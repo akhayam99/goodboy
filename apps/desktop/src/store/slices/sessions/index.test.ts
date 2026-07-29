@@ -1086,5 +1086,15 @@ describe('store contract', () => {
       expect(store.getState().agentProviderOverride[AGENT_ID]).toBeUndefined();
       expect(store.getState().agentModelOverride[AGENT_ID]).toBeUndefined();
     });
+
+    it('setAgentConfig syncs the effort used by turn routing', async () => {
+      const store = await getStore();
+      const agent = buildAgent({ id: AGENT_ID });
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
+      await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { effort: 'high' });
+      expect(store.getState().agentEffortOverride[AGENT_ID]).toBe('high');
+      await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { effort: null });
+      expect(store.getState().agentEffortOverride[AGENT_ID]).toBeUndefined();
+    });
   });
 });

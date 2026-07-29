@@ -13,6 +13,7 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
     }
     const prevModelOverride = get().agentModelOverride;
     const prevProviderOverride = get().agentProviderOverride;
+    const prevEffortOverride = get().agentEffortOverride;
     const applyFields = (a: Agent): Agent => {
       const { verbosity, effort, modelOverride, providerOverride, ...rest } = a;
       const nextVerbosity = fields.verbosity !== undefined ? fields.verbosity : (verbosity ?? null);
@@ -35,6 +36,7 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
       const runs = state.sessionPhaseRuns[sessionId] ?? [];
       const nextModelOverride = { ...state.agentModelOverride };
       const nextProviderOverride = { ...state.agentProviderOverride };
+      const nextEffortOverride = { ...state.agentEffortOverride };
       if (fields.modelOverride !== undefined) {
         if (fields.modelOverride != null) {
           nextModelOverride[agentId] = fields.modelOverride;
@@ -49,6 +51,13 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
           delete nextProviderOverride[agentId];
         }
       }
+      if (fields.effort !== undefined) {
+        if (fields.effort != null) {
+          nextEffortOverride[agentId] = fields.effort;
+        } else {
+          delete nextEffortOverride[agentId];
+        }
+      }
       return {
         sessionPhaseRuns: {
           ...state.sessionPhaseRuns,
@@ -56,6 +65,7 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
         },
         agentModelOverride: nextModelOverride,
         agentProviderOverride: nextProviderOverride,
+        agentEffortOverride: nextEffortOverride,
       };
     });
     try {
@@ -68,6 +78,7 @@ export const setAgentConfig = (set: SetFn, get: GetFn) => {
         },
         agentModelOverride: prevModelOverride,
         agentProviderOverride: prevProviderOverride,
+        agentEffortOverride: prevEffortOverride,
       }));
       throw err;
     }

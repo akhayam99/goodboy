@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CircleCheck, PanelRight, Trash2 } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
+import { getModelDescriptor } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import { formatCost } from '../../../../../features/session/agent-row-format';
@@ -77,7 +78,7 @@ export const AgentRow = ({
     `status: ${run.status}`,
     isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
     telemetry ? `provider: ${telemetry.provider}` : null,
-    telemetry ? `model: ${telemetry.model}` : null,
+    telemetry ? `model: ${getModelDescriptor(telemetry.model)?.label ?? telemetry.model}` : null,
     total !== null
       ? `last turn: ${total} tokens · ${formatCost(telemetry!.estimatedCostUsd)}`
       : null,

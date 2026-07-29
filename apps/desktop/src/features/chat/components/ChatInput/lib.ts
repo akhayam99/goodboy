@@ -1,4 +1,5 @@
 import type {
+  AgentId,
   AttachmentInput,
   BudgetAlert,
   BudgetAlertKind,
@@ -36,6 +37,7 @@ export type PendingAttachment = {
 
 export type QueuedTurn = {
   readonly id: string;
+  readonly agentId: AgentId;
   readonly content: string;
   readonly attachments: ReadonlyArray<PendingAttachment>;
   readonly override: TurnProviderOverride | undefined;

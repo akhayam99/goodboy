@@ -7,11 +7,15 @@ export { formatTokens } from '@goodboy/ui';
 export const formatCost = formatUsd;
 
 export const shortModel = (model: string): string => {
+  const descriptor = getModelDescriptor(model);
+  if (descriptor != null) {
+    return descriptor.label;
+  }
   const m = model.match(/claude-(haiku|sonnet|opus|fable)/i);
   if (m && m[1]) {
     return m[1].toLowerCase();
   }
-  return getModelDescriptor(model)?.label ?? model;
+  return model;
 };
 
 export const computeLatestTelemetryByAgentId = (

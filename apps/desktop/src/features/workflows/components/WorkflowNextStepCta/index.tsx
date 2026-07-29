@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, ClipboardList, Play } from 'lucide-react';
 import { InlineConfirm, cn } from '@goodboy/ui';
-import { classifyWorkflowChain } from '@goodboy/core';
+import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
 import type { Agent, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import { kindRouting, inferAgentKindFromName } from '../../../../features/session/agent-kind';
@@ -159,7 +159,7 @@ export const WorkflowNextStepCta = ({
             ? 'border-warning/50 bg-warning/10 text-warning hover:border-warning hover:bg-warning/20'
             : 'border-primary/40 bg-primary/10 text-primary hover:border-primary hover:bg-primary/20',
         )}
-        aria-label={`Run next step: ${next.name} (${defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})`}
+        aria-label={`Run next step: ${next.name} (${getModelDescriptor(defaults.model)?.label ?? defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})`}
       >
         {blockReason != null ? (
           <AlertTriangle

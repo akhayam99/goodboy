@@ -55,12 +55,12 @@ describe('formatCost', () => {
 });
 
 describe('shortModel', () => {
-  it('extracts the family from a versioned claude model', () => {
-    expect(shortModel('claude-haiku-4-5')).toBe('haiku');
-    expect(shortModel('claude-sonnet-4-6')).toBe('sonnet');
-    expect(shortModel('claude-opus-4-7')).toBe('opus');
-    expect(shortModel('claude-fable-5')).toBe('fable');
-    expect(shortModel('claude-opus-5')).toBe('opus');
+  it('uses catalog labels for known claude models', () => {
+    expect(shortModel('claude-haiku-4-5')).toBe('Haiku 4.5');
+    expect(shortModel('claude-sonnet-4-6')).toBe('Sonnet 4.6');
+    expect(shortModel('claude-opus-4-7')).toBe('Opus 4.7');
+    expect(shortModel('claude-fable-5')).toBe('Fable 5');
+    expect(shortModel('claude-opus-5')).toBe('Opus 5');
   });
 
   it('passes non-claude models through', () => {

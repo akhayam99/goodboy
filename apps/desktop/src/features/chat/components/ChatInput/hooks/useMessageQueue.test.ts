@@ -9,6 +9,7 @@ const AGENT = 'agent-1' as AgentId;
 
 const makeTurn = (id: string, content = 'hi'): QueuedTurn => ({
   id,
+  agentId: AGENT,
   content,
   attachments: [],
   override: undefined,
@@ -41,6 +42,19 @@ describe('useMessageQueue', () => {
       result.current.enqueue(makeTurn('t1'));
     });
     expect(useAppStore.getState().agentQueue[AGENT]?.map((q) => q.id)).toEqual(['t1']);
+  });
+
+  it('captures the queued agent and routing override', () => {
+    const override = { providerId: 'anthropic', model: 'claude-opus-5' } as const;
+    const { result } = renderHook(() =>
+      useMessageQueue({ agentId: AGENT, isRunning: true, dispatchTurn: resolved, onEdit: noop }),
+    );
+    act(() => {
+      result.current.enqueue({ ...makeTurn('t1'), override });
+    });
+    expect(useAppStore.getState().agentQueue[AGENT]?.[0]).toEqual(
+      expect.objectContaining({ agentId: AGENT, override }),
+    );
   });
 
   it('removes a queued turn by id', () => {
@@ -81,8 +95,27 @@ describe('useMessageQueue', () => {
     act(() => {
       result.current.editQueued('t1');
     });
-    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 't1', content: 'edit me' }));
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 't1',
+        agentId: AGENT,
+        content: 'edit me',
+      }),
+    );
     expect(result.current.queue).toEqual([]);
+  });
+
+  it('hands the captured override back to the composer on edit', () => {
+    const onEdit = vi.fn();
+    const override = { providerId: 'cursor', model: 'composer-2.5' } as const;
+    const { result } = renderHook(() =>
+      useMessageQueue({ agentId: AGENT, isRunning: true, dispatchTurn: resolved, onEdit }),
+    );
+    act(() => {
+      result.current.enqueue({ ...makeTurn('t1'), override });
+      result.current.editQueued('t1');
+    });
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ override }));
   });
 
   it('ignores edit for an unknown id', () => {
@@ -110,7 +143,7 @@ describe('useMessageQueue', () => {
       result.current.enqueue(makeTurn('t1', 'queued'));
     });
     rerender({ isRunning: false });
-    expect(dispatchTurn).toHaveBeenCalledWith('queued', [], undefined);
+    expect(dispatchTurn).toHaveBeenCalledWith('queued', [], undefined, AGENT);
     expect(result.current.queue).toEqual([]);
   });
 

@@ -1,4 +1,5 @@
 import { cn } from '@goodboy/ui';
+import { getModelDescriptor } from '@goodboy/core';
 import { Gauge } from 'lucide-react';
 import type { ProviderName } from '@goodboy/types';
 import { formatTokens } from '../../../../../features/session/agent-row-format';
@@ -27,8 +28,9 @@ function ProviderBar({
   const used = usage.inputTokens + usage.outputTokens;
   const pct = Math.min(1, used / window);
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
+  const modelLabel = getModelDescriptor(usage.model)?.label ?? usage.model;
   const tooltip =
-    `${usage.provider} · ${usage.model}\n` +
+    `${usage.provider} · ${modelLabel}\n` +
     `context: ${used.toLocaleString()} / ${window.toLocaleString()} tokens (${Math.round(pct * 100)}%)\n` +
     `cumulative input: ${usage.inputTokens.toLocaleString()} · output: ${usage.outputTokens.toLocaleString()}`;
   return (

@@ -3,16 +3,17 @@ import type { AgentId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { PendingAttachment, QueuedTurn } from '../lib';
 
-interface UseMessageQueueArgs {
+type UseMessageQueueArgs = {
   readonly agentId: AgentId | null;
   readonly isRunning: boolean;
   readonly dispatchTurn: (
     content: string,
     atts: ReadonlyArray<PendingAttachment>,
     override: QueuedTurn['override'],
+    agentId: AgentId,
   ) => Promise<void>;
   readonly onEdit: (item: QueuedTurn) => void;
-}
+};
 
 const EMPTY: ReadonlyArray<QueuedTurn> = [];
 
@@ -31,7 +32,7 @@ export function useMessageQueue({ agentId, isRunning, dispatchTurn, onEdit }: Us
       const [next, ...rest] = queue;
       setAgentQueue(agentId, rest);
       if (next) {
-        void dispatchTurn(next.content, next.attachments, next.override);
+        void dispatchTurn(next.content, next.attachments, next.override, next.agentId);
       }
     }
   }, [agentId, isRunning, queue, dispatchTurn, setAgentQueue]);

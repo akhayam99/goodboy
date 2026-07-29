@@ -1,7 +1,8 @@
 import { Clock, Paperclip, X } from 'lucide-react';
+import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import type { QueuedTurn } from '../lib';
 
-type QueuedItem = Pick<QueuedTurn, 'id' | 'content' | 'attachments'>;
+type QueuedItem = Pick<QueuedTurn, 'id' | 'content' | 'attachments' | 'override'>;
 
 export function QueuedMessages({
   items,
@@ -51,6 +52,15 @@ export function QueuedMessages({
             >
               {preview}
             </button>
+            {item.override != null && (
+              <RoutingBadge
+                provider={item.override.providerId}
+                model={item.override.model ?? item.override.selection?.key}
+                effort={item.override.selection?.effort}
+                muted
+                className="max-w-40 shrink-0"
+              />
+            )}
             {attachmentCount > 0 && trimmed.length > 0 && (
               <span className="inline-flex shrink-0 items-center gap-0.5 text-2xs text-muted-foreground">
                 <Paperclip size={10} aria-hidden />

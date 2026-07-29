@@ -108,16 +108,21 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     dismissPopover,
   } = useChatPrefix({ session, value, setValue, sessionWorktree, showToast, wrapperRef });
 
-  const routing = useTurnRouting({ session, isRunning });
+  const routing = useTurnRouting({ session });
   const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });
 
   const onEditQueued = useCallback(
     (item: QueuedTurn) => {
       setValue(item.content);
       setAttachments(item.attachments);
+      routing.setSelectedProviderState(item.override?.providerId ?? null);
+      routing.setSelectedModelState(item.override?.model ?? item.override?.selection?.key ?? null);
+      if (item.override?.selection?.effort != null) {
+        routing.setEffortState(item.override.selection.effort);
+      }
       wrapperRef.current?.querySelector('textarea')?.focus();
     },
-    [setValue, setAttachments],
+    [setValue, setAttachments, routing],
   );
 
   const { queue, enqueue, removeQueued, editQueued } = useMessageQueue({
@@ -190,11 +195,23 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         : undefined;
 
       if (isRunning) {
-        enqueue({ id: crypto.randomUUID(), content, attachments: atts, override });
+        if (selectedAgentId == null) {
+          return;
+        }
+        enqueue({
+          id: crypto.randomUUID(),
+          agentId: selectedAgentId,
+          content,
+          attachments: atts,
+          override,
+        });
         return;
       }
 
-      await dispatch.dispatchTurn(content, atts, override);
+      if (selectedAgentId == null) {
+        return;
+      }
+      await dispatch.dispatchTurn(content, atts, override, selectedAgentId);
     },
     [
       routing.allowOverride,
@@ -202,6 +219,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       routing.effectiveEffort,
       routing.routingOverride,
       isRunning,
+      selectedAgentId,
       enqueue,
       dispatch.dispatchTurn,
     ],
@@ -471,7 +489,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 }}
                 verbosity={routing.verbosity}
                 connectedProviders={routing.connectedProviderIds}
-                disabled={!routing.allowOverride || isRunning}
+                disabled={!routing.allowOverride}
                 disabledTitle={overrideDisabledTitle}
                 overridden={
                   routing.effectiveProvider !== routing.defaultProvider ||
@@ -503,7 +521,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   const failed = dispatch.lastFailedTurn;
                   if (!failed) return;
                   dispatch.setError(null);
-                  void dispatch.dispatchTurn(failed.content, failed.attachments, failed.override);
+                  void dispatch.dispatchTurn(
+                    failed.content,
+                    failed.attachments,
+                    failed.override,
+                    failed.agentId,
+                  );
                 }}
                 className="shrink-0 rounded border border-danger/30 bg-danger/5 px-2 py-0.5 text-xs font-medium text-danger hover:bg-danger/15"
               >
