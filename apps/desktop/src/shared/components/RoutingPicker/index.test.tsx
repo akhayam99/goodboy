@@ -365,16 +365,18 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('status', { name: 'Max Mode required previously' })).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Max Mode rejected' }).textContent).toBe(
+      'Cursor rejected Max Mode for this model. Check that Max Mode is available on your account, then retry.',
+    );
     const chip = screen.getByRole('button', { name: 'Sonnet 4.6' });
-    expect(within(chip).getByTitle('May require Max Mode in the Cursor app')).toBeDefined();
+    expect(within(chip).getByTitle('Cursor rejected Max Mode for this model')).toBeDefined();
 
     act(() => {
       cursorMaxModeAdvisory.clear({ accountId: 'unknown', model: 'sonnet-4.6' });
     });
 
-    expect(screen.queryByRole('status', { name: 'Max Mode required previously' })).toBeNull();
-    expect(within(chip).queryByTitle('May require Max Mode in the Cursor app')).toBeNull();
+    expect(screen.queryByRole('status', { name: 'Max Mode rejected' })).toBeNull();
+    expect(within(chip).queryByTitle('Cursor rejected Max Mode for this model')).toBeNull();
   });
 
   it('shows a static Max Mode requirement from the selected Cursor combination', () => {
@@ -387,8 +389,12 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('status', { name: 'Max Mode required' })).toBeDefined();
-    expect(screen.queryByRole('status', { name: 'Max Mode required previously' })).toBeNull();
+    expect(screen.getByRole('status', { name: 'Max Mode' }).textContent).toBe(
+      'Runs in Max Mode. Cursor bills Max Mode requests at a higher rate.',
+    );
+    expect(screen.queryByRole('status', { name: 'Max Mode rejected' })).toBeNull();
+    const chip = screen.getByRole('button', { name: 'GPT-5.5' });
+    expect(within(chip).queryByTitle('Cursor rejected Max Mode for this model')).toBeNull();
   });
 
   it('renders every anthropic catalog model as a version chip', () => {

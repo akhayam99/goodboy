@@ -30,6 +30,7 @@ type Params = {
   provider: ProviderId;
   model: string;
   effort: string | undefined;
+  cursorMaxMode: boolean | undefined;
   parallelDispatch: {
     template: Workflow;
     currentDef: Step;
@@ -56,6 +57,7 @@ export const dispatchParallelTurn = async (
     provider,
     model,
     effort,
+    cursorMaxMode,
     parallelDispatch,
     claudeFlags,
     apiKeyBinding,
@@ -164,6 +166,7 @@ export const dispatchParallelTurn = async (
         providerBinary,
         model,
         ...(effort !== undefined && { effort }),
+        ...(cursorMaxMode === true && { cursorMaxMode: true }),
         authIdentity: get().authResults?.[provider]?.identity ?? null,
         ...(claudeFlags.permissionMode !== undefined && {
           permissionMode: claudeFlags.permissionMode,

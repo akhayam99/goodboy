@@ -126,6 +126,7 @@ export type ModelAxes = {
 
 export type ResolvedModelArgs = {
   readonly args: ReadonlyArray<string>;
+  readonly maxMode?: true;
   readonly clamped?: {
     readonly requested: EffortLevel;
     readonly applied: EffortLevel;

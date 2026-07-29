@@ -73,6 +73,8 @@ pub struct SpawnArgs {
     pub api_key_env: Option<String>,
     #[serde(default)]
     pub credential_id: Option<String>,
+    #[serde(default)]
+    pub cursor_max_mode: bool,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -266,6 +268,17 @@ pub struct SpawnOneArgs<'a> {
     pub api_key_env: Option<&'a str>,
     pub credential_id: Option<&'a str>,
     pub workspace_id: Option<&'a str>,
+    pub cursor_max_mode: bool,
+}
+
+fn max_mode_config_dir_for(binary: &str, cursor_max_mode: bool) -> Option<std::path::PathBuf> {
+    let name = std::path::Path::new(binary)
+        .file_name()
+        .and_then(|value| value.to_str());
+    if name != Some("cursor-agent") || !cursor_max_mode {
+        return None;
+    }
+    crate::cursor_config::max_mode_config_dir()
 }
 
 /// Spawns one child process, registers it in the registry, and starts the
@@ -281,6 +294,10 @@ pub(crate) fn spawn_one(
     let mut command = crate::path_env::command(args.binary);
     command.current_dir(args.working_dir);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+
+    if let Some(directory) = max_mode_config_dir_for(args.binary, args.cursor_max_mode) {
+        command.env("CURSOR_CONFIG_DIR", directory);
+    }
 
     if let (Some(env_name), Some(cred_id)) = (args.api_key_env, args.credential_id) {
         if let Ok(Some(secret)) = crate::secrets::read(&format!("provider_credential.{cred_id}")) {
@@ -378,6 +395,7 @@ pub fn turn_spawn(
             api_key_env: args.api_key_env.as_deref(),
             credential_id: args.credential_id.as_deref(),
             workspace_id: args.workspace_id.as_deref(),
+            cursor_max_mode: args.cursor_max_mode,
         },
     )
 }
@@ -520,6 +538,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            cursor_max_mode: false,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -546,6 +565,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            cursor_max_mode: false,
         }
     }
 
@@ -740,6 +760,12 @@ mod tests {
     }
 
     #[test]
+    fn max_mode_config_dir_is_cursor_only_and_opt_in() {
+        assert!(max_mode_config_dir_for("claude", true).is_none());
+        assert!(max_mode_config_dir_for("/usr/local/bin/cursor-agent", false).is_none());
+    }
+
+    #[test]
     fn gemini_args_use_short_model_flag() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
@@ -775,6 +801,7 @@ mod tests {
             api_key_env: None,
             credential_id: None,
             workspace_id: None,
+            cursor_max_mode: false,
         };
         let cli = build_provider_cli_args("codex", &args);
         let out = std::process::Command::new("codex")

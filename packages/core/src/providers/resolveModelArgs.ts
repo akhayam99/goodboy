@@ -12,13 +12,18 @@ type WithClampParams = {
   readonly args: ReadonlyArray<string>;
   readonly requested: EffortLevel;
   readonly applied: EffortLevel;
+  readonly maxMode?: true;
 };
 
-const withClamp = ({ args, requested, applied }: WithClampParams): ResolvedModelArgs => {
+const withClamp = ({ args, requested, applied, maxMode }: WithClampParams): ResolvedModelArgs => {
   if (requested === applied) {
-    return { args };
+    return { args, ...(maxMode === true && { maxMode: true }) };
   }
-  return { args, clamped: { requested, applied } };
+  return {
+    args,
+    ...(maxMode === true && { maxMode: true }),
+    clamped: { requested, applied },
+  };
 };
 
 export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModelArgs => {
@@ -57,12 +62,13 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
       const combo = resolveCursorCombo({ model, selection });
       const args = ['--model', combo.slug];
       if (selection.effort == null || combo.effort == null) {
-        return { args };
+        return { args, ...(combo.maxMode === true && { maxMode: true }) };
       }
       return withClamp({
         args,
         requested: selection.effort,
         applied: combo.effort,
+        ...(combo.maxMode === true && { maxMode: true }),
       });
     }
     case 'gemini':

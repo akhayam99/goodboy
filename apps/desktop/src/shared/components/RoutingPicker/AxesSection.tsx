@@ -74,18 +74,14 @@ export const AxesSection = ({
         </AxisRow>
       ))}
       {axes.requiresMaxMode && (
-        <p role="status" aria-label="Max Mode required" className="text-2xs text-warning">
-          Requires Max Mode. Goodboy cannot enable it. Turn it on in the Cursor app.
+        <p role="status" aria-label="Max Mode" className="text-2xs text-warning">
+          Runs in Max Mode. Cursor bills Max Mode requests at a higher rate.
         </p>
       )}
       {hasMaxModeAdvisory && axes.requiresMaxMode === false && (
-        <p
-          role="status"
-          aria-label="Max Mode required previously"
-          className="text-2xs text-warning"
-        >
-          This model previously required Max Mode. Goodboy cannot enable it. Turn it on in the
-          Cursor app, then retry.
+        <p role="status" aria-label="Max Mode rejected" className="text-2xs text-warning">
+          Cursor rejected Max Mode for this model. Check that Max Mode is available on your account,
+          then retry.
         </p>
       )}
       {notice != null && (

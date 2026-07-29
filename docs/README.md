@@ -22,6 +22,7 @@ once, so pull the deep-dive only when the task touches it.
 | [styling.md](styling.md)                                |       |         |      ✓      |    ✓     |            |            |
 | [tone-of-voice.md](tone-of-voice.md)                    |       |         |      ✓      |    ✓     |     ✓      |            |
 | [providers.md](providers.md)                            |   ✓   |    ✓    |      ✓      |          |            |     ✓      |
+| [model-picker.md](model-picker.md)                      |       |    ✓    |      ✓      |    ✓     |            |            |
 | [release.md](release.md)                                |       |         |             |          |     ✓      |            |
 | [release-command.md](release-command.md)                |       |         |             |          |     ✓      |            |
 | [workflows.md](workflows.md)                            |       |    ✓    |      ✓      |    ✓     |            |            |
@@ -95,6 +96,7 @@ Every doc, its one-line purpose, and the roles that load it.
 | [styling.md](styling.md)                                    | Concrete Tailwind rules for spacing, radius, scroll. DESIGN.md owns the principles.               | implementer, reviewer                   |
 | [tone-of-voice.md](tone-of-voice.md)                        | How Goodboy talks: README, website, release notes, in-app copy, errors.                           | implementer, reviewer, pr-release       |
 | [providers.md](providers.md)                                | Provider integration guide: install, connect, manage each CLI.                                    | scout, planner, implementer, onboarding |
+| [model-picker.md](model-picker.md)                          | Model picker structure: catalog presentation data, axes, Cursor Max Mode.                         | planner, implementer, reviewer          |
 | [release.md](release.md)                                    | Technical release runbook: signing, notarization, updater, homebrew.                              | pr-release                              |
 | [release-command.md](release-command.md)                    | Agent release playbook: step order and gotchas. Points to release.md for mechanics.               | pr-release                              |
 | [workflows.md](workflows.md)                                | Workflow tables, run advance gate, post-step summarizer, parallel status.                         | planner, implementer, reviewer          |

@@ -51,6 +51,7 @@ describe('invokeParallelPhaseRunSpawn', () => {
       permissionMode: 'acceptEdits',
       allowedTools: ['Bash', 'Edit'],
       disallowedTools: ['WebSearch'],
+      cursorMaxMode: true,
     };
 
     const result = await invokeParallelPhaseRunSpawn(args);

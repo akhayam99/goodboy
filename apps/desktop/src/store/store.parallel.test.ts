@@ -209,6 +209,7 @@ function buildDef(args: {
   name?: string;
   promptPrefix?: string;
   parallelGroup?: number;
+  modelOverride?: string;
 }): Step {
   return {
     id: args.id as StepId,
@@ -217,6 +218,7 @@ function buildDef(args: {
     name: args.name ?? args.id,
     promptPrefix: args.promptPrefix ?? `[${args.id}]`,
     ...(args.parallelGroup !== undefined && { parallelGroup: args.parallelGroup }),
+    ...(args.modelOverride !== undefined && { modelOverride: args.modelOverride }),
   };
 }
 
@@ -420,6 +422,66 @@ describe('sendTurn, parallel agents branch', () => {
       expect.objectContaining({ parentAgentId: 'agent-1' }),
     );
     expect(phaseRunUpdateStatusSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('threads Cursor Max Mode into every parallel spawn', async () => {
+    agentFeaturesMock.parallelAgents = true;
+    invokeParallelPhaseRunSpawnSpy.mockImplementation(
+      async (args: { runs: ReadonlyArray<{ runId: string }> }) => args.runs.map((r) => r.runId),
+    );
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      selectedProvider: 'cursor',
+      selectedModel: 'gpt-5.5-high',
+      reason: 'preference',
+    });
+
+    const useAppStore = await importStore();
+    setupSession(useAppStore, [
+      buildDef({ id: 'd-a', ordinal: 1, parallelGroup: 7, modelOverride: 'gpt-5.5-high' }),
+      buildDef({ id: 'd-b', ordinal: 2, parallelGroup: 7 }),
+    ]);
+    useAppStore.setState({
+      providers: [
+        {
+          id: 'cursor',
+          binary: 'cursor-agent',
+          connection: 'connected',
+          name: 'Cursor',
+          installation: 'installed',
+        } as never,
+      ],
+    });
+
+    const turnPromise = useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'plan' });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    expect(invokeParallelPhaseRunSpawnSpy).toHaveBeenCalledTimes(2);
+    const spawnCalls = invokeParallelPhaseRunSpawnSpy.mock.calls as unknown as ReadonlyArray<
+      [
+        {
+          readonly binary?: string;
+          readonly model: string;
+          readonly cursorMaxMode?: boolean;
+          readonly runs: ReadonlyArray<{ readonly runId: ProviderRunId }>;
+        },
+      ]
+    >;
+    for (const [args] of spawnCalls) {
+      expect(args).toEqual(
+        expect.objectContaining({
+          binary: 'cursor-agent',
+          model: 'gpt-5.5-high',
+          cursorMaxMode: true,
+        }),
+      );
+      const runId = args.runs[0]?.runId;
+      if (runId != null) {
+        emitEnd(runId, 0);
+      }
+    }
+
+    await turnPromise;
   });
 
   it('flag ON but only 1 sibling → falls back to single-run path', async () => {

@@ -861,6 +861,36 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(runTurnSpy.mock.calls[0]?.[0]?.effort).toBe('medium');
   });
 
+  it('passes Cursor Max Mode only for a model combination that requires it', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    const routingMod = await import('../features/providers/routing');
+    const routingSpy = routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>;
+    routingSpy
+      .mockResolvedValueOnce({
+        selectedProvider: 'cursor',
+        selectedModel: 'gpt-5.5-high',
+        reason: 'preference',
+      })
+      .mockResolvedValueOnce({
+        selectedProvider: 'cursor',
+        selectedModel: 'composer-2.5',
+        reason: 'preference',
+      });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'max' });
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'standard' });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ model: 'gpt-5.5-high', cursorMaxMode: true }),
+    );
+    expect(runTurnSpy.mock.calls[1]?.[0]).not.toHaveProperty('cursorMaxMode');
+  });
+
   it('passes clamped effort to runTurn when the resolved provider is codex', async () => {
     const useAppStore = await importStore();
     setup(useAppStore);

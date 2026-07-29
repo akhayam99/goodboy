@@ -621,6 +621,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         provider,
         model: spawnModel,
         effort: effortFlag,
+        cursorMaxMode: resolvedModel.maxMode,
         parallelDispatch,
         claudeFlags,
         apiKeyBinding,
@@ -784,6 +785,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(resumeSessionId !== undefined && { resumeSessionId }),
         systemPrompt: fullSystemPrompt,
         ...(effortFlag !== undefined && { effort: effortFlag }),
+        ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
         ...(apiKeyBinding ?? {}),
         ...claudeFlags,
       })) {
@@ -1025,7 +1027,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             });
       const errorState: TurnState = {
         kind: 'error',
-        message: rawMessage,
+        message,
         failedAt: now(),
       };
       const derived = applyAgentTurnState(set, sessionId, activeAgentId, errorState, now());
