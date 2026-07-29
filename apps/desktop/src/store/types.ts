@@ -66,9 +66,9 @@ import type { UpdaterState } from './slices/updater/state';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
 
 export type ResolverThreadOutcome =
-  | { readonly kind: 'resolved'; readonly commitSha: string }
-  | { readonly kind: 'wontfix'; readonly reason: string }
-  | { readonly kind: 'analyzed' };
+  | { readonly kind: 'resolved'; readonly commitSha: string; readonly reply?: string }
+  | { readonly kind: 'wontfix'; readonly reason: string; readonly reply?: string }
+  | { readonly kind: 'analyzed'; readonly reply?: string };
 
 export type BootPhase =
   | 'pending'

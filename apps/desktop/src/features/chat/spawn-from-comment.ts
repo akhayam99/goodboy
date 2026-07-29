@@ -65,6 +65,10 @@ const buildCommentAgentPrompt = ({
   if (c.source === 'review' && c.threadId) {
     lines.push('');
     lines.push(`Review thread id (for the resolution marker): ${c.threadId}`);
+    lines.push('');
+    lines.push('Write the answer the reviewer will read in this block:');
+    lines.push(`<<comment-reply id="${c.threadId}">>your answer<</comment-reply>>`);
+    lines.push('It is posted on that thread, and only on that thread, when the thread closes.');
   }
   if (mode === 'analyze') {
     lines.push('');
@@ -136,6 +140,10 @@ export const buildCombinedCommentAgentPrompt = (
     '<<comment-wontfix threadId="PRRT_..." reason="...">>',
     '<<comment-analysis threadId="PRRT_..." verdict="fix" summary="...">>',
     'Every review thread id above must receive exactly one marker.',
+    '',
+    'Also write the answer each reviewer will read, one block per thread:',
+    '<<comment-reply id="PRRT_...">>your answer for that thread<</comment-reply>>',
+    'A block is posted only on the thread whose id it names, so never reuse one answer for several ids.',
   );
   return lines.join('\n');
 };

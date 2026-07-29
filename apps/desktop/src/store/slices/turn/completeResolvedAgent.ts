@@ -1,5 +1,6 @@
 import {
   extractAllCommentAnalysis,
+  extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractPlanFromMarker,
@@ -97,6 +98,12 @@ export const completeResolvedAgent = async ({
   }
   for (const marker of analysisMarkers) {
     outcomes[marker.threadId] = { kind: 'analyzed' };
+  }
+  for (const marker of extractAllCommentReplies(assistantText)) {
+    const outcome = outcomes[marker.threadId];
+    if (outcome !== undefined) {
+      outcomes[marker.threadId] = { ...outcome, reply: marker.body };
+    }
   }
   const markerCount = resolvedMarkers.length + wontfixMarkers.length + analysisMarkers.length;
   const nextState =

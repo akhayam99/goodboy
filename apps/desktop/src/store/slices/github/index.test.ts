@@ -709,5 +709,46 @@ describe('store contract', () => {
       expect(store.getState().sessionPendingResolutions[SESSION_ID]).toEqual([]);
       expect(refresh).toHaveBeenCalledOnce();
     });
+
+    it('resolveAgentThreads posts the reply of each thread only on that thread', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1', 'PRRT_2'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890', reply: 'answer for one' },
+            PRRT_2: { kind: 'resolved', commitSha: 'abcdef1234567890', reply: 'answer for two' },
+          },
+        },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValueOnce([]);
+
+      await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      const replyCalls = addReplySpy.mock.calls as ReadonlyArray<ReadonlyArray<unknown>>;
+      const bodyByThread = new Map(
+        replyCalls.map((call) => [String(call[1]), String(call[2])] as const),
+      );
+      expect(bodyByThread.get('PRRT_1')).toContain('answer for one');
+      expect(bodyByThread.get('PRRT_1')).not.toContain('answer for two');
+      expect(bodyByThread.get('PRRT_2')).toContain('answer for two');
+      expect(bodyByThread.get('PRRT_2')).not.toContain('answer for one');
+    });
   });
 });
