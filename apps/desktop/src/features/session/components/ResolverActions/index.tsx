@@ -103,7 +103,6 @@ export const ResolverActions = ({
   const pendingResolutions = pending.filter((resolution) =>
     threadIds.includes(resolution.threadId),
   );
-  const pendingResolution = pendingResolutions[0] ?? null;
   const resolvedTargets = Object.entries(outcomes).flatMap(([targetThreadId, outcome]) =>
     outcome.kind === 'resolved' ? [{ threadId: targetThreadId, commitSha: outcome.commitSha }] : [],
   );
@@ -137,16 +136,7 @@ export const ResolverActions = ({
       if (threadId === null || effectiveCommitSha === null) {
         return;
       }
-      if (threadIds.length >= 2) {
-        await resolveAgentThreads(sessionId, agent.id);
-        return;
-      }
-      const didResolve = await resolveGithubThread(sessionId, threadId, {
-        commitSha: effectiveCommitSha,
-      });
-      if (didResolve && pendingResolution !== null) {
-        await dequeueResolution(sessionId, threadId);
-      }
+      await resolveAgentThreads(sessionId, agent.id);
       return;
     }
     if (kind === 'queue') {

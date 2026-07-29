@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import type { ResolverStatus } from '../../resolver-linkage';
 
@@ -91,6 +91,22 @@ describe('ResolverActions', () => {
 
     expect(screen.getByRole('button', { name: 'Remove from batch' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Push now' })).toBeDefined();
+  });
+
+  it('routes push now through the agent-wide resolution path', () => {
+    h.pending = [{ threadId: 'PRRT_1', commitSha: 'abc1234' }];
+    renderActions({ status: 'committed' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push now' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Push now?' })).getByRole('button', {
+        name: 'Push now',
+      }),
+    );
+
+    expect(h.resolveAgentThreads).toHaveBeenCalledWith(SESSION_ID, AGENT.id);
+    expect(h.resolveGithubThread).not.toHaveBeenCalled();
+    expect(h.dequeueResolution).not.toHaveBeenCalled();
   });
 
   it('arms a confirm instead of pushing on the first click', () => {

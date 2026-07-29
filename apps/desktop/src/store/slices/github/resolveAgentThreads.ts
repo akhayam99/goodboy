@@ -7,6 +7,17 @@ import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
 import type { GetFn, SetFn } from './types';
 
+type Closure = {
+  readonly commitSha?: string;
+  readonly reason?: string;
+  readonly reply?: string;
+};
+
+type Target = {
+  readonly threadId: string;
+  readonly closure: Closure;
+};
+
 export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId): Promise<boolean> => {
     const agent = get().sessionPhaseRuns[sessionId]?.find((candidate) => candidate.id === agentId);
@@ -22,38 +33,54 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
       ...(workspace !== undefined && { workspaceId: workspace.id }),
     };
     const outcomes = get().resolverThreadOutcomes[agentId] ?? {};
-    const resolvedEntries = Object.entries(outcomes).flatMap(([threadId, outcome]) =>
-      outcome.kind === 'resolved' ? [{ threadId, commitSha: outcome.commitSha }] : [],
-    );
+    const outcomeEntries = Object.entries(outcomes);
     const targets =
-      Object.keys(outcomes).length > 0
-        ? resolvedEntries
-        : agentThreadIds(agent).map((threadId) => ({ threadId, commitSha: null }));
+      outcomeEntries.length > 0
+        ? outcomeEntries.map(([threadId, outcome]): Target => {
+            if (outcome.kind === 'resolved') {
+              return {
+                threadId,
+                closure: { commitSha: outcome.commitSha, reply: outcome.reply },
+              };
+            }
+            if (outcome.kind === 'wontfix') {
+              return {
+                threadId,
+                closure: { reason: outcome.reason, reply: outcome.reply },
+              };
+            }
+            return { threadId, closure: { reply: outcome.reply } };
+          })
+        : agentThreadIds(agent).map((threadId): Target => ({ threadId, closure: {} }));
     if (targets.length === 0) {
       return false;
     }
-    const push = await pushSessionBranch(get, sessionId);
-    if (!push.ok) {
-      void get().emitNotification(
-        'error',
-        'error',
-        'push failed, threads left open',
-        push.error,
-        notifyTarget,
-      );
-      return false;
+    const shouldPush =
+      outcomeEntries.length === 0 ||
+      outcomeEntries.some(([, outcome]) => outcome.kind === 'resolved');
+    if (shouldPush) {
+      const push = await pushSessionBranch(get, sessionId);
+      if (!push.ok) {
+        void get().emitNotification(
+          'error',
+          'error',
+          'push failed, threads left open',
+          push.error,
+          notifyTarget,
+        );
+        return false;
+      }
     }
     try {
       for (const target of targets) {
-        await markThreadResolvedNoPush(
-          get,
+        await markThreadResolvedNoPush(get, sessionId, target.threadId, target.closure);
+        await deletePendingResolution({
+          db: tauriDatabase,
           sessionId,
-          target.threadId,
-          target.commitSha !== null ? { commitSha: target.commitSha } : undefined,
-        );
-        await deletePendingResolution(tauriDatabase, sessionId, target.threadId);
+          threadId: target.threadId,
+        });
       }
-      const pending = await listPendingResolutionsForSession(tauriDatabase, sessionId);
+      const pending = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
       set((state) => ({
         sessionPendingResolutions: {
           ...state.sessionPendingResolutions,

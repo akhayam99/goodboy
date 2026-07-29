@@ -224,6 +224,7 @@ export type {
   GithubIssue,
   LinkedIssue,
   PendingResolution,
+  PendingResolutionOutcome,
   PrCheckConclusion,
   PrCheckRun,
   PrComment,

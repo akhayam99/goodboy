@@ -5,7 +5,7 @@ import type { GetFn, SetFn } from './types';
 
 export const dequeueResolution = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, threadId: string): Promise<void> => {
-    await deletePendingResolution(tauriDatabase, sessionId, threadId);
+    await deletePendingResolution({ db: tauriDatabase, sessionId, threadId });
     set((state) => ({
       sessionPendingResolutions: {
         ...state.sessionPendingResolutions,

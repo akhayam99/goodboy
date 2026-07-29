@@ -5,7 +5,7 @@ import { buildResolutionReplyBody } from './buildResolutionReplyBody';
 import { resolverReplyForThread } from './resolverReplyForThread';
 import type { GetFn } from './types';
 
-type Closure = { commitSha?: string; reason?: string };
+type Closure = { commitSha?: string; reason?: string; reply?: string };
 
 export const markThreadResolvedNoPush = async (
   get: GetFn,
@@ -18,7 +18,9 @@ export const markThreadResolvedNoPush = async (
     ? get().workspaces.find((w) => w.id === session.workspaceId)
     : undefined;
   const pr = get().sessionGithub[sessionId]?.pr ?? null;
-  const reply = resolverReplyForThread(get().resolverThreadOutcomes, threadId);
+  const inMemoryReply = resolverReplyForThread(get().resolverThreadOutcomes, threadId);
+  const persistedReply = closure?.reply?.trim() ?? null;
+  const reply = inMemoryReply ?? persistedReply;
   const replyBody = buildResolutionReplyBody(
     reply === null ? closure : { ...closure, reply },
     pr?.url ?? null,
