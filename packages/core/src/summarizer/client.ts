@@ -1,6 +1,8 @@
 import type { ContextSlot, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
+import { runAuxOneShot } from '../providers/aux-spawn';
 import { computeCostUsd } from '../providers/claude/cost';
+import { cliModelId } from '../providers/cliModelId';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 import { isSlotKey, SLOT_KEYS, type SlotKey } from '../context/slots';
 import { extractJson } from './extract-json';
@@ -71,12 +73,6 @@ export class SummarizerCliError extends Error {
   }
 }
 
-type SummarizeCommandResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
-
 export class Summarizer {
   private readonly providerId: ProviderId;
   private readonly binary: string;
@@ -87,7 +83,10 @@ export class Summarizer {
   constructor(deps: SummarizerDeps) {
     this.providerId = deps.providerId;
     this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
-    this.model = deps.model ?? getCheapModel(deps.providerId);
+    this.model = cliModelId({
+      provider: deps.providerId,
+      model: deps.model ?? getCheapModel(deps.providerId),
+    });
     this.workingDir = deps.workingDir;
     this.invokeFn = deps.invokeFn;
   }
@@ -95,15 +94,14 @@ export class Summarizer {
   async summarize(input: SummarizeInput): Promise<SummarizerResult> {
     const userMessage = buildUserPrompt(input);
 
-    const result = await this.invokeFn<SummarizeCommandResult>('summarize_session', {
-      args: {
-        providerId: this.providerId,
-        model: this.model,
-        binary: this.binary,
-        userMessage,
-        systemPrompt: SUMMARIZER_SYSTEM_PROMPT,
-        ...(this.workingDir != null && { workingDir: this.workingDir }),
-      },
+    const result = await runAuxOneShot({
+      providerId: this.providerId,
+      model: this.model,
+      binary: this.binary,
+      userMessage,
+      systemPrompt: SUMMARIZER_SYSTEM_PROMPT,
+      ...(this.workingDir != null && { workingDir: this.workingDir }),
+      invokeFn: this.invokeFn,
     });
 
     if ((result.exitCode ?? 0) !== 0) {

@@ -1,5 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
+import { runAuxOneShot } from '../providers/aux-spawn';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const GOAL_POLISH_SYSTEM_PROMPT = `You polish goal statements for AI coding workflows.
@@ -27,12 +28,6 @@ export type GoalPolishDeps = {
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 };
 
-type OneShotResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
-
 export const polishWorkflowGoal = async (
   deps: GoalPolishDeps,
   goal: string,
@@ -42,15 +37,14 @@ export const polishWorkflowGoal = async (
     return null;
   }
 
-  const result = await deps.invokeFn<OneShotResult>('summarize_session', {
-    args: {
-      providerId: deps.providerId,
-      model: getCheapModel(deps.providerId),
-      binary: deps.binary ?? getDefaultBinary(deps.providerId),
-      userMessage: `GOAL (rough draft):\n${trimmed}\n\nRewrite it as the single <<goal>> marker block.`,
-      systemPrompt: GOAL_POLISH_SYSTEM_PROMPT,
-      ...(deps.workingDir != null && { workingDir: deps.workingDir }),
-    },
+  const result = await runAuxOneShot({
+    providerId: deps.providerId,
+    model: getCheapModel(deps.providerId),
+    binary: deps.binary ?? getDefaultBinary(deps.providerId),
+    userMessage: `GOAL (rough draft):\n${trimmed}\n\nRewrite it as the single <<goal>> marker block.`,
+    systemPrompt: GOAL_POLISH_SYSTEM_PROMPT,
+    ...(deps.workingDir != null && { workingDir: deps.workingDir }),
+    invokeFn: deps.invokeFn,
   });
   if ((result.exitCode ?? 0) !== 0) {
     return null;

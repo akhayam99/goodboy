@@ -4,7 +4,7 @@ import { tintClasses, type Tone } from '../tint';
 
 export type ConfirmRole = 'primary' | 'alert' | 'danger';
 
-export type InlineConfirmProps = {
+type Props = {
   readonly role: ConfirmRole;
   readonly icon: ReactNode;
   readonly title: string;
@@ -16,6 +16,7 @@ export type InlineConfirmProps = {
   readonly onConfirm: () => void | Promise<void>;
   readonly onCancel: () => void;
   readonly isBusy?: boolean;
+  readonly isConfirmDisabled?: boolean;
   readonly autoDisarmMs?: number;
   readonly className?: string;
 };
@@ -44,9 +45,10 @@ export const InlineConfirm = ({
   onConfirm,
   onCancel,
   isBusy = false,
+  isConfirmDisabled = false,
   autoDisarmMs,
   className,
-}: InlineConfirmProps) => {
+}: Props) => {
   const [isRunning, setIsRunning] = useState(false);
   const tint = tintClasses(ROLE_TONE[role]);
   const busy = isBusy || isRunning;
@@ -108,7 +110,7 @@ export const InlineConfirm = ({
         <button
           type="button"
           onClick={() => void confirm()}
-          disabled={busy}
+          disabled={busy || isConfirmDisabled}
           className={cn(
             'rounded-md px-2 py-0.5 font-semibold motion-safe:transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60',
             ROLE_CONFIRM[role],

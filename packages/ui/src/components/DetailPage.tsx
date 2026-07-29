@@ -11,7 +11,7 @@ export type DetailSection = {
   readonly defaultCollapsed?: boolean;
 };
 
-export type DetailPageProps = {
+type Props = {
   readonly title: ReactNode;
   readonly eyebrow?: ReactNode;
   readonly state?: ReactNode;
@@ -31,7 +31,7 @@ export const DetailPage = ({
   sections,
   footer,
   className,
-}: DetailPageProps) => {
+}: Props) => {
   const [collapsed, setCollapsed] = useState<ReadonlyArray<string>>(
     sections.filter((section) => section.defaultCollapsed === true).map((section) => section.id),
   );

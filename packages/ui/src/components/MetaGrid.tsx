@@ -8,7 +8,7 @@ export type MetaItem = {
   readonly wide?: boolean;
 };
 
-export type MetaGridProps = {
+type Props = {
   readonly items: ReadonlyArray<MetaItem>;
   readonly emptyLabel?: string;
   readonly className?: string;
@@ -16,7 +16,7 @@ export type MetaGridProps = {
 
 const isEmpty = (value: ReactNode): boolean => value == null || value === '' || value === false;
 
-export const MetaGrid = ({ items, emptyLabel = 'No attributes yet', className }: MetaGridProps) => {
+export const MetaGrid = ({ items, emptyLabel = 'No attributes yet', className }: Props) => {
   const present = items.filter((item) => !isEmpty(item.value));
 
   if (present.length === 0) {

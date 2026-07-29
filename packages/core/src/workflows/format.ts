@@ -1,5 +1,6 @@
 import type { AgentRole, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
+import { runAuxOneShot } from '../providers/aux-spawn';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 import { isAgentRole } from '../roles';
 
@@ -54,12 +55,6 @@ export type WorkflowFormatDeps = {
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 };
 
-type OneShotResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
-
 export const buildWorkflowFormatUserPrompt = (input: WorkflowFormatInput): string => {
   const lines = ['DESIRED WORKFLOW (plain language):', input.description.trim(), ''];
   const hasCurrent =
@@ -94,15 +89,14 @@ export const formatWorkflowFromNL = async (
     return null;
   }
 
-  const result = await deps.invokeFn<OneShotResult>('summarize_session', {
-    args: {
-      providerId: deps.providerId,
-      model: getCheapModel(deps.providerId),
-      binary: deps.binary ?? getDefaultBinary(deps.providerId),
-      userMessage: buildWorkflowFormatUserPrompt(input),
-      systemPrompt: WORKFLOW_FORMAT_SYSTEM_PROMPT,
-      ...(deps.workingDir != null && { workingDir: deps.workingDir }),
-    },
+  const result = await runAuxOneShot({
+    providerId: deps.providerId,
+    model: getCheapModel(deps.providerId),
+    binary: deps.binary ?? getDefaultBinary(deps.providerId),
+    userMessage: buildWorkflowFormatUserPrompt(input),
+    systemPrompt: WORKFLOW_FORMAT_SYSTEM_PROMPT,
+    ...(deps.workingDir != null && { workingDir: deps.workingDir }),
+    invokeFn: deps.invokeFn,
   });
   if ((result.exitCode ?? 0) !== 0) {
     return null;
