@@ -148,6 +148,34 @@ export const worktreeDiffCommit = async (worktreePath: string, sha: string): Pro
   return invoke<string>('worktree_diff_commit', { worktreePath, sha });
 };
 
+export type RewrittenHead = {
+  readonly sha: string;
+  readonly shortSha: string;
+  readonly replaced: ReadonlyArray<string>;
+};
+
+export type RewriteCommitArgs = {
+  readonly worktreePath: string;
+  readonly sha: string;
+  readonly message: string;
+};
+
+export const amendLocalCommit = async ({
+  worktreePath,
+  sha,
+  message,
+}: RewriteCommitArgs): Promise<RewrittenHead> => {
+  return invoke<RewrittenHead>('worktree_amend_commit', { args: { worktreePath, sha, message } });
+};
+
+export const squashLocalCommits = async ({
+  worktreePath,
+  sha,
+  message,
+}: RewriteCommitArgs): Promise<RewrittenHead> => {
+  return invoke<RewrittenHead>('worktree_squash_commits', { args: { worktreePath, sha, message } });
+};
+
 export const worktreeDiffWorking = async (
   worktreePath: string,
   scope: WorktreeDiffScope,

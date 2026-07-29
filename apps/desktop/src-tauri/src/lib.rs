@@ -134,6 +134,8 @@ pub fn run() {
       worktree::worktree_changed_files,
       worktree::worktree_commits,
       worktree::worktree_diff_commit,
+      worktree::worktree_amend_commit,
+      worktree::worktree_squash_commits,
       worktree::worktree_diff_working,
       worktree::worktree_status,
       worktree::worktree_list_local_branches,

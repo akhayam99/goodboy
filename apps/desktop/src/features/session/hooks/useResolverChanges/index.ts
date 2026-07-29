@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { extractFilesTouched } from '@goodboy/core';
 import { listTurnEventsForAgent } from '@goodboy/db';
 import type { Agent, BranchCommit, TurnEvent } from '@goodboy/types';
@@ -11,6 +11,7 @@ import { resolverReportedShas } from '../../resolver-reported-shas';
 export type ResolverChanges = AttributedCommits & {
   readonly files: ReadonlyArray<string>;
   readonly isLoading: boolean;
+  readonly reload: () => void;
 };
 
 const EMPTY_EVENTS: ReadonlyArray<TurnEvent> = [];
@@ -26,6 +27,7 @@ export const useResolverChanges = ({ agent, worktreePath }: Params): ResolverCha
   const [storedEvents, setStoredEvents] = useState<ReadonlyArray<TurnEvent>>(EMPTY_EVENTS);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>(EMPTY_COMMITS);
   const [isLoading, setIsLoading] = useState(false);
+  const [revision, setRevision] = useState(0);
   const agentId = agent?.id ?? null;
   const hasLiveEvents = liveEvents.length > 0;
 
@@ -69,9 +71,10 @@ export const useResolverChanges = ({ agent, worktreePath }: Params): ResolverCha
     return () => {
       cancelled = true;
     };
-  }, [worktreePath, agentId]);
+  }, [worktreePath, agentId, revision]);
 
   const events = hasLiveEvents ? liveEvents : storedEvents;
+  const reload = useCallback(() => setRevision((current) => current + 1), []);
 
   return useMemo(() => {
     const attributed = attributeResolverCommits({
@@ -81,6 +84,6 @@ export const useResolverChanges = ({ agent, worktreePath }: Params): ResolverCha
       completedAt: agent?.completedAt,
       now: Date.now(),
     });
-    return { ...attributed, files: extractFilesTouched(events), isLoading };
-  }, [events, commits, agent?.startedAt, agent?.completedAt, isLoading]);
+    return { ...attributed, files: extractFilesTouched(events), isLoading, reload };
+  }, [events, commits, agent?.startedAt, agent?.completedAt, isLoading, reload]);
 };

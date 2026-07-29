@@ -685,8 +685,10 @@ export const App = () => {
     if (worktree) {
       try {
         return await worktreeDiffCommit(worktree, commitDiff.sha);
-      } catch {
-        void 0;
+      } catch (error) {
+        if (commitDiff.repo === '') {
+          throw error;
+        }
       }
     }
     return ghCommitDiff(commitDiff.repo, commitDiff.sha);
@@ -999,6 +1001,7 @@ export const App = () => {
           onClose={() => setCommitDiff(null)}
           title={`commit ${commitDiff.sha.slice(0, 7)}`}
           loader={commitDiffLoader}
+          jumpToFile={commitDiff.file}
         />
       ) : null}
       {currentSession && deleteOpen ? (
