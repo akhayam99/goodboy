@@ -143,4 +143,55 @@ describe('IssueDetailPanel', () => {
     expect(screen.getByText('Users')).toBeDefined();
     expect(screen.getByText('12')).toBeDefined();
   });
+
+  it('renders the resolved issue detail values and sections', async () => {
+    const issue = {
+      ...makeIssue({ id: 'issue-4', title: 'List title', shortId: 'GB-4' }),
+      culprit: 'list/culprit',
+      permalink: 'https://sentry.io/issues/4',
+    };
+    fetchIssueDetail.mockResolvedValueOnce({
+      title: 'Detail title',
+      culprit: 'detail/culprit',
+      frames: [
+        {
+          filename: 'src/detail.ts',
+          function: 'detailFrame',
+          line_no: 42,
+          in_app: true,
+        },
+      ],
+      tags: [{ key: 'release', value: 'desktop@1.2.3' }],
+      breadcrumbs: [
+        {
+          category: 'http',
+          message: 'GET /detail',
+          level: 'info',
+          timestamp: null,
+        },
+      ],
+    });
+
+    render(
+      <IssueDetailPanel
+        issue={issue}
+        sessionId={null}
+        workspaceId={WORKSPACE_ID}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Detail title' })).toBeDefined(),
+    );
+    expect(screen.getByText('detail/culprit', { selector: 'span' })).toBeDefined();
+    expect(screen.getByRole('link', { name: /Open in Sentry/ }).getAttribute('href')).toBe(
+      'https://sentry.io/issues/4',
+    );
+    expect(screen.getByText('desktop@1.2.3')).toBeDefined();
+    expect(screen.getByText('› detailFrame (src/detail.ts:42)', { selector: 'pre' })).toBeDefined();
+    expect(screen.getByText('GET /detail')).toBeDefined();
+    expect(screen.getByText('stack trace')).toBeDefined();
+    expect(screen.getByText('breadcrumbs')).toBeDefined();
+  });
 });

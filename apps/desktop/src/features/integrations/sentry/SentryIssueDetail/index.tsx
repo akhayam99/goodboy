@@ -1,10 +1,10 @@
-import { DetailPage, MetaGrid, cn, type DetailSection, type MetaItem } from '@goodboy/ui';
+import { DetailPage, MetaGrid, type DetailSection, type MetaItem } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import type { SentryIssueDetail as Detail } from '../client';
-import { levelTone } from '../levelTone';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
+import { SentryLevelBadge } from '../SentryLevelBadge';
 import { SentryStackTrace } from '../SentryStackTrace';
-import { visibleSentryTags } from '../visibleSentryTags';
+import { sentryIssueView } from '../sentryIssueView';
 
 type Props = {
   readonly identifier: string;
@@ -27,37 +27,45 @@ export const SentryIssueDetail = ({
   isLoading,
   error,
 }: Props) => {
-  const visibleTags = visibleSentryTags({ detail });
-  const frames = detail?.frames ?? [];
-  const breadcrumbs = detail?.breadcrumbs ?? [];
-  const resolvedCulprit = detail?.culprit ?? culprit;
+  const view = sentryIssueView({
+    identifier,
+    title,
+    culprit,
+    level,
+    permalink,
+    detail,
+    isLoading,
+    error,
+  });
 
   const meta: ReadonlyArray<MetaItem> = [
     {
       label: 'Culprit',
       wide: true,
       value:
-        resolvedCulprit != null ? (
-          <span className="font-mono text-2xs">{resolvedCulprit}</span>
-        ) : null,
+        view.culprit != null ? <span className="font-mono text-2xs">{view.culprit}</span> : null,
     },
-    ...visibleTags.map((tag) => ({ label: tag.key, value: tag.value })),
+    ...view.tags.map((tag) => ({ label: tag.key, value: tag.value })),
   ];
 
   const sections: ReadonlyArray<DetailSection> = [
     {
       id: 'stack-trace',
       title: 'Stack trace',
-      children: <SentryStackTrace frames={frames} isLoading={isLoading} error={error} />,
+      children: <SentryStackTrace frames={view.frames} isLoading={isLoading} error={error} />,
     },
-    ...(breadcrumbs.length > 0 && !isLoading && error == null
+    ...(view.hasBreadcrumbs
       ? [
           {
             id: 'breadcrumbs',
-            title: `Breadcrumbs (${breadcrumbs.length})`,
+            title: view.breadcrumbsLabel,
             defaultCollapsed: true,
             children: (
-              <SentryBreadcrumbs breadcrumbs={breadcrumbs} isLoading={isLoading} error={error} />
+              <SentryBreadcrumbs
+                breadcrumbs={view.breadcrumbs}
+                isLoading={isLoading}
+                error={error}
+              />
             ),
           },
         ]
@@ -66,22 +74,13 @@ export const SentryIssueDetail = ({
 
   return (
     <DetailPage
-      eyebrow={identifier}
-      title={detail?.title ?? title}
-      state={
-        <span
-          className={cn(
-            'shrink-0 rounded border px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide',
-            levelTone({ level }),
-          )}
-        >
-          {level ?? 'error'}
-        </span>
-      }
+      eyebrow={view.identifier}
+      title={view.title}
+      state={<SentryLevelBadge level={view.level} />}
       actions={
-        permalink != null && permalink !== '' ? (
+        view.permalink != null && view.permalink !== '' ? (
           <a
-            href={permalink}
+            href={view.permalink}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
