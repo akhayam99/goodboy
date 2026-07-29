@@ -98,6 +98,23 @@ describe('WorkflowStepCard (expanded)', () => {
     expect(onRemove).toHaveBeenCalledOnce();
   });
 
+  it('ignores focusout without a related target and collapses for an outside target', () => {
+    const onCollapse = vi.fn();
+    render(
+      <>
+        <WorkflowStepCard {...baseProps} expanded={true} onCollapse={onCollapse} />
+        <button type="button">outside</button>
+      </>,
+    );
+    const card = screen.getByRole('listitem');
+
+    fireEvent.focusOut(card, { relatedTarget: null });
+    expect(onCollapse).not.toHaveBeenCalled();
+
+    fireEvent.focusOut(card, { relatedTarget: screen.getByRole('button', { name: 'outside' }) });
+    expect(onCollapse).toHaveBeenCalledOnce();
+  });
+
   it('wand button renders when onPolish is provided, absent when not provided', () => {
     const onPolish = vi.fn();
     const { unmount } = render(

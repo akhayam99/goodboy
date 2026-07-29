@@ -103,7 +103,10 @@ export const WorkflowStepCard = ({
       return;
     }
     const next = e.relatedTarget as Node | null;
-    if (next && liRef.current?.contains(next)) {
+    if (next == null) {
+      return;
+    }
+    if (liRef.current?.contains(next) === true) {
       return;
     }
     onCollapse();
