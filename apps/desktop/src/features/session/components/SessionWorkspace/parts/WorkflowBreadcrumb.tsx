@@ -80,6 +80,11 @@ export const WorkflowBreadcrumb = ({
   );
   const currentStep = workflow?.steps.find((step) => step.id === rootAgent?.stepId) ?? null;
   const stepLabel = currentStep?.name ?? rootAgent?.name ?? null;
+  const completedClusters = clusterChildren.filter((agent) => agent.status === 'completed').length;
+  const isRootSelected = rootAgent != null && rootAgent.id === selectedAgentId;
+  const agentCrumbLabel = isRootSelected
+    ? `${completedClusters}/${clusterChildren.length} clusters`
+    : (selectedAgent?.name ?? rootAgent?.name ?? '');
 
   return (
     <nav aria-label="workflow breadcrumb" className="flex min-w-0 items-center gap-1">
@@ -174,12 +179,14 @@ export const WorkflowBreadcrumb = ({
               onClick={agentMenu.toggle}
               aria-haspopup="menu"
               aria-expanded={agentMenu.open}
-              title={`${selectedAgent?.name ?? rootAgent.name}. Switch agent.`}
-              className={cn(CRUMB_CLASS, 'font-semibold text-foreground/90 hover:text-foreground')}
+              title={`${agentCrumbLabel}. Switch agent.`}
+              className={cn(
+                CRUMB_CLASS,
+                'font-semibold text-foreground/90 hover:text-foreground',
+                isRootSelected && 'font-normal tabular-nums text-muted-foreground',
+              )}
             >
-              <span className="min-w-0 max-w-48 truncate">
-                {selectedAgent?.name ?? rootAgent.name}
-              </span>
+              <span className="min-w-0 max-w-48 truncate">{agentCrumbLabel}</span>
               <ChevronDown
                 size={11}
                 aria-hidden

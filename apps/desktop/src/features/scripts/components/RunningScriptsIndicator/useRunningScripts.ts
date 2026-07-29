@@ -13,13 +13,14 @@ export type RunningScript = {
 export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
   const scriptRuns = useAppStore((state) => state.scriptRuns);
   const sessions = useAppStore((state) => state.sessions);
-  const workspaceId = useAppStore((state) => state.currentWorkspaceId);
-  const scripts = useAppStore((state) =>
-    workspaceId !== null ? state.workspaceScripts[workspaceId] : undefined,
-  );
+  const workspaceScripts = useAppStore((state) => state.workspaceScripts);
 
   return useMemo(() => {
-    const names = new Map(scripts?.map((script) => [script.id, script.name]) ?? []);
+    const names = new Map(
+      Object.values(workspaceScripts).flatMap((scripts) =>
+        scripts.map((script) => [script.id, script.name] as const),
+      ),
+    );
     const running: RunningScript[] = [];
     for (const session of sessions) {
       const sessionId = session.id as SessionId;
@@ -42,5 +43,5 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
       }
     }
     return running.sort((a, b) => a.startedAt - b.startedAt);
-  }, [scriptRuns, scripts, sessions]);
+  }, [scriptRuns, workspaceScripts, sessions]);
 };
