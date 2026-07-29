@@ -144,6 +144,14 @@ const OLDER_LOCAL_COMMIT: BranchCommit = {
   timestamp: RUN_EPOCH + 60,
 };
 
+const OTHER_AGENT_HEAD: BranchCommit = {
+  ...COMMIT,
+  sha: 'other12345',
+  shortSha: 'other12',
+  subject: 'fix: later work from another agent',
+  timestamp: RUN_EPOCH - 10,
+};
+
 const PUSHED_COMMIT: BranchCommit = {
   ...COMMIT,
   sha: 'pushed1234',
@@ -237,13 +245,26 @@ describe('AgentInspector (resolver)', () => {
     });
   });
 
+  it('blocks reword when another commit is the branch HEAD', async () => {
+    h.listBranchCommits.mockResolvedValue([OTHER_AGENT_HEAD, LOCAL_COMMIT]);
+
+    render(
+      <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
+    );
+    const reword = await screen.findByRole('button', { name: 'Reword' });
+
+    expect(reword.hasAttribute('disabled')).toBe(true);
+    expect(reword.getAttribute('title')).toBe('Only the branch HEAD commit can be reworded');
+    expect(screen.getByRole('button', { name: 'Squash through HEAD' })).toBeDefined();
+  });
+
   it('squashes from an older local commit and leaves a pushed one alone', async () => {
     h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT, OLDER_LOCAL_COMMIT, PUSHED_COMMIT]);
 
     render(
       <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
     );
-    const squash = await screen.findByRole('button', { name: 'Squash from here' });
+    const squash = await screen.findByRole('button', { name: 'Squash through HEAD' });
     fireEvent.click(squash);
     fireEvent.click(screen.getByRole('button', { name: 'Squash into one' }));
 
@@ -252,7 +273,7 @@ describe('AgentInspector (resolver)', () => {
       message: 'wip',
     });
     expect(screen.getByText('already pushed')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Squash from here' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Squash through HEAD' })).toHaveLength(1);
   });
 
   it('explains why a queued resolver is blocked and where it sits', () => {

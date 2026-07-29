@@ -244,17 +244,25 @@ export const ResolverActions = ({
           description={armedAction.confirm.description}
           confirmLabel={armedAction.confirm.confirmLabel}
           isConfirmDisabled={armedAction.reason === 'required' && reason.trim() === ''}
-          className="w-full"
+          className={cn('w-full', density === 'compact' && 'max-w-72 self-end')}
           note={
             armedAction.reason === null ? undefined : (
               <Textarea
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                aria-label="resolution explanation"
+                aria-label={
+                  threadIds.length > 1
+                    ? `resolution explanation for all ${threadIds.length} threads`
+                    : 'resolution explanation'
+                }
                 placeholder={
                   armedAction.reason === 'required'
-                    ? 'Explain why this can be closed'
-                    : 'Optional note'
+                    ? threadIds.length > 1
+                      ? `Explain why all ${threadIds.length} threads can be closed`
+                      : 'Explain why this can be closed'
+                    : threadIds.length > 1
+                      ? `Optional note for all ${threadIds.length} threads`
+                      : 'Optional note'
                 }
                 autoGrow
                 maxRows={6}

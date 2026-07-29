@@ -34,6 +34,22 @@ describe('resolverReportedShas', () => {
     expect(shas).toEqual(['aaa1111', 'bbb2222']);
   });
 
+  it('accepts every commitSha marker from a combined resolver turn', () => {
+    const shas = resolverReportedShas({
+      events: [
+        delta({
+          run: 'run-1',
+          text: [
+            '<<comment-resolved threadId="PRRT_1" commitSha="aaa1111">>',
+            '<<comment-resolved threadId="PRRT_2" commitSha="bbb2222">>',
+          ].join('\n'),
+        }),
+      ],
+    });
+
+    expect(shas).toEqual(['aaa1111', 'bbb2222']);
+  });
+
   it('ignores turns without a resolution marker', () => {
     const shas = resolverReportedShas({
       events: [delta({ run: 'run-1', text: 'looked into it, nothing to change' })],

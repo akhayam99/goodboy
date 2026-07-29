@@ -10,6 +10,7 @@ import { resolverReportedShas } from '../../resolver-reported-shas';
 
 export type ResolverChanges = AttributedCommits & {
   readonly files: ReadonlyArray<string>;
+  readonly headSha: string | null;
   readonly isLoading: boolean;
   readonly reload: () => void;
 };
@@ -84,6 +85,12 @@ export const useResolverChanges = ({ agent, worktreePath }: Params): ResolverCha
       completedAt: agent?.completedAt,
       now: Date.now(),
     });
-    return { ...attributed, files: extractFilesTouched(events), isLoading, reload };
+    return {
+      ...attributed,
+      files: extractFilesTouched(events),
+      headSha: commits[0]?.sha ?? null,
+      isLoading,
+      reload,
+    };
   }, [events, commits, agent?.startedAt, agent?.completedAt, isLoading, reload]);
 };

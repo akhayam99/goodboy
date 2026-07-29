@@ -3,13 +3,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
+import type { ResolverStatus } from '../../resolver-linkage';
 
 vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
     selector({
       agentTurnState: {},
-      sessionGithub: {},
+      sessionGithub: { 'sess-1': { pr: { number: 7 } } },
       sessionPendingResolutions: {},
       resolverThreadOutcomes: {},
     }),
@@ -26,6 +27,7 @@ const agent = {
   name: 'resolve comment 12',
   status: 'completed',
   sourceKind: 'review_comment',
+  sourceThreadId: 'PRRT_1',
   startedAt: '2026-05-28T00:00:00Z',
   completedAt: '2026-05-28T00:01:00Z',
 } as Agent;
@@ -42,24 +44,43 @@ const telemetry = {
 } as TelemetryRecord;
 
 type Params = {
+  readonly run?: Agent;
+  readonly status?: ResolverStatus;
+  readonly telemetry?: TelemetryRecord | null;
+  readonly contextUsage?: ReadonlyArray<{
+    readonly provider: 'anthropic';
+    readonly model: string;
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+  }>;
+  readonly reportedCommitSha?: string | null;
   readonly onOpenChat?: () => void;
   readonly onInspect?: () => void;
 };
 
-const renderCard = ({ onOpenChat = () => undefined, onInspect = () => undefined }: Params = {}) =>
+const renderCard = ({
+  run = agent,
+  status = 'done',
+  telemetry: cardTelemetry = telemetry,
+  contextUsage = [
+    { provider: 'anthropic', model: 'claude-haiku-4-5', inputTokens: 50_000, outputTokens: 0 },
+  ],
+  reportedCommitSha = null,
+  onOpenChat = () => undefined,
+  onInspect = () => undefined,
+}: Params = {}) =>
   render(
     <ResolverCard
-      agent={agent}
-      status="done"
+      agent={run}
+      status={status}
       threadComment={null}
       diffComment={null}
-      telemetry={telemetry}
+      telemetry={cardTelemetry}
       aggregate={{ inputTokens: 400, outputTokens: 40, estimatedCostUsd: 0.75, turns: 2 }}
-      contextUsage={[
-        { provider: 'anthropic', model: 'claude-haiku-4-5', inputTokens: 50_000, outputTokens: 0 },
-      ]}
+      contextUsage={contextUsage}
       turns={2}
       turnsLoading={false}
+      reportedCommitSha={reportedCommitSha}
       isSelected={false}
       isTaskActive
       isInspected={false}
@@ -80,6 +101,28 @@ describe('ResolverCard', () => {
     expect(screen.getByText('Haiku 4.5')).toBeTruthy();
     expect(screen.getByText('2t')).toBeTruthy();
     expect(screen.getByText(/ctx \d+%/)).toBeTruthy();
+  });
+
+  it('shows the planned model before telemetry arrives', () => {
+    renderCard({
+      run: { ...agent, modelOverride: 'claude-haiku-4-5' },
+      telemetry: null,
+      contextUsage: [],
+    });
+
+    expect(screen.getByText('Haiku 4.5')).toBeTruthy();
+    expect(screen.queryByText('no model yet')).toBeNull();
+  });
+
+  it('enables commit actions from the reported resolver sha', () => {
+    renderCard({ status: 'committed', reportedCommitSha: 'abcdef1234567890' });
+
+    expect(screen.getByRole('button', { name: 'Push & resolve' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Queue for batch push' }).hasAttribute('disabled'),
+    ).toBe(false);
   });
 
   it('shows the token split, duration and context gauge without being selected', () => {

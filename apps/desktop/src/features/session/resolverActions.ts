@@ -193,7 +193,7 @@ export const resolverActions = (params: Params): ReadonlyArray<ResolverAction> =
       role: 'alert',
       isEnabled: true,
       confirm: {
-        role: 'primary',
+        role: 'alert',
         title: 'Mark thread resolved?',
         description: 'Resolves the review thread on GitHub without waiting for the resolver agent.',
         confirmLabel: 'Mark resolved',

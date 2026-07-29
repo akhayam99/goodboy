@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GitCommit } from 'lucide-react';
-import { Input, cn } from '@goodboy/ui';
+import { InlineConfirm, Input, cn } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
 import { INSPECTOR_ACTION_CLASS, InspectorSection } from '../InspectorSection';
 
@@ -8,6 +8,7 @@ type Mode = 'amend' | 'squash';
 
 type Props = {
   readonly commits: ReadonlyArray<BranchCommit>;
+  readonly headSha: string | null;
   readonly onAmend: (sha: string, message: string) => Promise<void>;
   readonly onSquash: (sha: string, message: string) => Promise<void>;
 };
@@ -17,7 +18,7 @@ const PROMPT: Record<Mode, string> = {
   squash: 'message for the squashed commit',
 };
 
-export const LocalHistorySection = ({ commits, onAmend, onSquash }: Props) => {
+export const LocalHistorySection = ({ commits, headSha, onAmend, onSquash }: Props) => {
   const [draft, setDraft] = useState<{ sha: string; mode: Mode; message: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -80,49 +81,81 @@ export const LocalHistorySection = ({ commits, onAmend, onSquash }: Props) => {
                     <button
                       type="button"
                       onClick={() => start(commit, 'amend')}
+                      disabled={commit.sha !== headSha}
+                      title={
+                        commit.sha === headSha
+                          ? 'Reword the branch HEAD commit'
+                          : 'Only the branch HEAD commit can be reworded'
+                      }
                       className={INSPECTOR_ACTION_CLASS}
                     >
                       Reword
                     </button>
                   ) : null}
-                  {index > 0 ? (
+                  {commit.sha !== headSha ? (
                     <button
                       type="button"
                       onClick={() => start(commit, 'squash')}
+                      title="Folds every commit from this one through branch HEAD, including later commits not listed here"
                       className={INSPECTOR_ACTION_CLASS}
                     >
-                      Squash from here
+                      Squash through HEAD
                     </button>
                   ) : null}
                 </div>
               )}
               {draft?.sha === commit.sha ? (
                 <div className="flex flex-col gap-1 pl-5">
-                  <Input
-                    value={draft.message}
-                    onChange={(event) => setDraft({ ...draft, message: event.target.value })}
-                    placeholder={PROMPT[draft.mode]}
-                    aria-label={PROMPT[draft.mode]}
-                    className="h-7 text-xs"
-                  />
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => void submit()}
-                      disabled={isBusy || draft.message.trim().length === 0}
-                      className={INSPECTOR_ACTION_CLASS}
-                    >
-                      {draft.mode === 'amend' ? 'Save message' : 'Squash into one'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDraft(null)}
-                      disabled={isBusy}
-                      className={INSPECTOR_ACTION_CLASS}
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                  {draft.mode === 'squash' ? (
+                    <InlineConfirm
+                      role="danger"
+                      icon={<GitCommit size={12} aria-hidden />}
+                      title="Squash every commit through HEAD?"
+                      description="This rewrites history by folding every commit from the selected one through branch HEAD into one, including later commits not listed here."
+                      confirmLabel="Squash into one"
+                      isBusy={isBusy}
+                      isConfirmDisabled={draft.message.trim().length === 0}
+                      note={
+                        <Input
+                          value={draft.message}
+                          onChange={(event) => setDraft({ ...draft, message: event.target.value })}
+                          placeholder={PROMPT.squash}
+                          aria-label={PROMPT.squash}
+                          className="h-7 text-xs"
+                        />
+                      }
+                      onConfirm={submit}
+                      onCancel={() => setDraft(null)}
+                    />
+                  ) : (
+                    <>
+                      <Input
+                        value={draft.message}
+                        onChange={(event) => setDraft({ ...draft, message: event.target.value })}
+                        placeholder={PROMPT.amend}
+                        aria-label={PROMPT.amend}
+                        className="h-7 text-xs"
+                      />
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => void submit()}
+                          disabled={isBusy || draft.message.trim().length === 0}
+                          className={INSPECTOR_ACTION_CLASS}
+                        >
+                          Save message
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDraft(null)}
+                          disabled={isBusy}
+                          className={INSPECTOR_ACTION_CLASS}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : null}
             </li>

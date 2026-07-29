@@ -15,6 +15,7 @@ type Props = {
   readonly commentByThreadId: ReadonlyMap<string, PrComment>;
   readonly diffCommentByAgentId: ReadonlyMap<AgentId, DiffComment>;
   readonly metrics: AgentMetrics;
+  readonly reportedCommitShaByAgentId: ReadonlyMap<AgentId, string>;
   readonly onOpenChat: (agentId: AgentId) => void;
   readonly onInspect: (agentId: AgentId) => void;
   readonly onJump: (agent: Agent) => void;
@@ -30,6 +31,7 @@ export const ResolverRows = ({
   commentByThreadId,
   diffCommentByAgentId,
   metrics,
+  reportedCommitShaByAgentId,
   onOpenChat,
   onInspect,
   onJump,
@@ -55,6 +57,7 @@ export const ResolverRows = ({
           contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
           turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
           turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
+          reportedCommitSha={reportedCommitShaByAgentId.get(agent.id) ?? null}
           isSelected={agent.id === selectedAgentId}
           isTaskActive={isTaskActive}
           isInspected={agent.id === inspectedAgentId}

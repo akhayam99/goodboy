@@ -165,6 +165,7 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
       <Divider />
       <LocalHistorySection
         commits={localCommits}
+        headSha={changes.headSha}
         onAmend={async (sha, message) => {
           await amendSessionCommit(sessionId, { sha, message });
           changes.reload();

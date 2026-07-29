@@ -64,6 +64,7 @@ export const ResolverAgentsLane = ({ session, inspectedResolverId, onInspectReso
         commentByThreadId={lane.commentByThreadId}
         diffCommentByAgentId={lane.diffCommentByAgentId}
         metrics={lane.metrics}
+        reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
         onOpenChat={lane.onOpenChat}
         onInspect={onInspectResolver}
         onJump={lane.onJump}

@@ -1,7 +1,7 @@
 import { MessageSquareReply, PanelRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
-import { agentHasUnread } from '../../../../store';
+import { agentHasUnread, useAppStore } from '../../../../store';
 import { ContextWindowBar } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import { AgentCard } from '../AgentCard';
@@ -28,6 +28,7 @@ type Props = {
   readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
   readonly turns: number;
   readonly turnsLoading: boolean;
+  readonly reportedCommitSha: string | null;
   readonly isSelected: boolean;
   readonly isTaskActive: boolean;
   readonly isInspected: boolean;
@@ -48,6 +49,7 @@ export const ResolverCard = ({
   contextUsage,
   turns,
   turnsLoading,
+  reportedCommitSha,
   isSelected,
   isTaskActive,
   isInspected,
@@ -58,6 +60,9 @@ export const ResolverCard = ({
   onJump,
 }: Props) => {
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
+  const plannedModel = useAppStore(
+    (state) => state.agentModelOverride?.[agent.id] ?? agent.modelOverride ?? null,
+  );
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
   const rowTitle = [
     agent.name,
@@ -117,7 +122,7 @@ export const ResolverCard = ({
           agent={agent}
           sessionId={agent.sessionId}
           status={status}
-          commitSha={null}
+          commitSha={reportedCommitSha}
           density="compact"
         />
       }
@@ -132,6 +137,7 @@ export const ResolverCard = ({
             turns={turns}
             turnsLoading={turnsLoading}
             density="full"
+            plannedModel={plannedModel}
           />
           <AgentLastUpdate agent={agent} />
           <ContextWindowBar usage={contextUsage} />
