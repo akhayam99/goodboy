@@ -234,19 +234,87 @@ spawned them. Each cluster header is space-between: agent name on the left,
 asked-at timestamp on the right. Clusters are ordered most-recent-first.
 Clicking an agent name navigates to that agent.
 
-## Resolve lens: two force actions
+## Resolve lens: one source for the resolver actions
 
-The resolver State section of `AgentInspector` holds both, and they do different
-things:
+`resolverActions` (`features/session/resolverActions.ts`) is a pure function that
+turns a resolver plus its state into the ordered list of actions, each with a
+label, a role and its confirm copy. `ResolverActions`
+(`features/session/components/ResolverActions`) renders that list and owns the
+store calls, in two densities: `compact` on the resolver card in the Resolve
+lens, `full` in the resolver Actions section of `AgentInspector`. Card and
+inspector cannot diverge, because neither decides what to offer.
 
-| Action                     | Effect                                                                                                                                                                  | Shown when                                                                                         |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `ForceCloseResolverAction` | Cancels the running turn, stamps the agent `skipped`, marks it stopped, then activates the next queued resolver. Does not touch the code host.                          | The resolver or its agent is running                                                               |
-| `ForceResolveAction`       | Resolves the thread on the code host (optional note) and refreshes the PR detail. Never cancels a turn or stops a process, and the resolver keeps whatever state it had | The resolver has a source thread, no turn is running, and it is awaiting, failed, done, or stopped |
+| Action              | Effect                                                                                                                                        | Offered when                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `push`              | Pushes the branch, posts the resolution and resolves the thread. Labelled `Push now` when the thread is already queued for a batch push       | The resolver committed and a commit sha is known                                                   |
+| `queue` / `dequeue` | Adds the thread to the batch push, or takes it out again                                                                                      | The resolver committed and the session has a pull request                                          |
+| `proceed`           | Sends the proceed prompt so the resolver implements the fix it only analyzed                                                                  | The resolver analyzed the comment without committing                                               |
+| `explain`           | Publishes the explanation and closes the thread without a fix. The explanation is mandatory                                                   | The resolver analyzed the comment or declared it wontfix                                           |
+| `continue`          | Selects the resolver and focuses the composer                                                                                                 | The resolver is awaiting input                                                                     |
+| `run`               | Activates the next queued resolver                                                                                                            | The resolver is queued                                                                             |
+| `forceClose`        | Cancels the running turn, stamps the agent `skipped`, marks it stopped, then activates the next queued resolver. Does not touch the code host | The resolver or its agent is running                                                               |
+| `forceResolve`      | Resolves the thread on the code host (optional note) and refreshes the PR detail. Never cancels a turn, and the resolver keeps its state      | The resolver has a source thread, no turn is running, and it is awaiting, failed, done, or stopped |
 
-Both also appear on the resolver's card footer in the Resolve lens
-(`ResolverCardFooter`), so they are reachable without opening the inspector.
-Both arm on first click and act on the second, so neither fires by accident.
+Every destructive action arms an `InlineConfirm` on first click and acts on the
+second, so none of them fires by accident.
+
+## From a review comment to its commit
+
+`resolverCommitSha` (`features/session/resolverCommitSha.ts`) is the one answer to
+"which commit belongs to this thread": the sha queued for the batch push wins,
+then the sha attributed on the branch, then the sha the resolver reported in its
+outcome. `ResolverActions` uses it to decide whether a push is possible, and
+`ResolverSections` uses it to make the resolver Changes section navigable.
+
+In that section every reported commit opens its own diff, and every file the
+resolver edited opens the same diff scrolled to that file. Both dispatch
+`goodboy:open-commit-diff` with `{ repo, sha, file }`; `useCommitLinkInterceptor`
+turns it into the `DiffViewerDialog` target, the same one a `github.com/.../commit/`
+link in the transcript produces. File rows stay inert while no commit is known,
+since there would be nothing to filter. The dialog loads the diff from the session
+worktree and falls back to `gh` only when the repo slug is known.
+
+## One answer per review thread
+
+A resolver writes the answer a reviewer will read in a keyed block,
+`<<comment-reply id="PRRT_...">>body<</comment-reply>>`. Both the single-comment
+and the combined prompt inject the real thread ids and ask for one block per
+thread. `extractAllCommentReplies` (`packages/core/src/context/marker-parsing.ts`)
+returns one `(threadId, body)` pair per thread, keeps the last block when an id
+repeats, and drops blocks with an unknown id or an empty body. Since replies are
+keyed by thread id, one answer can never be cross-posted on several threads.
+
+`completeResolvedAgent` attaches each body to the outcome of the thread it names,
+so a reply for a thread with no resolution, wontfix, or analysis marker is
+discarded. On publish, `markThreadResolvedNoPush` reads it through
+`resolverReplyForThread` and `buildResolutionReplyBody` puts it above the commit
+link or the closing reason. Without a block the body degrades to the machine
+line alone, which is what every resolver produced before the marker existed.
+
+## Rewriting local history before the push
+
+The resolver inspector has a "What you can still rewrite" section listing the
+commits attributed to that resolver, newest first. A commit already on the remote
+is listed but inert, labelled "already pushed", since rewriting it would need a
+force push. The newest local commit can be reworded, any older local one can be
+squashed together with everything above it into a single commit.
+
+Both actions go through the store (`amendSessionCommit`, `squashSessionCommits` in
+the worktrees slice) to `worktree_amend_commit` and `worktree_squash_commits`.
+Eligibility is decided in Rust, never in the UI: the commit must be inside
+`@{u}..HEAD`, or inside the whole history when the branch has no upstream. A
+commit outside that set fails with an explicit error, and no code path in this
+feature ever passes `--force` or `--force-with-lease`. Amend refuses anything but
+HEAD, squash refuses the first commit of the repository, and both refuse to run
+while something is staged. The squash is a `reset --soft` to the parent followed
+by one commit, so a rejected commit (a pre-commit hook, for instance) restores
+the original HEAD and never leaves a rebase in progress.
+
+Each command returns the new head plus the shas it replaced, and
+`repointRewrittenCommits` moves every `resolverThreadOutcomes` entry and every
+queued row in `sessionPendingResolutions` from a replaced sha onto the new one.
+Without that step a later publish would post a link to a commit that no longer
+exists.
 
 ## Workflow advance from the chat
 
