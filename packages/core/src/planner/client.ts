@@ -1,6 +1,7 @@
 import type { ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { computeCostUsd } from '../providers/claude/cost';
+import { cliModelId } from '../providers/cliModelId';
 import { getDefaultBinary } from '../providers/cli-defaults';
 import { parsePlannerOutput } from './parser';
 import { PLANNER_SYSTEM_PROMPT, buildPlannerUserPrompt } from './prompt';
@@ -55,7 +56,7 @@ export class PlannerClient {
   constructor(deps: PlannerClientDeps) {
     this.providerId = deps.providerId;
     this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
-    this.model = deps.model;
+    this.model = cliModelId({ provider: deps.providerId, model: deps.model });
     this.workingDir = deps.workingDir;
     this.invokeFn = deps.invokeFn;
   }

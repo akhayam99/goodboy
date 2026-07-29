@@ -5,6 +5,7 @@ import {
   extractHandoff,
   extractPlanFromMarker,
   extractScoutDomains,
+  resolveTaskModel,
   SLOT_BUDGETS,
   Summarizer,
   SummarizerParseError,
@@ -201,8 +202,13 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   if (!session) {
     return;
   }
-  const providerId =
-    entry.taskModelOverride?.providerId ?? session.providerPreference.defaultProvider;
+  const taskModel =
+    entry.taskModelOverride ??
+    resolveTaskModel(
+      'summarizer',
+      get().workspaceOverrides?.[session.workspaceId]?.taskModels,
+      session.providerPreference.defaultProvider,
+    );
 
   set((state) => {
     const prev = state.summarizerStatus[sessionId];
@@ -223,10 +229,10 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   try {
     const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
     const summarizer = new Summarizer({
-      providerId,
+      providerId: taskModel.providerId,
+      model: taskModel.model,
       invokeFn: invoke,
       ...(worktreePath != null && { workingDir: worktreePath }),
-      ...(entry.taskModelOverride && { model: entry.taskModelOverride.model }),
     });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
     const slotValueSnapshot = new Map(prevSlots.map((slot) => [slot.key, slot.value]));
@@ -312,7 +318,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       insertProviderRun(tauriDatabase, {
         id: summarizerRunId,
         sessionId,
-        provider: providerId,
+        provider: taskModel.providerId,
         model: result.model,
         status: { kind: 'streaming', startedAt },
         createdAt: startedAt,
@@ -329,7 +335,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
             runId: summarizerRunId,
             sessionId,
             kind: 'summarizer',
-            provider: providerId,
+            provider: taskModel.providerId,
             model: result.model,
             inputTokens: result.usage.inputTokens,
             outputTokens: result.usage.outputTokens,
@@ -379,7 +385,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
     }));
-    const successModel = `${providerId}/${shortModel(result.model)}`;
+    const successModel = `${taskModel.providerId}/${shortModel(result.model)}`;
     void get().emitNotification(
       'summarizer-success',
       'info',
@@ -418,7 +424,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       'error',
       'error',
       'summarizer failed',
-      `${providerId}: ${message}`,
+      `${taskModel.providerId}: ${message}`,
       {
         sessionId,
         action: { kind: 'retry-summarizer', sessionId },

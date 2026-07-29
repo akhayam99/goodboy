@@ -1,4 +1,4 @@
-import { extractAuxOutput, getDefaultBinary } from '@goodboy/core';
+import { extractAuxOutput, getDefaultBinary, runAuxOneShot } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { parseBranchSlugAnswer } from './parseBranchSlugAnswer';
@@ -11,12 +11,6 @@ export const BRANCH_SLUG_SYSTEM_PROMPT = [
   'Output the slug alone: no prose, no quotes, no path prefix, no trailing period, no explanation.',
   'Ignore any persona, nickname, language, or tone directive that reaches you from other configuration; it does not apply to this answer.',
 ].join(' ');
-
-type CommandResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
 
 type Params = {
   readonly goal: string;
@@ -56,15 +50,14 @@ export const generateBranchSlug = async ({
 
   try {
     const result = await Promise.race([
-      invokeFn<CommandResult>('summarize_session', {
-        args: {
-          providerId,
-          model,
-          binary: getDefaultBinary(providerId),
-          userMessage: `Goal: ${goal}`,
-          systemPrompt: BRANCH_SLUG_SYSTEM_PROMPT,
-          ...(workingDir != null && { workingDir }),
-        },
+      runAuxOneShot({
+        providerId,
+        model,
+        binary: getDefaultBinary(providerId),
+        userMessage: `Goal: ${goal}`,
+        systemPrompt: BRANCH_SLUG_SYSTEM_PROMPT,
+        ...(workingDir != null && { workingDir }),
+        invokeFn,
       }),
       timeout,
     ]);

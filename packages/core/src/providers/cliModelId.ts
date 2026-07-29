@@ -16,7 +16,8 @@ const catalogCliId = (model: CatalogModel): string => {
       return variant.cliId;
     }
     case 'cursor': {
-      const combo = model.combos[0];
+      const combo =
+        model.combos.find((candidate) => candidate.maxMode === false) ?? model.combos[0];
       if (combo == null) {
         throw new Error(`cursor model has no combos: ${model.key}`);
       }

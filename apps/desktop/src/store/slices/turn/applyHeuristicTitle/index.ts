@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { getDefaultBinary, resolveTaskModel } from '@goodboy/core';
+import { getDefaultBinary, resolveTaskModel, runAuxOneShot } from '@goodboy/core';
 import { renameSession as renameSessionInDb } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@goodboy/types';
 import { shortModel } from '../../../../features/session/agent-row-format';
@@ -26,12 +26,6 @@ type Params = {
   readonly prompt: string;
 };
 
-type InvokeResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
-
 type GenerateParams = TaskModelPreference &
   Readonly<{
     prompt: string;
@@ -53,15 +47,14 @@ const generateAgentTitle = async ({
   });
   try {
     const result = await Promise.race([
-      invoke<InvokeResult>('summarize_session', {
-        args: {
-          providerId,
-          model,
-          binary: getDefaultBinary(providerId),
-          userMessage: prompt,
-          systemPrompt: TITLE_SYSTEM_PROMPT,
-          ...(workingDir != null && { workingDir }),
-        },
+      runAuxOneShot({
+        providerId,
+        model,
+        binary: getDefaultBinary(providerId),
+        userMessage: prompt,
+        systemPrompt: TITLE_SYSTEM_PROMPT,
+        ...(workingDir != null && { workingDir }),
+        invokeFn: invoke,
       }),
       timeout,
     ]);

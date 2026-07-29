@@ -22,17 +22,20 @@ describe('summarizeStepOutput', () => {
 
     const result = await summarizeStepOutput({
       providerId: 'cursor',
-      model: 'composer-2-fast',
+      model: 'sonnet-4.6',
       invokeFn,
       output: 'raw',
     });
     const args = request?.['args'];
+    const cliModel =
+      typeof args === 'object' && args !== null && 'model' in args ? args.model : null;
     const systemPrompt =
       typeof args === 'object' && args !== null && 'systemPrompt' in args
         ? args.systemPrompt
         : null;
 
     expect(command).toBe('summarize_session');
+    expect(cliModel).toBe('claude-4.6-sonnet-medium');
     expect(systemPrompt).toContain('File paths touched');
     expect(systemPrompt).toContain('1200 characters or fewer');
     expect(result).toBe('Implemented auth flow.\n- `src/auth.ts`');

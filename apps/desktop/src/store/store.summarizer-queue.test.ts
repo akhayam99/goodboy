@@ -91,6 +91,7 @@ let resolveSummarize: (() => void) | null = null;
 type SummarizerUpsert = { readonly key: SlotKey; readonly value: string };
 let summarizerUpserts: ReadonlyArray<SummarizerUpsert> = [];
 let summarizerUpsertSequence: Array<ReadonlyArray<SummarizerUpsert>> = [];
+let summarizerConstructorCalls: Array<unknown> = [];
 const summarizeSpy = vi.fn(
   () =>
     new Promise<void>((resolve) => {
@@ -103,6 +104,10 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   return {
     ...original,
     Summarizer: class {
+      constructor(deps: unknown) {
+        summarizerConstructorCalls.push(deps);
+      }
+
       summarize() {
         const upserts = summarizerUpsertSequence.shift() ?? summarizerUpserts;
         return summarizeSpy().then(() => ({
@@ -206,6 +211,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     resolveSummarize = null;
     summarizerUpserts = [];
     summarizerUpsertSequence = [];
+    summarizerConstructorCalls = [];
     dbSlots = [];
     upsertContextSlotSpy.mockClear();
     summarizeSpy.mockResolvedValue(undefined);
@@ -269,6 +275,49 @@ describe('summarizer queue, coalescing and no-stack', () => {
     expect(state).toBeDefined();
 
     summarizerQueues.delete(SESSION_ID);
+  });
+
+  it('uses the configured summarizer task model when no override is provided', async () => {
+    const { useAppStore } = await import('./store');
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: [] },
+      summarizerStatus: {},
+      workspaceOverrides: {
+        [WORKSPACE_ID]: {
+          defaultProviderId: null,
+          defaultWorkflowId: null,
+          defaultBranchPrefix: null,
+          parallelEnabled: null,
+          defaultVerbosity: null,
+          providerBindings: null,
+          taskModels: {
+            summarizer: { providerId: 'cursor', model: 'sonnet-4.6' },
+          },
+          roleModels: null,
+          scoutFanout: null,
+        },
+      },
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+
+    enqueueSummarizer(
+      useAppStore.setState,
+      useAppStore.getState,
+      SESSION_ID,
+      'turn input',
+      'turn output',
+    );
+
+    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    expect(summarizerConstructorCalls).toContainEqual(
+      expect.objectContaining({ providerId: 'cursor', model: 'sonnet-4.6' }),
+    );
+    useAppStore.setState({ workspaceOverrides: {} });
   });
 
   it('single trigger with nothing in-flight fires immediately and clears queue', async () => {

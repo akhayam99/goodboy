@@ -1,18 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderId } from '@goodboy/types';
+import { PROVIDER_IDS, type CatalogModel } from '@goodboy/types';
 import { runAuxOneShot } from './aux-spawn';
 import { cliModelId } from './cliModelId';
 import { getCheapModel } from './cli-defaults';
 import { MODEL_CATALOGS } from './catalogs';
-
-const PROVIDERS: ReadonlyArray<ProviderId> = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'opencode',
-  'openrouter',
-];
 
 const capture = () => {
   const seen: Array<Record<string, unknown>> = [];
@@ -21,6 +12,30 @@ const capture = () => {
     return { stdout: '', stderr: '', exitCode: 0 } as T;
   };
   return { seen, invokeFn };
+};
+
+type ExpectedCliIdParams = {
+  readonly model: CatalogModel;
+};
+
+const expectedCliId = ({ model }: ExpectedCliIdParams): string => {
+  switch (model.provider) {
+    case 'anthropic':
+    case 'gemini':
+    case 'opencode':
+    case 'openrouter':
+      return model.cliId;
+    case 'codex':
+      return model.variants[0]?.cliId ?? '';
+    case 'cursor':
+      return (
+        model.combos.find((combo) => combo.maxMode === false)?.slug ?? model.combos[0]?.slug ?? ''
+      );
+    default: {
+      const exhaustive: never = model;
+      throw new Error(`unknown catalog model: ${String(exhaustive)}`);
+    }
+  }
 };
 
 describe('runAuxOneShot', () => {
@@ -71,23 +86,30 @@ describe('runAuxOneShot', () => {
 });
 
 describe('cliModelId', () => {
-  it('resolves every cheap model to an id its cli accepts', () => {
-    const expected: Record<ProviderId, string> = {
-      anthropic: 'claude-haiku-4-5',
-      cursor: 'auto',
-      codex: 'gpt-5.4-mini',
-      gemini: 'gemini-3.5-flash',
-      opencode: 'opencode/minimax-m2.5-free',
-      openrouter: 'openrouter/deepseek/deepseek-v4',
-    };
+  it('maps the anthropic cheap catalog key to its spawnable cli id', () => {
+    expect(getCheapModel('anthropic')).toBe('haiku-4.5');
+    expect(cliModelId({ provider: 'anthropic', model: 'haiku-4.5' })).toBe('claude-haiku-4-5');
+  });
 
-    for (const provider of PROVIDERS) {
-      expect(cliModelId({ provider, model: getCheapModel(provider) })).toBe(expected[provider]);
+  it('resolves every provider cheap model to its catalog cli id', () => {
+    for (const provider of PROVIDER_IDS) {
+      const cheapModel = getCheapModel(provider);
+      const catalogEntry = MODEL_CATALOGS[provider].find((model) => model.key === cheapModel);
+      expect(catalogEntry).toBeDefined();
+      if (catalogEntry == null) {
+        continue;
+      }
+      const mapped = cliModelId({ provider, model: cheapModel });
+      const expected = expectedCliId({ model: catalogEntry });
+      expect(mapped).toBe(expected);
+      if (cheapModel !== expected) {
+        expect(mapped).not.toBe(cheapModel);
+      }
     }
   });
 
   it('is idempotent, so a resolved id survives a second pass', () => {
-    for (const provider of PROVIDERS) {
+    for (const provider of PROVIDER_IDS) {
       for (const model of MODEL_CATALOGS[provider]) {
         const once = cliModelId({ provider, model: model.key });
         expect(cliModelId({ provider, model: once })).toBe(once);
