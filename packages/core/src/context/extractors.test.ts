@@ -3,6 +3,7 @@ import type { TurnEvent } from '@goodboy/types';
 import {
   assessPlanReadiness,
   extractAllCommentAnalysis,
+  extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractClusterDone,
@@ -412,6 +413,51 @@ describe('extractAllCommentWontfix', () => {
       { threadId: 'PRRT_1', reason: 'first' },
       { threadId: 'PRRT_2', reason: 'second' },
     ]);
+  });
+});
+
+describe('extractAllCommentReplies', () => {
+  it('keeps one reply per thread, in the order the threads appear', () => {
+    const text = [
+      'done with both threads.',
+      '<<comment-reply id="PRRT_1">>Extracted the guard into a helper.<</comment-reply>>',
+      '<<comment-reply id="PRRT_2">>Renamed it, and covered it with a test.<</comment-reply>>',
+    ].join('\n');
+
+    expect(extractAllCommentReplies(text)).toEqual([
+      { threadId: 'PRRT_1', body: 'Extracted the guard into a helper.' },
+      { threadId: 'PRRT_2', body: 'Renamed it, and covered it with a test.' },
+    ]);
+  });
+
+  it('keeps the last body when a thread is answered twice', () => {
+    const text =
+      '<<comment-reply id="PRRT_1">>first take<</comment-reply>><<comment-reply id="PRRT_1">>second take<</comment-reply>>';
+
+    expect(extractAllCommentReplies(text)).toEqual([{ threadId: 'PRRT_1', body: 'second take' }]);
+  });
+
+  it('keeps a multi line markdown body verbatim', () => {
+    const text =
+      '<<comment-reply id="PRRT_1">>\nMoved the check up:\n\n```ts\nif (x == null) {\n  return;\n}\n```\n<</comment-reply>>';
+
+    expect(extractAllCommentReplies(text)).toEqual([
+      {
+        threadId: 'PRRT_1',
+        body: 'Moved the check up:\n\n```ts\nif (x == null) {\n  return;\n}\n```',
+      },
+    ]);
+  });
+
+  it('discards replies that name no review thread, or nothing at all', () => {
+    expect(extractAllCommentReplies('<<comment-reply id="th-1">>body<</comment-reply>>')).toEqual(
+      [],
+    );
+    expect(extractAllCommentReplies('<<comment-reply>>body<</comment-reply>>')).toEqual([]);
+    expect(extractAllCommentReplies('<<comment-reply id="PRRT_1">>  <</comment-reply>>')).toEqual(
+      [],
+    );
+    expect(extractAllCommentReplies('<<comment-reply id="PRRT_1">>never closed')).toEqual([]);
   });
 });
 

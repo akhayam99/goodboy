@@ -27,6 +27,7 @@ export {
   assessPlanReadiness,
   autoPopulateContext,
   extractAllCommentAnalysis,
+  extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractClusterDone,
@@ -59,6 +60,7 @@ export {
   type ExtractedCluster,
   type ExtractedScoutArea,
   type ExtractedCommentAnalysis,
+  type ExtractedCommentReply,
   type ExtractedCommentResolution,
   type ExtractedCommentWontfix,
   type ExtractedHandoff,
@@ -130,7 +132,9 @@ export { resolveTaskModel } from './providers/task-models';
 export { resolveRoleRouting, type ResolvedRoleRouting } from './providers/role-models';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
+export { cliModelId } from './providers/cliModelId';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
+export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
 
 export { getModelDescriptor, getModelProvider } from './providers/model-display';
 
