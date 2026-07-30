@@ -129,6 +129,8 @@ export const LensColumn = ({
     (s) =>
       (s.reviewDrafts[sessionId] ?? EMPTY_ARRAY).filter((draft) => draft.status === 'draft').length,
   );
+  const githubCount =
+    externalTasks.filter((task) => task.provider === 'github').length + (hasGithubPr ? 1 : 0);
   const linearCount = externalTasks.filter((task) => task.provider === 'linear').length;
   const sentryCount = externalTasks.filter((task) => task.provider === 'sentry').length;
   const gitlabCount = externalTasks.filter((task) => task.provider === 'gitlab').length;
@@ -162,6 +164,7 @@ export const LensColumn = ({
       label: 'GitHub',
       glyph: 'github',
       tone: 'accent',
+      count: githubCount,
       dot: hasGithubPr ? 'running' : undefined,
       isConnected: githubConnection.isConnected,
     },

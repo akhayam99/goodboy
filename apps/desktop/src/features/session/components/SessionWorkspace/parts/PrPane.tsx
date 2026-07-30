@@ -13,7 +13,14 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Button, Eyebrow, cn } from '@goodboy/ui';
-import type { PrCheckRun, PullRequestStateKind, Session, SessionId } from '@goodboy/types';
+import type {
+  LinkedIssue,
+  PrCheckRun,
+  PullRequestStateKind,
+  Session,
+  SessionExternalTask,
+  SessionId,
+} from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { PrSwitcher } from '../../../../github/components/GitHubStudio/PrSwitcher';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
@@ -75,8 +82,13 @@ export const PrPane = ({ session }: Props) => {
             : 'open';
   const hasBothProviders = pullRequest != null && mergeRequest != null;
 
+  const description =
+    activeProvider === 'gitlab'
+      ? 'Merge request and linked issues for this session.'
+      : 'Pull request and linked issues for this session.';
+
   return (
-    <PaneShell title="Pull requests" description="Review status for this session.">
+    <PaneShell title="Pull requests" description={description}>
       <div className="flex flex-col gap-3">
         {hasBothProviders ? (
           <div className="flex flex-col gap-1.5">
@@ -182,34 +194,67 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   }
 
   if (!pr) {
-    return (
-      <div className="animate-fade-in relative flex flex-col items-center gap-5 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-8 py-8 text-center">
-        <div className="absolute right-3 top-3">
-          <RefreshButton onClick={refresh} loading={loading} error={error} />
+    const hasLinkedWork = linkedIssues.length > 0 || codeHostTasks.length > 0;
+    if (!hasLinkedWork) {
+      return (
+        <div className="animate-fade-in relative flex flex-col items-center gap-5 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-8 py-8 text-center">
+          <div className="absolute right-3 top-3">
+            <RefreshButton onClick={refresh} loading={loading} error={error} />
+          </div>
+          <span
+            aria-hidden
+            className="flex size-12 items-center justify-center rounded-full bg-primary/10"
+          >
+            <GitPullRequest size={24} className="text-primary" />
+          </span>
+          <div className="flex flex-col items-center gap-1.5">
+            <h2 className="text-base font-semibold text-foreground">Open a pull request</h2>
+            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Turn this session&rsquo;s work into a PR. Fill in the title and description, or hand
+              it to an agent that writes them from your commits.
+            </p>
+            <p className="text-xs text-muted-foreground/70">
+              No issues or external tasks are linked to this session yet.
+            </p>
+            {branch != null && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
+                <GitBranch size={11} aria-hidden className="shrink-0" />
+                <span className="truncate text-foreground/80">{branch}</span>
+              </span>
+            )}
+          </div>
+          <Button onClick={openStudio}>
+            Open a pull request
+            <ArrowUpRight size={13} aria-hidden className="ml-1.5 shrink-0 opacity-70" />
+          </Button>
         </div>
-        <span
-          aria-hidden
-          className="flex size-12 items-center justify-center rounded-full bg-primary/10"
-        >
-          <GitPullRequest size={24} className="text-primary" />
-        </span>
-        <div className="flex flex-col items-center gap-1.5">
-          <h2 className="text-base font-semibold text-foreground">Open a pull request</h2>
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Turn this session&rsquo;s work into a PR. Fill in the title and description, or hand it
-            to an agent that writes them from your commits.
-          </p>
+      );
+    }
+    return (
+      <div className="animate-fade-in flex flex-col gap-3">
+        <LinkedIssuesSection issues={linkedIssues} />
+        <ExternalTasksSection tasks={codeHostTasks} />
+        <div className="relative flex flex-col items-start gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-4 py-4">
+          <div className="absolute right-3 top-3">
+            <RefreshButton onClick={refresh} loading={loading} error={error} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <h2 className="text-sm font-semibold text-foreground">No pull request yet</h2>
+            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Turn this session&rsquo;s work into a PR when it is ready.
+            </p>
+          </div>
           {branch != null && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
               <GitBranch size={11} aria-hidden className="shrink-0" />
               <span className="truncate text-foreground/80">{branch}</span>
             </span>
           )}
+          <Button size="sm" onClick={openStudio}>
+            Open a pull request
+            <ArrowUpRight size={13} aria-hidden className="ml-1.5 shrink-0 opacity-70" />
+          </Button>
         </div>
-        <Button onClick={openStudio}>
-          Open a pull request
-          <ArrowUpRight size={13} aria-hidden className="ml-1.5 shrink-0 opacity-70" />
-        </Button>
       </div>
     );
   }
@@ -261,41 +306,8 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
         </span>
       </div>
 
-      {linkedIssues.length > 0 ? (
-        <div className="flex flex-col gap-1.5">
-          <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
-          <div className="flex flex-col gap-1">
-            {linkedIssues.map((issue) => (
-              <a
-                key={issue.url}
-                href={issue.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 rounded-lg bg-muted/25 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-              >
-                <span className="shrink-0 font-mono">#{issue.number}</span>
-                <span className="min-w-0 flex-1 truncate">{issue.title ?? 'GitHub issue'}</span>
-                <ArrowUpRight size={12} aria-hidden className="shrink-0" />
-              </a>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {codeHostTasks.length > 0 ? (
-        <div className="flex flex-col gap-1.5">
-          <Eyebrow label="External tasks" muted className="px-0.5 font-medium" />
-          <div className="flex flex-col gap-1">
-            {codeHostTasks.map((task) => (
-              <ExternalTaskChip
-                key={`${task.provider}:${task.externalId}`}
-                task={task}
-                appearance="row"
-              />
-            ))}
-          </div>
-        </div>
-      ) : null}
+      <LinkedIssuesSection issues={linkedIssues} />
+      <ExternalTasksSection tasks={codeHostTasks} />
 
       <button
         type="button"
@@ -311,6 +323,60 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
           {error}
         </span>
       ) : null}
+    </div>
+  );
+};
+
+type LinkedIssuesSectionProps = {
+  readonly issues: ReadonlyArray<LinkedIssue>;
+};
+
+const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
+  if (issues.length === 0) {
+    return null;
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
+      <div className="flex flex-col gap-1">
+        {issues.map((issue) => (
+          <a
+            key={issue.url}
+            href={issue.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 rounded-lg bg-muted/25 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+          >
+            <span className="shrink-0 font-mono">#{issue.number}</span>
+            <span className="min-w-0 flex-1 truncate">{issue.title ?? 'GitHub issue'}</span>
+            <ArrowUpRight size={12} aria-hidden className="shrink-0" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+type ExternalTasksSectionProps = {
+  readonly tasks: ReadonlyArray<SessionExternalTask>;
+};
+
+const ExternalTasksSection = ({ tasks }: ExternalTasksSectionProps) => {
+  if (tasks.length === 0) {
+    return null;
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Eyebrow label="External tasks" muted className="px-0.5 font-medium" />
+      <div className="flex flex-col gap-1">
+        {tasks.map((task) => (
+          <ExternalTaskChip
+            key={`${task.provider}:${task.externalId}`}
+            task={task}
+            appearance="row"
+          />
+        ))}
+      </div>
     </div>
   );
 };

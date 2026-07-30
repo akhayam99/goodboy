@@ -14,6 +14,7 @@ type Store = {
 
 type Props = {
   readonly children: ReactNode;
+  readonly actions?: ReactNode;
 };
 
 const h = vi.hoisted(() => ({
@@ -60,7 +61,12 @@ vi.mock('./SentryTaskDetail', () => ({
 }));
 
 vi.mock('../PaneShell', () => ({
-  PaneShell: ({ children }: Props) => <div>{children}</div>,
+  PaneShell: ({ children, actions }: Props) => (
+    <div>
+      {actions}
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock('../../../../../integrations/hooks/useIssueCandidates', () => ({
@@ -159,9 +165,10 @@ describe('IntegrationPane', () => {
     );
   });
 
-  it('links a pasted provider URL', async () => {
+  it('links a pasted provider URL from the Link ticket popover and closes it', async () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Link ticket' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Or paste a Linear issue URL' }), {
       target: { value: 'https://linear.app/goodboy/issue/GB-99/new-link' },
     });
@@ -176,15 +183,34 @@ describe('IntegrationPane', () => {
       url: 'https://linear.app/goodboy/issue/GB-99/new-link',
       createdAt: expect.any(String),
     });
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'link Linear ticket' })).toBeNull(),
+    );
   });
 
-  it('keeps the link form as the connected empty state and opens the provider studio', () => {
+  it('shows the Link ticket action only when a task is already linked', () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    expect(screen.queryByRole('textbox', { name: 'Or paste a Linear issue URL' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Link ticket' }));
+    expect(screen.getByRole('dialog', { name: 'link Linear ticket' })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Or paste a Linear issue URL' })).toBeDefined();
+
+    cleanup();
+    h.store.sessionExternalTasks = {};
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    expect(screen.queryByRole('button', { name: 'Link ticket' })).toBeNull();
+  });
+
+  it('integrates the link form into the connected empty state and opens the provider studio', () => {
     h.store.sessionExternalTasks = {};
     const listener = vi.fn();
     window.addEventListener('goodboy:open-sentry-studio', listener);
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="sentry" />);
 
+    expect(screen.getByText('No Sentry issues linked')).toBeDefined();
     expect(screen.getByRole('textbox', { name: 'Or paste a Sentry issue URL' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Link ticket' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open Sentry studio' }));
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-sentry-studio', listener);
@@ -228,6 +254,7 @@ describe('IntegrationPane', () => {
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Link ticket' }));
     fireEvent.focus(screen.getByRole('combobox', { name: 'Link an issue' }));
     fireEvent.mouseDown(screen.getByText('Ship the issue picker'));
 
@@ -246,6 +273,7 @@ describe('IntegrationPane', () => {
 
   it('does not submit the URL form when Enter is pressed in a closed issue picker', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Link ticket' }));
     const picker = screen.getByRole('combobox', { name: 'Link an issue' });
 
     fireEvent.focus(picker);
