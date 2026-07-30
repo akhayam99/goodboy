@@ -108,6 +108,14 @@ export type TurnEvent =
       at: IsoDateTime;
     }
   | {
+      kind: 'orchestrator_decision';
+      runId: ProviderRunId;
+      action: 'next' | 'done' | 'blocked';
+      reason: string;
+      stepName?: string;
+      at: IsoDateTime;
+    }
+  | {
       kind: 'permission_request';
       runId: ProviderRunId;
       toolUseId: string;

@@ -79,6 +79,23 @@ describe('session_workflows trigger-mode queries', () => {
       expect(runs[0]!.autoRun).toBe(false);
     });
 
+    it('persists dynamic execution mode', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        true,
+        NOW,
+        undefined,
+        'immediate',
+        undefined,
+        'dynamic',
+      );
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.executionMode).toBe('dynamic');
+    });
+
     it('persists after_run mode with chain_after_run_id round-trip', async () => {
       await attachWorkflowToSession(db, sessionId, 'pred' as WorkflowRunId, workflowId, true, NOW);
       await attachWorkflowToSession(

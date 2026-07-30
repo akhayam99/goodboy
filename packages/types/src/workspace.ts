@@ -59,6 +59,8 @@ export type TurnState =
 
 export type WorkflowTriggerMode = 'immediate' | 'manual' | 'after_run';
 
+export type WorkflowExecutionMode = 'static' | 'dynamic';
+
 export type WorkflowRun = Readonly<{
   id: WorkflowRunId;
   workflowId: WorkflowId;
@@ -66,6 +68,7 @@ export type WorkflowRun = Readonly<{
   currentStep: number;
   autoRun: boolean;
   triggerMode: WorkflowTriggerMode;
+  executionMode: WorkflowExecutionMode;
   chainAfterId?: WorkflowRunId;
   goal?: string;
   discardedAt?: IsoDateTime;
