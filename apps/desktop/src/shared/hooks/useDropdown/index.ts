@@ -85,6 +85,7 @@ export const useDropdown = ({
     }
     setOpen((previous) => !previous);
   }, [disabled]);
+  const portalTarget = containerRef.current?.closest('dialog[open]') ?? document.body;
 
   return {
     open,
@@ -94,6 +95,7 @@ export const useDropdown = ({
     popupRef,
     popupStyle: position.style,
     portal: strategy === 'fixed',
+    portalTarget,
     popupClassName: cn(
       strategy === 'fixed' ? 'fixed z-50' : 'absolute z-50',
       width,

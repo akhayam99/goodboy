@@ -36,14 +36,23 @@ export const CreateAgentPopover = ({
   description,
   onSpawned,
 }: Props) => {
-  const { open, close, toggle, containerRef, popupRef, popupClassName, popupStyle, portal } =
-    useDropdown({
-      align: 'end',
-      expectedHeight: 460,
-      expectedWidth: 384,
-      width: 'w-96 max-w-[calc(100vw-2rem)]',
-      strategy: 'fixed',
-    });
+  const {
+    open,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupClassName,
+    popupStyle,
+    portal,
+    portalTarget,
+  } = useDropdown({
+    align: 'end',
+    expectedHeight: 460,
+    expectedWidth: 384,
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
+    strategy: 'fixed',
+  });
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
@@ -93,7 +102,7 @@ export const CreateAgentPopover = ({
         className={cn(variant === 'tile' && 'w-full', className)}
         onClick={toggle}
       />
-      <DropdownPortal portal={portal}>
+      <DropdownPortal portal={portal} portalTarget={portalTarget}>
         {open && (
           <Popover
             innerRef={popupRef}

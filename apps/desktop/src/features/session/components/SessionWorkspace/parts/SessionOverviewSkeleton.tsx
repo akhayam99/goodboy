@@ -11,7 +11,7 @@ export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
   return (
     <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
       <div
-        className="mx-auto flex max-w-3xl flex-col gap-6"
+        className="mx-auto flex max-w-5xl flex-col gap-6"
         role="status"
         aria-label="Loading session overview"
       >

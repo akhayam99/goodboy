@@ -98,16 +98,25 @@ export const RoutingPicker = ({
   ariaLabel,
   openEvent,
 }: Props) => {
-  const { open, close, toggle, containerRef, popupRef, popupClassName, popupStyle, portal } =
-    useDropdown({
-      disabled,
-      align,
-      openEvent,
-      expectedHeight: 320,
-      expectedWidth: 384,
-      width: 'w-96 max-w-[calc(100vw-2rem)]',
-      strategy: 'fixed',
-    });
+  const {
+    open,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupClassName,
+    popupStyle,
+    portal,
+    portalTarget,
+  } = useDropdown({
+    disabled,
+    align,
+    openEvent,
+    expectedHeight: 320,
+    expectedWidth: 384,
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
+    strategy: 'fixed',
+  });
   const editableEffort = effort.editable ? effort : null;
   const effortValue = effort.value ?? 'medium';
   const recommendedProvider = recommendation?.provider;
@@ -316,7 +325,7 @@ export const RoutingPicker = ({
           )}
         />
       </button>
-      <DropdownPortal portal={portal}>
+      <DropdownPortal portal={portal} portalTarget={portalTarget}>
         {open && (
           <Popover
             innerRef={popupRef}

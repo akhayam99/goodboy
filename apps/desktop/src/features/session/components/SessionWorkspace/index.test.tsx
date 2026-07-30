@@ -507,7 +507,15 @@ describe('SessionWorkspace agents inspector', () => {
 
     expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
 
+    store.activeLens = { [SESSION_ID]: 'questions' };
     store.sessionPhaseRuns = { [SESSION_ID]: [] };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+
+    expect(
+      screen.queryByRole('separator', { name: 'resize inspector panel', hidden: true }),
+    ).toBeNull();
+
+    store.activeLens = { [SESSION_ID]: 'agents' };
     view.rerender(<SessionWorkspace session={session} isActive />);
 
     expect(screen.queryByRole('separator', { name: 'resize inspector panel' })).toBeNull();

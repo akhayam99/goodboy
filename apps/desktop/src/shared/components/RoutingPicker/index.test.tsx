@@ -513,10 +513,25 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const dialog = screen.getByRole('dialog');
-    expect(dialog.parentElement).toBe(document.body);
+    const portal = dialog.closest('[data-dropdown-portal]');
+    expect(portal?.parentElement).toBe(document.body);
     expect(dialog.className).toContain('fixed');
     fireEvent.mouseDown(screen.getByRole('button', { name: 'Opus 5' }));
     expect(screen.getByRole('dialog')).toBe(dialog);
+  });
+
+  it('mounts the popup inside the open dialog containing its trigger', () => {
+    render(
+      <dialog open aria-label="diff viewer">
+        <RoutingPicker {...baseProps} />
+      </dialog>,
+    );
+    const hostDialog = screen.getByRole('dialog', { name: 'diff viewer' });
+    fireEvent.click(within(hostDialog).getByRole('button', { name: /routing/i }));
+
+    const pickerDialog = screen.getByRole('dialog', { name: 'routing' });
+    expect(hostDialog.contains(pickerDialog)).toBe(true);
+    expect(pickerDialog.closest('[data-dropdown-portal]')?.parentElement).toBe(hostDialog);
   });
 
   it('shows the exact resolved model arguments in the footer', () => {

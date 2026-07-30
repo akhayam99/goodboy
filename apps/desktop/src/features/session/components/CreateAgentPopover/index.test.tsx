@@ -90,7 +90,7 @@ describe('CreateAgentPopover', () => {
     openPopover();
     const dialog = screen.getByRole('dialog', { name: 'create agent' });
     expect(dialog).toBeTruthy();
-    expect(dialog.parentElement).toBe(document.body);
+    expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
     expect(dialog.className).toContain('fixed');
   });
 

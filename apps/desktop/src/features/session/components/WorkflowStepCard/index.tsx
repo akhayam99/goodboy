@@ -102,8 +102,11 @@ export const WorkflowStepCard = ({
     if (!expanded) {
       return;
     }
-    const next = e.relatedTarget as Node | null;
+    const next = e.relatedTarget;
     if (next == null) {
+      return;
+    }
+    if (next.closest('[data-dropdown-portal]') != null) {
       return;
     }
     if (liRef.current?.contains(next) === true) {

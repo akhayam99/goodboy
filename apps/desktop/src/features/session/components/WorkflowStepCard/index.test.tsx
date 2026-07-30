@@ -18,10 +18,6 @@ vi.mock('../../../../shared/components/AgentAvatar', () => ({
   AgentAvatar: ({ kind }: { kind: string }) => <span data-testid="agent-avatar">{kind}</span>,
 }));
 
-vi.mock('../../../../shared/hooks/useClickOutside', () => ({
-  useClickOutside: () => {},
-}));
-
 import { WorkflowStepCard } from './index';
 
 const baseProps = {
@@ -113,6 +109,25 @@ describe('WorkflowStepCard (expanded)', () => {
 
     fireEvent.focusOut(card, { relatedTarget: screen.getByRole('button', { name: 'outside' }) });
     expect(onCollapse).toHaveBeenCalledOnce();
+  });
+
+  it('stays expanded when focus and pointer events move into a dropdown portal', () => {
+    const onCollapse = vi.fn();
+    render(
+      <>
+        <WorkflowStepCard {...baseProps} expanded={true} onCollapse={onCollapse} />
+        <div data-dropdown-portal>
+          <button type="button">portal option</button>
+        </div>
+      </>,
+    );
+    const card = screen.getByRole('listitem');
+    const portalOption = screen.getByRole('button', { name: 'portal option' });
+
+    fireEvent.focusOut(card, { relatedTarget: portalOption });
+    fireEvent.mouseDown(portalOption);
+
+    expect(onCollapse).not.toHaveBeenCalled();
   });
 
   it('wand button renders when onPolish is provided, absent when not provided', () => {

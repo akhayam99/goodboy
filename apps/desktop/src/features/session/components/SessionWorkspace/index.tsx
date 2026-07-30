@@ -199,13 +199,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       ? undefined
       : `${resolverCounts.queued} queued, ${resolverCounts.resolved} resolved`;
   useEffect(() => {
-    if (lens !== 'agents') {
-      return;
-    }
     if (standaloneAgents.length === 0) {
       if (inspectedAgentId !== null) {
         setInspectedAgentId(null);
       }
+      return;
+    }
+    if (lens !== 'agents') {
       return;
     }
     const isInspectedAgentPresent =
