@@ -785,7 +785,7 @@ export const DiffViewerContent = ({
     <div
       className={cn(
         'flex h-full min-h-0 w-full flex-col',
-        isPane && 'mx-auto max-w-5xl gap-5 px-6 py-5 motion-safe:animate-studio-in',
+        isPane && 'gap-5 px-6 py-5 motion-safe:animate-studio-in',
       )}
       onKeyDown={handleKeyDown}
     >

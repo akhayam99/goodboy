@@ -176,11 +176,12 @@ describe('DiffViewerPane', () => {
     expect(container.firstElementChild?.className).toContain('motion-safe:animate-studio-in');
   });
 
-  it('centers the pane content at the widest section width', () => {
+  it('lets the pane content span the full lens width', () => {
     const { container } = render(<DiffViewerPane onClose={vi.fn()} />);
     const shell = container.firstElementChild as HTMLElement;
-    expect(shell.className).toContain('mx-auto');
-    expect(shell.className).toContain('max-w-5xl');
+    expect(shell.className).toContain('w-full');
+    expect(shell.className).not.toContain('mx-auto');
+    expect(shell.className).not.toContain('max-w-');
     expect(shell.className).not.toContain('fixed');
   });
 
@@ -756,15 +757,15 @@ describe('progressive batching', () => {
 });
 
 describe('DiffViewerDialog vs DiffViewerPane structural difference', () => {
-  it('DiffViewerDialog uses a fixed overlay and DiffViewerPane uses centered pane layout', () => {
+  it('DiffViewerDialog uses a fixed overlay and DiffViewerPane fills its lens slot', () => {
     const { container: dialogContainer } = render(<DiffViewerDialog open onClose={vi.fn()} />);
     const { container: paneContainer } = render(<DiffViewerPane onClose={vi.fn()} />);
     const dialogRoot = dialogContainer.querySelector('dialog, [role="dialog"]');
     expect(dialogRoot).not.toBeNull();
 
     const paneShell = paneContainer.firstElementChild as HTMLElement;
-    expect(paneShell.className).toContain('mx-auto');
-    expect(paneShell.className).toContain('max-w-5xl');
+    expect(paneShell.className).toContain('w-full');
+    expect(paneShell.className).not.toContain('max-w-');
     expect(paneShell.className).not.toContain('fixed');
   });
 });
