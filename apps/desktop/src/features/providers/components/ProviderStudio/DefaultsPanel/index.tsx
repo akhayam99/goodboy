@@ -58,6 +58,11 @@ const TASKS: ReadonlyArray<{
     label: 'PR and MR drafts',
     help: 'Default agent config when drafting pull requests',
   },
+  {
+    id: 'rebase',
+    label: 'Rebase agent',
+    help: 'Default agent config when rebasing a session onto main',
+  },
 ];
 
 const ROLES: ReadonlyArray<AgentRole> = Object.keys(ROLE_DEFAULTS).filter(isAgentRole);

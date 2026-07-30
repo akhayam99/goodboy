@@ -74,7 +74,7 @@ vi.mock('../../../../store', () => ({
     (agent.lastViewedAt == null || agent.lastFinishedAt > agent.lastViewedAt),
   readPersistedLens: () => null,
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
-  useFilesTouched: () => ({ count: 0 }),
+  useFilesTouched: () => ({ paths: [], count: 0, additions: 0, deletions: 0 }),
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => hooks.openQuestions,
 }));

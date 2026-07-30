@@ -1,12 +1,20 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const { state, fixtures } = vi.hoisted(() => ({
   state: {
     settings: {} as Record<string, string>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    sessions: [
+      {
+        id: 's1',
+        workspaceId: 'workspace-1',
+        providerPreference: { defaultProvider: 'anthropic' },
+      },
+    ],
+    workspaceOverrides: {} as Record<string, { taskModels: Record<string, unknown> | null }>,
     providers: [{ id: 'anthropic', connection: 'connected' }],
     loadDiffComments: vi.fn(async () => undefined),
     addDiffComment: vi.fn(async () => undefined),
@@ -21,6 +29,20 @@ const { state, fixtures } = vi.hoisted(() => ({
   fixtures: {
     files: [] as ReadonlyArray<unknown>,
     comments: [] as ReadonlyArray<unknown>,
+    status: {
+      head: null,
+      headSubject: null,
+      unstaged: 0,
+      staged: 0,
+      untracked: 0,
+      hasUpstream: false,
+      branch: null,
+      ahead: 0,
+      behind: 0,
+      commitsAheadOfMain: 2,
+      commitsBehindMain: 3,
+      changed: 0,
+    },
   },
 }));
 
@@ -43,20 +65,7 @@ vi.mock('../../../../features/worktree/worktree', () => ({
   worktreeDiff: vi.fn(async () => ''),
   worktreeDiffCommit: vi.fn(async () => ''),
   worktreeDiffWorking: vi.fn(async () => ''),
-  worktreeStatus: vi.fn(async () => ({
-    head: null,
-    headSubject: null,
-    unstaged: 0,
-    staged: 0,
-    untracked: 0,
-    hasUpstream: false,
-    branch: null,
-    ahead: 0,
-    behind: 0,
-    commitsAheadOfMain: 2,
-    commitsBehindMain: 3,
-    changed: 0,
-  })),
+  worktreeStatus: vi.fn(async () => fixtures.status),
 }));
 
 vi.mock('../DiffViewSelector', () => ({
@@ -71,10 +80,15 @@ vi.mock('@goodboy/core', async (importOriginal) => ({
 beforeEach(() => {
   state.settings = {};
   state.sessionPhaseRuns = {};
+  state.workspaceOverrides = {};
   state.loadDiffComments = vi.fn(async () => undefined);
   state.addDiffComment = vi.fn(async () => undefined);
+  state.selectAgent.mockClear();
+  state.spawnAgent.mockClear();
   fixtures.files = [];
   fixtures.comments = [];
+  fixtures.status.commitsAheadOfMain = 2;
+  fixtures.status.commitsBehindMain = 3;
   if (typeof localStorage !== 'undefined') {
     localStorage.clear();
   }
@@ -160,6 +174,74 @@ describe('DiffViewerPane', () => {
     expect(screen.getByRole('button', { name: 'branch vs main' })).toBeDefined();
     expect(await screen.findByText('2 commits')).toBeDefined();
     expect(screen.getByText('behind main by 3')).toBeDefined();
+  });
+
+  it('spawns a rebase agent with the resolved task model when behind main', async () => {
+    fixtures.files = fileFixture();
+    state.workspaceOverrides = {
+      'workspace-1': {
+        taskModels: {
+          rebase: { providerId: 'codex', model: 'gpt-5.4' },
+        },
+      },
+    };
+    render(
+      <DiffViewerPane
+        workspaceName="acme"
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Rebase' }));
+
+    await waitFor(() => expect(state.spawnAgent).toHaveBeenCalledOnce());
+    expect(state.spawnAgent).toHaveBeenCalledWith(
+      SID,
+      expect.objectContaining({
+        name: 'Rebase on main',
+        provider: 'codex',
+        model: 'gpt-5.4',
+        effort: 'low',
+      }),
+    );
+    await waitFor(() => expect(state.selectAgent).toHaveBeenCalledWith(SID, 'a1'));
+  });
+
+  it('does not show the rebase action when the branch is not behind main', async () => {
+    fixtures.files = fileFixture();
+    fixtures.status.commitsBehindMain = 0;
+    render(
+      <DiffViewerPane
+        workspaceName="acme"
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('2 commits')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Rebase' })).toBeNull();
+  });
+
+  it('disables rebase while the session rebase agent is running', async () => {
+    fixtures.files = fileFixture();
+    state.sessionPhaseRuns = {
+      [SID]: [{ name: 'Rebase on main', status: 'running' }],
+    };
+    render(
+      <DiffViewerPane
+        workspaceName="acme"
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        onClose={vi.fn()}
+      />,
+    );
+
+    const button = await screen.findByRole('button', { name: 'Rebase' });
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(button.getAttribute('title')).toBe('Rebase agent is still running');
   });
 });
 

@@ -302,6 +302,35 @@ describe('LensColumn', () => {
     expect(screen.queryByTestId('lens-count-loading-plans')).toBeNull();
   });
 
+  it('shows diff totals instead of the file count and falls back when unchanged', () => {
+    const { rerender } = render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={4}
+        diffstat={{ additions: 12, deletions: 3 }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Diff +12 -3' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Diff 4' })).toBeNull();
+
+    rerender(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={4}
+        diffstat={{ additions: 0, deletions: 0 }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Diff 4' })).toBeDefined();
+  });
+
   it('excludes user-completed agents from the agents count', () => {
     hooks.agentCount = 2;
     hooks.doneAgentCount = 1;

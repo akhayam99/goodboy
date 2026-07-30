@@ -351,6 +351,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             onSelectOverview={onSelectOverview}
             onSelect={onSelectLens}
             filesCount={filesTouched.count}
+            diffstat={{
+              additions: filesTouched.additions,
+              deletions: filesTouched.deletions,
+            }}
             isBranchless={isBranchless}
           />
         </div>

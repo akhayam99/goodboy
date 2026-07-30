@@ -34,4 +34,18 @@ describe('resolveTaskModel', () => {
       model: 'haiku-4.5',
     });
   });
+
+  it('uses a mid model for anthropic rebase tasks', () => {
+    expect(resolveTaskModel('rebase', null, 'anthropic')).toEqual({
+      providerId: 'anthropic',
+      model: 'sonnet-4.6',
+    });
+  });
+
+  it('uses the first turn-tier model for other rebase providers', () => {
+    expect(resolveTaskModel('rebase', null, 'codex')).toEqual({
+      providerId: 'codex',
+      model: 'gpt-5.6',
+    });
+  });
 });

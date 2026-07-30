@@ -26,6 +26,10 @@ export type LensRow = {
   readonly glyph?: IntegrationGlyphProvider;
   readonly tone: Tone;
   readonly count?: number;
+  readonly diffstat?: {
+    readonly additions: number;
+    readonly deletions: number;
+  };
   readonly isCountLoading?: boolean;
   readonly dot?: LensDot;
   readonly secondaryDot?: boolean;
@@ -39,7 +43,7 @@ export type LensGroup = {
   readonly repoOnly?: boolean;
 };
 
-export type LensGroupsInput = {
+type Params = {
   readonly isBranchless: boolean;
   readonly isPrReview: boolean;
   readonly reviewDraftCount: number;
@@ -54,6 +58,10 @@ export type LensGroupsInput = {
   readonly openCount: number;
   readonly areQuestionsLoading: boolean;
   readonly filesCount: number;
+  readonly diffstat?: {
+    readonly additions: number;
+    readonly deletions: number;
+  };
   readonly activePlans: number;
   readonly arePlansLoading: boolean;
   readonly runningScripts: number;
@@ -96,13 +104,14 @@ export const buildLensGroups = ({
   openCount,
   areQuestionsLoading,
   filesCount,
+  diffstat,
   activePlans,
   arePlansLoading,
   runningScripts,
   summarizerDot,
   liveTerminals,
   integrationRows,
-}: LensGroupsInput): ReadonlyArray<LensGroup> => {
+}: Params): ReadonlyArray<LensGroup> => {
   const flags = (kind: LensKind): Pick<LensRow, 'dot'> => ({
     dot: attentionLens === kind || unreadLens === kind ? 'attention' : undefined,
   });
@@ -185,6 +194,7 @@ export const buildLensGroups = ({
           icon: FileDiff,
           tone: 'info',
           count: filesCount,
+          diffstat,
           repoOnly: true,
         },
         {

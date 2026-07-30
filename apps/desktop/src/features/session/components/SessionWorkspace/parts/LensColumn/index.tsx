@@ -24,12 +24,16 @@ import { LensColumnFooter } from '../LensColumnFooter';
 import { LENS_SHORTCUTS, buildLensGroups } from './groups';
 import type { LensDot, LensRow } from './groups';
 
-type LensColumnProps = {
+type Props = {
   readonly session: Session;
   readonly activeLens: LensKind | null;
   readonly onSelectOverview: () => void;
   readonly onSelect: (lens: LensKind) => void;
   readonly filesCount: number;
+  readonly diffstat?: {
+    readonly additions: number;
+    readonly deletions: number;
+  };
   readonly isBranchless?: boolean;
 };
 
@@ -39,8 +43,9 @@ export const LensColumn = ({
   onSelectOverview,
   onSelect,
   filesCount,
+  diffstat,
   isBranchless = false,
-}: LensColumnProps) => {
+}: Props) => {
   const sessionId = session.id as SessionId;
   const loading = useAppStore((s) => s.sessionLoading[sessionId]);
   const areAgentsLoading = loading?.agents === true;
@@ -211,6 +216,7 @@ export const LensColumn = ({
     openCount,
     areQuestionsLoading,
     filesCount,
+    diffstat,
     activePlans,
     arePlansLoading,
     runningScripts,
@@ -264,8 +270,11 @@ export const LensColumn = ({
                 group.rows.map((row) => {
                   const active = activeLens === row.kind;
                   const shortcut = LENS_SHORTCUTS[row.kind];
+                  const hasDiffstat =
+                    row.diffstat != null && row.diffstat.additions + row.diffstat.deletions > 0;
                   const hasBadge =
                     row.isCountLoading === true ||
+                    hasDiffstat ||
                     (row.count != null && row.count > 0) ||
                     row.dot != null ||
                     row.secondaryDot === true ||
@@ -325,7 +334,12 @@ export const LensColumn = ({
                             </span>
                           ) : (
                             <>
-                              {row.count != null && row.count > 0 ? (
+                              {hasDiffstat && row.diffstat != null ? (
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-2xs font-medium tabular-nums">
+                                  <span className="text-success">+{row.diffstat.additions}</span>
+                                  <span className="text-danger">-{row.diffstat.deletions}</span>
+                                </span>
+                              ) : row.count != null && row.count > 0 ? (
                                 <span className="flex shrink-0 items-center gap-1.5">
                                   {row.secondaryDot ? <StatusDot tone="accent" size="sm" /> : null}
                                   {row.dot === 'running' ? (

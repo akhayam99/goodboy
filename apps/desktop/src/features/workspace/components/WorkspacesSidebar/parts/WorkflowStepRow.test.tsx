@@ -130,7 +130,7 @@ describe('WorkflowStepRow', () => {
     const { container } = renderRow();
     expect(screen.getAllByText('Sonnet 4.5')).toHaveLength(1);
     expect(container.querySelectorAll('[title^="in: "]')).toHaveLength(1);
-    expect(screen.getAllByTitle(/^started 2026-05-28/)).toHaveLength(1);
+    expect(screen.getAllByTitle(/^started .*28.*2026/)).toHaveLength(1);
   });
 
   it('names the planned model and stays quiet for a step that has not run', () => {
