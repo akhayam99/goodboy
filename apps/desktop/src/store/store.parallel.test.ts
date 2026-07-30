@@ -196,6 +196,7 @@ function buildSession(): Session {
         currentStep: 0,
         autoRun: false,
         triggerMode: 'immediate' as const,
+        executionMode: 'static' as const,
       },
     ],
     createdAt: now,

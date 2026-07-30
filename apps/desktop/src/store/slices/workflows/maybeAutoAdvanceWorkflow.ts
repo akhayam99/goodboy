@@ -4,6 +4,7 @@ import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import type { GetFn, SetFn } from './types';
+import { orchestrationTerminalStates } from './orchestrationTerminalStates';
 
 const advanceInFlight = new Set<SessionId>();
 
@@ -36,7 +37,11 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
     if (predTemplate == null) {
       continue;
     }
-    if (isWorkflowComplete(predTemplate, runsForWorkflowRun(runs, predecessor.id))) {
+    const predecessorComplete =
+      predecessor.executionMode === 'dynamic'
+        ? orchestrationTerminalStates.get(predecessor.id) === 'done'
+        : isWorkflowComplete(predTemplate, runsForWorkflowRun(runs, predecessor.id));
+    if (predecessorComplete) {
       await get().startWorkflowRun(sessionId, candidate.id);
     }
   }
@@ -71,6 +76,7 @@ const runAdvance = async ({ get, sessionId }: Params): Promise<void> => {
   const templates = state.phaseTemplates[session.workspaceId] ?? [];
   const runs = state.sessionPhaseRuns[sessionId] ?? [];
   const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
+  let dynamicRunId = null as (typeof activeRuns)[number]['id'] | null;
   const nextPendingAgent = (() => {
     for (const run of activeRuns) {
       if (workflowRunHasOpenQuestions(openQuestions, run.id)) {
@@ -98,10 +104,20 @@ const runAdvance = async ({ get, sessionId }: Params): Promise<void> => {
         }
         break;
       }
+      if (
+        run.executionMode === 'dynamic' &&
+        runAgents.every((agent) => agent.status === 'completed' || agent.status === 'skipped') &&
+        !orchestrationTerminalStates.has(run.id)
+      ) {
+        dynamicRunId = run.id;
+      }
     }
     return null;
   })();
   if (nextPendingAgent == null) {
+    if (dynamicRunId != null) {
+      await get().orchestrateNextStep(sessionId, dynamicRunId);
+    }
     return;
   }
   await get().activateWorkflowAgent(sessionId, nextPendingAgent.id);

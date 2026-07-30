@@ -524,6 +524,7 @@ describe('sendTurn, workflow carry-forward', () => {
               currentStep: 2,
               autoRun: false,
               triggerMode: 'immediate',
+              executionMode: 'static',
             },
           ],
         },
@@ -685,6 +686,7 @@ describe('sendTurn, workflow carry-forward', () => {
               currentStep: 3,
               autoRun: false,
               triggerMode: 'immediate',
+              executionMode: 'static',
             },
           ],
         },
@@ -1319,6 +1321,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           currentStep: 0,
           autoRun: false,
           triggerMode: 'immediate',
+          executionMode: 'static',
         },
       ],
     };

@@ -2,6 +2,8 @@ import type {
   Agent,
   AttachmentInput,
   IsoDateTime,
+  ModelEffort,
+  ProviderId,
   Session,
   SessionId,
   SessionExternalTask,
@@ -13,7 +15,6 @@ import type {
   WorkspaceId,
   WorkspaceMember,
 } from '@goodboy/types';
-import { resolveRoleRouting } from '@goodboy/core';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
   insertSession,
@@ -30,13 +31,7 @@ import {
   type CreatedWorktree,
 } from '../../../features/worktree/worktree';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
-import {
-  kindRouting,
-  AGENT_KIND_META,
-  ROLE_TO_KIND,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../../features/session/agent-kind';
+import { kindRouting, AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
 import {
   SETTING_LAST_SESSION_ID,
   DEFAULT_BRANCH_PREFIX,
@@ -44,6 +39,7 @@ import {
 import { markSessionMobileShared } from '../../../features/companion/mobileConfinement';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
+import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
 import type { GetFn, SetFn } from './types';
 
 const slugifyDir = (raw: string): string =>
@@ -203,6 +199,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
                 currentStep: 0,
                 autoRun: runAutoRun,
                 triggerMode: 'immediate' as const,
+                executionMode: 'static' as const,
               },
             ]
           : [],
@@ -264,6 +261,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
     let firstStepPromptPrefix = '';
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
+    const agentProviderOverrides: Record<string, ProviderId> = {};
+    const agentEffortOverrides: Record<string, ModelEffort> = {};
 
     const workspaceVerbositySeed =
       get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined;
@@ -275,29 +274,21 @@ export const createSession = (set: SetFn, get: GetFn) => {
       const sortedSteps = template ? [...template.steps].sort((a, b) => a.ordinal - b.ordinal) : [];
 
       if (sortedSteps.length > 0) {
-        const allAgents: Agent[] = [];
-        for (const step of sortedSteps) {
-          const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
-          const agent = await invokeAgentInsert({
-            sessionId: session.id,
-            stepId: step.id,
-            ...(workflowRunId !== undefined && { workflowRunId }),
-            ordinal: step.ordinal,
-            name: step.name,
-            status: 'pending',
-            kind,
-            ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
-          });
-          agentModelOverrides[agent.id] =
-            step.modelOverride ??
-            (step.role != null
-              ? resolveRoleRouting({ role: step.role, prefs: roleModels }).model
-              : kindRouting({ kind, roleModels }).model);
-          agentKindOverrides[agent.id] = kind;
-          allAgents.push(agent);
-        }
+        const spawned = await preSpawnWorkflowAgents({
+          sessionId: session.id,
+          ...(workflowRunId !== undefined && { workflowRunId }),
+          steps: sortedSteps,
+          baseOrdinal: 0,
+          defaultProvider: session.providerPreference.defaultProvider,
+          roleModels,
+          ...(workspaceVerbositySeed != null && { defaultVerbosity: workspaceVerbositySeed }),
+        });
+        Object.assign(agentModelOverrides, spawned.modelOverrides);
+        Object.assign(agentKindOverrides, spawned.kindOverrides);
+        Object.assign(agentProviderOverrides, spawned.providerOverrides);
+        Object.assign(agentEffortOverrides, spawned.effortOverrides);
         firstStepPromptPrefix = sortedSteps[0]!.promptPrefix;
-        prespawnedRuns = allAgents;
+        prespawnedRuns = spawned.agents;
       } else {
         const fallback = await invokeAgentInsert({
           sessionId: session.id,
@@ -387,6 +378,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
       agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
       agentModelOverride: { ...get().agentModelOverride, ...agentModelOverrides },
       agentKindOverride: { ...get().agentKindOverride, ...agentKindOverrides },
+      agentProviderOverride: { ...get().agentProviderOverride, ...agentProviderOverrides },
+      agentEffortOverride: { ...get().agentEffortOverride, ...agentEffortOverrides },
     }));
     await dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, session.id);
 

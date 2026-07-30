@@ -55,6 +55,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
         currentStep: 0,
         autoRun: false,
         triggerMode: 'immediate' as const,
+        executionMode: 'static' as const,
       },
     ],
     autoRun: false,
