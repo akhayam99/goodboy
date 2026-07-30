@@ -13,7 +13,7 @@ type Props = {
 
 export const SectionBody = ({ detail, detailLoading, detailError, onRetry, children }: Props) => {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-6 py-6">
+    <div className="flex w-full flex-col gap-3">
       {detailError != null ? (
         <div className="flex items-center gap-1.5 text-xs text-danger">
           <AlertCircle size={13} aria-hidden />

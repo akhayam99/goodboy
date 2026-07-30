@@ -1,22 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  Divider,
-  EmptyState,
-  Input,
-  Markdown,
-  SectionHeader,
-  Textarea,
-  cn,
-} from '@goodboy/ui';
+import { Button, Divider, EmptyState, Input, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
-  ExternalLink,
   GitBranch,
   GitMerge,
   MousePointerClick,
-  RefreshCw,
   Sparkles,
 } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
@@ -26,6 +15,9 @@ import {
   MetaItem,
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
+import { IssueStateBadge, type StateTone } from '../../../../shared/components/IssueStateBadge';
+import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
+import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
@@ -51,17 +43,17 @@ type Props = {
   readonly onClose: () => void;
 };
 
-const STATE_STYLE: Record<string, string> = {
-  opened: 'bg-success/15 text-success',
-  merged: 'bg-info/15 text-info',
-  closed: 'bg-danger/15 text-danger',
-  locked: 'bg-muted text-muted-foreground',
+const STATE_TONE: Record<string, StateTone> = {
+  opened: 'success',
+  merged: 'info',
+  closed: 'danger',
+  locked: 'neutral',
 };
 
-const MERGE_STATUS_STYLE: Record<GitlabMergeStatusTone, string> = {
-  success: 'bg-success/15 text-success',
-  danger: 'bg-danger/15 text-danger',
-  muted: 'bg-muted text-muted-foreground',
+const MERGE_STATUS_TONE: Record<GitlabMergeStatusTone, StateTone> = {
+  success: 'success',
+  danger: 'danger',
+  muted: 'neutral',
 };
 
 export const MrDetailPanel = ({
@@ -234,8 +226,11 @@ export const MrDetailPanel = ({
     mr != null && mr.state === 'opened' ? humanizeMergeStatus(mr.mergeStatus) : null;
 
   const refreshButton = (
-    <button
-      type="button"
+    <RefreshIconButton
+      label="refresh merge request"
+      iconSize={12}
+      isLoading={loading}
+      error={error}
       onClick={() => {
         if (sessionId != null) {
           void refreshSessionMr(sessionId, { force: true });
@@ -243,13 +238,7 @@ export const MrDetailPanel = ({
         }
         onRefresh?.();
       }}
-      disabled={loading}
-      title={error ? `refresh failed: ${error}` : 'refresh merge request'}
-      aria-label="refresh merge request"
-      className="flex size-7 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
-    >
-      <RefreshCw size={12} aria-hidden />
-    </button>
+    />
   );
 
   if (mr != null) {
@@ -259,19 +248,10 @@ export const MrDetailPanel = ({
           <HeaderBand
             meta={
               <>
-                <span
-                  className={cn(
-                    'rounded px-1.5 py-0.5 text-2xs font-medium',
-                    STATE_STYLE[mr.state] ?? 'bg-muted text-muted-foreground',
-                  )}
-                >
+                <IssueStateBadge tone={STATE_TONE[mr.state] ?? 'neutral'}>
                   !{mr.iid} · {mr.state}
-                </span>
-                {mr.draft ? (
-                  <span className="rounded bg-warning/15 px-1.5 py-0.5 text-2xs font-medium text-warning">
-                    draft
-                  </span>
-                ) : null}
+                </IssueStateBadge>
+                {mr.draft ? <IssueStateBadge tone="warning">draft</IssueStateBadge> : null}
               </>
             }
             title={mr.title}
@@ -285,14 +265,7 @@ export const MrDetailPanel = ({
             actions={
               <>
                 {refreshButton}
-                <a
-                  href={mr.webUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Open in GitLab <ExternalLink size={11} aria-hidden />
-                </a>
+                <OpenExternalLink url={mr.webUrl} label="Open in GitLab" />
               </>
             }
           />
@@ -307,14 +280,9 @@ export const MrDetailPanel = ({
             </MetaItem>
             {mergeStatus != null ? (
               <MetaItem label="Merge status">
-                <span
-                  className={cn(
-                    'rounded px-1.5 py-0.5 text-2xs font-medium',
-                    MERGE_STATUS_STYLE[mergeStatus.tone],
-                  )}
-                >
+                <IssueStateBadge tone={MERGE_STATUS_TONE[mergeStatus.tone]}>
                   {mergeStatus.label}
-                </span>
+                </IssueStateBadge>
               </MetaItem>
             ) : null}
             <MetaItem label="Draft">{mr.draft ? 'yes' : 'no'}</MetaItem>

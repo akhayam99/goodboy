@@ -1,5 +1,5 @@
 import { Divider, EmptyState, Markdown } from '@goodboy/ui';
-import { ExternalLink, Milestone, MousePointerClick } from 'lucide-react';
+import { Milestone, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
@@ -7,6 +7,8 @@ import {
   MetaItem,
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
+import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
+import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
@@ -62,22 +64,11 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                 {issueIdentifier(issue)}
               </span>
-              <span className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
-                {issue.state}
-              </span>
+              <IssueStateBadge>{issue.state}</IssueStateBadge>
             </>
           }
           title={issue.title}
-          actions={
-            <a
-              href={issue.webUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Open in GitLab <ExternalLink size={11} aria-hidden />
-            </a>
-          }
+          actions={<OpenExternalLink url={issue.webUrl} label="Open in GitLab" />}
         />
       }
       rail={

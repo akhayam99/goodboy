@@ -80,7 +80,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-6">
+    <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-2">
         <SectionHeader
           label="Title"

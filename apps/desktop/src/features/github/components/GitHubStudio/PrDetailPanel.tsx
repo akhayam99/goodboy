@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
-import { ArrowRight, Inbox } from 'lucide-react';
+import { Divider, EmptyState, IconButton, ScrollFade } from '@goodboy/ui';
+import { ArrowRight, ExternalLink, Inbox } from 'lucide-react';
 import {
   buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
@@ -13,6 +13,8 @@ import { resolverForComment, type ResolverLink } from '../../../session/resolver
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openUrl } from '../../../../shared/lib/editor';
 import { HeaderBand } from '../../../../shared/components/StudioDetail';
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
+import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import { groupThreads, type CommentThread } from '../../comment-threads';
 import { PullRequestChip } from '../PullRequestChip';
@@ -23,7 +25,7 @@ import { PrConversation } from './PrConversation';
 import { ResolveBoard } from './ResolveBoard';
 import { PrOverview } from './PrOverview';
 import { PrReviewers } from './PrReviewers';
-import { PrSectionNav } from './PrSectionNav';
+import { PrSectionTabs } from './PrSectionTabs';
 import { PrSwitcher } from './PrSwitcher';
 import { SectionBody } from './SectionBody';
 import type { PrSection } from './prSection';
@@ -332,10 +334,11 @@ export const PrDetailPanel = ({
       ? 'PR has conflicts, resolve them first'
       : 'squash merge this PR';
   const num = activePr.number;
+  const hasStateActions = !isTerminal || isClosed;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 px-6 py-4">
+      <div className="flex shrink-0 flex-col gap-3 px-6 py-4">
         <HeaderBand
           meta={
             options.length > 1 ? (
@@ -363,31 +366,28 @@ export const PrDetailPanel = ({
               </span>
             ) : undefined
           }
+          actions={
+            <>
+              <OpenSessionButton sessionId={sessionId} onOpened={onClose} variant="ghost" />
+              <IconButton
+                icon={ExternalLink}
+                iconSize={14}
+                label="open on GitHub"
+                onClick={() => void openUrl(activePr.url)}
+              />
+              <RefreshIconButton
+                label="refresh"
+                iconSize={14}
+                isLoading={detailLoading}
+                onClick={refreshActive}
+              />
+            </>
+          }
         />
-      </div>
-      <Divider />
-      <div className="flex min-h-0 flex-1">
-        <aside className="flex w-72 shrink-0 flex-col">
-          <PrSectionNav pr={activePr} detail={detail} section={section} onSection={setSection} />
-          <Divider />
-          <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3" fadeSize={24}>
-            <PrReviewers
-              detail={detail}
-              workspaceRoot={workspaceRoot}
-              onAddReviewers={onAddReviewers}
-            />
-          </ScrollFade>
-        </aside>
-
-        <Divider orientation="vertical" />
-
-        <div className="flex min-w-0 flex-1 flex-col">
+        {hasStateActions && (
           <PrActionBar
             pr={activePr}
-            sessionId={sessionId}
-            onOpenSession={onClose}
             busy={busy}
-            detailLoading={detailLoading}
             canMerge={canMerge}
             mergeReason={mergeReason}
             onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
@@ -396,28 +396,40 @@ export const PrDetailPanel = ({
             onReopen={() => void run('reopen', () => reopenPr(sessionId, num))}
             onCreateNew={() => setCreateOpen(true)}
             onMerge={() => run('merge', () => mergePr(sessionId, num))}
-            onOpenGithub={() => void openUrl(activePr.url)}
-            onRefresh={refreshActive}
           />
+        )}
+      </div>
 
-          <Divider />
+      <Divider />
 
-          {createOpen ? (
-            <CreatePrPanel
-              sessionId={sessionId}
-              defaultTitle={session.goal}
-              closedPr={isClosed ? { number: activePr.number, url: activePr.url } : undefined}
-              onCreated={() => {
-                setCreateOpen(false);
-                onMutated();
-              }}
-              onCancel={() => setCreateOpen(false)}
-              onStudioClose={onClose}
-            />
-          ) : (
-            <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+      {createOpen ? (
+        <CreatePrPanel
+          sessionId={sessionId}
+          defaultTitle={session.goal}
+          closedPr={isClosed ? { number: activePr.number, url: activePr.url } : undefined}
+          onCreated={() => {
+            setCreateOpen(false);
+            onMutated();
+          }}
+          onCancel={() => setCreateOpen(false)}
+          onStudioClose={onClose}
+        />
+      ) : (
+        <>
+          <div className="shrink-0 px-6 py-3">
+            <PrSectionTabs pr={activePr} detail={detail} section={section} onSection={setSection} />
+          </div>
+          <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 pb-6" fadeSize={24}>
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
               {section === 'overview' ? (
-                <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
+                <>
+                  <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
+                  <PrReviewers
+                    detail={detail}
+                    workspaceRoot={workspaceRoot}
+                    onAddReviewers={onAddReviewers}
+                  />
+                </>
               ) : (
                 <SectionBody
                   detailLoading={detailLoading}
@@ -459,10 +471,10 @@ export const PrDetailPanel = ({
                   )}
                 </SectionBody>
               )}
-            </ScrollFade>
-          )}
-        </div>
-      </div>
+            </div>
+          </ScrollFade>
+        </>
+      )}
     </div>
   );
 };

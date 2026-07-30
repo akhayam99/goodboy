@@ -1,5 +1,5 @@
 import { Divider, EmptyState, StatCard } from '@goodboy/ui';
-import { ExternalLink, ListTree, MousePointerClick } from 'lucide-react';
+import { ListTree, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
@@ -7,6 +7,7 @@ import {
   MetaItem,
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
+import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
@@ -109,14 +110,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           }
           actions={
             view.permalink != null && view.permalink !== '' ? (
-              <a
-                href={view.permalink}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Open in Sentry <ExternalLink size={11} aria-hidden />
-              </a>
+              <OpenExternalLink url={view.permalink} label="Open in Sentry" />
             ) : undefined
           }
         />

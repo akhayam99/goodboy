@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Divider, EmptyState, Markdown, SectionHeader, cn } from '@goodboy/ui';
-import { ExternalLink, GitPullRequest, MousePointerClick } from 'lucide-react';
+import { GitPullRequest, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
@@ -13,6 +13,8 @@ import {
   MetaItem,
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
+import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
+import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
@@ -158,22 +160,11 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                 {issue.identifier}
               </span>
-              <span className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
-                {issue.state.name}
-              </span>
+              <IssueStateBadge>{issue.state.name}</IssueStateBadge>
             </>
           }
           title={issue.title}
-          actions={
-            <a
-              href={issue.url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Open in Linear <ExternalLink size={11} aria-hidden />
-            </a>
-          }
+          actions={<OpenExternalLink url={issue.url} label="Open in Linear" />}
         />
       }
       rail={
