@@ -1,82 +1,50 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  getContextHealth,
-  getDelegationFlow,
-  getModelMix,
-  getOrchestrationOverview,
-  getPlanAdoption,
+  getAgentDurations,
+  getCacheEfficiency,
+  getContextGrowth,
+  getExternalTaskOutcomes,
+  getFlowHealth,
+  getImpactOverview,
+  getPullRequestOutcomes,
+  getReviewOutcomes,
   getRightSizeNudgeOutcomes,
   getTurnDistribution,
-  type ContextHealth,
-  type DelegationFlow,
-  type ModelMixEntry,
+  type AgentDurations,
+  type CacheEfficiencyEntry,
+  type ContextGrowthPoint,
+  type ExternalTaskOutcomes,
+  type FlowHealth,
+  type ImpactOverview,
   type NudgeOutcomeCount,
-  type OrchestrationOverview,
-  type PlanAdoption,
+  type PullRequestOutcomes,
+  type ReviewOutcomes,
   type TurnBucket,
 } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
-import { IMPACT_WINDOW_DAYS, type ImpactWindowId } from '../../lib';
+import { IMPACT_WINDOW_DAYS, type ImpactScopeId, type ImpactWindowId } from '../../lib';
 
 const DAY_MS = 86_400_000;
 
-const EMPTY_OVERVIEW: OrchestrationOverview = {
-  sessionCount: 0,
-  orchestratedSessions: 0,
-  plannedSessions: 0,
-  workflowSessions: 0,
-  splitSessions: 0,
-  resolverSessions: 0,
-};
-
-const EMPTY_PLAN: PlanAdoption = {
-  sessionCount: 0,
-  plannedSessions: 0,
-  consumedPlans: 0,
-  handoffPlans: 0,
-  handoffSessions: 0,
-};
-
-const EMPTY_CONTEXT: ContextHealth = {
-  sessionCount: 0,
-  slotSessions: 0,
-  userEdits: 0,
-  summarizerEdits: 0,
-  questionsTotal: 0,
-  questionsAnswered: 0,
-  questionsDismissed: 0,
-  avgHoursToAnswer: null,
-};
-
-const EMPTY_DELEGATION: DelegationFlow = {
-  sessionCount: 0,
-  workflowRuns: 0,
-  workflowSessions: 0,
-  discardedRuns: 0,
-  scoutChildren: 0,
-  clusterChildren: 0,
-  completedGroups: 0,
-  longAgents: 0,
-  resolverAgents: 0,
-  resolvedThreads: 0,
-  diffCommentsTotal: 0,
-  diffCommentsHandled: 0,
-  linkedSessions: 0,
-  startedFromSessions: 0,
-  integrationCount: 0,
-  external: [],
+export type QueryResult<T> = {
+  readonly data: T | null;
+  readonly error: Error | null;
 };
 
 export type ImpactMetrics = {
-  readonly overview: OrchestrationOverview | null;
-  readonly allTimeOverview: OrchestrationOverview | null;
-  readonly plan: PlanAdoption | null;
-  readonly context: ContextHealth | null;
-  readonly turns: ReadonlyArray<TurnBucket> | null;
-  readonly mix: ReadonlyArray<ModelMixEntry> | null;
-  readonly nudges: ReadonlyArray<NudgeOutcomeCount> | null;
-  readonly delegation: DelegationFlow | null;
+  readonly overview: QueryResult<ImpactOverview>;
+  readonly pullRequests: QueryResult<PullRequestOutcomes>;
+  readonly reviews: QueryResult<ReviewOutcomes>;
+  readonly externalTasks: QueryResult<ExternalTaskOutcomes>;
+  readonly agentDurations: QueryResult<AgentDurations>;
+  readonly flowHealth: QueryResult<FlowHealth>;
+  readonly cacheEfficiency: QueryResult<ReadonlyArray<CacheEfficiencyEntry>>;
+  readonly contextGrowth: QueryResult<ReadonlyArray<ContextGrowthPoint>>;
+  readonly turns: QueryResult<ReadonlyArray<TurnBucket>>;
+  readonly nudges: QueryResult<ReadonlyArray<NudgeOutcomeCount>>;
+  readonly loading: Readonly<Record<ImpactScopeId, boolean>>;
+  readonly retry: (scope: ImpactScopeId) => void;
 };
 
 type Params = {
@@ -84,145 +52,195 @@ type Params = {
   readonly windowId: ImpactWindowId;
 };
 
+type LoadQueryParams<T> = {
+  readonly query: () => Promise<T>;
+  readonly setResult: (result: QueryResult<T>) => void;
+  readonly activeGeneration: number;
+};
+
+type LoadScopeParams = {
+  readonly scope: ImpactScopeId;
+  readonly activeGeneration: number;
+};
+
+type ToErrorParams = {
+  readonly value: unknown;
+};
+
+const EMPTY_LOADING = {
+  overview: true,
+  shipped: true,
+  flow: true,
+  efficiency: true,
+} satisfies Record<ImpactScopeId, boolean>;
+
+const EMPTY_RESULT = { data: null, error: null };
+
+const toError = ({ value }: ToErrorParams): Error =>
+  value instanceof Error ? value : new Error(String(value));
+
 export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetrics => {
-  const [overview, setOverview] = useState<OrchestrationOverview | null>(null);
-  const [allTimeOverview, setAllTimeOverview] = useState<OrchestrationOverview | null>(null);
-  const [plan, setPlan] = useState<PlanAdoption | null>(null);
-  const [context, setContext] = useState<ContextHealth | null>(null);
-  const [turns, setTurns] = useState<ReadonlyArray<TurnBucket> | null>(null);
-  const [mix, setMix] = useState<ReadonlyArray<ModelMixEntry> | null>(null);
-  const [nudges, setNudges] = useState<ReadonlyArray<NudgeOutcomeCount> | null>(null);
-  const [delegation, setDelegation] = useState<DelegationFlow | null>(null);
+  const generation = useRef(0);
+  const [overview, setOverview] = useState<QueryResult<ImpactOverview>>(EMPTY_RESULT);
+  const [pullRequests, setPullRequests] = useState<QueryResult<PullRequestOutcomes>>(EMPTY_RESULT);
+  const [reviews, setReviews] = useState<QueryResult<ReviewOutcomes>>(EMPTY_RESULT);
+  const [externalTasks, setExternalTasks] =
+    useState<QueryResult<ExternalTaskOutcomes>>(EMPTY_RESULT);
+  const [agentDurations, setAgentDurations] = useState<QueryResult<AgentDurations>>(EMPTY_RESULT);
+  const [flowHealth, setFlowHealth] = useState<QueryResult<FlowHealth>>(EMPTY_RESULT);
+  const [cacheEfficiency, setCacheEfficiency] =
+    useState<QueryResult<ReadonlyArray<CacheEfficiencyEntry>>>(EMPTY_RESULT);
+  const [contextGrowth, setContextGrowth] =
+    useState<QueryResult<ReadonlyArray<ContextGrowthPoint>>>(EMPTY_RESULT);
+  const [turns, setTurns] = useState<QueryResult<ReadonlyArray<TurnBucket>>>(EMPTY_RESULT);
+  const [nudges, setNudges] = useState<QueryResult<ReadonlyArray<NudgeOutcomeCount>>>(EMPTY_RESULT);
+  const [loading, setLoading] = useState<Readonly<Record<ImpactScopeId, boolean>>>(EMPTY_LOADING);
+
+  const params = useMemo(
+    () => ({
+      db: tauriDatabase,
+      workspaceId,
+      sinceMs: windowId === 'all' ? null : Date.now() - IMPACT_WINDOW_DAYS * DAY_MS,
+    }),
+    [windowId, workspaceId],
+  );
+
+  const loadQuery = useCallback(
+    async <T>({ query, setResult, activeGeneration }: LoadQueryParams<T>) => {
+      try {
+        const data = await query();
+        if (generation.current !== activeGeneration) {
+          return;
+        }
+        setResult({ data, error: null });
+      } catch (value) {
+        if (generation.current !== activeGeneration) {
+          return;
+        }
+        setResult({ data: null, error: toError({ value }) });
+      }
+    },
+    [],
+  );
+
+  const loadScope = useCallback(
+    async ({ scope, activeGeneration }: LoadScopeParams) => {
+      setLoading((current) => ({ ...current, [scope]: true }));
+      if (scope === 'overview') {
+        setOverview(EMPTY_RESULT);
+        await loadQuery({
+          query: () => getImpactOverview(params),
+          setResult: setOverview,
+          activeGeneration,
+        });
+      }
+      if (scope === 'shipped') {
+        setPullRequests(EMPTY_RESULT);
+        setReviews(EMPTY_RESULT);
+        setExternalTasks(EMPTY_RESULT);
+        await Promise.all([
+          loadQuery({
+            query: () => getPullRequestOutcomes(params),
+            setResult: setPullRequests,
+            activeGeneration,
+          }),
+          loadQuery({
+            query: () => getReviewOutcomes(params),
+            setResult: setReviews,
+            activeGeneration,
+          }),
+          loadQuery({
+            query: () => getExternalTaskOutcomes(params),
+            setResult: setExternalTasks,
+            activeGeneration,
+          }),
+        ]);
+      }
+      if (scope === 'flow') {
+        setAgentDurations(EMPTY_RESULT);
+        setFlowHealth(EMPTY_RESULT);
+        await Promise.all([
+          loadQuery({
+            query: () => getAgentDurations(params),
+            setResult: setAgentDurations,
+            activeGeneration,
+          }),
+          loadQuery({
+            query: () => getFlowHealth(params),
+            setResult: setFlowHealth,
+            activeGeneration,
+          }),
+        ]);
+      }
+      if (scope === 'efficiency') {
+        setCacheEfficiency(EMPTY_RESULT);
+        setContextGrowth(EMPTY_RESULT);
+        setTurns(EMPTY_RESULT);
+        setNudges(EMPTY_RESULT);
+        await Promise.all([
+          loadQuery({
+            query: () => getCacheEfficiency(params),
+            setResult: setCacheEfficiency,
+            activeGeneration,
+          }),
+          loadQuery({
+            query: () => getContextGrowth(params),
+            setResult: setContextGrowth,
+            activeGeneration,
+          }),
+          loadQuery({
+            query: () => getTurnDistribution(params),
+            setResult: setTurns,
+            activeGeneration,
+          }),
+          loadQuery({
+            query: () => getRightSizeNudgeOutcomes(params),
+            setResult: setNudges,
+            activeGeneration,
+          }),
+        ]);
+      }
+      if (generation.current !== activeGeneration) {
+        return;
+      }
+      setLoading((current) => ({ ...current, [scope]: false }));
+    },
+    [loadQuery, params],
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    const sinceMs = windowId === 'all' ? null : Date.now() - IMPACT_WINDOW_DAYS * DAY_MS;
-    const params = { workspaceId, sinceMs };
-
-    setOverview(null);
-    setAllTimeOverview(null);
-    setPlan(null);
-    setContext(null);
-    setTurns(null);
-    setMix(null);
-    setNudges(null);
-    setDelegation(null);
-
-    void getOrchestrationOverview(tauriDatabase, params)
-      .then(async (value) => {
-        if (cancelled) {
-          return;
-        }
-        setOverview(value);
-        if (value.sessionCount > 0 || sinceMs === null) {
-          setAllTimeOverview(value);
-          return;
-        }
-        const allTime = await getOrchestrationOverview(tauriDatabase, {
-          workspaceId,
-          sinceMs: null,
-        });
-        if (cancelled) {
-          return;
-        }
-        setAllTimeOverview(allTime);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-        setOverview(EMPTY_OVERVIEW);
-        setAllTimeOverview(EMPTY_OVERVIEW);
-      });
-
-    void getPlanAdoption(tauriDatabase, params)
-      .then((value) => {
-        if (cancelled) {
-          return;
-        }
-        setPlan(value);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-        setPlan(EMPTY_PLAN);
-      });
-
-    void getContextHealth(tauriDatabase, params)
-      .then((value) => {
-        if (cancelled) {
-          return;
-        }
-        setContext(value);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-        setContext(EMPTY_CONTEXT);
-      });
-
-    void getTurnDistribution(tauriDatabase, params)
-      .then((value) => {
-        if (cancelled) {
-          return;
-        }
-        setTurns(value);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-        setTurns([]);
-      });
-
-    void getModelMix(tauriDatabase, params)
-      .then((value) => {
-        if (cancelled) {
-          return;
-        }
-        setMix(value);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-        setMix([]);
-      });
-
-    void getRightSizeNudgeOutcomes(tauriDatabase, params)
-      .then((value) => {
-        if (cancelled) {
-          return;
-        }
-        setNudges(value);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-        setNudges([]);
-      });
-
-    void getDelegationFlow(tauriDatabase, params)
-      .then((value) => {
-        if (cancelled) {
-          return;
-        }
-        setDelegation(value);
-      })
-      .catch(() => {
-        if (cancelled) {
-          return;
-        }
-        setDelegation(EMPTY_DELEGATION);
-      });
-
+    generation.current += 1;
+    const activeGeneration = generation.current;
+    setLoading(EMPTY_LOADING);
+    void Promise.all(
+      (['overview', 'shipped', 'flow', 'efficiency'] satisfies ReadonlyArray<ImpactScopeId>).map(
+        (scope) => loadScope({ scope, activeGeneration }),
+      ),
+    );
     return () => {
-      cancelled = true;
+      generation.current += 1;
     };
-  }, [workspaceId, windowId]);
+  }, [loadScope]);
 
-  return { overview, allTimeOverview, plan, context, turns, mix, nudges, delegation };
+  const retry = useCallback(
+    (scope: ImpactScopeId) => {
+      void loadScope({ scope, activeGeneration: generation.current });
+    },
+    [loadScope],
+  );
+
+  return {
+    overview,
+    pullRequests,
+    reviews,
+    externalTasks,
+    agentDurations,
+    flowHealth,
+    cacheEfficiency,
+    contextGrowth,
+    turns,
+    nudges,
+    loading,
+    retry,
+  };
 };
