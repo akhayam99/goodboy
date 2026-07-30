@@ -66,7 +66,9 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
       roleModels={roleModels}
       blockReason={state.kind === 'blocked' ? state.reason : null}
       onAdvance={(step) => void onAdvance(step)}
-      onForceAdvance={() => void skipStuckStepAndAdvance(sessionId, workflowRunId)}
+      onForceAdvance={() =>
+        void skipStuckStepAndAdvance(sessionId, workflowRunId, { onlyWhenBlocked: true })
+      }
       className="ml-auto shrink-0"
     />
   );

@@ -81,7 +81,7 @@ type Props = {
   readonly onRenameCommit: (id: AgentId, name: string) => Promise<void>;
   readonly onResolveFirstForRun: (run: WorkflowRun) => void;
   readonly toggleClusterExpand: (id: string) => void;
-  readonly forceAdvanceWorkflowStep: AppStore['forceAdvanceWorkflowStep'];
+  readonly skipStuckStepAndAdvance: AppStore['skipStuckStepAndAdvance'];
 };
 
 export const WorkflowRow = ({
@@ -123,7 +123,7 @@ export const WorkflowRow = ({
   onRenameCommit,
   onResolveFirstForRun,
   toggleClusterExpand,
-  forceAdvanceWorkflowStep,
+  skipStuckStepAndAdvance,
 }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId: task.id });
   const workflowRun = run;
@@ -490,7 +490,9 @@ export const WorkflowRow = ({
               }
               void onStartStepAgent(pending);
             }}
-            onForceAdvance={() => void forceAdvanceWorkflowStep(task.id, run.id)}
+            onForceAdvance={() =>
+              void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })
+            }
           />
         </div>
       ) : null}

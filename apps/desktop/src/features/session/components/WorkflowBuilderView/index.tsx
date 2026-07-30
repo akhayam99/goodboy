@@ -538,6 +538,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       ...(triggerMode !== 'immediate' && { triggerMode }),
       ...(triggerMode === 'after_run' && after && { chainAfterId: after }),
       ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
+      ...(mode === 'dynamic' && { executionMode: 'dynamic' as const }),
     };
   };
 
@@ -613,7 +614,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       return;
     }
     const usePresetAsIs = mode === 'preset' && selectedPreset !== null && !presetDirty;
-    if (mode === 'preset' ? selectedPreset === null : steps.length === 0) {
+    if (
+      (mode === 'preset' && selectedPreset === null) ||
+      (mode === 'custom' && steps.length === 0) ||
+      (mode === 'dynamic' && processText.trim().length === 0)
+    ) {
       return;
     }
     setError(null);
@@ -630,13 +635,17 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       const name =
         mode === 'custom'
           ? (plan?.workflowName ?? 'Custom workflow')
-          : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow');
+          : mode === 'dynamic'
+            ? 'Orchestrated workflow'
+            : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow');
       const description =
         mode === 'custom'
           ? (plan?.reasoning ?? '')
-          : (selectedPreset?.description ?? basePreset?.description ?? '');
+          : mode === 'dynamic'
+            ? 'Steps are decided at runtime from the latest results.'
+            : (selectedPreset?.description ?? basePreset?.description ?? '');
       const goal = goalText.trim();
-      const process = mode === 'custom' ? processText.trim() : '';
+      const process = mode === 'custom' || mode === 'dynamic' ? processText.trim() : '';
       const workflow: Workflow = {
         id: workflowId,
         workspaceId: session.workspaceId,
@@ -644,8 +653,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         description,
         ...(goal.length > 0 && { goal }),
         ...(process.length > 0 && { processText: process }),
-        steps: buildSteps(workflowId),
-        isPreset: saveAsPreset,
+        steps: mode === 'dynamic' ? [] : buildSteps(workflowId),
+        isPreset: mode === 'dynamic' ? false : saveAsPreset,
         createdAt: now,
         updatedAt: now,
       };
@@ -661,15 +670,27 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   };
 
   const startDisabled =
-    blocked || (mode === 'preset' ? selectedPreset === null : steps.length === 0);
-  const canAdvanceFromApproach = mode === 'preset' ? selectedPreset !== null : plan !== null;
+    blocked ||
+    (mode === 'preset'
+      ? selectedPreset === null
+      : mode === 'dynamic'
+        ? processText.trim().length === 0
+        : steps.length === 0);
+  const canAdvanceFromApproach =
+    mode === 'preset'
+      ? selectedPreset !== null
+      : mode === 'dynamic'
+        ? processText.trim().length > 0
+        : plan !== null;
   const canContinue =
     (stage === 0 && goalText.trim().length > 0) || (stage === 1 && canAdvanceFromApproach);
   const continueHint =
     stage === 1 && !canAdvanceFromApproach
       ? mode === 'preset'
         ? 'Select a preset to continue'
-        : 'Generate a plan to continue'
+        : mode === 'dynamic'
+          ? 'Describe the intent and constraints to continue'
+          : 'Generate a plan to continue'
       : null;
   const stageReachable = (i: Stage): boolean => {
     if (i <= stage) return true;
@@ -694,7 +715,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const workflowName =
     mode === 'custom'
       ? (plan?.workflowName ?? 'Custom workflow')
-      : (selectedPreset?.name ?? basePreset?.name ?? 'Workflow');
+      : mode === 'dynamic'
+        ? 'Orchestrated workflow'
+        : (selectedPreset?.name ?? basePreset?.name ?? 'Workflow');
 
   return (
     <StudioShell
@@ -844,7 +867,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 <>
                   <StageHeading
                     title="How do you want to build it?"
-                    subtitle="Start from a preset and customize, or describe a flow and let the planner draft the steps."
+                    subtitle="Start from a preset, draft a custom plan, or let the orchestrator decide each step at runtime."
                   />
                   <section className="flex flex-col gap-3">
                     <SectionHeader
@@ -864,6 +887,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               value: 'custom',
                               label: 'Custom',
                               icon: Sparkles,
+                              disabled: blocked,
+                            },
+                            {
+                              value: 'dynamic',
+                              label: 'Orchestrated',
+                              icon: Wand2,
                               disabled: blocked,
                             },
                           ]}
@@ -965,53 +994,68 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     ) : (
                       <div className="flex flex-col gap-2">
                         <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
-                          Describe the flow. The planner drafts ordered steps you tune before
-                          starting.
+                          {mode === 'dynamic'
+                            ? 'Describe the intent and constraints. The orchestrator decides each step from the latest results.'
+                            : 'Describe the flow. The planner drafts ordered steps you tune before starting.'}
                         </p>
                         <div className="rounded-lg bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
                           <div className="relative">
                             <Textarea
                               value={processText}
                               onChange={(e) => setProcessText(e.target.value)}
-                              placeholder="describe the process you expect (e.g. read the existing github integration, study how it works, then plan the gitlab equivalent, then implement)…"
+                              placeholder={
+                                mode === 'dynamic'
+                                  ? 'describe the intent, constraints, and stopping conditions…'
+                                  : 'describe the process you expect (e.g. read the existing github integration, study how it works, then plan the gitlab equivalent, then implement)…'
+                              }
                               autoGrow
                               minRows={4}
                               maxRows={9}
-                              className="min-h-20 resize-none border-0 bg-transparent px-4 pt-3 pb-12 text-sm shadow-none focus-visible:ring-0"
+                              className={cn(
+                                'min-h-20 resize-none border-0 bg-transparent px-4 pt-3 text-sm shadow-none focus-visible:ring-0',
+                                mode === 'custom' ? 'pb-12' : 'pb-3',
+                              )}
                             />
-                            <div className="absolute bottom-2.5 right-2.5">
-                              <Button
-                                size="sm"
-                                onClick={() => void onPlan()}
-                                disabled={blocked || processText.trim().length === 0}
-                                className={cn('min-w-[6.5rem]', planning && 'animate-border-pulse')}
-                              >
-                                {planning ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
-                              </Button>
+                            {mode === 'custom' ? (
+                              <div className="absolute bottom-2.5 right-2.5">
+                                <Button
+                                  size="sm"
+                                  onClick={() => void onPlan()}
+                                  disabled={blocked || processText.trim().length === 0}
+                                  className={cn(
+                                    'min-w-[6.5rem]',
+                                    planning && 'animate-border-pulse',
+                                  )}
+                                >
+                                  {planning ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
+                                </Button>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                        {mode === 'custom' ? (
+                          <div className="flex justify-end px-1">
+                            <div className="w-64">
+                              <RoutingPicker
+                                ariaLabel="planner routing"
+                                connectedProviders={connectedProviders}
+                                provider={plannerProviderOverride}
+                                model={plannerModelOverride}
+                                effort={{ editable: false, value: PLANNER_EFFORT }}
+                                recommendation={{
+                                  provider: resolvedPlanTaskModel.providerId,
+                                  model: plannerRecommendedModel,
+                                }}
+                                disabled={blocked}
+                                onProvider={(next) => {
+                                  setPlannerProviderOverride(next);
+                                  setPlannerModelOverride('');
+                                }}
+                                onModel={setPlannerModelOverride}
+                              />
                             </div>
                           </div>
-                        </div>
-                        <div className="flex justify-end px-1">
-                          <div className="w-64">
-                            <RoutingPicker
-                              ariaLabel="planner routing"
-                              connectedProviders={connectedProviders}
-                              provider={plannerProviderOverride}
-                              model={plannerModelOverride}
-                              effort={{ editable: false, value: PLANNER_EFFORT }}
-                              recommendation={{
-                                provider: resolvedPlanTaskModel.providerId,
-                                model: plannerRecommendedModel,
-                              }}
-                              disabled={blocked}
-                              onProvider={(next) => {
-                                setPlannerProviderOverride(next);
-                                setPlannerModelOverride('');
-                              }}
-                              onModel={setPlannerModelOverride}
-                            />
-                          </div>
-                        </div>
+                        ) : null}
                       </div>
                     )}
                   </section>
@@ -1021,8 +1065,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
               {stage === 2 ? (
                 <>
                   <StageHeading
-                    title="Tune your steps"
-                    subtitle="Reorder, edit instructions, and pick a model and provider for each agent."
+                    title={mode === 'dynamic' ? 'Review orchestration' : 'Tune your steps'}
+                    subtitle={
+                      mode === 'dynamic'
+                        ? 'The orchestrator creates one focused step at a time from the latest results.'
+                        : 'Reorder, edit instructions, and pick a model and provider for each agent.'
+                    }
                   />
                   <section className="flex flex-col gap-3">
                     <div className="flex items-center justify-between gap-2">
@@ -1040,7 +1088,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             <Sparkles size={10} aria-hidden /> Re-design
                           </button>
                         ) : null}
-                        {mode === 'custom' ? (
+                        {mode === 'custom' || mode === 'dynamic' ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
                             <Check size={10} aria-hidden /> Ready
                           </span>
@@ -1056,7 +1104,19 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       </div>
                     </div>
 
-                    {showSteps ? (
+                    {mode === 'dynamic' ? (
+                      <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/40 p-4">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
+                          <Wand2 size={13} className="text-primary" aria-hidden />
+                          Steps are decided at runtime
+                        </span>
+                        <p className="text-2xs leading-relaxed text-muted-foreground">
+                          After kickoff and each completed step, the orchestrator reviews the goal,
+                          your process, prior outputs, and open questions before choosing what comes
+                          next.
+                        </p>
+                      </div>
+                    ) : showSteps ? (
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <span className={SECTION_LABEL_CLS}>

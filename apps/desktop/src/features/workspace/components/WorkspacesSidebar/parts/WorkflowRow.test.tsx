@@ -81,6 +81,7 @@ const run: WorkflowRun = {
   currentStep: 0,
   autoRun: false,
   triggerMode: 'immediate',
+  executionMode: 'static',
   goal: 'just the auth module',
 };
 
@@ -164,7 +165,7 @@ const renderDetail = ({
       onRenameCommit={vi.fn(async () => undefined)}
       onResolveFirstForRun={vi.fn()}
       toggleClusterExpand={vi.fn()}
-      forceAdvanceWorkflowStep={vi.fn(async () => undefined)}
+      skipStuckStepAndAdvance={vi.fn(async () => undefined)}
     />,
   );
 

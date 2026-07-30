@@ -135,7 +135,9 @@ describe('ChatWorkflowAdvance', () => {
     expect(store.skipStuckStepAndAdvance).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByText(/skip and continue/i));
-    expect(store.skipStuckStepAndAdvance).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(store.skipStuckStepAndAdvance).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      onlyWhenBlocked: true,
+    });
   });
 
   it('renders nothing once every step is done', () => {

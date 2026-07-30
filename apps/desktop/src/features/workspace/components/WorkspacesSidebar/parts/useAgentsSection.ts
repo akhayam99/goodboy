@@ -68,7 +68,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
-  const forceAdvanceWorkflowStep = useAppStore((s) => s.forceAdvanceWorkflowStep);
+  const skipStuckStepAndAdvance = useAppStore((s) => s.skipStuckStepAndAdvance);
   const detachWorkflowFromSession = useAppStore((s) => s.detachWorkflowFromSession);
   const renameAgent = useAppStore((s) => s.renameAgent);
   const attachedRuns = useAttachedWorkflowRuns({ session: task });
@@ -248,7 +248,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     countUnread: tree.countUnread,
     editingId,
     focusedWorkflowRunId,
-    forceAdvanceWorkflowStep,
+    skipStuckStepAndAdvance,
     hasAnyWorkflow: attachedRuns.length > 0,
     isTaskActive,
     isTranscriptLoading: loading.transcript,
