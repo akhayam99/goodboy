@@ -71,6 +71,7 @@ const WORKFLOW_ID = 'workflow-1' as WorkflowId;
 const RUN_ID = 'workflow-run-1' as WorkflowRunId;
 const AGENT_ID = 'agent-1' as AgentId;
 const NOW = '2026-07-30T12:00:00.000Z' as IsoDateTime;
+const COMPLETED_AT = '2026-07-30T12:05:00.000Z' as IsoDateTime;
 
 const workflow: Workflow = {
   id: WORKFLOW_ID,
@@ -108,7 +109,7 @@ const agent: Agent = {
   status: 'completed',
   outputSummary: '**Done** with tests.',
   startedAt: NOW,
-  completedAt: '2026-07-30T12:05:00.000Z' as IsoDateTime,
+  completedAt: COMPLETED_AT,
 };
 
 const session = {
@@ -142,7 +143,7 @@ afterEach(cleanup);
 describe('WorkflowStepInspector', () => {
   it('shows step guidance, origin, output, routing, metrics, and timestamps', () => {
     const expectedStartedAt = formatAbsoluteDateTime({ iso: NOW });
-    const expectedCompletedAt = formatAbsoluteDateTime({ iso: agent.completedAt });
+    const expectedCompletedAt = formatAbsoluteDateTime({ iso: COMPLETED_AT });
 
     render(<WorkflowStepInspector session={session} agentId={AGENT_ID} />);
 
