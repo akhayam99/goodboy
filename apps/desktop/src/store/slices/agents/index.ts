@@ -6,7 +6,9 @@ import { clearAgentQueue } from './clearAgentQueue';
 import { deleteAgent } from './deleteAgent';
 import { deselectAgent } from './deselectAgent';
 import { forceCloseResolver } from './forceCloseResolver';
+import { markAgentSeen } from './markAgentSeen';
 import { markAgentViewed } from './markAgentViewed';
+import { markAllAgentsSeen } from './markAllAgentsSeen';
 import { renameAgent } from './renameAgent';
 import { selectAgent } from './selectAgent';
 import { setAgentAttachments } from './setAgentAttachments';
@@ -31,6 +33,8 @@ export const createAgentsSlice = (set: SetFn, get: GetFn) => {
     selectAgent: selectAgent(set, get),
     deselectAgent: deselectAgent(set),
     markAgentViewed: markAgentViewed(set, get),
+    markAgentSeen: markAgentSeen(set, get),
+    markAllAgentsSeen: markAllAgentsSeen(set, get),
     setAgentDone: setAgentDone(set),
     clearAgentDone: clearAgentDone(set),
     renameAgent: renameAgent(set),

@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import {
   ArrowRight,
   Bot,
+  CheckCheck,
   CircleHelp,
   GitPullRequest,
   MessageSquareReply,
@@ -9,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FolderGit2 } from 'lucide-react';
-import { cn, Eyebrow, Input, ScrollFade, StatusDot } from '@goodboy/ui';
+import { Button, cn, Eyebrow, Input, ScrollFade, StatusDot } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId, SessionStage } from '@goodboy/types';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import {
@@ -97,9 +98,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
   const pullRequest = useAppStore((s) => s.sessionGithub[session.id as SessionId]?.pr ?? null);
   const attention = selectAttention(stage);
   const openQuestions = selectOpenQuestions(useSessionOpenQuestions(session.id));
-  const rawStandalone = selectStandaloneAgents(
-    useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY),
-  );
+  const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const rawStandalone = selectStandaloneAgents(sessionAgents);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const hasResolver = rawStandalone.some(
     (agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null) === 'resolver',
@@ -109,6 +109,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
   const runningAgents = nonResolverAgents.filter((a) => a.status === 'running').length;
   const resolvable = useResolvableCount(session.id as SessionId);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
 
@@ -130,6 +131,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
     hasResolver,
     unreadLens,
   });
+  const hasUnreadAgents = sessionAgents.some((agent) => agentHasUnread(agent, false));
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -228,6 +230,17 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
               <Eyebrow label={STAGE_LABEL[stage.stage]} />
             </div>
             <div className="flex items-center gap-1">
+              {hasUnreadAgents && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => void markAllAgentsSeen(session.id as SessionId)}
+                >
+                  <CheckCheck size={13} aria-hidden />
+                  Mark all seen
+                </Button>
+              )}
               <ConnectedIntegrationGlyphs session={session} onSelectLens={onSelectLens} />
               <EditorMenu sessionId={session.id as SessionId} />
             </div>

@@ -142,17 +142,41 @@ describe('WorkflowNextStepCta', () => {
     expect(onAdvance).not.toHaveBeenCalled();
   });
 
-  it('hides the CTA while the step is still working', () => {
+  it('warns and confirms before advancing while the predecessor turn is running', async () => {
     const onAdvance = vi.fn();
-    const { container } = render(
+    render(
       <WorkflowNextStepCta
         workflow={wf()}
-        runs={ctaRuns}
+        runs={preCreated('completed', 'pending', 'pending')}
         onAdvance={onAdvance}
         blockReason="turn-running"
       />,
     );
-    expect(container.innerHTML).toBe('');
+
+    const cta = screen.getByTestId('workflow-next-step-cta');
+    expect(cta.className).toContain('border-warning');
+    expect(cta.className).not.toContain('border-primary');
+    fireEvent.click(cta);
+    expect(screen.getByText(/start the next agent anyway/i)).toBeDefined();
+    expect(onAdvance).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'start anyway' }));
+    await Promise.resolve();
+    expect(onAdvance).toHaveBeenCalledTimes(1);
+    expect(onAdvance.mock.calls[0]?.[0]).toMatchObject({ id: 's2' });
+  });
+
+  it('uses the primary tone when predecessors and gates are clear', () => {
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={preCreated('completed', 'pending', 'pending')}
+        onAdvance={vi.fn()}
+      />,
+    );
+
+    const cta = screen.getByTestId('workflow-next-step-cta');
+    expect(cta.className).toContain('border-primary');
+    expect(cta.className).not.toContain('border-warning');
   });
 
   it('names the next step explicitly', () => {

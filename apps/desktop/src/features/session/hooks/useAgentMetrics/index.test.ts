@@ -141,14 +141,42 @@ describe('useAgentMetrics', () => {
     store.state.agentRunHistory = { a: ['run-a', 'run-a2'] };
     store.state.sessionTelemetry = {
       [SID]: [
-        turn('run-a', { provider: 'codex', model: 'gpt-5', inputTokens: 5, outputTokens: 1 }),
-        turn('run-a2', { inputTokens: 900, outputTokens: 100 }),
+        turn('run-a', {
+          provider: 'codex',
+          model: 'gpt-5',
+          inputTokens: 5,
+          outputTokens: 1,
+          contextTokens: 6,
+        }),
+        turn('run-a2', { inputTokens: 900, outputTokens: 100, contextTokens: 1_000 }),
       ],
     };
     const { result } = renderHook(() => useAgentMetrics({ sessionId: SID }));
     const usage = result.current.providerUsageByAgentId.get('a');
     expect(usage?.map((u) => u.provider)).toEqual(['anthropic', 'codex']);
     expect(usage?.[0]?.inputTokens).toBe(900);
+    expect(usage?.[0]?.contextTokens).toBe(1_000);
+  });
+
+  it('sorts unknown context usage as zero', () => {
+    store.state.sessionPhaseRuns = { [SID]: [agent('a')] };
+    store.state.agentRunHistory = { a: ['run-a', 'run-a2'] };
+    store.state.sessionTelemetry = {
+      [SID]: [
+        turn('run-a', {
+          provider: 'codex',
+          model: 'gpt-5',
+          inputTokens: 5,
+          outputTokens: 1,
+        }),
+        turn('run-a2', { inputTokens: 900, outputTokens: 100 }),
+      ],
+    };
+
+    const { result } = renderHook(() => useAgentMetrics({ sessionId: SID }));
+    const usage = result.current.providerUsageByAgentId.get('a');
+
+    expect(usage?.map((entry) => entry.provider)).toEqual(['codex', 'anthropic']);
   });
 
   it('uses the latest provider snapshot without child rollup', () => {
@@ -169,6 +197,7 @@ describe('useAgentMetrics', () => {
           inputTokens: 10,
           cachedInputTokens: 20,
           cacheCreationInputTokens: 30,
+          contextTokens: 65,
           outputTokens: 5,
           recordedAt: '2026-01-01T00:00:01.000Z' as IsoDateTime,
         }),
@@ -190,6 +219,7 @@ describe('useAgentMetrics', () => {
         outputTokens: 5,
         cachedInputTokens: 20,
         cacheCreationInputTokens: 30,
+        contextTokens: 65,
       },
     ]);
   });

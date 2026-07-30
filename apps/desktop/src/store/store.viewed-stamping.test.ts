@@ -1,6 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { agentHasUnread } from './selectors';
+import { deriveSessionStage } from './slices/session-view';
 
 const callOrder: string[] = [];
 const markViewedSpy = vi.fn((id: string) => {
@@ -370,6 +380,112 @@ describe('selectAgent cascades lastViewedAt to descendants', () => {
     const stamped = markViewedSpy.mock.calls.map((c) => c[0]);
     expect(stamped).not.toContain(SIBLING);
     expect(stamped).not.toContain(SIBLING_CHILD);
+  });
+});
+
+describe('markAgentSeen', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    callOrder.length = 0;
+  });
+
+  it('stamps the hovered agent and every descendant in its parentAgentId subtree', async () => {
+    const parentId = 'seen-parent' as AgentId;
+    const childId = 'seen-child' as AgentId;
+    const grandchildId = 'seen-grandchild' as AgentId;
+    const useAppStore = await importStore();
+
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          buildAgent({ id: parentId, lastFinishedAt: T2 }),
+          buildAgent({ id: childId, parentAgentId: parentId, lastFinishedAt: T2 }),
+          buildAgent({ id: grandchildId, parentAgentId: childId, lastFinishedAt: T2 }),
+        ],
+      },
+    });
+
+    await useAppStore.getState().markAgentSeen(SESSION_ID, parentId);
+
+    const runs = useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? [];
+    expect(runs.every((agent) => agent.lastViewedAt != null)).toBe(true);
+    expect(markViewedSpy.mock.calls.map((call) => call[0])).toEqual(
+      expect.arrayContaining([parentId, childId, grandchildId]),
+    );
+    expect(unreadSpy).toHaveBeenCalledOnce();
+  });
+});
+
+describe('markAllAgentsSeen', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    callOrder.length = 0;
+  });
+
+  const openQuestion = {
+    id: 'question-seen-1' as OpenQuestionId,
+    sessionId: SESSION_ID,
+    createdByAgentId: AGENT_ID,
+    text: 'Which implementation should I use?',
+    suggestedAnswers: [],
+    userAnswer: null,
+    status: 'open',
+    createdAt: T1,
+  } satisfies OpenQuestion;
+
+  it('clears every unread agent without changing open questions', async () => {
+    const secondAgentId = 'seen-second' as AgentId;
+    const questions = [openQuestion];
+    const useAppStore = await importStore();
+
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          buildAgent({ lastFinishedAt: T2 }),
+          buildAgent({ id: secondAgentId, lastFinishedAt: T3, lastViewedAt: T2 }),
+        ],
+      },
+      sessionOpenQuestions: { [SESSION_ID]: questions },
+    });
+
+    await useAppStore.getState().markAllAgentsSeen(SESSION_ID);
+
+    const state = useAppStore.getState();
+    const runs = state.sessionPhaseRuns[SESSION_ID] ?? [];
+    expect(runs.some((agent) => agentHasUnread(agent, false))).toBe(false);
+    expect(state.sessionOpenQuestions[SESSION_ID]).toBe(questions);
+    expect(markViewedSpy.mock.calls.map((call) => call[0])).toEqual(
+      expect.arrayContaining([AGENT_ID, secondAgentId]),
+    );
+    expect(unreadSpy).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the session attention stage when open questions remain after the bulk clear', async () => {
+    const useAppStore = await importStore();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionPhaseRuns: {
+        [SESSION_ID]: [buildAgent({ lastFinishedAt: T2 })],
+      },
+      sessionOpenQuestions: { [SESSION_ID]: [openQuestion] },
+    });
+
+    await useAppStore.getState().markAllAgentsSeen(SESSION_ID);
+
+    const state = useAppStore.getState();
+    const stage = deriveSessionStage({
+      session: buildSession(),
+      pr: null,
+      hasUnread: (state.sessionPhaseRuns[SESSION_ID] ?? []).some((agent) =>
+        agentHasUnread(agent, false),
+      ),
+      openQuestionCount: (state.sessionOpenQuestions[SESSION_ID] ?? []).filter(
+        (question) => question.status === 'open',
+      ).length,
+    });
+    expect(stage).toEqual({ stage: 'attention', reason: '1 open question' });
   });
 });
 

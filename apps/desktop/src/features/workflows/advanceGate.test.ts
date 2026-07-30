@@ -97,6 +97,16 @@ describe('resolveWorkflowAdvance', () => {
     expect(state).toMatchObject({ kind: 'blocked', reason: 'turn-running' });
   });
 
+  it('blocks when a predecessor agent is still running', () => {
+    const state = resolveWorkflowAdvance({
+      workflow,
+      agents: agents('running', 'pending'),
+      ...gate,
+    });
+
+    expect(state).toMatchObject({ kind: 'blocked', reason: 'turn-running' });
+  });
+
   it('is complete once every step is done or skipped', () => {
     const state = resolveWorkflowAdvance({
       workflow,

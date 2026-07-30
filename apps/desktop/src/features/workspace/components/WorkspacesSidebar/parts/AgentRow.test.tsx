@@ -4,9 +4,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, AgentStatus, SessionId, TelemetryRecord } from '@goodboy/types';
 
-vi.mock('../../../../../store', () => ({
-  agentHasUnread: () => false,
+const { hoverState, markAgentSeen } = vi.hoisted(() => ({
+  hoverState: { hasUnread: false },
+  markAgentSeen: vi.fn(async () => undefined),
 }));
+
+vi.mock('../../../../../store', () => {
+  const useAppStore = Object.assign(() => undefined, {
+    getState: () => ({ markAgentSeen }),
+  });
+  return {
+    agentHasUnread: () => hoverState.hasUnread,
+    useAppStore,
+  };
+});
 
 import { AgentRow } from './AgentRow';
 
@@ -31,6 +42,7 @@ const telemetry = {
   outputTokens: 2,
   cachedInputTokens: 20,
   cacheCreationInputTokens: 30,
+  contextTokens: 62,
   estimatedCostUsd: 0.25,
   recordedAt: '2026-01-01T00:00:00.000Z',
 } as TelemetryRecord;
@@ -53,6 +65,7 @@ const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
             model: 'claude-sonnet-4-5',
             inputTokens: 100_000,
             outputTokens: 0,
+            contextTokens: 100_000,
           },
         ]}
         turns={3}
@@ -74,6 +87,8 @@ const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.useRealTimers();
+  hoverState.hasUnread = false;
 });
 
 describe('AgentRow', () => {
@@ -116,6 +131,22 @@ describe('AgentRow', () => {
     expect(screen.getByText('Sonnet 4.5')).toBeTruthy();
     expect(screen.getAllByTestId('agent-metrics-inline')).toHaveLength(1);
     expect(screen.getAllByTestId('agent-metrics-block')).toHaveLength(1);
+  });
+
+  it('marks an unread row seen after the hover dwell', () => {
+    vi.useFakeTimers();
+    hoverState.hasUnread = true;
+    const { container } = renderRow(false);
+    const rowElement = container.querySelector('li');
+    expect(rowElement).not.toBeNull();
+    if (rowElement == null) {
+      return;
+    }
+
+    fireEvent.mouseEnter(rowElement);
+    vi.advanceTimersByTime(450);
+
+    expect(markAgentSeen).toHaveBeenCalledWith(SID, run.id);
   });
 
   it.each<AgentStatus>(['pending', 'running', 'completed', 'failed', 'skipped'])(

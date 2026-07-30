@@ -38,7 +38,7 @@ const databaseWithRun = async ({}: Params) => {
 };
 
 describe('telemetry queries', () => {
-  it('round-trips cache read and cache creation tokens', async () => {
+  it('round-trips cache and context tokens', async () => {
     const database = await databaseWithRun({});
     const record: TelemetryRecord = {
       id: 'telemetry-1' as TelemetryRecordId,
@@ -51,6 +51,7 @@ describe('telemetry queries', () => {
       outputTokens: 5,
       cachedInputTokens: 20,
       cacheCreationInputTokens: 30,
+      contextTokens: 65,
       estimatedCostUsd: 0.01,
       recordedAt,
     };
@@ -80,5 +81,6 @@ describe('telemetry queries', () => {
 
     expect(stored?.cachedInputTokens).toBe(0);
     expect(stored?.cacheCreationInputTokens).toBe(0);
+    expect(stored?.contextTokens).toBeUndefined();
   });
 });

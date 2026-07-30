@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Divider, StatusDot, cn } from '@goodboy/ui';
-import { AlertTriangle, Check, ChevronDown, ChevronRight, Clock, Play } from 'lucide-react';
-import type { Agent, Step, TelemetryRecord } from '@goodboy/types';
+import { useEffect, useState } from 'react';
+import { StatusDot, cn } from '@goodboy/ui';
+import { AlertTriangle, Check, Clock, Play } from 'lucide-react';
+import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
@@ -10,18 +10,15 @@ import {
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetrics';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
-import { WorkflowStepBrief } from './WorkflowStepBrief';
 import { WorkflowStepPlanBadge } from './WorkflowStepPlanBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../../workflows/blockCopy';
+import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
 
 type Props = {
   readonly run: Agent;
   readonly kind: AgentKind;
   readonly index: number;
-  readonly step?: Step;
-  readonly showBrief?: boolean;
-  readonly detailContent?: ReactNode;
   readonly resolvedModel: string;
   readonly isActionable: boolean;
   readonly blockReason: WorkflowBlockReason | null;
@@ -45,9 +42,6 @@ export const WorkflowStepRow = ({
   run,
   kind,
   index,
-  step,
-  showBrief = false,
-  detailContent,
   resolvedModel,
   isActionable,
   blockReason,
@@ -71,14 +65,12 @@ export const WorkflowStepRow = ({
   const isStartable = isActionable && !isBlocked;
   const isRunning = run.status === 'running';
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
-  const promptPrefix = step?.promptPrefix.trim() ?? '';
-  const expectedOutput = step?.expectedOutput?.trim() ?? '';
-  const outputSummary = run.outputSummary?.trim() ?? '';
-  const hasBrief =
-    showBrief && (promptPrefix !== '' || expectedOutput !== '' || outputSummary !== '');
-
+  const hoverMarkViewed = useHoverMarkViewed({
+    sessionId: run.sessionId,
+    agentId: run.id,
+    hasUnread,
+  });
   const [draft, setDraft] = useState(run.name);
-  const [briefOpen, setBriefOpen] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
   useEffect(() => {
     if (isEditing) {
@@ -166,7 +158,12 @@ export const WorkflowStepRow = ({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className={containerClass} data-testid="workflow-step-card">
+      <div
+        className={containerClass}
+        data-testid="workflow-step-card"
+        onMouseEnter={hoverMarkViewed.onMouseEnter}
+        onMouseLeave={hoverMarkViewed.onMouseLeave}
+      >
         <div
           role={isPendingFuture ? undefined : 'button'}
           tabIndex={isEditing || isPendingFuture ? -1 : 0}
@@ -252,40 +249,6 @@ export const WorkflowStepRow = ({
           />
           <ContextWindowBar usage={contextUsage} />
         </div>
-        {hasBrief ? (
-          <>
-            <Divider />
-            <div className="flex flex-col gap-1 px-2 py-1.5">
-              <button
-                type="button"
-                onClick={() => setBriefOpen((open) => !open)}
-                aria-expanded={briefOpen}
-                aria-label={`${briefOpen ? 'hide' : 'show'} details for ${run.name}`}
-                className="flex items-center gap-1 self-start rounded text-2xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {briefOpen ? (
-                  <ChevronDown size={11} aria-hidden className="shrink-0" />
-                ) : (
-                  <ChevronRight size={11} aria-hidden className="shrink-0" />
-                )}
-                Details
-              </button>
-              {briefOpen ? (
-                <WorkflowStepBrief
-                  promptPrefix={promptPrefix}
-                  expectedOutput={expectedOutput}
-                  outputSummary={outputSummary}
-                />
-              ) : null}
-            </div>
-          </>
-        ) : null}
-        {detailContent != null ? (
-          <>
-            <Divider />
-            <div className="px-2 py-1.5">{detailContent}</div>
-          </>
-        ) : null}
       </div>
       {pendingConfirm && blockReason !== null ? (
         <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-[11px]">

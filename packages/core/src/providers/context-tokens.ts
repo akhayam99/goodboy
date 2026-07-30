@@ -9,6 +9,7 @@ type InputParams = {
 
 type Params = InputParams & {
   readonly outputTokens: number;
+  readonly contextTokens?: number;
 };
 
 export const inputTokensForUsage = ({
@@ -27,13 +28,15 @@ export const inputTokensForUsage = ({
 export const contextTokensForUsage = ({
   provider,
   inputTokens,
-  cachedInputTokens = 0,
-  cacheCreationInputTokens = 0,
   outputTokens,
-}: Params): number => {
+  contextTokens,
+}: Params): number | null => {
+  if (contextTokens != null && Number.isFinite(contextTokens)) {
+    return contextTokens;
+  }
   if (provider === 'codex' || provider === 'gemini') {
     return inputTokens + outputTokens;
   }
 
-  return inputTokens + cachedInputTokens + cacheCreationInputTokens + outputTokens;
+  return null;
 };

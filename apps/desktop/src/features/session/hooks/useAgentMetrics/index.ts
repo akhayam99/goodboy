@@ -39,6 +39,7 @@ type ProviderEntry = {
   outputTokens: number;
   cachedInputTokens: number;
   cacheCreationInputTokens: number;
+  contextTokens?: number;
 };
 
 type TelemetryParams = {
@@ -232,6 +233,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
             outputTokens: rec.outputTokens,
             cachedInputTokens: rec.cachedInputTokens ?? 0,
             cacheCreationInputTokens: rec.cacheCreationInputTokens ?? 0,
+            ...(rec.contextTokens != null && { contextTokens: rec.contextTokens }),
           },
         });
       }
@@ -249,8 +251,9 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
             outputTokens: entry.outputTokens,
             cachedInputTokens: entry.cachedInputTokens,
             cacheCreationInputTokens: entry.cacheCreationInputTokens,
+            ...(entry.contextTokens != null && { contextTokens: entry.contextTokens }),
           }))
-          .sort((a, b) => contextTokensForUsage(b) - contextTokensForUsage(a)),
+          .sort((a, b) => (contextTokensForUsage(b) ?? 0) - (contextTokensForUsage(a) ?? 0)),
       );
     }
     return result;

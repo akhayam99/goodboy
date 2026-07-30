@@ -16,6 +16,7 @@ import { resolverOrigin } from '../../resolver-origin';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { resolverCardTone } from './resolverCardTone';
+import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 
 const ACTIONS_CLASS = 'w-14';
 
@@ -61,6 +62,11 @@ export const ResolverCard = ({
   onJump,
 }: Props) => {
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
+  const hoverMarkViewed = useHoverMarkViewed({
+    sessionId: agent.sessionId,
+    agentId: agent.id,
+    hasUnread,
+  });
   const plannedModel = useAppStore(
     (state) => state.agentModelOverride?.[agent.id] ?? agent.modelOverride ?? null,
   );
@@ -80,6 +86,8 @@ export const ResolverCard = ({
       isMuted={isMuted}
       rowTitle={rowTitle}
       onOpen={onOpenChat}
+      onMouseEnter={hoverMarkViewed.onMouseEnter}
+      onMouseLeave={hoverMarkViewed.onMouseLeave}
       leading={<ResolverStateIcon state={resolverBadgeState(status)} />}
       title={
         <span

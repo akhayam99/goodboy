@@ -22,5 +22,8 @@ export const contextUsageSummary = ({ usage }: Params): ContextUsageSummary | nu
     return null;
   }
   const usedTokens = contextTokensForUsage(dominant);
+  if (usedTokens == null) {
+    return null;
+  }
   return { usedTokens, windowTokens, pct: Math.min(1, usedTokens / windowTokens) };
 };

@@ -2,15 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, EmptyState } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import { Plus, SquareTerminal } from 'lucide-react';
-import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
-import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
-import { ScriptDetail } from './ScriptDetail';
-import { ScriptEditor } from './ScriptEditor';
+import { NewScriptCard } from './NewScriptCard';
 import { ScriptRow } from './ScriptRow';
-import type { PanelState, PendingAction } from './types';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -18,15 +14,47 @@ type Props = {
   readonly worktreePath?: string | null;
 };
 
-type TransitionParams = {
-  readonly target: PanelState;
+type NewDraft = {
+  readonly name: string;
+  readonly body: string;
 };
 
-type SaveResult =
+type PendingNewAction = {
+  readonly expandedId: WorkspaceScriptId | null;
+};
+
+type SaveNewResult =
   | { readonly kind: 'failed' }
   | { readonly kind: 'saved'; readonly scriptId: WorkspaceScriptId | null };
 
-const CLOSED_PANEL = { kind: 'closed' } satisfies PanelState;
+type SaveNewParams = Record<never, never>;
+
+type ToggleParams = {
+  readonly id: WorkspaceScriptId;
+};
+
+type CopyParams = {
+  readonly id: WorkspaceScriptId;
+  readonly body: string;
+};
+
+type DeleteParams = {
+  readonly id: WorkspaceScriptId;
+};
+
+type RunParams = {
+  readonly script: WorkspaceScript;
+};
+
+type CancelParams = {
+  readonly id: WorkspaceScriptId;
+};
+
+type SaveExistingParams = {
+  readonly script: WorkspaceScript;
+  readonly name: string;
+  readonly body: string;
+};
 
 export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) => {
   const scripts = useAppStore((state) => state.workspaceScripts[workspaceId]);
@@ -39,31 +67,17 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
     sessionId != null ? state.scriptRuns[sessionId] : undefined,
   );
 
-  const [panelState, setPanelState] = useState<PanelState>(CLOSED_PANEL);
-  const [original, setOriginal] = useState<{ name: string; body: string } | null>(null);
+  const [expandedId, setExpandedId] = useState<WorkspaceScriptId | null>(null);
+  const [newDraft, setNewDraft] = useState<NewDraft | null>(null);
+  const [pendingNewAction, setPendingNewAction] = useState<PendingNewAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<WorkspaceScriptId | null>(null);
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
 
   const runnable = sessionId != null;
   const list = scripts ?? [];
-  const draft = panelState.kind === 'edit' ? panelState.draft : null;
-  const dirty =
-    draft !== null &&
-    original !== null &&
-    (draft.name !== original.name || draft.body !== original.body);
-  const selectedScriptId =
-    panelState.kind === 'detail'
-      ? panelState.scriptId
-      : panelState.kind === 'edit'
-        ? panelState.draft.id
-        : null;
-  const detailScript =
-    panelState.kind === 'detail'
-      ? (list.find((script) => script.id === panelState.scriptId) ?? null)
-      : null;
-  const selectedRun = selectedScriptId !== null ? (runs?.[selectedScriptId] ?? null) : null;
+  const newDraftDirty =
+    newDraft != null && (newDraft.name.trim() !== '' || newDraft.body.trim() !== '');
 
   useEffect(() => {
     void loadScripts(workspaceId);
@@ -85,152 +99,130 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
     });
   }, [runs]);
 
-  const applyTransition = useCallback(({ target }: TransitionParams) => {
-    setPanelState(target);
-    setError(null);
-    if (target.kind === 'edit') {
-      setOriginal({ name: target.draft.name, body: target.draft.body });
-      return;
-    }
-    setOriginal(null);
-  }, []);
-
-  const requestTransition = useCallback(
-    ({ target }: TransitionParams) => {
-      if (dirty) {
-        setPendingAction({ target });
-        return;
+  const saveNew = useCallback(
+    async (_params: SaveNewParams): Promise<SaveNewResult> => {
+      if (newDraft == null) {
+        return { kind: 'failed' };
       }
-      applyTransition({ target });
+      const name = newDraft.name.trim();
+      const body = newDraft.body.trim();
+      if (name === '' || body === '') {
+        setError('name and script body are required');
+        return { kind: 'failed' };
+      }
+
+      const previousIds = new Set(list.map((script) => script.id));
+      setError(null);
+      try {
+        await saveScript({ workspaceId, id: undefined, name, body });
+        const savedScript =
+          useAppStore
+            .getState()
+            .workspaceScripts[workspaceId]?.find((script) => !previousIds.has(script.id)) ?? null;
+        return { kind: 'saved', scriptId: savedScript?.id ?? null };
+      } catch (caughtError) {
+        setError(formatError(caughtError));
+        return { kind: 'failed' };
+      }
     },
-    [applyTransition, dirty],
+    [list, newDraft, saveScript, workspaceId],
   );
 
-  useEffect(() => {
-    if (panelState.kind === 'closed' || pendingAction !== null) {
-      return;
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      requestTransition({ target: CLOSED_PANEL });
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [panelState.kind, pendingAction, requestTransition]);
-
-  const requestOpenNew = useCallback(() => {
-    requestTransition({
-      target: { kind: 'edit', draft: { id: null, name: '', body: '' } },
-    });
-  }, [requestTransition]);
-
-  const requestDetail = useCallback(
-    (script: WorkspaceScript) => {
-      requestTransition({ target: { kind: 'detail', scriptId: script.id } });
-    },
-    [requestTransition],
-  );
-
-  const requestEdit = useCallback(
-    (script: WorkspaceScript) => {
-      requestTransition({
-        target: {
-          kind: 'edit',
-          draft: { id: script.id, name: script.name, body: script.body },
-        },
-      });
-    },
-    [requestTransition],
-  );
-
-  const requestCancelEdit = useCallback(() => {
-    if (panelState.kind !== 'edit') {
-      return;
-    }
-    const target =
-      panelState.draft.id === null
-        ? CLOSED_PANEL
-        : ({ kind: 'detail', scriptId: panelState.draft.id } satisfies PanelState);
-    requestTransition({ target });
-  }, [panelState, requestTransition]);
-
-  const requestClose = useCallback(() => {
-    requestTransition({ target: CLOSED_PANEL });
-  }, [requestTransition]);
-
-  const onSaveDraft = useCallback(async (): Promise<SaveResult> => {
-    if (draft === null) {
-      return { kind: 'failed' };
-    }
-    const name = draft.name.trim();
-    const body = draft.body.trim();
-    if (name === '' || body === '') {
-      setError('name and script body are required');
-      return { kind: 'failed' };
-    }
-    setError(null);
-    const previousIds = new Set(list.map((script) => script.id));
-    try {
-      await saveScript({ workspaceId, id: draft.id ?? undefined, name, body });
-      if (draft.id !== null) {
-        return { kind: 'saved', scriptId: draft.id };
-      }
-      const savedScript =
-        useAppStore
-          .getState()
-          .workspaceScripts[workspaceId]?.find((script) => !previousIds.has(script.id)) ?? null;
-      return { kind: 'saved', scriptId: savedScript?.id ?? null };
-    } catch (caughtError) {
-      setError(formatError(caughtError));
-      return { kind: 'failed' };
-    }
-  }, [draft, list, saveScript, workspaceId]);
-
-  const onEditorSave = useCallback(() => {
+  const onSaveNew = useCallback(() => {
     void (async () => {
-      const result = await onSaveDraft();
+      const result = await saveNew({});
       if (result.kind === 'failed') {
         return;
       }
-      if (result.scriptId === null) {
-        applyTransition({ target: CLOSED_PANEL });
+      setNewDraft(null);
+      setExpandedId(result.scriptId);
+    })();
+  }, [saveNew]);
+
+  const onToggle = useCallback(
+    ({ id }: ToggleParams) => {
+      const target = expandedId === id ? null : id;
+      if (newDraftDirty) {
+        setPendingNewAction({ expandedId: target });
         return;
       }
-      applyTransition({ target: { kind: 'detail', scriptId: result.scriptId } });
-    })();
-  }, [applyTransition, onSaveDraft]);
+      setNewDraft(null);
+      setError(null);
+      setExpandedId(target);
+    },
+    [expandedId, newDraftDirty],
+  );
+
+  const onOpenNew = useCallback(() => {
+    if (newDraft != null) {
+      return;
+    }
+    setExpandedId(null);
+    setError(null);
+    setNewDraft({ name: '', body: '' });
+  }, [newDraft]);
+
+  const onCancelNew = useCallback(() => {
+    if (newDraftDirty) {
+      setPendingNewAction({ expandedId: null });
+      return;
+    }
+    setNewDraft(null);
+    setError(null);
+  }, [newDraftDirty]);
 
   const onDialogCancel = useCallback(() => {
-    setPendingAction(null);
+    setPendingNewAction(null);
   }, []);
 
   const onDialogDiscard = useCallback(() => {
-    const action = pendingAction;
-    setPendingAction(null);
-    if (action === null) {
-      return;
-    }
-    applyTransition({ target: action.target });
-  }, [applyTransition, pendingAction]);
+    const action = pendingNewAction;
+    setPendingNewAction(null);
+    setNewDraft(null);
+    setError(null);
+    setExpandedId(action?.expandedId ?? null);
+  }, [pendingNewAction]);
 
   const onDialogSave = useCallback(() => {
     void (async () => {
-      const result = await onSaveDraft();
+      const result = await saveNew({});
       if (result.kind === 'failed') {
         return;
       }
-      const action = pendingAction;
-      setPendingAction(null);
-      if (action === null) {
+      const action = pendingNewAction;
+      setPendingNewAction(null);
+      setNewDraft(null);
+      setExpandedId(action?.expandedId ?? result.scriptId);
+    })();
+  }, [pendingNewAction, saveNew]);
+
+  const onSaveExisting = useCallback(
+    async ({ script, name, body }: SaveExistingParams) => {
+      const nextName = name.trim();
+      const nextBody = body.trim();
+      if (nextName === '' || nextBody === '') {
+        setError('name and script body are required');
         return;
       }
-      applyTransition({ target: action.target });
-    })();
-  }, [applyTransition, onSaveDraft, pendingAction]);
+      if (nextName === script.name && nextBody === script.body) {
+        return;
+      }
+      setError(null);
+      try {
+        await saveScript({
+          workspaceId,
+          id: script.id,
+          name: nextName,
+          body: nextBody,
+        });
+      } catch (caughtError) {
+        setError(formatError(caughtError));
+      }
+    },
+    [saveScript, workspaceId],
+  );
 
-  const onCopy = useCallback((id: WorkspaceScriptId, body: string) => {
+  const onCopy = useCallback(({ id, body }: CopyParams) => {
     void navigator.clipboard
       .writeText(body)
       .then(() => {
@@ -241,21 +233,19 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
   }, []);
 
   const onDelete = useCallback(
-    async (id: WorkspaceScriptId) => {
+    async ({ id }: DeleteParams) => {
       try {
         await deleteScript(id, workspaceId);
-        if (selectedScriptId === id) {
-          applyTransition({ target: CLOSED_PANEL });
-        }
+        setExpandedId((current) => (current === id ? null : current));
       } catch (caughtError) {
         setError(formatError(caughtError));
       }
     },
-    [applyTransition, deleteScript, selectedScriptId, workspaceId],
+    [deleteScript, workspaceId],
   );
 
   const onRun = useCallback(
-    (script: WorkspaceScript) => {
+    ({ script }: RunParams) => {
       if (sessionId == null || worktreePath == null) {
         return;
       }
@@ -265,7 +255,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
   );
 
   const onCancel = useCallback(
-    (id: WorkspaceScriptId) => {
+    ({ id }: CancelParams) => {
       if (sessionId == null) {
         return;
       }
@@ -281,107 +271,73 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
           Shell scripts you run by hand from inside a session. cwd is the session worktree. Scripts
           are shared across every session of this workspace.
         </p>
-        <Button variant="ghost" size="sm" onClick={requestOpenNew}>
+        <Button variant="ghost" size="sm" onClick={onOpenNew}>
           <Plus size={13} aria-hidden />
           New script
         </Button>
       </div>
 
-      {error !== null && panelState.kind !== 'edit' ? (
-        <p className="text-xs text-danger">{error}</p>
-      ) : null}
+      {error !== null && newDraft === null ? <p className="text-xs text-danger">{error}</p> : null}
 
-      <InspectorSplit
-        open={panelState.kind !== 'closed'}
-        panel={
-          panelState.kind === 'detail' && detailScript !== null ? (
-            <div className="flex min-h-0 flex-1 flex-col">
-              <InspectorHeader
-                title={detailScript.name}
-                closeLabel="Close script panel"
-                onClose={requestClose}
-              />
-              <ScriptDetail
-                script={detailScript}
-                run={selectedRun}
-                completedAt={selectedRun !== null ? completedAt[selectedRun.runId] : undefined}
-                onEdit={() => requestEdit(detailScript)}
-              />
-            </div>
-          ) : panelState.kind === 'edit' ? (
-            <div className="flex min-h-0 flex-1 flex-col">
-              <InspectorHeader
-                title={panelState.draft.id === null ? 'New script' : panelState.draft.name}
-                closeLabel="Close script panel"
-                onClose={requestClose}
-              />
-              <ScriptEditor
-                draft={panelState.draft}
-                dirty={dirty}
-                error={error}
-                run={selectedRun}
-                completedAt={selectedRun !== null ? completedAt[selectedRun.runId] : undefined}
-                onNameChange={(name) =>
-                  setPanelState((current) =>
-                    current.kind === 'edit'
-                      ? { ...current, draft: { ...current.draft, name } }
-                      : current,
-                  )
-                }
-                onBodyChange={(body) =>
-                  setPanelState((current) =>
-                    current.kind === 'edit'
-                      ? { ...current, draft: { ...current.draft, body } }
-                      : current,
-                  )
-                }
-                onSave={onEditorSave}
-                onCancel={requestCancelEdit}
-              />
-            </div>
-          ) : null
-        }
-      >
-        <div className="flex min-h-0 flex-1 flex-col gap-2">
-          {list.length === 0 ? (
-            <EmptyState
-              bordered
-              tone="info"
-              icon={SquareTerminal}
-              title="No scripts yet"
-              description="Create one to run setup or checks from inside this session."
-            />
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {list.map((script) => (
+      <div className="flex min-h-0 flex-1 flex-col gap-2">
+        {newDraft != null ? (
+          <NewScriptCard
+            name={newDraft.name}
+            body={newDraft.body}
+            error={error}
+            onNameChange={(name) =>
+              setNewDraft((current) => (current == null ? null : { ...current, name }))
+            }
+            onBodyChange={(body) =>
+              setNewDraft((current) => (current == null ? null : { ...current, body }))
+            }
+            onSave={onSaveNew}
+            onCancel={onCancelNew}
+          />
+        ) : null}
+        {list.length === 0 && newDraft == null ? (
+          <EmptyState
+            bordered
+            tone="info"
+            icon={SquareTerminal}
+            title="No scripts yet"
+            description="Create one to run setup or checks from inside this session."
+          />
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {list.map((script) => {
+              const run = runs?.[script.id] ?? null;
+              return (
                 <li key={script.id}>
                   <ScriptRow
                     script={script}
-                    run={runs?.[script.id] ?? null}
-                    selected={selectedScriptId === script.id}
+                    run={run}
+                    completedAt={run == null ? undefined : completedAt[run.runId]}
+                    expanded={expandedId === script.id}
                     runnable={runnable}
                     canRun={worktreePath != null}
                     copied={copiedId === script.id}
-                    onSelect={() => requestDetail(script)}
-                    onRun={() => onRun(script)}
-                    onCancel={() => onCancel(script.id)}
-                    onCopy={() => onCopy(script.id, script.body)}
-                    onDelete={() => onDelete(script.id)}
+                    onToggle={() => onToggle({ id: script.id })}
+                    onSave={(name, body) => onSaveExisting({ script, name, body })}
+                    onRun={() => onRun({ script })}
+                    onCancel={() => onCancel({ id: script.id })}
+                    onCopy={() => onCopy({ id: script.id, body: script.body })}
+                    onDelete={() => onDelete({ id: script.id })}
                   />
                 </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </InspectorSplit>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
-      {pendingAction !== null && (
+      {pendingNewAction !== null ? (
         <DiscardDraftConfirm
           onSave={onDialogSave}
           onDiscard={onDialogDiscard}
           onCancel={onDialogCancel}
         />
-      )}
+      ) : null}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { StatusDot, cn } from '@goodboy/ui';
 import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
+import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
 
 type Props = {
   readonly child: Agent;
@@ -23,6 +24,11 @@ export const ClusterChildRow = ({
   onSelect,
 }: Props) => {
   const hasUnread = agentHasUnread(child, isSelected && isTaskActive);
+  const hoverMarkViewed = useHoverMarkViewed({
+    sessionId: child.sessionId,
+    agentId: child.id,
+    hasUnread,
+  });
   const domains = child.domains ?? [];
   const visibleDomains = domains.slice(0, 3);
   const hiddenDomainCount = domains.length - visibleDomains.length;
@@ -42,6 +48,8 @@ export const ClusterChildRow = ({
     <button
       type="button"
       onClick={onSelect}
+      onMouseEnter={hoverMarkViewed.onMouseEnter}
+      onMouseLeave={hoverMarkViewed.onMouseLeave}
       className={cn(
         'flex w-full items-center gap-2 rounded border-l-2 border-transparent px-2 py-1 text-2xs font-medium transition-colors',
         hasUnread && !isSelected && 'border-warning/70 bg-warning/5',

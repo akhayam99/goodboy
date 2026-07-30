@@ -76,21 +76,19 @@ export const AgentMetrics = ({
             aggregate == null ? 'no cost yet' : `$${aggregate.estimatedCostUsd.toFixed(4)} spent`
           }
         />
-        <span aria-hidden className="text-muted-foreground/40">
-          ·
-        </span>
-        {summary == null || pct == null ? (
-          <span className="tabular-nums text-muted-foreground/50" title="no context usage yet">
-            ctx 0%
-          </span>
-        ) : (
-          <span
-            className={cn('tabular-nums', contextUsageTone({ pct: summary.pct, prefix: 'text' }))}
-            title={`context: ${summary.usedTokens.toLocaleString()} / ${summary.windowTokens.toLocaleString()} tokens`}
-          >
-            ctx {pct}%
-          </span>
-        )}
+        {summary != null && pct != null ? (
+          <>
+            <span aria-hidden className="text-muted-foreground/40">
+              ·
+            </span>
+            <span
+              className={cn('tabular-nums', contextUsageTone({ pct: summary.pct, prefix: 'text' }))}
+              title={`context: ${summary.usedTokens.toLocaleString()} / ${summary.windowTokens.toLocaleString()} tokens`}
+            >
+              ctx {pct}%
+            </span>
+          </>
+        ) : null}
         <span aria-hidden className="text-muted-foreground/40">
           ·
         </span>

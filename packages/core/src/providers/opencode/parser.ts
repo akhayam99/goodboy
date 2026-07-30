@@ -97,11 +97,16 @@ type UsageParams = {
 };
 
 const buildUsage = ({ tokens, cost }: UsageParams): ProviderUsage => {
+  const inputTokens = tokens?.input ?? 0;
+  const outputTokens = (tokens?.output ?? 0) + (tokens?.reasoning ?? 0);
+  const cachedInputTokens = tokens?.cache?.read ?? 0;
+  const cacheCreationInputTokens = tokens?.cache?.write ?? 0;
   return {
-    inputTokens: tokens?.input ?? 0,
-    outputTokens: (tokens?.output ?? 0) + (tokens?.reasoning ?? 0),
-    cachedInputTokens: tokens?.cache?.read ?? 0,
-    cacheCreationInputTokens: tokens?.cache?.write ?? 0,
+    inputTokens,
+    outputTokens,
+    cachedInputTokens,
+    cacheCreationInputTokens,
+    contextTokens: inputTokens + outputTokens + cachedInputTokens + cacheCreationInputTokens,
     estimatedCostUsd: cost ?? 0,
   };
 };

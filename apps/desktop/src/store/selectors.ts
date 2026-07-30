@@ -34,6 +34,8 @@ import {
   sortAndGroupSessions,
   type GroupedSessions,
 } from './slices/session-view';
+import { agentHasUnread } from './slices/agents/agentHasUnread';
+export { agentHasUnread } from './slices/agents/agentHasUnread';
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
@@ -455,25 +457,6 @@ export const useFilesTouched = (
   }, [isActive, workingDir, lastTurnFinishedAt, summarizerLastUpdate]);
 
   return state;
-};
-
-export const agentHasUnread = (agent: Agent, isCurrentlyViewed: boolean): boolean => {
-  if (agent.doneAt != null) {
-    return false;
-  }
-  if (isCurrentlyViewed) {
-    return false;
-  }
-  if (agent.status === 'skipped') {
-    return false;
-  }
-  if (!agent.lastFinishedAt) {
-    return false;
-  }
-  if (!agent.lastViewedAt) {
-    return true;
-  }
-  return agent.lastFinishedAt > agent.lastViewedAt;
 };
 
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];

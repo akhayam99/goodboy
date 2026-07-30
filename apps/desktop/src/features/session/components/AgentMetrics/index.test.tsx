@@ -49,6 +49,7 @@ describe('AgentMetrics', () => {
             outputTokens: 10_000,
             cachedInputTokens: 70_000,
             cacheCreationInputTokens: 20_000,
+            contextTokens: 120_000,
           },
         ]}
         turns={4}
@@ -74,6 +75,7 @@ describe('AgentMetrics', () => {
             model: 'claude-sonnet-4-5',
             inputTokens: 1_000_000,
             outputTokens: 0,
+            contextTokens: 1_000_000,
           },
         ]}
         turns={0}
@@ -122,7 +124,7 @@ describe('AgentMetrics', () => {
       />,
     );
     expect(screen.getByText('no model yet')).toBeTruthy();
-    expect(screen.getByText('ctx 0%')).toBeTruthy();
+    expect(screen.queryByText(/ctx /)).toBeNull();
     expect(screen.getByText('0t')).toBeTruthy();
   });
 

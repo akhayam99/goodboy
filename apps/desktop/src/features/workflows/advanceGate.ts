@@ -37,7 +37,7 @@ export const resolveWorkflowAdvance = ({
   if (chain.kind === 'blocked') {
     return { kind: 'blocked', reason: 'failed-step', step };
   }
-  if (isTurnRunning) {
+  if (isTurnRunning || agents.some((agent) => agent.status === 'running')) {
     return { kind: 'blocked', reason: 'turn-running', step };
   }
   return { kind: 'ready', step };

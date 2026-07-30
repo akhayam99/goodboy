@@ -5,43 +5,35 @@ import { invokeAgentMarkViewed } from '../../../features/workflows/workflows';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { EMPTY_LOADING } from '../../session-mutators';
 import type { GetFn, SetFn } from './types';
+import { stampAgentSubtreeViewed } from './stampAgentSubtreeViewed';
 
 export const selectAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     const stampedAt = new Date().toISOString() as IsoDateTime;
     const prevAgentId = get().selectedAgentId[sessionId] ?? null;
-    const stampAgents = new Set<AgentId>([agentId]);
-    if (prevAgentId && prevAgentId !== agentId) {
-      stampAgents.add(prevAgentId);
-    }
-
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
-    const childrenByParentId = new Map<AgentId, AgentId[]>();
-    for (const run of runs) {
-      if (run.parentAgentId) {
-        const list = childrenByParentId.get(run.parentAgentId) ?? [];
-        list.push(run.id);
-        childrenByParentId.set(run.parentAgentId, list);
-      }
-    }
-    const queue: AgentId[] = [agentId];
-    while (queue.length > 0) {
-      const current = queue.shift() as AgentId;
-      for (const childId of childrenByParentId.get(current) ?? []) {
-        if (!stampAgents.has(childId)) {
-          stampAgents.add(childId);
-          queue.push(childId);
-        }
-      }
-    }
+    const additionalAgentIds = prevAgentId != null && prevAgentId !== agentId ? [prevAgentId] : [];
+    const stamp = stampAgentSubtreeViewed({
+      runs,
+      rootAgentId: agentId,
+      stampedAt,
+      additionalAgentIds,
+    });
 
     const markViewed = (): Promise<void> =>
       Promise.all(
-        [...stampAgents].map((id) => invokeAgentMarkViewed(id, stampedAt).catch(() => undefined)),
+        [...stamp.agentIds].map((id) =>
+          invokeAgentMarkViewed(id, stampedAt).catch(() => undefined),
+        ),
       ).then(() => undefined);
 
     const stampRuns = (runs: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
-      runs.map((s) => (stampAgents.has(s.id) ? { ...s, lastViewedAt: stampedAt } : s));
+      stampAgentSubtreeViewed({
+        runs,
+        rootAgentId: agentId,
+        stampedAt,
+        additionalAgentIds,
+      }).runs;
 
     set((state) =>
       workSurfaceFocus({
