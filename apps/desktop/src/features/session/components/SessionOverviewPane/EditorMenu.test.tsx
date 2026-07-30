@@ -22,8 +22,8 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 vi.mock('../../../../shared/components/OverflowMenu', () => ({
-  OverflowMenu: ({ label }: { label: string }) => (
-    <button type="button" aria-label={label}>
+  OverflowMenu: ({ label, triggerClassName }: { label: string; triggerClassName: string }) => (
+    <button type="button" aria-label={label} className={triggerClassName}>
       menu
     </button>
   ),
@@ -44,9 +44,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('EditorMenu', () => {
-  it('renders the open-worktree trigger', () => {
+  it('renders the open-worktree trigger at footer icon weight', () => {
     render(<EditorMenu sessionId={'sess-1' as SessionId} />);
-    expect(screen.getByRole('button', { name: /open worktree/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open worktree/i }).className).toContain('size-6');
   });
 
   it('loads detected editors once when none are known yet', () => {

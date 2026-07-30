@@ -9,7 +9,6 @@ import {
   Pencil,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { FolderGit2 } from 'lucide-react';
 import { Button, cn, Eyebrow, Input, ScrollFade, StatusDot } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId, SessionStage } from '@goodboy/types';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
@@ -44,9 +43,8 @@ import { LinkedWorkSection } from './LinkedWorkSection';
 import { StartRowContent } from './StartRowContent';
 import { StartTileContent } from './StartTileContent';
 import { SummaryRow } from './SummaryRow';
-import { ConnectedIntegrationGlyphs } from './ConnectedIntegrationGlyphs';
-import { EditorMenu } from './EditorMenu';
 import { PrStatusLine } from './PrStatusLine';
+import { SessionShortcuts } from './SessionShortcuts';
 
 type SessionOverviewPaneProps = {
   readonly session: Session;
@@ -106,7 +104,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
   );
   const nonResolverAgents = useNonResolverStandaloneAgents(session.id as SessionId);
   const unreadLens = useSessionUnreadLens(session.id as SessionId);
-  const runningAgents = nonResolverAgents.filter((a) => a.status === 'running').length;
   const resolvable = useResolvableCount(session.id as SessionId);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
@@ -124,7 +121,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
   const hasResolveItems = resolvableItems > 0 || resolveQueueItems > 0;
   const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
   const isFresh = activeWorkflows === 0 && rawStandalone.length === 0;
-  const isRunning = runningAgents > 0 || (activeWorkflows > 0 && stage.stage === 'running');
   const attentionLens = resolveAttentionLens(stage, {
     hasNonResolverStandalone: nonResolverAgents.length > 0,
     hasWorkflow: activeWorkflows > 0,
@@ -241,8 +237,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
                   Mark all seen
                 </Button>
               )}
-              <ConnectedIntegrationGlyphs session={session} onSelectLens={onSelectLens} />
-              <EditorMenu sessionId={session.id as SessionId} />
             </div>
           </div>
           {rename.renaming ? (
@@ -286,12 +280,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
             <p className="text-sm leading-relaxed text-muted-foreground">{stage.reason}</p>
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
-            {workspace ? (
-              <span className="inline-flex min-w-0 shrink items-center gap-1.5 rounded-md border border-border-soft bg-muted/30 px-2 py-1 text-2xs text-foreground/80">
-                <FolderGit2 size={10} aria-hidden className="shrink-0 text-muted-foreground" />
-                <span className="truncate">{workspace.name}</span>
-              </span>
-            ) : null}
             {branch ? (
               <BranchChip
                 branch={branch}
@@ -309,6 +297,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
             </span>
           </div>
         </div>
+
+        <SessionShortcuts session={session} />
 
         {nudges.length > 0 ? (
           <div className="flex flex-col gap-2">
@@ -433,12 +423,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
           freeAgents={runs.completedFreeAgents ?? EMPTY_ARRAY}
           onSelectLens={onSelectLens}
         />
-
-        {!isFresh && nudges.length === 0 && !isRunning ? (
-          <span className="px-0.5 text-2xs text-muted-foreground/70">
-            All clear, nothing running.
-          </span>
-        ) : null}
       </div>
     </ScrollFade>
   );

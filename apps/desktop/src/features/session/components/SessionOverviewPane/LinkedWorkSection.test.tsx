@@ -19,24 +19,12 @@ type Store = {
       } | null;
     }
   >;
-  sessionGitlabMr: Record<
-    string,
-    {
-      mr?: {
-        iid: number;
-        title: string;
-        state: string;
-        draft: boolean;
-      } | null;
-    }
-  >;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
 };
 
 const { store, mocks } = vi.hoisted(() => ({
   store: {
     sessionGithub: {},
-    sessionGitlabMr: {},
     sessionExternalTasks: {},
   } as Store,
   mocks: {
@@ -57,7 +45,6 @@ import { LinkedWorkSection } from './LinkedWorkSection';
 
 beforeEach(() => {
   store.sessionGithub = {};
-  store.sessionGitlabMr = {};
   store.sessionExternalTasks = {};
   mocks.openUrl.mockClear();
 });
@@ -65,46 +52,18 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('LinkedWorkSection', () => {
-  it('renders a pull request with its state and unresolved review count', () => {
+  it('does not duplicate pull requests or merge requests from their dedicated surfaces', () => {
     store.sessionGithub = {
       'sess-1': {
         pr: { number: 42, title: 'Ship linked work', state: 'open' },
-        detail: {
-          comments: [
-            { source: 'review', resolved: false },
-            { source: 'review', resolved: false },
-            { source: 'review', resolved: true },
-            { source: 'issue', resolved: false },
-          ],
-        },
       },
     };
-    const onSelectLens = vi.fn();
 
-    render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={onSelectLens} />);
+    render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByText('#42')).toBeDefined();
-    expect(screen.getByText('Ship linked work')).toBeDefined();
-    expect(screen.getByText('In review · 2 unresolved')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /#42 Ship linked work/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('pr');
-  });
-
-  it('renders a merge request and routes it to the pull request lens', () => {
-    store.sessionGitlabMr = {
-      'sess-1': {
-        mr: { iid: 17, title: 'GitLab work', state: 'opened', draft: true },
-      },
-    };
-    const onSelectLens = vi.fn();
-
-    render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={onSelectLens} />);
-
-    expect(screen.getByText('!17')).toBeDefined();
-    expect(screen.getByText('GitLab work')).toBeDefined();
-    expect(screen.getByText('Draft')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /!17 GitLab work/i }));
-    expect(onSelectLens).toHaveBeenCalledWith('pr');
+    expect(screen.queryByText('#42')).toBeNull();
+    expect(screen.queryByText('Ship linked work')).toBeNull();
+    expect(screen.getByText('No linked issues or tasks yet.')).toBeDefined();
   });
 
   it('renders every linked issue and opens its external URL', () => {
@@ -189,7 +148,7 @@ describe('LinkedWorkSection', () => {
   it('keeps the link hub visible when no linked work exists', () => {
     render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByText('No linked work yet.')).toBeDefined();
+    expect(screen.getByText('No linked issues or tasks yet.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'link work' })).toBeDefined();
   });
 });

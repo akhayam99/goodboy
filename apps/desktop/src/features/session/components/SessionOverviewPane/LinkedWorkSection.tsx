@@ -1,12 +1,11 @@
 import { Bug, GitBranch, GitFork, Link2, ListTodo } from 'lucide-react';
 import { Eyebrow } from '@goodboy/ui';
-import type { PullRequestStateKind, SessionExternalTaskProvider, SessionId } from '@goodboy/types';
+import type { SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
-import { pullRequestMeta } from '../../../github/components/PullRequestChip';
 import { LinkedWorkRow } from './LinkedWorkRow';
 
 type Props = {
@@ -30,34 +29,11 @@ const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
 
 export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
-  const mergeRequest = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr ?? null);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
-  const pullRequest = github?.pr ?? null;
   const linkedIssues = github?.linkedIssues ?? [];
   const orderedExternalTasks = [...externalTasks].sort(
     (left, right) => PROVIDER_ORDER[left.provider] - PROVIDER_ORDER[right.provider],
   );
-  const unresolvedReviewComments =
-    github?.detail?.comments.filter(
-      (comment) => comment.source === 'review' && comment.resolved === false,
-    ).length ?? 0;
-
-  const pullRequestLabel =
-    pullRequest == null
-      ? null
-      : `${pullRequestMeta(pullRequest.state).label}${
-          unresolvedReviewComments > 0 ? ` · ${unresolvedReviewComments} unresolved` : ''
-        }`;
-  const mergeRequestState: PullRequestStateKind | null =
-    mergeRequest == null
-      ? null
-      : mergeRequest.draft
-        ? 'draft'
-        : mergeRequest.state === 'merged'
-          ? 'merged'
-          : mergeRequest.state === 'closed'
-            ? 'closed'
-            : 'open';
   const linkItems: ReadonlyArray<OverflowMenuItem> = [
     {
       kind: 'item',
@@ -81,11 +57,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
       onClick: () => onSelectLens('gitlab_issues'),
     },
   ];
-  const hasLinkedWork =
-    pullRequest != null ||
-    mergeRequest != null ||
-    linkedIssues.length > 0 ||
-    externalTasks.length > 0;
+  const hasLinkedWork = linkedIssues.length > 0 || externalTasks.length > 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -104,28 +76,6 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
         />
       </div>
       <div className="flex flex-col gap-2">
-        {pullRequest != null && pullRequestLabel != null ? (
-          <LinkedWorkRow
-            provider="GitHub"
-            icon={GitBranch}
-            tone="accent"
-            identifier={`#${pullRequest.number}`}
-            title={pullRequest.title}
-            state={pullRequestLabel}
-            onClick={() => onSelectLens('pr')}
-          />
-        ) : null}
-        {mergeRequest != null && mergeRequestState != null ? (
-          <LinkedWorkRow
-            provider="GitLab"
-            icon={GitFork}
-            tone="accent"
-            identifier={`!${mergeRequest.iid}`}
-            title={mergeRequest.title}
-            state={pullRequestMeta(mergeRequestState).label}
-            onClick={() => onSelectLens('pr')}
-          />
-        ) : null}
         {linkedIssues.map((issue) => (
           <LinkedWorkRow
             key={issue.url}
@@ -149,7 +99,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
         ))}
         {!hasLinkedWork ? (
           <p className="rounded-lg bg-muted/20 px-3.5 py-2.5 text-sm text-muted-foreground">
-            No linked work yet.
+            No linked issues or tasks yet.
           </p>
         ) : null}
       </div>
