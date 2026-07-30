@@ -29,24 +29,13 @@ vi.mock(
 );
 
 vi.mock('./WorkflowStepRow', () => ({
-  WorkflowStepRow: ({
-    run,
-    detailContent,
-  }: {
-    readonly run: Agent;
-    readonly detailContent?: React.ReactNode;
-  }) => (
-    <div data-testid={`step-${run.id}`}>
-      {run.name}
-      {detailContent}
-    </div>
+  WorkflowStepRow: ({ run }: { readonly run: Agent }) => (
+    <div data-testid={`step-${run.id}`}>{run.name}</div>
   ),
 }));
 
 vi.mock('./ScoutSubtree', () => ({
-  ScoutSubtree: ({ variant }: { readonly variant?: string }) => (
-    <div data-testid={`scout-subtree-${variant ?? 'sidebar'}`} />
-  ),
+  ScoutSubtree: () => <div data-testid="scout-subtree" />,
 }));
 vi.mock('./ClusterChildRow', () => ({ ClusterChildRow: () => null }));
 vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));

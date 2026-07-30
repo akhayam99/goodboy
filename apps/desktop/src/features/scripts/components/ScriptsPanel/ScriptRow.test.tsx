@@ -45,6 +45,39 @@ describe('ScriptRow', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it('commits the next blur after cancelling an edit with Escape', () => {
+    const onSave = vi.fn();
+    render(
+      <ScriptRow
+        script={script}
+        run={null}
+        completedAt={undefined}
+        expanded
+        runnable
+        canRun
+        copied={false}
+        onToggle={vi.fn()}
+        onSave={onSave}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'echo hi' }));
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Edit setup command' }), {
+      key: 'Escape',
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'echo hi' }));
+    const textarea = screen.getByRole('textbox', { name: 'Edit setup command' });
+    fireEvent.change(textarea, { target: { value: 'echo next' } });
+    fireEvent.blur(textarea);
+
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onSave).toHaveBeenCalledWith('setup', 'echo next');
+  });
+
   it('keeps run, copy, edit, and overflow controls together in the header', () => {
     render(
       <ScriptRow

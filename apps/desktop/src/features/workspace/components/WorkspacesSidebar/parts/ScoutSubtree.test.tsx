@@ -43,7 +43,6 @@ function renderTree(
     expanded?: boolean;
     selectedAgentId?: AgentId | null;
     isTaskActive?: boolean;
-    variant?: 'sidebar' | 'detail';
   } = {},
 ) {
   const expandState = new Map<string, boolean>([[CONTAINER, opts.expanded ?? false]]);
@@ -58,7 +57,6 @@ function renderTree(
       expandState={expandState}
       onToggle={vi.fn()}
       onSelect={vi.fn()}
-      variant={opts.variant}
     />,
   );
 }
@@ -175,7 +173,7 @@ describe('ScoutSubtree unread badge', () => {
     expect(screen.queryByTitle(/scout repl/)).toBeNull();
   });
 
-  it('uses a flat Runs disclosure at the detail root', () => {
+  it('uses the sidebar disclosure layout', () => {
     const map = new Map<string, Agent[]>([
       [
         CONTAINER,
@@ -185,10 +183,12 @@ describe('ScoutSubtree unread badge', () => {
         ],
       ],
     ]);
-    const { container } = renderTree(map, { variant: 'detail' });
+    const { container } = renderTree(map);
 
-    expect(screen.getByRole('button', { name: 'expand runs' }).textContent).toContain('Runs (1/2)');
-    expect(container?.querySelector('.ml-3')).toBeNull();
-    expect(container?.querySelector('.border-l')).toBeNull();
+    expect(screen.getByRole('button', { name: 'expand scouts' }).textContent).toContain(
+      'scouts 1/2',
+    );
+    expect(container.querySelector('.ml-3')).not.toBeNull();
+    expect(container.querySelector('.border-l')).not.toBeNull();
   });
 });

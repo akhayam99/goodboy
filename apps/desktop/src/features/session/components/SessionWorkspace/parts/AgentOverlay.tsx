@@ -1,5 +1,5 @@
 import { ResizeHandle } from '@goodboy/ui';
-import type { AgentId, Session, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { ChatView } from '../../../../chat/components/ChatView';
 import type { AgentHomeLens } from '../../../agent-kind';
 import { AgentInspector } from '../../AgentInspector';
@@ -7,6 +7,8 @@ import { agentOverlayHeader } from './agentOverlayHeader';
 import { useColumnWidth } from '../../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
 import { WorkflowStepInspector } from '../../../../workflows/components/WorkflowStepInspector';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { isWorkflowStepAgent } from '../../../../workflows/isWorkflowStepAgent';
 
 type Props = {
   readonly session: Session;
@@ -34,6 +36,16 @@ export const AgentOverlay = ({
   onOpenWorkflow,
 }: Props) => {
   const [inspectorWidth, setInspectorWidth] = useColumnWidth(STORAGE_KEYS.inspectorPanelWidth, 320);
+  const selectedAgent = useAppStore(
+    (state) =>
+      (state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>)).find(
+        (agent) => agent.id === selectedAgentId,
+      ) ?? null,
+  );
+  const showWorkflowStepInspector =
+    overlayHome === 'workflows' &&
+    selectedAgent !== null &&
+    isWorkflowStepAgent({ agent: selectedAgent });
   const header = agentOverlayHeader({
     session,
     sessionId,
@@ -82,7 +94,7 @@ export const AgentOverlay = ({
           </div>
         </>
       ) : null}
-      {overlayHome === 'workflows' && selectedAgentId !== null ? (
+      {showWorkflowStepInspector && selectedAgentId !== null ? (
         <>
           <ResizeHandle
             value={inspectorWidth}

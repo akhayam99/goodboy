@@ -12,6 +12,7 @@ import { CostsSection } from '../../../session/components/AgentInspector/CostsSe
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { useAttachedWorkflowRuns } from '../../useAttachedWorkflowRuns';
+import { isWorkflowStepAgent } from '../../isWorkflowStepAgent';
 
 type Props = {
   readonly session: Session;
@@ -35,7 +36,7 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
   const attachedRuns = useAttachedWorkflowRuns({ session });
   const metrics = useAgentMetrics({ sessionId: session.id });
 
-  if (agent == null || agent.workflowRunId == null || agent.stepId == null) {
+  if (agent == null || !isWorkflowStepAgent({ agent })) {
     return null;
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Copy, Pencil, Play, Square, Trash2 } from 'lucide-react';
 import { InlineConfirm, Textarea, cn } from '@goodboy/ui';
 import type { WorkspaceScript } from '@goodboy/types';
@@ -64,7 +64,6 @@ export const ScriptRow = ({
   const [nameDraft, setNameDraft] = useState(script.name);
   const [bodyDraft, setBodyDraft] = useState(script.body);
   const [isDeleteArmed, setIsDeleteArmed] = useState(false);
-  const isCancellingRef = useRef(false);
   const status = run?.status ?? 'idle';
   const presentation = SCRIPT_RUN_PRESENTATION[status];
   const preview = extractPreviewLine({ body: script.body });
@@ -89,13 +88,14 @@ export const ScriptRow = ({
   };
 
   const commit = ({ field }: EditParams) => {
-    if (isCancellingRef.current) {
-      isCancellingRef.current = false;
-      return;
-    }
     const name = nameDraft.trim();
     const body = bodyDraft.trim();
     setEditingField(null);
+    const draft = field === 'name' ? name : body;
+    const value = field === 'name' ? script.name : script.body;
+    if (draft === value) {
+      return;
+    }
     if (name === '' || body === '') {
       setNameDraft(script.name);
       setBodyDraft(script.body);
@@ -105,7 +105,6 @@ export const ScriptRow = ({
   };
 
   const cancelEditing = ({ field }: EditParams) => {
-    isCancellingRef.current = true;
     if (field === 'name') {
       setNameDraft(script.name);
     }

@@ -239,6 +239,23 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('separator', { name: 'resize agent inspector' })).toBeNull();
   });
 
+  it('keeps workflow chat full-width when an ad-hoc agent is selected', () => {
+    const adHocAgent = {
+      ...selectedAgent,
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    store.activeLens = { [SESSION_ID]: 'workflows' };
+    store.selectedAgentId = { [SESSION_ID]: adHocAgent.id };
+    store.sessionPhaseRuns = { [SESSION_ID]: [adHocAgent] };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('chat-view')).toBeDefined();
+    expect(screen.queryByTestId('workflow-step-inspector')).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'resize workflow step inspector' })).toBeNull();
+  });
+
   it('hides the workflow breadcrumb for a standalone resolver', () => {
     const standaloneResolver = {
       ...selectedAgent,

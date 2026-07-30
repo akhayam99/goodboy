@@ -388,7 +388,6 @@ export const WorkflowRow = ({
                       run={run}
                       kind={kind}
                       index={index}
-                      step={step}
                       resolvedModel={resolvedModel}
                       isActionable={isActionable}
                       blockReason={isActionable ? wfBlockReason : null}
