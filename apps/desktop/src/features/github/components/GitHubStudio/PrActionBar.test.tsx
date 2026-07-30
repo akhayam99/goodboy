@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { PullRequestState, SessionId } from '@goodboy/types';
+import type { PullRequestState } from '@goodboy/types';
 import type { ActionBusy } from './PrActionBar';
 
 type Params = {
@@ -24,10 +24,6 @@ const PR = {
   updatedAt: '2026-07-30T10:00:00Z',
 } satisfies PullRequestState;
 
-vi.mock('../../../../shared/components/OpenSessionButton', () => ({
-  OpenSessionButton: () => <button type="button">Open session</button>,
-}));
-
 import { PrActionBar } from './PrActionBar';
 
 const renderActionBar = ({
@@ -38,10 +34,7 @@ const renderActionBar = ({
   render(
     <PrActionBar
       pr={PR}
-      sessionId={'session-1' as SessionId}
-      onOpenSession={vi.fn()}
       busy={busy}
-      detailLoading={false}
       canMerge={canMerge}
       mergeReason={canMerge ? 'squash merge this PR' : 'PR has conflicts, resolve them first'}
       onMarkReady={vi.fn()}
@@ -50,8 +43,6 @@ const renderActionBar = ({
       onReopen={vi.fn()}
       onCreateNew={vi.fn()}
       onMerge={onMerge}
-      onOpenGithub={vi.fn()}
-      onRefresh={vi.fn()}
     />,
   );
 

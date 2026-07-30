@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { PrDetail, PullRequestState, SessionId, WorkspaceId } from '@goodboy/types';
 
 type Store = {
@@ -190,12 +190,25 @@ describe('PrDetailPanel', () => {
     expect(screen.getByDisplayValue(h.pr.title).tagName).toBe('INPUT');
   });
 
-  it('switches the active section body', () => {
+  it('switches the active section body through the tablist', () => {
     renderPanel();
 
+    const tablist = screen.getByRole('tablist', { name: 'Pull request sections' });
+    expect(
+      within(tablist)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent),
+    ).toEqual(['Overview', 'Conversation', 'Resolve', 'Checks']);
+    expect(
+      within(tablist).getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected'),
+    ).toBe('true');
     expect(screen.getByText(h.pr.body)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Conversation' }));
 
+    fireEvent.click(within(tablist).getByRole('tab', { name: 'Conversation' }));
+
+    expect(
+      within(tablist).getByRole('tab', { name: 'Conversation' }).getAttribute('aria-selected'),
+    ).toBe('true');
     expect(screen.queryByText(h.pr.body)).toBeNull();
     expect(screen.getByText('Conversation body')).toBeDefined();
   });

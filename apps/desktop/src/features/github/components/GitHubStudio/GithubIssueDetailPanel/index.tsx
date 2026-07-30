@@ -1,5 +1,5 @@
 import { Divider, EmptyState, Markdown } from '@goodboy/ui';
-import { ExternalLink, MousePointerClick } from 'lucide-react';
+import { MousePointerClick } from 'lucide-react';
 import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
@@ -7,6 +7,8 @@ import {
   MetaItem,
   StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
+import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
+import { OpenExternalLink } from '../../../../../shared/components/OpenExternalLink';
 import { formatRelativeDuration } from '../../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../../../goal-from-issue';
@@ -61,22 +63,11 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                 #{issue.number}
               </span>
-              <span className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
-                {issue.state.toLowerCase()}
-              </span>
+              <IssueStateBadge>{issue.state.toLowerCase()}</IssueStateBadge>
             </>
           }
           title={issue.title}
-          actions={
-            <a
-              href={issue.url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Open in GitHub <ExternalLink size={11} aria-hidden />
-            </a>
-          }
+          actions={<OpenExternalLink url={issue.url} label="Open in GitHub" />}
         />
       }
       rail={
