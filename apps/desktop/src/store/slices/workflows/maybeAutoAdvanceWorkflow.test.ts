@@ -80,6 +80,7 @@ const makeSession = (): Session => ({
       currentStep: 0,
       autoRun: true,
       triggerMode: 'immediate',
+      executionMode: 'static',
     },
   ],
   autoRun: true,
@@ -98,6 +99,7 @@ const baseState = (stepIds: ReadonlyArray<string>, agents: ReadonlyArray<Agent>)
   budgetAlerts: [],
   startWorkflowRun: vi.fn(async () => undefined),
   activateWorkflowAgent: vi.fn(async () => undefined),
+  orchestrateNextStep: vi.fn(async () => undefined),
   emitNotification: vi.fn(async () => undefined),
 });
 
@@ -114,6 +116,7 @@ const harness = (state: StoreState) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  listOpenQuestionsSpy.mockResolvedValue([]);
 });
 
 describe('maybeAutoAdvanceWorkflow', () => {
@@ -221,5 +224,132 @@ describe('maybeAutoAdvanceWorkflow', () => {
     state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
     await advance(SESSION_ID);
     expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(SESSION_ID, `${RUN_ID}-s0`);
+  });
+
+  it('orchestrates a dynamic run when no pending agent exists', async () => {
+    const state = baseState([], []);
+    const session = (state['sessions'] as ReadonlyArray<Session>)[0]!;
+    state['sessions'] = [
+      {
+        ...session,
+        workflowRuns: session.workflowRuns.map((run) => ({
+          ...run,
+          executionMode: 'dynamic' as const,
+        })),
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('does not orchestrate a dynamic run with a persisted terminal outcome', async () => {
+    const state = baseState([], []);
+    const session = (state['sessions'] as ReadonlyArray<Session>)[0]!;
+    state['sessions'] = [
+      {
+        ...session,
+        workflowRuns: session.workflowRuns.map((run) => ({
+          ...run,
+          executionMode: 'dynamic' as const,
+          orchestrationOutcome: 'done' as const,
+        })),
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+  });
+
+  it('starts a chained run only after the dynamic predecessor persists done', async () => {
+    const CHAINED_ID = 'run-2' as WorkflowRunId;
+    const chained: WorkflowRun = {
+      id: CHAINED_ID,
+      workflowId: WF_ID,
+      ordinal: 1,
+      currentStep: 0,
+      autoRun: true,
+      triggerMode: 'after_run',
+      executionMode: 'static',
+      chainAfterId: RUN_ID,
+    };
+    const session = makeSession();
+    const dynamicPredecessor = (outcome?: 'done' | 'blocked'): WorkflowRun => ({
+      ...session.workflowRuns[0]!,
+      executionMode: 'dynamic',
+      ...(outcome != null && { orchestrationOutcome: outcome }),
+    });
+    const state = baseState([], []);
+    state['sessions'] = [{ ...session, workflowRuns: [dynamicPredecessor(), chained] }];
+    const { set, get } = harness(state);
+    const advance = maybeAutoAdvanceWorkflow(set, get);
+
+    await advance(SESSION_ID);
+    expect(state['startWorkflowRun']).not.toHaveBeenCalled();
+
+    state['sessions'] = [{ ...session, workflowRuns: [dynamicPredecessor('done'), chained] }];
+    await advance(SESSION_ID);
+    expect(state['startWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, CHAINED_ID);
+  });
+
+  it('does not orchestrate while a dynamic step is still running', async () => {
+    const state = baseState(['s0'], [makeAgent('s0', 'running', 0)]);
+    const session = (state['sessions'] as ReadonlyArray<Session>)[0]!;
+    state['sessions'] = [
+      {
+        ...session,
+        workflowRuns: session.workflowRuns.map((run) => ({
+          ...run,
+          executionMode: 'dynamic' as const,
+        })),
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+  });
+
+  it('keeps dynamic orchestration behind summarizer, question, and budget gates', async () => {
+    const state = baseState([], []);
+    const session = (state['sessions'] as ReadonlyArray<Session>)[0]!;
+    state['sessions'] = [
+      {
+        ...session,
+        workflowRuns: session.workflowRuns.map((run) => ({
+          ...run,
+          executionMode: 'dynamic' as const,
+        })),
+      },
+    ];
+    const { set, get } = harness(state);
+    const advance = maybeAutoAdvanceWorkflow(set, get);
+
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    await advance(SESSION_ID);
+    state['summarizerStatus'] = {};
+    state['budgetAlerts'] = [{ kind: 'provider-exceeded' }];
+    await advance(SESSION_ID);
+    state['budgetAlerts'] = [];
+    listOpenQuestionsSpy.mockResolvedValue([
+      {
+        id: 'question-1',
+        sessionId: SESSION_ID,
+        workflowRunId: RUN_ID,
+        text: 'Which path?',
+        suggestedAnswers: [],
+        userAnswer: null,
+        status: 'open',
+        createdAt: NOW,
+      },
+    ] as never);
+    await advance(SESSION_ID);
+
+    expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
   });
 });

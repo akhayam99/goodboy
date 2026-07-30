@@ -15,6 +15,7 @@ import {
   listWorkflowsForSession,
   updateSessionWorkflowTriggerMode,
   updateWorkflowOrder,
+  updateWorkflowRunOrchestrationOutcome,
 } from './session-workflow';
 
 const workspaceId = 'ws-1' as WorkspaceId;
@@ -77,6 +78,23 @@ describe('session_workflows trigger-mode queries', () => {
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.triggerMode).toBe('manual');
       expect(runs[0]!.autoRun).toBe(false);
+    });
+
+    it('persists dynamic execution mode', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        true,
+        NOW,
+        undefined,
+        'immediate',
+        undefined,
+        'dynamic',
+      );
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.executionMode).toBe('dynamic');
     });
 
     it('persists after_run mode with chain_after_run_id round-trip', async () => {
@@ -253,6 +271,83 @@ describe('session_workflows trigger-mode queries', () => {
       );
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs.map((r) => r.goal)).toEqual(['second goal', 'first goal']);
+    });
+  });
+
+  describe('updateWorkflowRunOrchestrationOutcome', () => {
+    it('attaches with a null outcome by default', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        true,
+        NOW,
+        undefined,
+        'immediate',
+        undefined,
+        'dynamic',
+      );
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.orchestrationOutcome).toBeUndefined();
+    });
+
+    it('round-trips done and blocked outcomes', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        true,
+        NOW,
+        undefined,
+        'immediate',
+        undefined,
+        'dynamic',
+      );
+      await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done');
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationOutcome).toBe('done');
+      await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'blocked');
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationOutcome).toBe(
+        'blocked',
+      );
+      await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, null);
+      expect(
+        (await listWorkflowsForSession(db, sessionId))[0]!.orchestrationOutcome,
+      ).toBeUndefined();
+    });
+
+    it('keeps the outcome when runs are reordered', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        true,
+        NOW,
+        undefined,
+        'immediate',
+        undefined,
+        'dynamic',
+      );
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-2' as WorkflowRunId,
+        workflowId2,
+        true,
+        NOW,
+      );
+      await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done');
+      await updateWorkflowOrder(
+        db,
+        sessionId,
+        ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
+        NOW,
+      );
+      const runs = await listWorkflowsForSession(db, sessionId);
+      const first = runs.find((r) => r.id === ('run-1' as WorkflowRunId));
+      expect(first!.orchestrationOutcome).toBe('done');
     });
   });
 

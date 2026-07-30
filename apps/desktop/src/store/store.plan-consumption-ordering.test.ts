@@ -278,6 +278,7 @@ function makeSession(): Session {
         currentStep: 0,
         autoRun: true,
         triggerMode: 'immediate' as const,
+        executionMode: 'static' as const,
       },
     ],
     createdAt: NOW,

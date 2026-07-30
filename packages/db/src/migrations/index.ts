@@ -88,6 +88,7 @@ import { m087AgentProviderSessionProvider } from './m087-agent-provider-session-
 import { m088PendingResolutionReply } from './m088-pending-resolution-reply';
 import { m089TelemetryCacheTokens } from './m089-telemetry-cache-tokens';
 import { m090TelemetryContextTokens } from './m090-telemetry-context-tokens';
+import { m091WorkflowExecutionMode } from './m091-workflow-execution-mode';
 
 export type Migration = {
   readonly version: number;
@@ -185,4 +186,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 88, sql: m088PendingResolutionReply },
   { version: 89, sql: m089TelemetryCacheTokens },
   { version: 90, sql: m090TelemetryContextTokens },
+  { version: 91, sql: m091WorkflowExecutionMode },
 ];

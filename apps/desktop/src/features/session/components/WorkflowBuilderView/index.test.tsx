@@ -364,6 +364,59 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
   });
 });
 
+describe('WorkflowBuilderView (orchestrated mode)', () => {
+  it('gates on process text and starts a zero-step dynamic workflow', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+
+    expect(screen.queryByRole('button', { name: /generate plan/i })).toBeNull();
+    expect(continueBtn().disabled).toBe(true);
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    expect(continueBtn().disabled).toBe(false);
+    fireEvent.click(continueBtn());
+
+    expect(screen.getByText(/steps are decided at runtime/i)).toBeDefined();
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const saved = mockSavePhaseTemplate.mock.calls[0]![0];
+    expect(saved.processText).toBe('Inspect each result and stop after tests pass.');
+    expect(saved.steps).toEqual([]);
+    expect(mockPlan).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
+        autoRun: true,
+        goal: 'test goal',
+        executionMode: 'dynamic',
+      }),
+    );
+  });
+
+  it('defaults auto-run to on for dynamic runs while letting the user disable it', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    fireEvent.click(continueBtn());
+
+    const autoRunSwitch = screen.getByRole('switch', { name: /auto-run/i });
+    expect(autoRunSwitch.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(autoRunSwitch);
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.objectContaining({ autoRun: false, executionMode: 'dynamic' }),
+    );
+  });
+});
+
 describe('WorkflowBuilderView (preset mode)', () => {
   it('defaults to preset mode when presets exist and starts the picked preset with the goal', async () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };

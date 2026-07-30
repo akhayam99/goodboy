@@ -38,6 +38,8 @@ export type {
   WorkspaceKind,
   WorkspaceMember,
   WorkflowRun,
+  WorkflowExecutionMode,
+  WorkflowOrchestrationOutcome,
   WorkflowTriggerMode,
   WorkspaceIntegration,
   WorkspaceIntegrationConfig,

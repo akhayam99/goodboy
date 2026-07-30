@@ -241,7 +241,7 @@ function reset() {
     sessionWorkflows: {},
     discardWorkflow: vi.fn(),
     detachWorkflowFromSession: h.detachWorkflowFromSession,
-    forceAdvanceWorkflowStep: vi.fn(),
+    skipStuckStepAndAdvance: vi.fn(),
     reorderSessionWorkflows: vi.fn(),
     setWorkflowRunAutoRun: vi.fn(),
     startWorkflowRun: vi.fn(),

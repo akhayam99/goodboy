@@ -49,6 +49,14 @@ export type TranscriptItem =
       at: string;
     }
   | {
+      kind: 'orchestrator_decision';
+      key: string;
+      action: 'next' | 'done' | 'blocked';
+      reason: string;
+      stepName?: string;
+      at: IsoDateTime;
+    }
+  | {
       kind: 'workflow_kickoff';
       key: string;
       goal: string;
@@ -233,6 +241,16 @@ export const reduceTranscript = (
           carryForwardContext: event.carryForwardContext,
           degraded: event.degraded,
           durationMs: event.durationMs,
+          at: event.at,
+        });
+        break;
+      case 'orchestrator_decision':
+        items.push({
+          kind: 'orchestrator_decision',
+          key: `orchestrator-${i}`,
+          action: event.action,
+          reason: event.reason,
+          ...(event.stepName != null && { stepName: event.stepName }),
           at: event.at,
         });
         break;

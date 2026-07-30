@@ -32,6 +32,7 @@ import type {
   WorkflowId,
   WorkflowRunId,
   WorkflowTriggerMode,
+  WorkflowExecutionMode,
   ProviderId,
   ProviderCredential,
   CredentialId,
@@ -239,6 +240,8 @@ export type AppActions = {
       goal?: string;
       triggerMode?: WorkflowTriggerMode;
       chainAfterId?: WorkflowRunId;
+      attachmentInputs?: ReadonlyArray<AttachmentInput>;
+      executionMode?: WorkflowExecutionMode;
     },
   ): Promise<void>;
   detachWorkflowFromSession(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
@@ -267,9 +270,14 @@ export type AppActions = {
     opts?: { readonly force?: boolean },
   ): Promise<{ readonly shouldAutoAdvance: boolean }>;
   advanceScoutTree(sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void>;
-  forceAdvanceWorkflowStep(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  skipStuckStepAndAdvance(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
+  skipStuckStepAndAdvance(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    options?: { readonly onlyWhenBlocked?: boolean },
+  ): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
+  orchestrateNextStep(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
+  retryWorkflowOrchestration(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
   appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;

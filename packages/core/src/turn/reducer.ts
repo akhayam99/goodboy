@@ -80,6 +80,7 @@ function applyTurnEvent(state: TurnState, turn: TurnEvent): TurnState {
     case 'usage':
     case 'skill_invocation':
     case 'step_transition':
+    case 'orchestrator_decision':
     case 'permission_decision':
     case 'unknown_payload':
     case 'provider_session_init':

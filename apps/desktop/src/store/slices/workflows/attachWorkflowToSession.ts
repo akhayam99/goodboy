@@ -5,21 +5,16 @@ import type {
   ProviderId,
   SessionId,
   WorkflowId,
+  WorkflowExecutionMode,
   WorkflowRun,
   WorkflowRunId,
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
-import {
-  isWorkflowComplete,
-  recommendedModelForRole,
-  resolveModelForProvider,
-  runsForWorkflowRun,
-} from '@goodboy/core';
+import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { invokeAgentInsert } from '../../../features/workflows/workflows';
-import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import type { GetFn, SetFn } from './types';
 
 type Options = {
@@ -28,6 +23,7 @@ type Options = {
   triggerMode?: WorkflowTriggerMode;
   chainAfterId?: WorkflowRunId;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
+  executionMode?: WorkflowExecutionMode;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -45,6 +41,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
 
     const workflowRunId = crypto.randomUUID() as WorkflowRunId;
     const autoRun = options?.autoRun ?? session.autoRun;
+    const executionMode = options?.executionMode ?? 'static';
     const goal = options?.goal?.trim() || undefined;
     const chainAfterId = options?.chainAfterId;
     let triggerMode: WorkflowTriggerMode = options?.triggerMode ?? 'immediate';
@@ -58,7 +55,11 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
           get().sessionPhaseRuns[sessionId] ?? [],
           chainAfterId,
         );
-        if (isWorkflowComplete(predTemplate, predAgents)) {
+        const predecessorComplete =
+          predecessor.executionMode === 'dynamic'
+            ? predecessor.orchestrationOutcome === 'done'
+            : isWorkflowComplete(predTemplate, predAgents);
+        if (predecessorComplete) {
           triggerMode = 'immediate';
         }
       }
@@ -75,49 +76,32 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       goal,
       triggerMode,
       chainAfterId,
+      executionMode,
     );
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
     const baseOrdinal = existingRuns.reduce((max, r) => Math.max(max, r.ordinal), -1);
-    const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
     const sessionDefaultProvider = (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId;
     const roleModels = roleModelsForSession({ state: get(), sessionId });
-    const newAgents: Agent[] = [];
-    const agentModelOverrides: Record<string, string> = {};
-    const agentKindOverrides: Record<string, string> = {};
-    const agentProviderOverrides: Record<string, ProviderId> = {};
-    const agentEffortOverrides: Record<string, string> = {};
-    for (let i = 0; i < sortedSteps.length; i += 1) {
-      const step = sortedSteps[i]!;
-      const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
-      const agent = await invokeAgentInsert({
-        sessionId,
-        stepId: step.id,
-        workflowRunId,
-        ordinal: baseOrdinal + 1 + i,
-        name: step.name,
-        status: 'pending',
-        kind,
-      });
-      const resolvedProvider = step.providerOverride ?? sessionDefaultProvider;
-      agentProviderOverrides[agent.id] = resolvedProvider;
-      agentModelOverrides[agent.id] = resolveModelForProvider({
-        provider: resolvedProvider,
-        modelId:
-          step.modelOverride ??
-          recommendedModelForRole({
-            role: step.role ?? 'custom',
-            provider: resolvedProvider,
-            prefs: roleModels,
-          }),
-      });
-      agentKindOverrides[agent.id] = kind;
-      if (step.effort) {
-        agentEffortOverrides[agent.id] = step.effort;
-      }
-      newAgents.push(agent);
-    }
+    const spawned =
+      executionMode === 'dynamic'
+        ? {
+            agents: [] as ReadonlyArray<Agent>,
+            modelOverrides: {},
+            kindOverrides: {},
+            providerOverrides: {},
+            effortOverrides: {},
+          }
+        : await preSpawnWorkflowAgents({
+            sessionId,
+            workflowRunId,
+            steps: template.steps,
+            baseOrdinal: baseOrdinal + 1,
+            defaultProvider: sessionDefaultProvider,
+            roleModels,
+          });
+    const newAgents = spawned.agents;
 
     const newRun: WorkflowRun = {
       id: workflowRunId,
@@ -126,6 +110,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       currentStep: 0,
       autoRun,
       triggerMode,
+      executionMode,
       ...(chainAfterId && { chainAfterId }),
       ...(goal && { goal }),
     };
@@ -155,10 +140,10 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       },
       transcripts: { ...state.transcripts, ...transcriptEntries },
       agentTurnState: { ...state.agentTurnState, ...turnStateEntries },
-      agentModelOverride: { ...state.agentModelOverride, ...agentModelOverrides },
-      agentKindOverride: { ...state.agentKindOverride, ...agentKindOverrides },
-      agentProviderOverride: { ...state.agentProviderOverride, ...agentProviderOverrides },
-      agentEffortOverride: { ...state.agentEffortOverride, ...agentEffortOverrides },
+      agentModelOverride: { ...state.agentModelOverride, ...spawned.modelOverrides },
+      agentKindOverride: { ...state.agentKindOverride, ...spawned.kindOverrides },
+      agentProviderOverride: { ...state.agentProviderOverride, ...spawned.providerOverrides },
+      agentEffortOverride: { ...state.agentEffortOverride, ...spawned.effortOverrides },
     }));
 
     const attachmentInputs = options?.attachmentInputs;
@@ -169,7 +154,11 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     void get().reprocessGoalForWorkflow(sessionId);
 
     if (triggerMode === 'immediate') {
-      if (autoRun) {
+      if (executionMode === 'dynamic' && autoRun) {
+        void get().maybeAutoAdvanceWorkflow(sessionId);
+      } else if (executionMode === 'dynamic') {
+        void get().orchestrateNextStep(sessionId, workflowRunId);
+      } else if (autoRun) {
         void get().maybeAutoAdvanceWorkflow(sessionId);
       } else if (newAgents.length > 0) {
         void get().activateWorkflowAgent(sessionId, newAgents[0]!.id);

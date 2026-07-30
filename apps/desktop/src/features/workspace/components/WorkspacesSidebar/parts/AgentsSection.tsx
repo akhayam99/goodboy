@@ -111,7 +111,7 @@ export const AgentsSection = ({
                 onRenameCommit={section.onRenameCommit}
                 onResolveFirstForRun={section.onResolveFirstForRun}
                 toggleClusterExpand={section.toggleClusterExpand}
-                forceAdvanceWorkflowStep={section.forceAdvanceWorkflowStep}
+                skipStuckStepAndAdvance={section.skipStuckStepAndAdvance}
               />
             ))}
           </div>

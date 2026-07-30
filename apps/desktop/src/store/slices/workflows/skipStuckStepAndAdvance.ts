@@ -6,7 +6,11 @@ import type { GetFn, SetFn } from './types';
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void> => {
+  return async (
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    options?: { readonly onlyWhenBlocked?: boolean },
+  ): Promise<void> => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) {
       return;
@@ -23,6 +27,9 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
     const runs = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
     const chain = classifyWorkflowChain(template, runs);
     if (chain.kind === 'complete') {
+      return;
+    }
+    if (options?.onlyWhenBlocked === true && chain.kind !== 'blocked') {
       return;
     }
     const stuckStep = chain.kind === 'blocked' ? chain.failedStep : chain.step;

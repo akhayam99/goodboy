@@ -73,6 +73,7 @@ const session: Session = {
       currentStep: 0,
       autoRun: true,
       triggerMode: 'immediate',
+      executionMode: 'static',
     },
   ],
   autoRun: true,

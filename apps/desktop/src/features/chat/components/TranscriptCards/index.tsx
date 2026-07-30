@@ -4,6 +4,7 @@ import type { TranscriptItem } from '../../utils/transcript-items';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
+import { OrchestratorDecisionCard } from '../OrchestratorDecisionCard';
 import { WorkflowKickoffCard } from '../WorkflowKickoffCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
@@ -79,6 +80,8 @@ function TranscriptCardImpl({
       return <SkillInvocationCard item={item} />;
     case 'step_transition':
       return <PhaseTransitionCard item={item} />;
+    case 'orchestrator_decision':
+      return <OrchestratorDecisionCard item={item} />;
     case 'workflow_kickoff':
       return <WorkflowKickoffCard item={item} />;
     case 'oq_answer':

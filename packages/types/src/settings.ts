@@ -11,6 +11,7 @@ export type AuxTaskId =
   | 'branch_naming'
   | 'plan_generation'
   | 'agent_naming'
+  | 'workflow_orchestrator'
   | 'pr_draft'
   | 'rebase';
 

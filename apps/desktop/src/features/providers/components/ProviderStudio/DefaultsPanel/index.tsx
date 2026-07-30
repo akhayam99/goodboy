@@ -54,6 +54,11 @@ const TASKS: ReadonlyArray<{
     help: 'Names agents from your first request',
   },
   {
+    id: 'workflow_orchestrator',
+    label: 'Workflow orchestrator',
+    help: 'Decides the next step of a dynamic workflow run',
+  },
+  {
     id: 'pr_draft',
     label: 'PR and MR drafts',
     help: 'Default agent config when drafting pull requests',

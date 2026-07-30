@@ -4,7 +4,7 @@ import type { EffortLevel } from '../../../features/chat/utils/chat-constants';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type Mode = 'preset' | 'custom';
+export type Mode = 'preset' | 'custom' | 'dynamic';
 
 export type EditableStep = {
   readonly key: string;

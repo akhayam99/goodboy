@@ -48,6 +48,10 @@ export const startWorkflowRun = (set: SetFn, get: GetFn) => {
       .find((r) => r.status === 'pending');
     if (firstPending) {
       await get().activateWorkflowAgent(sessionId, firstPending.id);
+      return;
+    }
+    if (run.executionMode === 'dynamic') {
+      await get().orchestrateNextStep(sessionId, workflowRunId);
     }
   };
 };

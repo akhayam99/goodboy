@@ -43,6 +43,7 @@ const run: WorkflowRun = {
   currentStep: 0,
   autoRun: false,
   triggerMode: 'immediate',
+  executionMode: 'static',
 };
 
 const agent: Agent = {

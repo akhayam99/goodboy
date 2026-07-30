@@ -7,12 +7,13 @@ import { deleteWorkflow } from './deleteWorkflow';
 import { detachWorkflowFromSession } from './detachWorkflowFromSession';
 import { discardWorkflow } from './discardWorkflow';
 import { finalizeWorkflowStep } from './finalizeWorkflowStep';
-import { forceAdvanceWorkflowStep } from './forceAdvanceWorkflowStep';
 import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
 import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
+import { orchestrateNextStep } from './orchestrateNextStep';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
+import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
 import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
 import { savePhaseTemplate } from './savePhaseTemplate';
@@ -43,10 +44,11 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     activateWorkflowAgent: activateWorkflowAgent(set, get),
     advanceClusterImplementation: advanceClusterImplementation(set, get),
     finalizeWorkflowStep: finalizeWorkflowStep(set, get),
-    forceAdvanceWorkflowStep: forceAdvanceWorkflowStep(set, get),
     skipStuckStepAndAdvance: skipStuckStepAndAdvance(set, get),
     advanceScoutTree: advanceScoutTree(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
+    orchestrateNextStep: orchestrateNextStep(set, get),
+    retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),
     retryStepSummary: retryStepSummary(set, get),
   };
 };

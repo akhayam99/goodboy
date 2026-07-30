@@ -122,6 +122,7 @@ function buildHarness(opts: {
         currentStep: 0,
         autoRun: handsFree,
         triggerMode: 'immediate' as const,
+        executionMode: 'static' as const,
       },
     ],
     autoRun: handsFree,

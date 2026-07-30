@@ -334,3 +334,18 @@ export {
   type PlannerClientResult,
   type PlannerUsage,
 } from './planner';
+
+export {
+  parseOrchestratorDecision,
+  buildOrchestratorUserPrompt,
+  ORCHESTRATOR_SYSTEM_PROMPT,
+  OrchestratorClient,
+  OrchestratorClientSpawnError,
+  type OrchestratorClientDeps,
+  type OrchestratorClientResult,
+  type OrchestratorCompletedStep,
+  type OrchestratorDecision,
+  type OrchestratorInput,
+  type OrchestratorStep,
+  type OrchestratorUsage,
+} from './orchestrator';
