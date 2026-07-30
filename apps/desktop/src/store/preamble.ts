@@ -1,13 +1,13 @@
 import {
   isSlotKey,
   PREAMBLE_SLOT_TOTAL_BUDGET,
-  getModelDescriptor,
   serializeSlotsBudgeted,
   SLOT_KEYS,
   SLOT_LABELS,
   type SlotKey,
 } from '@goodboy/core';
 import type { ContextSlot, TurnEvent } from '@goodboy/types';
+import { contextWindowFor } from '../features/session/contextWindowFor';
 import { estimateTokens } from '../shared/utils/estimate-tokens';
 
 const CONTEXT_MARKER_HINT =
@@ -130,5 +130,5 @@ export const buildPriorTurnsBlock = (
 };
 
 export const getModelContextWindow = (model: string): number | null => {
-  return getModelDescriptor(model)?.contextWindow ?? null;
+  return contextWindowFor(model);
 };

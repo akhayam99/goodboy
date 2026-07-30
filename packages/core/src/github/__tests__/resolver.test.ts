@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GhRunner } from '../gh';
 import { GhCliError } from '../gh';
-import { detectRepoSlug, resolvePrForBranch } from '../resolver';
+import { detectRepoSlug, listPrsForBranch, resolvePrForBranch } from '../resolver';
 
 function makeRunner(result: { stdout: string; stderr: string; exitCode: number }): GhRunner {
   return { run: vi.fn().mockResolvedValue(result) };
@@ -265,6 +265,24 @@ describe('resolvePrForBranch', () => {
     const runner = makeJsonRunner([pr]);
     const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
     expect(result?.checks).toBeNull();
+  });
+});
+
+describe('listPrsForBranch', () => {
+  it('returns an empty list when no pull requests exist', async () => {
+    const runner = makeJsonRunner([]);
+
+    await expect(listPrsForBranch(runner, 'org/repo', 'feature')).resolves.toEqual([]);
+  });
+
+  it('rethrows GhCliError so callers can preserve cached lists', async () => {
+    const runner: GhRunner = {
+      run: vi.fn().mockResolvedValue({ stdout: '', stderr: 'authentication failed', exitCode: 1 }),
+    };
+
+    await expect(listPrsForBranch(runner, 'org/repo', 'feature')).rejects.toBeInstanceOf(
+      GhCliError,
+    );
   });
 });
 

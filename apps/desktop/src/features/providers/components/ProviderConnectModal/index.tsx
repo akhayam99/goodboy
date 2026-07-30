@@ -127,7 +127,7 @@ function ModalBody({ providerId, initialAction, open, onClose }: BodyProps) {
         <ErrorPanel tail={lifecycle.errorTail} />
       ) : null}
 
-      {command ? <EscapeHatch command={command} /> : null}
+      {command ? <EscapeHatch command={command} providerId={providerId} /> : null}
     </Dialog>
   );
 }

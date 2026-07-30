@@ -5,6 +5,7 @@ export const CURSOR_CATALOG = [
     key: 'composer-2.5',
     label: 'Composer 2.5',
     tier: 'turn',
+    contextWindow: 200_000,
     presentation: {
       family: 'composer',
       group: 'Composer',
@@ -22,6 +23,7 @@ export const CURSOR_CATALOG = [
     key: 'auto',
     label: 'Auto',
     tier: 'cheap',
+    contextWindow: 200_000,
     presentation: {
       family: 'cursor-auto',
       group: null,
@@ -36,6 +38,7 @@ export const CURSOR_CATALOG = [
     key: 'opus-5',
     label: 'Opus 5',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Opus',
@@ -65,6 +68,7 @@ export const CURSOR_CATALOG = [
     key: 'opus-4.7',
     label: 'Opus 4.7',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Opus',
@@ -87,6 +91,7 @@ export const CURSOR_CATALOG = [
     key: 'sonnet-4.6',
     label: 'Sonnet 4.6',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Sonnet',
@@ -116,6 +121,7 @@ export const CURSOR_CATALOG = [
     key: 'gpt-5.6',
     label: 'GPT-5.6',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -138,6 +144,7 @@ export const CURSOR_CATALOG = [
     key: 'gpt-5.5',
     label: 'GPT-5.5',
     tier: 'turn',
+    contextWindow: 400_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -167,6 +174,7 @@ export const CURSOR_CATALOG = [
     key: 'gpt-5.3-codex',
     label: 'GPT-5.3 Codex',
     tier: 'turn',
+    contextWindow: 400_000,
     presentation: {
       family: 'gpt',
       group: 'Codex',

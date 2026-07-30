@@ -1,12 +1,7 @@
 import {
   buildProviderList,
   checkProviderAuth,
-  getCodexStatus,
-  getCursorStatus,
-  getGeminiStatus,
-  getOpenCodeStatus,
-  getOpenRouterStatus,
-  getProviderStatus,
+  refreshProviderDetection,
   type ProviderAuthResults,
   type ProviderStatuses,
 } from '../../../features/providers/providers';
@@ -17,21 +12,15 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
   return async () => {
     const previousCursorIdentity = get().authResults?.cursor?.identity ?? null;
     const previousCursorState = get().authResults?.cursor?.state ?? null;
-    const [
-      providerStatus,
-      cursorStatus,
-      codexStatus,
-      geminiStatus,
-      opencodeStatus,
-      openrouterStatus,
-    ] = await Promise.all([
-      getProviderStatus('anthropic'),
-      getCursorStatus(),
-      getCodexStatus(),
-      getGeminiStatus(),
-      getOpenCodeStatus(),
-      getOpenRouterStatus(),
-    ]);
+    const [providerStatus, cursorStatus, codexStatus, geminiStatus, opencodeStatus] =
+      await Promise.all([
+        refreshProviderDetection({ id: 'anthropic' }),
+        refreshProviderDetection({ id: 'cursor' }),
+        refreshProviderDetection({ id: 'codex' }),
+        refreshProviderDetection({ id: 'gemini' }),
+        refreshProviderDetection({ id: 'opencode' }),
+      ]);
+    const openrouterStatus = { ...opencodeStatus, id: 'openrouter' };
     const statuses: ProviderStatuses = {
       anthropic: providerStatus,
       cursor: cursorStatus,

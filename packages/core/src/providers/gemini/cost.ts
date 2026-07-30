@@ -1,23 +1,41 @@
 import type { ProviderUsage } from '@goodboy/types';
 
-export const computeGeminiCostUsd = (
-  usage: ProviderUsage,
-  _model: string,
-  override: GeminiModelPriceOverride | null,
-): number => {
-  if (override === null) {
-    return 0;
-  }
-  const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
-  return (
-    (billableInput * override.inputPerMtok) / 1_000_000 +
-    (usage.cachedInputTokens * (override.cachedInputPerMtok ?? override.inputPerMtok)) / 1_000_000 +
-    (usage.outputTokens * override.outputPerMtok) / 1_000_000
-  );
-};
-
 export type GeminiModelPriceOverride = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok?: number;
+};
+
+export const GEMINI_PRICES: Readonly<Record<string, GeminiModelPriceOverride>> = {
+  'gemini-3.1-pro': {
+    inputPerMtok: 2,
+    outputPerMtok: 12,
+    cachedInputPerMtok: 0.2,
+  },
+  'gemini-3.5-flash': {
+    inputPerMtok: 1.5,
+    outputPerMtok: 9,
+    cachedInputPerMtok: 0.15,
+  },
+};
+
+type Params = {
+  readonly usage: ProviderUsage;
+  readonly model: string;
+  readonly override?: GeminiModelPriceOverride | null;
+};
+
+export const computeGeminiCostUsd = ({ usage, model, override }: Params): number => {
+  const price = override ?? GEMINI_PRICES[model];
+  if (price == null) {
+    return 0;
+  }
+
+  const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
+  return (
+    (billableInput * price.inputPerMtok) / 1_000_000 +
+    (usage.cachedInputTokens * (price.cachedInputPerMtok ?? price.inputPerMtok)) / 1_000_000 +
+    ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
+    (usage.outputTokens * price.outputPerMtok) / 1_000_000
+  );
 };

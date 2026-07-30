@@ -20,7 +20,7 @@ describe('getModelPrice', () => {
   });
 
   it('returns cursor composer pricing for a known cursor id', () => {
-    expect(getModelPrice('composer-2.5-fast')).toEqual({ inputPerMtok: 0.8, outputPerMtok: 4 });
+    expect(getModelPrice('composer-2.5-fast')).toEqual({ inputPerMtok: 3, outputPerMtok: 15 });
   });
 
   it('omits the cached-input rate from the summary', () => {
@@ -28,13 +28,13 @@ describe('getModelPrice', () => {
     expect(price).not.toHaveProperty('cachedInputPerMtok');
   });
 
-  it('returns null for codex picker ids with no static price table', () => {
-    expect(getModelPrice('gpt-5.5')).toBeNull();
-    expect(getModelPrice('gpt-5.4-mini')).toBeNull();
+  it('returns codex pricing for catalog cli ids', () => {
+    expect(getModelPrice('gpt-5.5')).toEqual({ inputPerMtok: 5, outputPerMtok: 30 });
+    expect(getModelPrice('gpt-5.4-mini')).toEqual({ inputPerMtok: 0.75, outputPerMtok: 4.5 });
   });
 
-  it('returns null for gemini picker ids with no static price table', () => {
-    expect(getModelPrice('gemini-3.1-pro')).toBeNull();
+  it('returns gemini pricing for catalog cli ids', () => {
+    expect(getModelPrice('gemini-3.1-pro')).toEqual({ inputPerMtok: 2, outputPerMtok: 12 });
   });
 
   it('returns null for an unknown model with no fallback', () => {
@@ -42,11 +42,11 @@ describe('getModelPrice', () => {
   });
 
   it('returns cursor composer pricing for composer-2.5 (no effort suffix)', () => {
-    expect(getModelPrice('composer-2.5')).toEqual({ inputPerMtok: 0.8, outputPerMtok: 4 });
+    expect(getModelPrice('composer-2.5')).toEqual({ inputPerMtok: 0.5, outputPerMtok: 2.5 });
   });
 
   it('returns cursor gpt pricing for gpt-5.5-high', () => {
-    expect(getModelPrice('gpt-5.5-high')).toEqual({ inputPerMtok: 5, outputPerMtok: 15 });
+    expect(getModelPrice('gpt-5.5-high')).toEqual({ inputPerMtok: 5, outputPerMtok: 30 });
   });
 
   it('returns cursor sonnet pricing for claude-4.6-sonnet-medium', () => {
@@ -56,7 +56,17 @@ describe('getModelPrice', () => {
     });
   });
 
-  it('returns null for gpt-5.4 (not in any static table)', () => {
-    expect(getModelPrice('gpt-5.4')).toBeNull();
+  it('returns codex gpt-5.4 pricing', () => {
+    expect(getModelPrice('gpt-5.4')).toEqual({ inputPerMtok: 2.5, outputPerMtok: 15 });
+  });
+
+  it.each([
+    ['gpt-5.6', 'gpt-5.6-sol'],
+    ['opus-5', 'claude-opus-5'],
+    ['sonnet-4.6', 'claude-sonnet-4-6'],
+    ['composer-2.5', 'composer-2.5'],
+  ])('maps catalog key %s to its default cli price', (key, cliId) => {
+    expect(getModelPrice(key)).not.toBeNull();
+    expect(getModelPrice(key)).toEqual(getModelPrice(cliId));
   });
 });

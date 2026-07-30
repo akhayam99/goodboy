@@ -42,7 +42,6 @@ export const SessionPanel = ({
     0,
   );
   const turnCount = records.filter((r) => r.kind === 'turn').length;
-  const providerCount = new Set(records.map((r) => r.provider)).size;
 
   return (
     <PanelShell
@@ -64,14 +63,14 @@ export const SessionPanel = ({
       />
 
       <Widget label="by model">
-        <ModelTable entries={models} showProvider={providerCount >= 2} />
+        <ModelTable entries={models} />
       </Widget>
 
       <Widget label="cost per turn">
         <Sparkline values={turnCosts} />
       </Widget>
 
-      <TurnsTable turns={turns} showProvider={providerCount >= 2} showSession={false} />
+      <TurnsTable turns={turns} showSession={false} />
     </PanelShell>
   );
 };

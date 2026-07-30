@@ -1,24 +1,23 @@
 import { MessageSquareReply, PanelRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { Agent, AgentId, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
-import { agentHasUnread } from '../../../../store';
+import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
+import { agentHasUnread, useAppStore } from '../../../../store';
 import { ContextWindowBar } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
 import { AgentCardActions } from '../AgentCard/AgentCardActions';
-import { AgentMetricsBlock, type AgentAggregate } from '../AgentMetricsBlock';
+import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
-import { AgentMetricsInline } from '../AgentMetricsInline';
-import { ResolverStateBadge, resolverBadgeState } from '../ResolverStateBadge';
+import { resolverBadgeState } from '../ResolverStateBadge';
+import { ResolverStateIcon } from '../ResolverStateBadge/ResolverStateIcon';
+import { ResolverActions } from '../ResolverActions';
 import { resolverOrigin } from '../../resolver-origin';
-import { agentThreadIds } from '../../agentThreadIds';
 import type { ResolverStatus } from '../../resolver-linkage';
-import { ResolverCardFooter } from './ResolverCardFooter';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { resolverCardTone } from './resolverCardTone';
 
-const ACTIONS_CLASS = 'w-24';
+const ACTIONS_CLASS = 'w-14';
 
 type Props = {
   readonly agent: Agent;
@@ -30,6 +29,7 @@ type Props = {
   readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
   readonly turns: number;
   readonly turnsLoading: boolean;
+  readonly reportedCommitSha: string | null;
   readonly isSelected: boolean;
   readonly isTaskActive: boolean;
   readonly isInspected: boolean;
@@ -38,8 +38,6 @@ type Props = {
   readonly onOpenChat: () => void;
   readonly onInspect: () => void;
   readonly onJump: () => void;
-  readonly onResolveThread: (threadId: string) => Promise<void> | void;
-  readonly onResolveAgent: (agentId: AgentId) => Promise<void> | void;
 };
 
 export const ResolverCard = ({
@@ -52,6 +50,7 @@ export const ResolverCard = ({
   contextUsage,
   turns,
   turnsLoading,
+  reportedCommitSha,
   isSelected,
   isTaskActive,
   isInspected,
@@ -60,10 +59,11 @@ export const ResolverCard = ({
   onOpenChat,
   onInspect,
   onJump,
-  onResolveThread,
-  onResolveAgent,
 }: Props) => {
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
+  const plannedModel = useAppStore(
+    (state) => state.agentModelOverride?.[agent.id] ?? agent.modelOverride ?? null,
+  );
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
   const rowTitle = [
     agent.name,
@@ -80,6 +80,7 @@ export const ResolverCard = ({
       isMuted={isMuted}
       rowTitle={rowTitle}
       onOpen={onOpenChat}
+      leading={<ResolverStateIcon state={resolverBadgeState(status)} />}
       title={
         <span
           className={cn(
@@ -90,13 +91,11 @@ export const ResolverCard = ({
           {agent.name}
         </span>
       }
-      trailing={<ResolverStateBadge state={resolverBadgeState(status)} />}
       actions={
         <AgentCardActions className={ACTIONS_CLASS}>
           <AgentCardAction
             icon={PanelRight}
             label="Toggle resolver details"
-            text="Details"
             pressed={isInspected}
             active={isInspected}
             onClick={onInspect}
@@ -119,25 +118,27 @@ export const ResolverCard = ({
         </span>
       }
       footer={
-        <ResolverCardFooter
+        <ResolverActions
           agent={agent}
+          sessionId={agent.sessionId}
           status={status}
-          threadIds={agentThreadIds(agent)}
-          onResolveThread={onResolveThread}
-          onResolveAgent={onResolveAgent}
+          commitSha={reportedCommitSha}
+          density="compact"
         />
       }
     >
       <div className="flex flex-col gap-1">
         <div className="flex flex-col gap-0.5">
-          <AgentMetricsInline
+          <AgentMetrics
+            run={agent}
             telemetry={telemetry}
             aggregate={aggregate}
             contextUsage={contextUsage}
             turns={turns}
             turnsLoading={turnsLoading}
+            density="full"
+            plannedModel={plannedModel}
           />
-          <AgentMetricsBlock run={agent} aggregate={aggregate} />
           <AgentLastUpdate agent={agent} />
           <ContextWindowBar usage={contextUsage} />
         </div>

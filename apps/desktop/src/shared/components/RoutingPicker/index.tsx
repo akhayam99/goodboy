@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import {
   MODEL_CATALOGS,
-  PROVIDER_CAPABILITIES,
   modelAxes,
   modelIdForSelection,
   remapModelSelection,
@@ -22,6 +21,7 @@ import {
   VERBOSITY_LEVELS,
   type VerbosityLevel,
 } from '../../../features/settings/verbosity';
+import { DropdownPortal } from '../../hooks/useDropdown/DropdownPortal';
 import { useDropdown } from '../../hooks/useDropdown';
 import { AxesSection } from './AxesSection';
 import { CatalogGrid } from './CatalogGrid';
@@ -30,18 +30,14 @@ import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
 import { RecommendationRow } from './RecommendationRow';
 import { TriggerLabel } from './TriggerLabel';
+import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { recommendationSummary } from './recommendationSummary';
+import { resolvePickerSelection } from './resolvePickerSelection';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
 import { useCursorMaxModeModels } from './useCursorMaxModeModels';
 
 const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-2.5';
-const PROVIDER_CHIP_GROUP_CLASS_NAME =
-  'flex gap-1.5 bg-subtle px-2.5 [&>button]:h-7 [&>button]:flex-1';
-const EMPTY_MODEL_KEYS: ReadonlySet<string> = new Set();
-const PROVIDERS = Object.keys(PROVIDER_CAPABILITIES).filter(
-  (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
-);
 
 type PickProviderParams = {
   readonly next: ProviderId | '';
@@ -102,19 +98,31 @@ export const RoutingPicker = ({
   ariaLabel,
   openEvent,
 }: Props) => {
-  const { open, close, toggle, containerRef, popupClassName } = useDropdown({
+  const {
+    open,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupClassName,
+    popupStyle,
+    portal,
+    portalTarget,
+  } = useDropdown({
     disabled,
     align,
     openEvent,
     expectedHeight: 320,
+    expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
+    strategy: 'fixed',
   });
   const editableEffort = effort.editable ? effort : null;
   const effortValue = effort.value ?? 'medium';
   const recommendedProvider = recommendation?.provider;
   const recommendedModel = recommendation?.model;
   const routing = resolveRouting({
-    providers: PROVIDERS,
+    providers: ROUTING_PICKER_CONSTANTS.providers,
     provider,
     model,
     effort: effortValue,
@@ -140,7 +148,7 @@ export const RoutingPicker = ({
     selection: draftSelection,
   });
   const viewedRouting = resolveRouting({
-    providers: PROVIDERS,
+    providers: ROUTING_PICKER_CONSTANTS.providers,
     provider: viewProvider,
     model: draftModelId,
     effort: draftSelection.effort ?? effortValue,
@@ -173,7 +181,8 @@ export const RoutingPicker = ({
   const axes = modelAxes({ model: viewedModel, selection: viewedRouting.selection });
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
-  const advisoryKeys = viewProvider === 'cursor' ? maxModeModels : EMPTY_MODEL_KEYS;
+  const advisoryKeys =
+    viewProvider === 'cursor' ? maxModeModels : ROUTING_PICKER_CONSTANTS.emptyModelKeys;
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
 
   useEffect(() => {
@@ -198,15 +207,18 @@ export const RoutingPicker = ({
     if (open === false || isViewProviderConnected === false) {
       return;
     }
-    containerRef.current
+    popupRef.current
       ?.querySelector<HTMLButtonElement>('section[aria-label="Models"] button[aria-pressed="true"]')
       ?.focus();
-  }, [containerRef, isViewProviderConnected, open]);
+  }, [isViewProviderConnected, open, popupRef]);
 
   const onPickSelection = ({ next, provider: nextProvider }: PickSelectionParams) => {
-    const resolved = resolveModelArgs({ provider: nextProvider, selection: next });
+    const resolved = resolvePickerSelection({
+      provider: nextProvider,
+      selection: next,
+    });
     const nextModelId = modelIdForSelection({ provider: nextProvider, selection: next });
-    const applied = resolved.clamped?.applied ?? next.effort;
+    const applied = resolved.effort;
     const normalized = resolveStoredModelSelection({
       provider: nextProvider,
       id: nextModelId,
@@ -217,7 +229,7 @@ export const RoutingPicker = ({
         ? { ...normalized, effort: next.effort }
         : normalized;
     setDraftSelection(appliedSelection);
-    setClampNotice(resolved.clamped);
+    setClampNotice(resolved.notice);
     onModel(nextModelId);
     if (editableEffort == null || applied == null || applied === editableEffort.value) {
       return;
@@ -313,189 +325,193 @@ export const RoutingPicker = ({
           )}
         />
       </button>
-      {open && (
-        <Popover
-          role="dialog"
-          ariaLabel={ariaLabel ?? 'model routing'}
-          className={cn(popupClassName, 'flex flex-col bg-subtle')}
-        >
-          {defaultSummary != null && (
-            <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
-              <span
-                className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}
-              >
-                {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
-                {isOverridden ? summary : defaultSummary}
-              </span>
-              {onReset != null && isOverridden && (
-                <button
-                  type="button"
+      <DropdownPortal portal={portal} portalTarget={portalTarget}>
+        {open && (
+          <Popover
+            innerRef={popupRef}
+            role="dialog"
+            ariaLabel={ariaLabel ?? 'model routing'}
+            className={cn(popupClassName, 'flex flex-col bg-subtle')}
+            style={popupStyle}
+          >
+            {defaultSummary != null && (
+              <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
+                <span
+                  className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}
+                >
+                  {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
+                  {isOverridden ? summary : defaultSummary}
+                </span>
+                {onReset != null && isOverridden && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onReset();
+                      close();
+                    }}
+                    className="font-medium text-warning underline-offset-2 hover:underline"
+                  >
+                    reset
+                  </button>
+                )}
+              </div>
+            )}
+            {recommendedProvider != null && (
+              <>
+                <RecommendationRow
+                  summary={recommendationSummary({
+                    provider: recommendedProvider,
+                    model: recommendedModel,
+                  })}
+                  active={isViewingAuto}
+                  onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
+                />
+                <Divider />
+              </>
+            )}
+            <PickerSection label="Provider" hint="Which CLI agent runs the turn">
+              <div className={ROUTING_PICKER_CONSTANTS.providerChipGroupClassName}>
+                {ROUTING_PICKER_CONSTANTS.providers.map((id) => {
+                  const isConnected = connectedProviders.includes(id);
+                  const isActive = !isViewingAuto && viewProvider === id;
+                  const isRecommendedTab = isViewingAuto && recommendedProvider === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      title={PROVIDER_LABEL[id]}
+                      aria-label={PROVIDER_LABEL[id]}
+                      aria-pressed={isActive}
+                      onClick={() => {
+                        setViewProvider(id);
+                        setIsViewingAuto(false);
+                        if (!isConnected) {
+                          const preview = remapModelSelection({
+                            sourceProvider: viewProvider,
+                            targetProvider: id,
+                            selection: viewedRouting.selection,
+                          });
+                          setDraftSelection(
+                            id === 'gemini'
+                              ? { ...preview.selection, effort: viewedRouting.effort }
+                              : preview.selection,
+                          );
+                          return;
+                        }
+                        onPickProvider({ next: id, viewedProvider: id });
+                      }}
+                      className={cn(
+                        'relative inline-flex min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
+                        isActive && 'bg-background text-foreground shadow-sm',
+                        isRecommendedTab && 'text-foreground ring-1 ring-inset ring-border-soft',
+                      )}
+                    >
+                      <span className={cn(!isConnected && 'opacity-35')}>
+                        <ProviderGlyph id={id} size={15} />
+                      </span>
+                      {!isConnected && (
+                        <span
+                          className="absolute right-1 top-1 size-1.5 rounded-full bg-warning ring-1 ring-subtle"
+                          aria-hidden
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </PickerSection>
+            <Divider />
+            {!isViewProviderConnected && (
+              <section aria-label="Models" className="flex items-center gap-2 p-3">
+                <p className="flex-1 text-xs text-muted-foreground">
+                  {PROVIDER_LABEL[viewProvider]} is not connected
+                </p>
+                <Button
+                  size="sm"
                   onClick={() => {
-                    onReset();
+                    window.dispatchEvent(
+                      new CustomEvent('goodboy:open-provider-studio', {
+                        detail: { providerId: viewProvider },
+                      }),
+                    );
                     close();
                   }}
-                  className="font-medium text-warning underline-offset-2 hover:underline"
                 >
-                  reset
-                </button>
-              )}
-            </div>
-          )}
-          {recommendedProvider != null && (
-            <>
-              <RecommendationRow
-                summary={recommendationSummary({
-                  provider: recommendedProvider,
-                  model: recommendedModel,
-                })}
-                active={isViewingAuto}
-                onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
-              />
-              <Divider />
-            </>
-          )}
-          <PickerSection label="Provider" hint="Which CLI agent runs the turn">
-            <div className={PROVIDER_CHIP_GROUP_CLASS_NAME}>
-              {PROVIDERS.map((id) => {
-                const isConnected = connectedProviders.includes(id);
-                const isActive = !isViewingAuto && viewProvider === id;
-                const isRecommendedTab = isViewingAuto && recommendedProvider === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    title={PROVIDER_LABEL[id]}
-                    aria-label={PROVIDER_LABEL[id]}
-                    aria-pressed={isActive}
-                    onClick={() => {
-                      setViewProvider(id);
-                      setIsViewingAuto(false);
-                      if (!isConnected) {
-                        const preview = remapModelSelection({
-                          sourceProvider: viewProvider,
-                          targetProvider: id,
-                          selection: viewedRouting.selection,
-                        });
-                        setDraftSelection(
-                          id === 'gemini'
-                            ? { ...preview.selection, effort: viewedRouting.effort }
-                            : preview.selection,
-                        );
-                        return;
-                      }
-                      onPickProvider({ next: id, viewedProvider: id });
-                    }}
-                    className={cn(
-                      'relative inline-flex min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
-                      isActive && 'bg-background text-foreground shadow-sm',
-                      isRecommendedTab && 'text-foreground ring-1 ring-inset ring-border-soft',
-                    )}
-                  >
-                    <span className={cn(!isConnected && 'opacity-35')}>
-                      <ProviderGlyph id={id} size={15} />
-                    </span>
-                    {!isConnected && (
-                      <span
-                        className="absolute right-1 top-1 size-1.5 rounded-full bg-warning ring-1 ring-subtle"
-                        aria-hidden
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </PickerSection>
-          <Divider />
-          {!isViewProviderConnected && (
-            <section aria-label="Models" className="flex items-center gap-2 p-3">
-              <p className="flex-1 text-xs text-muted-foreground">
-                {PROVIDER_LABEL[viewProvider]} is not connected
-              </p>
-              <Button
-                size="sm"
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('goodboy:open-provider-studio', {
-                      detail: { providerId: viewProvider },
-                    }),
-                  );
-                  close();
-                }}
-              >
-                Connect {PROVIDER_LABEL[viewProvider]}
-              </Button>
-            </section>
-          )}
-          {isViewProviderConnected && (
-            <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
-              <CatalogGrid
-                catalog={viewedRouting.catalog}
-                selectedKey={viewedRouting.model}
-                recommendedKey={viewedRecommendedSelection?.key}
-                advisoryKeys={advisoryKeys}
-                onSelect={onPickModel}
-              />
-            </ScrollFade>
-          )}
-          {isViewProviderConnected && (
-            <>
-              <Divider />
-              <AxesSection
-                axes={axes}
-                effortValue={viewedRouting.effort}
-                canEditEffort={editableEffort != null}
-                notice={clampNotice}
-                hasMaxModeAdvisory={hasMaxModeAdvisory}
-                onEffort={(level) =>
-                  onPickSelection({
-                    next: { ...viewedRouting.selection, effort: level },
-                    provider: viewProvider,
-                  })
-                }
-                onVariant={(id) =>
-                  onPickSelection({
-                    next: { ...viewedRouting.selection, variant: id },
-                    provider: viewProvider,
-                  })
-                }
-                onToggle={(id) =>
-                  onPickSelection({
-                    next: {
-                      ...viewedRouting.selection,
-                      toggles: {
-                        ...viewedRouting.selection.toggles,
-                        [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
+                  Connect {PROVIDER_LABEL[viewProvider]}
+                </Button>
+              </section>
+            )}
+            {isViewProviderConnected && (
+              <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
+                <CatalogGrid
+                  catalog={viewedRouting.catalog}
+                  selectedKey={viewedRouting.model}
+                  recommendedKey={viewedRecommendedSelection?.key}
+                  advisoryKeys={advisoryKeys}
+                  onSelect={onPickModel}
+                />
+              </ScrollFade>
+            )}
+            {isViewProviderConnected && (
+              <>
+                <Divider />
+                <AxesSection
+                  axes={axes}
+                  effortValue={viewedRouting.effort}
+                  canEditEffort={editableEffort != null}
+                  notice={clampNotice}
+                  hasMaxModeAdvisory={hasMaxModeAdvisory}
+                  onEffort={(level) =>
+                    onPickSelection({
+                      next: { ...viewedRouting.selection, effort: level },
+                      provider: viewProvider,
+                    })
+                  }
+                  onVariant={(id) =>
+                    onPickSelection({
+                      next: { ...viewedRouting.selection, variant: id },
+                      provider: viewProvider,
+                    })
+                  }
+                  onToggle={(id) =>
+                    onPickSelection({
+                      next: {
+                        ...viewedRouting.selection,
+                        toggles: {
+                          ...viewedRouting.selection.toggles,
+                          [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
+                        },
                       },
-                    },
-                    provider: viewProvider,
-                  })
-                }
-              />
-            </>
-          )}
-          {isViewProviderConnected && verbosity != null && onVerbosity != null && (
-            <>
-              <Divider />
-              <PickerSection label="Replies" hint="How detailed the answers should be">
-                <div className={CHIP_GROUP_CLASS_NAME}>
-                  {VERBOSITY_LEVELS.map((level) => (
-                    <PickerChip
-                      key={level}
-                      label={VERBOSITY_LABEL[level]}
-                      active={verbosity === level}
-                      onSelect={() => onVerbosity(level)}
-                    />
-                  ))}
-                </div>
-              </PickerSection>
-            </>
-          )}
-          <Divider />
-          <footer className="px-3 py-2 font-mono text-2xs text-muted-foreground">
-            {viewedResolved.args.join(' ')}
-          </footer>
-        </Popover>
-      )}
+                      provider: viewProvider,
+                    })
+                  }
+                />
+              </>
+            )}
+            {isViewProviderConnected && verbosity != null && onVerbosity != null && (
+              <>
+                <Divider />
+                <PickerSection label="Replies" hint="How detailed the answers should be">
+                  <div className={CHIP_GROUP_CLASS_NAME}>
+                    {VERBOSITY_LEVELS.map((level) => (
+                      <PickerChip
+                        key={level}
+                        label={VERBOSITY_LABEL[level]}
+                        active={verbosity === level}
+                        onSelect={() => onVerbosity(level)}
+                      />
+                    ))}
+                  </div>
+                </PickerSection>
+              </>
+            )}
+            <Divider />
+            <footer className="px-3 py-2 font-mono text-2xs text-muted-foreground">
+              {viewedResolved.args.join(' ')}
+            </footer>
+          </Popover>
+        )}
+      </DropdownPortal>
     </div>
   );
 };

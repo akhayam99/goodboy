@@ -26,9 +26,10 @@ Top to bottom, always in this order:
 
 1. **Provider row.** Provider glyphs, one per connected provider. Picking a
    provider swaps the catalog below.
-2. **Family sections.** A family is the vendor lineage of a model (`claude`,
-   `gpt`, `composer`, `gemini`). The section header renders only when the
-   provider has more than one family; a single-family provider shows no header.
+2. **Family ordering.** A family is the vendor lineage of a model (`claude`,
+   `gpt`, `composer`, `gemini`). Family sections keep their authored order but
+   render seamlessly without a provider or family band. The user already knows
+   which provider they selected.
 3. **Group rows.** One row per macro model: the group label on the left, its
    versions as chips on the right, separated. `Opus` on the left, `4.6 4.7 4.8
 5` on the right. A group of one still gets a row.
@@ -124,8 +125,8 @@ example an account where Max Mode itself is unavailable.
 it an `order` that places it in the ladder, and for Cursor probe each combo's
 Max Mode. Nothing in the picker changes.
 
-**A family**: add the `ModelFamily` value and its section label. Sections appear
-automatically once a provider has more than one.
+**A family**: add the `ModelFamily` value. Its models appear automatically in
+the authored family order without a visible family band.
 
 **A provider**: author its catalog, then extend `modelAxes` with the axes that
 provider exposes. If the new provider needs a control that is not an effort
@@ -139,6 +140,9 @@ These were tried, or shipped and reverted. Do not reintroduce them:
 - A flat searchable model list. It replaced the grouped picker once and lost the
   version ladder, the cost signal, and the tuning context.
 - A native `select` for variants or effort. Every control here is a chip.
+- Provider or family bands above the model rows. They were removed on purpose
+  because the user already knows which provider they selected. Group rows and
+  version chips remain the settled model-list structure.
 - Deriving family, version, or cost from the model id with a regex. That is what
   `presentation` exists to replace.
 - Hiding levels that the current toggle combination cannot reach, instead of

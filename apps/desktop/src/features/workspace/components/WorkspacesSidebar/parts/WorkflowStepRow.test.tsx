@@ -119,7 +119,7 @@ describe('WorkflowStepRow', () => {
   it('shows the full metric picture without being selected', () => {
     const { container } = renderRow();
     expect(screen.getByTestId('agent-metrics-inline')).toBeTruthy();
-    expect(screen.getByText('sonnet 4.5')).toBeTruthy();
+    expect(screen.getByText('Sonnet 4.5')).toBeTruthy();
     expect(screen.getByText('5t')).toBeTruthy();
     expect(screen.getByText(/ctx \d+%/)).toBeTruthy();
     expect(screen.getByTitle('in: 900 tokens (cumulative)')).toBeTruthy();
@@ -128,14 +128,14 @@ describe('WorkflowStepRow', () => {
 
   it('prints the model and the duration exactly once', () => {
     const { container } = renderRow();
-    expect(screen.getAllByText('sonnet 4.5')).toHaveLength(1);
+    expect(screen.getAllByText('Sonnet 4.5')).toHaveLength(1);
     expect(container.querySelectorAll('[title^="in: "]')).toHaveLength(1);
-    expect(screen.getAllByTitle(/^started 2026-05-28/)).toHaveLength(1);
+    expect(screen.getAllByTitle(/^started .*28.*2026/)).toHaveLength(1);
   });
 
   it('names the planned model and stays quiet for a step that has not run', () => {
     renderRow({ ranAlready: false, isPendingFuture: true });
-    expect(screen.getByText('opus 4.5')).toBeTruthy();
+    expect(screen.getByText('Opus 4.5')).toBeTruthy();
     expect(screen.getByTestId('agent-metrics-inline').className).toContain('opacity-60');
     expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
   });

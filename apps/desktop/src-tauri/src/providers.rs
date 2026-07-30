@@ -7,12 +7,9 @@ use tauri::State;
 
 use crate::path_env;
 
-// Tight detection budgets: a CLI that doesn't respond to `--version` in 2s is
-// already broken from the user's POV, and worst-case sum across 4 providers
-// dominates the "refresh providers" UI latency. Auth was previously 5s × N
-// candidate subcommands × N providers, easily 20s+ wall time on cold runs.
 const DETECT_TIMEOUT: Duration = Duration::from_secs(2);
-const AUTH_TIMEOUT: Duration = Duration::from_secs(2);
+const AUTH_TIMEOUT: Duration = Duration::from_secs(5);
+const CODEX_AUTH_TIMEOUT: Duration = Duration::from_secs(8);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Debug, Clone, Serialize)]
@@ -162,6 +159,13 @@ impl AuthCommandOutput {
 }
 
 fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
+    run_auth_command_until(args, Instant::now() + AUTH_TIMEOUT)
+}
+
+fn run_auth_command_until(
+    args: &[&str],
+    deadline: Instant,
+) -> Result<AuthCommandOutput, String> {
     let (binary, rest) = args.split_first().ok_or_else(|| "empty command".to_string())?;
     let mut child = path_env::command(binary)
         .args(rest)
@@ -170,7 +174,6 @@ fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
         .spawn()
         .map_err(|e| e.to_string())?;
 
-    let deadline = Instant::now() + AUTH_TIMEOUT;
     loop {
         match child.try_wait() {
             Ok(Some(status)) => {
@@ -408,8 +411,14 @@ fn check_codex_auth() -> AuthState {
         &["codex", "whoami"],
         &["codex", "status"],
     ];
+    let deadline = Instant::now() + CODEX_AUTH_TIMEOUT;
     for cmd in candidates {
-        if let Ok(out) = run_auth_command(cmd) {
+        let now = Instant::now();
+        if now >= deadline {
+            break;
+        }
+        let command_deadline = std::cmp::min(now + AUTH_TIMEOUT, deadline);
+        if let Ok(out) = run_auth_command_until(cmd, command_deadline) {
             let text = out.primary_text();
             if text.trim().is_empty() {
                 continue;
@@ -529,8 +538,10 @@ pub fn get_provider_status(state: State<'_, ProviderState>) -> ProviderStatus {
 }
 
 #[tauri::command]
-pub fn refresh_provider_status(state: State<'_, ProviderState>) -> ProviderStatus {
-    refresh_status(&state.0, detect_claude)
+pub async fn refresh_provider_status(
+    state: State<'_, ProviderState>,
+) -> Result<ProviderStatus, String> {
+    refresh_status(&state.0, detect_claude).await
 }
 
 #[tauri::command]
@@ -539,8 +550,10 @@ pub fn get_cursor_status(state: State<'_, CursorState>) -> ProviderStatus {
 }
 
 #[tauri::command]
-pub fn refresh_cursor_status(state: State<'_, CursorState>) -> ProviderStatus {
-    refresh_status(&state.0, detect_cursor)
+pub async fn refresh_cursor_status(
+    state: State<'_, CursorState>,
+) -> Result<ProviderStatus, String> {
+    refresh_status(&state.0, detect_cursor).await
 }
 
 #[tauri::command]
@@ -549,8 +562,10 @@ pub fn get_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
 }
 
 #[tauri::command]
-pub fn refresh_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
-    refresh_status(&state.0, detect_codex)
+pub async fn refresh_codex_status(
+    state: State<'_, CodexState>,
+) -> Result<ProviderStatus, String> {
+    refresh_status(&state.0, detect_codex).await
 }
 
 #[tauri::command]
@@ -559,8 +574,10 @@ pub fn get_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
 }
 
 #[tauri::command]
-pub fn refresh_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
-    refresh_status(&state.0, detect_gemini)
+pub async fn refresh_gemini_status(
+    state: State<'_, GeminiState>,
+) -> Result<ProviderStatus, String> {
+    refresh_status(&state.0, detect_gemini).await
 }
 
 #[tauri::command]
@@ -576,8 +593,19 @@ pub fn get_openrouter_status(state: State<'_, OpencodeState>) -> ProviderStatus 
 }
 
 #[tauri::command]
-pub fn refresh_opencode_status(state: State<'_, OpencodeState>) -> ProviderStatus {
-    refresh_status(&state.0, detect_opencode)
+pub async fn refresh_openrouter_status(
+    state: State<'_, OpencodeState>,
+) -> Result<ProviderStatus, String> {
+    let mut status = refresh_status(&state.0, detect_opencode).await?;
+    status.id = "openrouter".to_string();
+    Ok(status)
+}
+
+#[tauri::command]
+pub async fn refresh_opencode_status(
+    state: State<'_, OpencodeState>,
+) -> Result<ProviderStatus, String> {
+    refresh_status(&state.0, detect_opencode).await
 }
 
 fn get_status(state: &Mutex<ProviderStatus>, id: &str, binary: &str) -> ProviderStatus {
@@ -590,15 +618,17 @@ fn get_status(state: &Mutex<ProviderStatus>, id: &str, binary: &str) -> Provider
     })
 }
 
-fn refresh_status(
+async fn refresh_status(
     state: &Mutex<ProviderStatus>,
     detect: fn() -> ProviderStatus,
-) -> ProviderStatus {
-    let next = detect();
+) -> Result<ProviderStatus, String> {
+    let next = tauri::async_runtime::spawn_blocking(detect)
+        .await
+        .map_err(|err| err.to_string())?;
     if let Ok(mut current) = state.lock() {
         *current = next.clone();
     }
-    next
+    Ok(next)
 }
 
 // Sync entry point for callers that already run on a blocking thread (e.g.

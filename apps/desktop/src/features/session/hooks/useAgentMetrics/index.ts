@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core';
 import type {
   Agent,
   ProviderName,
@@ -9,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
-import type { AgentAggregate } from '../../components/AgentMetricsBlock';
+import type { AgentAggregate } from '../../components/AgentMetrics';
 import { computeLatestTelemetryByAgentId } from '../../agent-row-format';
 
 export type AgentMetrics = {
@@ -36,25 +37,35 @@ type ProviderEntry = {
   recordedAt: string;
   inputTokens: number;
   outputTokens: number;
+  cachedInputTokens: number;
+  cacheCreationInputTokens: number;
 };
 
-const latestTurnTelemetryByRunId = (
-  telemetry: ReadonlyArray<TelemetryRecord>,
-): Map<string, TelemetryRecord> => {
+type TelemetryParams = {
+  readonly telemetry: ReadonlyArray<TelemetryRecord>;
+};
+
+const latestTurnTelemetryByRunId = ({
+  telemetry,
+}: TelemetryParams): Map<string, TelemetryRecord> => {
   const map = new Map<string, TelemetryRecord>();
   for (const rec of telemetry) {
     if (rec.kind !== 'turn') {
       continue;
     }
     const existing = map.get(rec.runId);
-    if (existing == null || existing.recordedAt < rec.recordedAt) {
+    if (existing == null || existing.recordedAt <= rec.recordedAt) {
       map.set(rec.runId, rec);
     }
   }
   return map;
 };
 
-const childIdsByParentId = (agents: ReadonlyArray<Agent>): Map<string, ReadonlyArray<string>> => {
+type AgentParams = {
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+const childIdsByParentId = ({ agents }: AgentParams): Map<string, ReadonlyArray<string>> => {
   const map = new Map<string, string[]>();
   for (const agent of agents) {
     if (agent.parentAgentId == null) {
@@ -67,18 +78,18 @@ const childIdsByParentId = (agents: ReadonlyArray<Agent>): Map<string, ReadonlyA
   return map;
 };
 
-const mergeProviderEntry = (target: Map<ProviderName, ProviderEntry>, entry: ProviderEntry) => {
+type MergeParams = {
+  readonly target: Map<ProviderName, ProviderEntry>;
+  readonly entry: ProviderEntry;
+};
+
+const mergeProviderEntry = ({ target, entry }: MergeParams) => {
   const existing = target.get(entry.provider);
-  if (existing == null) {
-    target.set(entry.provider, { ...entry });
+  if (existing != null && existing.recordedAt > entry.recordedAt) {
     return;
   }
-  existing.inputTokens += entry.inputTokens;
-  existing.outputTokens += entry.outputTokens;
-  if (existing.recordedAt < entry.recordedAt) {
-    existing.recordedAt = entry.recordedAt;
-    existing.model = entry.model;
-  }
+
+  target.set(entry.provider, { ...entry });
 };
 
 export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
@@ -134,7 +145,22 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
   }, [messages]);
 
   const aggregatesByAgentId = useMemo(() => {
-    const turnTelemetry = latestTurnTelemetryByRunId(telemetry);
+    const turnTelemetry = new Map<string, MutableAggregate>();
+    for (const record of telemetry) {
+      if (record.kind !== 'turn') {
+        continue;
+      }
+      const aggregate = turnTelemetry.get(record.runId) ?? {
+        inputTokens: 0,
+        outputTokens: 0,
+        estimatedCostUsd: 0,
+        turns: 1,
+      };
+      aggregate.inputTokens += inputTokensForUsage(record);
+      aggregate.outputTokens += record.outputTokens;
+      aggregate.estimatedCostUsd += record.estimatedCostUsd;
+      turnTelemetry.set(record.runId, aggregate);
+    }
     const map = new Map<string, MutableAggregate>();
     for (const run of phaseRuns) {
       const runIds = agentRunHistory[run.id] ?? (run.runId != null ? [run.runId] : []);
@@ -152,11 +178,11 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
         totals.inputTokens += rec.inputTokens;
         totals.outputTokens += rec.outputTokens;
         totals.estimatedCostUsd += rec.estimatedCostUsd;
-        totals.turns += 1;
+        totals.turns += rec.turns;
       }
       map.set(run.id, totals);
     }
-    const childIds = childIdsByParentId(phaseRuns);
+    const childIds = childIdsByParentId({ agents: phaseRuns });
     const rolled = new Set<string>();
     const rollup = (id: string) => {
       if (rolled.has(id)) {
@@ -186,7 +212,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
   }, [telemetry, phaseRuns, agentRunHistory]);
 
   const providerUsageByAgentId = useMemo(() => {
-    const turnTelemetry = latestTurnTelemetryByRunId(telemetry);
+    const turnTelemetry = latestTurnTelemetryByRunId({ telemetry });
     const map = new Map<string, Map<ProviderName, ProviderEntry>>();
     for (const run of phaseRuns) {
       const runIds = agentRunHistory[run.id] ?? (run.runId != null ? [run.runId] : []);
@@ -196,40 +222,20 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
         if (rec == null) {
           continue;
         }
-        mergeProviderEntry(byProvider, {
-          provider: rec.provider,
-          model: rec.model,
-          recordedAt: rec.recordedAt,
-          inputTokens: rec.inputTokens,
-          outputTokens: rec.outputTokens,
+        mergeProviderEntry({
+          target: byProvider,
+          entry: {
+            provider: rec.provider,
+            model: rec.model,
+            recordedAt: rec.recordedAt,
+            inputTokens: rec.inputTokens,
+            outputTokens: rec.outputTokens,
+            cachedInputTokens: rec.cachedInputTokens ?? 0,
+            cacheCreationInputTokens: rec.cacheCreationInputTokens ?? 0,
+          },
         });
       }
       map.set(run.id, byProvider);
-    }
-    const childIds = childIdsByParentId(phaseRuns);
-    const rolled = new Set<string>();
-    const rollup = (id: string) => {
-      if (rolled.has(id)) {
-        return;
-      }
-      rolled.add(id);
-      const self = map.get(id);
-      if (self == null) {
-        return;
-      }
-      for (const childId of childIds.get(id) ?? []) {
-        rollup(childId);
-        const child = map.get(childId);
-        if (child == null) {
-          continue;
-        }
-        for (const entry of child.values()) {
-          mergeProviderEntry(self, entry);
-        }
-      }
-    };
-    for (const run of phaseRuns) {
-      rollup(run.id);
     }
     const result = new Map<string, ReadonlyArray<ProviderContextUsage>>();
     for (const [id, byProvider] of map) {
@@ -241,8 +247,10 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
             model: entry.model,
             inputTokens: entry.inputTokens,
             outputTokens: entry.outputTokens,
+            cachedInputTokens: entry.cachedInputTokens,
+            cacheCreationInputTokens: entry.cacheCreationInputTokens,
           }))
-          .sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens)),
+          .sort((a, b) => contextTokensForUsage(b) - contextTokensForUsage(a)),
       );
     }
     return result;

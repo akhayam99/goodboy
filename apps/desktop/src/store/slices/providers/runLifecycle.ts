@@ -234,6 +234,7 @@ export const runLifecycle = async (
         },
       };
     });
+    void get().refreshProviders();
   });
 
   try {

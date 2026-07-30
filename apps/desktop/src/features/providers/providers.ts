@@ -65,6 +65,15 @@ const TAURI_GET_CMD: Record<ProviderId, string> = {
   openrouter: 'get_openrouter_status',
 };
 
+const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
+  anthropic: 'refresh_provider_status',
+  cursor: 'refresh_cursor_status',
+  codex: 'refresh_codex_status',
+  gemini: 'refresh_gemini_status',
+  opencode: 'refresh_opencode_status',
+  openrouter: 'refresh_openrouter_status',
+};
+
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   models: [],
   supportsTools: false,
@@ -81,6 +90,14 @@ export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('
 export const getGeminiStatus = (): Promise<ProviderStatus> => getProviderStatus('gemini');
 export const getOpenCodeStatus = (): Promise<ProviderStatus> => getProviderStatus('opencode');
 export const getOpenRouterStatus = (): Promise<ProviderStatus> => getProviderStatus('openrouter');
+
+type RefreshParams = {
+  readonly id: ProviderId;
+};
+
+export const refreshProviderDetection = async ({ id }: RefreshParams): Promise<ProviderStatus> => {
+  return invoke<ProviderStatus>(TAURI_REFRESH_CMD[id]);
+};
 
 export const checkProviderAuth = async (providerId: ProviderId): Promise<AuthState> => {
   return invoke<AuthState>('check_provider_auth', { providerId });

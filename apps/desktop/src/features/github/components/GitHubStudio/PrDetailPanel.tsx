@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import type { AgentId, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
-import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
-import { AlertCircle, Inbox, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import type { AgentId, SessionId } from '@goodboy/types';
+import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
+import { ArrowRight, Inbox } from 'lucide-react';
 import {
   buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
@@ -12,17 +12,21 @@ import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
 import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openUrl } from '../../../../shared/lib/editor';
-import { formatError } from '../../../../shared/lib/errors';
-import { useAppStore, useSessions } from '../../../../store';
-import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
+import { HeaderBand } from '../../../../shared/components/StudioDetail';
+import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import { groupThreads, type CommentThread } from '../../comment-threads';
+import { PullRequestChip } from '../PullRequestChip';
 import { CreatePrPanel } from './CreatePrPanel';
 import { PrActionBar, type ActionBusy } from './PrActionBar';
 import { PrChecks } from './PrChecks';
 import { PrConversation } from './PrConversation';
 import { ResolveBoard } from './ResolveBoard';
 import { PrOverview } from './PrOverview';
-import { PrSidebar, type PrSection } from './PrSidebar';
+import { PrReviewers } from './PrReviewers';
+import { PrSectionNav } from './PrSectionNav';
+import { PrSwitcher } from './PrSwitcher';
+import { SectionBody } from './SectionBody';
+import type { PrSection } from './prSection';
 
 type Props = {
   readonly sessionId: SessionId | null;
@@ -38,18 +42,29 @@ export const PrDetailPanel = ({
   onClose,
 }: Props) => {
   const sessions = useSessions();
-  const session = sessionId ? sessions.find((s) => s.id === sessionId) : undefined;
-  const github = useAppStore((s) => (sessionId ? s.sessionGithub[sessionId] : null));
-  const branch = useAppStore((s) => (sessionId ? (s.sessionBranches[sessionId] ?? null) : null));
+  const session =
+    sessionId != null ? sessions.find((candidate) => candidate.id === sessionId) : undefined;
+  const github = useAppStore((state) =>
+    sessionId != null ? state.sessionGithub[sessionId] : null,
+  );
+  const prs = useAppStore((state) =>
+    sessionId != null ? (state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  );
+  const selectedNumber = useAppStore((state) =>
+    sessionId != null ? (state.sessionSelectedPrNumber[sessionId] ?? null) : null,
+  );
   const workspaceRoot = useAppStore((s) => {
-    const sess = sessionId ? s.sessions.find((x) => x.id === sessionId) : undefined;
-    const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined;
+    const sess =
+      sessionId != null ? s.sessions.find((candidate) => candidate.id === sessionId) : undefined;
+    const ws =
+      sess != null
+        ? s.workspaces.find((workspace) => workspace.id === sess.workspaceId)
+        : undefined;
     return ws?.rootPath ?? null;
   });
-  const workspaceId = session?.workspaceId;
   const roleModels = useSessionRoleModels({ sessionId });
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
+  const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const markPrReady = useAppStore((s) => s.markPrReady);
   const convertPrToDraft = useAppStore((s) => s.convertPrToDraft);
   const mergePr = useAppStore((s) => s.mergePr);
@@ -71,52 +86,24 @@ export const PrDetailPanel = ({
   );
 
   const [busy, setBusy] = useState<ActionBusy>(null);
-  const [mergeConfirm, setMergeConfirm] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [section, setSection] = useState<PrSection>('overview');
   const [jumpThreadId, setJumpThreadId] = useState<string | null>(null);
-  const [prs, setPrs] = useState<ReadonlyArray<PullRequestState>>([]);
-  const [prsTick, setPrsTick] = useState(0);
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
-  const [localDetail, setLocalDetail] = useState<PrDetail | null>(null);
-  const [localDetailLoading, setLocalDetailLoading] = useState(false);
-  const [localDetailError, setLocalDetailError] = useState<string | null>(null);
 
   const primary = github?.pr ?? null;
   const primaryNumber = primary?.number ?? null;
-  const options = prs.length > 0 ? prs : primary ? [primary] : [];
-  const selected = selectedNumber ?? primaryNumber ?? options[0]?.number ?? null;
-  const activePr = options.find((p) => p.number === selected) ?? primary;
-  const isPrimary = !!activePr && activePr.number === primaryNumber;
-
-  const detail = isPrimary ? (github?.detail ?? null) : localDetail;
-  const detailLoading = isPrimary ? !!github?.detailLoading : localDetailLoading;
-  const detailError = isPrimary ? (github?.detailError ?? null) : localDetailError;
-
-  const fetchLocalDetail = useCallback(
-    async (num: number) => {
-      if (!workspaceRoot) {
-        return;
-      }
-      setLocalDetailLoading(true);
-      setLocalDetailError(null);
-      try {
-        setLocalDetail(await ghPrDetailByNumber(workspaceRoot, num, workspaceId));
-      } catch (e) {
-        setLocalDetailError(formatError(e));
-      } finally {
-        setLocalDetailLoading(false);
-      }
-    },
-    [workspaceRoot, workspaceId],
-  );
+  const options = prs.length > 0 ? prs : primary != null ? [primary] : [];
+  const selectedPr =
+    selectedNumber != null
+      ? (options.find((candidate) => candidate.number === selectedNumber) ?? null)
+      : null;
+  const selected = selectedPr?.number ?? primaryNumber;
+  const activePr = options.find((pr) => pr.number === selected) ?? primary;
+  const detail = github?.detail ?? null;
+  const detailLoading = github?.detailLoading === true;
+  const detailError = github?.detailError ?? null;
 
   useEffect(() => {
-    setSelectedNumber(null);
-    setPrs([]);
-    setLocalDetail(null);
-    setLocalDetailError(null);
-    setMergeConfirm(false);
     setCreateOpen(false);
     setSection('overview');
   }, [sessionId]);
@@ -125,44 +112,25 @@ export const PrDetailPanel = ({
     if (initialThreadId == null) {
       return;
     }
-    if (initialPrNumber != null) {
-      setSelectedNumber(initialPrNumber);
+    if (
+      sessionId != null &&
+      initialPrNumber != null &&
+      options.some((candidate) => candidate.number === initialPrNumber)
+    ) {
+      void selectSessionPr(sessionId, initialPrNumber);
     }
     setSection('comments');
-  }, [sessionId, initialThreadId, initialPrNumber]);
+  }, [sessionId, initialThreadId, initialPrNumber, options, selectSessionPr]);
 
   useEffect(() => {
-    if (!branch || !workspaceRoot) {
-      setPrs([]);
+    if (sessionId == null || activePr == null) {
       return;
     }
-    let cancelled = false;
-    void ghPrsForBranch(workspaceRoot, branch, workspaceId)
-      .then((list) => {
-        if (!cancelled) {
-          setPrs(list);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPrs([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [branch, workspaceRoot, workspaceId, prsTick]);
-
-  useEffect(() => {
-    if (!sessionId || !isPrimary || !activePr) {
-      return;
-    }
-    if (!github?.detail && !github?.detailLoading && !github?.detailError) {
+    if (github?.detail == null && github?.detailLoading !== true && github?.detailError == null) {
       void refreshSessionPrDetail(sessionId);
     }
   }, [
     sessionId,
-    isPrimary,
     activePr,
     github?.detail,
     github?.detailLoading,
@@ -170,24 +138,7 @@ export const PrDetailPanel = ({
     refreshSessionPrDetail,
   ]);
 
-  useEffect(() => {
-    if (!sessionId || prs.length === 0) {
-      return;
-    }
-    if ((prs[0]?.number ?? null) === primaryNumber) {
-      return;
-    }
-    void refreshSessionPr(sessionId, { force: true, silent: true });
-  }, [sessionId, prs, primaryNumber, refreshSessionPr]);
-
-  useEffect(() => {
-    if (!activePr || isPrimary) {
-      return;
-    }
-    void fetchLocalDetail(activePr.number);
-  }, [activePr, isPrimary, fetchLocalDetail]);
-
-  if (!sessionId || !session) {
+  if (sessionId == null || session == null) {
     return (
       <div className="flex h-full items-center justify-center px-6">
         <EmptyState
@@ -202,20 +153,13 @@ export const PrDetailPanel = ({
   }
 
   const refreshActive = () => {
-    if (!activePr) {
+    if (activePr == null) {
       return;
     }
-    if (isPrimary) {
-      void refreshSessionPrDetail(sessionId, { force: true });
-    } else {
-      void fetchLocalDetail(activePr.number);
-    }
+    void refreshSessionPrDetail(sessionId, { force: true });
   };
 
-  const onMutated = () => {
-    setPrsTick((t) => t + 1);
-    refreshActive();
-  };
+  const onMutated = refreshActive;
 
   const spawnResolver = async (
     args: CommentAgentArgs,
@@ -253,11 +197,11 @@ export const PrDetailPanel = ({
   };
 
   const onSpawnOne = (thread: CommentThread, choice: ResolveModelChoice) => {
-    if (!activePr) {
+    if (activePr == null) {
       return;
     }
     const existing = resolverFor(thread);
-    if (existing && existing.status !== 'failed') {
+    if (existing != null && existing.status !== 'failed') {
       openResolver(existing.agent.id as AgentId);
       return;
     }
@@ -278,12 +222,12 @@ export const PrDetailPanel = ({
     batch: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => {
-    if (!activePr || batch.length === 0) {
+    if (activePr == null || batch.length === 0) {
       return;
     }
     const fresh = batch.filter((t) => {
       const existing = resolverFor(t);
-      return !existing || existing.status === 'failed';
+      return existing == null || existing.status === 'failed';
     });
     if (fresh.length === 0) {
       void (async () => {
@@ -312,12 +256,12 @@ export const PrDetailPanel = ({
     batch: ReadonlyArray<CommentThread>,
     choiceById: Readonly<Record<string, ResolveModelChoice>>,
   ) => {
-    if (!activePr || batch.length < 2 || batch.length > 8) {
+    if (activePr == null || batch.length < 2 || batch.length > 8) {
       return;
     }
     const fresh = batch.filter((thread) => {
       const existing = resolverFor(thread);
-      return !existing || existing.status === 'failed';
+      return existing == null || existing.status === 'failed';
     });
     if (fresh.length < 2) {
       return;
@@ -337,7 +281,7 @@ export const PrDetailPanel = ({
   };
 
   const run = async (kind: Exclude<ActionBusy, null>, fn: () => Promise<void>) => {
-    if (busy) {
+    if (busy != null) {
       return;
     }
     setBusy(kind);
@@ -348,12 +292,11 @@ export const PrDetailPanel = ({
       void 0;
     } finally {
       setBusy(null);
-      setMergeConfirm(false);
     }
   };
 
   const onAddReviewers = (logins: ReadonlyArray<string>) => {
-    if (!activePr) {
+    if (activePr == null) {
       return;
     }
     void (async () => {
@@ -366,7 +309,7 @@ export const PrDetailPanel = ({
     })();
   };
 
-  if (!activePr) {
+  if (activePr == null) {
     return (
       <div className="flex h-full flex-col">
         <CreatePrPanel
@@ -391,150 +334,135 @@ export const PrDetailPanel = ({
   const num = activePr.number;
 
   return (
-    <div className="flex h-full min-h-0">
-      <PrSidebar
-        pr={activePr}
-        options={options}
-        selected={selected}
-        onSelectPr={setSelectedNumber}
-        detail={detail}
-        section={section}
-        onSection={setSection}
-        workspaceRoot={workspaceRoot}
-        onAddReviewers={onAddReviewers}
-      />
-
-      <Divider orientation="vertical" />
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <PrActionBar
-          pr={activePr}
-          sessionId={sessionId}
-          onOpenSession={onClose}
-          busy={busy}
-          detailLoading={detailLoading}
-          mergeConfirm={mergeConfirm}
-          canMerge={canMerge}
-          mergeReason={mergeReason}
-          onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
-          onConvertDraft={() => void run('undraft', () => convertPrToDraft(sessionId, num))}
-          onClose={() => void run('close', () => closePr(sessionId, num))}
-          onReopen={() => void run('reopen', () => reopenPr(sessionId, num))}
-          onCreateNew={() => setCreateOpen(true)}
-          onMerge={() => void run('merge', () => mergePr(sessionId, num))}
-          onSetMergeConfirm={setMergeConfirm}
-          onOpenGithub={() => void openUrl(activePr.url)}
-          onRefresh={refreshActive}
-        />
-
-        <Divider />
-
-        {createOpen ? (
-          <CreatePrPanel
-            sessionId={sessionId}
-            defaultTitle={session.goal}
-            closedPr={isClosed ? { number: activePr.number, url: activePr.url } : undefined}
-            onCreated={() => {
-              setCreateOpen(false);
-              onMutated();
-            }}
-            onCancel={() => setCreateOpen(false)}
-            onStudioClose={onClose}
-          />
-        ) : (
-          <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-            {section === 'overview' ? (
-              <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 px-6 py-4">
+        <HeaderBand
+          meta={
+            options.length > 1 ? (
+              <PrSwitcher
+                prs={options}
+                selected={selected}
+                onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
+              />
             ) : (
-              <SectionBody
-                detailLoading={detailLoading}
-                detailError={detailError}
-                detail={detail}
-                onRetry={refreshActive}
-              >
-                {section === 'resolve' ? (
-                  <ResolveBoard
-                    threads={groupThreads(detail?.comments ?? []).filter(
-                      (t) => t.head.source === 'review' && t.head.resolved === false,
-                    )}
-                    resolverFor={resolverFor}
-                    onSpawnOne={onSpawnOne}
-                    onSpawnBatch={onSpawnBatch}
-                    onSpawnCombined={onSpawnCombined}
-                    onOpenResolver={openResolver}
-                    roleModels={roleModels}
-                    onOpenThread={(threadId) => {
-                      setJumpThreadId(threadId);
-                      setSection('comments');
-                    }}
-                  />
-                ) : section === 'comments' ? (
-                  <PrConversation
-                    comments={detail?.comments ?? []}
-                    pr={activePr}
-                    resolverFor={resolverFor}
-                    scrollToThreadId={jumpThreadId ?? initialThreadId}
-                    onOpenUrl={(u) => void openUrl(u)}
-                  />
-                ) : (
-                  <PrChecks
-                    checks={detail?.checks ?? []}
-                    pr={activePr}
-                    onOpenUrl={(u) => void openUrl(u)}
-                  />
-                )}
-              </SectionBody>
-            )}
+              <PullRequestChip
+                state={activePr.isDraft ? 'draft' : activePr.state}
+                variant="badge"
+                number={activePr.number}
+                iconSize={12}
+              />
+            )
+          }
+          title={activePr.title}
+          subtitle={
+            activePr.headBranch !== '' && activePr.baseBranch !== '' ? (
+              <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
+                <span className="font-mono">{activePr.headBranch}</span>
+                <ArrowRight size={11} aria-hidden />
+                <span className="font-mono">{activePr.baseBranch}</span>
+              </span>
+            ) : undefined
+          }
+        />
+      </div>
+      <Divider />
+      <div className="flex min-h-0 flex-1">
+        <aside className="flex w-72 shrink-0 flex-col">
+          <PrSectionNav pr={activePr} detail={detail} section={section} onSection={setSection} />
+          <Divider />
+          <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3" fadeSize={24}>
+            <PrReviewers
+              detail={detail}
+              workspaceRoot={workspaceRoot}
+              onAddReviewers={onAddReviewers}
+            />
           </ScrollFade>
-        )}
+        </aside>
+
+        <Divider orientation="vertical" />
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <PrActionBar
+            pr={activePr}
+            sessionId={sessionId}
+            onOpenSession={onClose}
+            busy={busy}
+            detailLoading={detailLoading}
+            canMerge={canMerge}
+            mergeReason={mergeReason}
+            onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
+            onConvertDraft={() => void run('undraft', () => convertPrToDraft(sessionId, num))}
+            onClose={() => void run('close', () => closePr(sessionId, num))}
+            onReopen={() => void run('reopen', () => reopenPr(sessionId, num))}
+            onCreateNew={() => setCreateOpen(true)}
+            onMerge={() => run('merge', () => mergePr(sessionId, num))}
+            onOpenGithub={() => void openUrl(activePr.url)}
+            onRefresh={refreshActive}
+          />
+
+          <Divider />
+
+          {createOpen ? (
+            <CreatePrPanel
+              sessionId={sessionId}
+              defaultTitle={session.goal}
+              closedPr={isClosed ? { number: activePr.number, url: activePr.url } : undefined}
+              onCreated={() => {
+                setCreateOpen(false);
+                onMutated();
+              }}
+              onCancel={() => setCreateOpen(false)}
+              onStudioClose={onClose}
+            />
+          ) : (
+            <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+              {section === 'overview' ? (
+                <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
+              ) : (
+                <SectionBody
+                  detailLoading={detailLoading}
+                  detailError={detailError}
+                  detail={detail}
+                  onRetry={refreshActive}
+                >
+                  {section === 'resolve' ? (
+                    <ResolveBoard
+                      threads={groupThreads(detail?.comments ?? []).filter(
+                        (thread) =>
+                          thread.head.source === 'review' && thread.head.resolved === false,
+                      )}
+                      resolverFor={resolverFor}
+                      onSpawnOne={onSpawnOne}
+                      onSpawnBatch={onSpawnBatch}
+                      onSpawnCombined={onSpawnCombined}
+                      onOpenResolver={openResolver}
+                      roleModels={roleModels}
+                      onOpenThread={(threadId) => {
+                        setJumpThreadId(threadId);
+                        setSection('comments');
+                      }}
+                    />
+                  ) : section === 'comments' ? (
+                    <PrConversation
+                      comments={detail?.comments ?? []}
+                      pr={activePr}
+                      resolverFor={resolverFor}
+                      scrollToThreadId={jumpThreadId ?? initialThreadId}
+                      onOpenUrl={(url) => void openUrl(url)}
+                    />
+                  ) : (
+                    <PrChecks
+                      checks={detail?.checks ?? []}
+                      pr={activePr}
+                      onOpenUrl={(url) => void openUrl(url)}
+                    />
+                  )}
+                </SectionBody>
+              )}
+            </ScrollFade>
+          )}
+        </div>
       </div>
     </div>
   );
 };
-
-function SectionBody({
-  detail,
-  detailLoading,
-  detailError,
-  onRetry,
-  children,
-}: {
-  detail: PrDetail | null;
-  detailLoading: boolean;
-  detailError: string | null;
-  onRetry: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-6 py-6">
-      {detailError ? (
-        <div className="flex items-center gap-1.5 text-xs text-danger">
-          <AlertCircle size={13} aria-hidden />
-          <span className="min-w-0 flex-1 truncate" title={detailError}>
-            {detailError}
-          </span>
-          <button
-            type="button"
-            onClick={onRetry}
-            aria-label="retry"
-            className="rounded p-0.5 hover:bg-muted"
-          >
-            <RefreshCw size={12} aria-hidden />
-          </button>
-        </div>
-      ) : detailLoading && !detail ? (
-        <div className="flex flex-col gap-2" role="status" aria-label="loading pr data">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Skeleton className="size-4 shrink-0 rounded-full" />
-              <Skeleton className="h-3 flex-1" />
-              <Skeleton className="h-3 w-12 shrink-0" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        children
-      )}
-    </div>
-  );
-}

@@ -180,6 +180,19 @@ describe('sweepGithub', () => {
   });
 
   describe('skip rules', () => {
+    it('continues polling when a closed pr is selected over an open canonical pr', () => {
+      state = makeState({
+        sessions: [{ id: S1 }],
+        sessionBranches: { [S1]: 'feat/foo' },
+        sessionGithub: { [S1]: { pr: { state: 'open' }, fetchedAt: '2025-01-01T00:00:00Z' } },
+        sessionSelectedPrNumber: { [S1]: 40 },
+      });
+
+      sweepGithub(set as never, get as never)();
+
+      expect(state.refreshSessionPr).toHaveBeenCalledWith(S1, expect.anything());
+    });
+
     it('skips merged PRs (does not add to promises)', async () => {
       state = makeState({
         sessions: [{ id: S1 }],

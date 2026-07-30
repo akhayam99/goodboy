@@ -133,4 +133,16 @@ describe('getCapabilities', () => {
       }
     }
   });
+
+  it('exposes authored context windows per model', () => {
+    const anthropic = getCapabilities({ id: 'anthropic' });
+    const codex = getCapabilities({ id: 'codex' });
+    expect(anthropic.models.find((model) => model.id === 'sonnet-4.5')?.contextWindow).toBe(
+      200_000,
+    );
+    expect(anthropic.models.find((model) => model.id === 'sonnet-4.6')?.contextWindow).toBe(
+      1_000_000,
+    );
+    expect(codex.models.find((model) => model.id === 'gpt-5.4')?.contextWindow).toBe(400_000);
+  });
 });

@@ -180,7 +180,12 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
     if let Some(name) = existing_branch {
         let local_exists = git(
             &repo_path,
-            &["rev-parse", "--verify", "--quiet", &format!("refs/heads/{name}")],
+            &[
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                &format!("refs/heads/{name}"),
+            ],
         )
         .is_ok();
         if local_exists {
@@ -297,10 +302,8 @@ fn list_local_branches_blocking(repo_path: String) -> Result<Vec<BranchInfo>, Wo
         &["for-each-ref", "--format=%(refname:short)", "refs/heads"],
     )?;
     let worktrees = parse_porcelain(&git(p, &["worktree", "list", "--porcelain"])?);
-    let in_use_branches: std::collections::HashSet<String> = worktrees
-        .iter()
-        .filter_map(|w| w.branch.clone())
-        .collect();
+    let in_use_branches: std::collections::HashSet<String> =
+        worktrees.iter().filter_map(|w| w.branch.clone()).collect();
     let uncommitted = uncommitted_status_by_branch(&worktrees, &in_use_branches);
     let mut branches = Vec::new();
     for line in raw.lines() {
@@ -398,10 +401,7 @@ pub fn worktree_remote_url(repo_path: String) -> Option<String> {
 }
 
 #[tauri::command]
-pub fn worktree_diff(
-    worktree_path: String,
-    base: Option<String>,
-) -> Result<String, WorktreeError> {
+pub fn worktree_diff(worktree_path: String, base: Option<String>) -> Result<String, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
@@ -639,6 +639,10 @@ pub struct WorktreeStatus {
     pub head_subject: Option<String>,
     pub ahead: u32,
     pub behind: u32,
+    #[serde(rename = "commitsAheadOfMain")]
+    pub commits_ahead_of_main: u32,
+    #[serde(rename = "commitsBehindMain")]
+    pub commits_behind_main: u32,
     pub staged: u32,
     pub unstaged: u32,
     pub untracked: u32,
@@ -703,11 +707,178 @@ pub fn worktree_commits(worktree_path: String) -> Result<Vec<BranchCommit>, Work
     Ok(commits)
 }
 
+#[derive(Debug, Deserialize)]
+pub struct RewriteArgs {
+    #[serde(rename = "worktreePath")]
+    pub worktree_path: String,
+    pub sha: String,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RewrittenHead {
+    pub sha: String,
+    #[serde(rename = "shortSha")]
+    pub short_sha: String,
+    pub replaced: Vec<String>,
+}
+
 #[tauri::command]
-pub fn worktree_diff_commit(
-    worktree_path: String,
-    sha: String,
-) -> Result<String, WorktreeError> {
+pub fn worktree_amend_commit(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
+    let p = Path::new(&args.worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
+    }
+    let message = require_message(&args.message)?;
+    let target = resolve_commit(p, &args.sha)?;
+    let head = resolve_commit(p, "HEAD")?;
+    if target != head {
+        return Err(WorktreeError::Git {
+            message: format!(
+                "only the newest local commit can be amended: {} is behind HEAD",
+                short_of(&target)
+            ),
+        });
+    }
+    ensure_unpushed(p, std::slice::from_ref(&target))?;
+    ensure_nothing_staged(p)?;
+    git(p, &["commit", "--amend", "-m", &message])?;
+    head_of(p, vec![target])
+}
+
+#[tauri::command]
+pub fn worktree_squash_commits(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
+    let p = Path::new(&args.worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
+    }
+    let message = require_message(&args.message)?;
+    let oldest = resolve_commit(p, &args.sha)?;
+    let head = resolve_commit(p, "HEAD")?;
+    if oldest == head {
+        return Err(WorktreeError::Git {
+            message: "squash needs at least two commits: pick an older one".to_string(),
+        });
+    }
+    if git(p, &["merge-base", "--is-ancestor", &oldest, &head]).is_err() {
+        return Err(WorktreeError::Git {
+            message: format!("{} is not an ancestor of HEAD", short_of(&oldest)),
+        });
+    }
+    let mut range: Vec<String> = git(p, &["rev-list", &format!("{oldest}..{head}")])
+        .map(|out| {
+            out.lines()
+                .map(|l| l.trim().to_string())
+                .filter(|l| !l.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    range.push(oldest.clone());
+    ensure_unpushed(p, &range)?;
+    ensure_nothing_staged(p)?;
+    let parent = git(
+        p,
+        &["rev-parse", "--verify", "--quiet", &format!("{oldest}^")],
+    )
+    .map(|out| out.trim().to_string())
+    .ok()
+    .filter(|s| !s.is_empty())
+    .ok_or_else(|| WorktreeError::Git {
+        message: "cannot squash the first commit of the repository".to_string(),
+    })?;
+    git(p, &["reset", "--soft", &parent])?;
+    match git(p, &["commit", "-m", &message]) {
+        Ok(_) => head_of(p, range),
+        Err(err) => {
+            git(p, &["reset", "--soft", &head])?;
+            Err(err)
+        }
+    }
+}
+
+fn require_message(message: &str) -> Result<String, WorktreeError> {
+    let trimmed = message.trim();
+    if trimmed.is_empty() {
+        return Err(WorktreeError::Git {
+            message: "commit message is empty".to_string(),
+        });
+    }
+    Ok(trimmed.to_string())
+}
+
+fn resolve_commit(cwd: &Path, sha: &str) -> Result<String, WorktreeError> {
+    let trimmed = sha.trim();
+    if trimmed.is_empty() {
+        return Err(WorktreeError::Git {
+            message: "commit sha is empty".to_string(),
+        });
+    }
+    let resolved = git(
+        cwd,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("{trimmed}^{{commit}}"),
+        ],
+    )
+    .map(|out| out.trim().to_string())
+    .ok()
+    .filter(|s| !s.is_empty());
+    resolved.ok_or_else(|| WorktreeError::Git {
+        message: format!("unknown commit: {trimmed}"),
+    })
+}
+
+fn unpushed_shas(cwd: &Path) -> std::collections::HashSet<String> {
+    match resolve_upstream(cwd) {
+        Some(upstream) => rev_list_set(cwd, &format!("{upstream}..HEAD")),
+        None => rev_list_set(cwd, "HEAD"),
+    }
+}
+
+fn ensure_unpushed(cwd: &Path, shas: &[String]) -> Result<(), WorktreeError> {
+    let unpushed = unpushed_shas(cwd);
+    for sha in shas {
+        if !unpushed.contains(sha) {
+            return Err(WorktreeError::Git {
+                message: format!(
+                    "{} is already pushed: rewriting it would need a force push",
+                    short_of(sha)
+                ),
+            });
+        }
+    }
+    Ok(())
+}
+
+fn ensure_nothing_staged(cwd: &Path) -> Result<(), WorktreeError> {
+    let (staged, _, _, _) = parse_status_counts(cwd);
+    if staged > 0 {
+        return Err(WorktreeError::Git {
+            message: format!(
+                "{staged} staged change(s): commit or unstage them before rewriting local history"
+            ),
+        });
+    }
+    Ok(())
+}
+
+fn head_of(cwd: &Path, replaced: Vec<String>) -> Result<RewrittenHead, WorktreeError> {
+    let sha = resolve_commit(cwd, "HEAD")?;
+    Ok(RewrittenHead {
+        short_sha: short_of(&sha),
+        sha,
+        replaced,
+    })
+}
+
+fn short_of(sha: &str) -> String {
+    sha.chars().take(7).collect()
+}
+
+#[tauri::command]
+pub fn worktree_diff_commit(worktree_path: String, sha: String) -> Result<String, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
@@ -767,6 +938,9 @@ pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, Worktree
     } else {
         (0, 0)
     };
+    let (commits_ahead_of_main, commits_behind_main) = resolve_main(p)
+        .and_then(|(main_ref, _)| rev_list_left_right(p, main_ref, "HEAD"))
+        .unwrap_or((0, 0));
     let (staged, unstaged, untracked, changed) = parse_status_counts(p);
     Ok(WorktreeStatus {
         branch,
@@ -774,6 +948,8 @@ pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, Worktree
         head_subject,
         ahead,
         behind,
+        commits_ahead_of_main,
+        commits_behind_main,
         staged,
         unstaged,
         untracked,
@@ -782,37 +958,58 @@ pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, Worktree
     })
 }
 
-/// Range argument for `git log` that lists only commits unique to the current
-/// branch (i.e. since divergence from `main`). Falls back to `HEAD` when no
-/// merge-base can be resolved — typical for a brand-new repo without `main`.
 fn resolve_branch_range(cwd: &Path) -> String {
-    for base in ["main", "origin/main"] {
-        if let Ok(out) = git(cwd, &["merge-base", "HEAD", base]) {
-            let sha = out.trim();
-            if !sha.is_empty() {
-                return format!("{sha}..HEAD");
-            }
+    resolve_main(cwd)
+        .map(|(_, merge_base)| format!("{merge_base}..HEAD"))
+        .unwrap_or_else(|| "HEAD".to_string())
+}
+
+fn resolve_main(cwd: &Path) -> Option<(&'static str, String)> {
+    for main_ref in ["origin/main", "main"] {
+        let merge_base = git(cwd, &["merge-base", "HEAD", main_ref])
+            .ok()
+            .map(|out| out.trim().to_string())
+            .filter(|sha| !sha.is_empty());
+        if let Some(merge_base) = merge_base {
+            return Some((main_ref, merge_base));
         }
     }
-    "HEAD".to_string()
+    None
 }
 
 fn resolve_upstream(cwd: &Path) -> Option<String> {
-    git(cwd, &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
+    git(
+        cwd,
+        &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+    )
+    .ok()
+    .map(|s| s.trim().to_string())
+    .filter(|s| !s.is_empty())
 }
 
 fn rev_list_set(cwd: &Path, range: &str) -> std::collections::HashSet<String> {
     git(cwd, &["rev-list", range])
         .ok()
-        .map(|s| s.lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).collect())
+        .map(|s| {
+            s.lines()
+                .map(|l| l.trim().to_string())
+                .filter(|l| !l.is_empty())
+                .collect()
+        })
         .unwrap_or_default()
 }
 
 fn rev_list_left_right(cwd: &Path, left: &str, right: &str) -> Option<(u32, u32)> {
-    let out = git(cwd, &["rev-list", "--left-right", "--count", &format!("{left}...{right}")]).ok()?;
+    let out = git(
+        cwd,
+        &[
+            "rev-list",
+            "--left-right",
+            "--count",
+            &format!("{left}...{right}"),
+        ],
+    )
+    .ok()?;
     let parts: Vec<&str> = out.split_whitespace().collect();
     if parts.len() < 2 {
         return None;
@@ -940,10 +1137,7 @@ fn resolve_origin_base(repo_path: &Path, base: &str) -> Result<String, WorktreeE
         }
     }
     Err(WorktreeError::Git {
-        message: format!(
-            "cannot find base ref: tried {}",
-            candidates.join(", ")
-        ),
+        message: format!("cannot find base ref: tried {}", candidates.join(", ")),
     })
 }
 
@@ -966,8 +1160,11 @@ fn untracked_new_file_diffs(p: &Path) -> String {
 fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
     // Only emit if git agrees this path is untracked — keeps the single-file
     // diff honest (a tracked-but-unchanged file produces nothing).
-    let listed = git(p, &["ls-files", "--others", "--exclude-standard", "--", rel])
-        .unwrap_or_default();
+    let listed = git(
+        p,
+        &["ls-files", "--others", "--exclude-standard", "--", rel],
+    )
+    .unwrap_or_default();
     if listed.lines().map(str::trim).all(|l| l != rel) {
         return String::new();
     }
@@ -1027,7 +1224,9 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr).unwrap_or_default();
         return Err(WorktreeError::Git {
-            message: format!("git {} failed: {stderr}", args.join(" ")).trim().to_string(),
+            message: format!("git {} failed: {stderr}", args.join(" "))
+                .trim()
+                .to_string(),
         });
     }
     String::from_utf8(output.stdout).map_err(|_| WorktreeError::InvalidUtf8)
@@ -1071,4 +1270,212 @@ fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
     }
 
     entries
+}
+
+#[cfg(test)]
+mod rewrite_tests {
+    use super::{worktree_amend_commit, worktree_squash_commits, worktree_status, RewriteArgs};
+    use std::path::{Path, PathBuf};
+
+    fn temp_root(name: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "goodboy-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    fn git_ok(cwd: &Path, args: &[&str]) -> String {
+        super::git(cwd, args)
+            .unwrap_or_else(|err| panic!("git {} failed: {err}", args.join(" ")))
+            .trim()
+            .to_string()
+    }
+
+    fn init_repo(name: &str) -> PathBuf {
+        let root = temp_root(name);
+        git_ok(&root, &["init", "-b", "main"]);
+        git_ok(&root, &["config", "user.email", "test@example.com"]);
+        git_ok(&root, &["config", "user.name", "test"]);
+        git_ok(&root, &["config", "commit.gpgsign", "false"]);
+        root
+    }
+
+    fn commit(root: &Path, file: &str, body: &str, message: &str) -> String {
+        std::fs::write(root.join(file), body).unwrap();
+        git_ok(root, &["add", file]);
+        git_ok(root, &["commit", "-m", message]);
+        git_ok(root, &["rev-parse", "HEAD"])
+    }
+
+    fn push_to_new_remote(root: &Path) {
+        let remote = root.join("remote.git");
+        git_ok(root, &["init", "--bare", remote.to_str().unwrap()]);
+        git_ok(root, &["remote", "add", "origin", remote.to_str().unwrap()]);
+        git_ok(root, &["push", "-u", "origin", "main"]);
+    }
+
+    fn log_subjects(root: &Path) -> Vec<String> {
+        git_ok(root, &["log", "--format=%s"])
+            .lines()
+            .map(|l| l.trim().to_string())
+            .collect()
+    }
+
+    fn args(root: &Path, sha: &str, message: &str) -> RewriteArgs {
+        RewriteArgs {
+            worktree_path: root.to_string_lossy().into_owned(),
+            sha: sha.to_string(),
+            message: message.to_string(),
+        }
+    }
+
+    #[test]
+    fn status_counts_commits_ahead_of_and_behind_main() {
+        let root = init_repo("status-main-position");
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        commit(&root, "feature.txt", "feature", "feature");
+        commit(&root, "feature-two.txt", "feature two", "feature two");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "main.txt", "main", "main");
+        git_ok(&root, &["push", "origin", "main"]);
+        git_ok(&root, &["checkout", "feature"]);
+
+        let status = worktree_status(root.to_string_lossy().into_owned()).unwrap();
+
+        assert_eq!(status.commits_ahead_of_main, 2);
+        assert_eq!(status.commits_behind_main, 1);
+    }
+
+    #[test]
+    fn amend_rewords_the_newest_local_commit_without_upstream() {
+        let root = init_repo("amend-local");
+        commit(&root, "a.txt", "a", "first");
+        let head = commit(&root, "b.txt", "b", "second");
+
+        let result = worktree_amend_commit(args(&root, &head, "second, reworded")).unwrap();
+
+        assert_eq!(result.sha, git_ok(&root, &["rev-parse", "HEAD"]));
+        assert_eq!(result.replaced, vec![head]);
+        assert_eq!(log_subjects(&root), vec!["second, reworded", "first"]);
+    }
+
+    #[test]
+    fn amend_refuses_a_pushed_commit() {
+        let root = init_repo("amend-pushed");
+        commit(&root, "a.txt", "a", "first");
+        push_to_new_remote(&root);
+        let head = git_ok(&root, &["rev-parse", "HEAD"]);
+
+        let err = worktree_amend_commit(args(&root, &head, "reworded")).unwrap_err();
+
+        assert!(err.to_string().contains("already pushed"), "{err}");
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
+    }
+
+    #[test]
+    fn amend_refuses_a_commit_behind_head() {
+        let root = init_repo("amend-behind");
+        let first = commit(&root, "a.txt", "a", "first");
+        let head = commit(&root, "b.txt", "b", "second");
+
+        let err = worktree_amend_commit(args(&root, &first, "reworded")).unwrap_err();
+
+        assert!(err.to_string().contains("newest local commit"), "{err}");
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
+    }
+
+    #[test]
+    fn squash_folds_the_selected_range_into_one_commit() {
+        let root = init_repo("squash-range");
+        commit(&root, "a.txt", "a", "first");
+        let second = commit(&root, "b.txt", "b", "second");
+        let third = commit(&root, "c.txt", "c", "third");
+
+        let result = worktree_squash_commits(args(&root, &second, "second and third")).unwrap();
+
+        assert_eq!(result.sha, git_ok(&root, &["rev-parse", "HEAD"]));
+        assert_eq!(result.replaced, vec![third, second]);
+        assert_eq!(log_subjects(&root), vec!["second and third", "first"]);
+        assert_eq!(
+            git_ok(&root, &["show", "--name-only", "--format=", "HEAD"]),
+            "b.txt\nc.txt"
+        );
+    }
+
+    #[test]
+    fn squash_refuses_a_range_that_contains_a_pushed_commit() {
+        let root = init_repo("squash-pushed");
+        commit(&root, "a.txt", "a", "first");
+        let second = commit(&root, "b.txt", "b", "second");
+        push_to_new_remote(&root);
+        commit(&root, "c.txt", "c", "third");
+        let head = git_ok(&root, &["rev-parse", "HEAD"]);
+
+        let err = worktree_squash_commits(args(&root, &second, "second and third")).unwrap_err();
+
+        assert!(err.to_string().contains("already pushed"), "{err}");
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
+    }
+
+    #[test]
+    fn squash_refuses_staged_changes() {
+        let root = init_repo("squash-staged");
+        commit(&root, "a.txt", "a", "first");
+        let second = commit(&root, "b.txt", "b", "second");
+        commit(&root, "c.txt", "c", "third");
+        std::fs::write(root.join("d.txt"), "d").unwrap();
+        git_ok(&root, &["add", "d.txt"]);
+        let head = git_ok(&root, &["rev-parse", "HEAD"]);
+
+        let err = worktree_squash_commits(args(&root, &second, "second and third")).unwrap_err();
+
+        assert!(err.to_string().contains("staged change"), "{err}");
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
+    }
+
+    #[test]
+    fn squash_refuses_the_first_commit_of_the_repository() {
+        let root = init_repo("squash-root");
+        let first = commit(&root, "a.txt", "a", "first");
+        commit(&root, "b.txt", "b", "second");
+        let head = git_ok(&root, &["rev-parse", "HEAD"]);
+
+        let err = worktree_squash_commits(args(&root, &first, "everything")).unwrap_err();
+
+        assert!(err.to_string().contains("first commit"), "{err}");
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
+    }
+
+    #[test]
+    fn a_failed_squash_restores_head_and_leaves_no_rebase_in_progress() {
+        let root = init_repo("squash-failure");
+        commit(&root, "a.txt", "a", "first");
+        let second = commit(&root, "b.txt", "b", "second");
+        commit(&root, "c.txt", "c", "third");
+        let head = git_ok(&root, &["rev-parse", "HEAD"]);
+        let hook = root.join(".git").join("hooks").join("pre-commit");
+        std::fs::create_dir_all(hook.parent().unwrap()).unwrap();
+        std::fs::write(&hook, "#!/bin/sh\nexit 1\n").unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+
+        let err = worktree_squash_commits(args(&root, &second, "second and third")).unwrap_err();
+
+        assert!(err.to_string().contains("git commit"), "{err}");
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
+        assert_eq!(log_subjects(&root), vec!["third", "second", "first"]);
+        assert!(!root.join(".git").join("rebase-merge").exists());
+        assert!(!root.join(".git").join("rebase-apply").exists());
+    }
 }

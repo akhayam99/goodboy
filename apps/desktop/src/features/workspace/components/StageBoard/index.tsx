@@ -5,8 +5,8 @@ import type { Session, SessionStage, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useStageGroupedSessions } from '../../../../store';
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
-import { ArchiveSessionDialog } from '../../../session/components/ArchiveSessionDialog';
-import { DeleteSessionDialog } from '../../../session/components/DeleteSessionDialog';
+import { ArchiveSessionConfirm } from '../../../session/components/ArchiveSessionConfirm';
+import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionConfirm';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 
@@ -136,10 +136,18 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
       )}
 
       {confirm?.kind === 'archive' && (
-        <ArchiveSessionDialog session={confirm.session} open onClose={() => setConfirm(null)} />
+        <ArchiveSessionConfirm
+          session={confirm.session}
+          onClose={() => setConfirm(null)}
+          className="mx-auto w-full max-w-lg shrink-0"
+        />
       )}
       {confirm?.kind === 'delete' && (
-        <DeleteSessionDialog session={confirm.session} open onClose={() => setConfirm(null)} />
+        <DeleteSessionConfirm
+          session={confirm.session}
+          onClose={() => setConfirm(null)}
+          className="mx-auto w-full max-w-lg shrink-0"
+        />
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import { UpdateIndicator } from '../../../features/updater/components/UpdateIndi
 import { bridgeStatus } from '../../../features/companion/bridge';
 import { useThemeStore } from '../../../shared/lib/theme';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
+import { RunningScriptsIndicator } from '../../../features/scripts/components/RunningScriptsIndicator';
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
 import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
 
@@ -42,6 +43,7 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
         <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
 
         <div className="flex shrink-0 items-center gap-0.5">
+          <RunningScriptsIndicator />
           <NotificationCenter />
           <Tooltip content={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}>
             <button

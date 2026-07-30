@@ -43,9 +43,11 @@ type UsagePayload = {
   readonly input_tokens?: number;
   readonly output_tokens?: number;
   readonly cache_read_input_tokens?: number;
+  readonly cache_creation_input_tokens?: number;
   readonly inputTokens?: number;
   readonly outputTokens?: number;
   readonly cacheReadTokens?: number;
+  readonly cacheCreationInputTokens?: number;
 };
 
 const FILE_EDIT_TOOLS: ReadonlySet<string> = new Set([
@@ -159,8 +161,14 @@ export const parseAnthropicEnvelopeLine = (
       const input = usage.input_tokens ?? usage.inputTokens;
       const output = usage.output_tokens ?? usage.outputTokens;
       const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
+      const cacheCreation = usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens;
       const events: TurnEvent[] = [];
-      if (typeof input === 'number' || typeof output === 'number') {
+      if (
+        typeof input === 'number' ||
+        typeof output === 'number' ||
+        typeof cached === 'number' ||
+        typeof cacheCreation === 'number'
+      ) {
         events.push({
           kind: 'usage',
           runId: ctx.runId,
@@ -168,6 +176,7 @@ export const parseAnthropicEnvelopeLine = (
             inputTokens: input ?? 0,
             outputTokens: output ?? 0,
             cachedInputTokens: cached ?? 0,
+            cacheCreationInputTokens: cacheCreation ?? 0,
             estimatedCostUsd: 0,
           },
           at,

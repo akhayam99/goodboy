@@ -18,7 +18,8 @@ type MutableFile = {
   hunks: DiffHunk[];
 };
 
-const FILE_HEADER = /^diff --git a\/(.+) b\/(.+)$/;
+const FILE_HEADER_PREFIX = 'diff --git a/';
+const FILE_HEADER_SEPARATOR = ' b/';
 const HUNK_HEADER = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/;
 
 export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
@@ -51,16 +52,19 @@ export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
   };
 
   for (const line of lines) {
-    const fileMatch = line.match(FILE_HEADER);
-    if (fileMatch) {
+    if (line.startsWith(FILE_HEADER_PREFIX)) {
+      const separatorIndex = line.lastIndexOf(FILE_HEADER_SEPARATOR);
+      if (separatorIndex <= FILE_HEADER_PREFIX.length) {
+        continue;
+      }
+      const oldPath = line.slice(FILE_HEADER_PREFIX.length, separatorIndex);
+      const newPath = line.slice(separatorIndex + FILE_HEADER_SEPARATOR.length);
+      if (newPath.length === 0) {
+        continue;
+      }
       flushHunk();
       if (current) {
         files.push(current);
-      }
-      const oldPath = fileMatch[1];
-      const newPath = fileMatch[2];
-      if (!oldPath || !newPath) {
-        continue;
       }
       current = {
         path: newPath,

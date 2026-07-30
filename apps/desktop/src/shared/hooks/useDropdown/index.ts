@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
-import { useClickOutside } from '../useClickOutside';
 import { useDropdownDirection } from '../useDropdownDirection';
 
 type Params = {
@@ -8,7 +7,9 @@ type Params = {
   readonly align?: 'start' | 'end';
   readonly width?: string;
   readonly expectedHeight?: number;
+  readonly expectedWidth?: number;
   readonly openEvent?: string;
+  readonly strategy?: 'absolute' | 'fixed';
 };
 
 export const useDropdown = ({
@@ -16,13 +17,41 @@ export const useDropdown = ({
   align = 'start',
   width = 'w-full min-w-[10rem]',
   expectedHeight = 200,
+  expectedWidth = 160,
   openEvent,
+  strategy = 'absolute',
 }: Params) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
-  useClickOutside(containerRef, close);
-  const direction = useDropdownDirection(containerRef, open, expectedHeight);
+  const position = useDropdownDirection({
+    triggerRef: containerRef,
+    popupRef,
+    open,
+    expectedHeight,
+    expectedWidth,
+    align,
+    strategy,
+  });
+
+  useEffect(() => {
+    const onMouseDown = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (
+        containerRef.current?.contains(target) === true ||
+        popupRef.current?.contains(target) === true
+      ) {
+        return;
+      }
+      close();
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [close]);
 
   useEffect(() => {
     if (!open) {
@@ -56,17 +85,23 @@ export const useDropdown = ({
     }
     setOpen((previous) => !previous);
   }, [disabled]);
+  const portalTarget = containerRef.current?.closest('dialog[open]') ?? document.body;
 
   return {
     open,
     close,
     toggle,
     containerRef,
+    popupRef,
+    popupStyle: position.style,
+    portal: strategy === 'fixed',
+    portalTarget,
     popupClassName: cn(
-      'absolute z-50',
+      strategy === 'fixed' ? 'fixed z-50' : 'absolute z-50',
       width,
-      align === 'end' ? 'right-0' : 'left-0',
-      direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1',
+      strategy === 'absolute' && (align === 'end' ? 'right-0' : 'left-0'),
+      strategy === 'absolute' &&
+        (position.direction === 'up' ? 'bottom-[calc(100%+0.25rem)]' : 'top-[calc(100%+0.25rem)]'),
     ),
   };
 };

@@ -19,7 +19,6 @@ type Props = {
   readonly rowTitle?: string;
   readonly leading?: ReactNode;
   readonly title: ReactNode;
-  readonly trailing?: ReactNode;
   readonly actions: ReactNode;
   readonly headline?: ReactNode;
   readonly footer?: ReactNode;
@@ -38,7 +37,6 @@ export const AgentCard = ({
   rowTitle,
   leading,
   title,
-  trailing,
   actions,
   headline,
   footer,
@@ -76,7 +74,6 @@ export const AgentCard = ({
     <div className="flex items-center gap-2" title={rowTitle}>
       {leading}
       {title}
-      {trailing}
       {actions}
     </div>
     {headline}

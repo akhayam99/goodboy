@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderUsage } from '@goodboy/types';
-import { CURSOR_CHEAP_MODEL, computeCursorCostUsd, cursorPriceFor } from './cost';
+import { computeCursorCostUsd, cursorPriceFor } from './cost';
 import { computeCostUsd } from '../claude/cost';
 
 const usage: ProviderUsage = {
@@ -11,27 +11,32 @@ const usage: ProviderUsage = {
 };
 
 describe('computeCursorCostUsd', () => {
-  it('composer-2-fast (cheap default) uses Composer-tier pricing', () => {
-    expect(computeCursorCostUsd(usage, CURSOR_CHEAP_MODEL)).toBeCloseTo(0.8 + 4);
+  it('composer-2.5-fast uses fast pricing', () => {
+    expect(computeCursorCostUsd({ usage, model: 'composer-2.5-fast' })).toBeCloseTo(3 + 15);
   });
 
   it('claude-4.6-sonnet-medium matches anthropic sonnet list price', () => {
-    const cursorCost = computeCursorCostUsd(usage, 'claude-4.6-sonnet-medium');
-    const claudeCost = computeCostUsd(usage, 'claude-sonnet-4-6');
+    const cursorCost = computeCursorCostUsd({
+      usage,
+      model: 'claude-4.6-sonnet-medium',
+    });
+    const claudeCost = computeCostUsd({ usage, model: 'claude-sonnet-4-6' });
     expect(cursorCost).toBeCloseTo(claudeCost);
   });
 
   it('claude-opus-4-7-thinking-high uses opus-tier pricing', () => {
-    expect(computeCursorCostUsd(usage, 'claude-opus-4-7-thinking-high')).toBeCloseTo(15 + 75);
+    expect(computeCursorCostUsd({ usage, model: 'claude-opus-4-7-thinking-high' })).toBeCloseTo(
+      5 + 25,
+    );
   });
 
   it('gpt-5.5-high uses GPT-5 pricing proxy', () => {
-    expect(computeCursorCostUsd(usage, 'gpt-5.5-high')).toBeCloseTo(5 + 15);
+    expect(computeCursorCostUsd({ usage, model: 'gpt-5.5-high' })).toBeCloseTo(5 + 30);
   });
 
-  it('unknown model falls back to composer-2-fast pricing', () => {
-    expect(computeCursorCostUsd(usage, 'mystery-model-9')).toBeCloseTo(
-      computeCursorCostUsd(usage, CURSOR_CHEAP_MODEL),
+  it('unknown model falls back to composer standard pricing', () => {
+    expect(computeCursorCostUsd({ usage, model: 'mystery-model-9' })).toBeCloseTo(
+      computeCursorCostUsd({ usage, model: 'composer-2.5' }),
     );
   });
 
@@ -42,12 +47,31 @@ describe('computeCursorCostUsd', () => {
       cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    expect(computeCursorCostUsd(partial, 'claude-4.6-sonnet-medium')).toBeCloseTo(3 + 0.3);
+    expect(computeCursorCostUsd({ usage: partial, model: 'claude-4.6-sonnet-medium' })).toBeCloseTo(
+      6 + 0.3,
+    );
   });
 
-  it('cursorPriceFor returns composer-2-fast fallback for unknown model', () => {
+  it('bills cache creation at 1.25 times the input rate', () => {
+    const cacheCreationUsage: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 180_000,
+      estimatedCostUsd: 0,
+    };
+
+    expect(
+      computeCursorCostUsd({
+        usage: cacheCreationUsage,
+        model: 'claude-opus-5-thinking-high',
+      }),
+    ).toBeCloseTo(1.125);
+  });
+
+  it('cursorPriceFor returns composer standard fallback for unknown model', () => {
     const p = cursorPriceFor('totally-unknown');
-    const fallback = cursorPriceFor(CURSOR_CHEAP_MODEL);
+    const fallback = cursorPriceFor('composer-2.5');
     expect(p).toEqual(fallback);
   });
 });

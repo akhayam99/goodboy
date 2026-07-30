@@ -88,7 +88,10 @@ describe('CreateAgentPopover', () => {
     expect(screen.queryByRole('dialog', { name: 'create agent' })).toBeNull();
 
     openPopover();
-    expect(screen.getByRole('dialog', { name: 'create agent' })).toBeTruthy();
+    const dialog = screen.getByRole('dialog', { name: 'create agent' });
+    expect(dialog).toBeTruthy();
+    expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
+    expect(dialog.className).toContain('fixed');
   });
 
   it('offers every visible kind with its hint and spawns the picked one', () => {
@@ -215,6 +218,23 @@ describe('CreateAgentPopover', () => {
       model: 'gpt-5.6-terra',
       effort: 'high',
     });
+  });
+
+  it('announces the same Cursor effort clamp as the routing picker', () => {
+    h.providers = [{ id: 'cursor' as ProviderId, connection: 'connected' }];
+    h.sessions = [
+      makeSession({
+        providerOverride: 'cursor',
+        modelOverride: 'claude-opus-5-low',
+        effort: 'low',
+      }),
+    ];
+    renderControl();
+    openPopover();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thinking' }));
+
+    expect(screen.getByText('Effort adjusted from Low to High.')).toBeTruthy();
   });
 
   it('drops the type section entirely in a simple workspace', () => {

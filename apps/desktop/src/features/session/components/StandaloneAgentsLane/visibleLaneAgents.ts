@@ -1,9 +1,8 @@
 import type { Agent } from '@goodboy/types';
-import type { CompletionTab } from '../AgentLane/completionTab';
 
 type Params = {
   readonly isLens: boolean;
-  readonly tab: CompletionTab;
+  readonly showCompleted: boolean;
   readonly active: ReadonlyArray<Agent>;
   readonly completed: ReadonlyArray<Agent>;
   readonly all: ReadonlyArray<Agent>;
@@ -11,7 +10,7 @@ type Params = {
 
 export const visibleLaneAgents = ({
   isLens,
-  tab,
+  showCompleted,
   active,
   completed,
   all,
@@ -19,8 +18,8 @@ export const visibleLaneAgents = ({
   if (!isLens) {
     return all;
   }
-  if (tab === 'completed') {
-    return completed;
+  if (showCompleted) {
+    return [...active, ...completed];
   }
   return active;
 };

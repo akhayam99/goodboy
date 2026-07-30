@@ -2,6 +2,7 @@ import type {
   Agent,
   AgentId,
   ImplementationCluster,
+  PlanConsumption,
   PlanWithCount,
   SessionId,
   WorkflowRunId,
@@ -19,6 +20,7 @@ const hoisted = vi.hoisted(() => {
     }),
     invokeAgentList: vi.fn(async () => [] as Agent[]),
     invokeAgentUpdateStatus: vi.fn(async () => undefined),
+    invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
   };
 });
 
@@ -26,6 +28,10 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: hoisted.invokeAgentInsert,
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
+}));
+
+vi.mock('../../../features/plans/plans', () => ({
+  listConsumptionsForPlan: hoisted.invokeListConsumptionsForPlan,
 }));
 
 import {
@@ -210,9 +216,11 @@ function makeStore(initial: Record<string, unknown>) {
   const emitNotification = vi.fn(async () => undefined);
   const refreshUnreadWorkspaces = vi.fn(async () => undefined);
   const maybeAutoAdvanceWorkflow = vi.fn(async () => undefined);
+  const loadSessionPlans = vi.fn(async () => undefined);
   const state: Record<string, unknown> = {
     sessionPhaseRuns: {},
     sessionPlans: {},
+    planConsumptions: {},
     sessions: [sessionRow(true)],
     transcripts: {},
     agentTurnState: {},
@@ -222,6 +230,7 @@ function makeStore(initial: Record<string, unknown>) {
     emitNotification,
     refreshUnreadWorkspaces,
     maybeAutoAdvanceWorkflow,
+    loadSessionPlans,
     ...initial,
   };
   const get = (() => state) as unknown as GetFn;
@@ -240,6 +249,7 @@ function makeStore(initial: Record<string, unknown>) {
     emitNotification,
     refreshUnreadWorkspaces,
     maybeAutoAdvanceWorkflow,
+    loadSessionPlans,
   };
 }
 
@@ -247,6 +257,7 @@ afterEach(() => {
   hoisted.insertArgs.length = 0;
   vi.clearAllMocks();
   hoisted.invokeAgentList.mockResolvedValue([]);
+  hoisted.invokeListConsumptionsForPlan.mockResolvedValue([]);
 });
 
 describe('fanOutClusters', () => {
@@ -262,6 +273,7 @@ describe('fanOutClusters', () => {
       expect(args.kind).toBe('implementer');
       expect(args.parentAgentId).toBe(PARENT);
       expect(args.sessionId).toBe(SID);
+      expect(args.stepId).toBeUndefined();
     }
   });
 
@@ -437,6 +449,96 @@ describe('advanceClusterImplementation', () => {
     expect(refreshUnreadWorkspaces).toHaveBeenCalled();
   });
 
+  it('uses the container plan consumption when the plan has a workflow run and the children do not', async () => {
+    const c0 = childAgent({ id: 'scope0', ordinal: 0 });
+    const c1 = childAgent({ id: 'scope1', ordinal: 1 });
+    const scopedPlan = plan({ id: 'scoped-plan', workflowRunId: 'R' as WorkflowRunId });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [scopedPlan] },
+      planConsumptions: {
+        [scopedPlan.id]: [
+          {
+            id: 'scope-consumption',
+            planId: scopedPlan.id,
+            agentId: PARENT,
+            agentName: 'container',
+            consumedAt: '2026-01-01T00:00:00.000Z',
+          } as PlanConsumption,
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'scope0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, c0.id, done('scope0'));
+
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe(c1.id);
+    expect(call.content).toContain('do 1');
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      c1.id,
+      expect.objectContaining({ status: 'failed' }),
+    );
+  });
+
+  it('hydrates the container plan consumption when the plan has no workflow run and the child does', async () => {
+    const c0 = childAgent({
+      id: 'mirror0',
+      ordinal: 0,
+      workflowRunId: 'R' as WorkflowRunId,
+    });
+    const c1 = childAgent({
+      id: 'mirror1',
+      ordinal: 1,
+      workflowRunId: 'R' as WorkflowRunId,
+    });
+    const unscopedPlan = plan({ id: 'unscoped-plan' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [unscopedPlan] },
+    });
+    hoisted.invokeListConsumptionsForPlan.mockResolvedValue([
+      {
+        id: 'mirror-consumption',
+        planId: unscopedPlan.id,
+        agentId: PARENT,
+        agentName: 'container',
+        consumedAt: '2026-01-01T00:00:00.000Z',
+      } as PlanConsumption,
+    ]);
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({
+        id: 'mirror0',
+        ordinal: 0,
+        status: 'completed',
+        workflowRunId: 'R' as WorkflowRunId,
+      }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, c0.id, done('mirror0'));
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(hoisted.invokeListConsumptionsForPlan).toHaveBeenCalledWith(unscopedPlan.id);
+    expect(call.agentId).toBe(c1.id);
+    expect(call.content).toContain('do 1');
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      c1.id,
+      expect.objectContaining({ status: 'failed' }),
+    );
+  });
+
   it('force-advances past a missing marker: completes the child and starts the next', async () => {
     const c0 = childAgent({ id: 'f0', ordinal: 0, status: 'running' });
     const c1 = childAgent({ id: 'f1', ordinal: 1 });
@@ -486,6 +588,168 @@ describe('advanceClusterImplementation', () => {
         outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
       }),
     );
+  });
+
+  it('kicks off the next cluster with its instructions even after the plan flipped to consumed', async () => {
+    const c0 = childAgent({ id: 'cu0', ordinal: 0 });
+    const c1 = childAgent({ id: 'cu1', ordinal: 1 });
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({ status: 'consumed', consumptionCount: 1 })] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'cu0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, 'cu0' as AgentId, done('cu0'));
+
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { content: string };
+    expect(call.content).toContain('2/2');
+    expect(call.content).toContain('c1');
+    expect(call.content).toContain('do 1');
+    expect(call.content).toContain('Overall goal: goal');
+  });
+
+  it('hydrates the plans from the db when the store has none for the session', async () => {
+    const c0 = childAgent({ id: 'hy0', ordinal: 0 });
+    const c1 = childAgent({ id: 'hy1', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: {},
+    });
+    store.state.loadSessionPlans = vi.fn(async () => {
+      store.state.sessionPlans = { [SID]: [plan({ status: 'consumed' })] };
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'hy0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'hy0' as AgentId, done('hy0'));
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as { content: string };
+    expect(call.content).toContain('do 1');
+  });
+
+  it('completes the child when plan consumption hydration fails', async () => {
+    const c0 = childAgent({ id: 'db-hydrate-0', ordinal: 0 });
+    const c1 = childAgent({ id: 'db-hydrate-1', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeListConsumptionsForPlan.mockRejectedValueOnce(new Error('read failed'));
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'db-hydrate-0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, c0.id, done('db-hydrate-0'));
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      c0.id,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('completes the child when reloading session plans fails', async () => {
+    const child = childAgent({ id: 'db-reload-0', ordinal: 0 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: {},
+    });
+    store.state.loadSessionPlans = vi.fn(async () => {
+      throw new Error('read failed');
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'db-reload-0', ordinal: 0, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, child.id, done('db-reload-0'));
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      child.id,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+  });
+
+  it('blocks the next child instead of sending an instruction-less kickoff when no plan is readable', async () => {
+    const c0 = childAgent({ id: 'nb0', ordinal: 0 });
+    const c1 = childAgent({ id: 'nb1', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: {},
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'nb0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'nb0' as AgentId, done('nb0'));
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('nb1', {
+      status: 'failed',
+      completedAt: expect.any(String),
+    });
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      expect.stringContaining('cluster blocked'),
+      expect.stringContaining('no instructions'),
+      { sessionId: SID },
+    );
+  });
+
+  it('fails the container and notifies when the plan has more clusters than children', async () => {
+    const c0 = childAgent({ id: 'short-0', ordinal: 0, status: 'completed' });
+    const c1 = childAgent({ id: 'short-1', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: {
+        [SID]: [
+          plan({
+            clusters: [
+              { title: 'c0', instructions: 'do 0' },
+              { title: 'c1', instructions: 'do 1' },
+              { title: 'c2', instructions: 'do 2' },
+            ],
+          }),
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      c0,
+      childAgent({ id: 'short-1', ordinal: 1, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, c1.id, done('short-1'));
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(PARENT, {
+      status: 'failed',
+      completedAt: expect.any(String),
+    });
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'cluster blocked: missing implementer',
+      expect.stringContaining('more clusters'),
+      { sessionId: SID },
+    );
+    expect(store.maybeAutoAdvanceWorkflow).not.toHaveBeenCalled();
   });
 
   it('completes the container and auto-advances when the last child finishes', async () => {

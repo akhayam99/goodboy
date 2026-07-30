@@ -502,6 +502,8 @@ describe('store contract', () => {
         sidebarProviderFilter: [],
         githubStatus: null,
         sessionGithub: {},
+        sessionGithubPrs: {},
+        sessionSelectedPrNumber: {},
         volatilePermissionAllows: new Set<string>(),
         agentModelOverride: {},
         agentProviderOverride: {},
@@ -591,11 +593,15 @@ describe('store contract', () => {
       store.setState({
         sessions: [buildSession()],
         currentSessionId: SESSION_ID,
+        sessionGithubPrs: { [SESSION_ID]: [] },
+        sessionSelectedPrNumber: { [SESSION_ID]: 40 },
       });
       await store.getState().archiveTask(SESSION_ID);
       const s = store.getState();
       expect(s.sessions).toEqual([]);
       expect(s.currentSessionId).toBeNull();
+      expect(s.sessionGithubPrs[SESSION_ID]).toBeUndefined();
+      expect(s.sessionSelectedPrNumber[SESSION_ID]).toBeUndefined();
     });
 
     it('unarchiveTask restores a session from archived cache to active when in same workspace', async () => {
@@ -626,11 +632,15 @@ describe('store contract', () => {
         currentWorkspaceId: WS_ID,
         currentSessionId: SESSION_ID,
         archivedSessions: { [WS_ID]: [archived] },
+        sessionGithubPrs: { [SESSION_ID]: [] },
+        sessionSelectedPrNumber: { [SESSION_ID]: 40 },
       });
       await store.getState().deleteTask(SESSION_ID);
       const s = store.getState();
       expect(s.archivedSessions[WS_ID]).toEqual([]);
       expect(s.currentSessionId).toBeNull();
+      expect(s.sessionGithubPrs[SESSION_ID]).toBeUndefined();
+      expect(s.sessionSelectedPrNumber[SESSION_ID]).toBeUndefined();
     });
 
     describe('bulk archived ops', () => {
@@ -640,6 +650,33 @@ describe('store contract', () => {
           archivedAt: NOW,
         } as Session;
       }
+
+      it('bulkArchiveTask archives every selected active session', async () => {
+        const store = await getStore();
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          sessions: [buildSession(), buildSession({ id: SESSION_ID_2, goal: 'two' })],
+        });
+        await store.getState().bulkArchiveTask([SESSION_ID, SESSION_ID_2]);
+        expect(store.getState().sessions).toEqual([]);
+      });
+
+      it('bulkArchiveTask keeps archiving after one session fails and reports the failure', async () => {
+        const store = await getStore();
+        const { archiveSession } = await import('@goodboy/db');
+        (archiveSession as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+          new Error('db down'),
+        );
+        store.setState({
+          workspaces: [buildWorkspace()],
+          currentWorkspaceId: WS_ID,
+          sessions: [buildSession(), buildSession({ id: SESSION_ID_2, goal: 'two' })],
+        });
+        await store.getState().bulkArchiveTask([SESSION_ID, SESSION_ID_2]);
+        expect(store.getState().sessions.map((x) => x.id)).toEqual([SESSION_ID]);
+        expect(insertNotificationSpy).toHaveBeenCalled();
+      });
 
       it('bulkUnarchiveTask restores every selected session into the active list', async () => {
         const store = await getStore();
@@ -1058,6 +1095,16 @@ describe('store contract', () => {
       });
       expect(store.getState().agentProviderOverride[AGENT_ID]).toBeUndefined();
       expect(store.getState().agentModelOverride[AGENT_ID]).toBeUndefined();
+    });
+
+    it('setAgentConfig syncs the effort used by turn routing', async () => {
+      const store = await getStore();
+      const agent = buildAgent({ id: AGENT_ID });
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
+      await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { effort: 'high' });
+      expect(store.getState().agentEffortOverride[AGENT_ID]).toBe('high');
+      await store.getState().setAgentConfig(SESSION_ID, AGENT_ID, { effort: null });
+      expect(store.getState().agentEffortOverride[AGENT_ID]).toBeUndefined();
     });
   });
 });

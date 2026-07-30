@@ -251,11 +251,18 @@ describe('ChatInput, input wiring', () => {
             runId: 'run-1' as ProviderRunId,
             startedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
           },
+          providerPreference: {
+            defaultProvider: 'anthropic',
+            allowTurnOverride: true,
+          },
         })}
       />,
     );
     const textarea = screen.getByRole('textbox');
     expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
+    expect(
+      (screen.getByRole('button', { name: /^model routing:/ }) as HTMLButtonElement).disabled,
+    ).toBe(false);
   });
 
   it('Enter sends the turn and clears the input', async () => {
@@ -299,7 +306,7 @@ describe('ChatInput, input wiring', () => {
     expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'hi there' }));
   });
 
-  it('maps a stale session model into the selected provider namespace', async () => {
+  it('does not leak a stale session model into an agent without a model pin', async () => {
     const setSessionConfig = vi.fn(async () => undefined);
     mockStore.setState({ setSessionConfig });
 
@@ -326,8 +333,8 @@ describe('ChatInput, input wiring', () => {
       expect.objectContaining({
         override: expect.objectContaining({
           providerId: 'cursor',
-          model: 'sonnet-4.6',
-          selection: expect.objectContaining({ key: 'sonnet-4.6' }),
+          model: 'composer-2.5',
+          selection: expect.objectContaining({ key: 'composer-2.5' }),
         }),
       }),
     );

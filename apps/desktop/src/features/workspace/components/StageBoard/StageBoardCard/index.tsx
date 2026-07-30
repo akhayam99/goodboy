@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo } from 'react';
 import {
   Archive,
   Bot,
+  Check,
   Code,
   MessageSquareDiff,
   RotateCcw,
@@ -26,10 +27,20 @@ import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { useDynamicActions } from './useDynamicActions';
 
+export type CardSelectionEvent = {
+  readonly shiftKey: boolean;
+  readonly metaKey: boolean;
+  readonly ctrlKey: boolean;
+  readonly altKey: boolean;
+};
+
 type StageBoardCardProps = {
   readonly session: Session;
   readonly nav: BoardNavigation;
   readonly archived?: boolean;
+  readonly selected?: boolean;
+  readonly onToggleSelect?: (id: SessionId, event: CardSelectionEvent) => void;
+  readonly onModifierClick?: (id: SessionId, event: CardSelectionEvent) => void;
   readonly onArchive?: (session: Session) => void;
   readonly onDelete?: (session: Session) => void;
   readonly onRestore?: (session: Session) => void;
@@ -39,6 +50,9 @@ export const StageBoardCard = memo(function StageBoardCard({
   session,
   nav,
   archived,
+  selected,
+  onToggleSelect,
+  onModifierClick,
   onArchive,
   onDelete,
   onRestore,
@@ -99,7 +113,14 @@ export const StageBoardCard = memo(function StageBoardCard({
     <button
       type="button"
       data-archived={archived || undefined}
-      onClick={() => nav.selectCard(session)}
+      aria-pressed={selected === true}
+      onClick={(event) => {
+        if (onModifierClick && (event.shiftKey || event.metaKey || event.ctrlKey)) {
+          onModifierClick(id, event);
+          return;
+        }
+        nav.selectCard(session);
+      }}
       className={cn(
         'group flex h-[7.25rem] min-h-[7.25rem] shrink-0 gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
         stage === 'running'
@@ -107,6 +128,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           : stage === 'attention'
             ? 'border-warning/50'
             : 'border-transparent',
+        selected === true && 'border-primary bg-primary/5 text-foreground',
       )}
     >
       <span className="flex min-w-0 flex-1 flex-col gap-2">
@@ -174,6 +196,27 @@ export const StageBoardCard = memo(function StageBoardCard({
       </span>
 
       <span className="-mr-1 flex shrink-0 flex-col items-end gap-1">
+        {onToggleSelect && (
+          <span
+            role="checkbox"
+            tabIndex={0}
+            aria-checked={selected === true}
+            aria-label={`select ${session.goal}`}
+            title={selected ? 'deselect session' : 'select session · shift-click to extend'}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleSelect(id, event);
+            }}
+            className={cn(
+              'flex size-4 shrink-0 items-center justify-center rounded border motion-safe:transition-colors',
+              selected === true
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border-soft opacity-0 hover:border-primary/50 group-hover:opacity-100',
+            )}
+          >
+            {selected === true && <Check size={11} aria-hidden />}
+          </span>
+        )}
         {!archived && dynamicActions.length > 0 && (
           <span className="flex flex-wrap justify-end gap-0.5">
             {dynamicActions.map((action) => (

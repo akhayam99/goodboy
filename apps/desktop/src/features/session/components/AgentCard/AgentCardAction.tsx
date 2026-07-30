@@ -18,7 +18,6 @@ const ACTIVE_CLASS: Record<AgentCardActionTone, string> = {
 type Props = {
   readonly icon: LucideIcon;
   readonly label: string;
-  readonly text?: string;
   readonly tone?: AgentCardActionTone;
   readonly reveal?: boolean;
   readonly active?: boolean;
@@ -29,7 +28,6 @@ type Props = {
 export const AgentCardAction = ({
   icon: Icon,
   label,
-  text,
   tone = 'neutral',
   reveal = false,
   active = false,
@@ -44,7 +42,7 @@ export const AgentCardAction = ({
     onClick={onClick}
     className={cn(
       'inline-flex h-6 shrink-0 items-center justify-center gap-1 rounded-md text-[10px] font-medium text-muted-foreground transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-      text == null ? 'w-6' : 'px-1.5',
+      'w-6',
       HOVER_CLASS[tone],
       reveal &&
         'opacity-0 group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100',
@@ -52,6 +50,5 @@ export const AgentCardAction = ({
     )}
   >
     <Icon size={12} aria-hidden />
-    {text != null && <span>{text}</span>}
   </button>
 );

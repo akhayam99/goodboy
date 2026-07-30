@@ -1,6 +1,6 @@
-import { StatusDot, cn } from '@goodboy/ui';
-import { AlertTriangle, Ban, Check, CheckCheck, CircleStop, Clock, GitCommit } from 'lucide-react';
+import { cn } from '@goodboy/ui';
 import type { ResolverStatus } from '../../resolver-linkage';
+import { ResolverStateIcon } from './ResolverStateIcon';
 
 export type ResolverBadgeState =
   | 'none'
@@ -58,26 +58,6 @@ const COPY: Record<ResolverBadgeState, string> = {
 };
 
 export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps) => {
-  const icon =
-    state === 'running' ? (
-      <StatusDot tone="info" size="sm" pulsing />
-    ) : state === 'failed' ? (
-      <span className="size-1.5 rounded-full bg-danger" aria-hidden />
-    ) : state === 'stopped' ? (
-      <CircleStop size={10} className="text-danger" aria-hidden />
-    ) : state === 'queued' ? (
-      <Clock size={10} className="text-muted-foreground/60" aria-hidden />
-    ) : state === 'resolved' ? (
-      <CheckCheck size={10} className="text-success" aria-hidden />
-    ) : state === 'committed' ? (
-      <GitCommit size={10} className="text-warning" aria-hidden />
-    ) : state === 'wontfix' ? (
-      <Ban size={10} className="text-muted-foreground/70" aria-hidden />
-    ) : state === 'awaiting' || state === 'analyzed' ? (
-      <AlertTriangle size={10} className="text-warning" aria-hidden />
-    ) : (
-      <Check size={10} className="text-muted-foreground/70" aria-hidden />
-    );
   return (
     <span
       className={cn(
@@ -94,7 +74,7 @@ export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps
         className,
       )}
     >
-      {icon}
+      <ResolverStateIcon state={state} />
       {COPY[state]}
     </span>
   );

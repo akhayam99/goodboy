@@ -14,6 +14,8 @@ import type {
   PlanConsumptionId,
   PlanId,
   PlanWithCount,
+  PendingResolution,
+  PullRequestState,
   ProviderRunId,
   Session,
   SessionId,
@@ -62,7 +64,10 @@ const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceS
 const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
 const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
 const deletePendingResolutionSpy = vi.fn(async () => undefined);
-const listPendingResolutionsForSessionSpy = vi.fn(async () => []);
+const listPendingResolutionsForSessionSpy = vi.fn<
+  (db: unknown, sessionId: SessionId) => Promise<ReadonlyArray<PendingResolution>>
+>(async () => []);
+const queuePendingResolutionSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -122,6 +127,7 @@ vi.mock('@goodboy/db', () => ({
   deleteWorkspaceScript: deleteWorkspaceScriptSpy,
   deletePendingResolution: deletePendingResolutionSpy,
   listPendingResolutionsForSession: listPendingResolutionsForSessionSpy,
+  queuePendingResolution: queuePendingResolutionSpy,
   upsertContextSlot: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: insertNudgeEventSpy,
@@ -307,6 +313,9 @@ const ghClearTokenSpy = vi.fn(async () => undefined);
 const gitPushSpy = vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 }));
 const resolveThreadSpy = vi.fn(async () => undefined);
 const addReplySpy = vi.fn(async () => undefined);
+const detectRepoSlugSpy = vi.fn(async () => null as string | null);
+const listPrsForBranchSpy = vi.fn(async () => [] as ReadonlyArray<PullRequestState>);
+const fetchLinkedIssuesSpy = vi.fn(async () => []);
 
 vi.mock('../../../features/github/github', () => ({
   ghStatus: ghStatusSpy,
@@ -321,10 +330,11 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
-    detectRepoSlug: vi.fn(async () => null),
+    detectRepoSlug: detectRepoSlugSpy,
+    listPrsForBranch: listPrsForBranchSpy,
     getPrForBranch: vi.fn(async () => null),
     fetchPrDetail: vi.fn(async () => null),
-    fetchLinkedIssues: vi.fn(async () => []),
+    fetchLinkedIssues: fetchLinkedIssuesSpy,
     resolveReviewThread: resolveThreadSpy,
     addReviewThreadReply: addReplySpy,
     seedWorkflowLibrary: vi.fn(async () => undefined),
@@ -501,6 +511,8 @@ describe('store contract', () => {
         sidebarProviderFilter: [],
         githubStatus: null,
         sessionGithub: {},
+        sessionGithubPrs: {},
+        sessionSelectedPrNumber: {},
         volatilePermissionAllows: new Set<string>(),
         agentModelOverride: {},
         agentKindOverride: {},
@@ -581,6 +593,75 @@ describe('store contract', () => {
       });
       await store.getState().refreshSessionPr(SESSION_ID);
       expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
+    });
+
+    it('keeps selection separate while a new canonical pr surfaces from one list fetch', async () => {
+      const store = await getStore();
+      const selectedPr = {
+        number: 40,
+        title: 'Closed selection',
+        state: 'closed',
+        updatedAt: '2026-07-29T10:00:00Z',
+      } as PullRequestState;
+      const canonicalPr = {
+        ...selectedPr,
+        number: 42,
+        title: 'New canonical',
+        state: 'open',
+        updatedAt: '2026-07-30T10:00:00Z',
+      } as PullRequestState;
+      detectRepoSlugSpy.mockResolvedValueOnce('acme/goodboy');
+      listPrsForBranchSpy.mockResolvedValueOnce([canonicalPr, selectedPr]);
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionGithub: {
+          [SESSION_ID]: {
+            pr: selectedPr,
+            linkedIssues: [],
+            fetchedAt: null,
+            loading: false,
+            error: null,
+            detail: null,
+            detailFetchedAt: null,
+            detailLoading: false,
+            detailError: null,
+          },
+        },
+        sessionGithubPrs: { [SESSION_ID]: [selectedPr] },
+        sessionSelectedPrNumber: { [SESSION_ID]: selectedPr.number },
+      });
+
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true });
+
+      expect(store.getState().sessionGithub[SESSION_ID]?.pr?.number).toBe(canonicalPr.number);
+      expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(selectedPr.number);
+      expect(listPrsForBranchSpy).toHaveBeenCalledOnce();
+    });
+
+    it('keeps the previous pr list and selection when listing fails', async () => {
+      const store = await getStore();
+      const previousPr = {
+        number: 40,
+        title: 'Previous selection',
+        state: 'closed',
+        updatedAt: '2026-07-29T10:00:00Z',
+      } as PullRequestState;
+      detectRepoSlugSpy.mockResolvedValueOnce('acme/goodboy');
+      listPrsForBranchSpy.mockRejectedValueOnce(new Error('authentication failed'));
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionGithubPrs: { [SESSION_ID]: [previousPr] },
+        sessionSelectedPrNumber: { [SESSION_ID]: previousPr.number },
+      });
+
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true });
+
+      expect(store.getState().sessionGithubPrs[SESSION_ID]).toEqual([previousPr]);
+      expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(previousPr.number);
     });
 
     it('sweepGithub is a no-op when github is unavailable', async () => {
@@ -684,6 +765,8 @@ describe('store contract', () => {
               prNumber: 1,
               threadId: 'PRRT_1',
               commitSha: 'abcdef1234567890',
+              reply: null,
+              outcome: 'resolved',
               createdAt: NOW,
             },
             {
@@ -692,6 +775,8 @@ describe('store contract', () => {
               prNumber: 1,
               threadId: 'PRRT_2',
               commitSha: 'abcdef1234567890',
+              reply: null,
+              outcome: 'resolved',
               createdAt: NOW,
             },
           ],
@@ -708,6 +793,385 @@ describe('store contract', () => {
       expect(deletePendingResolutionSpy).toHaveBeenCalledTimes(2);
       expect(store.getState().sessionPendingResolutions[SESSION_ID]).toEqual([]);
       expect(refresh).toHaveBeenCalledOnce();
+    });
+
+    it('resolveAgentThreads closes mixed outcomes with each thread explanation', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1', 'PRRT_2'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: {
+              kind: 'resolved',
+              commitSha: 'abcdef1234567890',
+              reply: 'fixed with the shared guard',
+            },
+            PRRT_2: {
+              kind: 'wontfix',
+              reason: 'the suggested branch is unreachable',
+              reply: 'This path cannot be reached for review threads.',
+            },
+          },
+        },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValueOnce([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(gitPushSpy).toHaveBeenCalledTimes(1);
+      expect(resolveThreadSpy).toHaveBeenCalledTimes(2);
+      const replyCalls = addReplySpy.mock.calls as ReadonlyArray<ReadonlyArray<unknown>>;
+      const bodyByThread = new Map(
+        replyCalls.map((call) => [String(call[1]), String(call[2])] as const),
+      );
+      expect(bodyByThread.get('PRRT_1')).toContain('fixed with the shared guard');
+      expect(bodyByThread.get('PRRT_1')).toContain('abcdef1');
+      expect(bodyByThread.get('PRRT_2')).toContain(
+        'This path cannot be reached for review threads.',
+      );
+      expect(bodyByThread.get('PRRT_2')).toContain('Closing: the suggested branch is unreachable');
+      expect(bodyByThread.get('PRRT_2')).not.toContain('abcdef1');
+    });
+
+    it('resolveAgentThreads includes an owned thread without an in-memory outcome', async () => {
+      const store = await getStore();
+      const persisted = {
+        id: 'pending-3',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_3',
+        commitSha: 'abcdef1234567890',
+        reply: 'The third thread was already analyzed before restart.',
+        outcome: 'analyzed',
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1', 'PRRT_2', 'PRRT_3'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+            PRRT_2: { kind: 'wontfix', reason: 'the behavior is intentional' },
+          },
+        },
+        sessionPendingResolutions: { [SESSION_ID]: [persisted] },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([persisted])
+        .mockResolvedValueOnce([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(resolveThreadSpy).toHaveBeenCalledTimes(3);
+      expect(deletePendingResolutionSpy).toHaveBeenCalledTimes(3);
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        persisted.threadId,
+        persisted.reply,
+        expect.anything(),
+      );
+    });
+
+    it('resolveAgentThreads restores a queued closure after store recreation', async () => {
+      const store = await getStore();
+      const persisted = {
+        id: 'pending-1',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_1',
+        commitSha: 'abcdef1234567890',
+        reply: 'Persisted reply from the completed resolver.',
+        outcome: 'resolved',
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'resolver after restart',
+              status: 'completed',
+              sourceThreadId: persisted.threadId,
+            },
+          ],
+        },
+        resolverThreadOutcomes: {},
+        sessionPendingResolutions: {},
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([persisted])
+        .mockResolvedValueOnce([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(gitPushSpy).toHaveBeenCalledOnce();
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        persisted.threadId,
+        expect.stringContaining(persisted.reply),
+        expect.anything(),
+      );
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        persisted.threadId,
+        expect.stringContaining('Resolved in `abcdef1`.'),
+        expect.anything(),
+      );
+      expect(resolveThreadSpy).toHaveBeenCalledOnce();
+    });
+
+    it('resolveAgentThreads skips the branch push when no outcome is resolved', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'explanation resolver',
+              status: 'completed',
+              sourceThreadId: 'PRRT_1',
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: {
+              kind: 'wontfix',
+              reason: 'the requested behavior is intentional',
+            },
+          },
+        },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValueOnce([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(gitPushSpy).not.toHaveBeenCalled();
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        'PRRT_1',
+        'Closing: the requested behavior is intentional',
+        expect.anything(),
+      );
+      expect(resolveThreadSpy).toHaveBeenCalledOnce();
+    });
+
+    it('resolveAgentThreads posts the reply of each thread only on that thread', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1', 'PRRT_2'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890', reply: 'answer for one' },
+            PRRT_2: { kind: 'resolved', commitSha: 'abcdef1234567890', reply: 'answer for two' },
+          },
+        },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValueOnce([]);
+
+      await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      const replyCalls = addReplySpy.mock.calls as ReadonlyArray<ReadonlyArray<unknown>>;
+      const bodyByThread = new Map(
+        replyCalls.map((call) => [String(call[1]), String(call[2])] as const),
+      );
+      expect(bodyByThread.get('PRRT_1')).toContain('answer for one');
+      expect(bodyByThread.get('PRRT_1')).not.toContain('answer for two');
+      expect(bodyByThread.get('PRRT_2')).toContain('answer for two');
+      expect(bodyByThread.get('PRRT_2')).not.toContain('answer for one');
+    });
+
+    it('resolveAgentThreads prefers the caller closure over persisted and global replies', async () => {
+      const store = await getStore();
+      const persisted = {
+        id: 'pending-1',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_1',
+        commitSha: 'abcdef1234567890',
+        reply: 'persisted reply',
+        outcome: 'resolved',
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'resolver',
+              status: 'completed',
+              sourceThreadId: persisted.threadId,
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID_2]: {
+            PRRT_1: {
+              kind: 'resolved',
+              commitSha: persisted.commitSha,
+              reply: 'reply from another agent',
+            },
+          },
+          [AGENT_ID]: {
+            PRRT_1: {
+              kind: 'resolved',
+              commitSha: persisted.commitSha,
+              reply: 'reply from the caller closure',
+            },
+          },
+        },
+        sessionPendingResolutions: { [SESSION_ID]: [persisted] },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([persisted])
+        .mockResolvedValueOnce([]);
+
+      await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      const replyCalls = addReplySpy.mock.calls as ReadonlyArray<ReadonlyArray<unknown>>;
+      const body = String(replyCalls[0]?.[2]);
+      expect(body).toContain('reply from the caller closure');
+      expect(body).not.toContain('persisted reply');
+      expect(body).not.toContain('reply from another agent');
+    });
+
+    it('pushAllResolutions posts a queued reply after in-memory outcomes are lost', async () => {
+      const store = await getStore();
+      const persisted = {
+        id: 'pending-1',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_1',
+        commitSha: 'abcdef1234567890',
+        reply: 'persisted resolver reply',
+        outcome: 'resolved',
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: {
+              kind: 'resolved',
+              commitSha: persisted.commitSha,
+              reply: persisted.reply,
+            },
+          },
+        },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValueOnce([persisted]);
+
+      await store.getState().queueResolution(SESSION_ID, {
+        threadId: persisted.threadId,
+        commitSha: persisted.commitSha,
+        prNumber: persisted.prNumber,
+      });
+
+      expect(queuePendingResolutionSpy).toHaveBeenCalledWith({
+        db: expect.anything(),
+        id: expect.any(String),
+        sessionId: SESSION_ID,
+        prNumber: persisted.prNumber,
+        threadId: persisted.threadId,
+        commitSha: persisted.commitSha,
+        reply: persisted.reply,
+        outcome: persisted.outcome,
+      });
+
+      store.setState({
+        resolverThreadOutcomes: {},
+        sessionPendingResolutions: {},
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([persisted])
+        .mockResolvedValueOnce([persisted])
+        .mockResolvedValueOnce([]);
+
+      await store.getState().loadPendingResolutions(SESSION_ID);
+      const result = await store.getState().pushAllResolutions(SESSION_ID);
+
+      expect(result).toEqual({ pushed: true, resolved: 1, failed: 0 });
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        persisted.threadId,
+        expect.stringContaining(persisted.reply),
+        expect.anything(),
+      );
+      expect(store.getState().sessionPendingResolutions[SESSION_ID]).toEqual([]);
     });
   });
 });

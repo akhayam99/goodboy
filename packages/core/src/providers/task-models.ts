@@ -4,7 +4,7 @@ import type {
   TaskModelPreference,
   TaskModelPreferences,
 } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from './capabilities';
+import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
 import { getCheapModel } from './cli-defaults';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 
@@ -25,6 +25,11 @@ export const resolveTaskModel = (
   }
   return {
     providerId: defaultProviderId,
-    model: getCheapModel(defaultProviderId),
+    model:
+      task === 'rebase'
+        ? defaultProviderId === 'anthropic'
+          ? 'sonnet-4.6'
+          : getDefaultTurnModel({ id: defaultProviderId })
+        : getCheapModel(defaultProviderId),
   };
 };

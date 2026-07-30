@@ -11,6 +11,7 @@ export type QueuedAttachment = Readonly<{
 
 export type AgentQueuedTurn = Readonly<{
   id: string;
+  agentId: AgentId;
   content: string;
   attachments: ReadonlyArray<QueuedAttachment>;
   override: TurnProviderOverride | undefined;

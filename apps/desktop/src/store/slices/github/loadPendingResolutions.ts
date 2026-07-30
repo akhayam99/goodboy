@@ -13,7 +13,7 @@ export const loadPendingResolutions = (set: SetFn, get: GetFn) => {
     }
     pendingResolutionsInFlight.add(sessionId);
     try {
-      const rows = await listPendingResolutionsForSession(tauriDatabase, sessionId);
+      const rows = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
       set((state) => ({
         sessionPendingResolutions: { ...state.sessionPendingResolutions, [sessionId]: rows },
       }));

@@ -42,7 +42,7 @@ Never skip hooks (`git push --no-verify`) to dodge a missing-env failure; replay
 
 - Adapter pattern: each AI provider implements a common interface.
 - Priority-based routing with usage thresholds.
-- The model registry is compiled, not stored: ids, family, cost tier, effort ladder, context window and routing weight live in `packages/core/src/providers/capabilities.ts`. Prices are compiled too, in a separate table (`providers/claude/cost.ts`, `providers/cursor/cost.ts`, and the shipped `apps/desktop/src/features/providers/pricing.json` for codex and gemini).
+- The model registry is compiled, not stored: ids, family, cost tier, effort ladder, context window, and routing weight are authored in the provider catalogs under `packages/core/src/providers/` and exposed through `capabilities.ts`. Prices are compiled in each provider cost module, with the shipped `apps/desktop/src/features/providers/pricing.json` supplying desktop overrides for codex and gemini.
 - SQLite holds only the overrides on top of that registry: `workspaces.default_provider_id`, `workspaces.provider_bindings`, `workspaces.task_models`, `workspaces.role_models`, plus `sessions.default_provider_id` and `sessions.provider_bindings`.
 - A stored pin is validated against the registry at read time (`resolveTaskModel`, `resolveRoleRouting`). A provider or model id the registry no longer carries falls back to the compiled default instead of reaching a spawn.
 - API keys stored securely via Tauri's credential store.

@@ -1,9 +1,7 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import { AgentLane } from '../AgentLane';
 import { AgentLaneEmpty } from '../AgentLane/AgentLaneEmpty';
-import { AgentLaneNote } from '../AgentLane/AgentLaneNote';
-import type { CompletionTab } from '../AgentLane/completionTab';
 import { ResolveCommentsAction } from './ResolveCommentsAction';
 import { ResolverLaneToolbar } from './ResolverLaneToolbar';
 import { ResolverRows } from './ResolverRows';
@@ -12,27 +10,37 @@ import { useResolverAgentsLane } from './useResolverAgentsLane';
 const NOTHING_TO_RESOLVE_DESCRIPTION =
   'Spawn a resolver from a pull request comment or a diff selection and it will show up here.';
 const ALL_RESOLVED_DESCRIPTION =
-  'Every resolver here has finished. Check the completed tab for what they did.';
+  'Every resolver here has finished. Show completed resolvers to review what they did.';
 
 type Props = {
   readonly session: Session;
   readonly inspectedResolverId: AgentId | null;
   readonly onInspectResolver: (agentId: AgentId) => void;
+  readonly showCompleted?: boolean;
+  readonly onCompletedCountChange?: (completedCount: number) => void;
 };
 
-export const ResolverAgentsLane = ({ session, inspectedResolverId, onInspectResolver }: Props) => {
+export const ResolverAgentsLane = ({
+  session,
+  inspectedResolverId,
+  onInspectResolver,
+  showCompleted = false,
+  onCompletedCountChange,
+}: Props) => {
   const lane = useResolverAgentsLane({ session });
-  const [tab, setTab] = useState<CompletionTab>('active');
-  const entries = tab === 'completed' ? lane.completedEntries : lane.activeEntries;
   const hasNoResolvers = lane.totalCount === 0;
+  const hasVisibleEntries =
+    lane.activeEntries.length > 0 || (showCompleted && lane.completedEntries.length > 0);
+
+  useEffect(() => {
+    if (onCompletedCountChange == null) {
+      return;
+    }
+    onCompletedCountChange(lane.completedEntries.length);
+  }, [lane.completedEntries.length, onCompletedCountChange]);
 
   return (
     <AgentLane
-      ariaLabel="Filter resolvers by status"
-      activeCount={lane.activeEntries.length}
-      completedCount={lane.completedEntries.length}
-      tab={tab}
-      onTabChange={setTab}
       toolbar={
         <ResolverLaneToolbar
           sessionId={lane.sessionId}
@@ -43,33 +51,48 @@ export const ResolverAgentsLane = ({ session, inspectedResolverId, onInspectReso
           onOpenPr={lane.onOpenPr}
         />
       }
-      isEmpty={entries.length === 0}
-      emptyActive={
+      isEmpty={!hasVisibleEntries}
+      empty={
         <AgentLaneEmpty
           title={hasNoResolvers ? 'Nothing to resolve' : 'No active resolvers'}
           description={hasNoResolvers ? NOTHING_TO_RESOLVE_DESCRIPTION : ALL_RESOLVED_DESCRIPTION}
           action={<ResolveCommentsAction variant="tile" onOpen={lane.onOpenResolveBoard} />}
         />
       }
-      emptyCompleted={<AgentLaneNote text="No completed resolvers yet." />}
       footer={<ResolveCommentsAction variant="link" onOpen={lane.onOpenResolveBoard} />}
     >
       <ResolverRows
-        entries={entries}
+        entries={lane.activeEntries}
         isTaskActive={lane.isTaskActive}
         isTranscriptLoading={lane.isTranscriptLoading}
-        isMuted={tab === 'completed'}
+        isMuted={false}
         selectedAgentId={lane.selectedAgentId}
         inspectedAgentId={inspectedResolverId}
         commentByThreadId={lane.commentByThreadId}
         diffCommentByAgentId={lane.diffCommentByAgentId}
         metrics={lane.metrics}
+        reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
         onOpenChat={lane.onOpenChat}
         onInspect={onInspectResolver}
         onJump={lane.onJump}
-        onResolveThread={lane.onResolveThread}
-        onResolveAgent={lane.onResolveAgent}
       />
+      {showCompleted && lane.completedEntries.length > 0 ? (
+        <ResolverRows
+          entries={lane.completedEntries}
+          isTaskActive={lane.isTaskActive}
+          isTranscriptLoading={lane.isTranscriptLoading}
+          isMuted
+          selectedAgentId={lane.selectedAgentId}
+          inspectedAgentId={inspectedResolverId}
+          commentByThreadId={lane.commentByThreadId}
+          diffCommentByAgentId={lane.diffCommentByAgentId}
+          metrics={lane.metrics}
+          reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+          onOpenChat={lane.onOpenChat}
+          onInspect={onInspectResolver}
+          onJump={lane.onJump}
+        />
+      ) : null}
     </AgentLane>
   );
 };

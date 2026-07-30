@@ -29,6 +29,7 @@ export const AxesSection = ({
   onToggle,
 }: Props) => {
   const hasNoAxes = axes.effort == null && axes.variant == null && axes.toggles.length === 0;
+  const toggleRowLabel = axes.variant == null ? 'Variant' : 'Modes';
   return (
     <section aria-label="Tuning" className="flex flex-col gap-2.5 p-3">
       {hasNoAxes && (
@@ -36,7 +37,7 @@ export const AxesSection = ({
       )}
       {axes.variant != null && (
         <AxisRow label={axes.variant.label}>
-          <div className="grid grid-cols-3 gap-1 rounded-lg bg-background/40 p-1">
+          <div className="grid grid-cols-3 justify-center gap-1 rounded-lg bg-background/40 p-1">
             {axes.variant.options.map((option) => (
               <PickerChip
                 key={option.id}
@@ -58,21 +59,30 @@ export const AxesSection = ({
           />
         </AxisRow>
       )}
-      {axes.toggles.map((toggle) => (
-        <AxisRow key={toggle.id} label={toggle.label}>
-          <PickerChip
-            label={toggle.label}
-            active={toggle.active}
-            disabled={toggle.canToggle === false}
-            title={
-              toggle.canToggle === false
-                ? `${toggle.label} cannot be changed for this model`
-                : undefined
-            }
-            onSelect={() => onToggle(toggle.id)}
-          />
+      {axes.toggles.length > 0 && (
+        <AxisRow label={toggleRowLabel}>
+          <div
+            role="group"
+            aria-label={toggleRowLabel}
+            className="flex flex-wrap justify-center gap-1 rounded-lg bg-background/40 p-1"
+          >
+            {axes.toggles.map((toggle) => (
+              <PickerChip
+                key={toggle.id}
+                label={toggle.label}
+                active={toggle.active}
+                disabled={toggle.canToggle === false}
+                title={
+                  toggle.canToggle === false
+                    ? `${toggle.label} cannot be changed for this model`
+                    : undefined
+                }
+                onSelect={() => onToggle(toggle.id)}
+              />
+            ))}
+          </div>
         </AxisRow>
-      ))}
+      )}
       {axes.requiresMaxMode && (
         <p role="status" aria-label="Max Mode" className="text-2xs text-warning">
           Runs in Max Mode. Cursor bills Max Mode requests at a higher rate.

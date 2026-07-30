@@ -17,6 +17,7 @@ type Props = {
   showClose: boolean;
   onClose: () => void;
   viewSelector?: React.ReactNode;
+  presentation?: 'bar' | 'actions';
 };
 
 export const DiffToolbar = ({
@@ -33,15 +34,20 @@ export const DiffToolbar = ({
   showClose,
   onClose,
   viewSelector,
+  presentation = 'bar',
 }: Props) => {
   const titleText = title ?? (prNumber !== undefined ? `pr #${prNumber} diff` : 'diff');
-  const aheadBehind =
-    status?.hasUpstream && (status.ahead > 0 || status.behind > 0)
-      ? `↑${status.ahead} ↓${status.behind}`
-      : null;
+  const ahead = status?.ahead ?? 0;
+  const behind = status?.behind ?? 0;
+  const hasAheadBehind = status?.hasUpstream === true && (ahead > 0 || behind > 0);
   return (
     <>
-      <div className="flex shrink-0 items-center gap-2 px-2.5 py-1.5">
+      <div
+        className={cn(
+          'flex min-w-0 items-center gap-2',
+          presentation === 'bar' ? 'shrink-0 px-2.5 py-1.5' : 'flex-wrap justify-end',
+        )}
+      >
         <button
           type="button"
           onClick={onToggleSidebar}
@@ -53,11 +59,12 @@ export const DiffToolbar = ({
         </button>
 
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          {viewSelector ?? (
-            <span className="shrink-0 text-xs font-semibold tracking-tight text-foreground">
-              {titleText}
-            </span>
-          )}
+          {viewSelector ??
+            (presentation === 'bar' ? (
+              <span className="shrink-0 text-xs font-semibold tracking-tight text-foreground">
+                {titleText}
+              </span>
+            ) : null)}
           {openCommentsCount > 0 ? (
             <span
               className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
@@ -86,7 +93,12 @@ export const DiffToolbar = ({
           <span className="hidden min-w-0 shrink items-center gap-1.5 text-2xs text-muted-foreground md:flex">
             <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
             <span className="truncate font-mono">{status.branch}</span>
-            {aheadBehind ? <span className="shrink-0 tabular-nums">{aheadBehind}</span> : null}
+            {hasAheadBehind ? (
+              <span className="flex shrink-0 items-center gap-1 tabular-nums">
+                {ahead > 0 ? <span title="unpushed commits">↑{ahead}</span> : null}
+                {behind > 0 ? <span title="behind upstream">↓{behind}</span> : null}
+              </span>
+            ) : null}
           </span>
         ) : null}
 
@@ -116,7 +128,7 @@ export const DiffToolbar = ({
           ) : null}
         </div>
       </div>
-      <Divider className="shrink-0" />
+      {presentation === 'bar' ? <Divider className="shrink-0" /> : null}
     </>
   );
 };

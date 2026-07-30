@@ -45,7 +45,8 @@ describe('LinearIssueDetail', () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
 
     expect(screen.getByLabelText('Priority: Urgent')).toBeDefined();
-    expect(screen.getByText('Assigned to Grace Hopper')).toBeDefined();
+    expect(screen.getByText('Grace Hopper')).toBeDefined();
+    expect(screen.getByText('Desktop')).toBeDefined();
     expect(screen.getByText('Full')).toBeDefined();
     expect(screen.getByText('Ada Lovelace')).toBeDefined();
     expect(screen.getByText('The fix is ready for review.')).toBeDefined();

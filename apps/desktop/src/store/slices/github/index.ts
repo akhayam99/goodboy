@@ -10,6 +10,7 @@ import { requestReview } from './requestReview';
 import { refreshGithubStatus } from './refreshGithubStatus';
 import { refreshSessionPr } from './refreshSessionPr';
 import { refreshSessionPrDetail } from './refreshSessionPrDetail';
+import { selectSessionPr } from './selectSessionPr';
 import { resolveGithubThread } from './resolveGithubThread';
 import { resolveAgentThreads } from './resolveAgentThreads';
 import { queueResolution } from './queueResolution';
@@ -27,6 +28,7 @@ export const createGithubSlice = (set: SetFn, get: GetFn) => {
     clearGithubToken: clearGithubToken(set, get),
     refreshSessionPr: refreshSessionPr(set, get),
     refreshSessionPrDetail: refreshSessionPrDetail(set, get),
+    selectSessionPr: selectSessionPr(set, get),
     resolveGithubThread: resolveGithubThread(set, get),
     resolveAgentThreads: resolveAgentThreads(set, get),
     queueResolution: queueResolution(set, get),

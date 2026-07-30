@@ -56,16 +56,28 @@ describe('parseCursorStreamLine', () => {
     ]);
   });
 
-  it('emits usage + done for result success', () => {
+  it('emits a first-turn snapshot with cache creation tokens', () => {
     const events = parse(
       JSON.stringify({
         type: 'result',
         subtype: 'success',
-        usage: { input_tokens: 10, output_tokens: 5 },
+        usage: {
+          input_tokens: 10,
+          output_tokens: 5,
+          cache_creation_input_tokens: 180_000,
+        },
       }),
     );
     expect(events).toHaveLength(2);
-    expect(events[0]).toMatchObject({ kind: 'usage', usage: { inputTokens: 10, outputTokens: 5 } });
+    expect(events[0]).toMatchObject({
+      kind: 'usage',
+      usage: {
+        inputTokens: 10,
+        outputTokens: 5,
+        cachedInputTokens: 0,
+        cacheCreationInputTokens: 180_000,
+      },
+    });
     expect(events[1]).toMatchObject({ kind: 'done' });
   });
 

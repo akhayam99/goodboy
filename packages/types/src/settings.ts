@@ -11,7 +11,8 @@ export type AuxTaskId =
   | 'branch_naming'
   | 'plan_generation'
   | 'agent_naming'
-  | 'pr_draft';
+  | 'pr_draft'
+  | 'rebase';
 
 export type TaskModelPreference = Readonly<{
   providerId: ProviderId;

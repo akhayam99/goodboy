@@ -175,20 +175,8 @@ describe('GeminiAdapter.detect', () => {
 });
 
 describe('GeminiAdapter.cost', () => {
-  it('returns 0 when no priceOverride is set (free-tier users)', () => {
+  it('prices the catalog default without an injected override', () => {
     const adapter = new GeminiAdapter();
-    expect(
-      adapter.cost(
-        { inputTokens: 100, outputTokens: 50, cachedInputTokens: 0, estimatedCostUsd: 0 },
-        GEMINI_DEFAULT_MODEL,
-      ),
-    ).toBe(0);
-  });
-
-  it('computes USD when a priceOverride is provided', () => {
-    const adapter = new GeminiAdapter({
-      priceOverride: { inputPerMtok: 1.25, outputPerMtok: 10 },
-    });
     expect(
       adapter.cost(
         {
@@ -199,13 +187,11 @@ describe('GeminiAdapter.cost', () => {
         },
         GEMINI_DEFAULT_MODEL,
       ),
-    ).toBeCloseTo(11.25);
+    ).toBeCloseTo(10.5);
   });
 
-  it('bills cached input at the discounted rate when override sets one', () => {
-    const adapter = new GeminiAdapter({
-      priceOverride: { inputPerMtok: 1.25, outputPerMtok: 10, cachedInputPerMtok: 0.3 },
-    });
+  it('bills cached input at the catalog discount', () => {
+    const adapter = new GeminiAdapter();
     expect(
       adapter.cost(
         {
@@ -216,6 +202,6 @@ describe('GeminiAdapter.cost', () => {
         },
         GEMINI_DEFAULT_MODEL,
       ),
-    ).toBeCloseTo(1.25 + 0.3);
+    ).toBeCloseTo(1.5 + 0.15);
   });
 });

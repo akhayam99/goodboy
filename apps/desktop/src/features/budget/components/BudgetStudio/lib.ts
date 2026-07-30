@@ -1,5 +1,6 @@
 import type { ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
+import { PROVIDER_LABEL_LOWER } from '../../../providers/providers';
 
 export type BudgetScope =
   | { readonly kind: 'overview' }
@@ -38,24 +39,13 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
   'opencode',
   'openrouter',
 ];
-const VENDOR_PREFIXES = ['claude', 'anthropic', 'gemini', 'google', 'cursor'];
-
 export const toProviderId = (provider: string): ProviderId | null => {
   return PROVIDER_IDS.includes(provider as ProviderId) ? (provider as ProviderId) : null;
 };
 
 export const providerLabel = (provider: string): string => {
-  return provider === 'anthropic' ? 'claude' : provider;
-};
-
-export const formatModel = (model: string): string => {
-  let m = model.toLowerCase();
-  const dash = m.indexOf('-');
-  if (dash > 0 && VENDOR_PREFIXES.includes(m.slice(0, dash))) {
-    m = m.slice(dash + 1);
-  }
-  m = m.replace(/(\d)-(\d)/g, '$1.$2');
-  return m.replace(/-/g, ' ');
+  const id = toProviderId(provider);
+  return id === null ? provider : PROVIDER_LABEL_LOWER[id];
 };
 
 export const spendBarColor = (pct: number): string => {

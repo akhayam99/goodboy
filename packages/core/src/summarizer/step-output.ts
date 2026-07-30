@@ -1,4 +1,5 @@
 import { extractAuxOutput } from '../providers/aux-output';
+import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
 import { SummarizerParseError, SummarizerSpawnError, type SummarizerDeps } from './client';
 
@@ -50,12 +51,6 @@ type FallbackDetection = {
   readonly summary: string;
 };
 
-type OneShotResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
-
 export const summarizeStepOutput = async ({
   providerId,
   binary,
@@ -65,15 +60,14 @@ export const summarizeStepOutput = async ({
   model,
   expectedOutput,
 }: SummarizeParams & SummarizerDeps): Promise<string> => {
-  const result = await invokeFn<OneShotResult>('summarize_session', {
-    args: {
-      providerId,
-      model,
-      binary: binary ?? getDefaultBinary(providerId),
-      userMessage: output,
-      systemPrompt: stepOutputSystemPrompt({ expectedOutput: expectedOutput ?? '' }),
-      ...(workingDir != null && { workingDir }),
-    },
+  const result = await runAuxOneShot({
+    providerId,
+    model,
+    binary: binary ?? getDefaultBinary(providerId),
+    userMessage: output,
+    systemPrompt: stepOutputSystemPrompt({ expectedOutput: expectedOutput ?? '' }),
+    ...(workingDir != null && { workingDir }),
+    invokeFn,
   });
   if ((result.exitCode ?? 0) !== 0) {
     throw new SummarizerSpawnError(result.exitCode, result.stderr);

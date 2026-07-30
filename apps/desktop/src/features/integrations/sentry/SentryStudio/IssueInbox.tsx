@@ -3,6 +3,7 @@ import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import { Inbox, MessagesSquare, Search, Users } from 'lucide-react';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import type { SentryIssue } from '../client';
+import { SentryLevelBadge } from '../SentryLevelBadge';
 import type { SentryIssueRow } from './useSentryIssues';
 
 type Props = {
@@ -14,17 +15,6 @@ type Props = {
   readonly loading: boolean;
   readonly error: string | null;
 };
-
-const LEVEL_TONE: Record<string, string> = {
-  fatal: 'border-danger/40 bg-danger/10 text-danger',
-  error: 'border-danger/40 bg-danger/10 text-danger',
-  warning: 'border-warning/40 bg-warning/10 text-warning',
-  info: 'border-info/40 bg-info/10 text-info',
-  debug: 'border-border-soft bg-muted/40 text-muted-foreground',
-};
-
-const levelTone = (level: string | null): string =>
-  LEVEL_TONE[level?.toLowerCase() ?? ''] ?? 'border-border-soft bg-muted/40 text-muted-foreground';
 
 export const IssueInbox = ({
   rows,
@@ -119,14 +109,7 @@ export const IssueInbox = ({
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          'shrink-0 rounded border px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide',
-                          levelTone(row.issue.level),
-                        )}
-                      >
-                        {row.issue.level ?? 'error'}
-                      </span>
+                      <SentryLevelBadge level={row.issue.level} density="compact" />
                       <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                         {row.issue.title}
                       </span>

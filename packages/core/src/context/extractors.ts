@@ -1,6 +1,7 @@
 export {
   assessPlanReadiness,
   extractAllCommentAnalysis,
+  extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractClusterDone,
@@ -20,6 +21,7 @@ export {
   stripControlMarkers,
   type ExtractedCluster,
   type ExtractedCommentAnalysis,
+  type ExtractedCommentReply,
   type ExtractedCommentResolution,
   type ExtractedCommentWontfix,
   type ExtractedHandoff,

@@ -24,6 +24,16 @@ const h = vi.hoisted(() => ({
     unlinkSessionExternalTask: vi.fn(async () => undefined),
   },
   openUrl: vi.fn(async () => undefined),
+  loadCandidates: vi.fn(),
+  candidate: {
+    provider: 'linear',
+    externalId: 'GB-77',
+    identifier: 'GB-77',
+    title: 'Ship the issue picker',
+    url: 'https://linear.app/goodboy/issue/GB-77/ship-the-issue-picker',
+    goal: 'Ship the issue picker',
+    branchSlug: 'ship-the-issue-picker',
+  },
 }));
 
 vi.mock('../../../../../../store', () => ({
@@ -51,6 +61,16 @@ vi.mock('./SentryTaskDetail', () => ({
 
 vi.mock('../PaneShell', () => ({
   PaneShell: ({ children }: Props) => <div>{children}</div>,
+}));
+
+vi.mock('../../../../../integrations/hooks/useIssueCandidates', () => ({
+  useIssueCandidates: () => ({
+    rows: [h.candidate],
+    isLoading: false,
+    isLoaded: true,
+    error: null,
+    load: h.loadCandidates,
+  }),
 }));
 
 import { IntegrationPane } from '.';
@@ -124,7 +144,7 @@ describe('parseIntegrationTaskUrl', () => {
 });
 
 describe('IntegrationPane', () => {
-  it('opens and unlinks every provider task shown for the session', async () => {
+  it('opens and confirms before unlinking every provider task shown for the session', async () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     expect(screen.getByText('Refactor integration storage')).toBeDefined();
@@ -132,6 +152,8 @@ describe('IntegrationPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open GB-42' }));
     expect(h.openUrl).toHaveBeenCalledWith(TASK.url);
     fireEvent.click(screen.getByRole('button', { name: 'unlink GB-42' }));
+    expect(h.store.unlinkSessionExternalTask).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
     await waitFor(() =>
       expect(h.store.unlinkSessionExternalTask).toHaveBeenCalledWith(SESSION_ID, 'linear', 'GB-42'),
     );
@@ -140,7 +162,7 @@ describe('IntegrationPane', () => {
   it('links a pasted provider URL', async () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Linear issue URL' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Or paste a Linear issue URL' }), {
       target: { value: 'https://linear.app/goodboy/issue/GB-99/new-link' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Link' }));
@@ -162,7 +184,7 @@ describe('IntegrationPane', () => {
     window.addEventListener('goodboy:open-sentry-studio', listener);
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="sentry" />);
 
-    expect(screen.getByRole('textbox', { name: 'Sentry issue URL' })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Or paste a Sentry issue URL' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Open Sentry studio' }));
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-sentry-studio', listener);
@@ -177,7 +199,7 @@ describe('IntegrationPane', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     expect(screen.getByText('Connect Linear')).toBeDefined();
-    expect(screen.queryByRole('textbox', { name: 'Linear issue URL' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Or paste a Linear issue URL' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-linear-studio', listener);
@@ -200,4 +222,37 @@ describe('IntegrationPane', () => {
       expect(screen.queryByText(detailText)).toBeNull();
     },
   );
+
+  it('links an issue picked from the assigned-issues search', async () => {
+    h.store.workspaceIntegrations = { [WORKSPACE_ID]: [{ provider: 'linear' }] };
+
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    fireEvent.focus(screen.getByRole('combobox', { name: 'Link an issue' }));
+    fireEvent.mouseDown(screen.getByText('Ship the issue picker'));
+
+    await waitFor(() => expect(h.store.linkSessionExternalTask).toHaveBeenCalledOnce());
+    expect(h.store.linkSessionExternalTask).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({
+        provider: 'linear',
+        externalId: 'GB-77',
+        identifier: 'GB-77',
+        title: 'Ship the issue picker',
+        url: 'https://linear.app/goodboy/issue/GB-77/ship-the-issue-picker',
+      }),
+    );
+  });
+
+  it('does not submit the URL form when Enter is pressed in a closed issue picker', () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    const picker = screen.getByRole('combobox', { name: 'Link an issue' });
+
+    fireEvent.focus(picker);
+    fireEvent.keyDown(picker, { key: 'Escape' });
+    fireEvent.keyDown(picker, { key: 'Enter' });
+
+    expect(h.store.linkSessionExternalTask).not.toHaveBeenCalled();
+    expect(screen.queryByText('Paste an issue URL to link it.')).toBeNull();
+  });
 });

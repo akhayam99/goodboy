@@ -1,4 +1,4 @@
-import { Divider, EmptyState, SectionHeader, StatCard, cn } from '@goodboy/ui';
+import { Divider, EmptyState, StatCard } from '@goodboy/ui';
 import { ExternalLink, ListTree, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
@@ -12,11 +12,11 @@ import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromSentry } from '../goal-from-sentry';
 import type { SentryIssue } from '../client';
-import { levelTone } from '../levelTone';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
+import { SentryLevelBadge } from '../SentryLevelBadge';
 import { SentryStackTrace } from '../SentryStackTrace';
+import { sentryIssueView } from '../sentryIssueView';
 import { useSentryIssueDetail } from '../useSentryIssueDetail';
-import { visibleSentryTags } from '../visibleSentryTags';
 
 type Props = {
   readonly issue: SentryIssue | null;
@@ -68,12 +68,16 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     />
   );
 
-  const identifier = issue.shortId ?? issue.id;
-  const culprit = issueDetail?.culprit ?? issue.culprit;
-  const permalink = issue.permalink;
-  const visibleTags = visibleSentryTags({ detail: issueDetail });
-  const frames = issueDetail?.frames ?? [];
-  const breadcrumbs = issueDetail?.breadcrumbs ?? [];
+  const view = sentryIssueView({
+    identifier: issue.shortId ?? issue.id,
+    title: issue.title,
+    level: issue.level,
+    culprit: issue.culprit,
+    permalink: issue.permalink,
+    detail: issueDetail,
+    isLoading: detailLoading,
+    error: detailError,
+  });
   const firstSeen = issue.firstSeen == null ? '' : formatRelativeDuration(issue.firstSeen);
   const lastSeen = issue.lastSeen == null ? '' : formatRelativeDuration(issue.lastSeen);
   const stats = [
@@ -89,29 +93,24 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         <HeaderBand
           meta={
             <>
-              <span
-                className={cn(
-                  'shrink-0 rounded border px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide',
-                  levelTone({ level: issue.level }),
-                )}
-              >
-                {issue.level ?? 'error'}
-              </span>
+              <SentryLevelBadge level={view.level} />
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-                {identifier}
+                {view.identifier}
               </span>
             </>
           }
-          title={issueDetail?.title ?? issue.title}
+          title={view.title}
           subtitle={
-            culprit != null ? (
-              <span className="truncate font-mono text-2xs text-muted-foreground">{culprit}</span>
+            view.culprit != null ? (
+              <span className="truncate font-mono text-2xs text-muted-foreground">
+                {view.culprit}
+              </span>
             ) : undefined
           }
           actions={
-            permalink != null && permalink !== '' ? (
+            view.permalink != null && view.permalink !== '' ? (
               <a
-                href={permalink}
+                href={view.permalink}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
@@ -126,7 +125,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         <>
           {launch}
           <Divider />
-          {visibleTags.map((tag) => (
+          {view.tags.map((tag) => (
             <MetaItem key={tag.key} label={tag.key}>
               {tag.value}
             </MetaItem>
@@ -143,15 +142,22 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         </div>
       ) : null}
 
-      <section className="flex flex-col gap-3">
-        <SectionHeader
-          label="stack trace"
-          icon={<ListTree size={13} aria-hidden className="text-muted-foreground" />}
-        />
-        <SentryStackTrace frames={frames} isLoading={detailLoading} error={detailError} />
-      </section>
+      <DetailSection
+        label="stack trace"
+        icon={<ListTree size={13} aria-hidden className="text-muted-foreground" />}
+      >
+        <SentryStackTrace frames={view.frames} isLoading={detailLoading} error={detailError} />
+      </DetailSection>
 
-      <SentryBreadcrumbs breadcrumbs={breadcrumbs} isLoading={detailLoading} error={detailError} />
+      {view.hasBreadcrumbs ? (
+        <DetailSection label="breadcrumbs">
+          <SentryBreadcrumbs
+            breadcrumbs={view.breadcrumbs}
+            isLoading={detailLoading}
+            error={detailError}
+          />
+        </DetailSection>
+      ) : null}
     </StudioDetailLayout>
   );
 };

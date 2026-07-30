@@ -10,13 +10,6 @@ export {
 } from './budget';
 
 export {
-  TelemetryRecorder,
-  type RecordSummarizerInput,
-  type RecordTurnInput,
-  type TelemetryRecorderDeps,
-} from './telemetry';
-
-export {
   ContextEngine,
   InvalidSlotKeyError,
   PREAMBLE_SLOT_TOTAL_BUDGET,
@@ -27,6 +20,7 @@ export {
   assessPlanReadiness,
   autoPopulateContext,
   extractAllCommentAnalysis,
+  extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractClusterDone,
@@ -59,6 +53,7 @@ export {
   type ExtractedCluster,
   type ExtractedScoutArea,
   type ExtractedCommentAnalysis,
+  type ExtractedCommentReply,
   type ExtractedCommentResolution,
   type ExtractedCommentWontfix,
   type ExtractedHandoff,
@@ -130,13 +125,17 @@ export { resolveTaskModel } from './providers/task-models';
 export { resolveRoleRouting, type ResolvedRoleRouting } from './providers/role-models';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
+export { cliModelId } from './providers/cliModelId';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
+export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
 
 export { getModelDescriptor, getModelProvider } from './providers/model-display';
+export { computeProviderCostUsd } from './providers/provider-cost';
+export { contextTokensForUsage, inputTokensForUsage } from './providers/context-tokens';
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 
-export { CURSOR_CHEAP_MODEL, computeCursorCostUsd } from './providers/cursor/cost';
+export { computeCursorCostUsd } from './providers/cursor/cost';
 export { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
 export {
   parseCursorStreamLine,

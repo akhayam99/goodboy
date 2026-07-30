@@ -19,6 +19,7 @@ import type {
   OverrideSettings,
   OpenQuestion,
   OpenQuestionId,
+  PendingResolutionOutcome,
   PermissionScope,
   PlanId,
   PlanStatus,
@@ -61,7 +62,7 @@ import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList, type ProviderStatus } from '../features/providers/providers';
 import { DEFAULT_BRANCH_PREFIX } from '../features/settings/settings';
 import { AGENT_FEATURES } from '../shared/lib/features';
-import { type CreatedWorktree } from '../features/worktree/worktree';
+import { type CreatedWorktree, type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
@@ -215,6 +216,14 @@ export type AppActions = {
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
   reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
+  amendSessionCommit(
+    sessionId: SessionId,
+    args: { sha: string; message: string },
+  ): Promise<RewrittenHead>;
+  squashSessionCommits(
+    sessionId: SessionId,
+    args: { sha: string; message: string },
+  ): Promise<RewrittenHead>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   setWorkflowRunAutoRun(
     sessionId: SessionId,
@@ -386,6 +395,7 @@ export type AppActions = {
   deleteTask(sessionId: SessionId): Promise<void>;
   bulkDeleteTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   archiveTask(sessionId: SessionId): Promise<void>;
+  bulkArchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   unarchiveTask(sessionId: SessionId): Promise<void>;
   bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<void>;
   setSessionConfig(sessionId: SessionId, fields: SessionConfigUpdate): Promise<void>;
@@ -409,6 +419,7 @@ export type AppActions = {
     sessionId: SessionId,
     opts?: { force?: boolean; silent?: boolean; retries?: number },
   ): Promise<void>;
+  selectSessionPr(sessionId: SessionId, prNumber: number): Promise<void>;
   sweepGithub(opts?: { skipUnknownPr?: boolean }): void;
   resolveGithubThread(
     sessionId: SessionId,
@@ -418,7 +429,13 @@ export type AppActions = {
   resolveAgentThreads(sessionId: SessionId, agentId: AgentId): Promise<boolean>;
   queueResolution(
     sessionId: SessionId,
-    args: { threadId: string; commitSha: string; prNumber: number },
+    args: {
+      threadId: string;
+      commitSha: string;
+      prNumber: number;
+      reply?: string | null;
+      outcome?: PendingResolutionOutcome | null;
+    },
   ): Promise<void>;
   dequeueResolution(sessionId: SessionId, threadId: string): Promise<void>;
   loadPendingResolutions(sessionId: SessionId): Promise<void>;
@@ -633,6 +650,8 @@ export const initialState: AppState = {
   sessionPanelExpanded: {},
   githubStatus: null,
   sessionGithub: {},
+  sessionGithubPrs: {},
+  sessionSelectedPrNumber: {},
   sessionGitlabMr: {},
   reviewPrs: {},
   reviewDrafts: {},

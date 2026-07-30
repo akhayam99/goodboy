@@ -86,7 +86,7 @@ export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
             <ErrorPanel tail={lifecycle.errorTail} />
           ) : null}
 
-          {command ? <EscapeHatch command={command} /> : null}
+          {command ? <EscapeHatch command={command} providerId={providerId} /> : null}
         </div>
         <Divider orientation="vertical" />
         <ScrollFade

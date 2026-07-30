@@ -72,6 +72,29 @@ describe('generateBranchSlug', () => {
     expect(result).toEqual({ slug: HEURISTIC, accepted: false, error: 'cli not found' });
   });
 
+  it('maps a catalog key to the spawnable cli id', async () => {
+    let request: Record<string, unknown> | undefined;
+    const invokeFn: InvokeFn = async <T>(
+      _cmd: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => {
+      request = args;
+      return { stdout: JSON.stringify({ result: 'fix-auth-flow' }), stderr: '', exitCode: 0 } as T;
+    };
+
+    await generateBranchSlug({
+      goal: 'fix the authentication flow',
+      providerId: 'anthropic',
+      model: 'haiku-4.5',
+      fallbackSlug: HEURISTIC,
+      invokeFn,
+      timeoutMs: 200,
+    });
+
+    const args = request?.['args'] as Record<string, unknown> | undefined;
+    expect(args?.['model']).toBe('claude-haiku-4-5');
+  });
+
   it('states the output contract and neutralises outside style directives', () => {
     expect(BRANCH_SLUG_SYSTEM_PROMPT).toContain('Output the slug alone');
     expect(BRANCH_SLUG_SYSTEM_PROMPT).toContain(

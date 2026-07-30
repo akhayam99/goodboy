@@ -42,4 +42,26 @@ describe('useClickOutside', () => {
 
     document.body.removeChild(inside);
   });
+
+  it('does not fire when mousedown is inside a dropdown portal', () => {
+    const inside = document.createElement('div');
+    const portal = document.createElement('div');
+    const portalButton = document.createElement('button');
+    portal.dataset.dropdownPortal = '';
+    portal.appendChild(portalButton);
+    document.body.appendChild(inside);
+    document.body.appendChild(portal);
+
+    const onClose = vi.fn();
+    renderHook(() => {
+      const ref = useRef<HTMLDivElement>(inside);
+      useClickOutside(ref, onClose);
+    });
+
+    portalButton.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    expect(onClose).not.toHaveBeenCalled();
+
+    document.body.removeChild(inside);
+    document.body.removeChild(portal);
+  });
 });

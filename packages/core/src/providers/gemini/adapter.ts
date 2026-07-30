@@ -9,7 +9,7 @@ import type {
   TurnRequest,
 } from '@goodboy/types';
 import { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './constants';
-import { computeGeminiCostUsd, type GeminiModelPriceOverride } from './cost';
+import { computeGeminiCostUsd } from './cost';
 import { parseJsonLine } from './parser';
 import { streamChildEvents } from '../shared/stream-events';
 import { resolveModelArgs } from '../resolveModelArgs';
@@ -19,7 +19,6 @@ const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
   toolUse: true,
   fileEdits: true,
-  contextWindow: 1_000_000,
   defaultModel: GEMINI_DEFAULT_MODEL,
   availableModels: GEMINI_MODELS.map((m) => m.id),
 };
@@ -29,7 +28,6 @@ export type GeminiAdapterDeps = {
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-  readonly priceOverride?: GeminiModelPriceOverride | null;
 };
 
 type SpawnParams = {
@@ -48,14 +46,12 @@ export class GeminiAdapter implements ProviderAdapter {
   private readonly now: () => IsoDateTime;
   private readonly spawnFn: typeof spawn;
   private readonly onUnknown: (type: string, payload: unknown) => void;
-  private readonly priceOverride: GeminiModelPriceOverride | null;
 
   constructor(deps: GeminiAdapterDeps = {}) {
     this.binary = deps.binary ?? 'agy';
     this.now = deps.now ?? (() => new Date().toISOString() as IsoDateTime);
     this.spawnFn = deps.spawnFn ?? spawn;
     this.onUnknown = deps.onUnknown ?? (() => undefined);
-    this.priceOverride = deps.priceOverride ?? null;
   }
 
   async detect(): Promise<DetectResult> {
@@ -85,7 +81,7 @@ export class GeminiAdapter implements ProviderAdapter {
   }
 
   cost(usage: ProviderUsage, model: string): number {
-    return computeGeminiCostUsd(usage, model, this.priceOverride);
+    return computeGeminiCostUsd({ usage, model });
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {

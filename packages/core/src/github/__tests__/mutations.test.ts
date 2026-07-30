@@ -87,6 +87,25 @@ describe('addReviewThreadReply', () => {
     expect(args).toContain('body=multi\nline body');
   });
 
+  it('keeps one body per thread across several threads', async () => {
+    const runner = makeRunner(
+      jsonOk({
+        data: {
+          addPullRequestReviewThreadReply: { comment: { id: 'PRRC_1', url: 'u' } },
+        },
+      }),
+    );
+    await addReviewThreadReply(runner, 'PRRT_1', 'answer for one');
+    await addReviewThreadReply(runner, 'PRRT_2', 'answer for two');
+    const calls = (runner.run as ReturnType<typeof vi.fn>).mock.calls.map(
+      (call) => call[0] as ReadonlyArray<string>,
+    );
+    expect(calls[0]).toEqual(expect.arrayContaining(['-F', 'threadId=PRRT_1']));
+    expect(calls[0]).toContain('body=answer for one');
+    expect(calls[1]).toEqual(expect.arrayContaining(['-F', 'threadId=PRRT_2']));
+    expect(calls[1]).toContain('body=answer for two');
+  });
+
   it('throws GhCliError when graphql returns errors', async () => {
     const runner = makeRunner(jsonOk({ errors: [{ message: 'thread not found' }] }));
     await expect(addReviewThreadReply(runner, 'PRT_x', 'hi')).rejects.toBeInstanceOf(GhCliError);

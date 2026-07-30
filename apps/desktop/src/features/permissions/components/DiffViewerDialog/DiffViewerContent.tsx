@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { CheckCircle2, X } from 'lucide-react';
-import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { AlertTriangle, CheckCircle2, GitBranch, RefreshCw, X } from 'lucide-react';
+import { Divider, EmptyState, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
@@ -14,6 +14,7 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { ghPrDiff } from '../../../../features/github/github';
+import { taskModelAgentSpawnConfig } from '../../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import {
@@ -40,6 +41,7 @@ import { FileRail } from './FileTree/FileRail';
 import { FileDiffCard } from './FileDiffCard';
 import { DiffToolbar } from './DiffToolbar';
 import { NotesFooter } from './NotesFooter';
+import { DIFF_VIEWER_PANE_COPY } from './diffViewerPaneCopy';
 
 type Props = {
   onClose: () => void;
@@ -54,6 +56,7 @@ type Props = {
   jumpToFirstCommented?: boolean;
   jumpToFile?: string;
   showToolbarClose?: boolean;
+  presentation?: 'dialog' | 'pane';
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
@@ -82,9 +85,7 @@ const readPersistedView = (sessionId: SessionId | undefined): DiffView | null =>
     if (parsed && typeof parsed === 'object' && 'kind' in parsed) {
       return parsed;
     }
-  } catch {
-    // ignore
-  }
+  } catch {}
   return null;
 };
 
@@ -95,9 +96,7 @@ const writePersistedView = (sessionId: SessionId | undefined, view: DiffView): v
   }
   try {
     window.localStorage.setItem(key, JSON.stringify(view));
-  } catch {
-    // ignore
-  }
+  } catch {}
 };
 
 const loadDiffForView = (worktreePath: string, view: DiffView): Promise<string> => {
@@ -242,9 +241,7 @@ const writeReviewedMap = (
   }
   try {
     window.localStorage.setItem(key, JSON.stringify(map));
-  } catch {
-    // ignore
-  }
+  } catch {}
 };
 
 export const DiffViewerContent = ({
@@ -260,6 +257,7 @@ export const DiffViewerContent = ({
   jumpToFirstCommented = false,
   jumpToFile,
   showToolbarClose = true,
+  presentation = 'dialog',
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [mountedCount, setMountedCount] = useState(DIFF_BATCH_SIZE);
@@ -312,6 +310,23 @@ export const DiffViewerContent = ({
   const sendTurn = useAppStore((s) => s.sendTurn);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const [spawning, setSpawning] = useState(false);
+  const [isRebasing, setIsRebasing] = useState(false);
+  const [rebaseError, setRebaseError] = useState<string | null>(null);
+  const session = useAppStore((s) =>
+    sessionId == null ? null : (s.sessions.find((candidate) => candidate.id === sessionId) ?? null),
+  );
+  const workspaceOverrides = useAppStore((s) =>
+    session == null ? null : (s.workspaceOverrides?.[session.workspaceId] ?? null),
+  );
+  const rebaseAgentConfig = useMemo(
+    () =>
+      taskModelAgentSpawnConfig({
+        task: 'rebase',
+        preferences: workspaceOverrides?.taskModels,
+        defaultProviderId: session?.providerPreference.defaultProvider ?? 'anthropic',
+      }),
+    [session?.providerPreference.defaultProvider, workspaceOverrides?.taskModels],
+  );
   const resolverRoleModels = useSessionRoleModels({ sessionId: sessionId ?? null });
   const [resolverRouting, setResolverRouting] = useState<AgentKindRouting>(() =>
     kindRouting({ kind: 'resolver', roleModels: resolverRoleModels }),
@@ -331,6 +346,13 @@ export const DiffViewerContent = ({
   const phaseRuns = useAppStore((s) =>
     sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null,
   );
+  const isRebaseAgentRunning =
+    phaseRuns?.some(
+      (agent) =>
+        agent.name === 'Rebase on main' &&
+        (agent.status === 'pending' || agent.status === 'running'),
+    ) === true;
+  const isRebaseDisabled = isRebasing || isRebaseAgentRunning;
   const agentNameById = useMemo(() => {
     const m = new Map<AgentId, string>();
     if (phaseRuns) {
@@ -422,9 +444,7 @@ export const DiffViewerContent = ({
         setCommits(c);
         setStatus(s);
       })
-      .catch(() => {
-        // best-effort; the diff effect surfaces hard errors
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -518,8 +538,6 @@ export const DiffViewerContent = ({
     if (typeof IntersectionObserver === 'undefined' || files.length === 0) {
       return;
     }
-    // ScrollFade wraps the scroller in a positioned shell; the scroll viewport
-    // is the descendant that actually overflows, and is the IO root.
     const viewport =
       scrollRef.current?.querySelector<HTMLElement>('.overflow-y-auto') ?? scrollRef.current;
     const obs = new IntersectionObserver(
@@ -613,6 +631,38 @@ export const DiffViewerContent = ({
     onClose();
   };
 
+  const handleRebase = async () => {
+    const provider = rebaseAgentConfig.provider;
+    if (sessionId == null || isRebaseDisabled || provider === '') {
+      return;
+    }
+    setRebaseError(null);
+    setIsRebasing(true);
+    try {
+      const initialPrompt = [
+        'Rebase this session branch onto origin/main.',
+        '- Fetch origin main before rebasing.',
+        "- Rebase the session branch onto origin/main and resolve conflicts by favoring the branch's intent.",
+        "- Run the repository's typecheck to confirm nothing broke.",
+        '- Push the rebased branch with --force-with-lease.',
+        '- Never merge and never touch other branches.',
+        '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
+      ].join('\n');
+      const agentId = await spawnAgent(sessionId, {
+        name: 'Rebase on main',
+        initialPrompt,
+        model: rebaseAgentConfig.model,
+        provider,
+        effort: rebaseAgentConfig.effort,
+      });
+      await selectAgent(sessionId, agentId);
+    } catch (rebaseFailure) {
+      setRebaseError(formatError(rebaseFailure));
+    } finally {
+      setIsRebasing(false);
+    }
+  };
+
   const handleOpenInEditor = useCallback(
     async (filePath: string) => {
       if (!workingDir) {
@@ -621,9 +671,7 @@ export const DiffViewerContent = ({
       const root = workingDir.replace(/\/$/, '');
       try {
         await openFileInWorkspace(root, `${root}/${filePath}`, editorBinary);
-      } catch {
-        // swallow, error surfaced via console
-      }
+      } catch {}
     },
     [workingDir, editorBinary],
   );
@@ -654,84 +702,201 @@ export const DiffViewerContent = ({
   );
 
   const isEmpty = !loading && !error && files.length === 0;
+  const isPane = presentation === 'pane';
+  const isDefaultView = view.kind === 'branch';
+  const commitsAheadOfMain = status?.commitsAheadOfMain ?? 0;
+  const commitCountLabel = `${commitsAheadOfMain} ${
+    commitsAheadOfMain === 1 ? 'commit' : 'commits'
+  }`;
 
   return (
-    /* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- container handles keyboard nav */
-    <div className="flex h-full min-h-0 w-full flex-col" onKeyDown={handleKeyDown}>
-      {isEmpty ? (
-        isGitAware ? (
-          <>
-            <div className="flex shrink-0 items-center gap-2 px-2.5 py-1.5">
-              <div className="flex min-w-0 flex-1 items-center">
+    <div
+      className={cn(
+        'flex h-full min-h-0 w-full flex-col',
+        isPane && 'mx-auto max-w-5xl gap-5 px-6 py-5 motion-safe:animate-studio-in',
+      )}
+      onKeyDown={handleKeyDown}
+    >
+      {isPane ? (
+        <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-baseline gap-2">
+              <h1 className="text-xl font-semibold leading-snug text-foreground">
+                {DIFF_VIEWER_PANE_COPY.title}
+              </h1>
+              {!loading && error === null && !isEmpty ? (
+                <span className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+                  {isGitAware ? <span>{commitCountLabel}</span> : null}
+                  {status != null && status.commitsBehindMain > 0 ? (
+                    <span
+                      className="text-muted-foreground/70"
+                      title="commits on main not in this branch"
+                    >
+                      behind main by {status.commitsBehindMain}
+                    </span>
+                  ) : null}
+                  {status != null && status.commitsBehindMain > 0 && sessionId != null ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleRebase()}
+                      disabled={isRebaseDisabled}
+                      title={
+                        isRebaseDisabled ? 'Rebase agent is still running' : 'Rebase onto main'
+                      }
+                      className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-2xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <GitBranch size={11} aria-hidden />
+                      Rebase
+                    </button>
+                  ) : null}
+                  {rebaseError != null ? (
+                    <span
+                      role="alert"
+                      className="inline-flex min-w-0 items-center gap-1 text-danger"
+                      title={rebaseError}
+                    >
+                      <AlertTriangle size={11} aria-hidden className="shrink-0" />
+                      <span className="truncate">{rebaseError}</span>
+                    </span>
+                  ) : null}
+                </span>
+              ) : null}
+            </div>
+            <p className="text-sm text-muted-foreground">{DIFF_VIEWER_PANE_COPY.description}</p>
+          </div>
+          {!isEmpty ? (
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+              <DiffToolbar
+                title={title}
+                prNumber={prNumber}
+                openCommentsCount={openComments.length}
+                reviewedCount={files.length > 0 ? reviewedCount : null}
+                filesCount={files.length}
+                sidebarCollapsed={sidebarCollapsed}
+                onToggleSidebar={toggleSidebar}
+                status={isGitAware ? status : null}
+                onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
+                refreshing={loading}
+                showClose={false}
+                onClose={onClose}
+                presentation="actions"
+                viewSelector={
+                  isGitAware ? (
+                    <DiffViewSelector
+                      view={view}
+                      onChange={setView}
+                      commits={commits}
+                      status={status}
+                      filesCount={loading ? null : files.length}
+                      loading={loading}
+                    />
+                  ) : null
+                }
+              />
+            </div>
+          ) : isGitAware ? (
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+              {isDefaultView ? (
+                <button
+                  type="button"
+                  onClick={() => setRefreshTick((tick) => tick + 1)}
+                  title="refresh git state"
+                  aria-label="refresh git state"
+                  className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
+                >
+                  <RefreshCw size={12} aria-hidden />
+                </button>
+              ) : (
                 <DiffViewSelector
                   view={view}
                   onChange={setView}
                   commits={commits}
                   status={status}
-                  filesCount={loading ? null : files.length}
-                  loading={loading}
+                  filesCount={files.length}
+                  loading={false}
                 />
-              </div>
-              {showToolbarClose ? (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  title="close"
-                  aria-label="close"
-                  className={TOOLBAR_ICON_BTN}
-                >
-                  <X size={13} />
-                </button>
-              ) : null}
+              )}
             </div>
-            <Divider className="shrink-0" />
-          </>
-        ) : showToolbarClose ? (
-          <>
-            <div className="flex shrink-0 items-center justify-end px-2.5 py-1.5">
-              <button
-                type="button"
-                onClick={onClose}
-                title="close"
-                aria-label="close"
-                className={TOOLBAR_ICON_BTN}
-              >
-                <X size={13} />
-              </button>
-            </div>
-            <Divider className="shrink-0" />
-          </>
-        ) : null
+          ) : null}
+        </div>
       ) : (
-        <DiffToolbar
-          title={title}
-          prNumber={prNumber}
-          openCommentsCount={openComments.length}
-          reviewedCount={files.length > 0 ? reviewedCount : null}
-          filesCount={files.length}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={toggleSidebar}
-          status={isGitAware ? status : null}
-          onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
-          refreshing={loading}
-          showClose={showToolbarClose}
-          onClose={onClose}
-          viewSelector={
+        <>
+          {isEmpty ? (
             isGitAware ? (
-              <DiffViewSelector
-                view={view}
-                onChange={setView}
-                commits={commits}
-                status={status}
-                filesCount={loading ? null : files.length}
-                loading={loading}
-              />
+              <>
+                <div className="flex shrink-0 items-center gap-2 px-2.5 py-1.5">
+                  <div className="flex min-w-0 flex-1 items-center">
+                    <DiffViewSelector
+                      view={view}
+                      onChange={setView}
+                      commits={commits}
+                      status={status}
+                      filesCount={loading ? null : files.length}
+                      loading={loading}
+                    />
+                  </div>
+                  {showToolbarClose ? (
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      title="close"
+                      aria-label="close"
+                      className={TOOLBAR_ICON_BTN}
+                    >
+                      <X size={13} />
+                    </button>
+                  ) : null}
+                </div>
+                <Divider className="shrink-0" />
+              </>
+            ) : showToolbarClose ? (
+              <>
+                <div className="flex shrink-0 items-center justify-end px-2.5 py-1.5">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    title="close"
+                    aria-label="close"
+                    className={TOOLBAR_ICON_BTN}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+                <Divider className="shrink-0" />
+              </>
             ) : null
-          }
-        />
+          ) : (
+            <DiffToolbar
+              title={title}
+              prNumber={prNumber}
+              openCommentsCount={openComments.length}
+              reviewedCount={files.length > 0 ? reviewedCount : null}
+              filesCount={files.length}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+              status={isGitAware ? status : null}
+              onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
+              refreshing={loading}
+              showClose={showToolbarClose}
+              onClose={onClose}
+              viewSelector={
+                isGitAware ? (
+                  <DiffViewSelector
+                    view={view}
+                    onChange={setView}
+                    commits={commits}
+                    status={status}
+                    filesCount={loading ? null : files.length}
+                    loading={loading}
+                  />
+                ) : null
+              }
+            />
+          )}
+        </>
       )}
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {loading ? (
           <div className="flex min-h-0 flex-1 flex-col gap-4 p-4" aria-label="Loading diff">
             {DIFF_SKELETON_CARDS.map((lines, ci) => (
@@ -759,8 +924,8 @@ export const DiffViewerContent = ({
         ) : error ? (
           <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
         ) : files.length === 0 ? (
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-2xl px-6 py-5">
+          <ScrollFade className="min-h-0 min-w-0 flex-1">
+            <div className={cn('mx-auto w-full', !isPane && 'max-w-2xl px-6 py-5')}>
               <EmptyState
                 bordered
                 tone="success"
@@ -769,7 +934,7 @@ export const DiffViewerContent = ({
                 description={emptyStateBlurb(view, isGitAware) ?? undefined}
               />
             </div>
-          </div>
+          </ScrollFade>
         ) : (
           <>
             {!sidebarCollapsed && (
@@ -781,8 +946,8 @@ export const DiffViewerContent = ({
                 commentCounts={openCommentsByFile}
               />
             )}
-            <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
-              <ScrollFade className="min-h-0 flex-1">
+            <div ref={scrollRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <ScrollFade className="min-h-0 min-w-0 flex-1">
                 {files.slice(0, mountedCount).map((file) => (
                   <FileDiffCard
                     key={file.path}
@@ -817,7 +982,7 @@ export const DiffViewerContent = ({
         )}
       </div>
 
-      {sessionId && openComments.length > 0 ? (
+      {(!isPane || !isEmpty) && sessionId && openComments.length > 0 ? (
         <NotesFooter
           openCount={openComments.length}
           spawning={spawning}

@@ -112,12 +112,6 @@ vi.mock('../../features/worktree/worktree', () => ({
 
 vi.mock('../../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
 
-vi.mock('../../provider-pricing', () => ({
-  parseProviderPricingConfig: vi.fn(() => null),
-  getCodexPriceOverride: vi.fn(() => null),
-  refreshPricingTable: vi.fn(() => Promise.resolve()),
-}));
-
 const SESSION_ID = 'sess-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const RUN_ID = 'run-1' as ProviderRunId;

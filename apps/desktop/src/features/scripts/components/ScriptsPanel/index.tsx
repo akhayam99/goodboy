@@ -6,7 +6,7 @@ import { InspectorSplit } from '../../../session/components/SessionWorkspace/par
 import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
-import { DiscardDraftDialog } from './DiscardDraftDialog';
+import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { ScriptDetail } from './ScriptDetail';
 import { ScriptEditor } from './ScriptEditor';
 import { ScriptRow } from './ScriptRow';
@@ -366,8 +366,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
                     onRun={() => onRun(script)}
                     onCancel={() => onCancel(script.id)}
                     onCopy={() => onCopy(script.id, script.body)}
-                    onEdit={() => requestEdit(script)}
-                    onDelete={() => void onDelete(script.id)}
+                    onDelete={() => onDelete(script.id)}
                   />
                 </li>
               ))}
@@ -376,12 +375,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
         </div>
       </InspectorSplit>
 
-      <DiscardDraftDialog
-        open={pendingAction !== null}
-        onSave={onDialogSave}
-        onDiscard={onDialogDiscard}
-        onCancel={onDialogCancel}
-      />
+      {pendingAction !== null && (
+        <DiscardDraftConfirm
+          onSave={onDialogSave}
+          onDiscard={onDialogDiscard}
+          onCancel={onDialogCancel}
+        />
+      )}
     </div>
   );
 };

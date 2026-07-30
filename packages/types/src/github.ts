@@ -154,11 +154,15 @@ export type PrDetail = {
   checks: ReadonlyArray<PrCheckRun>;
 };
 
+export type PendingResolutionOutcome = 'resolved' | 'wontfix' | 'analyzed';
+
 export type PendingResolution = {
   id: string;
   sessionId: SessionId;
   prNumber: number;
   threadId: string;
   commitSha: string;
+  reply: string | null;
+  outcome: PendingResolutionOutcome | null;
   createdAt: IsoDateTime;
 };

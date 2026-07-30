@@ -93,6 +93,7 @@ export const MrDetailPanel = ({
   const resolvedAgentConfig = useMemo(
     () =>
       taskModelAgentSpawnConfig({
+        task: 'pr_draft',
         preferences: workspaceOverrides?.taskModels,
         defaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
       }),

@@ -15,11 +15,10 @@ type Props = {
   readonly commentByThreadId: ReadonlyMap<string, PrComment>;
   readonly diffCommentByAgentId: ReadonlyMap<AgentId, DiffComment>;
   readonly metrics: AgentMetrics;
+  readonly reportedCommitShaByAgentId: ReadonlyMap<AgentId, string>;
   readonly onOpenChat: (agentId: AgentId) => void;
   readonly onInspect: (agentId: AgentId) => void;
   readonly onJump: (agent: Agent) => void;
-  readonly onResolveThread: (threadId: string) => Promise<void> | void;
-  readonly onResolveAgent: (agentId: AgentId) => Promise<void> | void;
 };
 
 export const ResolverRows = ({
@@ -32,11 +31,10 @@ export const ResolverRows = ({
   commentByThreadId,
   diffCommentByAgentId,
   metrics,
+  reportedCommitShaByAgentId,
   onOpenChat,
   onInspect,
   onJump,
-  onResolveThread,
-  onResolveAgent,
 }: Props) => (
   <ul className="flex flex-col gap-1">
     {entries.map(({ agent, status }) => {
@@ -59,6 +57,7 @@ export const ResolverRows = ({
           contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
           turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
           turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
+          reportedCommitSha={reportedCommitShaByAgentId.get(agent.id) ?? null}
           isSelected={agent.id === selectedAgentId}
           isTaskActive={isTaskActive}
           isInspected={agent.id === inspectedAgentId}
@@ -67,8 +66,6 @@ export const ResolverRows = ({
           onOpenChat={() => onOpenChat(agent.id)}
           onInspect={() => onInspect(agent.id)}
           onJump={() => onJump(agent)}
-          onResolveThread={onResolveThread}
-          onResolveAgent={onResolveAgent}
         />
       );
     })}

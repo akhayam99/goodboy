@@ -1,13 +1,12 @@
 import { formatTokens, formatUsdPrecise } from '@goodboy/ui';
-import { ProviderIcon } from '../../../providers/components/ProviderIcon';
-import { formatModel, type ModelBreakdownEntry } from './lib';
+import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import type { ModelBreakdownEntry } from './lib';
 
 type Props = {
   readonly entries: ReadonlyArray<ModelBreakdownEntry>;
-  readonly showProvider: boolean;
 };
 
-export const ModelTable = ({ entries, showProvider }: Props) => {
+export const ModelTable = ({ entries }: Props) => {
   if (entries.length === 0) {
     return (
       <p className="rounded-lg border border-border-soft bg-muted/10 px-3 py-4 text-center text-xs text-muted-foreground">
@@ -33,10 +32,7 @@ export const ModelTable = ({ entries, showProvider }: Props) => {
             className="transition-colors hover:bg-muted/30"
           >
             <td className="px-3 py-2">
-              <span className="flex items-center gap-2">
-                {showProvider ? <ProviderIcon provider={entry.provider} size={14} /> : null}
-                <span className="font-mono text-foreground">{formatModel(entry.model)}</span>
-              </span>
+              <RoutingBadge provider={entry.provider} model={entry.model} />
             </td>
             <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
               {formatTokens(entry.tokensIn)}

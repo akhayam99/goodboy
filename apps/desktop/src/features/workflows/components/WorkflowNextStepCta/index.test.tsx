@@ -128,17 +128,23 @@ describe('WorkflowNextStepCta', () => {
         blockReason="questions"
       />,
     );
-    expect(screen.getByTestId('workflow-next-step-blocked').textContent).toMatch(
+    expect(screen.getByTestId('workflow-next-step-blocked')).toBeDefined();
+    expect(screen.getByTestId('workflow-next-step-cta').getAttribute('title')).toMatch(
       /open questions are waiting/i,
     );
+    expect(
+      screen.getByRole('button', {
+        name: /run next step: scout.*blocked: open questions are waiting/i,
+      }),
+    ).toBeDefined();
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
     expect(screen.getByText(/start the next agent anyway/i)).toBeDefined();
     expect(onAdvance).not.toHaveBeenCalled();
   });
 
-  it('keeps the CTA visible but inert while the step is still working', () => {
+  it('hides the CTA while the step is still working', () => {
     const onAdvance = vi.fn();
-    render(
+    const { container } = render(
       <WorkflowNextStepCta
         workflow={wf()}
         runs={ctaRuns}
@@ -146,11 +152,14 @@ describe('WorkflowNextStepCta', () => {
         blockReason="turn-running"
       />,
     );
-    const cta = screen.getByTestId('workflow-next-step-cta') as HTMLButtonElement;
-    expect(screen.getByTestId('workflow-next-step-blocked').textContent).toMatch(/still working/i);
-    expect(cta.disabled).toBe(true);
-    fireEvent.click(cta);
-    expect(onAdvance).not.toHaveBeenCalled();
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('names the next step explicitly', () => {
+    render(<WorkflowNextStepCta workflow={wf()} runs={ctaRuns} onAdvance={vi.fn()} />);
+    expect(screen.getByTestId('workflow-next-step-cta').textContent).toMatch(
+      /run next step: scout/i,
+    );
   });
 
   it('renders force CTA when chain is blocked (failed predecessor)', () => {
@@ -189,7 +198,7 @@ describe('WorkflowNextStepCta', () => {
     fireEvent.click(screen.getByTestId('workflow-force-next-step-cta'));
     expect(screen.getByText(/skip the blocked step/i)).toBeDefined();
     expect(onForceAdvance).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText(/skip and continue/i));
+    fireEvent.click(screen.getByRole('button', { name: 'skip and continue' }));
     await Promise.resolve();
     expect(onForceAdvance).toHaveBeenCalledTimes(1);
   });

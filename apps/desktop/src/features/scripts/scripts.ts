@@ -14,6 +14,7 @@ export type ScriptRunRecord = {
   readonly status: ScriptRunStatus;
   readonly result: ScriptRunResult | null;
   readonly runId: string;
+  readonly startedAt: number;
 };
 
 export type ScriptOutputPayload = {

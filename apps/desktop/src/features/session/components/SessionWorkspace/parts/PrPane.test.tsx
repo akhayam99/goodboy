@@ -11,22 +11,28 @@ import type {
 
 type Store = {
   sessionGithub: Record<string, unknown>;
+  sessionGithubPrs: Record<string, ReadonlyArray<PullRequestState>>;
+  sessionSelectedPrNumber: Record<string, number | null>;
   sessionGitlabMr: Record<string, unknown>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   workspaceIntegrations: Record<string, ReadonlyArray<{ readonly provider: string }>>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
+  readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
 };
 
 const h = vi.hoisted(() => ({
   store: {
     sessionGithub: {},
+    sessionGithubPrs: {},
+    sessionSelectedPrNumber: {},
     sessionGitlabMr: {},
     sessionExternalTasks: {},
     sessionPhaseRuns: {},
     workspaceIntegrations: {},
     refreshSessionPr: vi.fn(),
+    selectSessionPr: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
   } satisfies Store,
   remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
@@ -39,6 +45,10 @@ vi.mock('../../../../../store', () => ({
 
 vi.mock('../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => h.remoteKind,
+}));
+
+vi.mock('../../../../context/components/ContextPanel/strips/GitlabMrStrip', () => ({
+  GitlabMrStrip: () => <div>GitLab merge request detail</div>,
 }));
 
 import { PrPane } from './PrPane';
@@ -76,6 +86,8 @@ const session: Session = {
 
 beforeEach(() => {
   h.store.sessionGithub = {};
+  h.store.sessionGithubPrs = {};
+  h.store.sessionSelectedPrNumber = {};
   h.store.sessionGitlabMr = {};
   h.store.sessionExternalTasks = {};
   h.store.sessionPhaseRuns = {};
@@ -98,7 +110,7 @@ describe('PrPane', () => {
     expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
   });
 
-  it('renders the stored pull request as a selected list row above its detail', () => {
+  it('lands directly on the detail with a single pull request', () => {
     h.store.sessionGithub = {
       [SESSION_ID]: {
         pr: PULL_REQUEST,
@@ -107,14 +119,94 @@ describe('PrPane', () => {
         error: null,
       },
     };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
 
     render(<PrPane session={session} />);
 
-    const listRow = screen.getByRole('button', {
-      name: /GitHub #42 Refactor authentication In review/i,
-    });
-    expect(listRow.getAttribute('aria-current')).toBe('true');
-    expect(screen.getAllByText('Refactor authentication')).toHaveLength(2);
+    expect(
+      screen.queryByRole('button', { name: /GitHub #42 Refactor authentication In review/i }),
+    ).toBeNull();
+    expect(screen.getAllByText('Refactor authentication')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
+  });
+
+  it('offers a switcher across every pull request on the branch', () => {
+    const closedPr = {
+      ...PULL_REQUEST,
+      number: 40,
+      title: 'Refactor authentication (superseded)',
+      state: 'closed',
+    } satisfies PullRequestState;
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
+
+    render(<PrPane session={session} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /#42 of 2/i }));
+    fireEvent.click(screen.getByRole('option', { name: /#40/i }));
+
+    expect(h.store.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 40);
+  });
+
+  it('renders a valid selected pr without replacing the canonical pr', () => {
+    const closedPr = {
+      ...PULL_REQUEST,
+      number: 40,
+      title: 'Refactor authentication (superseded)',
+      state: 'closed',
+    } satisfies PullRequestState;
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
+    h.store.sessionSelectedPrNumber = { [SESSION_ID]: closedPr.number };
+
+    render(<PrPane session={session} />);
+
+    expect(screen.getByText(closedPr.title)).toBeDefined();
+    expect(screen.queryByText(PULL_REQUEST.title)).toBeNull();
+  });
+
+  it('falls back when the selected provider request disappears', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGitlabMr = {
+      [SESSION_ID]: {
+        mr: {
+          iid: 7,
+          title: 'GitLab fallback candidate',
+          state: 'open',
+          draft: false,
+        },
+      },
+    };
+    const view = render(<PrPane session={session} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /GitLab !7/i }));
+    expect(screen.getByText('GitLab merge request detail')).toBeDefined();
+
+    h.store.sessionGitlabMr = {};
+    view.rerender(<PrPane session={session} />);
+
+    expect(screen.queryByText('GitLab merge request detail')).toBeNull();
     expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
   });
 

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { SessionId, TurnProviderOverride } from '@goodboy/types';
+import type { AgentId, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { formatError } from '../../../../../shared/lib/errors';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
@@ -24,10 +24,12 @@ export function useTurnDispatch({ sessionId, cleanupSentAttachments }: UseTurnDi
       content: string,
       atts: ReadonlyArray<PendingAttachment>,
       override: TurnProviderOverride | undefined,
+      agentId: AgentId,
     ) => {
       try {
         await sendTurn({
           sessionId,
+          agentId,
           content,
           ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
           override,
@@ -42,7 +44,7 @@ export function useTurnDispatch({ sessionId, cleanupSentAttachments }: UseTurnDi
         cleanupSentAttachments(atts);
       } catch (err) {
         setError(formatError(err));
-        setLastFailedTurn({ content, attachments: atts, override });
+        setLastFailedTurn({ agentId, content, attachments: atts, override });
       }
     },
     [sendTurn, sessionId, showToast, cleanupSentAttachments],

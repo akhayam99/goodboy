@@ -113,10 +113,11 @@ describe('ScriptsPanel', () => {
     expect(screen.queryByPlaceholderText(/script name/i)).toBeNull();
   });
 
-  it('opens an existing script from its row Edit action and saves an edit to its body', async () => {
+  it('opens an existing script through its detail panel and saves an edit to its body', async () => {
     state.scripts = [{ id: 's1', name: 'setup', body: '#!/bin/bash\necho hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
+    fireEvent.click(screen.getByRole('button', { name: /setup/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     const textarea = screen.getByDisplayValue(/echo hi/);
     fireEvent.change(textarea, { target: { value: 'echo hi again' } });
     await act(async () => {
@@ -139,11 +140,14 @@ describe('ScriptsPanel', () => {
     expect(screen.getByDisplayValue('echo hi')).toBeDefined();
   });
 
-  it('deletes a script from its inline row action', async () => {
+  it('confirms before deleting a script from its inline row action', async () => {
     state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete script' }));
+    expect(state.deleteScript).not.toHaveBeenCalled();
+    expect(screen.getByRole('group', { name: 'Delete "setup"?' })).toBeDefined();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Delete script' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Delete setup' }));
     });
     expect(state.deleteScript).toHaveBeenCalledWith('s1', 'ws-1');
   });
@@ -163,7 +167,8 @@ describe('ScriptsPanel', () => {
     ];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
     const setupRow = screen.getAllByRole('listitem')[0]!;
-    fireEvent.click(within(setupRow).getByRole('button', { name: 'Edit script' }));
+    fireEvent.click(within(setupRow).getByRole('button', { name: /setup/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByDisplayValue(/echo one/), {
       target: { value: 'echo one changed' },
     });

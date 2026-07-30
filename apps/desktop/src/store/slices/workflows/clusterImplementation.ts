@@ -13,6 +13,7 @@ import {
   invokeAgentList,
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
+import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -61,6 +62,9 @@ function composeClusterKickoff(
     composeClusterBoundary(childId),
   ].join('\n');
 }
+
+const hasInstructions = (cluster: ImplementationCluster | undefined): boolean =>
+  (cluster?.instructions ?? '').trim().length > 0;
 
 function composeContinuePrompt(
   childId: AgentId,
@@ -166,6 +170,110 @@ function findClustersPlan(
   return p?.status === 'active' ? p : null;
 }
 
+type FindConsumedClustersPlanParams = {
+  readonly get: GetFn;
+  readonly plans: ReadonlyArray<PlanWithCount>;
+  readonly containerId: AgentId;
+};
+
+const findConsumedClustersPlan = ({
+  get,
+  plans,
+  containerId,
+}: FindConsumedClustersPlanParams): PlanWithCount | null => {
+  const consumptionsByPlan = get().planConsumptions;
+  for (let i = plans.length - 1; i >= 0; i--) {
+    const plan = plans[i];
+    if (!plan?.clusters || plan.clusters.length < 2) {
+      continue;
+    }
+    if ((consumptionsByPlan[plan.id] ?? []).some((item) => item.agentId === containerId)) {
+      return plan;
+    }
+  }
+  return null;
+};
+
+type HydrateClusterPlanConsumptionsParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly plans: ReadonlyArray<PlanWithCount>;
+};
+
+const hydrateClusterPlanConsumptions = async ({
+  set,
+  get,
+  plans,
+}: HydrateClusterPlanConsumptionsParams): Promise<void> => {
+  const consumptionsByPlan = get().planConsumptions;
+  const missingPlans = plans.filter(
+    (plan) =>
+      plan.clusters != null &&
+      plan.clusters.length >= 2 &&
+      !Object.prototype.hasOwnProperty.call(consumptionsByPlan, plan.id),
+  );
+  if (missingPlans.length === 0) {
+    return;
+  }
+  const entries = await Promise.all(
+    missingPlans.map(async (plan) => {
+      const consumptions = await invokeListConsumptionsForPlan(plan.id);
+      return [plan.id, consumptions] as const;
+    }),
+  );
+  set((state) => ({
+    planConsumptions: {
+      ...state.planConsumptions,
+      ...Object.fromEntries(entries),
+    },
+  }));
+};
+
+type ResolveClustersPlanParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly containerId: AgentId;
+  readonly workflowRunId: WorkflowRunId | undefined;
+};
+
+const resolveClustersPlan = async ({
+  set,
+  get,
+  sessionId,
+  containerId,
+  workflowRunId,
+}: ResolveClustersPlanParams): Promise<PlanWithCount | null> => {
+  let plans = get().sessionPlans[sessionId] ?? [];
+  let consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
+  if (consumedPlan != null) {
+    return consumedPlan;
+  }
+  await hydrateClusterPlanConsumptions({ set, get, plans }).catch(() => undefined);
+  consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
+  if (consumedPlan != null) {
+    return consumedPlan;
+  }
+  const matchingPlan = selectClustersPlan(plans, workflowRunId);
+  if (matchingPlan != null) {
+    return matchingPlan;
+  }
+  await get()
+    .loadSessionPlans(sessionId)
+    .catch(() => undefined);
+  plans = get().sessionPlans[sessionId] ?? [];
+  consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
+  if (consumedPlan != null) {
+    return consumedPlan;
+  }
+  await hydrateClusterPlanConsumptions({ set, get, plans }).catch(() => undefined);
+  consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
+  if (consumedPlan != null) {
+    return consumedPlan;
+  }
+  return selectClustersPlan(plans, workflowRunId);
+};
+
 export const selectFanOutPlan = (
   get: GetFn,
   sessionId: SessionId,
@@ -193,7 +301,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
     const containerId = child.parentAgentId;
-    const plan = findClustersPlan(get, sessionId, child.workflowRunId);
+    const plan = await resolveClustersPlan({
+      set,
+      get,
+      sessionId,
+      containerId,
+      workflowRunId: child.workflowRunId,
+    });
     const clusters = plan?.clusters ?? [];
     const goalTitle = plan?.title ?? 'the plan';
     const index = Math.max(
@@ -262,16 +376,42 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    void get().refreshUnreadWorkspaces();
     const next = children[completedCount];
-    if (next) {
-      startChild(
-        set,
-        get,
-        sessionId,
-        next.id,
-        composeClusterKickoff(next.id, goalTitle, clusters, completedCount),
+    if (!next) {
+      await invokeAgentUpdateStatus(containerId, { status: 'failed', completedAt: nowIso() });
+      const blocked = await invokeAgentList(sessionId);
+      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
+      void get().refreshUnreadWorkspaces();
+      void get().emitNotification(
+        'error',
+        'warning',
+        'cluster blocked: missing implementer',
+        'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
+        { sessionId },
       );
+      return;
     }
+    if (!hasInstructions(clusters[completedCount])) {
+      await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
+      const blocked = await invokeAgentList(sessionId);
+      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
+      void get().refreshUnreadWorkspaces();
+      void get().emitNotification(
+        'error',
+        'warning',
+        `cluster blocked: ${next.name}`,
+        'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+        { sessionId },
+      );
+      return;
+    }
+    void get().refreshUnreadWorkspaces();
+    startChild(
+      set,
+      get,
+      sessionId,
+      next.id,
+      composeClusterKickoff(next.id, goalTitle, clusters, completedCount),
+    );
   };
 };

@@ -7,7 +7,6 @@ import {
   findReusableAgent,
   isFallbackStepOutputSummary,
   resolveModelArgs,
-  resolveModelForProvider,
   resolveStoredModelSelection,
   runsForWorkflowRun,
   turnReducer,
@@ -54,7 +53,6 @@ import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
-import { refreshPricingTable } from '../../../features/providers/provider-pricing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
@@ -83,6 +81,7 @@ import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
+import { resolveTurnModelSelection } from './resolveTurnModelSelection';
 import type { GetFn, SetFn } from './types';
 
 type Input = {
@@ -379,56 +378,27 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     }
 
     const provider: ProviderId = routingDecision.selectedProvider;
-    const agentKindModel = get().agentModelOverride[activeAgentId] ?? null;
-    const agentModelApplies =
-      agentKindModel != null &&
-      (agentProvider != null
-        ? agentProvider === routingDecision.selectedProvider
-        : routingDecision.selectedProvider === 'anthropic');
-    const turnOverrideActive = turnOverride !== undefined && effectiveOverride === turnOverride;
     const autoStepModel =
-      phaseDefinition != null && !phaseDefinition.modelOverride
-        ? (autoModelForRole({
+      phaseDefinition != null && phaseDefinition.modelOverride == null
+        ? autoModelForRole({
             role: phaseDefinition.role ?? 'custom',
             providers: [provider],
             prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
-          })?.model ?? null)
+          })
         : null;
-    const requestedModelId =
-      phaseDefinition?.modelOverride && phaseDefinition.providerOverride === undefined
-        ? phaseDefinition.modelOverride
-        : autoStepModel != null
-          ? autoStepModel
-          : turnOverrideActive
-            ? routingDecision.selectedModel
-            : routingDecision.fallbackUsed
-              ? routingDecision.selectedModel
-              : agentModelApplies
-                ? agentKindModel
-                : routingDecision.selectedModel;
-    const model = resolveModelForProvider({ provider, modelId: requestedModelId });
     const rawEffort = phaseDefinition?.effort ?? get().agentEffortOverride[activeAgentId] ?? null;
     const requestedEffort = EFFORT_LEVELS.find((level) => level === rawEffort);
-    const requestedStoredSelection = resolveStoredModelSelection({
+    const modelSelection = resolveTurnModelSelection({
       provider,
-      id: requestedModelId,
-      ...(requestedEffort != null && { effort: requestedEffort }),
+      routingDecision,
+      phaseModelOverride: phaseDefinition?.modelOverride ?? null,
+      phaseProviderOverride: phaseDefinition?.providerOverride ?? null,
+      autoStepModel,
+      turnOverride,
+      agentModelPin,
+      agentProvider,
+      requestedEffort,
     });
-    const storedSelection =
-      requestedStoredSelection.report?.kind === 'unknown'
-        ? resolveStoredModelSelection({
-            provider,
-            id: model,
-            ...(requestedEffort != null && { effort: requestedEffort }),
-          }).selection
-        : requestedStoredSelection.selection;
-    const modelSelection =
-      turnOverrideActive && turnOverride?.selection != null
-        ? {
-            ...turnOverride.selection,
-            ...(requestedEffort != null && { effort: requestedEffort }),
-          }
-        : storedSelection;
     const resolvedModel = resolveModelArgs({ provider, selection: modelSelection });
     const modelFlag = provider === 'anthropic' || provider === 'cursor' ? '--model' : '-m';
     const modelFlagIndex = resolvedModel.args.indexOf(modelFlag);
@@ -436,6 +406,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (spawnModel == null) {
       throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
     }
+    const model = spawnModel;
     const explicitEffortFlag =
       provider === 'anthropic'
         ? '--effort'
@@ -635,7 +606,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       });
       return;
     }
-    void refreshPricingTable();
 
     const sharedSlots = get().sessionSlots[sessionId] ?? [];
 

@@ -34,6 +34,8 @@ const HANDOFF_OPEN = '<<handoff';
 const COMMENT_ANALYSIS_OPEN = '<<comment-analysis';
 const COMMENT_RESOLVED_OPEN = '<<comment-resolved';
 const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
+const COMMENT_REPLY_OPEN_RE = /<<comment-reply((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
+const COMMENT_REPLY_CLOSE = '<</comment-reply>>';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
 const SCOUT_DOMAINS_OPEN = '<<scout-domains';
 const REVIEW_COMMENT_OPEN = '<<review-comment';
@@ -415,6 +417,35 @@ export const extractAllCommentAnalysis = (
     markers.push({ threadId, verdict, summary });
   }
   return markers;
+};
+
+export type ExtractedCommentReply = {
+  readonly threadId: string;
+  readonly body: string;
+};
+
+export const extractAllCommentReplies = (
+  assistantText: string,
+): ReadonlyArray<ExtractedCommentReply> => {
+  const byThreadId = new Map<string, string>();
+  COMMENT_REPLY_OPEN_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = COMMENT_REPLY_OPEN_RE.exec(assistantText)) !== null) {
+    const bodyStart = COMMENT_REPLY_OPEN_RE.lastIndex;
+    const closeIndex = assistantText.indexOf(COMMENT_REPLY_CLOSE, bodyStart);
+    if (closeIndex === -1) {
+      continue;
+    }
+    COMMENT_REPLY_OPEN_RE.lastIndex = closeIndex + COMMENT_REPLY_CLOSE.length;
+    const attrs = parseQuestionAttrs(match[1] ?? '');
+    const threadId = (attrs.id ?? attrs.threadId ?? attrs.threadid ?? '').trim();
+    const body = assistantText.slice(bodyStart, closeIndex).trim();
+    if (!isReviewThreadId(threadId) || body.length === 0) {
+      continue;
+    }
+    byThreadId.set(threadId, body);
+  }
+  return [...byThreadId].map(([threadId, body]) => ({ threadId, body }));
 };
 
 export type ExtractedCommentWontfix = {

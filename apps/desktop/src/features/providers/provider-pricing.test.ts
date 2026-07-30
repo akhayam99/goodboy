@@ -1,26 +1,35 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   getCodexPriceOverride,
   getGeminiPriceOverride,
   getActivePricingTable,
-  refreshPricingTable,
 } from './provider-pricing';
+
+type PricingWindow = Window & {
+  __DEV_PRICING_OVERRIDE__?: Partial<ReturnType<typeof getActivePricingTable>>;
+};
+
+const pricingWindow = window as PricingWindow;
+
+afterEach(() => {
+  delete pricingWindow.__DEV_PRICING_OVERRIDE__;
+});
 
 describe('getActivePricingTable', () => {
   it('returns shipped pricing by default', () => {
     const table = getActivePricingTable();
     expect(table.anthropic).toBeDefined();
     expect(table.codex).toBeDefined();
-    expect(table.cursor).toBeDefined();
     expect(table.gemini).toBeDefined();
     expect(typeof table.version).toBe('string');
   });
 
-  it('has claude-sonnet-4-6 anthropic price', () => {
-    const price = getActivePricingTable().anthropic['claude-sonnet-4-6'];
-    expect(price).toBeDefined();
-    expect(price?.inputPerMtok).toBeGreaterThan(0);
-    expect(price?.outputPerMtok).toBeGreaterThan(0);
+  it('pins the reconciled opus price', () => {
+    expect(getActivePricingTable().anthropic['claude-opus-4-7']).toEqual({
+      inputPerMtok: 5,
+      outputPerMtok: 25,
+      cachedInputPerMtok: 0.5,
+    });
   });
 });
 
@@ -30,14 +39,29 @@ describe('getCodexPriceOverride', () => {
   });
 
   it('returns price for known codex model', () => {
-    const table = getActivePricingTable();
-    const knownModel = Object.keys(table.codex)[0];
-    if (knownModel) {
-      const result = getCodexPriceOverride(null, knownModel);
-      expect(result).not.toBeNull();
-      expect(result?.inputPerMtok).toBeGreaterThan(0);
-      expect(result?.outputPerMtok).toBeGreaterThan(0);
-    }
+    expect(getCodexPriceOverride(null, 'gpt-5.6-sol')).toEqual({
+      inputPerMtok: 5,
+      outputPerMtok: 30,
+      cachedInputPerMtok: 0.5,
+    });
+  });
+
+  it('keeps the development override hook active', () => {
+    pricingWindow.__DEV_PRICING_OVERRIDE__ = {
+      codex: {
+        'gpt-5.6-sol': {
+          inputPerMtok: 7,
+          outputPerMtok: 42,
+          cachedInputPerMtok: 0.7,
+        },
+      },
+    };
+
+    expect(getCodexPriceOverride(null, 'gpt-5.6-sol')).toEqual({
+      inputPerMtok: 7,
+      outputPerMtok: 42,
+      cachedInputPerMtok: 0.7,
+    });
   });
 });
 
@@ -47,26 +71,10 @@ describe('getGeminiPriceOverride', () => {
   });
 
   it('returns price for known gemini model', () => {
-    const table = getActivePricingTable();
-    const knownModel = Object.keys(table.gemini)[0];
-    if (knownModel) {
-      const result = getGeminiPriceOverride(null, knownModel);
-      expect(result).not.toBeNull();
-      expect(result?.inputPerMtok).toBeGreaterThan(0);
-      expect(result?.outputPerMtok).toBeGreaterThan(0);
-    }
-  });
-});
-
-describe('refreshPricingTable', () => {
-  it('resolves to undefined without making any network call', async () => {
-    const fetchSpy = vi.fn();
-    vi.stubGlobal('fetch', fetchSpy);
-    try {
-      await expect(refreshPricingTable()).resolves.toBeUndefined();
-      expect(fetchSpy).not.toHaveBeenCalled();
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    expect(getGeminiPriceOverride(null, 'gemini-3.1-pro')).toEqual({
+      inputPerMtok: 2,
+      outputPerMtok: 12,
+      cachedInputPerMtok: 0.2,
+    });
   });
 });

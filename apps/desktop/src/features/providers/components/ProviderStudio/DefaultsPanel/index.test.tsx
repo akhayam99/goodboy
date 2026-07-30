@@ -106,7 +106,14 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const TASK_LABELS = ['Summaries', 'Branch names', 'Planning', 'Agent titles', 'PR and MR drafts'];
+const TASK_LABELS = [
+  'Summaries',
+  'Branch names',
+  'Planning',
+  'Agent titles',
+  'PR and MR drafts',
+  'Rebase agent',
+];
 
 const openRolesTab = () => fireEvent.click(screen.getByRole('tab', { name: /Agent roles/ }));
 
@@ -158,6 +165,7 @@ describe('DefaultsPanel', () => {
     expect(screen.getByText('Planning')).toBeDefined();
     expect(screen.getByText('Agent titles')).toBeDefined();
     expect(screen.getByText('PR and MR drafts')).toBeDefined();
+    expect(screen.getByText('Rebase agent')).toBeDefined();
   });
 
   it('shows the resolved model for automatic task preferences, never the word auto', () => {
@@ -165,7 +173,7 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        'haiku-4.5',
+        label === 'Rebase agent' ? 'sonnet-4.6' : 'haiku-4.5',
       );
     }
     expect(screen.queryByText(/auto/)).toBeNull();

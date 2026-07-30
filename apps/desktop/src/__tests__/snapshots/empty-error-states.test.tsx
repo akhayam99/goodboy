@@ -164,7 +164,7 @@ import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmpt
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
 import { NewSessionView } from '../../features/session/components/NewSessionView';
-import { DeleteSessionDialog } from '../../features/session/components/DeleteSessionDialog';
+import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
@@ -272,12 +272,12 @@ describe('snapshot, error states', () => {
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('DeleteSessionDialog: error state', () => {
+  it('DeleteSessionConfirm: error state', () => {
     mockStore({
       deleteTask: vi.fn().mockRejectedValue(new Error('session not found')),
     });
     const { container } = render(
-      <DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />,
+      <DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />,
     );
     expect(container.firstChild).toMatchSnapshot();
   });

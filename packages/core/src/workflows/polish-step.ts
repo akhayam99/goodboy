@@ -1,5 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
+import { runAuxOneShot } from '../providers/aux-spawn';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const STEP_POLISH_SYSTEM_PROMPT = `You polish step instructions for AI coding workflows.
@@ -34,12 +35,6 @@ export type StepPolishInput = {
   readonly instruction: string;
 };
 
-type OneShotResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
-
 export const polishStepInstruction = async (
   deps: StepPolishDeps,
   input: StepPolishInput,
@@ -58,15 +53,14 @@ export const polishStepInstruction = async (
     'Rewrite it as the single <<step>> marker block.',
   ].join('\n');
 
-  const result = await deps.invokeFn<OneShotResult>('summarize_session', {
-    args: {
-      providerId: deps.providerId,
-      model: getCheapModel(deps.providerId),
-      binary: deps.binary ?? getDefaultBinary(deps.providerId),
-      userMessage,
-      systemPrompt: STEP_POLISH_SYSTEM_PROMPT,
-      ...(deps.workingDir != null && { workingDir: deps.workingDir }),
-    },
+  const result = await runAuxOneShot({
+    providerId: deps.providerId,
+    model: getCheapModel(deps.providerId),
+    binary: deps.binary ?? getDefaultBinary(deps.providerId),
+    userMessage,
+    systemPrompt: STEP_POLISH_SYSTEM_PROMPT,
+    ...(deps.workingDir != null && { workingDir: deps.workingDir }),
+    invokeFn: deps.invokeFn,
   });
   if ((result.exitCode ?? 0) !== 0) {
     return null;

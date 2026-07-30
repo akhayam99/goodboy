@@ -18,10 +18,6 @@ vi.mock('../../../../shared/components/AgentAvatar', () => ({
   AgentAvatar: ({ kind }: { kind: string }) => <span data-testid="agent-avatar">{kind}</span>,
 }));
 
-vi.mock('../../../../shared/hooks/useClickOutside', () => ({
-  useClickOutside: () => {},
-}));
-
 import { WorkflowStepCard } from './index';
 
 const baseProps = {
@@ -63,10 +59,11 @@ afterEach(() => {
 });
 
 describe('WorkflowStepCard (collapsed)', () => {
-  it('shows resolved model name and provider name in meta chips', () => {
+  it('reads as one dense row: resolved model, no raw id, no picker', () => {
     render(<WorkflowStepCard {...baseProps} />);
     expect(screen.getByText('Haiku 4.5')).toBeDefined();
-    expect(screen.getByText('Claude')).toBeDefined();
+    expect(screen.queryByText('claude-haiku-4-5')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^routing for step 1:/ })).toBeNull();
   });
 
   it('shows the clamped effort for the resolved model', () => {
@@ -95,6 +92,42 @@ describe('WorkflowStepCard (expanded)', () => {
     render(<WorkflowStepCard {...baseProps} expanded={true} onRemove={onRemove} />);
     fireEvent.click(screen.getByRole('button', { name: /remove step/i }));
     expect(onRemove).toHaveBeenCalledOnce();
+  });
+
+  it('ignores focusout without a related target and collapses for an outside target', () => {
+    const onCollapse = vi.fn();
+    render(
+      <>
+        <WorkflowStepCard {...baseProps} expanded={true} onCollapse={onCollapse} />
+        <button type="button">outside</button>
+      </>,
+    );
+    const card = screen.getByRole('listitem');
+
+    fireEvent.focusOut(card, { relatedTarget: null });
+    expect(onCollapse).not.toHaveBeenCalled();
+
+    fireEvent.focusOut(card, { relatedTarget: screen.getByRole('button', { name: 'outside' }) });
+    expect(onCollapse).toHaveBeenCalledOnce();
+  });
+
+  it('stays expanded when focus and pointer events move into a dropdown portal', () => {
+    const onCollapse = vi.fn();
+    render(
+      <>
+        <WorkflowStepCard {...baseProps} expanded={true} onCollapse={onCollapse} />
+        <div data-dropdown-portal>
+          <button type="button">portal option</button>
+        </div>
+      </>,
+    );
+    const card = screen.getByRole('listitem');
+    const portalOption = screen.getByRole('button', { name: 'portal option' });
+
+    fireEvent.focusOut(card, { relatedTarget: portalOption });
+    fireEvent.mouseDown(portalOption);
+
+    expect(onCollapse).not.toHaveBeenCalled();
   });
 
   it('wand button renders when onPolish is provided, absent when not provided', () => {

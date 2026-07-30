@@ -14,7 +14,20 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, resolveStoredModelSelection } from '@goodboy/core';
+
+const resolveModelArgsSpy = vi.hoisted(() => vi.fn());
+
+vi.mock('@goodboy/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core')>();
+  return {
+    ...actual,
+    resolveModelArgs: (params: Parameters<typeof actual.resolveModelArgs>[0]) => {
+      resolveModelArgsSpy(params);
+      return actual.resolveModelArgs(params);
+    },
+  };
+});
 
 const runTurnSpy = vi.fn();
 const cancelTurnSpy = vi.fn();
@@ -108,6 +121,7 @@ vi.mock('../features/providers/routing', () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-sonnet-4-5',
     reason: 'preference',
+    fallbackUsed: false,
   })),
 }));
 
@@ -210,6 +224,7 @@ describe('sendTurn, agent routing', () => {
     invokeAgentListSpy.mockReset();
     invokeAgentListSpy.mockResolvedValue([]);
     runTurnSpy.mockImplementation(() => emptyStream());
+    resolveModelArgsSpy.mockClear();
     invokeSpy.mockResolvedValue({
       stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
       stderr: '',
@@ -220,6 +235,7 @@ describe('sendTurn, agent routing', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'preference',
+      fallbackUsed: false,
     });
   });
 
@@ -349,6 +365,7 @@ describe('sendTurn, agent routing', () => {
       selectedProvider: 'codex',
       selectedModel: 'gpt-5.4',
       reason: 'preference',
+      fallbackUsed: false,
     });
 
     await useAppStore
@@ -410,6 +427,7 @@ describe('sendTurn, workflow carry-forward', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'preference',
+      fallbackUsed: false,
     });
   });
 
@@ -768,6 +786,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'preference',
+      fallbackUsed: false,
     });
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -818,6 +837,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-opus-4-8',
       reason: 'preference',
+      fallbackUsed: false,
     });
 
     await useAppStore
@@ -871,11 +891,13 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
         selectedProvider: 'cursor',
         selectedModel: 'gpt-5.5-high',
         reason: 'preference',
+        fallbackUsed: false,
       })
       .mockResolvedValueOnce({
         selectedProvider: 'cursor',
         selectedModel: 'composer-2.5',
         reason: 'preference',
+        fallbackUsed: false,
       });
 
     await useAppStore
@@ -899,6 +921,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'codex',
       selectedModel: 'gpt-5.5',
       reason: 'override',
+      fallbackUsed: false,
     });
     useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'max' } });
 
@@ -917,6 +940,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'gemini',
       selectedModel: 'gemini-3.1-pro',
       reason: 'override',
+      fallbackUsed: false,
     });
     useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'high' } });
 
@@ -1185,6 +1209,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'override',
+      fallbackUsed: false,
     });
 
     await useAppStore.getState().sendTurn({
@@ -1213,6 +1238,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: staleSession.modelOverride,
       reason: 'override',
+      fallbackUsed: false,
     });
 
     await useAppStore.getState().sendTurn({
@@ -1251,6 +1277,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'cursor',
       selectedModel: 'composer-2.5',
       reason: 'override',
+      fallbackUsed: false,
     });
     useAppStore.setState({
       sessions: [
@@ -1270,7 +1297,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('composer-2.5');
   });
 
-  it('maps a workflow phase model override into the routed provider namespace', async () => {
+  it('uses a workflow model override for both the transcript and spawn args', async () => {
     const useAppStore = await importStore();
     setup(useAppStore);
     const workflowRunId = 'workflow-run-1' as never;
@@ -1329,17 +1356,120 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'cursor',
       selectedModel: 'composer-2.5',
       reason: 'override',
+      fallbackUsed: false,
     });
 
     await useAppStore.getState().sendTurn({
       sessionId: SESSION_ID,
       agentId: AGENT_A,
       content: 'go',
-      override: { providerId: 'cursor', model: 'composer-2.5' },
+      override: {
+        providerId: 'cursor',
+        model: 'composer-2.5',
+        selection: resolveStoredModelSelection({
+          provider: 'cursor',
+          id: 'composer-2.5',
+        }).selection,
+      },
     });
 
     expect(runTurnSpy.mock.calls[0]?.[0]?.provider).toBe('cursor');
     expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-4.6-sonnet-medium');
+    const userEvent = (useAppStore.getState().transcripts[AGENT_A] ?? []).find(
+      (event) => event.kind === 'user_text',
+    );
+    expect(userEvent?.model).toBe('claude-4.6-sonnet-medium');
+  });
+
+  it('remaps a composer selection to the fallback provider default', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+        },
+      ],
+    });
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'cursor',
+      selectedModel: 'composer-2.5',
+      reason: 'fallback-budget',
+      fallbackUsed: true,
+      fallbackFrom: 'anthropic',
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+      override: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        selection: resolveStoredModelSelection({
+          provider: 'anthropic',
+          id: 'opus-5',
+        }).selection,
+      },
+    });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ provider: 'cursor', model: 'composer-2.5' }),
+    );
+    expect(resolveModelArgsSpy).toHaveBeenLastCalledWith({
+      provider: 'cursor',
+      selection: expect.objectContaining({ key: 'composer-2.5' }),
+    });
+    expect(resolveModelArgsSpy).not.toHaveBeenCalledWith({
+      provider: 'cursor',
+      selection: expect.objectContaining({ key: 'opus-5' }),
+    });
+    const userEvent = (useAppStore.getState().transcripts[AGENT_A] ?? []).find(
+      (event) => event.kind === 'user_text',
+    );
+    expect(userEvent?.model).toBe('composer-2.5');
+  });
+
+  it('uses a composer override for both the transcript and spawn args', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+        },
+      ],
+    });
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'opus-5',
+      reason: 'override',
+      fallbackUsed: false,
+    });
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+      override: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        selection: resolveStoredModelSelection({
+          provider: 'anthropic',
+          id: 'opus-5',
+        }).selection,
+      },
+    });
+
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('claude-opus-5');
+    const userEvent = (useAppStore.getState().transcripts[AGENT_A] ?? []).find(
+      (event) => event.kind === 'user_text',
+    );
+    expect(userEvent?.model).toBe('claude-opus-5');
   });
 
   it('an explicit per-turn model override beats both the agent provider and model pin', async () => {
@@ -1360,6 +1490,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'override',
+      fallbackUsed: false,
     });
 
     await useAppStore.getState().sendTurn({

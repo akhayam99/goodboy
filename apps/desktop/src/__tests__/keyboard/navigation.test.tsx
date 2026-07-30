@@ -76,7 +76,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
-import { DeleteSessionDialog } from '../../features/session/components/DeleteSessionDialog';
+import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { NewSessionView } from '../../features/session/components/NewSessionView';
 import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
@@ -98,26 +98,18 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   } as Session;
 }
 
-describe('keyboard, DeleteSessionDialog', () => {
-  it('Escape key triggers onClose', async () => {
-    const onClose = vi.fn();
-    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={onClose} />);
-    fireEvent.keyDown(document, { key: 'Escape' });
-    const cancelBtn = screen.getByRole('button', { name: /cancel/i });
-    expect(cancelBtn).toBeDefined();
-  });
-
-  it('cancel button is focusable via Tab', async () => {
+describe('keyboard, DeleteSessionConfirm', () => {
+  it('never deletes on the first keyboard reach of the panel', async () => {
     const user = userEvent.setup();
-    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
+    render(<DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />);
     await user.tab();
-    const focused = document.activeElement;
-    expect(focused?.tagName.toLowerCase()).toBe('button');
+    expect(document.activeElement?.tagName.toLowerCase()).toBe('button');
+    expect(screen.getByRole('group', { name: 'Delete session?' })).toBeDefined();
   });
 
   it('Enter on delete button keeps it keyboard-reachable', async () => {
     const user = userEvent.setup();
-    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
+    render(<DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />);
     const deleteBtn = screen.getByRole('button', { name: /^delete$/i });
     deleteBtn.focus();
     await user.keyboard('{Enter}');
@@ -125,14 +117,14 @@ describe('keyboard, DeleteSessionDialog', () => {
   });
 
   it('exposes both archive and delete actions', () => {
-    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /^archive$/i })).toBeDefined();
+    render(<DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /archive instead/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /^delete$/i })).toBeDefined();
   });
 
-  it('Tab cycles through cancel → archive → delete buttons', async () => {
+  it('Tab cycles through the panel controls', async () => {
     const user = userEvent.setup();
-    render(<DeleteSessionDialog session={makeSession()} open={true} onClose={vi.fn()} />);
+    render(<DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />);
     await user.tab();
     const first = document.activeElement;
     await user.tab();

@@ -100,7 +100,8 @@ const buildUsage = ({ tokens, cost }: UsageParams): ProviderUsage => {
   return {
     inputTokens: tokens?.input ?? 0,
     outputTokens: (tokens?.output ?? 0) + (tokens?.reasoning ?? 0),
-    cachedInputTokens: (tokens?.cache?.read ?? 0) + (tokens?.cache?.write ?? 0),
+    cachedInputTokens: tokens?.cache?.read ?? 0,
+    cacheCreationInputTokens: tokens?.cache?.write ?? 0,
     estimatedCostUsd: cost ?? 0,
   };
 };

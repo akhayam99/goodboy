@@ -74,7 +74,7 @@ vi.mock('../../../../store', () => ({
     (agent.lastViewedAt == null || agent.lastFinishedAt > agent.lastViewedAt),
   readPersistedLens: () => null,
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
-  useFilesTouched: () => ({ count: 0 }),
+  useFilesTouched: () => ({ paths: [], count: 0, additions: 0, deletions: 0 }),
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => hooks.openQuestions,
 }));
@@ -167,17 +167,11 @@ vi.mock('./parts/PaneShell', () => ({
 vi.mock('./hooks/useSelectedAgentHome', () => ({
   useSelectedAgentHome: () => hooks.agentHome,
 }));
-vi.mock('./parts/WorkflowStepper', () => ({
-  WorkflowStepper: () => <div data-testid="workflow-stepper" />,
-}));
-vi.mock('../ForceResolveAction', () => ({
-  ForceResolveAction: ({ agent }: { agent: Agent }) => (
-    <div data-testid="force-resolve-action">{agent.name}</div>
-  ),
-}));
-vi.mock('../ResolverInspector', () => ({
-  ResolverInspector: ({ agentId }: { agentId: string }) => (
-    <div data-testid="resolver-inspector">{agentId}</div>
+vi.mock('./parts/WorkflowBreadcrumb', () => ({
+  WorkflowBreadcrumb: ({ homeLabel, onHome }: { homeLabel: string; onHome: () => void }) => (
+    <button type="button" data-testid="workflow-breadcrumb" onClick={onHome}>
+      {homeLabel}
+    </button>
   ),
 }));
 vi.mock('../AgentInspector', () => ({
@@ -229,20 +223,20 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionWorkspace agent overlay', () => {
-  it('uses the full overlay width and workflow stepper for workflow agents', () => {
+  it('uses the full overlay width and workflow breadcrumb for workflow agents', () => {
     store.activeLens = { [SESSION_ID]: 'workflows' };
     render(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('workflow-stepper')).toBeDefined();
+    expect(screen.getByTestId('workflow-breadcrumb')).toBeDefined();
     expect(screen.getByTestId('chat-view')).toBeDefined();
-    expect(screen.getByTestId('chat-view').contains(screen.getByTestId('workflow-stepper'))).toBe(
-      true,
-    );
+    expect(
+      screen.getByTestId('chat-view').contains(screen.getByTestId('workflow-breadcrumb')),
+    ).toBe(true);
     expect(screen.queryByTestId('agents-lane')).toBeNull();
     expect(screen.queryByTestId('agents-section')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'resize agent inspector' })).toBeNull();
   });
 
-  it('hides the workflow stepper for a standalone resolver', () => {
+  it('hides the workflow breadcrumb for a standalone resolver', () => {
     const standaloneResolver = {
       ...selectedAgent,
       id: 'resolver-1',
@@ -258,7 +252,7 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.queryByTestId('workflow-stepper')).toBeNull();
+    expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
     expect(screen.queryByTestId('breadcrumb')).toBeNull();
     expect(
       screen.getByTestId('chat-view').contains(screen.getByRole('button', { name: 'Resolve' })),
@@ -299,7 +293,7 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={workflowSession} isActive />);
 
-    expect(screen.queryByTestId('workflow-stepper')).toBeNull();
+    expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
     expect(screen.queryByTestId('breadcrumb')).toBeNull();
     expect(screen.queryByText('Part of')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Release flow' })).toBeNull();
@@ -323,8 +317,7 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('resolver-inspector').textContent).toBe('resolver-1');
-    expect(screen.queryByTestId('force-resolve-action')).toBeNull();
+    expect(screen.getByTestId('agent-inspector').textContent).toBe('resolver-1');
   });
 
   it('adds the selected agent inspector to the agents-home overlay', () => {
@@ -336,11 +329,10 @@ describe('SessionWorkspace agent overlay', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneAgent] };
     hooks.agentHome = 'agents';
     render(<SessionWorkspace session={session} isActive />);
-    expect(screen.queryByTestId('workflow-stepper')).toBeNull();
+    expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'resize agent list' })).toBeNull();
     expect(screen.queryByTestId('agents-lane')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(1);
-    expect(screen.queryByTestId('resolver-inspector')).toBeNull();
     expect(screen.getByTestId('agent-inspector').textContent).toBe(standaloneAgent.id);
     expect(screen.getByRole('separator', { name: 'resize agent inspector' })).toBeDefined();
   });
@@ -362,15 +354,15 @@ describe('SessionWorkspace agent overlay', () => {
     hooks.agentHome = 'resolve';
     const view = render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('resolver-inspector').textContent).toBe(waiting.id);
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(waiting.id);
 
     store.selectedAgentId = { [SESSION_ID]: waiting.id };
     view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('resolver-inspector').textContent).toBe(waiting.id);
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(waiting.id);
 
     store.selectedAgentId = {};
     view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('resolver-inspector').textContent).toBe(waiting.id);
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(waiting.id);
   });
 
   it('opens the running resolver by default before an awaiting resolver', () => {
@@ -395,7 +387,29 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('resolver-inspector').textContent).toBe(running.id);
+    expect(screen.getByTestId('agent-inspector').textContent).toBe(running.id);
+  });
+
+  it('closes the resolver inspector after the last resolver is deleted', () => {
+    const resolver = {
+      ...selectedAgent,
+      id: 'resolver-last',
+      kind: 'resolver',
+      stepId: undefined,
+      workflowRunId: undefined,
+      sourceThreadId: 'thread-last',
+    } as Agent;
+    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [resolver] };
+    const view = render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
+
+    store.sessionPhaseRuns = { [SESSION_ID]: [] };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByRole('separator', { name: 'resize inspector panel' })).toBeNull();
   });
 });
 
@@ -478,6 +492,33 @@ describe('SessionWorkspace agents inspector', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [newer] };
     view.rerender(<SessionWorkspace session={session} isActive />);
     expect(screen.getByTestId('agent-inspector').textContent).toBe(newer.id);
+  });
+
+  it('closes the agent inspector after the last agent is deleted', () => {
+    const lastAgent = {
+      ...selectedAgent,
+      id: 'agent-last',
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [lastAgent] };
+    const view = render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
+
+    store.activeLens = { [SESSION_ID]: 'questions' };
+    store.sessionPhaseRuns = { [SESSION_ID]: [] };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+
+    expect(
+      screen.queryByRole('separator', { name: 'resize inspector panel', hidden: true }),
+    ).toBeNull();
+
+    store.activeLens = { [SESSION_ID]: 'agents' };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByRole('separator', { name: 'resize inspector panel' })).toBeNull();
   });
 });
 
@@ -633,7 +674,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     render(<SessionWorkspace session={workflowSession} isActive />);
 
     expect(screen.queryByTestId('breadcrumb')).toBeNull();
-    expect(screen.queryByTestId('workflow-stepper')).toBeNull();
+    expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Resolve' })).toHaveLength(1);
     expect(screen.queryByText('Part of')).toBeNull();
   });

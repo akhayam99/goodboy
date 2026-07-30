@@ -23,34 +23,6 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'gemini-3.5-flash': 5,
 };
 
-const cliIdFor = ({ model }: Params): string => {
-  switch (model.provider) {
-    case 'anthropic':
-    case 'gemini':
-    case 'opencode':
-    case 'openrouter':
-      return model.cliId;
-    case 'codex': {
-      const variant = model.variants[0];
-      if (variant == null) {
-        throw new Error(`codex model has no variants: ${model.key}`);
-      }
-      return variant.cliId;
-    }
-    case 'cursor': {
-      const combo = model.combos[0];
-      if (combo == null) {
-        throw new Error(`cursor model has no combos: ${model.key}`);
-      }
-      return combo.slug;
-    }
-    default: {
-      const exhaustive: never = model;
-      throw new Error(`unknown catalog model: ${String(exhaustive)}`);
-    }
-  }
-};
-
 const effortFor = ({ model }: Params) => {
   switch (model.provider) {
     case 'anthropic':
@@ -76,7 +48,7 @@ export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
   return {
     id: model.key,
     tier: model.tier,
-    contextWindow: family === 'gemini' || family === 'claude' ? 1_000_000 : 200_000,
+    contextWindow: model.contextWindow,
     family,
     subfamily: model.presentation.group,
     label: model.label,

@@ -110,8 +110,8 @@ describe('AgentInspector', () => {
     render(<AgentInspector sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
     expect(screen.getByText('implement feature')).toBeDefined();
-    expect(screen.getByText('claude-sonnet-4-5')).toBeDefined();
-    expect(screen.getByText('high')).toBeDefined();
+    expect(screen.getByText('Sonnet 4.5')).toBeDefined();
+    expect(screen.getByText('High')).toBeDefined();
     expect(screen.getByText('$1.50')).toBeDefined();
     expect(screen.getByText('4')).toBeDefined();
   });

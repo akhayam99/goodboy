@@ -7,7 +7,6 @@ import {
 import { agentThreadIds } from './agentThreadIds';
 
 export { resolverStatus };
-export { agentThreadIds };
 export type { ResolverState, ResolverStatus };
 
 export type ResolverLink = {

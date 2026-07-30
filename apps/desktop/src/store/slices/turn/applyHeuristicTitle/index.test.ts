@@ -99,6 +99,7 @@ describe('applyHeuristicTitle', () => {
       'Implement secure authentication flow',
     );
     expect(renameSessionMock).toHaveBeenCalledTimes(2);
+    expect(invokeMock.mock.calls[0]?.[1]?.args.model).toBe('claude-haiku-4-5');
   });
 
   it('keeps user titles changed while generation is in flight', async () => {

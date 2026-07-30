@@ -1,4 +1,4 @@
-import { extractCommentResolved } from '@goodboy/core';
+import { extractAllCommentResolved } from '@goodboy/core';
 import type { ProviderRunId, TurnEvent } from '@goodboy/types';
 
 type Params = {
@@ -16,12 +16,13 @@ export const resolverReportedShas = ({ events }: Params): ReadonlyArray<string> 
   const seen = new Set<string>();
   const out: string[] = [];
   for (const text of textByRun.values()) {
-    const marker = extractCommentResolved(text);
-    if (marker === null || seen.has(marker.commitSha)) {
-      continue;
+    for (const marker of extractAllCommentResolved(text)) {
+      if (seen.has(marker.commitSha)) {
+        continue;
+      }
+      seen.add(marker.commitSha);
+      out.push(marker.commitSha);
     }
-    seen.add(marker.commitSha);
-    out.push(marker.commitSha);
   }
   return out;
 };

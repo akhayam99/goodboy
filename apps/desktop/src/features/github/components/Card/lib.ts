@@ -1,4 +1,4 @@
-import type { PrDetail, PrReview, PrReviewState, PullRequestState } from '@goodboy/types';
+import type { PrDetail, PrReview, PullRequestState } from '@goodboy/types';
 
 export const TAB_KEYS = ['ci', 'comments', 'review'] as const;
 export type GithubTabKey = (typeof TAB_KEYS)[number];
@@ -51,16 +51,8 @@ export const pickSmartTab = (
   }
 
   const reviews = detail?.reviews ?? [];
-  const latestByAuthor = new Map<string, PrReviewState>();
-  for (const r of [...reviews].sort((a, b) =>
-    (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
-  )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
-      continue;
-    }
-    latestByAuthor.set(r.author, r.state);
-  }
-  if ([...latestByAuthor.values()].some((s) => s === 'changes_requested')) {
+  const latestByAuthor = latestTerminalReviewsByAuthor(reviews);
+  if (latestByAuthor.some((review) => review.state === 'changes_requested')) {
     return 'review';
   }
   if (pr.reviewDecision === 'changes_requested') {

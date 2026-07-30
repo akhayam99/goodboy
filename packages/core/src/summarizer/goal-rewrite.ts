@@ -1,5 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
+import { runAuxOneShot } from '../providers/aux-spawn';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 
 const GOAL_REWRITE_SYSTEM_PROMPT = `You clean the "goal" note for an AI coding session that is driven by a multi-step agent workflow. Each workflow step runs as its own dedicated agent, so the goal note must describe ONLY the desired end result, never the process used to reach it.
@@ -28,12 +29,6 @@ export type GoalRewriteDeps = {
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 };
 
-type OneShotResult = {
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly exitCode: number | null;
-};
-
 export const buildGoalRewriteUserPrompt = (input: GoalRewriteInput): string => {
   const steps = input.stepNames.map((name) => `- ${name}`).join('\n');
   return [
@@ -56,15 +51,14 @@ export const rewriteWorkflowGoal = async (
     return null;
   }
 
-  const result = await deps.invokeFn<OneShotResult>('summarize_session', {
-    args: {
-      providerId: deps.providerId,
-      model: getCheapModel(deps.providerId),
-      binary: deps.binary ?? getDefaultBinary(deps.providerId),
-      userMessage: buildGoalRewriteUserPrompt(input),
-      systemPrompt: GOAL_REWRITE_SYSTEM_PROMPT,
-      ...(deps.workingDir != null && { workingDir: deps.workingDir }),
-    },
+  const result = await runAuxOneShot({
+    providerId: deps.providerId,
+    model: getCheapModel(deps.providerId),
+    binary: deps.binary ?? getDefaultBinary(deps.providerId),
+    userMessage: buildGoalRewriteUserPrompt(input),
+    systemPrompt: GOAL_REWRITE_SYSTEM_PROMPT,
+    ...(deps.workingDir != null && { workingDir: deps.workingDir }),
+    invokeFn: deps.invokeFn,
   });
   if ((result.exitCode ?? 0) !== 0) {
     return null;

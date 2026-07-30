@@ -1,4 +1,7 @@
-import { CircleCheck, PanelRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CircleCheck, PanelRight, Trash2 } from 'lucide-react';
+import { InlineConfirm } from '@goodboy/ui';
+import { contextTokensForUsage, getModelDescriptor } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import { formatCost } from '../../../../../features/session/agent-row-format';
@@ -7,20 +10,16 @@ import { AgentKindChip } from '../../../../../features/session/components/AgentK
 import { AgentCard } from '../../../../../features/session/components/AgentCard';
 import { AgentCardAction } from '../../../../../features/session/components/AgentCard/AgentCardAction';
 import { AgentCardActions } from '../../../../../features/session/components/AgentCard/AgentCardActions';
-import { AgentCardDeleteAction } from '../../../../../features/session/components/AgentCard/AgentCardDeleteAction';
+import { AgentStatusIcon } from '../../../../../features/session/components/AgentCard/AgentStatusIcon';
 import { AgentCardTitle } from '../../../../../features/session/components/AgentCard/AgentCardTitle';
 import { agentCardTone } from '../../../../../features/session/components/AgentCard/agentCardTone';
 import {
-  AgentMetricsBlock,
+  AgentMetrics,
   type AgentAggregate,
-} from '../../../../../features/session/components/AgentMetricsBlock';
+} from '../../../../../features/session/components/AgentMetrics';
 import { AgentLastUpdate } from '../../../../../shared/components/AgentLastUpdate';
-import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
-import { AgentStatusBadge } from './AgentStatusBadge';
-
-const ACTIONS_CLASS = 'w-40';
-const COMPACT_ACTIONS_CLASS = 'w-20';
+const ACTIONS_CLASS = 'w-20';
 
 type Props = {
   readonly run: Agent;
@@ -65,16 +64,25 @@ export const AgentRow = ({
   onInspect,
   onMarkDone,
 }: Props) => {
-  const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
+  useEffect(() => {
+    setIsConfirmingDelete(false);
+  }, [isEditing]);
+
+  const lastTurn =
+    telemetry == null
+      ? null
+      : `last turn: ${contextTokensForUsage(telemetry)} tokens · ${formatCost(telemetry.estimatedCostUsd)}`;
   const titleParts = [
     `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
     isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
-    telemetry ? `provider: ${telemetry.provider}` : null,
-    telemetry ? `model: ${telemetry.model}` : null,
-    total !== null
-      ? `last turn: ${total} tokens · ${formatCost(telemetry!.estimatedCostUsd)}`
+    telemetry != null ? `provider: ${telemetry.provider}` : null,
+    telemetry != null
+      ? `model: ${getModelDescriptor(telemetry.model)?.label ?? telemetry.model}`
       : null,
+    lastTurn,
   ].filter((part): part is string => part !== null);
   const isMarkDoneAvailable =
     onMarkDone !== undefined && run.status !== 'running' && run.doneAt == null;
@@ -104,6 +112,7 @@ export const AgentRow = ({
             kind={kind}
             title={`agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
           />
+          <AgentStatusIcon status={run.status} />
         </>
       }
       title={
@@ -115,21 +124,19 @@ export const AgentRow = ({
           onRenameCancel={onRenameCancel}
         />
       }
-      trailing={<AgentStatusBadge status={run.status} />}
       actions={
-        <AgentCardActions
-          className={onInspect === undefined ? COMPACT_ACTIONS_CLASS : ACTIONS_CLASS}
-        >
-          {onInspect !== undefined && (
-            <AgentCardAction
-              icon={PanelRight}
-              label="Toggle agent details"
-              text="Details"
-              pressed={isInspected}
-              active={isInspected}
-              onClick={onInspect}
-            />
-          )}
+        <AgentCardActions className={ACTIONS_CLASS}>
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            {onInspect !== undefined && (
+              <AgentCardAction
+                icon={PanelRight}
+                label="Toggle agent details"
+                pressed={isInspected}
+                active={isInspected}
+                onClick={onInspect}
+              />
+            )}
+          </span>
           <span className="flex size-6 shrink-0 items-center justify-center">
             {isMarkDoneAvailable && (
               <AgentCardAction
@@ -141,26 +148,43 @@ export const AgentRow = ({
               />
             )}
           </span>
-          <AgentCardDeleteAction
-            label="delete agent"
-            confirmLabel="confirm delete agent"
-            cancelLabel="cancel delete agent"
-            resetToken={isEditing}
-            reveal
-            onDelete={onDelete}
-          />
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            <AgentCardAction
+              icon={Trash2}
+              label="delete agent"
+              tone="danger"
+              active={isConfirmingDelete}
+              reveal={!isConfirmingDelete}
+              onClick={() => setIsConfirmingDelete(true)}
+            />
+          </span>
         </AgentCardActions>
       }
     >
       <div className="flex flex-col gap-0.5">
-        <AgentMetricsInline
+        {isConfirmingDelete && (
+          <InlineConfirm
+            role="danger"
+            icon={<Trash2 size={12} aria-hidden />}
+            title="Delete agent?"
+            description="Removes this agent and its transcript from the session."
+            confirmLabel="Delete"
+            onConfirm={() => {
+              setIsConfirmingDelete(false);
+              onDelete();
+            }}
+            onCancel={() => setIsConfirmingDelete(false)}
+          />
+        )}
+        <AgentMetrics
+          run={run}
           telemetry={telemetry}
           aggregate={aggregate}
           contextUsage={contextUsage}
           turns={turns}
           turnsLoading={turnsLoading}
+          density="full"
         />
-        <AgentMetricsBlock run={run} aggregate={aggregate} />
         <AgentLastUpdate agent={run} />
         <ContextWindowBar usage={contextUsage} />
       </div>

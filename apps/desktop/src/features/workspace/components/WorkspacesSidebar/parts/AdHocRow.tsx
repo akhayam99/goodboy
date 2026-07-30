@@ -2,7 +2,7 @@ import { Fragment, type Dispatch, type SetStateAction } from 'react';
 import type { Agent, AgentId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY } from '../../../../../store';
 import { resolveAgentKind, type AgentKind } from '../../../../../features/session/agent-kind';
-import type { AgentAggregate } from '../../../../../features/session/components/AgentMetricsBlock';
+import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import type { ProviderContextUsage } from './ContextWindowBar';
 import { AgentRow } from './AgentRow';
 import { ScoutSubtree } from './ScoutSubtree';

@@ -264,6 +264,26 @@ describe('RoutingPicker', () => {
     expect(onModel).toHaveBeenCalledWith('auto');
   });
 
+  it('renders Cursor toggles once in a single Variant row', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model="composer-2.5-fast"
+        effort={{ editable: true, value: 'medium', onChange: vi.fn() }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const tuning = screen.getByRole('region', { name: 'Tuning' });
+    const variants = within(tuning).getByRole('group', { name: 'Variant' });
+    expect(within(tuning).getAllByText('Variant')).toHaveLength(1);
+    expect(within(tuning).getAllByText('Fast')).toHaveLength(1);
+    expect(
+      within(variants).getByRole('button', { name: 'Fast' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(variants.className).toContain('justify-center');
+  });
+
   it('reports the picked effort and keeps the popover open', () => {
     const onChange = vi.fn();
     render(<RoutingPicker {...baseProps} effort={{ editable: true, value: 'high', onChange }} />);
@@ -418,6 +438,33 @@ describe('RoutingPicker', () => {
     expect(within(models).getByRole('button', { name: 'Opus 5' }).textContent).toBe('5');
   });
 
+  it('renders multi-family catalogs without provider or family bands', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        provider="cursor"
+        model="claude-opus-5-low"
+        effort={{ editable: true, value: 'low', onChange: vi.fn() }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const models = screen.getByRole('region', { name: 'Models' });
+    expect(within(models).queryByText('Claude')).toBeNull();
+    expect(within(models).getByText('Opus')).toBeDefined();
+    expect(within(models).getByRole('button', { name: 'Auto' })).toBeDefined();
+  });
+
+  it('centers variant and effort controls inside the tuning control area', () => {
+    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const variant = screen.getByRole('button', { name: 'Terra' }).parentElement;
+    const effort = screen.getByRole('group', { name: 'Effort' });
+    expect(variant?.className).toContain('justify-center');
+    expect(variant?.parentElement?.className).toContain('justify-center');
+    expect(effort.className).toContain('justify-center');
+    expect(effort.parentElement?.className).toContain('justify-center');
+  });
+
   it('offers verbosity only when the caller wires it', () => {
     const view = render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
@@ -460,6 +507,31 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(screen.getByRole('button', { name: 'Opus 5' })).toBe(document.activeElement);
+  });
+
+  it('portals the popup and keeps inside pointer events open', () => {
+    render(<RoutingPicker {...baseProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const dialog = screen.getByRole('dialog');
+    const portal = dialog.closest('[data-dropdown-portal]');
+    expect(portal?.parentElement).toBe(document.body);
+    expect(dialog.className).toContain('fixed');
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Opus 5' }));
+    expect(screen.getByRole('dialog')).toBe(dialog);
+  });
+
+  it('mounts the popup inside the open dialog containing its trigger', () => {
+    render(
+      <dialog open aria-label="diff viewer">
+        <RoutingPicker {...baseProps} />
+      </dialog>,
+    );
+    const hostDialog = screen.getByRole('dialog', { name: 'diff viewer' });
+    fireEvent.click(within(hostDialog).getByRole('button', { name: /routing/i }));
+
+    const pickerDialog = screen.getByRole('dialog', { name: 'routing' });
+    expect(hostDialog.contains(pickerDialog)).toBe(true);
+    expect(pickerDialog.closest('[data-dropdown-portal]')?.parentElement).toBe(hostDialog);
   });
 
   it('shows the exact resolved model arguments in the footer', () => {

@@ -10,6 +10,7 @@ const { state } = vi.hoisted(() => ({
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
     sessionExternalTasks: {} as Record<string, unknown>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
+    bulkArchiveTask: vi.fn(async () => undefined),
     bulkDeleteTask: vi.fn(async () => undefined),
     setSessionsSidebarCollapsed: vi.fn(),
   },
@@ -91,6 +92,7 @@ function clickCheckbox(index: number): HTMLElement {
 
 beforeEach(() => {
   state.bulkUnarchiveTask.mockClear();
+  state.bulkArchiveTask.mockClear();
   state.bulkDeleteTask.mockClear();
   state.setSessionsSidebarCollapsed.mockClear();
   state.sessionExternalTasks = {};
@@ -118,11 +120,43 @@ describe('SessionActivityBar, baseline', () => {
 });
 
 describe('SessionActivityBar, bulk selection', () => {
-  it('hides selection checkboxes in the active tab and shows them in the archived tab', () => {
+  it('exposes selection checkboxes in both tabs', () => {
     renderBar([makeSession('s-1', 'archived one')], [makeSession('a-1', 'active one')]);
-    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
     toggleArchivedTab();
     expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+  });
+
+  it('offers Archive instead of Restore for active sessions', () => {
+    renderBar([], [makeSession('a-1', 'active one')]);
+    clickCheckbox(0);
+    expect(screen.getByRole('button', { name: /^Archive \(1\)$/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Restore/ })).toBeNull();
+  });
+
+  it('arms an inline confirmation on Archive and calls bulkArchiveTask once confirmed', async () => {
+    renderBar([], [makeSession('a-1', 'active one')]);
+    clickCheckbox(0);
+    fireEvent.click(screen.getByRole('button', { name: /^Archive \(1\)$/ }));
+    const panel = screen.getByRole('group', { name: 'Archive 1 sessions?' });
+    expect(state.bulkArchiveTask).not.toHaveBeenCalled();
+    fireEvent.click(within(panel).getByRole('button', { name: /^Archive \(1\)$/ }));
+    await waitFor(() => expect(state.bulkArchiveTask).toHaveBeenCalledWith(['a-1']));
+  });
+
+  it('selects from the row body when a modifier key is held instead of opening the session', () => {
+    const onSelect = vi.fn();
+    renderBar([], [makeSession('a-1', 'modifier me')], onSelect);
+    fireEvent.click(screen.getByRole('button', { name: /modifier me/ }), { metaKey: true });
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.getByText(/1 selected/)).toBeDefined();
+  });
+
+  it('extends the selection to a range on shift-click', () => {
+    renderBar([], [makeSession('a-1', 'one'), makeSession('a-2', 'two'), makeSession('a-3', 'x')]);
+    clickCheckbox(0);
+    fireEvent.click(checkboxAt(2), { shiftKey: true });
+    expect(screen.getByText(/3 selected/)).toBeDefined();
   });
 
   it('builds a selection from checkbox clicks and surfaces the bulk action bar with a count', () => {
@@ -143,14 +177,14 @@ describe('SessionActivityBar, bulk selection', () => {
     await waitFor(() => expect(screen.queryByText(/selected/)).toBeNull());
   });
 
-  it('opens the confirm dialog on Delete and calls bulkDeleteTask once confirmed', async () => {
+  it('arms an inline confirmation on Delete and calls bulkDeleteTask once confirmed', async () => {
     renderBar([makeSession('s-1', 'one')]);
     toggleArchivedTab();
     clickCheckbox(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
-    const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText(/Delete 1 sessions\?/)).toBeDefined();
-    fireEvent.click(within(dialog).getByRole('button', { name: /^Delete \(1\)$/ }));
+    const panel = screen.getByRole('group', { name: 'Delete 1 sessions?' });
+    expect(state.bulkDeleteTask).not.toHaveBeenCalled();
+    fireEvent.click(within(panel).getByRole('button', { name: /^Delete \(1\)$/ }));
     await waitFor(() => expect(state.bulkDeleteTask).toHaveBeenCalledWith(['s-1']));
   });
 
@@ -205,26 +239,26 @@ describe('SessionActivityBar, bulk selection', () => {
     expect(state.bulkDeleteTask).not.toHaveBeenCalled();
   });
 
-  it('lists the selected session goals in the confirm dialog', () => {
+  it('lists the selected session goals in the confirmation', () => {
     renderBar([makeSession('s-1', 'alpha goal'), makeSession('s-2', 'beta goal')]);
     toggleArchivedTab();
     clickCheckbox(0);
     clickCheckbox(1);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(2\)$/ }));
-    const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('alpha goal')).toBeDefined();
-    expect(within(dialog).getByText('beta goal')).toBeDefined();
+    const panel = screen.getByRole('group', { name: 'Delete 2 sessions?' });
+    expect(within(panel).getByText('alpha goal')).toBeDefined();
+    expect(within(panel).getByText('beta goal')).toBeDefined();
   });
 
-  it('does not call bulkDeleteTask when the confirm dialog is cancelled', () => {
+  it('does not call bulkDeleteTask when the confirmation is cancelled', () => {
     renderBar([makeSession('s-1', 'one')]);
     toggleArchivedTab();
     clickCheckbox(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.click(within(dialog).getByRole('button', { name: /^Cancel$/ }));
+    const panel = screen.getByRole('group', { name: 'Delete 1 sessions?' });
+    fireEvent.click(within(panel).getByRole('button', { name: /^Cancel$/ }));
     expect(state.bulkDeleteTask).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Delete 1 sessions?' })).toBeNull();
     expect(screen.getByText(/1 selected/)).toBeDefined();
   });
 
@@ -243,8 +277,8 @@ describe('SessionActivityBar, bulk selection', () => {
     toggleArchivedTab();
     clickCheckbox(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
-    const dialog = screen.getByRole('dialog');
-    fireEvent.click(within(dialog).getByRole('button', { name: /^Delete \(1\)$/ }));
+    const panel = screen.getByRole('group', { name: 'Delete 1 sessions?' });
+    fireEvent.click(within(panel).getByRole('button', { name: /^Delete \(1\)$/ }));
     await waitFor(() => expect(state.bulkDeleteTask).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByText(/selected/)).toBeNull());
   });

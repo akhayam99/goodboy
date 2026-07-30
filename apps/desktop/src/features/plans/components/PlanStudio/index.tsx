@@ -14,6 +14,7 @@ import {
 import {
   Divider,
   EmptyState,
+  InlineConfirm,
   Markdown,
   ScrollFade,
   SegmentedTabs,
@@ -24,7 +25,6 @@ import {
 import type { Agent, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { ConfirmableButton } from '../../../../shared/components/ConfirmableButton';
 import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanListPanel } from './PlanListPanel';
@@ -54,6 +54,8 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const [mode, setMode] = useState<'preview' | 'edit'>('preview');
   const [draft, setDraft] = useState('');
   const [spawning, setSpawning] = useState(false);
+  const [replayArmed, setReplayArmed] = useState(false);
+  const [deleteArmed, setDeleteArmed] = useState(false);
 
   useEffect(() => {
     if (selectedId === null && plans.length > 0) {
@@ -103,6 +105,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
     setMode('preview');
     setSelectedId(id);
     setListOpen(false);
+    setDeleteArmed(false);
   };
 
   const handleTrigger = async () => {
@@ -165,7 +168,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
       <Divider />
       <div className="flex min-h-0 flex-1">
         {plans.length === 0 ? (
-          <div className="mx-auto w-full max-w-2xl px-6 py-5">
+          <div className="mx-auto w-full max-w-5xl px-6 py-5">
             <EmptyState
               bordered
               tone="success"
@@ -177,7 +180,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
         ) : (
           <>
             <div className="min-h-0 flex-1">
-              <div className="mx-auto flex h-full min-h-0 min-w-0 w-full max-w-3xl flex-col gap-2 px-6 py-4">
+              <div className="mx-auto flex h-full min-h-0 min-w-0 w-full max-w-5xl flex-col gap-2 px-6 py-4">
                 {selected ? (
                   <>
                     <div className="flex shrink-0 items-start gap-3">
@@ -307,19 +310,19 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                         />
                         {selected.status !== 'discarded' ? (
                           selected.status === 'consumed' ? (
-                            <ConfirmableButton
-                              key={selected.id}
-                              label="Replay"
-                              armedLabel="Confirm replay"
-                              busyLabel="Replaying..."
-                              onConfirm={handleTrigger}
+                            <button
+                              type="button"
+                              onClick={() => setReplayArmed(true)}
                               disabled={spawning}
-                              tone="warning"
-                              autoDisarmMs={4000}
                               title="Plan already ran, click to replay and confirm"
-                              icon={<RotateCw size={12} aria-hidden />}
-                              className="rounded-md px-2.5 py-1 text-xs"
-                            />
+                              className={cn(
+                                'inline-flex items-center justify-center gap-1.5 rounded-md border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/10',
+                                spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
+                              )}
+                            >
+                              <RotateCw size={12} aria-hidden />
+                              Replay
+                            </button>
                           ) : (
                             <button
                               type="button"
@@ -368,7 +371,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                           <Tooltip content="Delete plan (soft delete, click restore to recover)">
                             <button
                               type="button"
-                              onClick={() => handleDiscard(selected)}
+                              onClick={() => setDeleteArmed(true)}
                               aria-label="Delete plan"
                               className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
                             >
@@ -378,6 +381,39 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                         )}
                       </div>
                     </div>
+                    {deleteArmed ? (
+                      <InlineConfirm
+                        role="danger"
+                        icon={<Trash2 size={12} aria-hidden />}
+                        title={`Delete "${selected.title}"?`}
+                        description="Moves this plan to discarded plans, where it can still be restored."
+                        confirmLabel={`Delete ${selected.title}`}
+                        autoDisarmMs={4000}
+                        onConfirm={() => {
+                          handleDiscard(selected);
+                          setDeleteArmed(false);
+                        }}
+                        onCancel={() => setDeleteArmed(false)}
+                        className="shrink-0"
+                      />
+                    ) : null}
+                    {replayArmed && (
+                      <InlineConfirm
+                        role="alert"
+                        icon={<RotateCw size={12} aria-hidden />}
+                        title="Replay this plan?"
+                        description="It already ran once. Replaying spawns a new agent to execute it again."
+                        confirmLabel="Replay"
+                        autoDisarmMs={4000}
+                        isBusy={spawning}
+                        onConfirm={async () => {
+                          await handleTrigger();
+                          setReplayArmed(false);
+                        }}
+                        onCancel={() => setReplayArmed(false)}
+                        className="shrink-0"
+                      />
+                    )}
                     <div className="shrink-0 py-2">
                       <Divider />
                     </div>

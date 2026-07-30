@@ -17,6 +17,7 @@ import {
 } from '../../../../../store';
 import { AnsweredCard } from '../../../../chat/components/ChatView/OpenQuestionInlineCard';
 import { QuestionCard } from '../../../../context/components/QuestionsTab/QuestionCard';
+import { QuestionClusterHeader } from '../../../../context/components/QuestionsTab/QuestionClusterHeader';
 import {
   buildQuestionClusters,
   type QuestionCluster,
@@ -36,6 +37,8 @@ type QuestionsPaneProps = {
 
 type ClusterSectionProps = {
   readonly cluster: QuestionCluster;
+  readonly sessionId: SessionId;
+  readonly ownerAgent: Agent | null;
   readonly drafts: ReturnType<typeof useOpenQuestions.getState>['drafts'];
   readonly justAnswered: ReadonlyArray<OpenQuestionId>;
   readonly onToggleSuggestion: (questionId: OpenQuestionId, suggestion: string) => void;
@@ -48,6 +51,8 @@ type ClusterSectionProps = {
 
 const ClusterSection = ({
   cluster,
+  sessionId,
+  ownerAgent,
   drafts,
   justAnswered,
   onToggleSuggestion,
@@ -63,15 +68,14 @@ const ClusterSection = ({
 
   return (
     <div className="flex flex-col gap-2">
-      {cluster.ownerAgentName !== null ? (
-        <div className="flex items-center gap-1.5 px-0.5 text-2xs font-medium">
-          <Bot size={12} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="truncate text-foreground/80">{cluster.ownerAgentName}</span>
-          {cluster.creatorAgentName !== null ? (
-            <span className="truncate text-muted-foreground">via {cluster.creatorAgentName}</span>
-          ) : null}
-        </div>
-      ) : null}
+      {(cluster.ownerAgentName !== null || ownerAgent !== null) && (
+        <QuestionClusterHeader
+          sessionId={sessionId}
+          ownerAgent={ownerAgent}
+          ownerAgentName={cluster.ownerAgentName}
+          creatorAgentName={cluster.creatorAgentName}
+        />
+      )}
       {cluster.questions.map((q) => (
         <QuestionCard
           key={q.id}
@@ -318,6 +322,8 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
           <ClusterSection
             key={cluster.ownerAgentId ?? '__orphan__'}
             cluster={cluster}
+            sessionId={sessionId}
+            ownerAgent={cluster.ownerAgentId ? (agentById.get(cluster.ownerAgentId) ?? null) : null}
             drafts={drafts}
             justAnswered={justAnswered}
             onToggleSuggestion={toggleSuggestion}

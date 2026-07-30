@@ -1,7 +1,5 @@
-import { FileEdit } from 'lucide-react';
 import { Dialog } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { StudioShell } from '../../../../shared/components/StudioShell';
 import { DiffViewerContent } from './DiffViewerContent';
 
 type DiffViewerContentProps = {
@@ -23,10 +21,6 @@ type DiffViewerDialogProps = DiffViewerContentProps & {
   open: boolean;
 };
 
-type DiffViewerPaneProps = DiffViewerContentProps & {
-  workspaceName: string;
-};
-
 export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
   <Dialog
     open={open}
@@ -41,17 +35,6 @@ export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
   </Dialog>
 );
 
-export const DiffViewerPane = ({ workspaceName, onClose, ...rest }: DiffViewerPaneProps) => (
-  <StudioShell
-    icon={FileEdit}
-    title="Diff"
-    workspaceName={workspaceName}
-    closeLabel="Overview"
-    onClose={onClose}
-    variant="slot"
-  >
-    {(requestClose) => (
-      <DiffViewerContent {...rest} onClose={requestClose} showToolbarClose={false} />
-    )}
-  </StudioShell>
+export const DiffViewerPane = ({ onClose, ...rest }: DiffViewerContentProps) => (
+  <DiffViewerContent {...rest} onClose={onClose} presentation="pane" showToolbarClose={false} />
 );

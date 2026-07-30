@@ -8,6 +8,7 @@ export const CODEX_CATALOG = [
     key: 'gpt-5.6',
     label: 'GPT-5.6',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -28,6 +29,7 @@ export const CODEX_CATALOG = [
     key: 'gpt-5.5',
     label: 'GPT-5.5',
     tier: 'turn',
+    contextWindow: 400_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -44,6 +46,7 @@ export const CODEX_CATALOG = [
     key: 'gpt-5.4',
     label: 'GPT-5.4',
     tier: 'turn',
+    contextWindow: 400_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -60,6 +63,7 @@ export const CODEX_CATALOG = [
     key: 'gpt-5.4-mini',
     label: 'GPT-5.4 Mini',
     tier: 'cheap',
+    contextWindow: 400_000,
     presentation: {
       family: 'gpt',
       group: 'Mini',

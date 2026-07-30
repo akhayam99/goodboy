@@ -11,4 +11,11 @@ describe('provider model display', () => {
     expect(getModelProvider('openrouter/anthropic/claude-sonnet-4.5')).toBe('openrouter');
     expect(getModelDescriptor('openrouter/openai/gpt-5.4')?.family).toBe('gpt');
   });
+
+  it('resolves variant and combo slugs to authored windows', () => {
+    expect(getModelDescriptor('gpt-5.6-sol')?.contextWindow).toBe(1_000_000);
+    expect(getModelDescriptor('gpt-5.4-mini')?.contextWindow).toBe(400_000);
+    expect(getModelDescriptor('claude-4.6-sonnet-medium')?.contextWindow).toBe(1_000_000);
+    expect(getModelDescriptor('composer-2.5-fast')?.contextWindow).toBe(200_000);
+  });
 });

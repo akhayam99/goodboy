@@ -143,6 +143,7 @@ function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
     inputTokens,
     outputTokens,
     cachedInputTokens,
+    cacheCreationInputTokens: 0,
     estimatedCostUsd: 0,
   };
 }

@@ -82,6 +82,13 @@ describe('parseLinkedIssuesFromBody', () => {
     expect(result[0]?.url).toBe(`${REPO_BASE}/issues/7`);
   });
 
+  it('returns for a pathological pull URL without backtracking', () => {
+    const repoUrl = `${REPO_BASE}/pull/${'1'.repeat(5000)}\ninvalid`;
+    const result = parseLinkedIssuesFromBody('closes #7', repoUrl);
+
+    expect(result[0]?.url).toBe(`${REPO_BASE}/issues/7`);
+  });
+
   it('returns sorted by issue number', () => {
     const body = 'closes #30\nfixes #10\nresolves #20';
     const result = parseLinkedIssuesFromBody(body, REPO_URL);

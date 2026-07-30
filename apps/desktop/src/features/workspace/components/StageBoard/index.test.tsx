@@ -28,11 +28,11 @@ vi.mock('./StageColumn', () => ({
   ),
 }));
 
-vi.mock('../../../session/components/ArchiveSessionDialog', () => ({
-  ArchiveSessionDialog: () => null,
+vi.mock('../../../session/components/ArchiveSessionConfirm', () => ({
+  ArchiveSessionConfirm: () => null,
 }));
-vi.mock('../../../session/components/DeleteSessionDialog', () => ({
-  DeleteSessionDialog: () => null,
+vi.mock('../../../session/components/DeleteSessionConfirm', () => ({
+  DeleteSessionConfirm: () => null,
 }));
 vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => <div /> }));
 

@@ -6,10 +6,9 @@ import { agentHasUnread } from '../../../../../store';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
 import {
-  AgentMetricsBlock,
+  AgentMetrics,
   type AgentAggregate,
-} from '../../../../../features/session/components/AgentMetricsBlock';
-import { AgentMetricsInline } from '../../../../../features/session/components/AgentMetricsInline';
+} from '../../../../../features/session/components/AgentMetrics';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { WorkflowStepBrief } from './WorkflowStepBrief';
 import { WorkflowStepPlanBadge } from './WorkflowStepPlanBadge';
@@ -240,7 +239,8 @@ export const WorkflowStepRow = ({
           <WorkflowStepPlanBadge run={run} kind={kind} />
         </div>
         <div className="flex flex-col gap-0.5 px-2 pb-1.5">
-          <AgentMetricsInline
+          <AgentMetrics
+            run={run}
             telemetry={telemetry}
             aggregate={aggregate}
             contextUsage={contextUsage}
@@ -248,8 +248,8 @@ export const WorkflowStepRow = ({
             turnsLoading={turnsLoading}
             plannedModel={resolvedModel}
             muted={isPendingFuture}
+            density={isPendingFuture ? 'compact' : 'full'}
           />
-          <AgentMetricsBlock run={run} aggregate={aggregate} />
           <ContextWindowBar usage={contextUsage} />
         </div>
         {hasBrief ? (

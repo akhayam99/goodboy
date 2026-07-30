@@ -314,13 +314,3 @@ export const suggestHeavierModel = (
   const kind = modelTier(current) === 'expensive' ? 'optional' : 'strong';
   return { id: best.id, kind, costMultiplier: costRatio(best.id, current) };
 };
-
-export const FAMILY_SECTION_LABEL: Record<ModelFamily, string> = {
-  claude: 'Claude',
-  gpt: 'GPT',
-  composer: 'Composer',
-  'cursor-auto': 'Auto',
-  gemini: 'Gemini',
-  codex: 'Codex',
-  other: 'Other',
-};

@@ -8,16 +8,16 @@ import {
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
+import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
 
 type Params = {
   readonly session: Session;
-  readonly isRunning: boolean;
 };
 
-export const useTurnRouting = ({ session, isRunning }: Params) => {
+export const useTurnRouting = ({ session }: Params) => {
   const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig);
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
   const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
@@ -50,7 +50,7 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
     const initialAgent = initialAgentId
       ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
       : null;
-    const persistedModel = initialAgent?.modelOverride ?? session.modelOverride ?? null;
+    const persistedModel = initialAgent?.modelOverride ?? null;
     if (persistedModel === null) {
       return null;
     }
@@ -80,9 +80,7 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
   const allowOverride = session.providerPreference.allowTurnOverride;
   const defaultProvider = session.providerPreference.defaultProvider;
   const defaultModelId =
-    agentModelOverride ??
-    session.providerPreference.defaultModel ??
-    getDefaultTurnModel({ id: defaultProvider });
+    session.providerPreference.defaultModel ?? getDefaultTurnModel({ id: defaultProvider });
   const defaultModel = resolveModelForProvider({
     provider: defaultProvider,
     modelId: defaultModelId,
@@ -91,7 +89,13 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
     selectedProvider ?? agentProviderOverride ?? defaultProvider;
   const effectiveModelId =
     selectedModel ??
-    session.modelOverride ??
+    (agentPinApplies({
+      agentModelPin: agentModelOverride,
+      agentProvider: agentProviderOverride,
+      provider: effectiveProvider,
+    })
+      ? agentModelOverride
+      : null) ??
     (effectiveProvider === defaultProvider
       ? defaultModelId
       : getDefaultTurnModel({ id: effectiveProvider }));
@@ -167,12 +171,11 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
   const setSelectedModel = useCallback(
     (id: string | null) => {
       setSelectedModelState(id);
-      void storeSetSessionConfig(session.id, { modelOverride: id });
       if (selectedAgentId) {
         void storeSetAgentConfig(session.id, selectedAgentId, { modelOverride: id });
       }
     },
-    [storeSetSessionConfig, storeSetAgentConfig, session.id, selectedAgentId],
+    [storeSetAgentConfig, session.id, selectedAgentId],
   );
 
   const realignEffort = useCallback(
@@ -188,7 +191,9 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
 
   const onSelectProvider = useCallback(
     (id: ProviderId) => {
-      if (!allowOverride || isRunning) return;
+      if (!allowOverride) {
+        return;
+      }
       setSelectedProviderState(id);
       setSelectedModelState(null);
       void storeSetSessionConfig(session.id, { providerOverride: id, modelOverride: null });
@@ -202,7 +207,6 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
     },
     [
       allowOverride,
-      isRunning,
       storeSetSessionConfig,
       storeSetAgentConfig,
       session.id,
@@ -215,18 +219,22 @@ export const useTurnRouting = ({ session, isRunning }: Params) => {
 
   const onSelectModel = useCallback(
     (id: string) => {
-      if (!allowOverride || isRunning) return;
+      if (!allowOverride) {
+        return;
+      }
       setSelectedModel(id);
       realignEffort(id);
     },
-    [allowOverride, isRunning, setSelectedModel, realignEffort],
+    [allowOverride, setSelectedModel, realignEffort],
   );
 
   const onResetTurnOverride = useCallback(() => {
-    if (!allowOverride || isRunning) return;
+    if (!allowOverride) {
+      return;
+    }
     setSelectedProvider(null);
     setSelectedModel(null);
-  }, [allowOverride, isRunning, setSelectedProvider, setSelectedModel]);
+  }, [allowOverride, setSelectedProvider, setSelectedModel]);
 
   return {
     selectedProvider,

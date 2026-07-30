@@ -66,9 +66,9 @@ import type { UpdaterState } from './slices/updater/state';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
 
 export type ResolverThreadOutcome =
-  | { readonly kind: 'resolved'; readonly commitSha: string }
-  | { readonly kind: 'wontfix'; readonly reason: string }
-  | { readonly kind: 'analyzed' };
+  | { readonly kind: 'resolved'; readonly commitSha: string; readonly reply?: string }
+  | { readonly kind: 'wontfix'; readonly reason: string; readonly reply?: string }
+  | { readonly kind: 'analyzed'; readonly reply?: string };
 
 export type BootPhase =
   | 'pending'
@@ -223,6 +223,8 @@ export type AppState = UpdaterState & {
   >;
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
+  readonly sessionGithubPrs: Readonly<Record<SessionId, ReadonlyArray<PullRequestState>>>;
+  readonly sessionSelectedPrNumber: Readonly<Record<SessionId, number | null>>;
   readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
   readonly reviewPrs: Readonly<Record<WorkspaceId, ReviewPrsState>>;
   readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;

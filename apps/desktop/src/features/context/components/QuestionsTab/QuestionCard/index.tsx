@@ -137,12 +137,12 @@ export const QuestionCard = ({
       <div className="flex items-center gap-2 pl-[21px] text-2xs text-muted-foreground">
         <span>{relativeAge(question.createdAt)}</span>
         {question.ownedByStepOrdinal != null && (
-          <span className="rounded bg-muted px-1 py-0.5 font-mono text-2xs text-muted-foreground">
+          <span className="rounded-md bg-muted px-1 py-0.5 font-mono text-2xs text-muted-foreground">
             step {question.ownedByStepOrdinal}
           </span>
         )}
         {question.workflowId && question.ownedByStepOrdinal != null && (
-          <span className="rounded bg-muted px-1 py-0.5 text-2xs text-muted-foreground">
+          <span className="rounded-md bg-muted px-1 py-0.5 text-2xs text-muted-foreground">
             workflow
           </span>
         )}

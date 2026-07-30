@@ -3,21 +3,21 @@ import type { PrReviewState } from '@goodboy/types';
 
 type Props = {
   readonly state: PrReviewState;
+  readonly size?: number;
 };
 
-export const ReviewStateIcon = ({ state }: Props) => {
-  const props = { size: 10, 'aria-hidden': true } as const;
+export const ReviewStateIcon = ({ state, size = 10 }: Props) => {
   if (state === 'approved') {
-    return <CheckCheck {...props} className="text-success" />;
+    return <CheckCheck size={size} aria-hidden className="shrink-0 text-success" />;
   }
   if (state === 'changes_requested') {
-    return <AlertCircle {...props} className="text-danger" />;
+    return <AlertCircle size={size} aria-hidden className="shrink-0 text-danger" />;
   }
   if (state === 'commented') {
-    return <MessageSquare {...props} className="text-muted-foreground" />;
+    return <MessageSquare size={size} aria-hidden className="shrink-0 text-muted-foreground" />;
   }
   if (state === 'dismissed') {
-    return <MinusCircle {...props} className="text-muted-foreground" />;
+    return <MinusCircle size={size} aria-hidden className="shrink-0 text-muted-foreground" />;
   }
-  return <CircleDashed {...props} className="text-muted-foreground" />;
+  return <CircleDashed size={size} aria-hidden className="shrink-0 text-muted-foreground" />;
 };

@@ -39,4 +39,55 @@ describe('useDropdown', () => {
     expect(result.current.popupClassName).toContain('right-0');
     expect(result.current.popupClassName).toContain('w-80');
   });
+
+  it('clamps a fixed popup within the viewport and updates on ancestor scroll', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    let rect = DOMRect.fromRect({ x: 940, y: 500, width: 80, height: 30 });
+    const scrollAncestor = document.createElement('div');
+    const trigger = document.createElement('div');
+    scrollAncestor.append(trigger);
+    document.body.append(scrollAncestor);
+    trigger.getBoundingClientRect = () => rect;
+    const { result } = renderHook(() =>
+      useDropdown({
+        align: 'end',
+        expectedHeight: 320,
+        expectedWidth: 384,
+        strategy: 'fixed',
+        width: 'w-96',
+      }),
+    );
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupClassName).toContain('fixed');
+    expect(result.current.popupClassName).not.toContain('right-0');
+    expect(result.current.popupStyle).toMatchObject({
+      bottom: 272,
+      left: 632,
+      maxWidth: 1008,
+    });
+
+    rect = DOMRect.fromRect({ x: 0, y: 100, width: 80, height: 30 });
+    act(() => {
+      scrollAncestor.dispatchEvent(new Event('scroll'));
+    });
+
+    expect(result.current.popupStyle).toMatchObject({
+      left: 8,
+      top: 134,
+    });
+
+    rect = DOMRect.fromRect({ x: 400, y: 200, width: 80, height: 30 });
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ left: 96, top: 234 });
+    scrollAncestor.remove();
+  });
 });

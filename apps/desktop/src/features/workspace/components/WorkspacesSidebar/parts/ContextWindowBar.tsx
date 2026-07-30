@@ -1,4 +1,5 @@
 import { cn } from '@goodboy/ui';
+import { contextTokensForUsage, getModelDescriptor } from '@goodboy/core';
 import { Gauge } from 'lucide-react';
 import type { ProviderName } from '@goodboy/types';
 import { formatTokens } from '../../../../../features/session/agent-row-format';
@@ -11,26 +12,28 @@ export type ProviderContextUsage = {
   readonly model: string;
   readonly inputTokens: number;
   readonly outputTokens: number;
+  readonly cachedInputTokens?: number;
+  readonly cacheCreationInputTokens?: number;
 };
 
-function ProviderBar({
-  usage,
-  showProvider,
-}: {
-  usage: ProviderContextUsage;
-  showProvider: boolean;
-}) {
-  const window = contextWindowFor({ provider: usage.provider, model: usage.model });
-  if (!window) {
+type ProviderBarProps = {
+  readonly usage: ProviderContextUsage;
+  readonly showProvider: boolean;
+};
+
+const ProviderBar = ({ usage, showProvider }: ProviderBarProps) => {
+  const window = contextWindowFor(usage.model);
+  if (window == null) {
     return null;
   }
-  const used = usage.inputTokens + usage.outputTokens;
+  const used = contextTokensForUsage(usage);
   const pct = Math.min(1, used / window);
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
+  const modelLabel = getModelDescriptor(usage.model)?.label ?? usage.model;
   const tooltip =
-    `${usage.provider} · ${usage.model}\n` +
+    `${usage.provider} · ${modelLabel}\n` +
     `context: ${used.toLocaleString()} / ${window.toLocaleString()} tokens (${Math.round(pct * 100)}%)\n` +
-    `cumulative input: ${usage.inputTokens.toLocaleString()} · output: ${usage.outputTokens.toLocaleString()}`;
+    `last turn context: ${usage.inputTokens.toLocaleString()} input · ${(usage.cachedInputTokens ?? 0).toLocaleString()} cache read · ${(usage.cacheCreationInputTokens ?? 0).toLocaleString()} cache write · ${usage.outputTokens.toLocaleString()} output`;
   return (
     <div className="flex flex-col gap-0.5" title={tooltip}>
       <div className="flex items-center justify-between text-[9px] uppercase tracking-wide text-muted-foreground/60">
@@ -59,9 +62,13 @@ function ProviderBar({
       </div>
     </div>
   );
-}
+};
 
-export function ContextWindowBar({ usage }: { usage: ReadonlyArray<ProviderContextUsage> }) {
+type Props = {
+  readonly usage: ReadonlyArray<ProviderContextUsage>;
+};
+
+export const ContextWindowBar = ({ usage }: Props) => {
   if (usage.length === 0) {
     return null;
   }
@@ -73,4 +80,4 @@ export function ContextWindowBar({ usage }: { usage: ReadonlyArray<ProviderConte
       ))}
     </div>
   );
-}
+};

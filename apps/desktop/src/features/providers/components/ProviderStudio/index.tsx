@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
@@ -28,6 +28,7 @@ export const ProviderStudio = ({
   onClose,
 }: Props) => {
   const providers = useAppStore((s) => s.providers);
+  const refreshProviders = useAppStore((s) => s.refreshProviders);
   const [focused, setFocused] = useState<ProviderId | 'defaults'>(initialFocus ?? 'defaults');
   const [connectAction, setConnectAction] = useState<ProviderLifecycleAction | null>(
     initialFocus && initialAction ? initialAction : null,
@@ -38,6 +39,20 @@ export const ProviderStudio = ({
   );
 
   const selected = ordered.find((p) => p.id === focused) ?? null;
+
+  useEffect(() => {
+    const lifecycle = useAppStore.getState().providerLifecycle;
+    const isInFlight = Object.values(lifecycle).some(
+      (item) =>
+        item.phase === 'installing' ||
+        item.phase === 'connecting' ||
+        item.phase === 'disconnecting',
+    );
+    if (isInFlight) {
+      return;
+    }
+    void refreshProviders();
+  }, [focused, refreshProviders]);
 
   const onSelect = (id: ProviderId) => {
     setConnectAction(null);

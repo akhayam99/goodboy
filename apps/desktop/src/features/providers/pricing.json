@@ -1,17 +1,25 @@
 {
-  "version": "2026-05-28",
+  "version": "2026-07-30",
   "anthropic": {
-    "claude-opus-4-7": { "inputPerMtok": 15, "outputPerMtok": 75, "cachedInputPerMtok": 1.5 },
+    "claude-fable-5": { "inputPerMtok": 10, "outputPerMtok": 50, "cachedInputPerMtok": 1 },
+    "claude-opus-5": { "inputPerMtok": 5, "outputPerMtok": 25, "cachedInputPerMtok": 0.5 },
+    "claude-opus-4-8": { "inputPerMtok": 5, "outputPerMtok": 25, "cachedInputPerMtok": 0.5 },
+    "claude-opus-4-7": { "inputPerMtok": 5, "outputPerMtok": 25, "cachedInputPerMtok": 0.5 },
+    "claude-opus-4-6": { "inputPerMtok": 5, "outputPerMtok": 25, "cachedInputPerMtok": 0.5 },
     "claude-sonnet-4-6": { "inputPerMtok": 3, "outputPerMtok": 15, "cachedInputPerMtok": 0.3 },
+    "claude-sonnet-4-5": { "inputPerMtok": 3, "outputPerMtok": 15, "cachedInputPerMtok": 0.3 },
     "claude-haiku-4-5": { "inputPerMtok": 1, "outputPerMtok": 5, "cachedInputPerMtok": 0.1 }
   },
-  "cursor": {},
   "codex": {
-    "codex-latest": { "inputPerMtok": 2.5, "outputPerMtok": 10, "cachedInputPerMtok": 1.25 },
-    "codex-mini-latest": { "inputPerMtok": 1.5, "outputPerMtok": 6, "cachedInputPerMtok": 0.75 }
+    "gpt-5.6-sol": { "inputPerMtok": 5, "outputPerMtok": 30, "cachedInputPerMtok": 0.5 },
+    "gpt-5.6-terra": { "inputPerMtok": 2.5, "outputPerMtok": 15, "cachedInputPerMtok": 0.25 },
+    "gpt-5.6-luna": { "inputPerMtok": 1, "outputPerMtok": 6, "cachedInputPerMtok": 0.1 },
+    "gpt-5.5": { "inputPerMtok": 5, "outputPerMtok": 30, "cachedInputPerMtok": 0.5 },
+    "gpt-5.4": { "inputPerMtok": 2.5, "outputPerMtok": 15, "cachedInputPerMtok": 0.25 },
+    "gpt-5.4-mini": { "inputPerMtok": 0.75, "outputPerMtok": 4.5, "cachedInputPerMtok": 0.075 }
   },
   "gemini": {
-    "gemini-3.1-pro": { "inputPerMtok": 2, "outputPerMtok": 12 },
-    "gemini-3.5-flash": { "inputPerMtok": 1.5, "outputPerMtok": 9 }
+    "gemini-3.1-pro": { "inputPerMtok": 2, "outputPerMtok": 12, "cachedInputPerMtok": 0.2 },
+    "gemini-3.5-flash": { "inputPerMtok": 1.5, "outputPerMtok": 9, "cachedInputPerMtok": 0.15 }
   }
 }
