@@ -1,20 +1,13 @@
 import { useState } from 'react';
-import { ScrollFade, StatusDot, type Tone } from '@goodboy/ui';
+import { ScrollFade, cn } from '@goodboy/ui';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { ScriptRunRecord, ScriptRunStatus } from '../../scripts';
+import type { ScriptRunRecord } from '../../scripts';
+import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
 
 type Props = {
   readonly run: ScriptRunRecord;
   readonly completedAt: number | undefined;
 };
-
-const STATUS_TONE = {
-  idle: 'neutral',
-  pending: 'info',
-  ok: 'success',
-  error: 'danger',
-  cancelled: 'neutral',
-} satisfies Record<ScriptRunStatus, Tone>;
 
 export const ScriptRunOutput = ({ run, completedAt }: Props) => {
   const [open, setOpen] = useState(true);
@@ -30,7 +23,14 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
       >
         {open ? <ChevronDown size={12} aria-hidden /> : <ChevronRight size={12} aria-hidden />}
         <span>Last run</span>
-        <StatusDot tone={STATUS_TONE[run.status]} pulsing={run.status === 'pending'} />
+        <span
+          className={cn(
+            'text-2xs font-normal capitalize',
+            SCRIPT_RUN_PRESENTATION[run.status].textClass,
+          )}
+        >
+          {run.status}
+        </span>
         {result !== null ? (
           <span className="text-2xs font-normal text-muted-foreground">
             exit {result.exitCode}

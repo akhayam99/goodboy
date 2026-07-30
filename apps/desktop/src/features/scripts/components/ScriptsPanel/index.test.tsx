@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 type Script = {
   readonly id: string;
@@ -54,31 +54,26 @@ beforeEach(() => {
   state.runScript = vi.fn(async () => undefined);
   state.cancelScript = vi.fn(async () => undefined);
 });
+
 afterEach(cleanup);
 
 describe('ScriptsPanel', () => {
-  it('loads scripts with the panel closed and renders the empty hint when none exist', () => {
+  it('loads scripts and renders the empty hint when none exist', () => {
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+
     expect(state.loadScripts).toHaveBeenCalledWith('ws-1');
     expect(screen.getByText(/no scripts yet/i)).toBeDefined();
     expect(
       screen.getByText(/scripts are shared across every session of this workspace/i),
     ).toBeDefined();
-    expect(screen.queryByPlaceholderText(/script name/i)).toBeNull();
-    expect(screen.queryByRole('button', { name: /close script panel/i })).toBeNull();
   });
 
-  it('reveals the editor when "New script" is clicked', () => {
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
-    expect(screen.getByPlaceholderText(/script name/i)).toBeDefined();
-  });
-
-  it('saves a new script via store action when filled in and opens its detail panel', async () => {
+  it('creates a new script in an inline card', async () => {
     state.saveScript = vi.fn(async () => {
       state.scripts = [{ id: 's1', name: 'copy env', body: 'cp ../main/.env .env' }];
     });
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+
     fireEvent.click(screen.getByRole('button', { name: /new script/i }));
     fireEvent.change(screen.getByPlaceholderText(/script name/i), {
       target: { value: 'copy env' },
@@ -89,6 +84,7 @@ describe('ScriptsPanel', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     });
+
     expect(state.saveScript).toHaveBeenCalledWith({
       workspaceId: 'ws-1',
       id: undefined,
@@ -96,33 +92,38 @@ describe('ScriptsPanel', () => {
       body: 'cp ../main/.env .env',
     });
     expect(screen.queryByPlaceholderText(/script name/i)).toBeNull();
-    expect(screen.getByRole('button', { name: /close script panel/i })).toBeDefined();
+    expect(screen.getByTestId('script-card-s1')).toBeDefined();
+    expect(screen.getByText('cp ../main/.env .env')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /close script panel/i })).toBeNull();
   });
 
-  it('opens a row in the detail panel instead of the editor', () => {
+  it('expands an existing script in place with its full command', () => {
     state.scripts = [{ id: 's1', name: 'setup', body: '#!/bin/bash\necho hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /setup/i }));
+
+    expect(screen.getByText('+1 line')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
+
     expect(
       screen.getByText(
         (_, element) =>
           element?.tagName === 'PRE' && element.textContent === '#!/bin/bash\necho hi',
       ),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: /close script panel/i })).toBeDefined();
-    expect(screen.queryByPlaceholderText(/script name/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /close script panel/i })).toBeNull();
   });
 
-  it('opens an existing script through its detail panel and saves an edit to its body', async () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: '#!/bin/bash\necho hi' }];
+  it('edits an existing command inline and commits on blur', async () => {
+    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /setup/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    const textarea = screen.getByDisplayValue(/echo hi/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit script' }));
+    const textarea = screen.getByRole('textbox', { name: 'Edit setup command' });
     fireEvent.change(textarea, { target: { value: 'echo hi again' } });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      fireEvent.blur(textarea);
     });
+
     expect(state.saveScript).toHaveBeenCalledWith({
       workspaceId: 'ws-1',
       id: 's1',
@@ -131,57 +132,58 @@ describe('ScriptsPanel', () => {
     });
   });
 
-  it('switches from detail mode to the editor with the detail Edit button', () => {
+  it('edits an existing script name inline and commits with Cmd+Enter', async () => {
     state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /setup/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    expect(screen.getByDisplayValue('setup')).toBeDefined();
-    expect(screen.getByDisplayValue('echo hi')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
+    fireEvent.click(screen.getByRole('button', { name: 'setup' }));
+    const nameInput = screen.getByRole('textbox', { name: 'Edit script name' });
+    fireEvent.change(nameInput, { target: { value: 'bootstrap' } });
+    await act(async () => {
+      fireEvent.keyDown(nameInput, { key: 'Enter', metaKey: true });
+    });
+
+    expect(state.saveScript).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      id: 's1',
+      name: 'bootstrap',
+      body: 'echo hi',
+    });
   });
 
-  it('confirms before deleting a script from its inline row action', async () => {
+  it('keeps the discard guard for an unfinished new script', () => {
     state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete script' }));
+
+    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
+    fireEvent.change(screen.getByPlaceholderText(/script name/i), {
+      target: { value: 'unfinished' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
+
+    expect(screen.getByText(/unsaved changes/i)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    expect(screen.queryByPlaceholderText(/script name/i)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Collapse setup' })).toBeDefined();
+  });
+
+  it('deletes a script through the overflow menu after confirmation', async () => {
+    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for setup' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete script' }));
     expect(state.deleteScript).not.toHaveBeenCalled();
     expect(screen.getByRole('group', { name: 'Delete "setup"?' })).toBeDefined();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Delete setup' }));
     });
+
     expect(state.deleteScript).toHaveBeenCalledWith('s1', 'ws-1');
   });
 
-  it('closes the detail panel from the inspector header', () => {
-    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /setup/i }));
-    fireEvent.click(screen.getByRole('button', { name: /close script panel/i }));
-    expect(screen.queryByRole('button', { name: /close script panel/i })).toBeNull();
-  });
-
-  it('prompts before discarding an unsaved edit and applies the pending detail transition', () => {
-    state.scripts = [
-      { id: 's1', name: 'setup', body: 'echo one' },
-      { id: 's2', name: 'build', body: 'echo two' },
-    ];
-    render(<ScriptsPanel workspaceId={'ws-1' as never} />);
-    const setupRow = screen.getAllByRole('listitem')[0]!;
-    fireEvent.click(within(setupRow).getByRole('button', { name: /setup/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    fireEvent.change(screen.getByDisplayValue(/echo one/), {
-      target: { value: 'echo one changed' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /build/i }));
-    expect(screen.getByText(/unsaved changes/i)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
-    expect(screen.queryByDisplayValue(/echo two/)).toBeNull();
-    expect(screen.getByRole('button', { name: /build/i }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-  });
-
-  it('runs a script without opening the panel and routes output to its session', () => {
+  it('runs a script without expanding it', () => {
     state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     render(
       <ScriptsPanel
@@ -190,28 +192,20 @@ describe('ScriptsPanel', () => {
         worktreePath="/tmp/work"
       />,
     );
+
     fireEvent.click(screen.getByRole('button', { name: 'Run script' }));
     expect(state.runScript).toHaveBeenCalledWith('session-1', 's1', '/tmp/work');
-    expect(screen.queryByRole('button', { name: /close script panel/i })).toBeNull();
-    expect(screen.queryByPlaceholderText(/script name/i)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Expand setup' })).toBeDefined();
   });
 
-  it('shows success and danger dots for finished runs', () => {
-    state.scripts = [
-      { id: 's1', name: 'setup', body: 'echo one' },
-      { id: 's2', name: 'build', body: 'echo two' },
-    ];
+  it('shows the last run output inside an expanded card', () => {
+    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     state.scriptRuns = {
       'session-1': {
         s1: {
           status: 'ok',
-          result: { stdout: 'done', stderr: '', exitCode: 0 },
+          result: { stdout: 'completed output', stderr: '', exitCode: 0 },
           runId: 'run-1',
-        },
-        s2: {
-          status: 'error',
-          result: { stdout: '', stderr: 'failed', exitCode: 1 },
-          runId: 'run-2',
         },
       },
     };
@@ -222,9 +216,45 @@ describe('ScriptsPanel', () => {
         worktreePath="/tmp/work"
       />,
     );
-    expect(screen.getByRole('img', { name: 'Script run succeeded' }).className).toContain(
-      'bg-success',
+
+    expect(screen.queryByText('completed output')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
+    expect(screen.getByText('Last run')).toBeDefined();
+    expect(screen.getByText('completed output')).toBeDefined();
+  });
+
+  it.each([
+    ['idle', 'border-border-soft', null],
+    ['pending', 'border-info/50', 'motion-safe:animate-pulse'],
+    ['ok', 'border-success/40', null],
+    ['error', 'border-danger/40', null],
+    ['cancelled', 'border-border', null],
+  ] as const)('uses the %s run state for the card border', (status, borderClass, pulseClass) => {
+    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    if (status !== 'idle') {
+      state.scriptRuns = {
+        'session-1': {
+          s1: {
+            status,
+            result: status === 'pending' ? null : { stdout: '', stderr: '', exitCode: 0 },
+            runId: 'run-1',
+          },
+        },
+      };
+    }
+    render(
+      <ScriptsPanel
+        workspaceId={'ws-1' as never}
+        sessionId={'session-1' as never}
+        worktreePath="/tmp/work"
+      />,
     );
-    expect(screen.getByRole('img', { name: 'Script run failed' }).className).toContain('bg-danger');
+
+    const card = screen.getByTestId('script-card-s1');
+    expect(card.className).toContain(borderClass);
+    if (pulseClass !== null) {
+      expect(card.className).toContain(pulseClass);
+    }
+    expect(card.querySelector('[role="img"]')).toBeNull();
   });
 });
