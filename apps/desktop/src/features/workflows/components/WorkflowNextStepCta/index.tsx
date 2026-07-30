@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ClipboardList, Play } from 'lucide-react';
+import { AlertTriangle, ClipboardList, Play, RotateCcw, Wand2 } from 'lucide-react';
 import { InlineConfirm, cn } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
-import type { Agent, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
+import type { Agent, RoleModelPreferences, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import { kindRouting, inferAgentKindFromName } from '../../../../features/session/agent-kind';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
@@ -22,6 +22,9 @@ export type Props = {
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
   readonly roleModels?: RoleModelPreferences | null;
+  readonly run?: WorkflowRun | null;
+  readonly onOrchestrate?: () => void | Promise<void>;
+  readonly onRetryOrchestration?: () => void | Promise<void>;
 };
 
 export type PickNextWorkflowStepGate = {
@@ -64,6 +67,9 @@ export const WorkflowNextStepCta = ({
   consumesActivePlan = false,
   className,
   roleModels = null,
+  run = null,
+  onOrchestrate,
+  onRetryOrchestration,
 }: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
@@ -84,6 +90,59 @@ export const WorkflowNextStepCta = ({
       setBusy(false);
     }
   };
+  const runDynamicAction = async (action: (() => void | Promise<void>) | undefined) => {
+    if (busy || action == null) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await action();
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (run?.executionMode === 'dynamic') {
+    if (run.orchestrationOutcome === 'done') {
+      return null;
+    }
+    if (run.orchestrationOutcome === 'blocked' && onRetryOrchestration != null) {
+      return (
+        <div className={cn('relative', className)}>
+          <button
+            type="button"
+            onClick={() => void runDynamicAction(onRetryOrchestration)}
+            disabled={busy}
+            data-testid="workflow-orchestrate-retry-cta"
+            title="the orchestrator marked this run blocked, retry the decision"
+            className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RotateCcw size={12} aria-hidden className="shrink-0" />
+            retry orchestration
+          </button>
+        </div>
+      );
+    }
+    const hasActiveAgents = runs.some(
+      (agent) => agent.status === 'pending' || agent.status === 'running',
+    );
+    if (!hasActiveAgents && run.orchestrationOutcome == null && onOrchestrate != null) {
+      return (
+        <div className={cn('relative', className)}>
+          <button
+            type="button"
+            onClick={() => void runDynamicAction(onOrchestrate)}
+            disabled={busy}
+            data-testid="workflow-orchestrate-next-cta"
+            title="ask the orchestrator to decide the next step"
+            className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-2xs font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Wand2 size={12} aria-hidden className="shrink-0" />
+            next step
+          </button>
+        </div>
+      );
+    }
+  }
   if (chain.kind === 'complete') {
     return null;
   }

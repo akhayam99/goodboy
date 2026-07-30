@@ -61,6 +61,8 @@ export type WorkflowTriggerMode = 'immediate' | 'manual' | 'after_run';
 
 export type WorkflowExecutionMode = 'static' | 'dynamic';
 
+export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
+
 export type WorkflowRun = Readonly<{
   id: WorkflowRunId;
   workflowId: WorkflowId;
@@ -69,6 +71,7 @@ export type WorkflowRun = Readonly<{
   autoRun: boolean;
   triggerMode: WorkflowTriggerMode;
   executionMode: WorkflowExecutionMode;
+  orchestrationOutcome?: WorkflowOrchestrationOutcome;
   chainAfterId?: WorkflowRunId;
   goal?: string;
   discardedAt?: IsoDateTime;

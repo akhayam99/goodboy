@@ -387,10 +387,32 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(mockPlan).not.toHaveBeenCalled();
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
-        autoRun: false,
+        autoRun: true,
         goal: 'test goal',
         executionMode: 'dynamic',
       }),
+    );
+  });
+
+  it('defaults auto-run to on for dynamic runs while letting the user disable it', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    fireEvent.click(continueBtn());
+
+    const autoRunSwitch = screen.getByRole('switch', { name: /auto-run/i });
+    expect(autoRunSwitch.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(autoRunSwitch);
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.objectContaining({ autoRun: false, executionMode: 'dynamic' }),
     );
   });
 });

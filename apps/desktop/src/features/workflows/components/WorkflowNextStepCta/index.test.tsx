@@ -10,6 +10,8 @@ import type {
   StepId,
   Workflow,
   WorkflowId,
+  WorkflowRun,
+  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
 import { WorkflowNextStepCta, pickNextWorkflowStep } from './index';
@@ -235,6 +237,96 @@ describe('WorkflowNextStepCta', () => {
     ];
     const { container } = render(
       <WorkflowNextStepCta workflow={wf()} runs={doneRuns} onAdvance={vi.fn()} />,
+    );
+    expect(container.innerHTML).toBe('');
+  });
+});
+
+describe('WorkflowNextStepCta dynamic runs', () => {
+  const dynamicRun = (extra: Partial<WorkflowRun> = {}): WorkflowRun => ({
+    id: 'run-1' as WorkflowRunId,
+    workflowId: WF_ID,
+    ordinal: 0,
+    currentStep: 0,
+    autoRun: false,
+    triggerMode: 'immediate',
+    executionMode: 'dynamic',
+    ...extra,
+  });
+
+  it('offers the next-step action when the run idles between steps', async () => {
+    const onOrchestrate = vi.fn();
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={[run('s1' as StepId, 'completed', 0)]}
+        onAdvance={vi.fn()}
+        run={dynamicRun()}
+        onOrchestrate={onOrchestrate}
+        onRetryOrchestration={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
+    await Promise.resolve();
+    expect(onOrchestrate).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers the next-step action before the first step exists', () => {
+    render(
+      <WorkflowNextStepCta
+        workflow={{ ...wf(), steps: [] }}
+        runs={[]}
+        onAdvance={vi.fn()}
+        run={dynamicRun()}
+        onOrchestrate={vi.fn()}
+        onRetryOrchestration={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('workflow-orchestrate-next-cta')).toBeDefined();
+  });
+
+  it('hides the next-step action while an agent is pending or running', () => {
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={[run('s1' as StepId, 'running', 0)]}
+        onAdvance={vi.fn()}
+        run={dynamicRun()}
+        onOrchestrate={vi.fn()}
+        onRetryOrchestration={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+  });
+
+  it('offers a retry that clears a blocked outcome', async () => {
+    const onRetryOrchestration = vi.fn();
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={[run('s1' as StepId, 'completed', 0)]}
+        onAdvance={vi.fn()}
+        run={dynamicRun({ orchestrationOutcome: 'blocked' })}
+        onOrchestrate={vi.fn()}
+        onRetryOrchestration={onRetryOrchestration}
+      />,
+    );
+    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+    fireEvent.click(screen.getByTestId('workflow-orchestrate-retry-cta'));
+    await Promise.resolve();
+    expect(onRetryOrchestration).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders nothing once the orchestrator declared the run done', () => {
+    const { container } = render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={[run('s1' as StepId, 'completed', 0)]}
+        onAdvance={vi.fn()}
+        run={dynamicRun({ orchestrationOutcome: 'done' })}
+        onOrchestrate={vi.fn()}
+        onRetryOrchestration={vi.fn()}
+      />,
     );
     expect(container.innerHTML).toBe('');
   });

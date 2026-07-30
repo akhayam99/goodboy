@@ -656,4 +656,31 @@ describe('attachWorkflowToSession trigger modes', () => {
     expect(added.executionMode).toBe('dynamic');
     expect(state.orchestrateNextStep).toHaveBeenCalledWith(SESSION_ID, added.id);
   });
+
+  it('after_run degrades to immediate when the dynamic predecessor persisted done', async () => {
+    const pred = makeRun('pred', 'immediate', {
+      executionMode: 'dynamic',
+      orchestrationOutcome: 'done',
+    });
+    const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'completed', 0)]);
+    const { set, get } = harness(state);
+    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
+      autoRun: true,
+      triggerMode: 'after_run',
+      chainAfterId: 'pred' as WorkflowRunId,
+    });
+    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('immediate');
+  });
+
+  it('after_run stays queued behind a dynamic predecessor without a persisted outcome', async () => {
+    const pred = makeRun('pred', 'immediate', { executionMode: 'dynamic' });
+    const state = baseState([pred], [makeAgent('pred' as WorkflowRunId, 's0', 'completed', 0)]);
+    const { set, get } = harness(state);
+    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, {
+      autoRun: true,
+      triggerMode: 'after_run',
+      chainAfterId: 'pred' as WorkflowRunId,
+    });
+    expect(attachInDbSpy.mock.calls[0]?.[7]).toBe('after_run');
+  });
 });

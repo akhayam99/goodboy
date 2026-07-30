@@ -15,13 +15,19 @@ import type {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
-const { decideSpy, invokeWorkflowUpsertSpy, invokeAgentInsertSpy, listOpenQuestionsSpy } =
-  vi.hoisted(() => ({
-    decideSpy: vi.fn(),
-    invokeWorkflowUpsertSpy: vi.fn(),
-    invokeAgentInsertSpy: vi.fn(),
-    listOpenQuestionsSpy: vi.fn(async () => []),
-  }));
+const {
+  decideSpy,
+  invokeWorkflowUpsertSpy,
+  invokeAgentInsertSpy,
+  listOpenQuestionsSpy,
+  updateOutcomeSpy,
+} = vi.hoisted(() => ({
+  decideSpy: vi.fn(),
+  invokeWorkflowUpsertSpy: vi.fn(),
+  invokeAgentInsertSpy: vi.fn(),
+  listOpenQuestionsSpy: vi.fn(async () => []),
+  updateOutcomeSpy: vi.fn(async () => undefined),
+}));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
   const original = await importOriginal<typeof import('@goodboy/core')>();
@@ -33,6 +39,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
+  updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -43,7 +50,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { orchestrateNextStep } from './orchestrateNextStep';
-import { orchestrationTerminalStates } from './orchestrationTerminalStates';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;
@@ -148,8 +154,8 @@ const harness = (state: State) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  orchestrationTerminalStates.clear();
   listOpenQuestionsSpy.mockResolvedValue([]);
+  updateOutcomeSpy.mockResolvedValue(undefined);
   invokeWorkflowUpsertSpy.mockImplementation(async (input: Record<string, unknown>) => ({
     ...workflow(),
     steps: input['steps'],
@@ -244,6 +250,28 @@ describe('orchestrateNextStep', () => {
       'All required tests pass.',
       { sessionId: SESSION_ID },
     );
+    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done');
+    const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(updated.orchestrationOutcome).toBe('done');
+  });
+
+  it('skips a run whose persisted outcome is already terminal', async () => {
+    const state = baseState();
+    const current = (state['sessions'] as ReadonlyArray<Session>)[0]!;
+    state['sessions'] = [
+      {
+        ...current,
+        workflowRuns: current.workflowRuns.map((run) => ({
+          ...run,
+          orchestrationOutcome: 'done' as const,
+        })),
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).not.toHaveBeenCalled();
   });
 
   it('notifies when blocked', async () => {
@@ -262,6 +290,81 @@ describe('orchestrateNextStep', () => {
       'dynamic workflow blocked',
       'A product choice is required.',
       { sessionId: SESSION_ID },
+    );
+    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'blocked');
+    const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(updated.orchestrationOutcome).toBe('blocked');
+  });
+
+  it('recovers from a client failure without persisting an outcome', async () => {
+    decideSpy.mockRejectedValueOnce(new Error('orchestrator decision timed out'));
+    const state = baseState();
+    const { set, get } = harness(state);
+    const orchestrate = orchestrateNextStep(set, get);
+
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['emitNotification']).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'orchestrator failed',
+      'orchestrator decision timed out',
+      { sessionId: SESSION_ID },
+    );
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({
+        action: 'blocked',
+        reason: 'orchestrator failed: orchestrator decision timed out',
+      }),
+    );
+    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+    expect(updateOutcomeSpy).not.toHaveBeenCalled();
+    const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(updated.orchestrationOutcome).toBeUndefined();
+
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+    });
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).toHaveBeenCalledTimes(2);
+    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done');
+  });
+
+  it('targets the run latest agent over the session selection for decision events', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+    });
+    const state = baseState();
+    state['selectedAgentId'] = { [SESSION_ID]: 'agent-other' as AgentId };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({ action: 'done' }),
+    );
+  });
+
+  it('falls back to the session selection when the run has no agents', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+    });
+    const state = baseState();
+    state['sessionPhaseRuns'] = { [SESSION_ID]: [] };
+    state['selectedAgentId'] = { [SESSION_ID]: 'agent-other' as AgentId };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      'agent-other',
+      SESSION_ID,
+      expect.objectContaining({ action: 'done' }),
     );
   });
 

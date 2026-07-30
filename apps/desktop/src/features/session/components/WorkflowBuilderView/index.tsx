@@ -283,7 +283,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       .map((r) => {
         const template = phaseTemplates.find((t) => t.id === r.workflowId) ?? null;
         const agents = runsForWorkflowRun(sessionPhaseRuns, r.id);
-        const complete = template ? isWorkflowComplete(template, agents) : false;
+        const complete =
+          r.executionMode === 'dynamic'
+            ? r.orchestrationOutcome === 'done'
+            : template
+              ? isWorkflowComplete(template, agents)
+              : false;
         const failed = agents.some((a) => a.status === 'failed');
         return { run: r, template, complete, failed };
       })
@@ -697,6 +702,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     if (goalText.trim().length === 0) return false;
     return i < 2 || canAdvanceFromApproach;
   };
+  const onModeChange = (next: Mode) => {
+    setMode(next);
+    if (next === 'dynamic') {
+      setAutoRun(true);
+    }
+  };
   const goNext = () => {
     if (canContinue) {
       setStage((s) => Math.min(s + 1, 2) as Stage);
@@ -897,7 +908,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             },
                           ]}
                           value={mode}
-                          onChange={setMode}
+                          onChange={onModeChange}
                           size="sm"
                         />
                       }

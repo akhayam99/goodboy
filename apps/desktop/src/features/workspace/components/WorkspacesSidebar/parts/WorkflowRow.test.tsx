@@ -16,9 +16,18 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
+const { orchestrateNextStepSpy, retryWorkflowOrchestrationSpy } = vi.hoisted(() => ({
+  orchestrateNextStepSpy: vi.fn(async () => undefined),
+  retryWorkflowOrchestrationSpy: vi.fn(async () => undefined),
+}));
+
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: unknown) => T) => selector({}),
+  useAppStore: <T,>(selector: (state: unknown) => T) =>
+    selector({
+      orchestrateNextStep: orchestrateNextStepSpy,
+      retryWorkflowOrchestration: retryWorkflowOrchestrationSpy,
+    }),
 }));
 
 vi.mock(
@@ -110,6 +119,8 @@ const session = { id: SESSION_ID, workflowRuns: [run] } as unknown as Session;
 
 type RenderParams = {
   readonly runOverride?: WorkflowRun;
+  readonly agentsOverride?: ReadonlyArray<Agent>;
+  readonly actionableStepId?: string | null;
   readonly childrenByParentId?: ReadonlyMap<string, Agent[]>;
   readonly clusterExpand?: ReadonlyMap<string, boolean>;
   readonly onDeleteWorkflow?: (runId: WorkflowRunId) => Promise<void>;
@@ -117,6 +128,8 @@ type RenderParams = {
 
 const renderDetail = ({
   runOverride = run,
+  agentsOverride = agents,
+  actionableStepId = 'step-2',
   childrenByParentId = new Map(),
   clusterExpand = new Map(),
   onDeleteWorkflow = vi.fn(async () => undefined),
@@ -128,8 +141,8 @@ const renderDetail = ({
       index={0}
       task={session}
       attachedRuns={[{ run: runOverride, workflow }]}
-      agentsByRunId={new Map([[RUN_ID, [...agents]]])}
-      actionableStepIdByRunId={new Map([[RUN_ID, 'step-2']])}
+      agentsByRunId={new Map([[RUN_ID, [...agentsOverride]]])}
+      actionableStepIdByRunId={new Map([[RUN_ID, actionableStepId]])}
       blockReasonByRunId={new Map([[RUN_ID, null]])}
       countUnread={() => 0}
       focusedWorkflowRunId={null}
@@ -231,5 +244,50 @@ describe('WorkflowRow detail dashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     expect(onDeleteWorkflow).toHaveBeenCalledWith(RUN_ID);
+  });
+});
+
+describe('WorkflowRow dynamic runs', () => {
+  const dynamicRun: WorkflowRun = { ...run, executionMode: 'dynamic' };
+  const doneAgents: ReadonlyArray<Agent> = [
+    { ...agents[0]! },
+    { ...agents[1]!, status: 'completed' },
+  ];
+
+  it('keeps an in-between dynamic run out of the completed state', () => {
+    renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
+
+    expect(screen.queryByText('Completed')).toBeNull();
+    expect(screen.getByText('Deciding next step')).toBeDefined();
+    expect(screen.getByText('deciding next step')).toBeDefined();
+  });
+
+  it('marks the dynamic run completed only on a persisted done outcome', () => {
+    renderDetail({
+      runOverride: { ...dynamicRun, orchestrationOutcome: 'done' },
+      agentsOverride: doneAgents,
+    });
+
+    expect(screen.getByText('Completed')).toBeDefined();
+    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+  });
+
+  it('asks the orchestrator for the next step from the CTA', () => {
+    renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents });
+
+    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
+
+    expect(orchestrateNextStepSpy).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('retries a blocked run through the retry affordance', () => {
+    renderDetail({
+      runOverride: { ...dynamicRun, orchestrationOutcome: 'blocked' },
+      agentsOverride: doneAgents,
+    });
+
+    fireEvent.click(screen.getByTestId('workflow-orchestrate-retry-cta'));
+
+    expect(retryWorkflowOrchestrationSpy).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 });

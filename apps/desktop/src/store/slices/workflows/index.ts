@@ -13,6 +13,7 @@ import { loadStepLibrary } from './loadStepLibrary';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { orchestrateNextStep } from './orchestrateNextStep';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
+import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
 import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
 import { savePhaseTemplate } from './savePhaseTemplate';
@@ -47,6 +48,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     advanceScoutTree: advanceScoutTree(set, get),
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
     orchestrateNextStep: orchestrateNextStep(set, get),
+    retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),
     retryStepSummary: retryStepSummary(set, get),
   };
 };

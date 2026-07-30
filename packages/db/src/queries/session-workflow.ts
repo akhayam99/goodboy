@@ -3,6 +3,7 @@ import type {
   SessionId,
   WorkflowId,
   WorkflowExecutionMode,
+  WorkflowOrchestrationOutcome,
   WorkflowRun,
   WorkflowRunId,
   WorkflowTriggerMode,
@@ -17,6 +18,7 @@ type SessionWorkflowRow = {
   auto_run: number;
   trigger_mode: string;
   execution_mode: string;
+  orchestration_outcome: string | null;
   chain_after_run_id: string | null;
   goal: string | null;
   discarded_at: string | null;
@@ -31,6 +33,9 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     autoRun: row.auto_run !== 0,
     triggerMode: row.trigger_mode as WorkflowTriggerMode,
     executionMode: row.execution_mode as WorkflowExecutionMode,
+    ...(row.orchestration_outcome != null && {
+      orchestrationOutcome: row.orchestration_outcome as WorkflowOrchestrationOutcome,
+    }),
     ...(row.chain_after_run_id != null && {
       chainAfterId: row.chain_after_run_id as WorkflowRunId,
     }),
@@ -44,7 +49,7 @@ export const listWorkflowsForSession = async (
   sessionId: SessionId,
 ): Promise<ReadonlyArray<WorkflowRun>> => {
   const rows = await db.select<SessionWorkflowRow>(
-    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
+    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map(toWorkflowRun);
@@ -114,7 +119,7 @@ export const updateWorkflowOrder = async (
   updatedAt: IsoDateTime,
 ): Promise<void> => {
   const existing = await db.select<SessionWorkflowRow>(
-    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ?',
+    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ?',
     [sessionId],
   );
   const byRun = new Map(existing.map((r) => [r.workflow_run_id, r]));
@@ -128,7 +133,7 @@ export const updateWorkflowOrder = async (
         continue;
       }
       await db.execute(
-        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           runId,
           sessionId,
@@ -141,6 +146,7 @@ export const updateWorkflowOrder = async (
           prev.trigger_mode,
           prev.chain_after_run_id,
           prev.execution_mode,
+          prev.orchestration_outcome,
         ],
       );
     }
@@ -194,6 +200,17 @@ export const updateSessionWorkflowAutoRun = async (
     workflowRunId,
   ]);
   await bumpSessionUpdatedAt(db, sessionId, updatedAt);
+};
+
+export const updateWorkflowRunOrchestrationOutcome = async (
+  db: Database,
+  workflowRunId: WorkflowRunId,
+  outcome: WorkflowOrchestrationOutcome | null,
+): Promise<void> => {
+  await db.execute(
+    'UPDATE session_workflows SET orchestration_outcome = ? WHERE workflow_run_id = ?',
+    [outcome, workflowRunId],
+  );
 };
 
 export const updateSessionWorkflowTriggerMode = async (

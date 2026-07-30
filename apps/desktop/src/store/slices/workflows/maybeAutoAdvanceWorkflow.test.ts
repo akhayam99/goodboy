@@ -245,6 +245,57 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
+  it('does not orchestrate a dynamic run with a persisted terminal outcome', async () => {
+    const state = baseState([], []);
+    const session = (state['sessions'] as ReadonlyArray<Session>)[0]!;
+    state['sessions'] = [
+      {
+        ...session,
+        workflowRuns: session.workflowRuns.map((run) => ({
+          ...run,
+          executionMode: 'dynamic' as const,
+          orchestrationOutcome: 'done' as const,
+        })),
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+  });
+
+  it('starts a chained run only after the dynamic predecessor persists done', async () => {
+    const CHAINED_ID = 'run-2' as WorkflowRunId;
+    const chained: WorkflowRun = {
+      id: CHAINED_ID,
+      workflowId: WF_ID,
+      ordinal: 1,
+      currentStep: 0,
+      autoRun: true,
+      triggerMode: 'after_run',
+      executionMode: 'static',
+      chainAfterId: RUN_ID,
+    };
+    const session = makeSession();
+    const dynamicPredecessor = (outcome?: 'done' | 'blocked'): WorkflowRun => ({
+      ...session.workflowRuns[0]!,
+      executionMode: 'dynamic',
+      ...(outcome != null && { orchestrationOutcome: outcome }),
+    });
+    const state = baseState([], []);
+    state['sessions'] = [{ ...session, workflowRuns: [dynamicPredecessor(), chained] }];
+    const { set, get } = harness(state);
+    const advance = maybeAutoAdvanceWorkflow(set, get);
+
+    await advance(SESSION_ID);
+    expect(state['startWorkflowRun']).not.toHaveBeenCalled();
+
+    state['sessions'] = [{ ...session, workflowRuns: [dynamicPredecessor('done'), chained] }];
+    await advance(SESSION_ID);
+    expect(state['startWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, CHAINED_ID);
+  });
+
   it('does not orchestrate while a dynamic step is still running', async () => {
     const state = baseState(['s0'], [makeAgent('s0', 'running', 0)]);
     const session = (state['sessions'] as ReadonlyArray<Session>)[0]!;

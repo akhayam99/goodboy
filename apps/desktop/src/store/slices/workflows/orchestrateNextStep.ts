@@ -10,15 +10,15 @@ import type {
   StepId,
   TurnEvent,
   Workflow,
+  WorkflowOrchestrationOutcome,
   WorkflowRunId,
 } from '@goodboy/types';
 import { OrchestratorClient, resolveTaskModel, runsForWorkflowRun } from '@goodboy/core';
-import { listOpenQuestionsForSession } from '@goodboy/db';
+import { listOpenQuestionsForSession, updateWorkflowRunOrchestrationOutcome } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
-import { orchestrationTerminalStates } from './orchestrationTerminalStates';
 import type { GetFn, SetFn } from './types';
 
 const orchestrationInFlight = new Set<WorkflowRunId>();
@@ -45,8 +45,8 @@ const emitDecision = ({
   const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
   const agentId =
     preferredAgentId ??
-    get().selectedAgentId[sessionId] ??
-    [...runAgents].sort((left, right) => right.ordinal - left.ordinal)[0]?.id;
+    [...runAgents].sort((left, right) => right.ordinal - left.ordinal)[0]?.id ??
+    get().selectedAgentId[sessionId];
   if (agentId == null) {
     return;
   }
@@ -59,6 +59,34 @@ const emitDecision = ({
     at: new Date().toISOString() as IsoDateTime,
   };
   get().appendTurnEvent(agentId, sessionId, event);
+};
+
+type PersistOutcomeParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly outcome: WorkflowOrchestrationOutcome;
+};
+
+const persistOrchestrationOutcome = async ({
+  set,
+  sessionId,
+  workflowRunId,
+  outcome,
+}: PersistOutcomeParams): Promise<void> => {
+  await updateWorkflowRunOrchestrationOutcome(tauriDatabase, workflowRunId, outcome);
+  set((state) => ({
+    sessions: state.sessions.map((session) =>
+      session.id === sessionId
+        ? {
+            ...session,
+            workflowRuns: session.workflowRuns.map((run) =>
+              run.id === workflowRunId ? { ...run, orchestrationOutcome: outcome } : run,
+            ),
+          }
+        : session,
+    ),
+  }));
 };
 
 type UniqueNameParams = {
@@ -169,10 +197,7 @@ const appendStep = async ({
 
 export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void> => {
-    if (
-      orchestrationInFlight.has(workflowRunId) ||
-      orchestrationTerminalStates.has(workflowRunId)
-    ) {
+    if (orchestrationInFlight.has(workflowRunId)) {
       return;
     }
     orchestrationInFlight.add(workflowRunId);
@@ -183,7 +208,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         session == null ||
         run == null ||
         run.executionMode !== 'dynamic' ||
-        run.discardedAt != null
+        run.discardedAt != null ||
+        run.orchestrationOutcome != null
       ) {
         return;
       }
@@ -215,12 +241,28 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workingDir: get().sessionWorktrees[sessionId]![0],
         }),
       });
-      const result = await client.decide({
-        goal: run.goal ?? workflow.goal ?? session.goal,
-        processText: workflow.processText ?? '',
-        completedSteps,
-        openQuestionCount: openQuestions.length,
-      });
+      let result: Awaited<ReturnType<typeof client.decide>> | null = null;
+      try {
+        result = await client.decide({
+          goal: run.goal ?? workflow.goal ?? session.goal,
+          processText: workflow.processText ?? '',
+          completedSteps,
+          openQuestionCount: openQuestions.length,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        emitDecision({
+          get,
+          sessionId,
+          workflowRunId,
+          action: 'blocked',
+          reason: `orchestrator failed: ${message}`,
+        });
+        void get().emitNotification('error', 'warning', 'orchestrator failed', message, {
+          sessionId,
+        });
+        return;
+      }
       const decision = result.decision ?? {
         action: 'blocked' as const,
         reason: 'unparseable decision',
@@ -246,7 +288,12 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         await get().activateWorkflowAgent(sessionId, agent.id);
         return;
       }
-      orchestrationTerminalStates.set(workflowRunId, decision.action);
+      await persistOrchestrationOutcome({
+        set,
+        sessionId,
+        workflowRunId,
+        outcome: decision.action,
+      });
       emitDecision({
         get,
         sessionId,

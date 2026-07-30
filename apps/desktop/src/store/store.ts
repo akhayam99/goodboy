@@ -277,6 +277,7 @@ export type AppActions = {
   ): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
   orchestrateNextStep(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
+  retryWorkflowOrchestration(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
   appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;

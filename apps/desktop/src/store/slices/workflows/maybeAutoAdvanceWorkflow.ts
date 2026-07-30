@@ -4,7 +4,6 @@ import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import type { GetFn, SetFn } from './types';
-import { orchestrationTerminalStates } from './orchestrationTerminalStates';
 
 const advanceInFlight = new Set<SessionId>();
 
@@ -39,7 +38,7 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
     }
     const predecessorComplete =
       predecessor.executionMode === 'dynamic'
-        ? orchestrationTerminalStates.get(predecessor.id) === 'done'
+        ? predecessor.orchestrationOutcome === 'done'
         : isWorkflowComplete(predTemplate, runsForWorkflowRun(runs, predecessor.id));
     if (predecessorComplete) {
       await get().startWorkflowRun(sessionId, candidate.id);
@@ -107,7 +106,7 @@ const runAdvance = async ({ get, sessionId }: Params): Promise<void> => {
       if (
         run.executionMode === 'dynamic' &&
         runAgents.every((agent) => agent.status === 'completed' || agent.status === 'skipped') &&
-        !orchestrationTerminalStates.has(run.id)
+        run.orchestrationOutcome == null
       ) {
         dynamicRunId = run.id;
       }

@@ -15,7 +15,6 @@ import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
-import { orchestrationTerminalStates } from './orchestrationTerminalStates';
 import type { GetFn, SetFn } from './types';
 
 type Options = {
@@ -58,7 +57,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
         );
         const predecessorComplete =
           predecessor.executionMode === 'dynamic'
-            ? orchestrationTerminalStates.get(predecessor.id) === 'done'
+            ? predecessor.orchestrationOutcome === 'done'
             : isWorkflowComplete(predTemplate, predAgents);
         if (predecessorComplete) {
           triggerMode = 'immediate';

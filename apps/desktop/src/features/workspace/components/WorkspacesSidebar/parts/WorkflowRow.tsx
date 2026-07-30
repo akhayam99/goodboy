@@ -18,7 +18,7 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { EMPTY_ARRAY } from '../../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 import {
   kindRouting,
@@ -126,6 +126,8 @@ export const WorkflowRow = ({
   skipStuckStepAndAdvance,
 }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId: task.id });
+  const orchestrateNextStep = useAppStore((s) => s.orchestrateNextStep);
+  const retryWorkflowOrchestration = useAppStore((s) => s.retryWorkflowOrchestration);
   const workflowRun = run;
   const isDiscarded = run.discardedAt != null;
   const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
@@ -136,7 +138,15 @@ export const WorkflowRow = ({
   const name = workflowKindName(workflow);
   const total = workflow.steps.length;
   const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
-  const isCompleted = !isDiscarded && total > 0 && done >= total;
+  const isDynamic = run.executionMode === 'dynamic';
+  const isCompleted =
+    !isDiscarded && (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total);
+  const isDynamicActionable =
+    isDynamic &&
+    !isDiscarded &&
+    run.triggerMode === 'immediate' &&
+    run.orchestrationOutcome !== 'done' &&
+    !wfAgents.some((a) => a.status === 'pending' || a.status === 'running');
   const unreadCount = countUnread(wfAgents);
   const isDetail = variant === 'detail';
   const expanded = isDetail
@@ -154,9 +164,11 @@ export const WorkflowRow = ({
     0,
   );
   const stepById = new Map(workflow.steps.map((step) => [step.id, step]));
+  const isDynamicDeciding = isDynamicActionable && run.orchestrationOutcome == null;
   const currentStepName =
     wfAgents.find((agent) => agent.status === 'running')?.name ??
-    workflow.steps.find((step) => step.id === actionableStepId)?.name;
+    workflow.steps.find((step) => step.id === actionableStepId)?.name ??
+    (isDynamicDeciding ? 'deciding next step' : undefined);
   return (
     <div
       className={cn(
@@ -474,13 +486,18 @@ export const WorkflowRow = ({
           </p>
         )
       ) : null}
-      {expanded && !isDiscarded && (isDetail || wfBlockReason === 'failed-step') ? (
+      {expanded &&
+      !isDiscarded &&
+      (isDetail || wfBlockReason === 'failed-step' || isDynamicActionable) ? (
         <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
           <WorkflowNextStepCta
             workflow={workflow}
             runs={wfAgents}
             roleModels={roleModels}
             blockReason={wfBlockReason}
+            run={run}
+            onOrchestrate={() => void orchestrateNextStep(task.id, run.id)}
+            onRetryOrchestration={() => void retryWorkflowOrchestration(task.id, run.id)}
             onAdvance={(step) => {
               const pending = wfAgents.find(
                 (agent) => agent.stepId === step.id && agent.status === 'pending',
