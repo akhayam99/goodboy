@@ -53,11 +53,14 @@ vi.mock('../../../../features/worktree/worktree', () => ({
     branch: null,
     ahead: 0,
     behind: 0,
+    commitsAheadOfMain: 2,
+    commitsBehindMain: 3,
+    changed: 0,
   })),
 }));
 
 vi.mock('../DiffViewSelector', () => ({
-  DiffViewSelector: () => null,
+  DiffViewSelector: () => <button type="button">branch vs main</button>,
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => ({
@@ -125,44 +128,38 @@ describe('DiffViewerPane', () => {
     expect(await screen.findByText(/no diff source configured/i)).toBeDefined();
   });
 
-  it('renders the studio header for the overlay slot', () => {
+  it('renders the canonical pane header without studio chrome', () => {
     render(<DiffViewerPane workspaceName="acme" onClose={vi.fn()} />);
-    expect(screen.getByRole('heading', { name: /^diff$/i })).toBeDefined();
-    expect(screen.getByText('acme')).toBeDefined();
+    const heading = screen.getByRole('heading', { name: /^diff$/i });
+    expect(heading.className).toContain('text-xl');
+    expect(heading.className).toContain('font-semibold');
+    expect(screen.getByText("Changes across this session's working tree.")).toBeDefined();
+    expect(screen.queryByText('acme')).toBeNull();
+    expect(screen.queryByText('beta')).toBeNull();
   });
 
-  it('uses variant="slot" (relative positioning, not fixed)', () => {
+  it('centers the pane content at the widest section width', () => {
     const { container } = render(<DiffViewerPane workspaceName="acme" onClose={vi.fn()} />);
     const shell = container.firstElementChild as HTMLElement;
-    expect(shell.className).toContain('relative');
+    expect(shell.className).toContain('mx-auto');
+    expect(shell.className).toContain('max-w-5xl');
     expect(shell.className).not.toContain('fixed');
-    expect(shell.className).not.toContain('z-50');
   });
 
-  it('Escape requests close', async () => {
-    vi.useFakeTimers();
-    const onClose = vi.fn();
-    render(<DiffViewerPane workspaceName="acme" onClose={onClose} />);
-    fireEvent.keyDown(window, { key: 'Escape' });
-    vi.advanceTimersByTime(300);
-    expect(onClose).toHaveBeenCalled();
-    vi.useRealTimers();
+  it('shows only the header and empty state when the pane diff is empty', async () => {
+    render(<DiffViewerPane workspaceName="acme" worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+    expect(await screen.findByText('Branch matches main')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'branch vs main' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /file list/i })).toBeNull();
   });
 
-  it('Done button requests close', () => {
-    vi.useFakeTimers();
-    const onClose = vi.fn();
-    render(<DiffViewerPane workspaceName="acme" onClose={onClose} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Overview' }));
-    expect(onClose).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(300);
-    expect(onClose).toHaveBeenCalledOnce();
-    vi.useRealTimers();
-  });
-
-  it('renders the beta badge', () => {
-    render(<DiffViewerPane workspaceName="acme" onClose={vi.fn()} />);
-    expect(screen.getByText('beta')).toBeDefined();
+  it('shows selector controls and main-relative commit metadata for a non-empty diff', async () => {
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane workspaceName="acme" worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+    expect(await screen.findByText(/alpha/)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'branch vs main' })).toBeDefined();
+    expect(await screen.findByText('2 commits')).toBeDefined();
+    expect(screen.getByText('behind main by 3')).toBeDefined();
   });
 });
 
@@ -319,6 +316,24 @@ describe('single-scroll all-files layout', () => {
     expect(screen.getAllByText('src/a.ts').length).toBeGreaterThan(0);
     expect(screen.getAllByText('src/b.ts').length).toBeGreaterThan(0);
   });
+
+  it('gives each file table its own horizontal scrollbar without wrapping code', async () => {
+    fixtures.files = fileFixture();
+    const { container } = render(
+      <DiffViewerPane
+        workspaceName="acme"
+        sessionId={SID}
+        loader={async () => 'raw'}
+        onClose={vi.fn()}
+      />,
+    );
+    await screen.findByText(/alpha/);
+    const table = container.querySelector('table');
+    const codeCell = screen.getByText(/alpha/).closest('td');
+    expect(table?.parentElement?.className).toContain('overflow-x-auto');
+    expect(table?.className).toContain('w-max');
+    expect(codeCell?.className).toContain('whitespace-pre');
+  });
 });
 
 describe('per-file reviewed state', () => {
@@ -453,7 +468,7 @@ describe('progressive batching', () => {
 });
 
 describe('DiffViewerDialog vs DiffViewerPane structural difference', () => {
-  it('DiffViewerDialog uses fixed overlay (Dialog), DiffViewerPane uses slot layout', () => {
+  it('DiffViewerDialog uses a fixed overlay and DiffViewerPane uses centered pane layout', () => {
     const { container: dialogContainer } = render(<DiffViewerDialog open onClose={vi.fn()} />);
     const { container: paneContainer } = render(
       <DiffViewerPane workspaceName="acme" onClose={vi.fn()} />,
@@ -462,7 +477,8 @@ describe('DiffViewerDialog vs DiffViewerPane structural difference', () => {
     expect(dialogRoot).not.toBeNull();
 
     const paneShell = paneContainer.firstElementChild as HTMLElement;
-    expect(paneShell.className).toContain('relative');
+    expect(paneShell.className).toContain('mx-auto');
+    expect(paneShell.className).toContain('max-w-5xl');
     expect(paneShell.className).not.toContain('fixed');
   });
 });

@@ -14,6 +14,8 @@ export type WorktreeStatus = {
   readonly headSubject: string | null;
   readonly ahead: number;
   readonly behind: number;
+  readonly commitsAheadOfMain: number;
+  readonly commitsBehindMain: number;
   readonly staged: number;
   readonly unstaged: number;
   readonly untracked: number;

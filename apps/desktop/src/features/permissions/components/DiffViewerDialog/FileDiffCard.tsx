@@ -206,7 +206,7 @@ export const FileDiffCard = ({
   const noteCount = comments.filter((c) => c.status === 'open').length;
 
   return (
-    <section ref={registerRef} data-file-path={file.path}>
+    <section ref={registerRef} data-file-path={file.path} className="min-w-0 max-w-full">
       <div className="sticky top-0 z-10 bg-background">
         <div className="flex items-center gap-2 px-3 py-1.5">
           <button
@@ -384,10 +384,10 @@ export const FileDiffCard = ({
           ) : file.hunks.length === 0 ? (
             <p className="py-4 text-center text-xs text-muted-foreground">no changes</p>
           ) : (
-            <>
+            <div className="min-w-0 max-w-full overflow-x-auto">
               <table
                 className={cn(
-                  'w-full border-collapse font-mono text-xs leading-5',
+                  'w-max min-w-full border-collapse font-mono text-xs leading-5',
                   drag && 'select-none',
                 )}
               >
@@ -557,7 +557,7 @@ export const FileDiffCard = ({
                   onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
                 />
               )}
-            </>
+            </div>
           )}
         </div>
       )}

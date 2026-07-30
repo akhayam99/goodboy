@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { CheckCircle2, X } from 'lucide-react';
-import { Divider, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { Divider, EmptyState, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
@@ -54,6 +54,7 @@ type Props = {
   jumpToFirstCommented?: boolean;
   jumpToFile?: string;
   showToolbarClose?: boolean;
+  presentation?: 'dialog' | 'pane';
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
@@ -260,6 +261,7 @@ export const DiffViewerContent = ({
   jumpToFirstCommented = false,
   jumpToFile,
   showToolbarClose = true,
+  presentation = 'dialog',
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [mountedCount, setMountedCount] = useState(DIFF_BATCH_SIZE);
@@ -654,84 +656,151 @@ export const DiffViewerContent = ({
   );
 
   const isEmpty = !loading && !error && files.length === 0;
+  const isPane = presentation === 'pane';
+  const fileCountLabel = `${files.length} ${files.length === 1 ? 'file' : 'files'}`;
+  const commitsAheadOfMain = status?.commitsAheadOfMain ?? 0;
+  const commitCountLabel = `${commitsAheadOfMain} ${
+    commitsAheadOfMain === 1 ? 'commit' : 'commits'
+  }`;
 
   return (
     /* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- container handles keyboard nav */
-    <div className="flex h-full min-h-0 w-full flex-col" onKeyDown={handleKeyDown}>
-      {isEmpty ? (
-        isGitAware ? (
-          <>
-            <div className="flex shrink-0 items-center gap-2 px-2.5 py-1.5">
-              <div className="flex min-w-0 flex-1 items-center">
-                <DiffViewSelector
-                  view={view}
-                  onChange={setView}
-                  commits={commits}
-                  status={status}
-                  filesCount={loading ? null : files.length}
-                  loading={loading}
-                />
-              </div>
-              {showToolbarClose ? (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  title="close"
-                  aria-label="close"
-                  className={TOOLBAR_ICON_BTN}
-                >
-                  <X size={13} />
-                </button>
+    <div
+      className={cn(
+        'flex h-full min-h-0 w-full flex-col',
+        isPane && 'mx-auto max-w-5xl gap-5 px-6 py-5',
+      )}
+      onKeyDown={handleKeyDown}
+    >
+      {isPane ? (
+        <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-baseline gap-2">
+              <h1 className="text-xl font-semibold leading-snug text-foreground">Diff</h1>
+              {!isEmpty && !loading && error === null ? (
+                <span className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
+                  <span>{fileCountLabel}</span>
+                  {isGitAware ? <span>{commitCountLabel}</span> : null}
+                  {status != null && status.commitsBehindMain > 0 ? (
+                    <span className="text-muted-foreground/70">
+                      behind main by {status.commitsBehindMain}
+                    </span>
+                  ) : null}
+                </span>
               ) : null}
             </div>
-            <Divider className="shrink-0" />
-          </>
-        ) : showToolbarClose ? (
-          <>
-            <div className="flex shrink-0 items-center justify-end px-2.5 py-1.5">
-              <button
-                type="button"
-                onClick={onClose}
-                title="close"
-                aria-label="close"
-                className={TOOLBAR_ICON_BTN}
-              >
-                <X size={13} />
-              </button>
-            </div>
-            <Divider className="shrink-0" />
-          </>
-        ) : null
+            <p className="text-sm text-muted-foreground">
+              Changes across this session&apos;s working tree.
+            </p>
+          </div>
+          {!isEmpty ? (
+            <DiffToolbar
+              title={title}
+              prNumber={prNumber}
+              openCommentsCount={openComments.length}
+              reviewedCount={files.length > 0 ? reviewedCount : null}
+              filesCount={files.length}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+              status={isGitAware ? status : null}
+              onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
+              refreshing={loading}
+              showClose={false}
+              onClose={onClose}
+              presentation="actions"
+              viewSelector={
+                isGitAware ? (
+                  <DiffViewSelector
+                    view={view}
+                    onChange={setView}
+                    commits={commits}
+                    status={status}
+                    filesCount={loading ? null : files.length}
+                    loading={loading}
+                  />
+                ) : null
+              }
+            />
+          ) : null}
+        </div>
       ) : (
-        <DiffToolbar
-          title={title}
-          prNumber={prNumber}
-          openCommentsCount={openComments.length}
-          reviewedCount={files.length > 0 ? reviewedCount : null}
-          filesCount={files.length}
-          sidebarCollapsed={sidebarCollapsed}
-          onToggleSidebar={toggleSidebar}
-          status={isGitAware ? status : null}
-          onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
-          refreshing={loading}
-          showClose={showToolbarClose}
-          onClose={onClose}
-          viewSelector={
+        <>
+          {isEmpty ? (
             isGitAware ? (
-              <DiffViewSelector
-                view={view}
-                onChange={setView}
-                commits={commits}
-                status={status}
-                filesCount={loading ? null : files.length}
-                loading={loading}
-              />
+              <>
+                <div className="flex shrink-0 items-center gap-2 px-2.5 py-1.5">
+                  <div className="flex min-w-0 flex-1 items-center">
+                    <DiffViewSelector
+                      view={view}
+                      onChange={setView}
+                      commits={commits}
+                      status={status}
+                      filesCount={loading ? null : files.length}
+                      loading={loading}
+                    />
+                  </div>
+                  {showToolbarClose ? (
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      title="close"
+                      aria-label="close"
+                      className={TOOLBAR_ICON_BTN}
+                    >
+                      <X size={13} />
+                    </button>
+                  ) : null}
+                </div>
+                <Divider className="shrink-0" />
+              </>
+            ) : showToolbarClose ? (
+              <>
+                <div className="flex shrink-0 items-center justify-end px-2.5 py-1.5">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    title="close"
+                    aria-label="close"
+                    className={TOOLBAR_ICON_BTN}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+                <Divider className="shrink-0" />
+              </>
             ) : null
-          }
-        />
+          ) : (
+            <DiffToolbar
+              title={title}
+              prNumber={prNumber}
+              openCommentsCount={openComments.length}
+              reviewedCount={files.length > 0 ? reviewedCount : null}
+              filesCount={files.length}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+              status={isGitAware ? status : null}
+              onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
+              refreshing={loading}
+              showClose={showToolbarClose}
+              onClose={onClose}
+              viewSelector={
+                isGitAware ? (
+                  <DiffViewSelector
+                    view={view}
+                    onChange={setView}
+                    commits={commits}
+                    status={status}
+                    filesCount={loading ? null : files.length}
+                    loading={loading}
+                  />
+                ) : null
+              }
+            />
+          )}
+        </>
       )}
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {loading ? (
           <div className="flex min-h-0 flex-1 flex-col gap-4 p-4" aria-label="Loading diff">
             {DIFF_SKELETON_CARDS.map((lines, ci) => (
@@ -759,8 +828,8 @@ export const DiffViewerContent = ({
         ) : error ? (
           <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
         ) : files.length === 0 ? (
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mx-auto w-full max-w-2xl px-6 py-5">
+          <ScrollFade className="min-h-0 min-w-0 flex-1">
+            <div className={cn('mx-auto w-full max-w-2xl', !isPane && 'px-6 py-5')}>
               <EmptyState
                 bordered
                 tone="success"
@@ -769,7 +838,7 @@ export const DiffViewerContent = ({
                 description={emptyStateBlurb(view, isGitAware) ?? undefined}
               />
             </div>
-          </div>
+          </ScrollFade>
         ) : (
           <>
             {!sidebarCollapsed && (
@@ -781,8 +850,8 @@ export const DiffViewerContent = ({
                 commentCounts={openCommentsByFile}
               />
             )}
-            <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col">
-              <ScrollFade className="min-h-0 flex-1">
+            <div ref={scrollRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <ScrollFade className="min-h-0 min-w-0 flex-1">
                 {files.slice(0, mountedCount).map((file) => (
                   <FileDiffCard
                     key={file.path}
@@ -817,7 +886,7 @@ export const DiffViewerContent = ({
         )}
       </div>
 
-      {sessionId && openComments.length > 0 ? (
+      {(!isPane || !isEmpty) && sessionId && openComments.length > 0 ? (
         <NotesFooter
           openCount={openComments.length}
           spawning={spawning}
