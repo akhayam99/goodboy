@@ -1,37 +1,110 @@
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
-type ImpactQueryParams = {
+const WINDOW_MS = 30 * 86_400_000;
+
+export type ImpactQueryParams = {
+  readonly db: Database;
   readonly workspaceId: WorkspaceId;
   readonly sinceMs: number | null;
 };
 
-export type OrchestrationOverview = {
+export type ImpactSession = {
+  readonly sessionId: SessionId;
+  readonly goal: string;
+  readonly value: number;
+};
+
+export type ImpactOverview = {
   readonly sessionCount: number;
   readonly orchestratedSessions: number;
-  readonly plannedSessions: number;
-  readonly workflowSessions: number;
-  readonly splitSessions: number;
-  readonly resolverSessions: number;
+  readonly previousSessionCount: number | null;
+  readonly previousOrchestratedSessions: number | null;
+  readonly medianSessionHours: number | null;
+  readonly previousMedianSessionHours: number | null;
+  readonly sessions: ReadonlyArray<ImpactSession>;
 };
 
-export type PlanAdoption = {
-  readonly sessionCount: number;
-  readonly plannedSessions: number;
-  readonly consumedPlans: number;
-  readonly handoffPlans: number;
-  readonly handoffSessions: number;
+export type PullRequestEntry = {
+  readonly sessionId: SessionId;
+  readonly goal: string;
+  readonly number: number;
+  readonly title: string;
+  readonly state: string;
 };
 
-export type ContextHealth = {
-  readonly sessionCount: number;
-  readonly slotSessions: number;
-  readonly userEdits: number;
-  readonly summarizerEdits: number;
-  readonly questionsTotal: number;
-  readonly questionsAnswered: number;
-  readonly questionsDismissed: number;
-  readonly avgHoursToAnswer: number | null;
+export type PullRequestOutcomes = {
+  readonly open: number;
+  readonly merged: number;
+  readonly closed: number;
+  readonly previousOpen: number | null;
+  readonly previousMerged: number | null;
+  readonly entries: ReadonlyArray<PullRequestEntry>;
+};
+
+export type ResolutionOutcome = {
+  readonly outcome: string;
+  readonly count: number;
+};
+
+export type HotFile = {
+  readonly filePath: string;
+  readonly comments: number;
+};
+
+export type ReviewOutcomes = {
+  readonly commentsResolved: number;
+  readonly previousCommentsResolved: number | null;
+  readonly medianResolveHours: number | null;
+  readonly publishedDrafts: number;
+  readonly pushedResolutions: number;
+  readonly resolutionOutcomes: ReadonlyArray<ResolutionOutcome>;
+  readonly resolutionDurationsHours: ReadonlyArray<number>;
+  readonly hotFiles: ReadonlyArray<HotFile>;
+  readonly sessions: ReadonlyArray<ImpactSession>;
+};
+
+export type ExternalTaskOutcomes = {
+  readonly linked: number;
+  readonly launched: number;
+  readonly sessions: ReadonlyArray<ImpactSession>;
+};
+
+export type DurationByKind = {
+  readonly kind: string;
+  readonly agents: number;
+  readonly medianHours: number;
+  readonly p90Hours: number;
+};
+
+export type AgentDurations = {
+  readonly totalAgents: number;
+  readonly byKind: ReadonlyArray<DurationByKind>;
+};
+
+export type FlowHealth = {
+  readonly medianSessionHours: number | null;
+  readonly p90SessionHours: number | null;
+  readonly answeredQuestions: number;
+  readonly medianQuestionHours: number | null;
+  readonly questionBlockedSessions: number;
+  readonly staleQuestions: number;
+  readonly failedAgents: number;
+  readonly budgetAlerts: number;
+  readonly sessions: ReadonlyArray<ImpactSession>;
+};
+
+export type CacheEfficiencyEntry = {
+  readonly provider: string;
+  readonly inputTokens: number;
+  readonly cachedInputTokens: number;
+  readonly cacheCreationInputTokens: number;
+  readonly hitRatio: number;
+};
+
+export type ContextGrowthPoint = {
+  readonly recordedAt: number;
+  readonly contextTokens: number;
 };
 
 export type TurnBucket = {
@@ -39,266 +112,71 @@ export type TurnBucket = {
   readonly agentCount: number;
 };
 
-export type ModelMixEntry = {
-  readonly kind: 'turn' | 'summarizer';
-  readonly provider: string;
-  readonly model: string;
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-  readonly costUsd: number;
-};
-
 export type NudgeOutcomeCount = {
   readonly outcome: string | null;
   readonly count: number;
 };
 
-type ExternalWorkEntry = {
-  readonly provider: string;
-  readonly linkedSessions: number;
-  readonly startedFromSessions: number;
+type CountRow = {
+  count: number;
 };
-
-export type DelegationFlow = {
-  readonly sessionCount: number;
-  readonly workflowRuns: number;
-  readonly workflowSessions: number;
-  readonly discardedRuns: number;
-  readonly scoutChildren: number;
-  readonly clusterChildren: number;
-  readonly completedGroups: number;
-  readonly longAgents: number;
-  readonly resolverAgents: number;
-  readonly resolvedThreads: number;
-  readonly diffCommentsTotal: number;
-  readonly diffCommentsHandled: number;
-  readonly linkedSessions: number;
-  readonly startedFromSessions: number;
-  readonly integrationCount: number;
-  readonly external: ReadonlyArray<ExternalWorkEntry>;
-};
-
-const LONG_AGENT_TURNS = 12;
-
-const toIso = (sinceMs: number | null): string | null =>
-  sinceMs === null ? null : new Date(sinceMs).toISOString();
-
-const readCount = (value: number | null | undefined): number => (value == null ? 0 : value);
 
 type OverviewRow = {
   session_count: number;
   orchestrated_sessions: number;
-  planned_sessions: number;
-  workflow_sessions: number;
-  split_sessions: number;
-  resolver_sessions: number;
 };
 
-export const getOrchestrationOverview = async (
-  db: Database,
-  { workspaceId, sinceMs }: ImpactQueryParams,
-): Promise<OrchestrationOverview> => {
-  const sinceIso = toIso(sinceMs);
-  const rows = await db.select<OverviewRow>(
-    `SELECT
-       COUNT(*) AS session_count,
-       COALESCE(SUM(CASE WHEN planned > 0 THEN 1 ELSE 0 END), 0) AS planned_sessions,
-       COALESCE(SUM(CASE WHEN workflow > 0 THEN 1 ELSE 0 END), 0) AS workflow_sessions,
-       COALESCE(SUM(CASE WHEN split > 0 THEN 1 ELSE 0 END), 0) AS split_sessions,
-       COALESCE(SUM(CASE WHEN resolver > 0 THEN 1 ELSE 0 END), 0) AS resolver_sessions,
-       COALESCE(
-         SUM(CASE WHEN planned > 0 OR workflow > 0 OR split > 0 OR resolver > 0 THEN 1 ELSE 0 END),
-         0
-       ) AS orchestrated_sessions
-     FROM (
-       SELECT
-         (SELECT COUNT(*)
-            FROM plan_consumptions pc
-            JOIN session_plans sp ON sp.id = pc.plan_id
-           WHERE sp.session_id = s.id
-             AND (? IS NULL OR pc.consumed_at >= ?)) AS planned,
-         (SELECT COUNT(*)
-            FROM session_workflows sw
-           WHERE sw.session_id = s.id
-             AND sw.discarded_at IS NULL
-             AND (? IS NULL OR julianday(sw.created_at) >= julianday(?))) AS workflow,
-         (SELECT COUNT(*)
-            FROM agents c
-            JOIN agents p ON p.id = c.parent_agent_id AND p.deleted_at IS NULL
-           WHERE c.session_id = s.id
-             AND c.deleted_at IS NULL
-             AND (? IS NULL OR julianday(c.started_at) >= julianday(?))) AS split,
-         (SELECT COUNT(*)
-            FROM agents r
-           WHERE r.session_id = s.id
-             AND r.kind = 'resolver'
-             AND r.deleted_at IS NULL
-             AND (? IS NULL OR julianday(r.started_at) >= julianday(?))) AS resolver
-       FROM sessions s
-        WHERE s.workspace_id = ?
-          AND s.deleted_at IS NULL
-          AND (? IS NULL OR s.updated_at >= ?)
-     )`,
-    [
-      sinceMs,
-      sinceMs,
-      sinceIso,
-      sinceIso,
-      sinceIso,
-      sinceIso,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-    ],
-  );
-  const row = rows[0];
-  return {
-    sessionCount: readCount(row?.session_count),
-    orchestratedSessions: readCount(row?.orchestrated_sessions),
-    plannedSessions: readCount(row?.planned_sessions),
-    workflowSessions: readCount(row?.workflow_sessions),
-    splitSessions: readCount(row?.split_sessions),
-    resolverSessions: readCount(row?.resolver_sessions),
-  };
+type SessionDurationRow = {
+  session_id: string;
+  goal: string;
+  duration_hours: number;
 };
 
-type PlanAdoptionRow = {
-  session_count: number;
-  planned_sessions: number;
-  consumed_plans: number;
-  handoff_plans: number;
-  handoff_sessions: number;
+type PullRequestRow = {
+  session_id: string;
+  goal: string;
+  number: number;
+  title: string;
+  state: string;
 };
 
-export const getPlanAdoption = async (
-  db: Database,
-  { workspaceId, sinceMs }: ImpactQueryParams,
-): Promise<PlanAdoption> => {
-  const rows = await db.select<PlanAdoptionRow>(
-    `SELECT
-       (SELECT COUNT(*)
-          FROM sessions s
-         WHERE s.workspace_id = ?
-           AND s.deleted_at IS NULL
-           AND (? IS NULL OR s.updated_at >= ?)) AS session_count,
-       COUNT(DISTINCT sp.session_id) AS planned_sessions,
-       COUNT(DISTINCT pc.plan_id) AS consumed_plans,
-       COUNT(DISTINCT CASE WHEN pc.agent_id <> sp.agent_id THEN pc.plan_id END) AS handoff_plans,
-       COUNT(DISTINCT CASE WHEN pc.agent_id <> sp.agent_id THEN sp.session_id END) AS handoff_sessions
-     FROM plan_consumptions pc
-     JOIN session_plans sp ON sp.id = pc.plan_id
-     JOIN sessions ps ON ps.id = sp.session_id
-    WHERE ps.workspace_id = ?
-      AND ps.deleted_at IS NULL
-      AND (? IS NULL OR pc.consumed_at >= ?)`,
-    [workspaceId, sinceMs, sinceMs, workspaceId, sinceMs, sinceMs],
-  );
-  const row = rows[0];
-  return {
-    sessionCount: readCount(row?.session_count),
-    plannedSessions: readCount(row?.planned_sessions),
-    consumedPlans: readCount(row?.consumed_plans),
-    handoffPlans: readCount(row?.handoff_plans),
-    handoffSessions: readCount(row?.handoff_sessions),
-  };
+type ReviewDurationRow = {
+  session_id: string;
+  goal: string;
+  file_path: string;
+  duration_hours: number;
 };
 
-type ContextHealthRow = {
-  session_count: number;
-  slot_sessions: number;
-  user_edits: number;
-  summarizer_edits: number;
-  questions_total: number;
-  questions_answered: number;
-  questions_dismissed: number;
-  avg_hours_to_answer: number | null;
+type ResolutionOutcomeRow = {
+  outcome: string | null;
+  outcome_count: number;
 };
 
-export const getContextHealth = async (
-  db: Database,
-  { workspaceId, sinceMs }: ImpactQueryParams,
-): Promise<ContextHealth> => {
-  const rows = await db.select<ContextHealthRow>(
-    `SELECT
-       (SELECT COUNT(*)
-          FROM sessions s
-         WHERE s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR s.updated_at >= ?)) AS session_count,
-       (SELECT COUNT(DISTINCT cs.session_id)
-          FROM context_slots cs
-          JOIN sessions s ON s.id = cs.session_id
-         WHERE cs.enabled = 1 AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR s.updated_at >= ?)) AS slot_sessions,
-       (SELECT COUNT(*)
-          FROM context_slot_history h
-          JOIN sessions s ON s.id = h.session_id
-         WHERE h.author = 'user' AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR h.created_at >= ?)) AS user_edits,
-       (SELECT COUNT(*)
-          FROM context_slot_history h
-          JOIN sessions s ON s.id = h.session_id
-         WHERE h.author = 'summarizer' AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR h.created_at >= ?)) AS summarizer_edits,
-       (SELECT COUNT(*)
-          FROM open_questions q
-          JOIN sessions s ON s.id = q.session_id
-         WHERE s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR q.created_at >= ?)) AS questions_total,
-       (SELECT COUNT(*)
-          FROM open_questions q
-          JOIN sessions s ON s.id = q.session_id
-         WHERE q.status = 'answered' AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR q.created_at >= ?)) AS questions_answered,
-       (SELECT COUNT(*)
-          FROM open_questions q
-          JOIN sessions s ON s.id = q.session_id
-         WHERE q.status = 'dismissed' AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR q.created_at >= ?)) AS questions_dismissed,
-       (SELECT AVG((q.answered_at - q.created_at) / 3600000.0)
-          FROM open_questions q
-          JOIN sessions s ON s.id = q.session_id
-         WHERE q.answered_at IS NOT NULL AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR q.created_at >= ?)) AS avg_hours_to_answer`,
-    [
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-    ],
-  );
-  const row = rows[0];
-  return {
-    sessionCount: readCount(row?.session_count),
-    slotSessions: readCount(row?.slot_sessions),
-    userEdits: readCount(row?.user_edits),
-    summarizerEdits: readCount(row?.summarizer_edits),
-    questionsTotal: readCount(row?.questions_total),
-    questionsAnswered: readCount(row?.questions_answered),
-    questionsDismissed: readCount(row?.questions_dismissed),
-    avgHoursToAnswer: row?.avg_hours_to_answer ?? null,
-  };
+type ExternalTaskRow = {
+  session_id: string;
+  goal: string;
+  launched: number;
+};
+
+type AgentDurationRow = {
+  kind: string | null;
+  duration_hours: number;
+};
+
+type QuestionDurationRow = {
+  duration_hours: number;
+};
+
+type CacheEfficiencyRow = {
+  provider: string;
+  input_tokens: number;
+  cached_input_tokens: number;
+  cache_creation_input_tokens: number;
+};
+
+type ContextGrowthRow = {
+  recorded_at: number;
+  context_tokens: number;
 };
 
 type TurnBucketRow = {
@@ -306,82 +184,633 @@ type TurnBucketRow = {
   agent_count: number;
 };
 
-export const getTurnDistribution = async (
-  db: Database,
-  { workspaceId, sinceMs }: ImpactQueryParams,
-): Promise<ReadonlyArray<TurnBucket>> => {
-  const rows = await db.select<TurnBucketRow>(
-    `SELECT turn_count AS turn_count, COUNT(*) AS agent_count
-       FROM (
-         SELECT a.id AS agent_id, COUNT(tr.id) AS turn_count
-           FROM agents a
-           JOIN sessions s ON s.id = a.session_id AND s.workspace_id = ? AND s.deleted_at IS NULL
-           JOIN telemetry_records tr
-             ON tr.run_id = a.provider_run_id
-            AND tr.kind = 'turn'
-            AND (? IS NULL OR tr.recorded_at >= ?)
-          WHERE a.deleted_at IS NULL
-          GROUP BY a.id
-       )
-      GROUP BY turn_count
-      ORDER BY turn_count ASC`,
-    [workspaceId, sinceMs, sinceMs],
-  );
-  return rows.map((row) => ({
-    turnCount: readCount(row.turn_count),
-    agentCount: readCount(row.agent_count),
-  }));
-};
-
-type ModelMixRow = {
-  kind: 'turn' | 'summarizer';
-  provider: string;
-  model: string;
-  input_tokens: number;
-  output_tokens: number;
-  cost_usd: number;
-};
-
-export const getModelMix = async (
-  db: Database,
-  { workspaceId, sinceMs }: ImpactQueryParams,
-): Promise<ReadonlyArray<ModelMixEntry>> => {
-  const rows = await db.select<ModelMixRow>(
-    `SELECT tr.kind AS kind,
-            tr.provider AS provider,
-            tr.model AS model,
-            COALESCE(SUM(tr.input_tokens), 0) AS input_tokens,
-            COALESCE(SUM(tr.output_tokens), 0) AS output_tokens,
-            COALESCE(SUM(tr.estimated_cost_usd), 0) AS cost_usd
-       FROM telemetry_records tr
-       JOIN provider_runs pr ON pr.id = tr.run_id
-       JOIN sessions s ON s.id = pr.session_id
-      WHERE s.workspace_id = ?
-        AND s.deleted_at IS NULL
-        AND (? IS NULL OR tr.recorded_at >= ?)
-      GROUP BY tr.kind, tr.provider, tr.model`,
-    [workspaceId, sinceMs, sinceMs],
-  );
-  return rows.map((row) => ({
-    kind: row.kind,
-    provider: row.provider,
-    model: row.model,
-    inputTokens: readCount(row.input_tokens),
-    outputTokens: readCount(row.output_tokens),
-    costUsd: row.cost_usd ?? 0,
-  }));
-};
-
 type NudgeOutcomeRow = {
   outcome: string | null;
   outcome_count: number;
 };
 
-export const getRightSizeNudgeOutcomes = async (
-  db: Database,
-  { workspaceId, sinceMs }: ImpactQueryParams,
-): Promise<ReadonlyArray<NudgeOutcomeCount>> => {
-  const sinceIso = toIso(sinceMs);
+type WindowBounds = {
+  readonly currentStart: number | null;
+  readonly previousStart: number | null;
+  readonly previousEnd: number | null;
+};
+
+type PercentileParams = {
+  readonly values: ReadonlyArray<number>;
+  readonly percentile: number;
+};
+
+type ReadCountParams = {
+  readonly value: number | null | undefined;
+};
+
+type WindowBoundsParams = {
+  readonly sinceMs: number | null;
+};
+
+const readCount = ({ value }: ReadCountParams): number => (value == null ? 0 : value);
+
+const percentile = ({ values, percentile: requested }: PercentileParams): number | null => {
+  if (values.length === 0) {
+    return null;
+  }
+  const sorted = [...values].sort((left, right) => left - right);
+  const index = Math.max(0, Math.ceil(sorted.length * requested) - 1);
+  return sorted[index] ?? null;
+};
+
+const windowBounds = ({ sinceMs }: WindowBoundsParams): WindowBounds => ({
+  currentStart: sinceMs,
+  previousStart: sinceMs === null ? null : sinceMs - WINDOW_MS,
+  previousEnd: sinceMs,
+});
+
+type OverviewRangeParams = ImpactQueryParams & {
+  readonly startMs: number | null;
+  readonly endMs: number | null;
+};
+
+const selectOverview = async ({
+  db,
+  workspaceId,
+  startMs,
+  endMs,
+}: OverviewRangeParams): Promise<OverviewRow> => {
+  const rows = await db.select<OverviewRow>(
+    `SELECT
+       COUNT(*) AS session_count,
+       COALESCE(SUM(
+         CASE WHEN
+           EXISTS (
+             SELECT 1
+               FROM plan_consumptions pc
+               JOIN session_plans sp ON sp.id = pc.plan_id
+              WHERE sp.session_id = s.id
+           )
+           OR EXISTS (
+             SELECT 1
+               FROM session_workflows sw
+              WHERE sw.session_id = s.id AND sw.discarded_at IS NULL
+           )
+           OR EXISTS (
+             SELECT 1
+               FROM agents a
+              WHERE a.session_id = s.id
+                AND a.deleted_at IS NULL
+                AND (a.parent_agent_id IS NOT NULL OR a.kind = 'resolver')
+           )
+         THEN 1 ELSE 0 END
+       ), 0) AS orchestrated_sessions
+     FROM sessions s
+    WHERE s.workspace_id = ?
+      AND s.deleted_at IS NULL
+      AND (? IS NULL OR s.updated_at >= ?)
+      AND (? IS NULL OR s.updated_at < ?)`,
+    [workspaceId, startMs, startMs, endMs, endMs],
+  );
+  return rows[0] ?? { session_count: 0, orchestrated_sessions: 0 };
+};
+
+type SessionDurationParams = ImpactQueryParams & {
+  readonly startMs: number | null;
+  readonly endMs: number | null;
+  readonly limit: number | null;
+};
+
+const selectSessionDurations = async ({
+  db,
+  workspaceId,
+  startMs,
+  endMs,
+  limit,
+}: SessionDurationParams): Promise<ReadonlyArray<SessionDurationRow>> => {
+  return db.select<SessionDurationRow>(
+    `SELECT
+       s.id AS session_id,
+       s.goal AS goal,
+       MAX(s.updated_at - s.created_at, 0) / 3600000.0 AS duration_hours
+     FROM sessions s
+    WHERE s.workspace_id = ?
+      AND s.deleted_at IS NULL
+      AND (? IS NULL OR s.updated_at >= ?)
+      AND (? IS NULL OR s.updated_at < ?)
+    ORDER BY duration_hours DESC, s.updated_at DESC
+    LIMIT COALESCE(?, -1)`,
+    [workspaceId, startMs, startMs, endMs, endMs, limit],
+  );
+};
+
+export const getImpactOverview = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<ImpactOverview> => {
+  const bounds = windowBounds({ sinceMs });
+  const [current, previous, durations, previousDurations] = await Promise.all([
+    selectOverview({ db, workspaceId, sinceMs, startMs: bounds.currentStart, endMs: null }),
+    sinceMs === null
+      ? Promise.resolve(null)
+      : selectOverview({
+          db,
+          workspaceId,
+          sinceMs,
+          startMs: bounds.previousStart,
+          endMs: bounds.previousEnd,
+        }),
+    selectSessionDurations({
+      db,
+      workspaceId,
+      sinceMs,
+      startMs: bounds.currentStart,
+      endMs: null,
+      limit: null,
+    }),
+    sinceMs === null
+      ? Promise.resolve([])
+      : selectSessionDurations({
+          db,
+          workspaceId,
+          sinceMs,
+          startMs: bounds.previousStart,
+          endMs: bounds.previousEnd,
+          limit: null,
+        }),
+  ]);
+  return {
+    sessionCount: readCount({ value: current.session_count }),
+    orchestratedSessions: readCount({ value: current.orchestrated_sessions }),
+    previousSessionCount: previous === null ? null : readCount({ value: previous.session_count }),
+    previousOrchestratedSessions:
+      previous === null ? null : readCount({ value: previous.orchestrated_sessions }),
+    medianSessionHours: percentile({
+      values: durations.map((row) => row.duration_hours),
+      percentile: 0.5,
+    }),
+    previousMedianSessionHours: percentile({
+      values: previousDurations.map((row) => row.duration_hours),
+      percentile: 0.5,
+    }),
+    sessions: durations.slice(0, 5).map((row) => ({
+      sessionId: row.session_id as SessionId,
+      goal: row.goal,
+      value: row.duration_hours,
+    })),
+  };
+};
+
+type PullRequestRangeParams = ImpactQueryParams & {
+  readonly startMs: number | null;
+  readonly endMs: number | null;
+};
+
+const selectPullRequests = async ({
+  db,
+  workspaceId,
+  startMs,
+  endMs,
+}: PullRequestRangeParams): Promise<ReadonlyArray<PullRequestRow>> => {
+  const startIso = startMs === null ? null : new Date(startMs).toISOString();
+  const endIso = endMs === null ? null : new Date(endMs).toISOString();
+  return db.select<PullRequestRow>(
+    `SELECT
+       s.id AS session_id,
+       s.goal AS goal,
+       CAST(json_extract(g.pr_json, '$.number') AS INTEGER) AS number,
+       COALESCE(json_extract(g.pr_json, '$.title'), 'Untitled pull request') AS title,
+       COALESCE(json_extract(g.pr_json, '$.state'), 'open') AS state
+     FROM github_pr_cache g
+     JOIN session_worktrees sw ON sw.branch = g.branch
+     JOIN sessions s ON s.id = sw.session_id
+    WHERE s.workspace_id = ?
+      AND s.deleted_at IS NULL
+      AND g.pr_json IS NOT NULL
+      AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) >= julianday(?))
+      AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) < julianday(?))
+    GROUP BY g.repo_slug, g.branch
+    ORDER BY julianday(json_extract(g.pr_json, '$.updatedAt')) DESC`,
+    [workspaceId, startIso, startIso, endIso, endIso],
+  );
+};
+
+export const getPullRequestOutcomes = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<PullRequestOutcomes> => {
+  const bounds = windowBounds({ sinceMs });
+  const [current, previous] = await Promise.all([
+    selectPullRequests({
+      db,
+      workspaceId,
+      sinceMs,
+      startMs: bounds.currentStart,
+      endMs: null,
+    }),
+    sinceMs === null
+      ? Promise.resolve([])
+      : selectPullRequests({
+          db,
+          workspaceId,
+          sinceMs,
+          startMs: bounds.previousStart,
+          endMs: bounds.previousEnd,
+        }),
+  ]);
+  return {
+    open: current.filter((entry) => entry.state !== 'merged' && entry.state !== 'closed').length,
+    merged: current.filter((entry) => entry.state === 'merged').length,
+    closed: current.filter((entry) => entry.state === 'closed').length,
+    previousOpen:
+      sinceMs === null
+        ? null
+        : previous.filter((entry) => entry.state !== 'merged' && entry.state !== 'closed').length,
+    previousMerged:
+      sinceMs === null ? null : previous.filter((entry) => entry.state === 'merged').length,
+    entries: current.slice(0, 5).map((entry) => ({
+      sessionId: entry.session_id as SessionId,
+      goal: entry.goal,
+      number: entry.number,
+      title: entry.title,
+      state: entry.state,
+    })),
+  };
+};
+
+type ReviewDurationParams = ImpactQueryParams & {
+  readonly startMs: number | null;
+  readonly endMs: number | null;
+};
+
+const selectReviewDurations = async ({
+  db,
+  workspaceId,
+  startMs,
+  endMs,
+}: ReviewDurationParams): Promise<ReadonlyArray<ReviewDurationRow>> => {
+  return db.select<ReviewDurationRow>(
+    `SELECT
+       s.id AS session_id,
+       s.goal AS goal,
+       d.file_path AS file_path,
+       MAX(COALESCE(d.resolved_at, d.consumed_at) - d.created_at, 0) / 3600000.0
+         AS duration_hours
+     FROM diff_comments d
+     JOIN sessions s ON s.id = d.session_id
+    WHERE s.workspace_id = ?
+      AND s.deleted_at IS NULL
+      AND d.status IN ('resolved', 'consumed')
+      AND COALESCE(d.resolved_at, d.consumed_at) IS NOT NULL
+      AND (? IS NULL OR COALESCE(d.resolved_at, d.consumed_at) >= ?)
+      AND (? IS NULL OR COALESCE(d.resolved_at, d.consumed_at) < ?)
+    ORDER BY COALESCE(d.resolved_at, d.consumed_at) DESC`,
+    [workspaceId, startMs, startMs, endMs, endMs],
+  );
+};
+
+export const getReviewOutcomes = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<ReviewOutcomes> => {
+  const bounds = windowBounds({ sinceMs });
+  const startIso = sinceMs === null ? null : new Date(sinceMs).toISOString();
+  const [durations, previousDurations, draftRows, resolutionRows, outcomeRows] = await Promise.all([
+    selectReviewDurations({
+      db,
+      workspaceId,
+      sinceMs,
+      startMs: bounds.currentStart,
+      endMs: null,
+    }),
+    sinceMs === null
+      ? Promise.resolve([])
+      : selectReviewDurations({
+          db,
+          workspaceId,
+          sinceMs,
+          startMs: bounds.previousStart,
+          endMs: bounds.previousEnd,
+        }),
+    db.select<CountRow>(
+      `SELECT COUNT(*) AS count
+         FROM pr_review_drafts d
+         JOIN sessions s ON s.id = d.session_id
+        WHERE d.status = 'published'
+          AND s.workspace_id = ?
+          AND s.deleted_at IS NULL
+          AND (? IS NULL OR julianday(d.created_at) >= julianday(?))`,
+      [workspaceId, startIso, startIso],
+    ),
+    db.select<CountRow>(
+      `SELECT COUNT(*) AS count
+         FROM pending_resolutions r
+         JOIN sessions s ON s.id = r.session_id
+        WHERE r.outcome IS NOT NULL
+          AND s.workspace_id = ?
+          AND s.deleted_at IS NULL
+          AND (? IS NULL OR r.created_at >= ?)`,
+      [workspaceId, sinceMs, sinceMs],
+    ),
+    db.select<ResolutionOutcomeRow>(
+      `SELECT r.outcome AS outcome, COUNT(*) AS outcome_count
+         FROM pending_resolutions r
+         JOIN sessions s ON s.id = r.session_id
+        WHERE r.outcome IS NOT NULL
+          AND s.workspace_id = ?
+          AND s.deleted_at IS NULL
+          AND (? IS NULL OR r.created_at >= ?)
+        GROUP BY r.outcome
+        ORDER BY outcome_count DESC, r.outcome ASC`,
+      [workspaceId, sinceMs, sinceMs],
+    ),
+  ]);
+  const hotFiles = new Map<string, number>();
+  const sessions = new Map<string, ImpactSession>();
+  for (const row of durations) {
+    hotFiles.set(row.file_path, (hotFiles.get(row.file_path) ?? 0) + 1);
+    const current = sessions.get(row.session_id);
+    sessions.set(row.session_id, {
+      sessionId: row.session_id as SessionId,
+      goal: row.goal,
+      value: (current?.value ?? 0) + 1,
+    });
+  }
+  return {
+    commentsResolved: durations.length,
+    previousCommentsResolved: sinceMs === null ? null : previousDurations.length,
+    medianResolveHours: percentile({
+      values: durations.map((row) => row.duration_hours),
+      percentile: 0.5,
+    }),
+    publishedDrafts: readCount({ value: draftRows[0]?.count }),
+    pushedResolutions: readCount({ value: resolutionRows[0]?.count }),
+    resolutionOutcomes: outcomeRows.map((row) => ({
+      outcome: row.outcome ?? 'unknown',
+      count: readCount({ value: row.outcome_count }),
+    })),
+    resolutionDurationsHours: durations.map((row) => row.duration_hours),
+    hotFiles: [...hotFiles.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 5)
+      .map(([filePath, comments]) => ({ filePath, comments })),
+    sessions: [...sessions.values()].sort((left, right) => right.value - left.value).slice(0, 5),
+  };
+};
+
+export const getExternalTaskOutcomes = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<ExternalTaskOutcomes> => {
+  const rows = await db.select<ExternalTaskRow>(
+    `SELECT
+       s.id AS session_id,
+       s.goal AS goal,
+       MAX(CASE WHEN t.created_at - s.created_at <= 60000 THEN 1 ELSE 0 END) AS launched
+     FROM session_external_tasks t
+     JOIN sessions s ON s.id = t.session_id
+    WHERE s.workspace_id = ?
+      AND s.deleted_at IS NULL
+      AND (? IS NULL OR t.created_at >= ?)
+    GROUP BY s.id
+    ORDER BY MAX(t.created_at) DESC`,
+    [workspaceId, sinceMs, sinceMs],
+  );
+  return {
+    linked: rows.length,
+    launched: rows.filter((row) => row.launched > 0).length,
+    sessions: rows.slice(0, 5).map((row) => ({
+      sessionId: row.session_id as SessionId,
+      goal: row.goal,
+      value: row.launched,
+    })),
+  };
+};
+
+export const getAgentDurations = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<AgentDurations> => {
+  const sinceIso = sinceMs === null ? null : new Date(sinceMs).toISOString();
+  const rows = await db.select<AgentDurationRow>(
+    `SELECT
+       COALESCE(a.kind, 'agent') AS kind,
+       MAX(
+         (julianday(COALESCE(a.done_at, a.completed_at, a.last_finished_at))
+           - julianday(a.started_at)) * 24,
+         0
+       ) AS duration_hours
+     FROM agents a
+     JOIN sessions s ON s.id = a.session_id
+    WHERE s.workspace_id = ?
+      AND s.deleted_at IS NULL
+      AND a.deleted_at IS NULL
+      AND a.started_at IS NOT NULL
+      AND COALESCE(a.done_at, a.completed_at, a.last_finished_at) IS NOT NULL
+      AND (? IS NULL OR julianday(a.started_at) >= julianday(?))
+    ORDER BY a.started_at DESC`,
+    [workspaceId, sinceIso, sinceIso],
+  );
+  const grouped = new Map<string, number[]>();
+  for (const row of rows) {
+    const kind = row.kind ?? 'agent';
+    grouped.set(kind, [...(grouped.get(kind) ?? []), row.duration_hours]);
+  }
+  return {
+    totalAgents: rows.length,
+    byKind: [...grouped.entries()]
+      .map(([kind, values]) => ({
+        kind,
+        agents: values.length,
+        medianHours: percentile({ values, percentile: 0.5 }) ?? 0,
+        p90Hours: percentile({ values, percentile: 0.9 }) ?? 0,
+      }))
+      .sort((left, right) => right.agents - left.agents),
+  };
+};
+
+export const getFlowHealth = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<FlowHealth> => {
+  const sinceIso = sinceMs === null ? null : new Date(sinceMs).toISOString();
+  const [sessions, questions, blockedRows, staleRows, failedRows, alertRows] = await Promise.all([
+    selectSessionDurations({
+      db,
+      workspaceId,
+      sinceMs,
+      startMs: sinceMs,
+      endMs: null,
+      limit: null,
+    }),
+    db.select<QuestionDurationRow>(
+      `SELECT
+         MAX((q.answered_at - q.created_at) / 3600000.0, 0) AS duration_hours
+       FROM open_questions q
+       JOIN sessions s ON s.id = q.session_id
+      WHERE s.workspace_id = ?
+        AND s.deleted_at IS NULL
+        AND q.answered_at IS NOT NULL
+        AND (? IS NULL OR q.created_at >= ?)`,
+      [workspaceId, sinceMs, sinceMs],
+    ),
+    db.select<CountRow>(
+      `SELECT COUNT(DISTINCT q.session_id) AS count
+         FROM open_questions q
+         JOIN sessions s ON s.id = q.session_id
+        WHERE q.status = 'open'
+          AND s.workspace_id = ?
+          AND s.deleted_at IS NULL
+          AND (? IS NULL OR q.created_at >= ?)`,
+      [workspaceId, sinceMs, sinceMs],
+    ),
+    db.select<CountRow>(
+      `SELECT COUNT(*) AS count
+         FROM open_questions q
+         JOIN sessions s ON s.id = q.session_id
+        WHERE q.status = 'open'
+          AND s.workspace_id = ?
+          AND s.deleted_at IS NULL
+          AND q.created_at <= (CAST(strftime('%s', 'now') AS INTEGER) * 1000 - 86400000)
+          AND (? IS NULL OR q.created_at >= ?)`,
+      [workspaceId, sinceMs, sinceMs],
+    ),
+    db.select<CountRow>(
+      `SELECT COUNT(*) AS count
+         FROM agents a
+         JOIN sessions s ON s.id = a.session_id
+        WHERE a.status = 'failed'
+          AND a.deleted_at IS NULL
+          AND s.workspace_id = ?
+          AND s.deleted_at IS NULL
+          AND (? IS NULL OR julianday(a.started_at) >= julianday(?))`,
+      [workspaceId, sinceIso, sinceIso],
+    ),
+    db.select<CountRow>(
+      `SELECT COUNT(*) AS count
+         FROM budget_alerts b
+         JOIN sessions s ON s.id = b.session_id
+        WHERE b.dismissed_at IS NULL
+          AND s.workspace_id = ?
+          AND s.deleted_at IS NULL
+          AND (? IS NULL OR julianday(b.created_at) >= julianday(?))`,
+      [workspaceId, sinceIso, sinceIso],
+    ),
+  ]);
+  const sessionHours = sessions.map((row) => row.duration_hours);
+  const questionHours = questions.map((row) => row.duration_hours);
+  return {
+    medianSessionHours: percentile({ values: sessionHours, percentile: 0.5 }),
+    p90SessionHours: percentile({ values: sessionHours, percentile: 0.9 }),
+    answeredQuestions: questions.length,
+    medianQuestionHours: percentile({ values: questionHours, percentile: 0.5 }),
+    questionBlockedSessions: readCount({ value: blockedRows[0]?.count }),
+    staleQuestions: readCount({ value: staleRows[0]?.count }),
+    failedAgents: readCount({ value: failedRows[0]?.count }),
+    budgetAlerts: readCount({ value: alertRows[0]?.count }),
+    sessions: sessions.slice(0, 5).map((row) => ({
+      sessionId: row.session_id as SessionId,
+      goal: row.goal,
+      value: row.duration_hours,
+    })),
+  };
+};
+
+export const getCacheEfficiency = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<ReadonlyArray<CacheEfficiencyEntry>> => {
+  const rows = await db.select<CacheEfficiencyRow>(
+    `SELECT
+       tr.provider AS provider,
+       COALESCE(SUM(tr.input_tokens), 0) AS input_tokens,
+       COALESCE(SUM(tr.cached_input_tokens), 0) AS cached_input_tokens,
+       COALESCE(SUM(tr.cache_creation_input_tokens), 0) AS cache_creation_input_tokens
+     FROM telemetry_records tr
+     JOIN sessions s ON s.id = tr.session_id
+    WHERE s.workspace_id = ?
+      AND s.deleted_at IS NULL
+      AND tr.kind = 'turn'
+      AND (? IS NULL OR tr.recorded_at >= ?)
+    GROUP BY tr.provider
+    ORDER BY input_tokens DESC`,
+    [workspaceId, sinceMs, sinceMs],
+  );
+  return rows.map((row) => ({
+    provider: row.provider,
+    inputTokens: readCount({ value: row.input_tokens }),
+    cachedInputTokens: readCount({ value: row.cached_input_tokens }),
+    cacheCreationInputTokens: readCount({ value: row.cache_creation_input_tokens }),
+    hitRatio:
+      row.input_tokens > 0
+        ? Math.min(readCount({ value: row.cached_input_tokens }) / row.input_tokens, 1)
+        : 0,
+  }));
+};
+
+export const getContextGrowth = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<ReadonlyArray<ContextGrowthPoint>> => {
+  const rows = await db.select<ContextGrowthRow>(
+    `SELECT tr.recorded_at AS recorded_at, tr.context_tokens AS context_tokens
+       FROM telemetry_records tr
+       JOIN sessions s ON s.id = tr.session_id
+      WHERE s.workspace_id = ?
+        AND s.deleted_at IS NULL
+        AND tr.kind = 'turn'
+        AND tr.context_tokens IS NOT NULL
+        AND (? IS NULL OR tr.recorded_at >= ?)
+      ORDER BY tr.recorded_at DESC
+      LIMIT 40`,
+    [workspaceId, sinceMs, sinceMs],
+  );
+  return [...rows].reverse().map((row) => ({
+    recordedAt: row.recorded_at,
+    contextTokens: readCount({ value: row.context_tokens }),
+  }));
+};
+
+export const getTurnDistribution = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<ReadonlyArray<TurnBucket>> => {
+  const rows = await db.select<TurnBucketRow>(
+    `SELECT turn_count AS turn_count, COUNT(*) AS agent_count
+       FROM (
+         SELECT a.id AS agent_id, COUNT(tr.id) AS turn_count
+           FROM agents a
+           JOIN sessions s ON s.id = a.session_id
+           JOIN telemetry_records tr
+             ON tr.run_id = a.provider_run_id
+            AND tr.kind = 'turn'
+            AND (? IS NULL OR tr.recorded_at >= ?)
+          WHERE s.workspace_id = ?
+            AND s.deleted_at IS NULL
+            AND a.deleted_at IS NULL
+          GROUP BY a.id
+       )
+      GROUP BY turn_count
+      ORDER BY turn_count ASC`,
+    [sinceMs, sinceMs, workspaceId],
+  );
+  return rows.map((row) => ({
+    turnCount: readCount({ value: row.turn_count }),
+    agentCount: readCount({ value: row.agent_count }),
+  }));
+};
+
+export const getRightSizeNudgeOutcomes = async ({
+  db,
+  workspaceId,
+  sinceMs,
+}: ImpactQueryParams): Promise<ReadonlyArray<NudgeOutcomeCount>> => {
+  const sinceIso = sinceMs === null ? null : new Date(sinceMs).toISOString();
   const rows = await db.select<NudgeOutcomeRow>(
     `SELECT n.outcome AS outcome, COUNT(*) AS outcome_count
        FROM nudge_events n
@@ -393,203 +822,8 @@ export const getRightSizeNudgeOutcomes = async (
       GROUP BY n.outcome`,
     [workspaceId, sinceIso, sinceIso],
   );
-  return rows.map((row) => ({ outcome: row.outcome, count: readCount(row.outcome_count) }));
-};
-
-type DelegationRow = {
-  session_count: number;
-  workflow_runs: number;
-  workflow_sessions: number;
-  discarded_runs: number;
-  scout_children: number;
-  cluster_children: number;
-  completed_groups: number;
-  long_agents: number;
-  resolver_agents: number;
-  resolved_threads: number;
-  diff_comments_total: number;
-  diff_comments_handled: number;
-  linked_sessions: number;
-  started_from_sessions: number;
-  integration_count: number;
-};
-
-type ExternalWorkRow = {
-  provider: string;
-  linked_sessions: number;
-  started_from_sessions: number;
-};
-
-export const getDelegationFlow = async (
-  db: Database,
-  { workspaceId, sinceMs }: ImpactQueryParams,
-): Promise<DelegationFlow> => {
-  const sinceIso = toIso(sinceMs);
-  const rows = await db.select<DelegationRow>(
-    `SELECT
-       (SELECT COUNT(*)
-          FROM sessions s
-         WHERE s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR s.updated_at >= ?)) AS session_count,
-       (SELECT COUNT(*)
-          FROM session_workflows sw
-          JOIN sessions s ON s.id = sw.session_id
-         WHERE s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR julianday(sw.created_at) >= julianday(?))) AS workflow_runs,
-       (SELECT COUNT(DISTINCT sw.session_id)
-          FROM session_workflows sw
-          JOIN sessions s ON s.id = sw.session_id
-         WHERE sw.discarded_at IS NULL AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR julianday(sw.created_at) >= julianday(?))) AS workflow_sessions,
-       (SELECT COUNT(*)
-          FROM session_workflows sw
-          JOIN sessions s ON s.id = sw.session_id
-         WHERE sw.discarded_at IS NOT NULL AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR julianday(sw.created_at) >= julianday(?))) AS discarded_runs,
-       (SELECT COUNT(*)
-          FROM agents c
-          JOIN agents p ON p.id = c.parent_agent_id AND p.deleted_at IS NULL
-          JOIN sessions s ON s.id = c.session_id
-         WHERE c.deleted_at IS NULL AND p.kind = 'scout'
-           AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR julianday(c.started_at) >= julianday(?))) AS scout_children,
-       (SELECT COUNT(*)
-          FROM agents c
-          JOIN agents p ON p.id = c.parent_agent_id AND p.deleted_at IS NULL
-          JOIN sessions s ON s.id = c.session_id
-         WHERE c.deleted_at IS NULL AND (p.kind IS NULL OR p.kind <> 'scout')
-           AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR julianday(c.started_at) >= julianday(?))) AS cluster_children,
-       (SELECT COUNT(*)
-          FROM parallel_groups g
-          JOIN sessions s ON s.id = g.session_id
-         WHERE g.completed_at IS NOT NULL AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR g.created_at >= ?)) AS completed_groups,
-       (SELECT COUNT(*)
-          FROM agents a
-          JOIN sessions s ON s.id = a.session_id
-         WHERE a.deleted_at IS NULL AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR julianday(a.started_at) >= julianday(?))
-           AND (SELECT COUNT(*)
-                  FROM telemetry_records tr
-                 WHERE tr.run_id = a.provider_run_id AND tr.kind = 'turn') > ${LONG_AGENT_TURNS}) AS long_agents,
-       (SELECT COUNT(*)
-          FROM agents a
-          JOIN sessions s ON s.id = a.session_id
-         WHERE a.kind = 'resolver' AND a.deleted_at IS NULL
-           AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR julianday(a.started_at) >= julianday(?))) AS resolver_agents,
-       (SELECT COUNT(DISTINCT a.source_thread_id)
-          FROM agents a
-          JOIN sessions s ON s.id = a.session_id
-         WHERE a.source_thread_id IS NOT NULL AND a.deleted_at IS NULL
-           AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR julianday(a.started_at) >= julianday(?))) AS resolved_threads,
-       (SELECT COUNT(*)
-          FROM diff_comments d
-          JOIN sessions s ON s.id = d.session_id
-         WHERE d.status <> 'deleted' AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR d.created_at >= ?)) AS diff_comments_total,
-       (SELECT COUNT(*)
-          FROM diff_comments d
-          JOIN sessions s ON s.id = d.session_id
-         WHERE d.status IN ('resolved', 'consumed') AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR d.created_at >= ?)) AS diff_comments_handled,
-       (SELECT COUNT(DISTINCT et.session_id)
-          FROM session_external_tasks et
-          JOIN sessions s ON s.id = et.session_id
-         WHERE s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR et.created_at >= ?)) AS linked_sessions,
-       (SELECT COUNT(DISTINCT et.session_id)
-          FROM session_external_tasks et
-          JOIN sessions s ON s.id = et.session_id
-         WHERE et.created_at - s.created_at <= 60000
-           AND s.workspace_id = ? AND s.deleted_at IS NULL
-           AND (? IS NULL OR et.created_at >= ?)) AS started_from_sessions,
-       (SELECT COUNT(*)
-          FROM workspace_integrations wi
-         WHERE wi.workspace_id = ?) AS integration_count`,
-    [
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceIso,
-      sinceIso,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-      sinceMs,
-      sinceMs,
-      workspaceId,
-    ],
-  );
-  const externalRows = await db.select<ExternalWorkRow>(
-    `SELECT et.provider AS provider,
-            COUNT(DISTINCT et.session_id) AS linked_sessions,
-            COUNT(DISTINCT CASE WHEN et.created_at - s.created_at <= 60000 THEN et.session_id END)
-              AS started_from_sessions
-       FROM session_external_tasks et
-       JOIN sessions s ON s.id = et.session_id
-      WHERE s.workspace_id = ?
-        AND s.deleted_at IS NULL
-        AND (? IS NULL OR et.created_at >= ?)
-      GROUP BY et.provider
-      ORDER BY et.provider ASC`,
-    [workspaceId, sinceMs, sinceMs],
-  );
-  const row = rows[0];
-  return {
-    sessionCount: readCount(row?.session_count),
-    workflowRuns: readCount(row?.workflow_runs),
-    workflowSessions: readCount(row?.workflow_sessions),
-    discardedRuns: readCount(row?.discarded_runs),
-    scoutChildren: readCount(row?.scout_children),
-    clusterChildren: readCount(row?.cluster_children),
-    completedGroups: readCount(row?.completed_groups),
-    longAgents: readCount(row?.long_agents),
-    resolverAgents: readCount(row?.resolver_agents),
-    resolvedThreads: readCount(row?.resolved_threads),
-    diffCommentsTotal: readCount(row?.diff_comments_total),
-    diffCommentsHandled: readCount(row?.diff_comments_handled),
-    linkedSessions: readCount(row?.linked_sessions),
-    startedFromSessions: readCount(row?.started_from_sessions),
-    integrationCount: readCount(row?.integration_count),
-    external: externalRows.map((entry) => ({
-      provider: entry.provider,
-      linkedSessions: readCount(entry.linked_sessions),
-      startedFromSessions: readCount(entry.started_from_sessions),
-    })),
-  };
+  return rows.map((row) => ({
+    outcome: row.outcome,
+    count: readCount({ value: row.outcome_count }),
+  }));
 };
