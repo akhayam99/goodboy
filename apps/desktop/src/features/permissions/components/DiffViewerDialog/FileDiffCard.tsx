@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, Copy, ExternalLink, MessageSquarePlus } from 'lucide-react';
-import { Divider, cn } from '@goodboy/ui';
+import { Divider, Tooltip, cn } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
 import type {
   AgentId,
@@ -279,33 +279,50 @@ export const FileDiffCard = ({
             {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
             {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
           </span>
-          <div className="flex shrink-0 items-center gap-0.5">
-            <button
-              type="button"
-              onClick={copyPath}
-              title="copy path"
-              aria-label="copy file path"
-              className={TOOLBAR_ICON_BTN}
-            >
-              {pathCopied ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
-            </button>
-            {canOpenEditor ? (
+          <div className="flex shrink-0 items-center gap-1">
+            <Tooltip content="copy path">
               <button
                 type="button"
-                onClick={onOpenInEditor}
-                title="open file in editor"
-                aria-label="open file in editor"
+                onClick={copyPath}
+                aria-label="copy file path"
                 className={TOOLBAR_ICON_BTN}
               >
-                <ExternalLink size={12} />
+                {pathCopied ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
               </button>
+            </Tooltip>
+            {canOpenEditor ? (
+              <Tooltip content="open file in editor">
+                <button
+                  type="button"
+                  onClick={onOpenInEditor}
+                  aria-label="open file in editor"
+                  className={TOOLBAR_ICON_BTN}
+                >
+                  <ExternalLink size={12} aria-hidden />
+                </button>
+              </Tooltip>
+            ) : null}
+            {canComment ? (
+              <Tooltip content="add file note">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCollapsed(false);
+                    setFileLevelComposerOpen(true);
+                  }}
+                  aria-label="add file note"
+                  className={TOOLBAR_ICON_BTN}
+                >
+                  <MessageSquarePlus size={12} aria-hidden />
+                </button>
+              </Tooltip>
             ) : null}
             <button
               type="button"
               onClick={handleToggleReviewed}
               title={isReviewed ? 'mark as not reviewed' : 'mark as reviewed'}
               className={cn(
-                'ml-1 inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+                'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] font-medium transition-colors',
                 isReviewed
                   ? 'border-success/40 bg-success/10 text-success'
                   : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -351,22 +368,9 @@ export const FileDiffCard = ({
           ) : null}
           {fileLevelComments.length > 0 || fileLevelComposerOpen ? (
             <div className="mb-3 flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  file notes
-                </span>
-                {canComment && !fileLevelComposerOpen ? (
-                  <button
-                    type="button"
-                    onClick={() => setFileLevelComposerOpen(true)}
-                    title="add file-level note"
-                    aria-label="add file-level note"
-                    className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <MessageSquarePlus size={11} aria-hidden />
-                  </button>
-                ) : null}
-              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                file notes
+              </span>
               {fileLevelComments.map((c) => (
                 <CommentItem
                   key={c.id}
@@ -384,18 +388,6 @@ export const FileDiffCard = ({
                   onCancel={() => setFileLevelComposerOpen(false)}
                 />
               ) : null}
-            </div>
-          ) : canComment ? (
-            <div className="mb-3">
-              <button
-                type="button"
-                onClick={() => setFileLevelComposerOpen(true)}
-                title="add file-level note"
-                className="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <MessageSquarePlus size={10} aria-hidden />
-                Add file note
-              </button>
             </div>
           ) : null}
           {file.binary ? (
@@ -415,7 +407,7 @@ export const FileDiffCard = ({
                     if (row.type === 'header') {
                       return (
                         <tr key={`hunk-${row.hi}`}>
-                          <td colSpan={4} className="border-y border-border-soft/40 bg-muted/30">
+                          <td colSpan={3} className="border-y border-border-soft/40 bg-muted/30">
                             <div
                               className={cn(
                                 DIFF_SCROLL_CONTENT_CLASS,
@@ -457,8 +449,28 @@ export const FileDiffCard = ({
                           )}
                         >
                           <td
+                            onPointerDown={
+                              canComment && anchor !== null
+                                ? (event) => {
+                                    event.preventDefault();
+                                    setDrag({
+                                      side: anchor.side,
+                                      start: anchor.lineNumber,
+                                      end: anchor.lineNumber,
+                                    });
+                                  }
+                                : undefined
+                            }
+                            aria-label={
+                              canComment && anchor !== null
+                                ? `comment on line ${anchor.lineNumber}`
+                                : undefined
+                            }
                             className={cn(
-                              'w-6 select-none border-l-2 px-0.5 align-top',
+                              'w-9 select-none border-l-2 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50',
+                              canComment &&
+                                anchor !== null &&
+                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground',
                               rangeCommented
                                 ? 'border-warning/60'
                                 : line.kind === 'add'
@@ -468,34 +480,33 @@ export const FileDiffCard = ({
                                     : 'border-transparent',
                             )}
                           >
-                            {canComment && anchor ? (
-                              <button
-                                type="button"
-                                onPointerDown={(e) => {
-                                  e.preventDefault();
-                                  setDrag({
-                                    side: anchor.side,
-                                    start: anchor.lineNumber,
-                                    end: anchor.lineNumber,
-                                  });
-                                }}
-                                title="comment on this line (drag to select a range)"
-                                aria-label="comment on this line"
-                                className={cn(
-                                  'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
-                                  isActive || selecting
-                                    ? 'opacity-100'
-                                    : 'opacity-0 group-hover:opacity-100',
-                                )}
-                              >
-                                <MessageSquarePlus size={9} aria-hidden />
-                              </button>
-                            ) : null}
-                          </td>
-                          <td className="w-9 select-none px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50">
                             {line.oldLine ?? ''}
                           </td>
-                          <td className="w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50">
+                          <td
+                            onPointerDown={
+                              canComment && anchor !== null
+                                ? (event) => {
+                                    event.preventDefault();
+                                    setDrag({
+                                      side: anchor.side,
+                                      start: anchor.lineNumber,
+                                      end: anchor.lineNumber,
+                                    });
+                                  }
+                                : undefined
+                            }
+                            aria-label={
+                              canComment && anchor !== null
+                                ? `comment on line ${anchor.lineNumber}`
+                                : undefined
+                            }
+                            className={cn(
+                              'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50',
+                              canComment &&
+                                anchor !== null &&
+                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground',
+                            )}
+                          >
                             {line.newLine ?? ''}
                           </td>
                           <td className="whitespace-pre px-2.5 text-foreground/80">
@@ -527,7 +538,7 @@ export const FileDiffCard = ({
                         </tr>
                         {lineComments.length > 0 && (
                           <tr>
-                            <td colSpan={4} className="bg-background">
+                            <td colSpan={3} className="bg-background">
                               <div
                                 data-diff-scroll-content
                                 className={cn(
@@ -558,7 +569,7 @@ export const FileDiffCard = ({
                         )}
                         {isActive && anchor ? (
                           <tr>
-                            <td colSpan={4} className="bg-background">
+                            <td colSpan={3} className="bg-background">
                               <div
                                 data-diff-scroll-content
                                 className={cn(DIFF_SCROLL_CONTENT_CLASS, 'px-3 py-2')}
@@ -583,7 +594,7 @@ export const FileDiffCard = ({
                   })}
                   {remaining > 0 && (
                     <tr>
-                      <td colSpan={4}>
+                      <td colSpan={3}>
                         <div data-diff-scroll-content className={DIFF_SCROLL_CONTENT_CLASS}>
                           <ShowMoreBar
                             step={Math.min(VISIBLE_LINES_STEP, remaining)}

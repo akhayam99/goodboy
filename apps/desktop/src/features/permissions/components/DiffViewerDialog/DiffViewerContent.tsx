@@ -268,6 +268,7 @@ export const DiffViewerContent = ({
   const fileRefs = useRef<Map<string, HTMLElement>>(new Map());
   const scrollRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
+  const pendingScrollPath = useRef<string | null>(null);
 
   const [view, setViewState] = useState<DiffView>(
     () => readPersistedView(sessionId) ?? DEFAULT_VIEW,
@@ -455,6 +456,7 @@ export const DiffViewerContent = ({
   }, [view, refreshTick]);
 
   useLayoutEffect(() => {
+    pendingScrollPath.current = null;
     setMountedCount(DIFF_BATCH_SIZE);
   }, [files]);
 
@@ -513,9 +515,43 @@ export const DiffViewerContent = ({
     }
   }, [sessionId, loadDiffComments]);
 
-  const scrollToFile = useCallback((path: string) => {
-    fileRefs.current.get(path)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  }, []);
+  const scrollToFile = useCallback(
+    (path: string) => {
+      const fileElement = fileRefs.current.get(path);
+      if (fileElement != null) {
+        fileElement.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        return;
+      }
+
+      const fileIndex = files.findIndex((file) => file.path === path);
+      if (fileIndex < 0) {
+        return;
+      }
+
+      pendingScrollPath.current = path;
+      const requiredCount = Math.min(
+        Math.ceil((fileIndex + 1) / DIFF_BATCH_SIZE) * DIFF_BATCH_SIZE,
+        files.length,
+      );
+      setMountedCount((currentCount) => Math.max(currentCount, requiredCount));
+    },
+    [files],
+  );
+
+  useEffect(() => {
+    const path = pendingScrollPath.current;
+    if (path == null) {
+      return;
+    }
+
+    const fileElement = fileRefs.current.get(path);
+    if (fileElement == null) {
+      return;
+    }
+
+    pendingScrollPath.current = null;
+    fileElement.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [mountedCount]);
 
   useEffect(() => {
     if (files.length === 0 || didInitialScroll.current) {
@@ -557,7 +593,7 @@ export const DiffViewerContent = ({
       obs.observe(el);
     }
     return () => obs.disconnect();
-  }, [files]);
+  }, [files, mountedCount]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((v) => {

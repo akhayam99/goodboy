@@ -52,6 +52,8 @@ const { state, fixtures } = vi.hoisted(() => ({
   },
 }));
 
+const scrollIntoViewMock = vi.fn();
+
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useDiffComments: () => fixtures.comments,
@@ -88,6 +90,11 @@ vi.mock('@goodboy/core', async (importOriginal) => ({
 }));
 
 beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: scrollIntoViewMock,
+  });
+  scrollIntoViewMock.mockReset();
   state.settings = {};
   state.sessionPhaseRuns = {};
   state.workspaceOverrides = {};
@@ -107,7 +114,10 @@ beforeEach(() => {
     localStorage.clear();
   }
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 import { DiffViewerDialog, DiffViewerPane } from './index';
 
@@ -272,12 +282,12 @@ describe('DiffViewerPane', () => {
 });
 
 describe('line comment add (single + multi-line drag)', () => {
-  it('single click on the gutter opens a single-line composer', async () => {
+  it('single click on a line number opens a single-line composer', async () => {
     fixtures.files = fileFixture();
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
-    const btns = screen.getAllByLabelText('comment on this line');
-    fireEvent.pointerDown(btns[0]!);
+    const lineNumbers = screen.getAllByLabelText('comment on line 1');
+    fireEvent.pointerDown(lineNumbers[0]!);
     fireEvent.pointerUp(window);
     const composerLabel = await screen.findByText('commenting on line 1');
     const scrollContent = composerLabel.closest('[data-diff-scroll-content]');
@@ -286,12 +296,12 @@ describe('line comment add (single + multi-line drag)', () => {
     expect(scrollContent?.className).toContain('w-[var(--diff-card-width)]');
   });
 
-  it('dragging the gutter across lines opens a range composer and persists endLineNumber', async () => {
+  it('dragging a line number across rows opens a range composer and persists endLineNumber', async () => {
     fixtures.files = fileFixture();
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
-    const btns = screen.getAllByLabelText('comment on this line');
-    fireEvent.pointerDown(btns[0]!);
+    const lineNumbers = screen.getAllByLabelText('comment on line 1');
+    fireEvent.pointerDown(lineNumbers[0]!);
     const lastRow = screen.getByText(/gamma/).closest('tr');
     expect(lastRow).not.toBeNull();
     fireEvent.mouseEnter(lastRow as HTMLElement);
@@ -366,7 +376,7 @@ describe('line comment add (single + multi-line drag)', () => {
     ];
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     const showMoreButton = await screen.findByRole('button', { name: /show 1 more lines/i });
-    fireEvent.pointerDown(screen.getAllByLabelText('comment on this line')[0]!);
+    fireEvent.pointerDown(screen.getAllByLabelText('comment on line 1')[0]!);
     fireEvent.pointerUp(window);
 
     const scrollContents = [
@@ -380,8 +390,18 @@ describe('line comment add (single + multi-line drag)', () => {
       expect(scrollContent?.className).toContain('left-0');
       expect(scrollContent?.className).toContain('w-[var(--diff-card-width)]');
       expect(scrollContent?.parentElement?.tagName).toBe('TD');
-      expect(scrollContent?.parentElement?.getAttribute('colspan')).toBe('4');
+      expect(scrollContent?.parentElement?.getAttribute('colspan')).toBe('3');
     }
+  });
+
+  it('opens file notes from the header action without a body call to action', async () => {
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
+
+    const addFileNote = await screen.findByRole('button', { name: 'add file note' });
+    expect(screen.queryByText('Add file note')).toBeNull();
+    fireEvent.click(addFileNote);
+    expect(await screen.findByPlaceholderText(/note for the agent/i)).toBeDefined();
   });
 
   it('offers a routing picker for the resolver spawned from open notes', async () => {
@@ -511,6 +531,29 @@ const makeFiles = (count: number, prefix = 'file') =>
   }));
 
 describe('progressive batching', () => {
+  it('mounts and scrolls to a file beyond the first batch when its rail entry is clicked', async () => {
+    vi.stubGlobal(
+      'requestIdleCallback',
+      vi.fn(() => 1),
+    );
+    vi.stubGlobal('cancelIdleCallback', vi.fn());
+    localStorage.setItem('goodboy:diff-sidebar-collapsed', '0');
+    fixtures.files = makeFiles(25);
+    const { container } = render(
+      <DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />,
+    );
+
+    await screen.findByTitle('src/file22.ts');
+    expect(container.querySelector('[data-file-path="src/file22.ts"]')).toBeNull();
+    fireEvent.click(screen.getByTitle('src/file22.ts'));
+
+    await waitFor(() => {
+      const fileCard = container.querySelector('[data-file-path="src/file22.ts"]');
+      expect(fileCard).not.toBeNull();
+      expect(scrollIntoViewMock.mock.contexts).toContain(fileCard);
+    });
+  });
+
   it('mounts only the first batch initially and appends more after idle', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
