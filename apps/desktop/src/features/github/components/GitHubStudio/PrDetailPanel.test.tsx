@@ -21,9 +21,12 @@ type Store = {
       readonly detailError: string | null;
     }
   >;
+  readonly sessionGithubPrs: Record<string, ReadonlyArray<PullRequestState>>;
+  readonly sessionSelectedPrNumber: Record<string, number | null>;
   readonly sessionBranches: Record<string, string>;
   readonly refreshSessionPrDetail: ReturnType<typeof vi.fn>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
+  readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly markPrReady: ReturnType<typeof vi.fn>;
   readonly convertPrToDraft: ReturnType<typeof vi.fn>;
   readonly mergePr: ReturnType<typeof vi.fn>;
@@ -93,9 +96,12 @@ const h = vi.hoisted(() => {
           detailError: null,
         },
       },
+      sessionGithubPrs: { [sessionId]: [pr] },
+      sessionSelectedPrNumber: {},
       sessionBranches: { [sessionId]: pr.headBranch },
       refreshSessionPrDetail: vi.fn(async () => undefined),
       refreshSessionPr: vi.fn(async () => undefined),
+      selectSessionPr: vi.fn(async () => undefined),
       markPrReady: vi.fn(async () => undefined),
       convertPrToDraft: vi.fn(async () => undefined),
       mergePr: vi.fn(async () => undefined),
@@ -164,6 +170,8 @@ const renderPanel = () => render(<PrDetailPanel sessionId={h.sessionId} onClose=
 
 beforeEach(() => {
   h.prs = [h.pr];
+  h.store.sessionGithubPrs = { [h.sessionId]: [h.pr] };
+  h.store.sessionSelectedPrNumber = {};
 });
 
 afterEach(cleanup);
@@ -198,11 +206,23 @@ describe('PrDetailPanel', () => {
     expect(screen.queryByTitle('2 pull requests on this branch')).toBeNull();
 
     firstRender.unmount();
-    h.prs = [h.pr, h.secondPr];
+    h.store.sessionGithubPrs = { [h.sessionId]: [h.pr, h.secondPr] };
     renderPanel();
 
     await waitFor(() => {
       expect(screen.getByTitle('2 pull requests on this branch')).toBeDefined();
     });
+  });
+
+  it('drives the active pr and switcher selection through store state', () => {
+    h.store.sessionGithubPrs = { [h.sessionId]: [h.pr, h.secondPr] };
+    h.store.sessionSelectedPrNumber = { [h.sessionId]: h.secondPr.number };
+
+    renderPanel();
+
+    expect(screen.getByRole('heading', { name: h.secondPr.title })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /#43 of 2/i }));
+    fireEvent.click(screen.getByRole('option', { name: /#42/i }));
+    expect(h.store.selectSessionPr).toHaveBeenCalledWith(h.sessionId, h.pr.number);
   });
 });

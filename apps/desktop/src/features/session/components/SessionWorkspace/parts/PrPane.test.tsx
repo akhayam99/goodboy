@@ -12,6 +12,7 @@ import type {
 type Store = {
   sessionGithub: Record<string, unknown>;
   sessionGithubPrs: Record<string, ReadonlyArray<PullRequestState>>;
+  sessionSelectedPrNumber: Record<string, number | null>;
   sessionGitlabMr: Record<string, unknown>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
@@ -25,6 +26,7 @@ const h = vi.hoisted(() => ({
   store: {
     sessionGithub: {},
     sessionGithubPrs: {},
+    sessionSelectedPrNumber: {},
     sessionGitlabMr: {},
     sessionExternalTasks: {},
     sessionPhaseRuns: {},
@@ -43,6 +45,10 @@ vi.mock('../../../../../store', () => ({
 
 vi.mock('../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => h.remoteKind,
+}));
+
+vi.mock('../../../../context/components/ContextPanel/strips/GitlabMrStrip', () => ({
+  GitlabMrStrip: () => <div>GitLab merge request detail</div>,
 }));
 
 import { PrPane } from './PrPane';
@@ -81,6 +87,7 @@ const session: Session = {
 beforeEach(() => {
   h.store.sessionGithub = {};
   h.store.sessionGithubPrs = {};
+  h.store.sessionSelectedPrNumber = {};
   h.store.sessionGitlabMr = {};
   h.store.sessionExternalTasks = {};
   h.store.sessionPhaseRuns = {};
@@ -146,6 +153,61 @@ describe('PrPane', () => {
     fireEvent.click(screen.getByRole('option', { name: /#40/i }));
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 40);
+  });
+
+  it('renders a valid selected pr without replacing the canonical pr', () => {
+    const closedPr = {
+      ...PULL_REQUEST,
+      number: 40,
+      title: 'Refactor authentication (superseded)',
+      state: 'closed',
+    } satisfies PullRequestState;
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
+    h.store.sessionSelectedPrNumber = { [SESSION_ID]: closedPr.number };
+
+    render(<PrPane session={session} />);
+
+    expect(screen.getByText(closedPr.title)).toBeDefined();
+    expect(screen.queryByText(PULL_REQUEST.title)).toBeNull();
+  });
+
+  it('falls back when the selected provider request disappears', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGitlabMr = {
+      [SESSION_ID]: {
+        mr: {
+          iid: 7,
+          title: 'GitLab fallback candidate',
+          state: 'open',
+          draft: false,
+        },
+      },
+    };
+    const view = render(<PrPane session={session} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /GitLab !7/i }));
+    expect(screen.getByText('GitLab merge request detail')).toBeDefined();
+
+    h.store.sessionGitlabMr = {};
+    view.rerender(<PrPane session={session} />);
+
+    expect(screen.queryByText('GitLab merge request detail')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
   });
 
   it('shows PR status, linked issues, and code-host external tasks from stored state', () => {

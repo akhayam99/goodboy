@@ -502,6 +502,8 @@ describe('store contract', () => {
         sidebarProviderFilter: [],
         githubStatus: null,
         sessionGithub: {},
+        sessionGithubPrs: {},
+        sessionSelectedPrNumber: {},
         volatilePermissionAllows: new Set<string>(),
         agentModelOverride: {},
         agentProviderOverride: {},
@@ -591,11 +593,15 @@ describe('store contract', () => {
       store.setState({
         sessions: [buildSession()],
         currentSessionId: SESSION_ID,
+        sessionGithubPrs: { [SESSION_ID]: [] },
+        sessionSelectedPrNumber: { [SESSION_ID]: 40 },
       });
       await store.getState().archiveTask(SESSION_ID);
       const s = store.getState();
       expect(s.sessions).toEqual([]);
       expect(s.currentSessionId).toBeNull();
+      expect(s.sessionGithubPrs[SESSION_ID]).toBeUndefined();
+      expect(s.sessionSelectedPrNumber[SESSION_ID]).toBeUndefined();
     });
 
     it('unarchiveTask restores a session from archived cache to active when in same workspace', async () => {
@@ -626,11 +632,15 @@ describe('store contract', () => {
         currentWorkspaceId: WS_ID,
         currentSessionId: SESSION_ID,
         archivedSessions: { [WS_ID]: [archived] },
+        sessionGithubPrs: { [SESSION_ID]: [] },
+        sessionSelectedPrNumber: { [SESSION_ID]: 40 },
       });
       await store.getState().deleteTask(SESSION_ID);
       const s = store.getState();
       expect(s.archivedSessions[WS_ID]).toEqual([]);
       expect(s.currentSessionId).toBeNull();
+      expect(s.sessionGithubPrs[SESSION_ID]).toBeUndefined();
+      expect(s.sessionSelectedPrNumber[SESSION_ID]).toBeUndefined();
     });
 
     describe('bulk archived ops', () => {

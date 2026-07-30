@@ -15,7 +15,13 @@ const DETAIL_TTL_MS = 30_000;
 export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params) => {
     const existing = get().sessionGithub[sessionId];
-    const pr = existing?.pr ?? null;
+    const prs = get().sessionGithubPrs[sessionId] ?? [];
+    const selectedNumber = get().sessionSelectedPrNumber[sessionId] ?? null;
+    const selectedPr =
+      selectedNumber != null
+        ? (prs.find((candidate) => candidate.number === selectedNumber) ?? null)
+        : null;
+    const pr = selectedPr ?? existing?.pr ?? null;
     if (!pr) {
       return;
     }
@@ -40,7 +46,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
       sessionGithub: {
         ...state.sessionGithub,
         [sessionId]: {
-          pr: state.sessionGithub[sessionId]?.pr ?? pr,
+          pr: state.sessionGithub[sessionId]?.pr ?? null,
           linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
           fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
           loading: state.sessionGithub[sessionId]?.loading ?? false,
@@ -62,7 +68,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
             sessionGithub: {
               ...state.sessionGithub,
               [sessionId]: {
-                pr: state.sessionGithub[sessionId]?.pr ?? pr,
+                pr: state.sessionGithub[sessionId]?.pr ?? null,
                 linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
                 fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
                 loading: state.sessionGithub[sessionId]?.loading ?? false,
@@ -84,7 +90,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           sessionGithub: {
             ...state.sessionGithub,
             [sessionId]: {
-              pr: state.sessionGithub[sessionId]?.pr ?? pr,
+              pr: state.sessionGithub[sessionId]?.pr ?? null,
               linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
               fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
               loading: state.sessionGithub[sessionId]?.loading ?? false,
@@ -105,7 +111,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
       sessionGithub: {
         ...state.sessionGithub,
         [sessionId]: {
-          pr: state.sessionGithub[sessionId]?.pr ?? pr,
+          pr: state.sessionGithub[sessionId]?.pr ?? null,
           linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
           fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
           loading: state.sessionGithub[sessionId]?.loading ?? false,

@@ -35,7 +35,14 @@ type PullRequestProvider = 'github' | 'gitlab';
 export const PrPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
   const remoteKind = useRemoteHostKind(session.workspaceId);
-  const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
+  const canonicalPullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
+  const branchPrs = useAppStore((state) => state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
+  const selectedPrNumber = useAppStore((state) => state.sessionSelectedPrNumber[sessionId] ?? null);
+  const selectedPullRequest =
+    selectedPrNumber != null
+      ? (branchPrs.find((candidate) => candidate.number === selectedPrNumber) ?? null)
+      : null;
+  const pullRequest = selectedPullRequest ?? canonicalPullRequest;
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const phaseRuns = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
@@ -50,7 +57,12 @@ export const PrPane = ({ session }: Props) => {
           : remoteKind === 'gitlab'
             ? 'gitlab'
             : 'github';
-  const activeProvider = selectedProvider ?? defaultProvider;
+  const activeProvider =
+    selectedProvider === 'github' && pullRequest != null
+      ? 'github'
+      : selectedProvider === 'gitlab' && mergeRequest != null
+        ? 'gitlab'
+        : defaultProvider;
   const mergeRequestState: PullRequestStateKind | null =
     mergeRequest == null
       ? null
@@ -109,6 +121,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const sessionId = session.id as SessionId;
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const branchPrs = useAppStore((s) => s.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
+  const selectedPrNumber = useAppStore((s) => s.sessionSelectedPrNumber[sessionId] ?? null);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
@@ -123,7 +136,11 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
     remoteKind,
     externalTasks,
   }).isConnected;
-  const pr = github?.pr ?? null;
+  const selectedPr =
+    selectedPrNumber != null
+      ? (branchPrs.find((candidate) => candidate.number === selectedPrNumber) ?? null)
+      : null;
+  const pr = selectedPr ?? github?.pr ?? null;
   const detail = github?.detail ?? null;
   const linkedIssues = github?.linkedIssues ?? [];
   const codeHostTasks = externalTasks.filter(

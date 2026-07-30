@@ -65,6 +65,10 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       delete nextPhaseRuns[sessionId];
       const nextGithub = { ...state.sessionGithub };
       delete nextGithub[sessionId];
+      const nextGithubPrs = { ...state.sessionGithubPrs };
+      delete nextGithubPrs[sessionId];
+      const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
+      delete nextSelectedPrNumber[sessionId];
       const nextLoading = { ...state.sessionLoading };
       delete nextLoading[sessionId];
       const nextSelected = { ...state.selectedAgentId };
@@ -94,6 +98,8 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         sessionBranches: nextBranches,
         sessionPhaseRuns: nextPhaseRuns,
         sessionGithub: nextGithub,
+        sessionGithubPrs: nextGithubPrs,
+        sessionSelectedPrNumber: nextSelectedPrNumber,
         sessionLoading: nextLoading,
         selectedAgentId: nextSelected,
         sessionMergeConflicts: nextConflicts,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AgentId, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
 import { ArrowRight, Inbox } from 'lucide-react';
 import {
@@ -12,10 +12,8 @@ import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
 import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openUrl } from '../../../../shared/lib/editor';
-import { formatError } from '../../../../shared/lib/errors';
 import { HeaderBand } from '../../../../shared/components/StudioDetail';
-import { useAppStore, useSessions } from '../../../../store';
-import { ghPrDetailByNumber, ghPrsForBranch } from '../../github';
+import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import { groupThreads, type CommentThread } from '../../comment-threads';
 import { PullRequestChip } from '../PullRequestChip';
 import { CreatePrPanel } from './CreatePrPanel';
@@ -49,8 +47,11 @@ export const PrDetailPanel = ({
   const github = useAppStore((state) =>
     sessionId != null ? state.sessionGithub[sessionId] : null,
   );
-  const branch = useAppStore((state) =>
-    sessionId != null ? (state.sessionBranches[sessionId] ?? null) : null,
+  const prs = useAppStore((state) =>
+    sessionId != null ? (state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  );
+  const selectedNumber = useAppStore((state) =>
+    sessionId != null ? (state.sessionSelectedPrNumber[sessionId] ?? null) : null,
   );
   const workspaceRoot = useAppStore((s) => {
     const sess =
@@ -61,10 +62,9 @@ export const PrDetailPanel = ({
         : undefined;
     return ws?.rootPath ?? null;
   });
-  const workspaceId = session?.workspaceId;
   const roleModels = useSessionRoleModels({ sessionId });
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
+  const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const markPrReady = useAppStore((s) => s.markPrReady);
   const convertPrToDraft = useAppStore((s) => s.convertPrToDraft);
   const mergePr = useAppStore((s) => s.mergePr);
@@ -89,47 +89,21 @@ export const PrDetailPanel = ({
   const [createOpen, setCreateOpen] = useState(false);
   const [section, setSection] = useState<PrSection>('overview');
   const [jumpThreadId, setJumpThreadId] = useState<string | null>(null);
-  const [prs, setPrs] = useState<ReadonlyArray<PullRequestState>>([]);
-  const [prsTick, setPrsTick] = useState(0);
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
-  const [localDetail, setLocalDetail] = useState<PrDetail | null>(null);
-  const [localDetailLoading, setLocalDetailLoading] = useState(false);
-  const [localDetailError, setLocalDetailError] = useState<string | null>(null);
 
   const primary = github?.pr ?? null;
   const primaryNumber = primary?.number ?? null;
   const options = prs.length > 0 ? prs : primary != null ? [primary] : [];
-  const selected = selectedNumber ?? primaryNumber ?? options[0]?.number ?? null;
+  const selectedPr =
+    selectedNumber != null
+      ? (options.find((candidate) => candidate.number === selectedNumber) ?? null)
+      : null;
+  const selected = selectedPr?.number ?? primaryNumber;
   const activePr = options.find((pr) => pr.number === selected) ?? primary;
-  const isPrimary = activePr != null && activePr.number === primaryNumber;
-
-  const detail = isPrimary ? (github?.detail ?? null) : localDetail;
-  const detailLoading = isPrimary ? github?.detailLoading === true : localDetailLoading;
-  const detailError = isPrimary ? (github?.detailError ?? null) : localDetailError;
-
-  const fetchLocalDetail = useCallback(
-    async (num: number) => {
-      if (workspaceRoot == null || workspaceRoot === '') {
-        return;
-      }
-      setLocalDetailLoading(true);
-      setLocalDetailError(null);
-      try {
-        setLocalDetail(await ghPrDetailByNumber(workspaceRoot, num, workspaceId));
-      } catch (e) {
-        setLocalDetailError(formatError(e));
-      } finally {
-        setLocalDetailLoading(false);
-      }
-    },
-    [workspaceRoot, workspaceId],
-  );
+  const detail = github?.detail ?? null;
+  const detailLoading = github?.detailLoading === true;
+  const detailError = github?.detailError ?? null;
 
   useEffect(() => {
-    setSelectedNumber(null);
-    setPrs([]);
-    setLocalDetail(null);
-    setLocalDetailError(null);
     setCreateOpen(false);
     setSection('overview');
   }, [sessionId]);
@@ -138,36 +112,18 @@ export const PrDetailPanel = ({
     if (initialThreadId == null) {
       return;
     }
-    if (initialPrNumber != null) {
-      setSelectedNumber(initialPrNumber);
+    if (
+      sessionId != null &&
+      initialPrNumber != null &&
+      options.some((candidate) => candidate.number === initialPrNumber)
+    ) {
+      void selectSessionPr(sessionId, initialPrNumber);
     }
     setSection('comments');
-  }, [sessionId, initialThreadId, initialPrNumber]);
+  }, [sessionId, initialThreadId, initialPrNumber, options, selectSessionPr]);
 
   useEffect(() => {
-    if (branch == null || branch === '' || workspaceRoot == null || workspaceRoot === '') {
-      setPrs([]);
-      return;
-    }
-    let cancelled = false;
-    void ghPrsForBranch(workspaceRoot, branch, workspaceId)
-      .then((list) => {
-        if (cancelled === false) {
-          setPrs(list);
-        }
-      })
-      .catch(() => {
-        if (cancelled === false) {
-          setPrs([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [branch, workspaceRoot, workspaceId, prsTick]);
-
-  useEffect(() => {
-    if (sessionId == null || isPrimary === false || activePr == null) {
+    if (sessionId == null || activePr == null) {
       return;
     }
     if (github?.detail == null && github?.detailLoading !== true && github?.detailError == null) {
@@ -175,30 +131,12 @@ export const PrDetailPanel = ({
     }
   }, [
     sessionId,
-    isPrimary,
     activePr,
     github?.detail,
     github?.detailLoading,
     github?.detailError,
     refreshSessionPrDetail,
   ]);
-
-  useEffect(() => {
-    if (sessionId == null || prs.length === 0) {
-      return;
-    }
-    if ((prs[0]?.number ?? null) === primaryNumber) {
-      return;
-    }
-    void refreshSessionPr(sessionId, { force: true, silent: true });
-  }, [sessionId, prs, primaryNumber, refreshSessionPr]);
-
-  useEffect(() => {
-    if (activePr == null || isPrimary) {
-      return;
-    }
-    void fetchLocalDetail(activePr.number);
-  }, [activePr, isPrimary, fetchLocalDetail]);
 
   if (sessionId == null || session == null) {
     return (
@@ -218,17 +156,10 @@ export const PrDetailPanel = ({
     if (activePr == null) {
       return;
     }
-    if (isPrimary) {
-      void refreshSessionPrDetail(sessionId, { force: true });
-      return;
-    }
-    void fetchLocalDetail(activePr.number);
+    void refreshSessionPrDetail(sessionId, { force: true });
   };
 
-  const onMutated = () => {
-    setPrsTick((t) => t + 1);
-    refreshActive();
-  };
+  const onMutated = refreshActive;
 
   const spawnResolver = async (
     args: CommentAgentArgs,
@@ -408,7 +339,11 @@ export const PrDetailPanel = ({
         <HeaderBand
           meta={
             options.length > 1 ? (
-              <PrSwitcher prs={options} selected={selected} onSelect={setSelectedNumber} />
+              <PrSwitcher
+                prs={options}
+                selected={selected}
+                onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
+              />
             ) : (
               <PullRequestChip
                 state={activePr.isDraft ? 'draft' : activePr.state}

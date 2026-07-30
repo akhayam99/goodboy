@@ -224,6 +224,7 @@ export type AppState = UpdaterState & {
   readonly githubStatus: GhTokenStatus | null;
   readonly sessionGithub: Readonly<Record<SessionId, SessionGithubState>>;
   readonly sessionGithubPrs: Readonly<Record<SessionId, ReadonlyArray<PullRequestState>>>;
+  readonly sessionSelectedPrNumber: Readonly<Record<SessionId, number | null>>;
   readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
   readonly reviewPrs: Readonly<Record<WorkspaceId, ReviewPrsState>>;
   readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;

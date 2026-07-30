@@ -176,15 +176,7 @@ export const listPrsForBranch = async (
     '--json',
     PR_FIELDS.join(','),
   ];
-  let raw: ReadonlyArray<RawPullRequest>;
-  try {
-    raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
-  } catch (err) {
-    if (err instanceof GhCliError) {
-      return [];
-    }
-    throw err;
-  }
+  const raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
   return [...raw]
     .sort((a, b) => {
       const aTerminal = a.state === 'OPEN' ? 0 : 1;

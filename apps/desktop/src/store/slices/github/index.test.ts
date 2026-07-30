@@ -15,6 +15,7 @@ import type {
   PlanId,
   PlanWithCount,
   PendingResolution,
+  PullRequestState,
   ProviderRunId,
   Session,
   SessionId,
@@ -312,6 +313,9 @@ const ghClearTokenSpy = vi.fn(async () => undefined);
 const gitPushSpy = vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 }));
 const resolveThreadSpy = vi.fn(async () => undefined);
 const addReplySpy = vi.fn(async () => undefined);
+const detectRepoSlugSpy = vi.fn(async () => null as string | null);
+const listPrsForBranchSpy = vi.fn(async () => [] as ReadonlyArray<PullRequestState>);
+const fetchLinkedIssuesSpy = vi.fn(async () => []);
 
 vi.mock('../../../features/github/github', () => ({
   ghStatus: ghStatusSpy,
@@ -326,10 +330,11 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
-    detectRepoSlug: vi.fn(async () => null),
+    detectRepoSlug: detectRepoSlugSpy,
+    listPrsForBranch: listPrsForBranchSpy,
     getPrForBranch: vi.fn(async () => null),
     fetchPrDetail: vi.fn(async () => null),
-    fetchLinkedIssues: vi.fn(async () => []),
+    fetchLinkedIssues: fetchLinkedIssuesSpy,
     resolveReviewThread: resolveThreadSpy,
     addReviewThreadReply: addReplySpy,
     seedWorkflowLibrary: vi.fn(async () => undefined),
@@ -506,6 +511,8 @@ describe('store contract', () => {
         sidebarProviderFilter: [],
         githubStatus: null,
         sessionGithub: {},
+        sessionGithubPrs: {},
+        sessionSelectedPrNumber: {},
         volatilePermissionAllows: new Set<string>(),
         agentModelOverride: {},
         agentKindOverride: {},
@@ -586,6 +593,75 @@ describe('store contract', () => {
       });
       await store.getState().refreshSessionPr(SESSION_ID);
       expect(store.getState().sessionGithub[SESSION_ID]).toBeUndefined();
+    });
+
+    it('keeps selection separate while a new canonical pr surfaces from one list fetch', async () => {
+      const store = await getStore();
+      const selectedPr = {
+        number: 40,
+        title: 'Closed selection',
+        state: 'closed',
+        updatedAt: '2026-07-29T10:00:00Z',
+      } as PullRequestState;
+      const canonicalPr = {
+        ...selectedPr,
+        number: 42,
+        title: 'New canonical',
+        state: 'open',
+        updatedAt: '2026-07-30T10:00:00Z',
+      } as PullRequestState;
+      detectRepoSlugSpy.mockResolvedValueOnce('acme/goodboy');
+      listPrsForBranchSpy.mockResolvedValueOnce([canonicalPr, selectedPr]);
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionGithub: {
+          [SESSION_ID]: {
+            pr: selectedPr,
+            linkedIssues: [],
+            fetchedAt: null,
+            loading: false,
+            error: null,
+            detail: null,
+            detailFetchedAt: null,
+            detailLoading: false,
+            detailError: null,
+          },
+        },
+        sessionGithubPrs: { [SESSION_ID]: [selectedPr] },
+        sessionSelectedPrNumber: { [SESSION_ID]: selectedPr.number },
+      });
+
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true });
+
+      expect(store.getState().sessionGithub[SESSION_ID]?.pr?.number).toBe(canonicalPr.number);
+      expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(selectedPr.number);
+      expect(listPrsForBranchSpy).toHaveBeenCalledOnce();
+    });
+
+    it('keeps the previous pr list and selection when listing fails', async () => {
+      const store = await getStore();
+      const previousPr = {
+        number: 40,
+        title: 'Previous selection',
+        state: 'closed',
+        updatedAt: '2026-07-29T10:00:00Z',
+      } as PullRequestState;
+      detectRepoSlugSpy.mockResolvedValueOnce('acme/goodboy');
+      listPrsForBranchSpy.mockRejectedValueOnce(new Error('authentication failed'));
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionGithubPrs: { [SESSION_ID]: [previousPr] },
+        sessionSelectedPrNumber: { [SESSION_ID]: previousPr.number },
+      });
+
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true });
+
+      expect(store.getState().sessionGithubPrs[SESSION_ID]).toEqual([previousPr]);
+      expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(previousPr.number);
     });
 
     it('sweepGithub is a no-op when github is unavailable', async () => {

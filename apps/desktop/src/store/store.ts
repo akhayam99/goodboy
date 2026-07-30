@@ -651,6 +651,7 @@ export const initialState: AppState = {
   githubStatus: null,
   sessionGithub: {},
   sessionGithubPrs: {},
+  sessionSelectedPrNumber: {},
   sessionGitlabMr: {},
   reviewPrs: {},
   reviewDrafts: {},

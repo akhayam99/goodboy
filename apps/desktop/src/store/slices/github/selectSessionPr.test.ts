@@ -12,8 +12,14 @@ const harness = (selected: number) => {
   const refreshSessionPrDetail = vi.fn(async () => undefined);
   const state = {
     sessionGithubPrs: { [SESSION_ID]: [pr(42), pr(40)] },
+    sessionSelectedPrNumber: { [SESSION_ID]: null as number | null },
     sessionGithub: {
-      [SESSION_ID]: { pr: pr(selected), detail: { checks: [] }, detailFetchedAt: 'x' },
+      [SESSION_ID]: {
+        pr: pr(selected),
+        linkedIssues: [{ number: 7 }],
+        detail: { checks: [] },
+        detailFetchedAt: 'x',
+      },
     },
     refreshSessionPrDetail,
   };
@@ -25,12 +31,14 @@ const harness = (selected: number) => {
 };
 
 describe('selectSessionPr', () => {
-  it('switches the session pr and reloads its detail', async () => {
+  it('stores the selection without replacing the canonical pr and reloads its detail', async () => {
     const { state, set, get, refreshSessionPrDetail } = harness(42);
 
     await selectSessionPr(set, get)(SESSION_ID, 40);
 
-    expect(state.sessionGithub[SESSION_ID]?.pr?.number).toBe(40);
+    expect(state.sessionGithub[SESSION_ID]?.pr?.number).toBe(42);
+    expect(state.sessionSelectedPrNumber[SESSION_ID]).toBe(40);
+    expect(state.sessionGithub[SESSION_ID]?.linkedIssues).toEqual([]);
     expect(state.sessionGithub[SESSION_ID]?.detail).toBeNull();
     expect(refreshSessionPrDetail).toHaveBeenCalledWith(SESSION_ID, { force: true });
   });
@@ -43,5 +51,15 @@ describe('selectSessionPr', () => {
 
     expect(state.sessionGithub[SESSION_ID]?.pr?.number).toBe(42);
     expect(refreshSessionPrDetail).not.toHaveBeenCalled();
+  });
+
+  it('clears the dedicated selection when switching back to the canonical pr', async () => {
+    const { state, set, get } = harness(42);
+    state.sessionSelectedPrNumber[SESSION_ID] = 40;
+
+    await selectSessionPr(set, get)(SESSION_ID, 42);
+
+    expect(state.sessionSelectedPrNumber[SESSION_ID]).toBeNull();
+    expect(state.sessionGithub[SESSION_ID]?.pr?.number).toBe(42);
   });
 });
