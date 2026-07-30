@@ -1,10 +1,5 @@
-import {
-  MODEL_CATALOGS,
-  PROVIDER_CAPABILITIES,
-  modelAxes,
-  modelIdForSelection,
-  resolveModelArgs,
-} from '@goodboy/core';
+import { useState } from 'react';
+import { MODEL_CATALOGS, modelAxes, modelIdForSelection } from '@goodboy/core';
 import { Button, Divider, ScrollFade, cn } from '@goodboy/ui';
 import type { ModelSelection, ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
@@ -12,16 +7,12 @@ import { AxesSection } from '../../../../shared/components/RoutingPicker/AxesSec
 import { CatalogGrid } from '../../../../shared/components/RoutingPicker/CatalogGrid';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
+import { ROUTING_PICKER_CONSTANTS } from '../../../../shared/components/RoutingPicker/constants';
+import { resolvePickerSelection } from '../../../../shared/components/RoutingPicker/resolvePickerSelection';
 import { resolveRouting } from '../../../../shared/components/RoutingPicker/resolveRouting';
 import { selectionForModel } from '../../../../shared/components/RoutingPicker/selectionForModel';
 import { useCursorMaxModeModels } from '../../../../shared/components/RoutingPicker/useCursorMaxModeModels';
 import type { AgentKindRouting } from '../../agent-kind';
-
-const PROVIDER_CHIP_GROUP_CLASS = 'flex gap-1.5 px-2.5 [&>button]:h-7 [&>button]:flex-1';
-const EMPTY_MODEL_KEYS: ReadonlySet<string> = new Set();
-const PROVIDERS = Object.keys(PROVIDER_CAPABILITIES).filter(
-  (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
-);
 
 type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -47,16 +38,22 @@ export const AgentRoutingSections = ({
   onConnectProvider,
 }: Props) => {
   const viewedRouting = resolveRouting({
-    providers: PROVIDERS,
+    providers: ROUTING_PICKER_CONSTANTS.providers,
     provider: viewProvider,
     model: viewProvider === effective.provider ? effective.model : '',
     effort: effective.effort,
     recommendation: undefined,
   });
+  const [clampNotice, setClampNotice] = useState(viewedRouting.clamped);
   const isProviderConnected = connectedProviders.includes(viewProvider);
   const onPickSelection = ({ selection }: PickSelectionParams) => {
-    const resolved = resolveModelArgs({ provider: viewProvider, selection });
-    const applied = resolved.clamped?.applied ?? selection.effort ?? effective.effort;
+    const resolved = resolvePickerSelection({
+      provider: viewProvider,
+      selection,
+      fallbackEffort: effective.effort,
+    });
+    const applied = resolved.effort ?? effective.effort;
+    setClampNotice(resolved.notice);
     onPickModel(modelIdForSelection({ provider: viewProvider, selection }), applied);
   };
   const viewedModel =
@@ -68,14 +65,15 @@ export const AgentRoutingSections = ({
   const axes = modelAxes({ model: viewedModel, selection: viewedRouting.selection });
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
-  const advisoryKeys = viewProvider === 'cursor' ? maxModeModels : EMPTY_MODEL_KEYS;
+  const advisoryKeys =
+    viewProvider === 'cursor' ? maxModeModels : ROUTING_PICKER_CONSTANTS.emptyModelKeys;
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
 
   return (
     <>
       <PickerSection label="Provider" hint="Which CLI agent runs the turn">
-        <div className={PROVIDER_CHIP_GROUP_CLASS}>
-          {PROVIDERS.map((id) => {
+        <div className={ROUTING_PICKER_CONSTANTS.providerChipGroupClassName}>
+          {ROUTING_PICKER_CONSTANTS.providers.map((id) => {
             const isConnected = connectedProviders.includes(id);
             const isActive = viewProvider === id;
             return (
@@ -87,6 +85,7 @@ export const AgentRoutingSections = ({
                 aria-pressed={isActive}
                 onClick={() => {
                   onViewProvider(id);
+                  setClampNotice(undefined);
                   if (!isConnected) {
                     return;
                   }
@@ -146,7 +145,7 @@ export const AgentRoutingSections = ({
             axes={axes}
             effortValue={viewedRouting.effort}
             canEditEffort
-            notice={undefined}
+            notice={clampNotice}
             hasMaxModeAdvisory={hasMaxModeAdvisory}
             onEffort={(level) =>
               onPickSelection({

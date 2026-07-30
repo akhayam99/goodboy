@@ -13,7 +13,7 @@ export const EffortChips = ({ axis, value, canEdit, onPick }: Props) => (
   <div
     role="group"
     aria-label={axis.label}
-    className="flex flex-wrap gap-1 rounded-lg bg-background/40 p-1"
+    className="flex flex-wrap justify-center gap-1 rounded-lg bg-background/40 p-1"
   >
     {axis.levels.map(({ level, available }) => (
       <PickerChip

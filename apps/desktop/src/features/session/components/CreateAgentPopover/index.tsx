@@ -19,6 +19,7 @@ import { AgentKindGrid } from './AgentKindGrid';
 import { AgentRoutingSections } from './AgentRoutingSections';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
 import { SpawnRoutingSummary } from './SpawnRoutingSummary';
+import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -35,11 +36,14 @@ export const CreateAgentPopover = ({
   description,
   onSpawned,
 }: Props) => {
-  const { open, close, toggle, containerRef, popupClassName } = useDropdown({
-    align: 'end',
-    expectedHeight: 460,
-    width: 'w-96 max-w-[calc(100vw-2rem)]',
-  });
+  const { open, close, toggle, containerRef, popupRef, popupClassName, popupStyle, portal } =
+    useDropdown({
+      align: 'end',
+      expectedHeight: 460,
+      expectedWidth: 384,
+      width: 'w-96 max-w-[calc(100vw-2rem)]',
+      strategy: 'fixed',
+    });
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
@@ -89,68 +93,72 @@ export const CreateAgentPopover = ({
         className={cn(variant === 'tile' && 'w-full', className)}
         onClick={toggle}
       />
-      {open && (
-        <Popover
-          role="dialog"
-          ariaLabel="create agent"
-          className={cn(popupClassName, 'flex flex-col bg-subtle')}
-        >
-          {agentKinds.length > 1 && (
-            <>
-              <PickerSection label="Agent type" hint="What this agent is allowed to do">
-                <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
-              </PickerSection>
-              <Divider />
-            </>
-          )}
-          <SpawnRoutingSummary
-            kind={selectedKind}
-            effective={effective}
-            fallback={spawnDefault}
-            isPinned={routing != null}
-            onReset={() => {
-              setRouting(null);
-              setViewProvider(spawnDefault.provider);
-            }}
-          />
-          <Divider />
-          <AgentRoutingSections
-            connectedProviders={connectedProviders}
-            effective={effective}
-            viewProvider={viewProvider}
-            onViewProvider={setViewProvider}
-            onPickProvider={(provider) => {
-              const model = getDefaultTurnModel({ id: provider });
-              setRouting({
-                provider,
-                model,
-                effort: clampEffort(model, effective.effort),
-              });
-            }}
-            onPickModel={(model, effort) => {
-              setRouting({
-                provider: viewProvider,
-                model,
-                effort,
-              });
-            }}
-            onConnectProvider={(provider) => {
-              window.dispatchEvent(
-                new CustomEvent('goodboy:open-provider-studio', {
-                  detail: { providerId: provider },
-                }),
-              );
-              close();
-            }}
-          />
-          <Divider />
-          <div className="flex items-center justify-end px-2.5 py-2">
-            <Button size="sm" onClick={() => void onCreate()}>
-              Spawn {AGENT_KIND_META[selectedKind].label}
-            </Button>
-          </div>
-        </Popover>
-      )}
+      <DropdownPortal portal={portal}>
+        {open && (
+          <Popover
+            innerRef={popupRef}
+            role="dialog"
+            ariaLabel="create agent"
+            className={cn(popupClassName, 'flex flex-col bg-subtle')}
+            style={popupStyle}
+          >
+            {agentKinds.length > 1 && (
+              <>
+                <PickerSection label="Agent type" hint="What this agent is allowed to do">
+                  <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
+                </PickerSection>
+                <Divider />
+              </>
+            )}
+            <SpawnRoutingSummary
+              kind={selectedKind}
+              effective={effective}
+              fallback={spawnDefault}
+              isPinned={routing != null}
+              onReset={() => {
+                setRouting(null);
+                setViewProvider(spawnDefault.provider);
+              }}
+            />
+            <Divider />
+            <AgentRoutingSections
+              connectedProviders={connectedProviders}
+              effective={effective}
+              viewProvider={viewProvider}
+              onViewProvider={setViewProvider}
+              onPickProvider={(provider) => {
+                const model = getDefaultTurnModel({ id: provider });
+                setRouting({
+                  provider,
+                  model,
+                  effort: clampEffort(model, effective.effort),
+                });
+              }}
+              onPickModel={(model, effort) => {
+                setRouting({
+                  provider: viewProvider,
+                  model,
+                  effort,
+                });
+              }}
+              onConnectProvider={(provider) => {
+                window.dispatchEvent(
+                  new CustomEvent('goodboy:open-provider-studio', {
+                    detail: { providerId: provider },
+                  }),
+                );
+                close();
+              }}
+            />
+            <Divider />
+            <div className="flex items-center justify-end px-2.5 py-2">
+              <Button size="sm" onClick={() => void onCreate()}>
+                Spawn {AGENT_KIND_META[selectedKind].label}
+              </Button>
+            </div>
+          </Popover>
+        )}
+      </DropdownPortal>
     </div>
   );
 };

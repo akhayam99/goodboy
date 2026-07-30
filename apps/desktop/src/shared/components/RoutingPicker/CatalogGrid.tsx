@@ -1,5 +1,4 @@
 import type { CatalogModel } from '@goodboy/types';
-import { FAMILY_SECTION_LABEL } from '../../../features/chat/utils/chat-constants';
 import { groupCatalog } from './groupCatalog';
 import { VersionChip } from './VersionChip';
 
@@ -19,16 +18,10 @@ export const CatalogGrid = ({
   onSelect,
 }: Props) => {
   const sections = groupCatalog({ catalog });
-  const showFamilyHeaders = sections.length > 1;
   return (
-    <section aria-label="Models" className="flex flex-col gap-1 py-3">
+    <section aria-label="Models" className="flex flex-col gap-0.5 py-3">
       {sections.map((section) => (
         <div key={section.family} className="flex flex-col gap-0.5">
-          {showFamilyHeaders && (
-            <span className="px-2.5 pt-1 text-2xs font-medium uppercase tracking-wide text-muted-foreground/50">
-              {FAMILY_SECTION_LABEL[section.family]}
-            </span>
-          )}
           {section.rows.map((row, rowIndex) =>
             row.group == null ? (
               <div

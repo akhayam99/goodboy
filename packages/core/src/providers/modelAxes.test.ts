@@ -28,6 +28,26 @@ describe('modelAxes', () => {
     ).toEqual(['high']);
   });
 
+  it('exposes each available Cursor toggle once with its active state', () => {
+    const composer = CURSOR_CATALOG.find((candidate) => candidate.key === 'composer-2.5');
+    const opus = CURSOR_CATALOG.find((candidate) => candidate.key === 'opus-5');
+    if (composer == null || opus == null) {
+      throw new Error('missing cursor toggle fixtures');
+    }
+    expect(
+      modelAxes({
+        model: composer,
+        selection: { key: composer.key, toggles: { fast: true } },
+      }).toggles,
+    ).toEqual([{ id: 'fast', label: 'Fast', active: true, canToggle: true }]);
+    expect(
+      modelAxes({
+        model: opus,
+        selection: { key: opus.key, toggles: { thinking: false } },
+      }).toggles,
+    ).toEqual([{ id: 'thinking', label: 'Thinking', active: false, canToggle: true }]);
+  });
+
   it('exposes codex variants and honors the selected variant', () => {
     const model = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-5.6');
     if (model == null) {
