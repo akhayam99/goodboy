@@ -9,7 +9,11 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { recommendedModelForRole, resolveModelForProvider } from '@goodboy/core';
-import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
+import {
+  ROLE_TO_KIND,
+  inferAgentKindFromName,
+  kindRouting,
+} from '../../../features/session/agent-kind';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 
 type Params = {
@@ -64,11 +68,13 @@ export const preSpawnWorkflowAgents = async ({
       provider,
       modelId:
         step.modelOverride ??
-        recommendedModelForRole({
-          role: step.role ?? 'custom',
-          provider,
-          prefs: roleModels,
-        }),
+        (step.role != null
+          ? recommendedModelForRole({
+              role: step.role,
+              provider,
+              prefs: roleModels,
+            })
+          : kindRouting({ kind, roleModels }).model),
     });
     kindOverrides[agent.id] = kind;
     if (step.effort != null) {
