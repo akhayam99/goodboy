@@ -5,6 +5,7 @@ import { ConfirmPill } from '../../../../../shared/components/ConfirmPill';
 import { useAppStore } from '../../../../../store';
 import { formatError } from '../../../../../shared/lib/errors';
 import { useToast } from '../../../../../app/components/Toast';
+import { EditorMenu } from '../../SessionOverviewPane/EditorMenu';
 
 const ICON_BUTTON =
   'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
@@ -67,56 +68,60 @@ export const LensColumnFooter = ({ session }: Props) => {
   };
 
   return (
-    <div className="flex shrink-0 items-center justify-between gap-2 px-2 py-2">
-      {archived ? (
-        <button
-          type="button"
-          onClick={doUnarchive}
-          title="Unarchive session"
-          aria-label="unarchive session"
-          className={ICON_BUTTON}
-        >
-          <ArchiveRestore size={13} aria-hidden />
-        </button>
-      ) : armed === 'archive' ? (
-        <ConfirmPill
-          label="Archive?"
-          confirmAria="archive session"
-          busy={busy}
-          onConfirm={doArchive}
-          onCancel={() => setArmed(null)}
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setArmed('archive')}
-          title="Archive session"
-          aria-label="archive session"
-          className={ICON_BUTTON}
-        >
-          <Archive size={13} aria-hidden />
-        </button>
-      )}
-      {armed === 'delete' ? (
-        <ConfirmPill
-          label="Delete?"
-          confirmAria="delete session"
-          danger
-          busy={busy}
-          onConfirm={doDelete}
-          onCancel={() => setArmed(null)}
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setArmed('delete')}
-          title="Delete session"
-          aria-label="delete session"
-          className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-        >
-          <Trash2 size={13} aria-hidden />
-        </button>
-      )}
+    <div className="flex shrink-0 items-center gap-2 px-2 py-2">
+      <EditorMenu sessionId={sessionId} />
+      <span className="flex-1" />
+      <div className="flex items-center gap-1">
+        {archived ? (
+          <button
+            type="button"
+            onClick={doUnarchive}
+            title="Unarchive session"
+            aria-label="unarchive session"
+            className={ICON_BUTTON}
+          >
+            <ArchiveRestore size={13} aria-hidden />
+          </button>
+        ) : armed === 'archive' ? (
+          <ConfirmPill
+            label="Archive?"
+            confirmAria="archive session"
+            busy={busy}
+            onConfirm={doArchive}
+            onCancel={() => setArmed(null)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setArmed('archive')}
+            title="Archive session"
+            aria-label="archive session"
+            className={ICON_BUTTON}
+          >
+            <Archive size={13} aria-hidden />
+          </button>
+        )}
+        {armed === 'delete' ? (
+          <ConfirmPill
+            label="Delete?"
+            confirmAria="delete session"
+            danger
+            busy={busy}
+            onConfirm={doDelete}
+            onCancel={() => setArmed(null)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setArmed('delete')}
+            title="Delete session"
+            aria-label="delete session"
+            className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          >
+            <Trash2 size={13} aria-hidden />
+          </button>
+        )}
+      </div>
     </div>
   );
 };

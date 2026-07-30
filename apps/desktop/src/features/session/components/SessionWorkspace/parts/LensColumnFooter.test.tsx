@@ -21,6 +21,10 @@ vi.mock('../../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
+vi.mock('../../SessionOverviewPane/EditorMenu', () => ({
+  EditorMenu: () => <button type="button">open worktree</button>,
+}));
+
 import { LensColumnFooter } from './LensColumnFooter';
 
 const session = (over: Record<string, unknown> = {}): Session =>
@@ -35,6 +39,16 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('LensColumnFooter', () => {
+  it('orders the editor, archive, and delete controls across the footer', () => {
+    render(<LensColumnFooter session={session()} />);
+    const editor = screen.getByRole('button', { name: /open worktree/i });
+    const archive = screen.getByRole('button', { name: /archive session/i });
+    const remove = screen.getByRole('button', { name: /delete session/i });
+
+    expect(editor.compareDocumentPosition(archive) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(archive.compareDocumentPosition(remove) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  });
+
   it('arms then confirms archive inline without firing on the first click', () => {
     render(<LensColumnFooter session={session()} />);
     fireEvent.click(screen.getByRole('button', { name: /archive session/i }));
