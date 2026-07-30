@@ -1,13 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { Button, cn, Divider, Input, ScrollFade, SectionHeader, Textarea } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, GitBranch, Sparkles } from 'lucide-react';
+import {
+  Button,
+  cn,
+  Divider,
+  FieldRow,
+  Input,
+  ScrollFade,
+  SectionHeader,
+  SegmentedTabs,
+  Skeleton,
+  Textarea,
+} from '@goodboy/ui';
+import { AlertTriangle, ArrowRight, GitBranch, PenLine, Sparkles } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { BranchCombobox } from '../../../worktree/BranchCombobox';
+import type { LocalBranchInfo } from '../../../worktree/worktree';
 import { useAppStore } from '../../../../store';
+
+type CreateMode = 'manual' | 'agent';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -51,15 +66,22 @@ export const CreatePrPanel = ({
     [workspaceOverrides?.taskModels, session?.providerPreference?.defaultProvider],
   );
 
+  const [mode, setMode] = useState<CreateMode>('manual');
   const [title, setTitle] = useState(defaultTitle);
   const [body, setBody] = useState('');
   const [base, setBase] = useState('');
   const [branches, setBranches] = useState<ReadonlyArray<string>>([]);
+  const [branchesLoading, setBranchesLoading] = useState(true);
   const [draft, setDraft] = useState(true);
   const [busy, setBusy] = useState<'create' | 'ai' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
   const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
+
+  const branchOptions = useMemo<ReadonlyArray<LocalBranchInfo>>(
+    () => branches.map((name) => ({ name, inUse: false, hasUncommitted: false })),
+    [branches],
+  );
 
   useEffect(() => {
     if (agentConfigUserTouched) {
@@ -69,16 +91,19 @@ export const CreatePrPanel = ({
   }, [agentConfigUserTouched, resolvedAgentConfig]);
 
   useEffect(() => {
-    if (!workspaceRoot) {
+    if (workspaceRoot == null) {
+      setBranchesLoading(false);
       return;
     }
     let cancelled = false;
+    setBranchesLoading(true);
     void ghBaseBranches(workspaceRoot, workspaceId).then(({ defaultBranch, branches: list }) => {
       if (cancelled) {
         return;
       }
       setBranches(list);
-      if (defaultBranch) {
+      setBranchesLoading(false);
+      if (defaultBranch != null) {
         setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
       }
     });
@@ -141,10 +166,10 @@ export const CreatePrPanel = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-10 py-8" fadeSize={24}>
-        <section className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+        <section className="mx-auto flex w-full max-w-2xl flex-col gap-6">
           <SectionHeader
-            label="open a pull request"
+            label="Open a pull request"
             action={
               <span className="inline-flex items-center gap-1 font-mono text-2xs text-muted-foreground">
                 <GitBranch size={11} aria-hidden />
@@ -152,69 +177,88 @@ export const CreatePrPanel = ({
               </span>
             }
           />
-          <div className="flex flex-col gap-1.5">
-            <SectionHeader label="title" />
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="pull request title"
-              disabled={busy !== null}
-              aria-label="Pull request title"
-              className="h-8 text-sm"
-              autoFocus
+          <section className="flex flex-col">
+            <SectionHeader
+              label="How"
+              hint="Fill the pull request yourself, or hand it to an agent that drafts and opens it."
+              action={
+                <SegmentedTabs
+                  ariaLabel="Creation mode"
+                  size="sm"
+                  options={[
+                    { value: 'manual', label: 'Manual', icon: PenLine },
+                    { value: 'agent', label: 'With an agent', icon: Sparkles },
+                  ]}
+                  value={mode}
+                  onChange={setMode}
+                />
+              }
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <SectionHeader label="description" />
-            <Textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="what changed and why (markdown supported)"
-              className="text-sm"
-              autoGrow
-              minRows={3}
-              maxRows={12}
-              disabled={busy !== null}
-              aria-label="Pull request description"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <SectionHeader label="base branch" icon={<GitBranch size={13} aria-hidden />} />
-            <Input
-              value={base}
-              onChange={(e) => setBase(e.target.value)}
-              placeholder="default branch"
-              list="pr-base-branches"
-              className="h-8 font-mono text-sm"
-              disabled={busy !== null}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              aria-label="Base branch"
-            />
-            <datalist id="pr-base-branches">
-              {branches.map((b) => (
-                <option key={b} value={b} />
-              ))}
-            </datalist>
-          </div>
-          <AgentSpawnConfig
-            value={agentConfig}
-            onChange={(value) => {
-              setAgentConfigUserTouched(true);
-              setAgentConfig(value);
-            }}
-            disabled={busy !== null}
-          />
-        </section>
-      </ScrollFade>
-
-      <Divider />
-
-      <footer className="shrink-0">
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-10 py-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+            {mode === 'manual' ? (
+              <>
+                <FieldRow label="Title" help="A short summary of the change.">
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Pull request title"
+                    disabled={busy !== null}
+                    aria-label="Pull request title"
+                    className="h-8 w-full text-sm sm:w-96"
+                    autoFocus
+                  />
+                </FieldRow>
+                <Divider />
+                <FieldRow label="Description" help="What changed and why. Markdown supported.">
+                  <Textarea
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="What changed and why"
+                    className="w-full text-sm sm:w-96"
+                    autoGrow
+                    minRows={3}
+                    maxRows={12}
+                    disabled={busy !== null}
+                    aria-label="Pull request description"
+                  />
+                </FieldRow>
+                <Divider />
+                <FieldRow label="Base branch" help="The branch this pull request merges into.">
+                  <div className="w-full sm:w-96">
+                    {branchesLoading ? (
+                      <Skeleton className="h-9 w-full rounded-md border border-border" />
+                    ) : (
+                      <BranchCombobox
+                        branches={branchOptions}
+                        value={base}
+                        onChange={setBase}
+                        disabled={busy !== null}
+                        loading={false}
+                      />
+                    )}
+                  </div>
+                </FieldRow>
+              </>
+            ) : (
+              <FieldRow
+                label="Agent"
+                layout="stacked"
+                help="Routing and optional notes for the agent that drafts the title and description, then opens the pull request."
+              >
+                <AgentSpawnConfig
+                  value={agentConfig}
+                  onChange={(value) => {
+                    setAgentConfigUserTouched(true);
+                    setAgentConfig(value);
+                  }}
+                  disabled={busy !== null}
+                />
+              </FieldRow>
+            )}
+            <Divider />
+            <FieldRow
+              label="Open as draft"
+              help="Creates the pull request in GitHub's draft state."
+            >
               <input
                 type="checkbox"
                 checked={draft}
@@ -222,45 +266,62 @@ export const CreatePrPanel = ({
                 className="accent-primary"
                 disabled={busy !== null}
               />
-              Mark as draft
-            </label>
-            {error != null && (
-              <span
-                role="alert"
-                className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
-                title={error}
-              >
-                <AlertTriangle size={12} aria-hidden className="shrink-0" />
-                {error}
-              </span>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {onCancel != null && (
-              <Button variant="ghost" onClick={onCancel} disabled={busy !== null}>
-                Cancel
-              </Button>
-            )}
-            <Button
-              variant="secondary"
-              onClick={() => void onCreateWithAi()}
-              disabled={busy !== null}
-              title="hand it to an agent: it drafts the title and description, then opens the PR"
-              className={cn(busy === 'ai' && 'animate-border-pulse')}
+            </FieldRow>
+          </section>
+        </section>
+      </ScrollFade>
+
+      <Divider />
+
+      <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {error != null && (
+            <span
+              role="alert"
+              className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
+              title={error}
             >
-              <Sparkles size={13} className="mr-1.5" aria-hidden />
-              Draft with an agent
-            </Button>
-            <Button
-              onClick={() => void onCreate()}
-              disabled={busy !== null || title.trim().length === 0}
-              className={cn(busy === 'create' && 'animate-border-pulse')}
-            >
-              Create PR
-              <ArrowRight size={13} className="ml-1.5" aria-hidden />
-            </Button>
-          </div>
+              <AlertTriangle size={12} aria-hidden className="shrink-0" />
+              {error}
+            </span>
+          )}
         </div>
+        {onCancel != null && (
+          <Button variant="ghost" onClick={onCancel} disabled={busy !== null}>
+            Cancel
+          </Button>
+        )}
+        {mode === 'manual' ? (
+          <Button
+            onClick={() => void onCreate()}
+            disabled={busy !== null || title.trim().length === 0}
+            className={cn(busy === 'create' && 'animate-border-pulse')}
+          >
+            {busy === 'create' ? (
+              'Creating…'
+            ) : (
+              <>
+                Create PR
+                <ArrowRight size={13} className="ml-1.5" aria-hidden />
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => void onCreateWithAi()}
+            disabled={busy !== null}
+            className={cn(busy === 'ai' && 'animate-border-pulse')}
+          >
+            {busy === 'ai' ? (
+              'Drafting…'
+            ) : (
+              <>
+                <Sparkles size={13} className="mr-1.5" aria-hidden />
+                Draft with agent
+              </>
+            )}
+          </Button>
+        )}
       </footer>
     </div>
   );

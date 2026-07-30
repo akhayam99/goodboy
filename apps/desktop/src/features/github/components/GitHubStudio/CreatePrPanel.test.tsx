@@ -25,6 +25,8 @@ type ConfigProps = {
   readonly disabled: boolean;
 };
 
+type BaseBranches = { defaultBranch: string | null; branches: ReadonlyArray<string> };
+
 const h = vi.hoisted(() => ({
   config: {
     provider: 'codex',
@@ -32,6 +34,12 @@ const h = vi.hoisted(() => ({
     effort: 'medium',
     hint: 'Keep the public API stable.',
   } satisfies AgentSpawnConfigValue,
+  ghBaseBranches: vi.fn(
+    async (): Promise<{ defaultBranch: string | null; branches: ReadonlyArray<string> }> => ({
+      defaultBranch: 'main',
+      branches: ['main'],
+    }),
+  ),
   store: {
     createPrForSession: vi.fn(async () => undefined),
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-2'),
@@ -49,7 +57,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('../../github', () => ({
-  ghBaseBranches: vi.fn(async () => ({ defaultBranch: 'main', branches: ['main'] })),
+  ghBaseBranches: h.ghBaseBranches,
 }));
 
 vi.mock('../../../session/components/AgentSpawnConfig', () => ({
@@ -73,16 +81,103 @@ import { CreatePrPanel } from './CreatePrPanel';
 
 const SESSION_ID = 'session-2' as SessionId;
 
+const renderPanel = () =>
+  render(
+    <CreatePrPanel
+      sessionId={SESSION_ID}
+      defaultTitle="Refactor PR cards"
+      onCreated={vi.fn()}
+      onStudioClose={vi.fn()}
+    />,
+  );
+
+const switchToAgentMode = () => {
+  fireEvent.click(screen.getByRole('tab', { name: 'With an agent' }));
+};
+
 beforeEach(() => {
+  h.store.createPrForSession.mockClear();
+  h.store.createPrForSession.mockImplementation(async () => undefined);
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
   h.store.setCurrentSession.mockClear();
   h.store.workspaceOverrides = {};
+  h.ghBaseBranches.mockClear();
+  h.ghBaseBranches.mockImplementation(async () => ({ defaultBranch: 'main', branches: ['main'] }));
 });
 
 afterEach(cleanup);
 
 describe('CreatePrPanel', () => {
+  it('creates a PR manually with the filled fields and the default base', async () => {
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Pull request title' }), {
+      target: { value: 'Ship the card refactor' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Pull request description' }), {
+      target: { value: 'Documents the change.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+
+    await waitFor(() =>
+      expect(h.store.createPrForSession).toHaveBeenCalledWith(SESSION_ID, {
+        title: 'Ship the card refactor',
+        body: 'Documents the change.',
+        base: 'main',
+        draft: true,
+      }),
+    );
+  });
+
+  it('respects the draft toggle on manual create', async () => {
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Open as draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+
+    await waitFor(() =>
+      expect(h.store.createPrForSession).toHaveBeenCalledWith(
+        SESSION_ID,
+        expect.objectContaining({ draft: false }),
+      ),
+    );
+  });
+
+  it('shows the create error in the footer', async () => {
+    h.store.createPrForSession.mockRejectedValueOnce(new Error('gh exploded'));
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('gh exploded');
+  });
+
+  it('swaps the body when switching modes', async () => {
+    renderPanel();
+    expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+    switchToAgentMode();
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Choose agent config' })).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Manual' }));
+    expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+  });
+
+  it('shows a skeleton instead of the base branch picker while branches load', async () => {
+    let resolve: (value: BaseBranches) => void = () => undefined;
+    h.ghBaseBranches.mockImplementationOnce(
+      () =>
+        new Promise<BaseBranches>((r) => {
+          resolve = r;
+        }),
+    );
+    renderPanel();
+    expect(screen.queryByRole('combobox', { name: 'Branch' })).toBeNull();
+    resolve({ defaultBranch: 'main', branches: ['main'] });
+    expect(await screen.findByRole('combobox', { name: 'Branch' })).toBeDefined();
+  });
+
   it('spawns a PR agent with the chosen config and operator notes', async () => {
     const onStudioClose = vi.fn();
     render(
@@ -93,8 +188,9 @@ describe('CreatePrPanel', () => {
         onStudioClose={onStudioClose}
       />,
     );
+    switchToAgentMode();
     fireEvent.click(screen.getByRole('button', { name: 'Choose agent config' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with an agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
 
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     const args = h.store.spawnAgent.mock.calls[0]![1];
@@ -110,16 +206,10 @@ describe('CreatePrPanel', () => {
   });
 
   it('preserves the prompt for a whitespace-only hint', async () => {
-    render(
-      <CreatePrPanel
-        sessionId={SESSION_ID}
-        defaultTitle="Refactor PR cards"
-        onCreated={vi.fn()}
-        onStudioClose={vi.fn()}
-      />,
-    );
+    renderPanel();
+    switchToAgentMode();
     fireEvent.click(screen.getByRole('button', { name: 'Set whitespace hint' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with an agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
 
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     const args = h.store.spawnAgent.mock.calls[0]![1];
@@ -162,7 +252,8 @@ describe('CreatePrPanel', () => {
         onStudioClose={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with an agent' }));
+    switchToAgentMode();
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
 
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({

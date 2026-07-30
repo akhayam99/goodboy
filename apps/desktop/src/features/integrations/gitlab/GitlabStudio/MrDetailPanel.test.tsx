@@ -16,7 +16,7 @@ type Store = {
     workspaceId: string;
     providerPreference: { defaultProvider: 'anthropic'; allowTurnOverride: false };
   }>;
-  readonly sessionGitlabMr: Record<string, unknown>;
+  sessionGitlabMr: Record<string, unknown>;
   readonly sessionBranches: Record<string, string>;
   readonly refreshSessionMr: ReturnType<typeof vi.fn>;
   readonly createMrForSession: ReturnType<typeof vi.fn>;
@@ -121,7 +121,12 @@ beforeEach(() => {
   h.store.setCurrentSession.mockClear();
   h.showToast.mockClear();
   h.store.workspaceOverrides = {};
+  h.store.sessionGitlabMr = {};
 });
+
+const switchToAgentMode = () => {
+  fireEvent.click(screen.getByRole('tab', { name: 'With an agent' }));
+};
 
 afterEach(cleanup);
 
@@ -149,11 +154,47 @@ describe('MrDetailPanel', () => {
     );
   });
 
+  it('respects the draft toggle on manual create', async () => {
+    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Merge request title' }), {
+      target: { value: 'Ship the GitLab release' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Open as draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create MR' }));
+
+    await waitFor(() =>
+      expect(h.store.createMrForSession).toHaveBeenCalledWith(
+        SESSION_ID,
+        expect.objectContaining({ draft: false }),
+      ),
+    );
+  });
+
+  it('shows the merge request error in the form footer', () => {
+    h.store.sessionGitlabMr = {
+      'session-3': { mr: null, loading: false, error: 'GitLab token expired' },
+    };
+    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
+
+    expect(screen.getByRole('alert').textContent).toContain('GitLab token expired');
+  });
+
+  it('swaps the form body when switching modes', () => {
+    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
+    expect(screen.getByRole('textbox', { name: 'Merge request title' })).toBeDefined();
+    switchToAgentMode();
+    expect(screen.queryByRole('textbox', { name: 'Merge request title' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Choose agent config' })).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Manual' }));
+    expect(screen.getByRole('textbox', { name: 'Merge request title' })).toBeDefined();
+  });
+
   it('spawns an MR agent with the chosen config and operator notes', async () => {
     const onClose = vi.fn();
     render(<MrDetailPanel sessionId={SESSION_ID} onClose={onClose} />);
+    switchToAgentMode();
     fireEvent.click(screen.getByRole('button', { name: 'Choose agent config' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with an agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
 
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     const args = h.store.spawnAgent.mock.calls[0]![1];
@@ -176,7 +217,8 @@ describe('MrDetailPanel', () => {
       },
     };
     rerender(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with an agent' }));
+    switchToAgentMode();
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
 
     await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
     expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({

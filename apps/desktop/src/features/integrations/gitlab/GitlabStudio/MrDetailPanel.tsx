@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Divider, EmptyState, Input, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  EmptyState,
+  FieldRow,
+  Input,
+  Markdown,
+  SectionHeader,
+  SegmentedTabs,
+  Textarea,
+} from '@goodboy/ui';
 import {
   AlertTriangle,
   ArrowRight,
   GitBranch,
   GitMerge,
   MousePointerClick,
+  PenLine,
   Sparkles,
 } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
@@ -33,6 +44,8 @@ import {
   type GitlabMergeStatusTone,
 } from '../client';
 import { projectPathFromMrUrl } from './useGitlabMrs';
+
+type CreateMode = 'manual' | 'agent';
 
 type Props = {
   readonly sessionId?: SessionId | null;
@@ -99,6 +112,7 @@ export const MrDetailPanel = ({
   const loading = mrState?.loading ?? false;
   const error = mrState?.error ?? null;
 
+  const [mode, setMode] = useState<CreateMode>('manual');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [targetBranch, setTargetBranch] = useState('main');
@@ -358,86 +372,113 @@ export const MrDetailPanel = ({
       }
     >
       {session != null && sessionId != null ? (
-        <section className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <SectionHeader label="title" />
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={busy !== null}
-              aria-label="Merge request title"
-              className="h-8 text-sm"
+        <section className="flex flex-col gap-6">
+          <section className="flex flex-col">
+            <SectionHeader
+              label="How"
+              hint="Fill the merge request yourself, or hand it to an agent that drafts and opens it."
+              action={
+                <SegmentedTabs
+                  ariaLabel="Creation mode"
+                  size="sm"
+                  options={[
+                    { value: 'manual', label: 'Manual', icon: PenLine },
+                    { value: 'agent', label: 'With an agent', icon: Sparkles },
+                  ]}
+                  value={mode}
+                  onChange={setMode}
+                />
+              }
             />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <SectionHeader label="description" />
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              autoGrow
-              minRows={3}
-              maxRows={10}
-              disabled={busy !== null}
-              aria-label="Merge request description"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <SectionHeader label="target branch" icon={<GitBranch size={13} aria-hidden />} />
-            <Input
-              value={targetBranch}
-              onChange={(e) => setTargetBranch(e.target.value)}
-              placeholder="main"
-              className="h-8 font-mono text-sm"
-              disabled={busy !== null}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              aria-label="Target branch"
-            />
-          </div>
-          <AgentSpawnConfig
-            value={agentConfig}
-            onChange={(value) => {
-              setAgentConfigUserTouched(true);
-              setAgentConfig(value);
-            }}
-            disabled={busy !== null}
-          />
+            {mode === 'manual' ? (
+              <>
+                <FieldRow label="Title" help="A short summary of the change.">
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    disabled={busy !== null}
+                    aria-label="Merge request title"
+                    className="h-8 w-full text-sm sm:w-96"
+                  />
+                </FieldRow>
+                <Divider />
+                <FieldRow label="Description" help="What changed and why. Markdown supported.">
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    autoGrow
+                    minRows={3}
+                    maxRows={10}
+                    disabled={busy !== null}
+                    aria-label="Merge request description"
+                    className="w-full text-sm sm:w-96"
+                  />
+                </FieldRow>
+                <Divider />
+                <FieldRow label="Target branch" help="The branch this merge request merges into.">
+                  <Input
+                    value={targetBranch}
+                    onChange={(e) => setTargetBranch(e.target.value)}
+                    placeholder="main"
+                    className="h-8 w-full font-mono text-sm sm:w-96"
+                    disabled={busy !== null}
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-label="Target branch"
+                  />
+                </FieldRow>
+              </>
+            ) : (
+              <FieldRow
+                label="Agent"
+                layout="stacked"
+                help="Routing and optional notes for the agent that drafts the title and description, then opens the merge request."
+              >
+                <AgentSpawnConfig
+                  value={agentConfig}
+                  onChange={(value) => {
+                    setAgentConfigUserTouched(true);
+                    setAgentConfig(value);
+                  }}
+                  disabled={busy !== null}
+                />
+              </FieldRow>
+            )}
+            <Divider />
+            <FieldRow
+              label="Open as draft"
+              help="Creates the merge request in GitLab's draft state."
+            >
+              <input
+                type="checkbox"
+                checked={draft}
+                onChange={(e) => setDraft(e.target.checked)}
+                className="accent-primary"
+                disabled={busy !== null}
+              />
+            </FieldRow>
+          </section>
 
           <Divider />
 
-          <footer className="flex shrink-0 items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={draft}
-                  onChange={(e) => setDraft(e.target.checked)}
-                  className="accent-primary"
-                  disabled={busy !== null}
-                />
-                Mark as draft
-              </label>
+          <footer className="flex shrink-0 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               {error != null ? (
-                <span role="alert" className="text-xs text-danger">
+                <span
+                  role="alert"
+                  className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
+                  title={error}
+                >
+                  <AlertTriangle size={12} aria-hidden className="shrink-0" />
                   {error}
                 </span>
               ) : null}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => void onCreateWithAi()}
-                disabled={busy !== null || !branch}
-                title="hand it to an agent: it drafts the title and description, then opens the MR"
-                className={busy === 'ai' ? 'animate-border-pulse' : undefined}
-              >
-                {busy === 'ai' ? null : <Sparkles size={13} className="mr-1.5" aria-hidden />}
-                Draft with an agent
-              </Button>
+            {mode === 'manual' ? (
               <Button
                 onClick={() => void onCreate()}
-                disabled={busy !== null || title.trim().length === 0 || !branch}
+                disabled={busy !== null || title.trim().length === 0 || branch == null}
                 className={busy === 'create' ? 'animate-border-pulse' : undefined}
               >
                 {busy === 'create' ? (
@@ -449,7 +490,22 @@ export const MrDetailPanel = ({
                   </>
                 )}
               </Button>
-            </div>
+            ) : (
+              <Button
+                onClick={() => void onCreateWithAi()}
+                disabled={busy !== null || branch == null}
+                className={busy === 'ai' ? 'animate-border-pulse' : undefined}
+              >
+                {busy === 'ai' ? (
+                  'Drafting…'
+                ) : (
+                  <>
+                    <Sparkles size={13} className="mr-1.5" aria-hidden />
+                    Draft with agent
+                  </>
+                )}
+              </Button>
+            )}
           </footer>
         </section>
       ) : null}

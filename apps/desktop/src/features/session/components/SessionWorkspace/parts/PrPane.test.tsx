@@ -106,7 +106,7 @@ describe('PrPane', () => {
     render(<PrPane session={session} />);
 
     expect(screen.getByText('External review session')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Draft with an agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Draft with agent' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
   });
 
@@ -320,7 +320,7 @@ describe('PrPane', () => {
       screen.getByText('No issues or external tasks are linked to this session yet.'),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Draft with an agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Draft with agent' })).toBeNull();
   });
 
   it('offers a connect action instead of the create-PR state without a GitHub remote', () => {
