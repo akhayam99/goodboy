@@ -14,7 +14,6 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { ghPrDiff } from '../../../../features/github/github';
-import { taskModelAgentSpawnConfig } from '../../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
 import {
@@ -25,6 +24,7 @@ import {
 import { useAppStore, useDiffComments, useSummarizerStatus } from '../../../../store';
 import { kindRouting, type AgentKindRouting } from '../../../../features/session/agent-kind';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
+import { useRebaseAgent } from '../../../../features/session/hooks/useRebaseAgent';
 import { clampEffort } from '../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
@@ -317,23 +317,6 @@ export const DiffViewerContent = ({
   const sendTurn = useAppStore((s) => s.sendTurn);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const [spawning, setSpawning] = useState(false);
-  const [isRebasing, setIsRebasing] = useState(false);
-  const [rebaseError, setRebaseError] = useState<string | null>(null);
-  const session = useAppStore((s) =>
-    sessionId == null ? null : (s.sessions.find((candidate) => candidate.id === sessionId) ?? null),
-  );
-  const workspaceOverrides = useAppStore((s) =>
-    session == null ? null : (s.workspaceOverrides?.[session.workspaceId] ?? null),
-  );
-  const rebaseAgentConfig = useMemo(
-    () =>
-      taskModelAgentSpawnConfig({
-        task: 'rebase',
-        preferences: workspaceOverrides?.taskModels,
-        defaultProviderId: session?.providerPreference.defaultProvider ?? 'anthropic',
-      }),
-    [session?.providerPreference.defaultProvider, workspaceOverrides?.taskModels],
-  );
   const resolverRoleModels = useSessionRoleModels({ sessionId: sessionId ?? null });
   const [resolverRouting, setResolverRouting] = useState<AgentKindRouting>(() =>
     kindRouting({ kind: 'resolver', roleModels: resolverRoleModels }),
@@ -353,13 +336,7 @@ export const DiffViewerContent = ({
   const phaseRuns = useAppStore((s) =>
     sessionId ? (s.sessionPhaseRuns[sessionId] ?? null) : null,
   );
-  const isRebaseAgentRunning =
-    phaseRuns?.some(
-      (agent) =>
-        agent.name === 'Rebase on main' &&
-        (agent.status === 'pending' || agent.status === 'running'),
-    ) === true;
-  const isRebaseDisabled = isRebasing || isRebaseAgentRunning;
+  const rebase = useRebaseAgent({ sessionId: sessionId ?? null, status });
   const agentNameById = useMemo(() => {
     const m = new Map<AgentId, string>();
     if (phaseRuns) {
@@ -691,38 +668,6 @@ export const DiffViewerContent = ({
     onClose();
   };
 
-  const handleRebase = async () => {
-    const provider = rebaseAgentConfig.provider;
-    if (sessionId == null || isRebaseDisabled || provider === '') {
-      return;
-    }
-    setRebaseError(null);
-    setIsRebasing(true);
-    try {
-      const initialPrompt = [
-        'Rebase this session branch onto origin/main.',
-        '- Fetch origin main before rebasing.',
-        "- Rebase the session branch onto origin/main and resolve conflicts by favoring the branch's intent.",
-        "- Run the repository's typecheck to confirm nothing broke.",
-        '- Push the rebased branch with --force-with-lease.',
-        '- Never merge and never touch other branches.',
-        '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
-      ].join('\n');
-      const agentId = await spawnAgent(sessionId, {
-        name: 'Rebase on main',
-        initialPrompt,
-        model: rebaseAgentConfig.model,
-        provider,
-        effort: rebaseAgentConfig.effort,
-      });
-      await selectAgent(sessionId, agentId);
-    } catch (rebaseFailure) {
-      setRebaseError(formatError(rebaseFailure));
-    } finally {
-      setIsRebasing(false);
-    }
-  };
-
   const handleOpenInEditor = useCallback(
     async (filePath: string) => {
       if (!workingDir) {
@@ -807,13 +752,13 @@ export const DiffViewerContent = ({
                       behind main by {status.commitsBehindMain}
                     </span>
                   ) : null}
-                  {status != null && status.commitsBehindMain > 0 && sessionId != null ? (
+                  {rebase.canRebase ? (
                     <button
                       type="button"
-                      onClick={() => void handleRebase()}
-                      disabled={isRebaseDisabled}
+                      onClick={() => void rebase.run()}
+                      disabled={rebase.isRunning}
                       title={
-                        isRebaseDisabled ? 'Rebase agent is still running' : 'Rebase onto main'
+                        rebase.isRunning ? 'Rebase agent is still running' : 'Rebase onto main'
                       }
                       className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-2xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -821,14 +766,14 @@ export const DiffViewerContent = ({
                       Rebase
                     </button>
                   ) : null}
-                  {rebaseError != null ? (
+                  {rebase.error != null ? (
                     <span
                       role="alert"
                       className="inline-flex min-w-0 items-center gap-1 text-danger"
-                      title={rebaseError}
+                      title={rebase.error}
                     >
                       <AlertTriangle size={11} aria-hidden className="shrink-0" />
-                      <span className="truncate">{rebaseError}</span>
+                      <span className="truncate">{rebase.error}</span>
                     </span>
                   ) : null}
                 </span>

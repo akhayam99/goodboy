@@ -137,12 +137,8 @@ vi.mock('../../../context/components/ContextPanel/strips/PendingResolutionsStrip
   PendingResolutionsStrip: () => <div data-testid="pending-resolutions-strip" />,
 }));
 
-vi.mock('./EditorMenu', () => ({
-  EditorMenu: () => <div data-testid="editor-menu" />,
-}));
-
-vi.mock('./ConnectedIntegrationGlyphs', () => ({
-  ConnectedIntegrationGlyphs: () => <div data-testid="connected-integration-glyphs" />,
+vi.mock('./SessionShortcuts', () => ({
+  SessionShortcuts: () => <div>Shortcuts</div>,
 }));
 
 import { SessionOverviewPane } from './index';
@@ -249,15 +245,14 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionOverviewPane header meta (cluster A)', () => {
-  it('renders the goal, stage label and workspace name', () => {
+  it('renders the goal and stage without duplicated workspace or shortcut controls', () => {
     hooks.stage = { stage: 'building', reason: 'agents are working' } as SessionStageInfo;
     renderPane();
     expect(screen.getByRole('heading', { name: /refactor auth/i })).toBeDefined();
     expect(screen.getByText('Building')).toBeDefined();
     expect(screen.getByText('agents are working')).toBeDefined();
-    expect(screen.getByText('My workspace')).toBeDefined();
-    expect(screen.getByTestId('connected-integration-glyphs')).toBeDefined();
-    expect(screen.getByTestId('editor-menu')).toBeDefined();
+    expect(screen.queryByText('My workspace')).toBeNull();
+    expect(screen.queryByRole('button', { name: /open worktree/i })).toBeNull();
   });
 
   it('falls back to Untitled session when the goal is blank', () => {
@@ -566,11 +561,7 @@ describe('SessionOverviewPane completed bucket (cluster D)', () => {
     expect(screen.queryByText('Activity')).toBeNull();
     expect(screen.getByText('Completed')).toBeDefined();
     expect(screen.getByText('finished agent')).toBeDefined();
-    const completed = screen.getByText('Completed');
-    const allClear = screen.getByText('All clear, nothing running.');
-    expect(completed.compareDocumentPosition(allClear) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
-      0,
-    );
+    expect(screen.queryByText('All clear, nothing running.')).toBeNull();
   });
 
   it('returns null (no activity section at all) when all six buckets are empty', () => {
@@ -639,9 +630,15 @@ describe('SessionOverviewPane section order', () => {
     runs.resolveQueue = [spawnNode({ id: 'resolver', name: 'resolver' })];
     runs.completedFreeAgents = [spawnNode({ name: 'finished agent', status: 'done' })];
     renderPane();
-    const sections = ['Needs you', 'Start', 'Activity', 'Resolve', 'Linked work', 'Completed'].map(
-      (label) => screen.getByText(label),
-    );
+    const sections = [
+      'Shortcuts',
+      'Needs you',
+      'Start',
+      'Activity',
+      'Resolve',
+      'Linked work',
+      'Completed',
+    ].map((label) => screen.getByText(label));
     for (let index = 0; index < sections.length - 1; index += 1) {
       expect(
         sections[index]!.compareDocumentPosition(sections[index + 1]!) &

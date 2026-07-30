@@ -1,3 +1,4 @@
+import type { SessionId } from '@goodboy/types';
 import { clearGithubToken } from './clearGithubToken';
 import { closePr } from './closePr';
 import { convertPrToDraft } from './convertPrToDraft';
@@ -17,6 +18,7 @@ import { queueResolution } from './queueResolution';
 import { dequeueResolution } from './dequeueResolution';
 import { loadPendingResolutions } from './loadPendingResolutions';
 import { pushAllResolutions } from './pushAllResolutions';
+import { pushSessionBranch } from './pushSessionBranch';
 import { setGithubPat } from './setGithubPat';
 import { sweepGithub } from './sweepGithub';
 import type { GetFn, SetFn } from './types';
@@ -35,6 +37,7 @@ export const createGithubSlice = (set: SetFn, get: GetFn) => {
     dequeueResolution: dequeueResolution(set, get),
     loadPendingResolutions: loadPendingResolutions(set, get),
     pushAllResolutions: pushAllResolutions(set, get),
+    pushSessionBranch: (sessionId: SessionId) => pushSessionBranch(get, sessionId),
     createPrForSession: createPrForSession(set, get),
     markPrReady: markPrReady(set, get),
     convertPrToDraft: convertPrToDraft(set, get),

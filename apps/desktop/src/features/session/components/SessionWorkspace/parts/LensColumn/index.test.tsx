@@ -86,6 +86,10 @@ vi.mock('../../../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
+vi.mock('../../../SessionOverviewPane/EditorMenu', () => ({
+  EditorMenu: () => <button type="button">open worktree</button>,
+}));
+
 import { LensColumn } from './index';
 
 const SESSION = {
@@ -562,7 +566,7 @@ describe('LensColumn', () => {
 });
 
 describe('LensColumn footer', () => {
-  it('renders the archive and delete controls after the lens navigation, confirming before archiving', () => {
+  it('renders editor, archive, and delete after lens navigation, confirming before archiving', () => {
     render(
       <LensColumn
         session={SESSION}
@@ -574,8 +578,15 @@ describe('LensColumn footer', () => {
     );
 
     const nav = screen.getByRole('navigation');
+    const editorButton = screen.getByRole('button', { name: /open worktree/i });
     const archiveButton = screen.getByRole('button', { name: /archive session/i });
     const deleteButton = screen.getByRole('button', { name: /delete session/i });
+    expect(nav.compareDocumentPosition(editorButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
+      0,
+    );
+    expect(
+      editorButton.compareDocumentPosition(archiveButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
     expect(nav.compareDocumentPosition(archiveButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
       0,
     );

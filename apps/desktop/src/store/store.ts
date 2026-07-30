@@ -452,6 +452,9 @@ export type AppActions = {
   pushAllResolutions(
     sessionId: SessionId,
   ): Promise<{ pushed: boolean; resolved: number; failed: number }>;
+  pushSessionBranch(
+    sessionId: SessionId,
+  ): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: string }>;
   createPrForSession(
     sessionId: SessionId,
     opts?: { title?: string; body?: string; base?: string; draft?: boolean },
