@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { CheckCircle2, GitBranch, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, GitBranch, RefreshCw, X } from 'lucide-react';
 import { Divider, EmptyState, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
 import type {
@@ -41,6 +41,7 @@ import { FileRail } from './FileTree/FileRail';
 import { FileDiffCard } from './FileDiffCard';
 import { DiffToolbar } from './DiffToolbar';
 import { NotesFooter } from './NotesFooter';
+import { DIFF_VIEWER_PANE_COPY } from './diffViewerPaneCopy';
 
 type Props = {
   onClose: () => void;
@@ -84,9 +85,7 @@ const readPersistedView = (sessionId: SessionId | undefined): DiffView | null =>
     if (parsed && typeof parsed === 'object' && 'kind' in parsed) {
       return parsed;
     }
-  } catch {
-    // ignore
-  }
+  } catch {}
   return null;
 };
 
@@ -97,9 +96,7 @@ const writePersistedView = (sessionId: SessionId | undefined, view: DiffView): v
   }
   try {
     window.localStorage.setItem(key, JSON.stringify(view));
-  } catch {
-    // ignore
-  }
+  } catch {}
 };
 
 const loadDiffForView = (worktreePath: string, view: DiffView): Promise<string> => {
@@ -244,9 +241,7 @@ const writeReviewedMap = (
   }
   try {
     window.localStorage.setItem(key, JSON.stringify(map));
-  } catch {
-    // ignore
-  }
+  } catch {}
 };
 
 export const DiffViewerContent = ({
@@ -316,6 +311,7 @@ export const DiffViewerContent = ({
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const [spawning, setSpawning] = useState(false);
   const [isRebasing, setIsRebasing] = useState(false);
+  const [rebaseError, setRebaseError] = useState<string | null>(null);
   const session = useAppStore((s) =>
     sessionId == null ? null : (s.sessions.find((candidate) => candidate.id === sessionId) ?? null),
   );
@@ -448,9 +444,7 @@ export const DiffViewerContent = ({
         setCommits(c);
         setStatus(s);
       })
-      .catch(() => {
-        // best-effort; the diff effect surfaces hard errors
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -544,8 +538,6 @@ export const DiffViewerContent = ({
     if (typeof IntersectionObserver === 'undefined' || files.length === 0) {
       return;
     }
-    // ScrollFade wraps the scroller in a positioned shell; the scroll viewport
-    // is the descendant that actually overflows, and is the IO root.
     const viewport =
       scrollRef.current?.querySelector<HTMLElement>('.overflow-y-auto') ?? scrollRef.current;
     const obs = new IntersectionObserver(
@@ -644,6 +636,7 @@ export const DiffViewerContent = ({
     if (sessionId == null || isRebaseDisabled || provider === '') {
       return;
     }
+    setRebaseError(null);
     setIsRebasing(true);
     try {
       const initialPrompt = [
@@ -663,6 +656,8 @@ export const DiffViewerContent = ({
         effort: rebaseAgentConfig.effort,
       });
       await selectAgent(sessionId, agentId);
+    } catch (rebaseFailure) {
+      setRebaseError(formatError(rebaseFailure));
     } finally {
       setIsRebasing(false);
     }
@@ -676,9 +671,7 @@ export const DiffViewerContent = ({
       const root = workingDir.replace(/\/$/, '');
       try {
         await openFileInWorkspace(root, `${root}/${filePath}`, editorBinary);
-      } catch {
-        // swallow, error surfaced via console
-      }
+      } catch {}
     },
     [workingDir, editorBinary],
   );
@@ -710,18 +703,17 @@ export const DiffViewerContent = ({
 
   const isEmpty = !loading && !error && files.length === 0;
   const isPane = presentation === 'pane';
-  const fileCountLabel = `${files.length} ${files.length === 1 ? 'file' : 'files'}`;
+  const isDefaultView = view.kind === 'branch';
   const commitsAheadOfMain = status?.commitsAheadOfMain ?? 0;
   const commitCountLabel = `${commitsAheadOfMain} ${
     commitsAheadOfMain === 1 ? 'commit' : 'commits'
   }`;
 
   return (
-    /* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- container handles keyboard nav */
     <div
       className={cn(
         'flex h-full min-h-0 w-full flex-col',
-        isPane && 'mx-auto max-w-5xl gap-5 px-6 py-5',
+        isPane && 'mx-auto max-w-5xl gap-5 px-6 py-5 motion-safe:animate-studio-in',
       )}
       onKeyDown={handleKeyDown}
     >
@@ -729,13 +721,17 @@ export const DiffViewerContent = ({
         <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-baseline gap-2">
-              <h1 className="text-xl font-semibold leading-snug text-foreground">Diff</h1>
-              {!loading && error === null && (!isEmpty || status != null) ? (
+              <h1 className="text-xl font-semibold leading-snug text-foreground">
+                {DIFF_VIEWER_PANE_COPY.title}
+              </h1>
+              {!loading && error === null && !isEmpty ? (
                 <span className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
-                  <span>{fileCountLabel}</span>
                   {isGitAware ? <span>{commitCountLabel}</span> : null}
                   {status != null && status.commitsBehindMain > 0 ? (
-                    <span className="text-muted-foreground/70">
+                    <span
+                      className="text-muted-foreground/70"
+                      title="commits on main not in this branch"
+                    >
                       behind main by {status.commitsBehindMain}
                     </span>
                   ) : null}
@@ -753,41 +749,74 @@ export const DiffViewerContent = ({
                       Rebase
                     </button>
                   ) : null}
+                  {rebaseError != null ? (
+                    <span
+                      role="alert"
+                      className="inline-flex min-w-0 items-center gap-1 text-danger"
+                      title={rebaseError}
+                    >
+                      <AlertTriangle size={11} aria-hidden className="shrink-0" />
+                      <span className="truncate">{rebaseError}</span>
+                    </span>
+                  ) : null}
                 </span>
               ) : null}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Changes across this session&apos;s working tree.
-            </p>
+            <p className="text-sm text-muted-foreground">{DIFF_VIEWER_PANE_COPY.description}</p>
           </div>
           {!isEmpty ? (
-            <DiffToolbar
-              title={title}
-              prNumber={prNumber}
-              openCommentsCount={openComments.length}
-              reviewedCount={files.length > 0 ? reviewedCount : null}
-              filesCount={files.length}
-              sidebarCollapsed={sidebarCollapsed}
-              onToggleSidebar={toggleSidebar}
-              status={isGitAware ? status : null}
-              onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
-              refreshing={loading}
-              showClose={false}
-              onClose={onClose}
-              presentation="actions"
-              viewSelector={
-                isGitAware ? (
-                  <DiffViewSelector
-                    view={view}
-                    onChange={setView}
-                    commits={commits}
-                    status={status}
-                    filesCount={loading ? null : files.length}
-                    loading={loading}
-                  />
-                ) : null
-              }
-            />
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+              <DiffToolbar
+                title={title}
+                prNumber={prNumber}
+                openCommentsCount={openComments.length}
+                reviewedCount={files.length > 0 ? reviewedCount : null}
+                filesCount={files.length}
+                sidebarCollapsed={sidebarCollapsed}
+                onToggleSidebar={toggleSidebar}
+                status={isGitAware ? status : null}
+                onRefresh={isGitAware ? () => setRefreshTick((t) => t + 1) : undefined}
+                refreshing={loading}
+                showClose={false}
+                onClose={onClose}
+                presentation="actions"
+                viewSelector={
+                  isGitAware ? (
+                    <DiffViewSelector
+                      view={view}
+                      onChange={setView}
+                      commits={commits}
+                      status={status}
+                      filesCount={loading ? null : files.length}
+                      loading={loading}
+                    />
+                  ) : null
+                }
+              />
+            </div>
+          ) : isGitAware ? (
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+              {isDefaultView ? (
+                <button
+                  type="button"
+                  onClick={() => setRefreshTick((tick) => tick + 1)}
+                  title="refresh git state"
+                  aria-label="refresh git state"
+                  className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
+                >
+                  <RefreshCw size={12} aria-hidden />
+                </button>
+              ) : (
+                <DiffViewSelector
+                  view={view}
+                  onChange={setView}
+                  commits={commits}
+                  status={status}
+                  filesCount={files.length}
+                  loading={false}
+                />
+              )}
+            </div>
           ) : null}
         </div>
       ) : (
@@ -896,7 +925,7 @@ export const DiffViewerContent = ({
           <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
         ) : files.length === 0 ? (
           <ScrollFade className="min-h-0 min-w-0 flex-1">
-            <div className={cn('mx-auto w-full max-w-2xl', !isPane && 'px-6 py-5')}>
+            <div className={cn('mx-auto w-full', !isPane && 'max-w-2xl px-6 py-5')}>
               <EmptyState
                 bordered
                 tone="success"

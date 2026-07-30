@@ -21,10 +21,6 @@ type DiffViewerDialogProps = DiffViewerContentProps & {
   open: boolean;
 };
 
-type DiffViewerPaneProps = DiffViewerContentProps & {
-  workspaceName: string;
-};
-
 export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
   <Dialog
     open={open}
@@ -39,10 +35,6 @@ export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
   </Dialog>
 );
 
-export const DiffViewerPane = ({
-  workspaceName: _workspaceName,
-  onClose,
-  ...rest
-}: DiffViewerPaneProps) => (
+export const DiffViewerPane = ({ onClose, ...rest }: DiffViewerContentProps) => (
   <DiffViewerContent {...rest} onClose={onClose} presentation="pane" showToolbarClose={false} />
 );

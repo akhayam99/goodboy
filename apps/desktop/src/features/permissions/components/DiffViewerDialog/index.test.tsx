@@ -2,6 +2,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { DiffView, SessionId } from '@goodboy/types';
+
+type DiffViewSelectorMockProps = {
+  view: DiffView;
+  onChange: (view: DiffView) => void;
+};
 
 const { state, fixtures } = vi.hoisted(() => ({
   state: {
@@ -69,7 +75,11 @@ vi.mock('../../../../features/worktree/worktree', () => ({
 }));
 
 vi.mock('../DiffViewSelector', () => ({
-  DiffViewSelector: () => <button type="button">branch vs main</button>,
+  DiffViewSelector: ({ view, onChange }: DiffViewSelectorMockProps) => (
+    <button type="button" onClick={() => onChange({ kind: 'working', scope: 'staged' })}>
+      {view.kind === 'branch' ? 'branch vs main' : 'staged only'}
+    </button>
+  ),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => ({
@@ -87,6 +97,10 @@ beforeEach(() => {
   state.spawnAgent.mockClear();
   fixtures.files = [];
   fixtures.comments = [];
+  fixtures.status.hasUpstream = false;
+  fixtures.status.branch = null;
+  fixtures.status.ahead = 0;
+  fixtures.status.behind = 0;
   fixtures.status.commitsAheadOfMain = 2;
   fixtures.status.commitsBehindMain = 3;
   if (typeof localStorage !== 'undefined') {
@@ -95,7 +109,6 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-import type { SessionId } from '@goodboy/types';
 import { DiffViewerDialog, DiffViewerPane } from './index';
 
 const SID = 's1' as SessionId;
@@ -138,42 +151,66 @@ describe('DiffViewerDialog', () => {
 
 describe('DiffViewerPane', () => {
   it('mounts content without an open gate and surfaces the no-source error', async () => {
-    render(<DiffViewerPane workspaceName="acme" onClose={vi.fn()} />);
+    render(<DiffViewerPane onClose={vi.fn()} />);
     expect(await screen.findByText(/no diff source configured/i)).toBeDefined();
   });
 
   it('renders the canonical pane header without studio chrome', () => {
-    render(<DiffViewerPane workspaceName="acme" onClose={vi.fn()} />);
+    const { container } = render(<DiffViewerPane onClose={vi.fn()} />);
     const heading = screen.getByRole('heading', { name: /^diff$/i });
     expect(heading.className).toContain('text-xl');
     expect(heading.className).toContain('font-semibold');
     expect(screen.getByText("Changes across this session's working tree.")).toBeDefined();
     expect(screen.queryByText('acme')).toBeNull();
     expect(screen.queryByText('beta')).toBeNull();
+    expect(container.firstElementChild?.className).toContain('motion-safe:animate-studio-in');
   });
 
   it('centers the pane content at the widest section width', () => {
-    const { container } = render(<DiffViewerPane workspaceName="acme" onClose={vi.fn()} />);
+    const { container } = render(<DiffViewerPane onClose={vi.fn()} />);
     const shell = container.firstElementChild as HTMLElement;
     expect(shell.className).toContain('mx-auto');
     expect(shell.className).toContain('max-w-5xl');
     expect(shell.className).not.toContain('fixed');
   });
 
-  it('shows only the header and empty state when the pane diff is empty', async () => {
-    render(<DiffViewerPane workspaceName="acme" worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+  it('shows a compact refresh action for an empty default pane view', async () => {
+    const { container } = render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
     expect(await screen.findByText('Branch matches main')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'branch vs main' })).toBeNull();
     expect(screen.queryByRole('button', { name: /file list/i })).toBeNull();
+    const refresh = screen.getByRole('button', { name: 'refresh git state' });
+    expect(refresh).toBeDefined();
+    expect(refresh.parentElement?.className).toContain('gap-1.5');
+    expect(refresh.parentElement?.className).toContain('pt-0.5');
+    expect(container.querySelector('[class*="max-w-2xl"]')).toBeNull();
+  });
+
+  it('keeps the selector available when a non-default pane view becomes empty', async () => {
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+    await screen.findByText(/alpha/);
+    fixtures.files = [];
+    fireEvent.click(screen.getByRole('button', { name: 'branch vs main' }));
+    expect(await screen.findByText('No staged changes')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'staged only' })).toBeDefined();
   });
 
   it('shows selector controls and main-relative commit metadata for a non-empty diff', async () => {
     fixtures.files = fileFixture();
-    render(<DiffViewerPane workspaceName="acme" worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+    fixtures.status.hasUpstream = true;
+    Object.assign(fixtures.status, { branch: 'feature' });
+    fixtures.status.ahead = 2;
+    fixtures.status.behind = 1;
+    render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
     expect(await screen.findByText(/alpha/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'branch vs main' })).toBeDefined();
     expect(await screen.findByText('2 commits')).toBeDefined();
     expect(screen.getByText('behind main by 3')).toBeDefined();
+    expect(screen.getByTitle('commits on main not in this branch')).toBeDefined();
+    expect(screen.getByTitle('unpushed commits')).toBeDefined();
+    expect(screen.getByTitle('behind upstream')).toBeDefined();
+    expect(screen.queryByText('1 file')).toBeNull();
   });
 
   it('spawns a rebase agent with the resolved task model when behind main', async () => {
@@ -185,14 +222,7 @@ describe('DiffViewerPane', () => {
         },
       },
     };
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        worktreePath="/tmp/worktree"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} worktreePath="/tmp/worktree" onClose={vi.fn()} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Rebase' }));
 
@@ -209,17 +239,20 @@ describe('DiffViewerPane', () => {
     await waitFor(() => expect(state.selectAgent).toHaveBeenCalledWith(SID, 'a1'));
   });
 
+  it('surfaces rebase agent failures beside the action', async () => {
+    fixtures.files = fileFixture();
+    state.spawnAgent.mockRejectedValueOnce(new Error('agent launch failed'));
+    render(<DiffViewerPane sessionId={SID} worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Rebase' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('agent launch failed');
+  });
+
   it('does not show the rebase action when the branch is not behind main', async () => {
     fixtures.files = fileFixture();
     fixtures.status.commitsBehindMain = 0;
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        worktreePath="/tmp/worktree"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} worktreePath="/tmp/worktree" onClose={vi.fn()} />);
 
     expect(await screen.findByText('2 commits')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Rebase' })).toBeNull();
@@ -230,14 +263,7 @@ describe('DiffViewerPane', () => {
     state.sessionPhaseRuns = {
       [SID]: [{ name: 'Rebase on main', status: 'running' }],
     };
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        worktreePath="/tmp/worktree"
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} worktreePath="/tmp/worktree" onClose={vi.fn()} />);
 
     const button = await screen.findByRole('button', { name: 'Rebase' });
     expect(button.hasAttribute('disabled')).toBe(true);
@@ -248,31 +274,21 @@ describe('DiffViewerPane', () => {
 describe('line comment add (single + multi-line drag)', () => {
   it('single click on the gutter opens a single-line composer', async () => {
     fixtures.files = fileFixture();
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
     const btns = screen.getAllByLabelText('comment on this line');
     fireEvent.pointerDown(btns[0]!);
     fireEvent.pointerUp(window);
-    expect(await screen.findByText('commenting on line 1')).toBeDefined();
+    const composerLabel = await screen.findByText('commenting on line 1');
+    const scrollContent = composerLabel.closest('[data-diff-scroll-content]');
+    expect(scrollContent?.className).toContain('sticky');
+    expect(scrollContent?.className).toContain('left-0');
+    expect(scrollContent?.className).toContain('w-[var(--diff-card-width)]');
   });
 
   it('dragging the gutter across lines opens a range composer and persists endLineNumber', async () => {
     fixtures.files = fileFixture();
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
     const btns = screen.getAllByLabelText('comment on this line');
     fireEvent.pointerDown(btns[0]!);
@@ -306,14 +322,7 @@ describe('line comment add (single + multi-line drag)', () => {
         anchor: { side: 'new', lineNumber: 2, endLineNumber: 3 },
       },
     ];
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     expect(await screen.findByText('lines 2–3')).toBeDefined();
     expect(screen.getByText('spans a range')).toBeDefined();
   });
@@ -331,14 +340,7 @@ describe('line comment add (single + multi-line drag)', () => {
         anchor: { side: 'new', lineNumber: 2 },
       },
     ];
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     const picker = await screen.findByRole('button', { name: /^resolver routing:/ });
     expect(picker.getAttribute('aria-label')).toContain('Claude');
     expect(picker.textContent).toContain('Medium');
@@ -385,14 +387,7 @@ const twoFileFixture = () => [
 describe('single-scroll all-files layout', () => {
   it('renders every file in one scroll, not one at a time', async () => {
     fixtures.files = twoFileFixture();
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
     expect(screen.getByText(/bravo/)).toBeDefined();
     expect(screen.getAllByText('src/a.ts').length).toBeGreaterThan(0);
@@ -402,12 +397,7 @@ describe('single-scroll all-files layout', () => {
   it('gives each file table its own horizontal scrollbar without wrapping code', async () => {
     fixtures.files = fileFixture();
     const { container } = render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
+      <DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />,
     );
     await screen.findByText(/alpha/);
     const table = container.querySelector('table');
@@ -421,14 +411,7 @@ describe('single-scroll all-files layout', () => {
 describe('per-file reviewed state', () => {
   it('marking a file viewed collapses it, updates progress, and persists', async () => {
     fixtures.files = twoFileFixture();
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
     const viewedButtons = screen.getAllByRole('button', { name: /viewed/i });
     fireEvent.click(viewedButtons[0]!);
@@ -443,14 +426,7 @@ describe('per-file reviewed state', () => {
       JSON.stringify({ 'src/a.ts': 'stale-signature' }),
     );
     fixtures.files = twoFileFixture();
-    render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
     expect(screen.getByText(/previously reviewed/i)).toBeDefined();
   });
@@ -483,12 +459,7 @@ describe('progressive batching', () => {
 
     fixtures.files = makeFiles(25);
     const { container } = render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
+      <DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />,
     );
 
     await flushMicrotasks();
@@ -511,12 +482,7 @@ describe('progressive batching', () => {
 
     fixtures.files = makeFiles(25, 'a');
     const { container, rerender } = render(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw'}
-        onClose={vi.fn()}
-      />,
+      <DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />,
     );
 
     await flushMicrotasks();
@@ -526,14 +492,7 @@ describe('progressive batching', () => {
     expect(container.querySelectorAll('[data-file-path]').length).toBe(25);
 
     fixtures.files = makeFiles(25, 'b');
-    rerender(
-      <DiffViewerPane
-        workspaceName="acme"
-        sessionId={SID}
-        loader={async () => 'raw2'}
-        onClose={vi.fn()}
-      />,
-    );
+    rerender(<DiffViewerPane sessionId={SID} loader={async () => 'raw2'} onClose={vi.fn()} />);
     await flushMicrotasks();
 
     const countAfterReset = container.querySelectorAll('[data-file-path]').length;
@@ -552,9 +511,7 @@ describe('progressive batching', () => {
 describe('DiffViewerDialog vs DiffViewerPane structural difference', () => {
   it('DiffViewerDialog uses a fixed overlay and DiffViewerPane uses centered pane layout', () => {
     const { container: dialogContainer } = render(<DiffViewerDialog open onClose={vi.fn()} />);
-    const { container: paneContainer } = render(
-      <DiffViewerPane workspaceName="acme" onClose={vi.fn()} />,
-    );
+    const { container: paneContainer } = render(<DiffViewerPane onClose={vi.fn()} />);
     const dialogRoot = dialogContainer.querySelector('dialog, [role="dialog"]');
     expect(dialogRoot).not.toBeNull();
 

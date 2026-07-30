@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, Copy, ExternalLink, MessageSquarePlus } from 'lucide-react';
 import { Divider, cn } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
@@ -44,6 +44,8 @@ type Props = {
   getAgentName: (agentId: AgentId) => string | undefined;
 };
 
+const DIFF_SCROLL_CONTENT_CLASS = 'sticky left-0 box-border w-[var(--diff-card-width)]';
+
 export const FileDiffCard = ({
   file,
   registerRef,
@@ -67,6 +69,23 @@ export const FileDiffCard = ({
   const [fileLevelComposerOpen, setFileLevelComposerOpen] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
   const [pathCopied, setPathCopied] = useState(false);
+  const diffScrollRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const scrollContainer = diffScrollRef.current;
+    if (scrollContainer == null) {
+      return;
+    }
+    scrollContainer.style.setProperty('--diff-card-width', `${scrollContainer.clientWidth}px`);
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      scrollContainer.style.setProperty('--diff-card-width', `${scrollContainer.clientWidth}px`);
+    });
+    observer.observe(scrollContainer);
+    return () => observer.disconnect();
+  }, [collapsed]);
 
   const isReviewed = reviewState === 'reviewed';
   const handleToggleReviewed = () => {
@@ -384,7 +403,7 @@ export const FileDiffCard = ({
           ) : file.hunks.length === 0 ? (
             <p className="py-4 text-center text-xs text-muted-foreground">no changes</p>
           ) : (
-            <div className="min-w-0 max-w-full overflow-x-auto">
+            <div ref={diffScrollRef} className="min-w-0 max-w-full overflow-x-auto">
               <table
                 className={cn(
                   'w-max min-w-full border-collapse font-mono text-xs leading-5',
@@ -396,11 +415,15 @@ export const FileDiffCard = ({
                     if (row.type === 'header') {
                       return (
                         <tr key={`hunk-${row.hi}`}>
-                          <td
-                            colSpan={4}
-                            className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-[10px] font-medium tabular-nums text-muted-foreground/70"
-                          >
-                            {row.header}
+                          <td colSpan={4} className="border-y border-border-soft/40 bg-muted/30">
+                            <div
+                              className={cn(
+                                DIFF_SCROLL_CONTENT_CLASS,
+                                'px-2.5 py-1 text-[10px] font-medium tabular-nums text-muted-foreground/70',
+                              )}
+                            >
+                              {row.header}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -504,8 +527,14 @@ export const FileDiffCard = ({
                         </tr>
                         {lineComments.length > 0 && (
                           <tr>
-                            <td colSpan={4} className="bg-background px-3 py-2">
-                              <div className="flex flex-col gap-1.5">
+                            <td colSpan={4} className="bg-background">
+                              <div
+                                data-diff-scroll-content
+                                className={cn(
+                                  DIFF_SCROLL_CONTENT_CLASS,
+                                  'flex flex-col gap-1.5 px-3 py-2',
+                                )}
+                              >
                                 {lineComments.map((c) => (
                                   <div key={c.id} className="flex flex-col gap-0.5">
                                     {c.anchor?.endLineNumber ? (
@@ -529,18 +558,23 @@ export const FileDiffCard = ({
                         )}
                         {isActive && anchor ? (
                           <tr>
-                            <td colSpan={4} className="bg-background px-3 py-2">
-                              <InlineComposer
-                                label={
-                                  activeAnchor?.endLineNumber
-                                    ? `commenting on lines ${activeAnchor.lineNumber}–${activeAnchor.endLineNumber}`
-                                    : `commenting on line ${anchor.lineNumber}`
-                                }
-                                onSubmit={(body) =>
-                                  handleSubmitComment(activeAnchor ?? anchor, body)
-                                }
-                                onCancel={() => setActiveAnchor(null)}
-                              />
+                            <td colSpan={4} className="bg-background">
+                              <div
+                                data-diff-scroll-content
+                                className={cn(DIFF_SCROLL_CONTENT_CLASS, 'px-3 py-2')}
+                              >
+                                <InlineComposer
+                                  label={
+                                    activeAnchor?.endLineNumber
+                                      ? `commenting on lines ${activeAnchor.lineNumber}–${activeAnchor.endLineNumber}`
+                                      : `commenting on line ${anchor.lineNumber}`
+                                  }
+                                  onSubmit={(body) =>
+                                    handleSubmitComment(activeAnchor ?? anchor, body)
+                                  }
+                                  onCancel={() => setActiveAnchor(null)}
+                                />
+                              </div>
                             </td>
                           </tr>
                         ) : null}
@@ -550,12 +584,14 @@ export const FileDiffCard = ({
                 </tbody>
               </table>
               {remaining > 0 && (
-                <ShowMoreBar
-                  step={Math.min(VISIBLE_LINES_STEP, remaining)}
-                  rendered={Math.min(visibleLines, totalLines)}
-                  total={totalLines}
-                  onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
-                />
+                <div data-diff-scroll-content className={DIFF_SCROLL_CONTENT_CLASS}>
+                  <ShowMoreBar
+                    step={Math.min(VISIBLE_LINES_STEP, remaining)}
+                    rendered={Math.min(visibleLines, totalLines)}
+                    total={totalLines}
+                    onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
+                  />
+                </div>
               )}
             </div>
           )}

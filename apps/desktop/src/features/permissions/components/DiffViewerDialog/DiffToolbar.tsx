@@ -37,10 +37,9 @@ export const DiffToolbar = ({
   presentation = 'bar',
 }: Props) => {
   const titleText = title ?? (prNumber !== undefined ? `pr #${prNumber} diff` : 'diff');
-  const aheadBehind =
-    status?.hasUpstream && (status.ahead > 0 || status.behind > 0)
-      ? `↑${status.ahead} ↓${status.behind}`
-      : null;
+  const ahead = status?.ahead ?? 0;
+  const behind = status?.behind ?? 0;
+  const hasAheadBehind = status?.hasUpstream === true && (ahead > 0 || behind > 0);
   return (
     <>
       <div
@@ -94,7 +93,12 @@ export const DiffToolbar = ({
           <span className="hidden min-w-0 shrink items-center gap-1.5 text-2xs text-muted-foreground md:flex">
             <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
             <span className="truncate font-mono">{status.branch}</span>
-            {aheadBehind ? <span className="shrink-0 tabular-nums">{aheadBehind}</span> : null}
+            {hasAheadBehind ? (
+              <span className="flex shrink-0 items-center gap-1 tabular-nums">
+                {ahead > 0 ? <span title="unpushed commits">↑{ahead}</span> : null}
+                {behind > 0 ? <span title="behind upstream">↓{behind}</span> : null}
+              </span>
+            ) : null}
           </span>
         ) : null}
 

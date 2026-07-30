@@ -1342,6 +1342,7 @@ mod rewrite_tests {
         push_to_new_remote(&root);
         git_ok(&root, &["checkout", "-b", "feature"]);
         commit(&root, "feature.txt", "feature", "feature");
+        commit(&root, "feature-two.txt", "feature two", "feature two");
         git_ok(&root, &["checkout", "main"]);
         commit(&root, "main.txt", "main", "main");
         git_ok(&root, &["push", "origin", "main"]);
@@ -1349,7 +1350,7 @@ mod rewrite_tests {
 
         let status = worktree_status(root.to_string_lossy().into_owned()).unwrap();
 
-        assert_eq!(status.commits_ahead_of_main, 1);
+        assert_eq!(status.commits_ahead_of_main, 2);
         assert_eq!(status.commits_behind_main, 1);
     }
 
