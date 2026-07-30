@@ -121,7 +121,7 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
     threadIds,
     outcomes,
     pendingResolutions,
-    reportedSha: changes.reported[0]?.sha ?? changes.reportedMissingShas[0] ?? null,
+    reportedSha: changes.reported[0]?.sha ?? null,
   });
   const openCommitDiff = (sha: string, file?: string) => {
     window.dispatchEvent(

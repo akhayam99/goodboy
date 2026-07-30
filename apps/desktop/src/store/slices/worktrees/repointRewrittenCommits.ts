@@ -43,6 +43,8 @@ export const repointRewrittenCommits = async ({
       threadId: row.threadId,
       commitSha: head.sha,
       prNumber: row.prNumber,
+      reply: row.reply,
+      outcome: row.outcome,
     });
   }
 };

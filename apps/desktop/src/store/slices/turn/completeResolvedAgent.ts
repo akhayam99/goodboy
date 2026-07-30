@@ -94,10 +94,16 @@ export const completeResolvedAgent = async ({
     outcomes[marker.threadId] = { kind: 'resolved', commitSha: marker.commitSha };
   }
   for (const marker of wontfixMarkers) {
+    if (outcomes[marker.threadId]?.kind === 'resolved') {
+      continue;
+    }
     outcomes[marker.threadId] = { kind: 'wontfix', reason: marker.reason };
   }
   for (const marker of analysisMarkers) {
-    outcomes[marker.threadId] = { kind: 'analyzed' };
+    if (outcomes[marker.threadId]?.kind === 'resolved') {
+      continue;
+    }
+    outcomes[marker.threadId] = { kind: 'analyzed', reply: marker.summary };
   }
   for (const marker of extractAllCommentReplies(assistantText)) {
     const outcome = outcomes[marker.threadId];

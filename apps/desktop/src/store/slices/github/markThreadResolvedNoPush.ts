@@ -18,9 +18,17 @@ export const markThreadResolvedNoPush = async (
     ? get().workspaces.find((w) => w.id === session.workspaceId)
     : undefined;
   const pr = get().sessionGithub[sessionId]?.pr ?? null;
-  const inMemoryReply = resolverReplyForThread(get().resolverThreadOutcomes, threadId);
-  const persistedReply = closure?.reply?.trim() ?? null;
-  const reply = inMemoryReply ?? persistedReply;
+  const closureReply = closure?.reply?.trim();
+  const pendingReply = get()
+    .sessionPendingResolutions[sessionId]?.find((resolution) => resolution.threadId === threadId)
+    ?.reply?.trim();
+  const globalReply = resolverReplyForThread(get().resolverThreadOutcomes, threadId);
+  const reply =
+    closureReply != null && closureReply.length > 0
+      ? closureReply
+      : pendingReply != null && pendingReply.length > 0
+        ? pendingReply
+        : globalReply;
   const replyBody = buildResolutionReplyBody(
     reply === null ? closure : { ...closure, reply },
     pr?.url ?? null,

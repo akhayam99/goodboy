@@ -16,18 +16,18 @@ export const resolverCommitSha = ({
   pendingResolutions,
   reportedSha = null,
 }: Params): string | null => {
+  for (const threadId of threadIds) {
+    const outcome = outcomes[threadId];
+    if (outcome?.kind === 'resolved') {
+      return outcome.commitSha;
+    }
+  }
   const queued = pendingResolutions.find((resolution) => threadIds.includes(resolution.threadId));
   if (queued != null) {
     return queued.commitSha;
   }
   if (reportedSha !== null) {
     return reportedSha;
-  }
-  for (const threadId of threadIds) {
-    const outcome = outcomes[threadId];
-    if (outcome?.kind === 'resolved') {
-      return outcome.commitSha;
-    }
   }
   return null;
 };

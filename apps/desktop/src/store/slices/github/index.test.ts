@@ -774,6 +774,117 @@ describe('store contract', () => {
       expect(bodyByThread.get('PRRT_2')).not.toContain('abcdef1');
     });
 
+    it('resolveAgentThreads includes an owned thread without an in-memory outcome', async () => {
+      const store = await getStore();
+      const persisted = {
+        id: 'pending-3',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_3',
+        commitSha: 'abcdef1234567890',
+        reply: 'The third thread was already analyzed before restart.',
+        outcome: 'analyzed',
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1', 'PRRT_2', 'PRRT_3'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+            PRRT_2: { kind: 'wontfix', reason: 'the behavior is intentional' },
+          },
+        },
+        sessionPendingResolutions: { [SESSION_ID]: [persisted] },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([persisted])
+        .mockResolvedValueOnce([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(resolveThreadSpy).toHaveBeenCalledTimes(3);
+      expect(deletePendingResolutionSpy).toHaveBeenCalledTimes(3);
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        persisted.threadId,
+        persisted.reply,
+        expect.anything(),
+      );
+    });
+
+    it('resolveAgentThreads restores a queued closure after store recreation', async () => {
+      const store = await getStore();
+      const persisted = {
+        id: 'pending-1',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_1',
+        commitSha: 'abcdef1234567890',
+        reply: 'Persisted reply from the completed resolver.',
+        outcome: 'resolved',
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'resolver after restart',
+              status: 'completed',
+              sourceThreadId: persisted.threadId,
+            },
+          ],
+        },
+        resolverThreadOutcomes: {},
+        sessionPendingResolutions: {},
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([persisted])
+        .mockResolvedValueOnce([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(gitPushSpy).toHaveBeenCalledOnce();
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        persisted.threadId,
+        expect.stringContaining(persisted.reply),
+        expect.anything(),
+      );
+      expect(addReplySpy).toHaveBeenCalledWith(
+        expect.anything(),
+        persisted.threadId,
+        expect.stringContaining('Resolved in `abcdef1`.'),
+        expect.anything(),
+      );
+      expect(resolveThreadSpy).toHaveBeenCalledOnce();
+    });
+
     it('resolveAgentThreads skips the branch push when no outcome is resolved', async () => {
       const store = await getStore();
       store.setState({
@@ -855,6 +966,67 @@ describe('store contract', () => {
       expect(bodyByThread.get('PRRT_1')).not.toContain('answer for two');
       expect(bodyByThread.get('PRRT_2')).toContain('answer for two');
       expect(bodyByThread.get('PRRT_2')).not.toContain('answer for one');
+    });
+
+    it('resolveAgentThreads prefers the caller closure over persisted and global replies', async () => {
+      const store = await getStore();
+      const persisted = {
+        id: 'pending-1',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_1',
+        commitSha: 'abcdef1234567890',
+        reply: 'persisted reply',
+        outcome: 'resolved',
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'resolver',
+              status: 'completed',
+              sourceThreadId: persisted.threadId,
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID_2]: {
+            PRRT_1: {
+              kind: 'resolved',
+              commitSha: persisted.commitSha,
+              reply: 'reply from another agent',
+            },
+          },
+          [AGENT_ID]: {
+            PRRT_1: {
+              kind: 'resolved',
+              commitSha: persisted.commitSha,
+              reply: 'reply from the caller closure',
+            },
+          },
+        },
+        sessionPendingResolutions: { [SESSION_ID]: [persisted] },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([persisted])
+        .mockResolvedValueOnce([]);
+
+      await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      const replyCalls = addReplySpy.mock.calls as ReadonlyArray<ReadonlyArray<unknown>>;
+      const body = String(replyCalls[0]?.[2]);
+      expect(body).toContain('reply from the caller closure');
+      expect(body).not.toContain('persisted reply');
+      expect(body).not.toContain('reply from another agent');
     });
 
     it('pushAllResolutions posts a queued reply after in-memory outcomes are lost', async () => {

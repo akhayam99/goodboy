@@ -100,7 +100,7 @@ describe('local history rewrites', () => {
             prNumber: 7,
             threadId: 'PRRT_1',
             commitSha: 'old1234567',
-            reply: null,
+            reply: 'persisted explanation',
             outcome: 'resolved',
             createdAt: '2026-07-29T00:00:00.000Z',
           },
@@ -136,6 +136,8 @@ describe('local history rewrites', () => {
       threadId: 'PRRT_1',
       commitSha: 'new1234567',
       prNumber: 7,
+      reply: 'persisted explanation',
+      outcome: 'resolved',
     });
     expect(h.dequeueResolution).toHaveBeenCalledTimes(1);
   });

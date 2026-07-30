@@ -2,11 +2,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Agent, AgentId, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Agent, AgentId, BranchCommit, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
   listTurnEventsForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
+  listBranchCommits: vi.fn(async () => [] as ReadonlyArray<BranchCommit>),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -60,6 +61,8 @@ vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => nul
 vi.mock('@goodboy/db', () => ({ listTurnEventsForSession: h.listTurnEventsForSession }));
 
 vi.mock('../../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+
+vi.mock('../../../worktree/worktree', () => ({ listBranchCommits: h.listBranchCommits }));
 
 vi.mock('../../../context/components/ContextPanel/strips/PendingResolutionsStrip', () => ({
   PendingResolutionsStrip: () => <div data-testid="pending-strip" />,
@@ -126,6 +129,8 @@ const renderLane = () =>
 beforeEach(() => {
   h.listTurnEventsForSession.mockReset();
   h.listTurnEventsForSession.mockResolvedValue([]);
+  h.listBranchCommits.mockReset();
+  h.listBranchCommits.mockResolvedValue([]);
   Object.keys(h.state).forEach((key) => delete h.state[key]);
   Object.assign(h.state, {
     currentSessionId: SESSION_ID,
@@ -135,6 +140,7 @@ beforeEach(() => {
     selectedAgentId: {},
     sessionGithub: {},
     sessionPendingResolutions: {},
+    sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
     transcripts: {},
     agentRunHistory: {},
     selectAgent: vi.fn(),
@@ -239,6 +245,17 @@ describe('ResolverAgentsLane', () => {
   });
 
   it('recovers each card reported sha from the session event read', async () => {
+    h.listBranchCommits.mockResolvedValue([
+      {
+        sha: 'abcdef1234567890',
+        shortSha: 'abcdef1',
+        subject: 'fix: resolve review',
+        author: 'agent',
+        timestamp: 1,
+        pushed: false,
+        parentSha: null,
+      },
+    ]);
     h.listTurnEventsForSession.mockResolvedValue([
       {
         kind: 'assistant_text',
@@ -263,5 +280,39 @@ describe('ResolverAgentsLane', () => {
       ),
     );
     expect(h.listTurnEventsForSession).toHaveBeenCalledOnce();
+  });
+
+  it('does not advertise a transcript sha missing from the branch', async () => {
+    h.listBranchCommits.mockResolvedValue([
+      {
+        sha: 'repointed1234567890',
+        shortSha: 'repoint',
+        subject: 'fix: rewritten resolution',
+        author: 'agent',
+        timestamp: 1,
+        pushed: false,
+        parentSha: null,
+      },
+    ]);
+    h.listTurnEventsForSession.mockResolvedValue([
+      {
+        kind: 'assistant_text',
+        runId: 'run-1',
+        delta: '<<comment-resolved threadId="PRRT_1" commitSha="obsolete1234567890">>',
+        at: '2026-07-29T00:00:00.000Z',
+      },
+    ]);
+    setResolvers([
+      buildResolver({
+        id: 'resolver-1' as AgentId,
+        runId: 'run-1' as never,
+        sourceThreadId: 'PRRT_1',
+      }),
+    ]);
+
+    renderLane();
+
+    await waitFor(() => expect(h.listBranchCommits).toHaveBeenCalledOnce());
+    expect(screen.getByTestId('resolver-row').getAttribute('data-reported-sha')).toBe('');
   });
 });

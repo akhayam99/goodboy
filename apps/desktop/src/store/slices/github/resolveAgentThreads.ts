@@ -1,8 +1,9 @@
 import { deletePendingResolution, listPendingResolutionsForSession } from '@goodboy/db';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, PendingResolution, SessionId } from '@goodboy/types';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
+import type { ResolverThreadOutcome } from '../../types';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
 import type { GetFn, SetFn } from './types';
@@ -16,6 +17,37 @@ type Closure = {
 type Target = {
   readonly threadId: string;
   readonly closure: Closure;
+  readonly shouldPush: boolean;
+};
+
+type OutcomeClosureParams = {
+  readonly outcome: ResolverThreadOutcome;
+};
+
+const outcomeClosure = ({ outcome }: OutcomeClosureParams): Closure => {
+  if (outcome.kind === 'resolved') {
+    return { commitSha: outcome.commitSha, reply: outcome.reply };
+  }
+  if (outcome.kind === 'wontfix') {
+    return { reason: outcome.reason, reply: outcome.reply };
+  }
+  return { reply: outcome.reply };
+};
+
+type PendingClosureParams = {
+  readonly resolution: PendingResolution;
+};
+
+const pendingClosure = ({ resolution }: PendingClosureParams): Closure => {
+  if ((resolution.outcome ?? 'resolved') === 'resolved') {
+    return {
+      commitSha: resolution.commitSha,
+      ...(resolution.reply !== null && { reply: resolution.reply }),
+    };
+  }
+  return {
+    ...(resolution.reply !== null && { reply: resolution.reply }),
+  };
 };
 
 export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
@@ -34,30 +66,38 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
     };
     const outcomes = get().resolverThreadOutcomes[agentId] ?? {};
     const outcomeEntries = Object.entries(outcomes);
-    const targets =
-      outcomeEntries.length > 0
-        ? outcomeEntries.map(([threadId, outcome]): Target => {
-            if (outcome.kind === 'resolved') {
-              return {
-                threadId,
-                closure: { commitSha: outcome.commitSha, reply: outcome.reply },
-              };
-            }
-            if (outcome.kind === 'wontfix') {
-              return {
-                threadId,
-                closure: { reason: outcome.reason, reply: outcome.reply },
-              };
-            }
-            return { threadId, closure: { reply: outcome.reply } };
-          })
-        : agentThreadIds(agent).map((threadId): Target => ({ threadId, closure: {} }));
+    const persisted = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+    const persistedByThreadId = new Map(
+      persisted.map((resolution) => [resolution.threadId, resolution] as const),
+    );
+    const threadIds = new Set([...agentThreadIds(agent), ...Object.keys(outcomes)]);
+    const targets = [...threadIds].map((threadId): Target => {
+      const outcome = outcomes[threadId];
+      if (outcome !== undefined) {
+        return {
+          threadId,
+          closure: outcomeClosure({ outcome }),
+          shouldPush: outcome.kind === 'resolved',
+        };
+      }
+      const resolution = persistedByThreadId.get(threadId);
+      if (resolution !== undefined) {
+        return {
+          threadId,
+          closure: pendingClosure({ resolution }),
+          shouldPush: (resolution.outcome ?? 'resolved') === 'resolved',
+        };
+      }
+      return {
+        threadId,
+        closure: {},
+        shouldPush: outcomeEntries.length === 0,
+      };
+    });
     if (targets.length === 0) {
       return false;
     }
-    const shouldPush =
-      outcomeEntries.length === 0 ||
-      outcomeEntries.some(([, outcome]) => outcome.kind === 'resolved');
+    const shouldPush = targets.some((target) => target.shouldPush);
     if (shouldPush) {
       const push = await pushSessionBranch(get, sessionId);
       if (!push.ok) {

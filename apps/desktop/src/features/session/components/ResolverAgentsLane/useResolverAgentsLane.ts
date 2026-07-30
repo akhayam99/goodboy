@@ -3,6 +3,7 @@ import { listTurnEventsForSession } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
+  BranchCommit,
   DiffComment,
   PrComment,
   ProviderRunId,
@@ -16,7 +17,9 @@ import { openUrl } from '../../../../shared/lib/editor';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { agentThreadIds } from '../../agentThreadIds';
+import { attributeResolverCommits } from '../../resolver-commits';
 import { resolverReportedShas } from '../../resolver-reported-shas';
+import { listBranchCommits } from '../../../worktree/worktree';
 import { resolverLaneEntries } from './resolverLaneEntries';
 
 type Params = {
@@ -24,6 +27,7 @@ type Params = {
 };
 
 const EMPTY_EVENTS: ReadonlyArray<TurnEvent> = [];
+const EMPTY_COMMITS: ReadonlyArray<BranchCommit> = [];
 
 export const useResolverAgentsLane = ({ session }: Params) => {
   const sessionId = session.id as SessionId;
@@ -40,9 +44,13 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   const activateNextResolver = useAppStore((state) => state.activateNextResolver);
   const transcripts = useAppStore((state) => state.transcripts);
   const agentRunHistory = useAppStore((state) => state.agentRunHistory);
+  const worktreePath = useAppStore(
+    (state) => (state.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null,
+  );
   const loading = useSessionLoading(sessionId);
   const metrics = useAgentMetrics({ sessionId });
   const [storedEvents, setStoredEvents] = useState<ReadonlyArray<TurnEvent>>(EMPTY_EVENTS);
+  const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>(EMPTY_COMMITS);
 
   const entries = useMemo(
     () => resolverLaneEntries({ links: resolverIndex.links }),
@@ -63,6 +71,24 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     };
   }, [sessionId]);
 
+  useEffect(() => {
+    setCommits(EMPTY_COMMITS);
+    if (worktreePath === null) {
+      return;
+    }
+    let cancelled = false;
+    listBranchCommits(worktreePath)
+      .then((list) => {
+        if (!cancelled) {
+          setCommits(list);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [worktreePath]);
+
   const reportedCommitShaByAgentId = useMemo(() => {
     const eventsByRunId = new Map<ProviderRunId, TurnEvent[]>();
     for (const event of storedEvents) {
@@ -78,13 +104,19 @@ export const useResolverAgentsLane = ({ session }: Params) => {
         liveEvents.length > 0
           ? liveEvents
           : runIds.flatMap((runId) => eventsByRunId.get(runId) ?? EMPTY_EVENTS);
-      const reportedSha = resolverReportedShas({ events })[0];
+      const reportedSha = attributeResolverCommits({
+        commits,
+        reportedShas: resolverReportedShas({ events }),
+        startedAt: agent.startedAt,
+        completedAt: agent.completedAt,
+        now: Date.now(),
+      }).reported[0]?.sha;
       if (reportedSha !== undefined) {
         result.set(agent.id, reportedSha);
       }
     }
     return result;
-  }, [agentRunHistory, resolverIndex.links, storedEvents, transcripts]);
+  }, [agentRunHistory, commits, resolverIndex.links, storedEvents, transcripts]);
 
   const commentByThreadId = useMemo(() => {
     const map = new Map<string, PrComment>();

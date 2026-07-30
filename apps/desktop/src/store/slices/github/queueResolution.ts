@@ -1,15 +1,21 @@
 import { listPendingResolutionsForSession, queuePendingResolution } from '@goodboy/db';
-import type { SessionId } from '@goodboy/types';
+import type { PendingResolutionOutcome, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { resolverOutcomeForThread } from './resolverOutcomeForThread';
 import type { GetFn, SetFn } from './types';
 
-type QueueArgs = { threadId: string; commitSha: string; prNumber: number };
+type QueueArgs = {
+  readonly threadId: string;
+  readonly commitSha: string;
+  readonly prNumber: number;
+  readonly reply?: string | null;
+  readonly outcome?: PendingResolutionOutcome | null;
+};
 
 export const queueResolution = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
-    { threadId, commitSha, prNumber }: QueueArgs,
+    { threadId, commitSha, prNumber, reply, outcome: explicitOutcome }: QueueArgs,
   ): Promise<void> => {
     const outcome = resolverOutcomeForThread({
       outcomes: get().resolverThreadOutcomes,
@@ -22,8 +28,8 @@ export const queueResolution = (set: SetFn, get: GetFn) => {
       prNumber,
       threadId,
       commitSha,
-      reply: outcome?.reply ?? null,
-      outcome: outcome?.kind ?? null,
+      reply: reply === undefined ? (outcome?.reply ?? null) : reply,
+      outcome: explicitOutcome === undefined ? (outcome?.kind ?? null) : explicitOutcome,
     });
     const rows = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
     set((state) => ({

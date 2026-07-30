@@ -7,10 +7,21 @@ const outcomes: Readonly<Record<string, ResolverThreadOutcome>> = {
 };
 
 describe('resolverCommitSha', () => {
-  it('prefers the sha already queued for the batch push', () => {
+  it('prefers the repointed outcome to queued and reported shas', () => {
     const sha = resolverCommitSha({
       threadIds: ['PRRT_1'],
       outcomes,
+      pendingResolutions: [{ threadId: 'PRRT_1', commitSha: 'from-queue' }],
+      reportedSha: 'from-branch',
+    });
+
+    expect(sha).toBe('from-outcome');
+  });
+
+  it('uses the sha queued for a batch after in-memory outcomes are lost', () => {
+    const sha = resolverCommitSha({
+      threadIds: ['PRRT_1'],
+      outcomes: {},
       pendingResolutions: [{ threadId: 'PRRT_1', commitSha: 'from-queue' }],
       reportedSha: 'from-branch',
     });
@@ -21,7 +32,7 @@ describe('resolverCommitSha', () => {
   it('falls back to the sha attributed on the branch', () => {
     const sha = resolverCommitSha({
       threadIds: ['PRRT_1'],
-      outcomes,
+      outcomes: {},
       pendingResolutions: [],
       reportedSha: 'from-branch',
     });
@@ -31,6 +42,17 @@ describe('resolverCommitSha', () => {
 
   it('reads the reported outcome when the branch says nothing', () => {
     const sha = resolverCommitSha({ threadIds: ['PRRT_1'], outcomes, pendingResolutions: [] });
+
+    expect(sha).toBe('from-outcome');
+  });
+
+  it('prefers a repointed outcome to an obsolete reported sha', () => {
+    const sha = resolverCommitSha({
+      threadIds: ['PRRT_1'],
+      outcomes,
+      pendingResolutions: [],
+      reportedSha: 'obsolete-transcript-sha',
+    });
 
     expect(sha).toBe('from-outcome');
   });

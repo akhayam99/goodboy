@@ -19,6 +19,7 @@ import type {
   OverrideSettings,
   OpenQuestion,
   OpenQuestionId,
+  PendingResolutionOutcome,
   PermissionScope,
   PlanId,
   PlanStatus,
@@ -428,7 +429,13 @@ export type AppActions = {
   resolveAgentThreads(sessionId: SessionId, agentId: AgentId): Promise<boolean>;
   queueResolution(
     sessionId: SessionId,
-    args: { threadId: string; commitSha: string; prNumber: number },
+    args: {
+      threadId: string;
+      commitSha: string;
+      prNumber: number;
+      reply?: string | null;
+      outcome?: PendingResolutionOutcome | null;
+    },
   ): Promise<void>;
   dequeueResolution(sessionId: SessionId, threadId: string): Promise<void>;
   loadPendingResolutions(sessionId: SessionId): Promise<void>;
