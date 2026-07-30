@@ -42,6 +42,7 @@ describe('PlanStudio', () => {
   it('renders the Plans title', () => {
     render(<PlanStudio sessionId={'sess-1' as never} />);
     expect(screen.getByText('Plans')).toBeDefined();
+    expect(screen.getByTestId('plan-studio-header').className).toContain('max-w-5xl');
   });
 
   it('shows No plans yet when the list is empty', () => {

@@ -138,32 +138,37 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
 
   return (
     <div className="relative flex h-full w-full flex-col bg-background">
-      <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/10">
-            <ClipboardList size={16} aria-hidden className="text-success" />
-          </span>
-          <div className="flex min-w-0 flex-col">
-            <h1 className="text-xl font-semibold leading-snug text-foreground">Plans</h1>
-            <p className="text-sm text-muted-foreground">
-              Plans agents drafted for this session. Run one to spawn an executor.
-            </p>
+      <div className="shrink-0 px-6 py-4">
+        <div
+          className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3"
+          data-testid="plan-studio-header"
+        >
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/10">
+              <ClipboardList size={16} aria-hidden className="text-success" />
+            </span>
+            <div className="flex min-w-0 flex-col">
+              <h1 className="text-xl font-semibold leading-snug text-foreground">Plans</h1>
+              <p className="text-sm text-muted-foreground">
+                Plans agents drafted for this session. Run one to spawn an executor.
+              </p>
+            </div>
           </div>
+          {plans.length > 1 ? (
+            <button
+              type="button"
+              onClick={() => setListOpen((open) => !open)}
+              title="browse the other plans in this session"
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground',
+                listOpen && 'bg-foreground/5 text-foreground',
+              )}
+            >
+              <List size={13} aria-hidden />
+              Other plans ({plans.length - 1})
+            </button>
+          ) : null}
         </div>
-        {plans.length > 1 ? (
-          <button
-            type="button"
-            onClick={() => setListOpen((open) => !open)}
-            title="browse the other plans in this session"
-            className={cn(
-              'inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground',
-              listOpen && 'bg-foreground/5 text-foreground',
-            )}
-          >
-            <List size={13} aria-hidden />
-            Other plans ({plans.length - 1})
-          </button>
-        ) : null}
       </div>
       <Divider />
       <div className="flex min-h-0 flex-1">
