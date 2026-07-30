@@ -33,6 +33,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     loadSessionAnsweredQuestions: vi.fn(async () => undefined),
     openQuestionScrollTarget: null as { agentId: string; questionId: string } | null,
     clearOpenQuestionScroll: vi.fn(() => undefined),
+    requestOpenQuestionScroll: vi.fn(() => undefined),
   },
 }));
 
@@ -132,6 +133,8 @@ beforeEach(() => {
   state.loadSessionOpenQuestions.mockClear();
   state.loadSessionAnsweredQuestions.mockClear();
   state.clearOpenQuestionScroll.mockClear();
+  state.requestOpenQuestionScroll.mockClear();
+  state.selectAgent.mockClear();
   chatBreadcrumbMock.mockClear();
   diffViewerMock.mockClear();
   openQuestions.current = [];
@@ -216,8 +219,39 @@ describe('ChatView', () => {
     render(<ChatView session={session} />);
 
     const clusters = screen.getAllByTestId('cluster');
-    expect(clusters).toHaveLength(1);
-    expect(clusters[0]?.textContent).toBe('q-early,q-late');
+    expect(clusters).toHaveLength(2);
+    expect(clusters.map((cluster) => cluster.textContent)).toEqual([
+      'q-early,q-late',
+      'q-no-ordinal',
+    ]);
+    expect(screen.queryByText('q-other-agent')).toBeNull();
+  });
+
+  it('opens the agent chat that owns questions outside the selected chat', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        { id: 'agent-1', name: 'planner' },
+        { id: 'agent-2', name: 'implementer' },
+      ],
+    };
+    openQuestions.current = [
+      {
+        id: 'q-other-agent',
+        createdByAgentId: 'agent-2',
+        turnOrdinal: 3,
+        createdAt: '2026-06-13T00:00:00.000Z',
+      },
+    ];
+
+    render(<ChatView session={session} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 open question from implementer' }));
+
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-2');
+    expect(state.requestOpenQuestionScroll).toHaveBeenCalledWith({
+      agentId: 'agent-2',
+      questionId: 'q-other-agent',
+    });
   });
 
   it('splits questions from different turns into separate clusters', () => {

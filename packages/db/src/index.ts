@@ -68,6 +68,7 @@ export {
 export {
   insertTurnEvent,
   insertTurnEventsBatch,
+  countUserTextEvents,
   listTurnEventsForAgent,
   listTurnEventsForSession,
   listAgentRunIdsForSession,

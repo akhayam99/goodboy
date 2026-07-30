@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from 'react';
-import { ArrowRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
 import type { Agent, AgentId, OpenQuestion, SessionId, Workflow } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { AnswerSubmitButton } from '../../../context/components/QuestionsTab/AnswerSubmitButton';
 import { QuestionClusterHeader } from '../../../context/components/QuestionsTab/QuestionClusterHeader';
 import { buildQuestionClusters } from '../../../context/components/QuestionsTab/clusters';
 import {
@@ -85,25 +84,7 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
         );
       })}
       {pendingPairs.length > 0 && (
-        <button
-          type="button"
-          onClick={() => void handleSubmit()}
-          className={cn(
-            'group flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold',
-            'bg-primary text-primary-foreground shadow-sm transition-all duration-150',
-            'hover:brightness-105 active:scale-[0.99]',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-          )}
-        >
-          <span>
-            {pendingPairs.length > 1 ? `send ${pendingPairs.length} answers` : 'send answer'}
-          </span>
-          <ArrowRight
-            size={13}
-            aria-hidden
-            className="transition-transform group-hover:translate-x-0.5"
-          />
-        </button>
+        <AnswerSubmitButton answerCount={pendingPairs.length} onClick={() => void handleSubmit()} />
       )}
     </div>
   );

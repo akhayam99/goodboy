@@ -13,6 +13,7 @@ import {
   type ClaudeFlagSet,
 } from '@goodboy/core';
 import {
+  countUserTextEvents,
   insertMessage,
   insertProviderRun,
   listContextSlotsForSession,
@@ -913,9 +914,18 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           }
           return undefined;
         })();
-        const turnOrdinal = (get().transcripts[activeAgentId] ?? []).filter(
+        const transcriptTurnOrdinal = (get().transcripts[activeAgentId] ?? []).filter(
           (e) => e.kind === 'user_text',
         ).length;
+        let turnOrdinal = transcriptTurnOrdinal;
+        try {
+          turnOrdinal = await countUserTextEvents({
+            db: tauriDatabase,
+            agentId: activeAgentId,
+          });
+        } catch {
+          turnOrdinal = transcriptTurnOrdinal;
+        }
         const result = await autoPopulateContext({
           db: tauriDatabase,
           sessionId,

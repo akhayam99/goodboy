@@ -9,6 +9,15 @@ type TurnEventRow = {
   created_at: number;
 };
 
+type CountUserTextEventsParams = {
+  readonly db: Database;
+  readonly agentId: AgentId;
+};
+
+type CountRow = {
+  count: number;
+};
+
 function rowToEvent(row: TurnEventRow): TurnEvent | null {
   try {
     return JSON.parse(row.payload) as TurnEvent;
@@ -109,6 +118,19 @@ export const listTurnEventsForSession = async (
     [sessionId],
   );
   return rows.map(rowToEvent).filter((e): e is TurnEvent => e !== null);
+};
+
+export const countUserTextEvents = async ({
+  db,
+  agentId,
+}: CountUserTextEventsParams): Promise<number> => {
+  const rows = await db.select<CountRow>(
+    `SELECT COUNT(*) AS count
+     FROM turn_events
+     WHERE agent_id = ? AND json_extract(payload, '$.kind') = 'user_text'`,
+    [agentId],
+  );
+  return rows[0]?.count ?? 0;
 };
 
 export const listAgentRunIdsForSession = async (

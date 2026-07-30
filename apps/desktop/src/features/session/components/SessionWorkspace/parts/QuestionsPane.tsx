@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { ArrowRight, Bot, CircleCheck } from 'lucide-react';
-import { EmptyState, cn } from '@goodboy/ui';
+import { Bot, CircleCheck } from 'lucide-react';
+import { EmptyState } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -15,7 +15,10 @@ import {
   useSessionAnsweredQuestions,
   useSessionOpenQuestions,
 } from '../../../../../store';
-import { AnsweredCard } from '../../../../chat/components/ChatView/OpenQuestionInlineCard';
+import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { AnsweredCard } from '../../../../chat/components/ChatView/AnsweredCard';
+import { AnswerSubmitButton } from '../../../../context/components/QuestionsTab/AnswerSubmitButton';
+import { DismissedQuestionUndo } from '../../../../context/components/QuestionsTab/DismissedQuestionUndo';
 import { QuestionCard } from '../../../../context/components/QuestionsTab/QuestionCard';
 import { QuestionClusterHeader } from '../../../../context/components/QuestionsTab/QuestionClusterHeader';
 import {
@@ -46,6 +49,8 @@ type ClusterSectionProps = {
   readonly onToggleCustomField: (questionId: OpenQuestionId) => void;
   readonly onClearJustAnswered: (id: OpenQuestionId) => void;
   readonly onDismiss: (question: OpenQuestion) => void;
+  readonly pendingUndoQuestionId: OpenQuestionId | null;
+  readonly onUndo: (question: OpenQuestion) => void;
   readonly onSubmit: (pairs: ReadonlyArray<AnswerPair>, ownerAgentId: AgentId | null) => void;
 };
 
@@ -60,9 +65,12 @@ const ClusterSection = ({
   onToggleCustomField,
   onClearJustAnswered,
   onDismiss,
+  pendingUndoQuestionId,
+  onUndo,
   onSubmit,
 }: ClusterSectionProps) => {
   const pendingPairs = cluster.questions
+    .filter((question) => question.id !== pendingUndoQuestionId)
     .map((q) => ({ id: q.id, text: q.text, answer: deriveDraftAnswer(drafts[q.id]) }))
     .filter((pair) => pair.answer.length > 0);
 
@@ -76,41 +84,30 @@ const ClusterSection = ({
           creatorAgentName={cluster.creatorAgentName}
         />
       )}
-      {cluster.questions.map((q) => (
-        <QuestionCard
-          key={q.id}
-          question={q}
-          selectedSuggestions={drafts[q.id]?.selectedSuggestions ?? []}
-          customAnswer={drafts[q.id]?.customAnswer ?? ''}
-          showCustomField={drafts[q.id]?.showCustomField ?? false}
-          justAnswered={justAnswered.includes(q.id)}
-          onToggleSuggestion={onToggleSuggestion}
-          onSetCustomAnswer={onSetCustomAnswer}
-          onToggleCustomField={onToggleCustomField}
-          onDismiss={() => onDismiss(q)}
-          onClearJustAnswered={onClearJustAnswered}
-        />
-      ))}
-      {pendingPairs.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => onSubmit(pendingPairs, cluster.ownerAgentId)}
-          className={cn(
-            'group flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold',
-            'bg-primary text-primary-foreground shadow-sm motion-safe:transition-all duration-150',
-            'hover:brightness-105 active:scale-[0.99]',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-          )}
-        >
-          <span>
-            {pendingPairs.length > 1 ? `send ${pendingPairs.length} answers` : 'send answer'}
-          </span>
-          <ArrowRight
-            size={13}
-            aria-hidden
-            className="motion-safe:transition-transform group-hover:translate-x-0.5"
+      {cluster.questions.map((q) =>
+        q.id === pendingUndoQuestionId ? (
+          <DismissedQuestionUndo key={q.id} onUndo={() => onUndo(q)} />
+        ) : (
+          <QuestionCard
+            key={q.id}
+            question={q}
+            selectedSuggestions={drafts[q.id]?.selectedSuggestions ?? []}
+            customAnswer={drafts[q.id]?.customAnswer ?? ''}
+            showCustomField={drafts[q.id]?.showCustomField ?? false}
+            justAnswered={justAnswered.includes(q.id)}
+            onToggleSuggestion={onToggleSuggestion}
+            onSetCustomAnswer={onSetCustomAnswer}
+            onToggleCustomField={onToggleCustomField}
+            onDismiss={() => onDismiss(q)}
+            onClearJustAnswered={onClearJustAnswered}
           />
-        </button>
+        ),
+      )}
+      {pendingPairs.length > 0 ? (
+        <AnswerSubmitButton
+          answerCount={pendingPairs.length}
+          onClick={() => onSubmit(pendingPairs, cluster.ownerAgentId)}
+        />
       ) : null}
     </div>
   );
@@ -178,17 +175,6 @@ const AnsweredClusterHeader = ({
 }: AnsweredClusterHeaderProps) => {
   const selectAgent = useAppStore((s) => s.selectAgent);
 
-  const diffMs = Date.now() - new Date(newestAt).getTime();
-  const mins = Math.floor(diffMs / 60_000);
-  const timeLabel =
-    mins < 1
-      ? 'just now'
-      : mins < 60
-        ? `${mins}m ago`
-        : mins < 1440
-          ? `${Math.floor(mins / 60)}h ago`
-          : `${Math.floor(mins / 1440)}d ago`;
-
   return (
     <div className="flex items-center justify-between gap-2 px-0.5">
       {agentId !== null && agentName !== null ? (
@@ -206,7 +192,9 @@ const AnsweredClusterHeader = ({
           <span className="truncate text-foreground/80">unknown agent</span>
         </div>
       )}
-      <span className="shrink-0 text-2xs text-muted-foreground">{timeLabel}</span>
+      <span className="shrink-0 text-2xs text-muted-foreground">
+        {formatRelativeAge({ fromIso: newestAt })}
+      </span>
     </div>
   );
 };
@@ -259,16 +247,32 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const toggleCustomField = useOpenQuestions((s) => s.toggleCustomField);
   const clearJustAnswered = useOpenQuestions((s) => s.clearJustAnswered);
   const flashAnswered = useOpenQuestions((s) => s.flashAnswered);
+  const pendingUndo = useOpenQuestions((s) => s.pendingUndo);
+  const beginUndo = useOpenQuestions((s) => s.beginUndo);
+  const clearUndo = useOpenQuestions((s) => s.clearUndo);
   const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
+  const restoreDismissedOpenQuestion = useAppStore((s) => s.restoreDismissedOpenQuestion);
 
   useEffect(() => {
     void loadSessionAnsweredQuestions(sessionId);
   }, [sessionId, loadSessionAnsweredQuestions]);
 
+  const pendingUndoQuestion =
+    pendingUndo?.question.sessionId === sessionId ? pendingUndo.question : null;
+  const displayedOpen = useMemo(() => {
+    if (
+      pendingUndoQuestion === null ||
+      open.some((question) => question.id === pendingUndoQuestion.id)
+    ) {
+      return open;
+    }
+    return [...open, pendingUndoQuestion].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }, [open, pendingUndoQuestion]);
+
   const clusters = useMemo(
-    () => buildQuestionClusters({ questions: open, agents, workflows }),
-    [open, agents, workflows],
+    () => buildQuestionClusters({ questions: displayedOpen, agents, workflows }),
+    [displayedOpen, agents, workflows],
   );
 
   const agentById = useMemo(() => {
@@ -295,19 +299,40 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
     [flashAnswered, answerOpenQuestions, sessionId],
   );
 
-  if (open.length === 0) {
+  const handleDismiss = useCallback(
+    async (question: OpenQuestion) => {
+      await dismissOpenQuestion(sessionId, question);
+      beginUndo(question);
+    },
+    [beginUndo, dismissOpenQuestion, sessionId],
+  );
+
+  const handleUndo = useCallback(
+    async (question: OpenQuestion) => {
+      await restoreDismissedOpenQuestion(sessionId, question);
+      clearUndo();
+    },
+    [clearUndo, restoreDismissedOpenQuestion, sessionId],
+  );
+
+  if (open.length === 0 && answeredClusters.length === 0 && pendingUndoQuestion === null) {
     return (
       <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
-        <div className="flex flex-col gap-6">
-          <EmptyState
-            bordered
-            tone="success"
-            icon={CircleCheck}
-            title="No open questions"
-            description="When an agent needs a decision, it shows up here."
-          />
-          <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
-        </div>
+        <EmptyState
+          bordered
+          tone="success"
+          icon={CircleCheck}
+          title="No open questions"
+          description="When an agent needs a decision, it shows up here."
+        />
+      </PaneShell>
+    );
+  }
+
+  if (open.length === 0 && pendingUndoQuestion === null) {
+    return (
+      <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
+        <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
       </PaneShell>
     );
   }
@@ -315,7 +340,11 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   return (
     <PaneShell
       title="Questions"
-      description={`${open.length} open ${open.length === 1 ? 'question' : 'questions'} waiting on you.`}
+      description={
+        open.length > 0
+          ? `${open.length} open ${open.length === 1 ? 'question' : 'questions'} waiting on you.`
+          : 'Decisions agents need from you to keep going.'
+      }
     >
       <div className="flex flex-col gap-4">
         {clusters.map((cluster) => (
@@ -330,7 +359,9 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
             onSetCustomAnswer={setCustomAnswer}
             onToggleCustomField={toggleCustomField}
             onClearJustAnswered={clearJustAnswered}
-            onDismiss={(q) => void dismissOpenQuestion(sessionId, q)}
+            onDismiss={(question) => void handleDismiss(question)}
+            pendingUndoQuestionId={pendingUndoQuestion?.id ?? null}
+            onUndo={(question) => void handleUndo(question)}
             onSubmit={(pairs, ownerAgentId) => void handleSubmit(pairs, ownerAgentId)}
           />
         ))}
