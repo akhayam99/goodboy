@@ -85,6 +85,30 @@ describe('AgentMetrics', () => {
     expect(screen.getByText('ctx 100%').className).toContain('text-danger');
   });
 
+  it('does not double-count cached tokens for inclusive codex input', () => {
+    render(
+      <AgentMetrics
+        telemetry={telemetry({ provider: 'codex', model: 'gpt-5.4-mini' })}
+        aggregate={null}
+        contextUsage={[
+          {
+            provider: 'codex',
+            model: 'gpt-5.4-mini',
+            inputTokens: 100_000,
+            outputTokens: 20_000,
+            cachedInputTokens: 50_000,
+            cacheCreationInputTokens: 10_000,
+          },
+        ]}
+        turns={1}
+        turnsLoading={false}
+        run={run}
+        density="compact"
+      />,
+    );
+    expect(screen.getByText('ctx 30%')).toBeTruthy();
+  });
+
   it('stays readable for an agent that never ran', () => {
     render(
       <AgentMetrics

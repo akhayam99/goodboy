@@ -1,3 +1,4 @@
+import { contextTokensForUsage } from '@goodboy/core';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import { contextWindowFor } from '../../contextWindowFor';
 
@@ -16,14 +17,10 @@ export const contextUsageSummary = ({ usage }: Params): ContextUsageSummary | nu
   if (dominant == null) {
     return null;
   }
-  const windowTokens = contextWindowFor({ provider: dominant.provider, model: dominant.model });
+  const windowTokens = contextWindowFor(dominant.model);
   if (windowTokens == null || windowTokens <= 0) {
     return null;
   }
-  const usedTokens =
-    dominant.inputTokens +
-    (dominant.cachedInputTokens ?? 0) +
-    (dominant.cacheCreationInputTokens ?? 0) +
-    dominant.outputTokens;
+  const usedTokens = contextTokensForUsage(dominant);
   return { usedTokens, windowTokens, pct: Math.min(1, usedTokens / windowTokens) };
 };

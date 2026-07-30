@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { contextTokensForUsage } from '@goodboy/core';
 import type {
   Agent,
   ProviderName,
@@ -155,7 +156,10 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
         estimatedCostUsd: 0,
         turns: 1,
       };
-      aggregate.inputTokens += record.inputTokens;
+      aggregate.inputTokens +=
+        record.inputTokens +
+        (record.cachedInputTokens ?? 0) +
+        (record.cacheCreationInputTokens ?? 0);
       aggregate.outputTokens += record.outputTokens;
       aggregate.estimatedCostUsd += record.estimatedCostUsd;
       turnTelemetry.set(record.runId, aggregate);
@@ -249,14 +253,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
             cachedInputTokens: entry.cachedInputTokens,
             cacheCreationInputTokens: entry.cacheCreationInputTokens,
           }))
-          .sort(
-            (a, b) =>
-              b.inputTokens +
-              b.cachedInputTokens +
-              b.cacheCreationInputTokens +
-              b.outputTokens -
-              (a.inputTokens + a.cachedInputTokens + a.cacheCreationInputTokens + a.outputTokens),
-          ),
+          .sort((a, b) => contextTokensForUsage(b) - contextTokensForUsage(a)),
       );
     }
     return result;

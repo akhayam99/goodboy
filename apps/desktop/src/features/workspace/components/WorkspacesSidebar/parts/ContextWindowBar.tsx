@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import { getModelDescriptor } from '@goodboy/core';
+import { contextTokensForUsage, getModelDescriptor } from '@goodboy/core';
 import { Gauge } from 'lucide-react';
 import type { ProviderName } from '@goodboy/types';
 import { formatTokens } from '../../../../../features/session/agent-row-format';
@@ -22,15 +22,11 @@ type ProviderBarProps = {
 };
 
 const ProviderBar = ({ usage, showProvider }: ProviderBarProps) => {
-  const window = contextWindowFor({ provider: usage.provider, model: usage.model });
+  const window = contextWindowFor(usage.model);
   if (window == null) {
     return null;
   }
-  const used =
-    usage.inputTokens +
-    (usage.cachedInputTokens ?? 0) +
-    (usage.cacheCreationInputTokens ?? 0) +
-    usage.outputTokens;
+  const used = contextTokensForUsage(usage);
   const pct = Math.min(1, used / window);
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
   const modelLabel = getModelDescriptor(usage.model)?.label ?? usage.model;

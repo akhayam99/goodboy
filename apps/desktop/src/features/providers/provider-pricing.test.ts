@@ -5,8 +5,14 @@ import {
   getActivePricingTable,
 } from './provider-pricing';
 
+type PricingWindow = Window & {
+  __DEV_PRICING_OVERRIDE__?: Partial<ReturnType<typeof getActivePricingTable>>;
+};
+
+const pricingWindow = window as PricingWindow;
+
 afterEach(() => {
-  delete window.__DEV_PRICING_OVERRIDE__;
+  delete pricingWindow.__DEV_PRICING_OVERRIDE__;
 });
 
 describe('getActivePricingTable', () => {
@@ -14,7 +20,6 @@ describe('getActivePricingTable', () => {
     const table = getActivePricingTable();
     expect(table.anthropic).toBeDefined();
     expect(table.codex).toBeDefined();
-    expect(table.cursor).toBeDefined();
     expect(table.gemini).toBeDefined();
     expect(typeof table.version).toBe('string');
   });
@@ -42,7 +47,7 @@ describe('getCodexPriceOverride', () => {
   });
 
   it('keeps the development override hook active', () => {
-    window.__DEV_PRICING_OVERRIDE__ = {
+    pricingWindow.__DEV_PRICING_OVERRIDE__ = {
       codex: {
         'gpt-5.6-sol': {
           inputPerMtok: 7,

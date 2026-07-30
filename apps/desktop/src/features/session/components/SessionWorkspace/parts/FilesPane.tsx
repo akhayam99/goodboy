@@ -1,8 +1,8 @@
 import { FileDiff } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { useCurrentWorkspace } from '../../../../../store';
 import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
+import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
 import { PaneShell } from './PaneShell';
 
 type FilesPaneProps = {
@@ -12,11 +12,12 @@ type FilesPaneProps = {
 };
 
 export const FilesPane = ({ sessionId, workingDir, onClose }: FilesPaneProps) => {
-  const workspaceName = useCurrentWorkspace()?.name ?? '';
-
   if (!workingDir) {
     return (
-      <PaneShell title="Diff" description="Changes across this session's working tree.">
+      <PaneShell
+        title={DIFF_VIEWER_PANE_COPY.title}
+        description={DIFF_VIEWER_PANE_COPY.description}
+      >
         <EmptyState
           bordered
           tone="info"
@@ -31,7 +32,6 @@ export const FilesPane = ({ sessionId, workingDir, onClose }: FilesPaneProps) =>
   return (
     <DiffViewerPane
       sessionId={sessionId}
-      workspaceName={workspaceName}
       workingDir={workingDir}
       worktreePath={workingDir}
       onClose={onClose}

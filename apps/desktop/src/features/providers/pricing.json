@@ -10,7 +10,6 @@
     "claude-sonnet-4-5": { "inputPerMtok": 3, "outputPerMtok": 15, "cachedInputPerMtok": 0.3 },
     "claude-haiku-4-5": { "inputPerMtok": 1, "outputPerMtok": 5, "cachedInputPerMtok": 0.1 }
   },
-  "cursor": {},
   "codex": {
     "gpt-5.6-sol": { "inputPerMtok": 5, "outputPerMtok": 30, "cachedInputPerMtok": 0.5 },
     "gpt-5.6-terra": { "inputPerMtok": 2.5, "outputPerMtok": 15, "cachedInputPerMtok": 0.25 },

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CircleCheck, PanelRight, Trash2 } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
-import { getModelDescriptor } from '@goodboy/core';
+import { contextTokensForUsage, getModelDescriptor } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import { formatCost } from '../../../../../features/session/agent-row-format';
@@ -70,16 +70,19 @@ export const AgentRow = ({
     setIsConfirmingDelete(false);
   }, [isEditing]);
 
-  const total = telemetry ? telemetry.inputTokens + telemetry.outputTokens : null;
+  const lastTurn =
+    telemetry == null
+      ? null
+      : `last turn: ${contextTokensForUsage(telemetry)} tokens · ${formatCost(telemetry.estimatedCostUsd)}`;
   const titleParts = [
     `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,
     isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
-    telemetry ? `provider: ${telemetry.provider}` : null,
-    telemetry ? `model: ${getModelDescriptor(telemetry.model)?.label ?? telemetry.model}` : null,
-    total !== null
-      ? `last turn: ${total} tokens · ${formatCost(telemetry!.estimatedCostUsd)}`
+    telemetry != null ? `provider: ${telemetry.provider}` : null,
+    telemetry != null
+      ? `model: ${getModelDescriptor(telemetry.model)?.label ?? telemetry.model}`
       : null,
+    lastTurn,
   ].filter((part): part is string => part !== null);
   const isMarkDoneAvailable =
     onMarkDone !== undefined && run.status !== 'running' && run.doneAt == null;

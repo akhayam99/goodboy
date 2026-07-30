@@ -10,42 +10,42 @@ type ModelPrice = {
 export type PricingTable = {
   readonly version: string;
   readonly anthropic: Record<string, ModelPrice>;
-  readonly cursor: Record<string, ModelPrice>;
   readonly codex: Record<string, ModelPrice>;
   readonly gemini: Record<string, ModelPrice>;
 };
 
-const activeTable: PricingTable = shippedPricing as PricingTable;
+type PricingWindow = Window & {
+  __DEV_PRICING_OVERRIDE__?: Partial<PricingTable>;
+};
+
+type PriceParams = {
+  readonly provider: 'anthropic' | 'codex' | 'gemini';
+  readonly model: string;
+};
+
+const activeTable: PricingTable = shippedPricing;
 
 export const getActivePricingTable = (): PricingTable => {
   return activeTable;
 };
 
-declare global {
-  interface Window {
-    __DEV_PRICING_OVERRIDE__?: Partial<PricingTable>;
-  }
-}
-
 const IS_DEV = import.meta.env.DEV === true;
 
-function priceForModel(
-  provider: 'anthropic' | 'cursor' | 'codex' | 'gemini',
-  model: string,
-): ModelPrice | null {
+const priceForModel = ({ provider, model }: PriceParams): ModelPrice | null => {
+  const pricingWindow = typeof window === 'undefined' ? null : (window as PricingWindow);
   const table: PricingTable =
-    IS_DEV && typeof window !== 'undefined' && window.__DEV_PRICING_OVERRIDE__
-      ? { ...activeTable, ...window.__DEV_PRICING_OVERRIDE__ }
+    IS_DEV && pricingWindow?.__DEV_PRICING_OVERRIDE__ != null
+      ? { ...activeTable, ...pricingWindow.__DEV_PRICING_OVERRIDE__ }
       : activeTable;
 
   return table[provider][model] ?? null;
-}
+};
 
 export const getCodexPriceOverride = (
   _config: unknown,
   model: string,
 ): CodexModelPriceOverride | null => {
-  const price = priceForModel('codex', model);
+  const price = priceForModel({ provider: 'codex', model });
   if (price === null) {
     return null;
   }
@@ -62,7 +62,7 @@ export const getGeminiPriceOverride = (
   _config: unknown,
   model: string,
 ): GeminiModelPriceOverride | null => {
-  const price = priceForModel('gemini', model);
+  const price = priceForModel({ provider: 'gemini', model });
   if (price === null) {
     return null;
   }

@@ -29,6 +29,8 @@ const telemetry = {
   model: 'claude-sonnet-4-5',
   inputTokens: 10,
   outputTokens: 2,
+  cachedInputTokens: 20,
+  cacheCreationInputTokens: 30,
   estimatedCostUsd: 0.25,
   recordedAt: '2026-01-01T00:00:00.000Z',
 } as TelemetryRecord;
@@ -94,6 +96,11 @@ describe('AgentRow', () => {
   it('shows the per-provider context gauge without being selected', () => {
     const { container } = renderRow(false);
     expect(container.querySelectorAll('[title*="context:"]').length).toBeGreaterThan(0);
+  });
+
+  it('includes cache tokens in the last-turn tooltip total', () => {
+    renderRow(false);
+    expect(screen.getAllByTitle(/last turn: 62 tokens/).length).toBeGreaterThan(0);
   });
 
   it('prints cost, turns and duration exactly once', () => {

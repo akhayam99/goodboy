@@ -57,10 +57,12 @@ beforeEach(() => {
 describe('useAgentMetrics', () => {
   it('aggregates cost and tokens per agent', () => {
     store.state.sessionPhaseRuns = { [SID]: [agent('a')] };
-    store.state.sessionTelemetry = { [SID]: [turn('run-a')] };
+    store.state.sessionTelemetry = {
+      [SID]: [turn('run-a', { cachedInputTokens: 20, cacheCreationInputTokens: 30 })],
+    };
     const { result } = renderHook(() => useAgentMetrics({ sessionId: SID }));
     expect(result.current.aggregatesByAgentId.get('a')).toEqual({
-      inputTokens: 100,
+      inputTokens: 150,
       outputTokens: 10,
       estimatedCostUsd: 0.5,
       turns: 1,
