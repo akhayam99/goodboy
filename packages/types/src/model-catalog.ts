@@ -16,6 +16,7 @@ export type BaseModel = {
   readonly key: ModelKey;
   readonly label: string;
   readonly tier: ModelTier;
+  readonly contextWindow: number;
   readonly presentation: ModelPresentation;
 };
 

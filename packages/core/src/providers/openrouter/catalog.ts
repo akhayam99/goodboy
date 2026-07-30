@@ -14,6 +14,7 @@ export const OPENROUTER_CATALOG = [
     key: 'sonnet-4.5',
     label: 'Claude Sonnet 4.5',
     tier: 'turn',
+    contextWindow: 200_000,
     presentation: {
       family: 'claude',
       group: 'Sonnet',
@@ -30,6 +31,7 @@ export const OPENROUTER_CATALOG = [
     key: 'opus-4.8',
     label: 'Claude Opus 4.8',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Opus',
@@ -46,6 +48,7 @@ export const OPENROUTER_CATALOG = [
     key: 'gpt-5.4',
     label: 'GPT-5.4',
     tier: 'turn',
+    contextWindow: 400_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -62,6 +65,7 @@ export const OPENROUTER_CATALOG = [
     key: 'gemini-3.1-pro',
     label: 'Gemini 3.1 Pro',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'gemini',
       group: 'Pro',
@@ -78,6 +82,7 @@ export const OPENROUTER_CATALOG = [
     key: 'deepseek-v4',
     label: 'DeepSeek V4',
     tier: 'cheap',
+    contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: null,
@@ -94,6 +99,7 @@ export const OPENROUTER_CATALOG = [
     key: 'kimi-k2',
     label: 'Kimi K2',
     tier: 'turn',
+    contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: null,
@@ -110,6 +116,7 @@ export const OPENROUTER_CATALOG = [
     key: 'glm-5',
     label: 'GLM-5',
     tier: 'cheap',
+    contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: null,
@@ -126,6 +133,7 @@ export const OPENROUTER_CATALOG = [
     key: 'grok-4',
     label: 'Grok 4',
     tier: 'turn',
+    contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: null,

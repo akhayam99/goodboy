@@ -18,6 +18,20 @@ describe('cursor model ids', () => {
   it('every priced model is a slug cursor-agent accepts', () => {
     const rejected = Object.keys(CURSOR_PRICES).filter((id) => !accepted.has(id));
     expect(rejected).toEqual([]);
+    expect(Object.keys(CURSOR_PRICES).sort()).toEqual([
+      'auto',
+      'claude-4.6-sonnet-medium',
+      'claude-4.6-sonnet-medium-thinking',
+      'claude-opus-4-7-thinking-high',
+      'claude-opus-5-low',
+      'claude-opus-5-thinking-high',
+      'composer-2.5',
+      'composer-2.5-fast',
+      'gpt-5.3-codex',
+      'gpt-5.5-high',
+      'gpt-5.5-medium',
+      'gpt-5.6-sol-high',
+    ]);
   });
 
   it('the default, cheap and auto slugs are emittable and accepted', () => {

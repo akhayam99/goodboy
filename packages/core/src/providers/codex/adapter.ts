@@ -9,7 +9,7 @@ import type {
   TurnRequest,
 } from '@goodboy/types';
 import { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './constants';
-import { computeCodexCostUsd, type CodexModelPriceOverride } from './cost';
+import { computeCodexCostUsd } from './cost';
 import { parseJsonLine } from './parser';
 import { streamChildEvents } from '../shared/stream-events';
 import { resolveModelArgs } from '../resolveModelArgs';
@@ -19,7 +19,6 @@ const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
   toolUse: true,
   fileEdits: true,
-  contextWindow: 200_000,
   defaultModel: CODEX_DEFAULT_MODEL,
   availableModels: CODEX_MODELS.map((m) => m.id),
 };
@@ -29,7 +28,6 @@ export type CodexAdapterDeps = {
   readonly now?: () => IsoDateTime;
   readonly spawnFn?: typeof spawn;
   readonly onUnknown?: (type: string, payload: unknown) => void;
-  readonly priceOverride?: CodexModelPriceOverride | null;
 };
 
 type SpawnParams = {
@@ -48,14 +46,12 @@ export class CodexAdapter implements ProviderAdapter {
   private readonly now: () => IsoDateTime;
   private readonly spawnFn: typeof spawn;
   private readonly onUnknown: (type: string, payload: unknown) => void;
-  private readonly priceOverride: CodexModelPriceOverride | null;
 
   constructor(deps: CodexAdapterDeps = {}) {
     this.binary = deps.binary ?? 'codex';
     this.now = deps.now ?? (() => new Date().toISOString() as IsoDateTime);
     this.spawnFn = deps.spawnFn ?? spawn;
     this.onUnknown = deps.onUnknown ?? (() => undefined);
-    this.priceOverride = deps.priceOverride ?? null;
   }
 
   async detect(): Promise<DetectResult> {
@@ -85,7 +81,7 @@ export class CodexAdapter implements ProviderAdapter {
   }
 
   cost(usage: ProviderUsage, model: string): number {
-    return computeCodexCostUsd(usage, model, this.priceOverride);
+    return computeCodexCostUsd({ usage, model });
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {

@@ -43,7 +43,12 @@ export const priceFor = (model: string): ModelPrice => {
   return CLAUDE_PRICES[model] ?? FALLBACK;
 };
 
-export const computeCostUsd = (usage: ProviderUsage, model: string): number => {
+type Params = {
+  readonly usage: ProviderUsage;
+  readonly model: string;
+};
+
+export const computeCostUsd = ({ usage, model }: Params): number => {
   const price = priceFor(model);
   const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
   return (

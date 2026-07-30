@@ -14,6 +14,7 @@ export const OPENCODE_CATALOG = [
     key: 'big-pickle',
     label: 'Big Pickle',
     tier: 'turn',
+    contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: null,
@@ -30,6 +31,7 @@ export const OPENCODE_CATALOG = [
     key: 'minimax-m2.5',
     label: 'MiniMax M2.5',
     tier: 'cheap',
+    contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: null,
@@ -46,6 +48,7 @@ export const OPENCODE_CATALOG = [
     key: 'nemotron-3-super',
     label: 'Nemotron 3 Super',
     tier: 'cheap',
+    contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: null,
@@ -62,6 +65,7 @@ export const OPENCODE_CATALOG = [
     key: 'ring-2.6-1t',
     label: 'Ring 2.6 1T',
     tier: 'cheap',
+    contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: null,

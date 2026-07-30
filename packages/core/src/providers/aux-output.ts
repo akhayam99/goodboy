@@ -4,6 +4,8 @@ export type AuxUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  readonly cacheCreationInputTokens: number;
+  readonly estimatedCostUsd?: number;
 };
 
 export type AuxOutput = {
@@ -19,7 +21,12 @@ type Params = {
   readonly stdout: string;
 };
 
-const ZERO_USAGE: AuxUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
+const ZERO_USAGE: AuxUsage = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedInputTokens: 0,
+  cacheCreationInputTokens: 0,
+};
 
 const asRecord = (value: unknown): Record<string, unknown> | null => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -72,9 +79,12 @@ const readEnvelopeUsage = (value: unknown): AuxUsage => {
     return ZERO_USAGE;
   }
   return {
-    inputTokens: asCount(usage['input_tokens']),
-    outputTokens: asCount(usage['output_tokens']),
-    cachedInputTokens: asCount(usage['cache_read_input_tokens']),
+    inputTokens: asCount(usage['input_tokens'] ?? usage['inputTokens']),
+    outputTokens: asCount(usage['output_tokens'] ?? usage['outputTokens']),
+    cachedInputTokens: asCount(usage['cache_read_input_tokens'] ?? usage['cacheReadTokens']),
+    cacheCreationInputTokens: asCount(
+      usage['cache_creation_input_tokens'] ?? usage['cacheCreationInputTokens'],
+    ),
   };
 };
 
@@ -87,6 +97,7 @@ const readCodexUsage = (value: unknown): AuxUsage => {
     inputTokens: asCount(usage['input_tokens']),
     outputTokens: asCount(usage['output_tokens']) + asCount(usage['reasoning_output_tokens']),
     cachedInputTokens: asCount(usage['cached_input_tokens']),
+    cacheCreationInputTokens: 0,
   };
 };
 
@@ -229,10 +240,13 @@ const readOpenCodeUsage = (value: unknown): AuxUsage => {
   const part = asRecord(value);
   const tokens = asRecord(part?.['tokens']);
   const cache = asRecord(tokens?.['cache']);
+  const estimatedCostUsd = asCount(part?.['cost']);
   return {
     inputTokens: asCount(tokens?.['input']),
     outputTokens: asCount(tokens?.['output']) + asCount(tokens?.['reasoning']),
-    cachedInputTokens: asCount(cache?.['read']) + asCount(cache?.['write']),
+    cachedInputTokens: asCount(cache?.['read']),
+    cacheCreationInputTokens: asCount(cache?.['write']),
+    ...(estimatedCostUsd > 0 && { estimatedCostUsd }),
   };
 };
 

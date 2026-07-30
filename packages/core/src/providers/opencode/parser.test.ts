@@ -103,7 +103,8 @@ describe('parseJsonLine, opencode 1.14.48', () => {
       usage: {
         inputTokens: 100,
         outputTokens: 60,
-        cachedInputTokens: 25,
+        cachedInputTokens: 20,
+        cacheCreationInputTokens: 5,
         estimatedCostUsd: 0.0123,
       },
     });

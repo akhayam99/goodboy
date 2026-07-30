@@ -12,14 +12,21 @@ const KNOWN_TYPES = new Set(['response.delta', 'response.completed', 'usage', 'e
 type UsagePayload = {
   readonly input_tokens?: number;
   readonly cached_input_tokens?: number;
+  readonly cache_creation_input_tokens?: number;
   readonly output_tokens?: number;
+  readonly inputTokens?: number;
+  readonly cachedInputTokens?: number;
+  readonly cacheCreationInputTokens?: number;
+  readonly outputTokens?: number;
 };
 
 function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
   return {
-    inputTokens: raw?.input_tokens ?? 0,
-    outputTokens: raw?.output_tokens ?? 0,
-    cachedInputTokens: raw?.cached_input_tokens ?? 0,
+    inputTokens: raw?.input_tokens ?? raw?.inputTokens ?? 0,
+    outputTokens: raw?.output_tokens ?? raw?.outputTokens ?? 0,
+    cachedInputTokens: raw?.cached_input_tokens ?? raw?.cachedInputTokens ?? 0,
+    cacheCreationInputTokens:
+      raw?.cache_creation_input_tokens ?? raw?.cacheCreationInputTokens ?? 0,
     estimatedCostUsd: 0,
   };
 }

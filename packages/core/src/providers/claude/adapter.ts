@@ -19,7 +19,6 @@ const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
   toolUse: true,
   fileEdits: true,
-  contextWindow: 1_000_000,
   defaultModel: ANTHROPIC_CATALOG[0]?.key ?? '',
   availableModels: ANTHROPIC_CATALOG.map((model) => model.key),
 };
@@ -90,7 +89,7 @@ export class ClaudeAdapter implements ProviderAdapter {
   }
 
   cost(usage: ProviderUsage, model: string): number {
-    return computeCostUsd(usage, model);
+    return computeCostUsd({ usage, model });
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {

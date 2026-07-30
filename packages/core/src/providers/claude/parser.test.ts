@@ -185,13 +185,23 @@ describe('parseStreamJsonLine', () => {
       JSON.stringify({
         type: 'result',
         subtype: 'success',
-        usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 2 },
+        usage: {
+          input_tokens: 10,
+          output_tokens: 5,
+          cache_read_input_tokens: 2,
+          cache_creation_input_tokens: 3,
+        },
       }),
     );
     expect(events).toHaveLength(2);
     expect(events[0]).toMatchObject({
       kind: 'usage',
-      usage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 2 },
+      usage: {
+        inputTokens: 10,
+        outputTokens: 5,
+        cachedInputTokens: 2,
+        cacheCreationInputTokens: 3,
+      },
     });
     expect(events[1]).toMatchObject({ kind: 'done' });
   });

@@ -8,6 +8,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'opus-5',
     label: 'Opus 5',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Opus',
@@ -24,6 +25,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'fable-5',
     label: 'Fable 5',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Fable',
@@ -40,6 +42,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'opus-4.8',
     label: 'Opus 4.8',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Opus',
@@ -56,6 +59,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'opus-4.7',
     label: 'Opus 4.7',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Opus',
@@ -72,6 +76,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'opus-4.6',
     label: 'Opus 4.6',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Opus',
@@ -88,6 +93,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'sonnet-4.6',
     label: 'Sonnet 4.6',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Sonnet',
@@ -104,6 +110,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'sonnet-4.5',
     label: 'Sonnet 4.5',
     tier: 'turn',
+    contextWindow: 200_000,
     presentation: {
       family: 'claude',
       group: 'Sonnet',
@@ -120,6 +127,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'haiku-4.5',
     label: 'Haiku 4.5',
     tier: 'cheap',
+    contextWindow: 200_000,
     presentation: {
       family: 'claude',
       group: 'Haiku',

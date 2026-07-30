@@ -12,6 +12,8 @@ export type TelemetryRecord = Readonly<{
   model: string;
   inputTokens: number;
   outputTokens: number;
+  cachedInputTokens?: number;
+  cacheCreationInputTokens?: number;
   estimatedCostUsd: number;
   recordedAt: IsoDateTime;
 }>;

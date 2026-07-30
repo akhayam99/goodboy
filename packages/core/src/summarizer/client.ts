@@ -1,7 +1,7 @@
 import type { ContextSlot, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
-import { computeCostUsd } from '../providers/claude/cost';
+import { computeProviderCostUsd } from '../providers/provider-cost';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
 import { cliModelId } from '../providers/cliModelId';
 import { isSlotKey, SLOT_KEYS, type SlotKey } from '../context/slots';
@@ -18,6 +18,7 @@ export type SummarizerUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  readonly cacheCreationInputTokens: number;
   readonly estimatedCostUsd: number;
 };
 
@@ -114,7 +115,14 @@ export class Summarizer {
     }
     const usage: SummarizerUsage = {
       ...output.usage,
-      estimatedCostUsd: computeCostUsd({ ...output.usage, estimatedCostUsd: 0 }, this.model),
+      estimatedCostUsd: computeProviderCostUsd({
+        providerId: this.providerId,
+        usage: {
+          ...output.usage,
+          estimatedCostUsd: output.usage.estimatedCostUsd ?? 0,
+        },
+        model: this.model,
+      }),
     };
     const delta = parseDelta(output.text);
     return { delta, usage, model: this.model };

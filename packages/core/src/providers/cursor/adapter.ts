@@ -19,7 +19,6 @@ const CAPABILITIES: ProviderCapabilities = {
   streaming: true,
   toolUse: true,
   fileEdits: true,
-  contextWindow: 200_000,
   defaultModel: CURSOR_DEFAULT_MODEL,
   availableModels: CURSOR_MODELS.map((m) => m.id),
 };
@@ -90,7 +89,7 @@ export class CursorAdapter implements ProviderAdapter {
   }
 
   cost(usage: ProviderUsage, model: string): number {
-    return computeCursorCostUsd(usage, model);
+    return computeCursorCostUsd({ usage, model });
   }
 
   spawn(request: TurnRequest): AsyncIterable<TurnEvent> {

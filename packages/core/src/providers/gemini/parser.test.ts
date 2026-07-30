@@ -43,7 +43,12 @@ describe('parseJsonLine (gemini v0.x)', () => {
     const events = parse(
       JSON.stringify({
         type: 'usage',
-        usage: { input_tokens: 100, output_tokens: 50, cached_input_tokens: 10 },
+        usage: {
+          input_tokens: 100,
+          output_tokens: 50,
+          cached_input_tokens: 10,
+          cache_creation_input_tokens: 4,
+        },
       }),
     );
     expect(events).toEqual([
@@ -54,6 +59,7 @@ describe('parseJsonLine (gemini v0.x)', () => {
           inputTokens: 100,
           outputTokens: 50,
           cachedInputTokens: 10,
+          cacheCreationInputTokens: 4,
           estimatedCostUsd: 0,
         },
         at,

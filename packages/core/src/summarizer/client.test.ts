@@ -146,6 +146,31 @@ describe('Summarizer client transport', () => {
     expect(result.usage.estimatedCostUsd).toBeCloseTo(6);
   });
 
+  it('uses cursor pricing for cursor summaries', async () => {
+    const stdout = JSON.stringify({
+      type: 'result',
+      subtype: 'success',
+      result: '{"upserts":[]}',
+      usage: {
+        input_tokens: 1_000_000,
+        output_tokens: 1_000_000,
+      },
+    });
+    const summarizer = new Summarizer({
+      providerId: 'cursor',
+      invokeFn: invokeReturning(stdout),
+    });
+
+    const result = await summarizer.summarize({
+      prevSlots: [],
+      turnInput: 'q',
+      turnOutput: 'a',
+    });
+
+    expect(result.model).toBe('auto');
+    expect(result.usage.estimatedCostUsd).toBeCloseTo(3);
+  });
+
   it('rejects an anthropic error payload that exits zero', async () => {
     const stdout = JSON.stringify({
       result: 'Sistema bloccato',

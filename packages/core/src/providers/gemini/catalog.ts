@@ -5,6 +5,7 @@ export const GEMINI_CATALOG = [
     key: 'gemini-3.1-pro',
     label: '3.1 Pro',
     tier: 'turn',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'gemini',
       group: 'Pro',
@@ -19,6 +20,7 @@ export const GEMINI_CATALOG = [
     key: 'gemini-3.5-flash',
     label: '3.5 Flash',
     tier: 'cheap',
+    contextWindow: 1_000_000,
     presentation: {
       family: 'gemini',
       group: 'Flash',

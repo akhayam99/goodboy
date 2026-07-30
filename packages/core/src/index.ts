@@ -10,13 +10,6 @@ export {
 } from './budget';
 
 export {
-  TelemetryRecorder,
-  type RecordSummarizerInput,
-  type RecordTurnInput,
-  type TelemetryRecorderDeps,
-} from './telemetry';
-
-export {
   ContextEngine,
   InvalidSlotKeyError,
   PREAMBLE_SLOT_TOTAL_BUDGET,
@@ -137,6 +130,7 @@ export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux
 export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
 
 export { getModelDescriptor, getModelProvider } from './providers/model-display';
+export { computeProviderCostUsd } from './providers/provider-cost';
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 

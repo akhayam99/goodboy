@@ -39,4 +39,29 @@ describe('PlannerClient', () => {
     expect(args?.['model']).toBe('claude-haiku-4-5');
     expect(result.model).toBe('claude-haiku-4-5');
   });
+
+  it('uses codex pricing for codex plans', async () => {
+    const stdout = [
+      JSON.stringify({
+        type: 'item.completed',
+        item: { id: 'message-1', type: 'agent_message', text: RESPONSE },
+      }),
+      JSON.stringify({
+        type: 'turn.completed',
+        usage: { input_tokens: 1_000_000, output_tokens: 1_000_000 },
+      }),
+    ].join('\n');
+    const invokeFn: PlannerClientDeps['invokeFn'] = async <T>(): Promise<T> =>
+      ({ stdout, stderr: '', exitCode: 0 }) as T;
+    const client = new PlannerClient({
+      providerId: 'codex',
+      model: 'gpt-5.4-mini',
+      invokeFn,
+    });
+
+    const result = await client.plan({ process: 'Fix authentication.' });
+
+    expect(result.model).toBe('gpt-5.4-mini');
+    expect(result.usage.estimatedCostUsd).toBeCloseTo(5.25);
+  });
 });

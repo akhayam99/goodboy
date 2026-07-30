@@ -9,7 +9,6 @@ export type ProviderCapabilities = {
   readonly streaming: boolean;
   readonly toolUse: boolean;
   readonly fileEdits: boolean;
-  readonly contextWindow: number;
   readonly defaultModel: string;
   readonly availableModels: ReadonlyArray<string>;
 };
@@ -18,6 +17,7 @@ export type ProviderUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
+  readonly cacheCreationInputTokens?: number;
   readonly estimatedCostUsd: number;
 };
 

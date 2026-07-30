@@ -221,20 +221,8 @@ describe('CodexAdapter.detect', () => {
 });
 
 describe('CodexAdapter.cost', () => {
-  it('returns 0 when no priceOverride is set (ChatGPT subscription users)', () => {
+  it('prices the catalog default without an injected override', () => {
     const adapter = new CodexAdapter();
-    expect(
-      adapter.cost(
-        { inputTokens: 100, outputTokens: 50, cachedInputTokens: 0, estimatedCostUsd: 0 },
-        CODEX_DEFAULT_MODEL,
-      ),
-    ).toBe(0);
-  });
-
-  it('computes USD when priceOverride is provided', () => {
-    const adapter = new CodexAdapter({
-      priceOverride: { inputPerMtok: 3, outputPerMtok: 15 },
-    });
     expect(
       adapter.cost(
         {
@@ -245,6 +233,6 @@ describe('CodexAdapter.cost', () => {
         },
         CODEX_DEFAULT_MODEL,
       ),
-    ).toBeCloseTo(18);
+    ).toBeCloseTo(35);
   });
 });

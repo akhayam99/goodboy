@@ -48,7 +48,7 @@ export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
   return {
     id: model.key,
     tier: model.tier,
-    contextWindow: family === 'gemini' || family === 'claude' ? 1_000_000 : 200_000,
+    contextWindow: model.contextWindow,
     family,
     subfamily: model.presentation.group,
     label: model.label,

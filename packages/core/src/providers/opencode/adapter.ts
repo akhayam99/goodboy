@@ -51,7 +51,6 @@ const capabilitiesFor = ({ providerId }: ProviderParams): ProviderCapabilities =
     streaming: true,
     toolUse: true,
     fileEdits: true,
-    contextWindow: models[0]?.contextWindow ?? 128_000,
     defaultModel: models.find((model) => model.tier === 'turn')?.id ?? models[0]?.id ?? '',
     availableModels: models.map((model) => model.id),
   };

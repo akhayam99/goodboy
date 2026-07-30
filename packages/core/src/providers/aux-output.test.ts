@@ -7,12 +7,22 @@ describe('extractAuxOutput, anthropic envelope', () => {
       result: '{"upserts":[]}',
       subtype: 'success',
       is_error: false,
-      usage: { input_tokens: 10, output_tokens: 4, cache_read_input_tokens: 2 },
+      usage: {
+        input_tokens: 10,
+        output_tokens: 4,
+        cache_read_input_tokens: 2,
+        cache_creation_input_tokens: 3,
+      },
     });
 
     expect(extractAuxOutput({ providerId: 'anthropic', stdout })).toEqual({
       text: '{"upserts":[]}',
-      usage: { inputTokens: 10, outputTokens: 4, cachedInputTokens: 2 },
+      usage: {
+        inputTokens: 10,
+        outputTokens: 4,
+        cachedInputTokens: 2,
+        cacheCreationInputTokens: 3,
+      },
       isError: false,
       errorMessage: null,
       envelopeDecoded: true,
@@ -146,7 +156,12 @@ describe('extractAuxOutput, opencode json stream', () => {
     ].join('\n');
     const out = extractAuxOutput({ providerId: 'opencode', stdout });
     expect(out.text).toBe('branch-name');
-    expect(out.usage).toEqual({ inputTokens: 5, outputTokens: 5, cachedInputTokens: 2 });
+    expect(out.usage).toEqual({
+      inputTokens: 5,
+      outputTokens: 5,
+      cachedInputTokens: 1,
+      cacheCreationInputTokens: 1,
+    });
   });
 
   it('decodes nested errors for openrouter', () => {
