@@ -339,6 +339,8 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
             model: result.model,
             inputTokens: result.usage.inputTokens,
             outputTokens: result.usage.outputTokens,
+            cachedInputTokens: result.usage.cachedInputTokens,
+            cacheCreationInputTokens: result.usage.cacheCreationInputTokens,
             estimatedCostUsd: result.usage.estimatedCostUsd,
             recordedAt: now(),
           };

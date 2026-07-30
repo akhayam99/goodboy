@@ -20,6 +20,10 @@ export const contextUsageSummary = ({ usage }: Params): ContextUsageSummary | nu
   if (windowTokens == null || windowTokens <= 0) {
     return null;
   }
-  const usedTokens = dominant.inputTokens + dominant.outputTokens;
+  const usedTokens =
+    dominant.inputTokens +
+    (dominant.cachedInputTokens ?? 0) +
+    (dominant.cacheCreationInputTokens ?? 0) +
+    dominant.outputTokens;
   return { usedTokens, windowTokens, pct: Math.min(1, usedTokens / windowTokens) };
 };

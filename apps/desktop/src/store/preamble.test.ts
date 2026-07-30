@@ -175,8 +175,11 @@ describe('buildPriorTurnsBlock', () => {
 });
 
 describe('getModelContextWindow', () => {
-  it('known claude model → 1_000_000', () => {
+  it('resolves model-specific windows through cli ids', () => {
     expect(getModelContextWindow('claude-opus-4-7')).toBe(1_000_000);
+    expect(getModelContextWindow('claude-haiku-4-5')).toBe(200_000);
+    expect(getModelContextWindow('gpt-5.6-sol')).toBe(1_000_000);
+    expect(getModelContextWindow('gpt-5.4')).toBe(400_000);
   });
 
   it('unknown model → null', () => {

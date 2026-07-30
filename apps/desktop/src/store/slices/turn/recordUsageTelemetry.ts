@@ -1,10 +1,4 @@
-import {
-  computeCostUsd,
-  computeCodexCostUsd,
-  computeCursorCostUsd,
-  computeGeminiCostUsd,
-  computeOpenCodeCostUsd,
-} from '@goodboy/core';
+import { computeProviderCostUsd } from '@goodboy/core';
 import {
   insertTelemetry,
   summarizeSessionTelemetry,
@@ -45,21 +39,18 @@ export const recordUsageTelemetry = async (
   get: GetFn,
   { event, provider, model, runId, sessionId, now, onNewAlerts }: Params,
 ): Promise<void> => {
-  const cost = (() => {
-    if (provider === 'codex') {
-      return computeCodexCostUsd(event.usage, model, getCodexPriceOverride(null, model));
-    }
-    if (provider === 'cursor') {
-      return computeCursorCostUsd(event.usage, model);
-    }
-    if (provider === 'gemini') {
-      return computeGeminiCostUsd(event.usage, model, getGeminiPriceOverride(null, model));
-    }
-    if (provider === 'opencode' || provider === 'openrouter') {
-      return computeOpenCodeCostUsd({ usage: event.usage, model });
-    }
-    return computeCostUsd(event.usage, model);
-  })();
+  const priceOverride =
+    provider === 'codex'
+      ? getCodexPriceOverride(null, model)
+      : provider === 'gemini'
+        ? getGeminiPriceOverride(null, model)
+        : null;
+  const cost = computeProviderCostUsd({
+    providerId: provider,
+    usage: event.usage,
+    model,
+    priceOverride,
+  });
   const record: TelemetryRecord = {
     id: crypto.randomUUID() as TelemetryRecordId,
     runId,
@@ -69,6 +60,8 @@ export const recordUsageTelemetry = async (
     model,
     inputTokens: event.usage.inputTokens,
     outputTokens: event.usage.outputTokens,
+    cachedInputTokens: event.usage.cachedInputTokens,
+    cacheCreationInputTokens: event.usage.cacheCreationInputTokens ?? 0,
     estimatedCostUsd: cost,
     recordedAt: now(),
   };

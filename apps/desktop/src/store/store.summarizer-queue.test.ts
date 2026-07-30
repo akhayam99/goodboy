@@ -82,9 +82,7 @@ vi.mock('../shared/lib/repo', () => ({
 }));
 
 vi.mock('../features/providers/provider-pricing', () => ({
-  parseProviderPricingConfig: vi.fn(() => null),
   getCodexPriceOverride: vi.fn(() => null),
-  refreshPricingTable: vi.fn(() => Promise.resolve()),
 }));
 
 let resolveSummarize: (() => void) | null = null;

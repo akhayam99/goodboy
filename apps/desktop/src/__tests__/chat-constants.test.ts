@@ -59,11 +59,11 @@ describe('suggestLighterModel', () => {
     expect(suggestLighterModel('gpt-5.5', CODEX)?.id).toBe('gpt-5.4');
   });
 
-  it('codex: costMultiplier is null (no static price table)', () => {
+  it('codex: GPT-5.5 costs about 2x GPT-5.4', () => {
     expect(suggestLighterModel('gpt-5.5', CODEX)).toEqual({
       id: 'gpt-5.4',
       kind: 'strong',
-      costMultiplier: null,
+      costMultiplier: 2,
     });
   });
 
@@ -103,11 +103,11 @@ describe('suggestHeavierModel', () => {
     expect(suggestHeavierModel('gpt-5.4', CODEX)?.id).toBe('gpt-5.5');
   });
 
-  it('codex: costMultiplier is null (no static price table)', () => {
+  it('codex: GPT-5.5 costs about 2x GPT-5.4', () => {
     expect(suggestHeavierModel('gpt-5.4', CODEX)).toEqual({
       id: 'gpt-5.5',
       kind: 'strong',
-      costMultiplier: null,
+      costMultiplier: 2,
     });
   });
 

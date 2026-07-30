@@ -122,7 +122,6 @@ vi.mock('../../store', () => {
     useWorkspaces: () => [],
   };
 });
-vi.mock('../../features/providers/provider-pricing', () => ({ refreshPricingTable: vi.fn() }));
 vi.mock('../../features/github/hooks/useGithubPolling', () => ({ useGithubPolling: vi.fn() }));
 vi.mock('../../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPolling: vi.fn() }));
 

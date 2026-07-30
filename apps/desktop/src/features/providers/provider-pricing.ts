@@ -21,10 +21,6 @@ export const getActivePricingTable = (): PricingTable => {
   return activeTable;
 };
 
-export const refreshPricingTable = async (): Promise<void> => {
-  return;
-};
-
 declare global {
   interface Window {
     __DEV_PRICING_OVERRIDE__?: Partial<PricingTable>;

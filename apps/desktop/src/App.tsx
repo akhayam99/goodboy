@@ -61,7 +61,6 @@ import {
   useWorkspaces,
   type LensKind,
 } from './store';
-import { refreshPricingTable } from './features/providers/provider-pricing';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useRemoteHostKind } from './features/worktree/useRemoteHostKind';
@@ -145,7 +144,6 @@ export const App = () => {
 
   useEffect(() => {
     void hydrate();
-    void refreshPricingTable();
     if (import.meta.env.PROD) {
       void checkForUpdates();
     }

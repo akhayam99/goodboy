@@ -53,7 +53,6 @@ import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
-import { refreshPricingTable } from '../../../features/providers/provider-pricing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
@@ -607,7 +606,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       });
       return;
     }
-    void refreshPricingTable();
 
     const sharedSlots = get().sessionSlots[sessionId] ?? [];
 

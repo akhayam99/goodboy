@@ -23,6 +23,8 @@ const telemetry = (over: Partial<TelemetryRecord> = {}): TelemetryRecord =>
     model: 'claude-sonnet-4-5',
     inputTokens: 10,
     outputTokens: 2,
+    cachedInputTokens: 0,
+    cacheCreationInputTokens: 0,
     estimatedCostUsd: 0.25,
     recordedAt: '2026-01-01T00:00:00.000Z',
     ...over,
@@ -43,8 +45,10 @@ describe('AgentMetrics', () => {
           {
             provider: 'anthropic',
             model: 'claude-sonnet-4-5',
-            inputTokens: 100_000,
-            outputTokens: 0,
+            inputTokens: 20_000,
+            outputTokens: 10_000,
+            cachedInputTokens: 70_000,
+            cacheCreationInputTokens: 20_000,
           },
         ]}
         turns={4}
@@ -55,7 +59,7 @@ describe('AgentMetrics', () => {
     );
     expect(screen.getByText('Sonnet 4.5')).toBeTruthy();
     expect(screen.getByText('4t')).toBeTruthy();
-    expect(screen.getByText(/ctx \d+%/)).toBeTruthy();
+    expect(screen.getByText('ctx 60%')).toBeTruthy();
     expect(screen.getByTestId('agent-metrics-inline').textContent).toContain('$');
   });
 
