@@ -69,6 +69,22 @@ describe('useAgentMetrics', () => {
     });
   });
 
+  it('does not double-count cached codex input tokens', () => {
+    store.state.sessionPhaseRuns = { [SID]: [agent('a')] };
+    store.state.sessionTelemetry = {
+      [SID]: [
+        turn('run-a', {
+          provider: 'codex',
+          inputTokens: 100,
+          cachedInputTokens: 20,
+          cacheCreationInputTokens: 0,
+        }),
+      ],
+    };
+    const { result } = renderHook(() => useAgentMetrics({ sessionId: SID }));
+    expect(result.current.aggregatesByAgentId.get('a')?.inputTokens).toBe(100);
+  });
+
   it('rolls child agent totals into the parent', () => {
     store.state.sessionPhaseRuns = { [SID]: [agent('parent'), agent('child', 'parent')] };
     store.state.sessionTelemetry = { [SID]: [turn('run-parent'), turn('run-child')] };

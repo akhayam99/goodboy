@@ -131,7 +131,7 @@ export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
 
 export { getModelDescriptor, getModelProvider } from './providers/model-display';
 export { computeProviderCostUsd } from './providers/provider-cost';
-export { contextTokensForUsage } from './providers/context-tokens';
+export { contextTokensForUsage, inputTokensForUsage } from './providers/context-tokens';
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 

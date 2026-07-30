@@ -581,18 +581,22 @@ export const FileDiffCard = ({
                       </Fragment>
                     );
                   })}
+                  {remaining > 0 && (
+                    <tr>
+                      <td colSpan={4}>
+                        <div data-diff-scroll-content className={DIFF_SCROLL_CONTENT_CLASS}>
+                          <ShowMoreBar
+                            step={Math.min(VISIBLE_LINES_STEP, remaining)}
+                            rendered={Math.min(visibleLines, totalLines)}
+                            total={totalLines}
+                            onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-              {remaining > 0 && (
-                <div data-diff-scroll-content className={DIFF_SCROLL_CONTENT_CLASS}>
-                  <ShowMoreBar
-                    step={Math.min(VISIBLE_LINES_STEP, remaining)}
-                    rendered={Math.min(visibleLines, totalLines)}
-                    total={totalLines}
-                    onShowMore={() => setVisibleLines((n) => n + VISIBLE_LINES_STEP)}
-                  />
-                </div>
-              )}
             </div>
           )}
         </div>

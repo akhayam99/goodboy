@@ -327,6 +327,63 @@ describe('line comment add (single + multi-line drag)', () => {
     expect(screen.getByText('spans a range')).toBeDefined();
   });
 
+  it('keeps colSpan controls sticky within the wide diff table', async () => {
+    const lines = Array.from({ length: 1001 }, (_, index) => ({
+      kind: 'add',
+      oldLine: null,
+      newLine: index + 1,
+      text: `line-${index + 1}`,
+    }));
+    fixtures.files = [
+      {
+        path: 'src/large.ts',
+        status: 'modified',
+        additions: lines.length,
+        deletions: 0,
+        binary: false,
+        hunks: [
+          {
+            header: '@@ -1,0 +1,1001 @@',
+            oldStart: 1,
+            oldLines: 0,
+            newStart: 1,
+            newLines: lines.length,
+            lines,
+          },
+        ],
+      },
+    ];
+    fixtures.comments = [
+      {
+        id: 'c1',
+        sessionId: SID,
+        filePath: 'src/large.ts',
+        body: 'sticky note',
+        status: 'open',
+        createdAt: '2026-06-13T00:00:00.000Z',
+        anchor: { side: 'new', lineNumber: 2 },
+      },
+    ];
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
+    const showMoreButton = await screen.findByRole('button', { name: /show 1 more lines/i });
+    fireEvent.pointerDown(screen.getAllByLabelText('comment on this line')[0]!);
+    fireEvent.pointerUp(window);
+
+    const scrollContents = [
+      screen.getByText('sticky note').closest('[data-diff-scroll-content]'),
+      (await screen.findByText('commenting on line 1')).closest('[data-diff-scroll-content]'),
+      showMoreButton.closest('[data-diff-scroll-content]'),
+    ];
+
+    for (const scrollContent of scrollContents) {
+      expect(scrollContent?.className).toContain('sticky');
+      expect(scrollContent?.className).toContain('left-0');
+      expect(scrollContent?.className).toContain('w-[var(--diff-card-width)]');
+      expect(scrollContent?.parentElement?.tagName).toBe('TD');
+      expect(scrollContent?.parentElement?.getAttribute('colspan')).toBe('4');
+    }
+  });
+
   it('offers a routing picker for the resolver spawned from open notes', async () => {
     fixtures.files = fileFixture();
     fixtures.comments = [

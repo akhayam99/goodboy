@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { contextTokensForUsage } from '@goodboy/core';
+import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core';
 import type {
   Agent,
   ProviderName,
@@ -156,10 +156,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
         estimatedCostUsd: 0,
         turns: 1,
       };
-      aggregate.inputTokens +=
-        record.inputTokens +
-        (record.cachedInputTokens ?? 0) +
-        (record.cacheCreationInputTokens ?? 0);
+      aggregate.inputTokens += inputTokensForUsage(record);
       aggregate.outputTokens += record.outputTokens;
       aggregate.estimatedCostUsd += record.estimatedCostUsd;
       turnTelemetry.set(record.runId, aggregate);
