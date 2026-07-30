@@ -1,14 +1,15 @@
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { getDefaultTurnModel } from '@goodboy/core';
 import { clampEffort, type EffortLevel } from '../../../../chat/utils/chat-constants';
+import type { ResolveMode } from '../../../../chat/spawn-from-comment';
 import { kindRouting } from '../../../../session/agent-kind';
-
-export { clampEffort };
 
 export type CardConfig = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: EffortLevel;
+  readonly mode: ResolveMode;
+  readonly hint: string;
 };
 
 type DefaultParams = {
@@ -17,7 +18,13 @@ type DefaultParams = {
 
 export const defaultConfig = ({ roleModels }: DefaultParams): CardConfig => {
   const routing = kindRouting({ kind: 'resolver', roleModels });
-  return { provider: routing.provider, model: routing.model, effort: routing.effort };
+  return {
+    provider: routing.provider,
+    model: routing.model,
+    effort: routing.effort,
+    mode: 'fix',
+    hint: '',
+  };
 };
 
 type ConfigForParams = {
@@ -27,11 +34,17 @@ type ConfigForParams = {
 
 export const configFor = ({ provider, base }: ConfigForParams): CardConfig => {
   const model = provider === base.provider ? base.model : getDefaultTurnModel({ id: provider });
-  return { provider, model, effort: clampEffort(model, base.effort) };
+  return { ...base, provider, model, effort: clampEffort(model, base.effort) };
 };
 
 export const sameConfig = (a: CardConfig, b: CardConfig): boolean => {
-  return a.provider === b.provider && a.model === b.model && a.effort === b.effort;
+  return (
+    a.provider === b.provider &&
+    a.model === b.model &&
+    a.effort === b.effort &&
+    a.mode === b.mode &&
+    a.hint === b.hint
+  );
 };
 
 type AggregateParams = {

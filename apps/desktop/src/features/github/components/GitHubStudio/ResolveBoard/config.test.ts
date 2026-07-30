@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { aggregateConfig, clampEffort, configFor, defaultConfig, sameConfig } from './config';
+import { clampEffort } from '../../../../chat/utils/chat-constants';
+import { aggregateConfig, configFor, defaultConfig, sameConfig } from './config';
 
 const DEFAULT_CONFIG = defaultConfig({ roleModels: null });
 
@@ -13,19 +14,31 @@ describe('ResolveBoard config', () => {
     expect(clampEffort('gpt-5.5', 'minimal')).toBe('low');
   });
 
+  it('defaultConfig seeds fix mode with an empty hint', () => {
+    expect(DEFAULT_CONFIG.mode).toBe('fix');
+    expect(DEFAULT_CONFIG.hint).toBe('');
+  });
+
   it('configFor seeds the resolver default model for anthropic', () => {
     expect(configFor({ provider: 'anthropic', base: DEFAULT_CONFIG })).toEqual(DEFAULT_CONFIG);
   });
 
-  it('configFor uses the provider default model for non-anthropic', () => {
-    const cfg = configFor({ provider: 'codex', base: DEFAULT_CONFIG });
+  it('configFor uses the provider default model and keeps mode and hint', () => {
+    const cfg = configFor({
+      provider: 'codex',
+      base: { ...DEFAULT_CONFIG, mode: 'analyze', hint: 'careful' },
+    });
     expect(cfg.provider).toBe('codex');
     expect(cfg.model).not.toBe(DEFAULT_CONFIG.model);
+    expect(cfg.mode).toBe('analyze');
+    expect(cfg.hint).toBe('careful');
   });
 
-  it('sameConfig compares provider, model and effort', () => {
+  it('sameConfig compares routing, mode and hint', () => {
     expect(sameConfig(DEFAULT_CONFIG, { ...DEFAULT_CONFIG })).toBe(true);
     expect(sameConfig(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, effort: 'high' })).toBe(false);
+    expect(sameConfig(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, mode: 'analyze' })).toBe(false);
+    expect(sameConfig(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, hint: 'x' })).toBe(false);
   });
 
   it('aggregateConfig returns the shared config when uniform, else mixed', () => {
