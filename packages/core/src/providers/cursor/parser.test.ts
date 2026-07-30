@@ -81,6 +81,56 @@ describe('parseCursorStreamLine', () => {
     expect(events[1]).toMatchObject({ kind: 'done' });
   });
 
+  it('uses the last assistant API call for context tokens', () => {
+    const turnContext: ParseContext = {
+      runId: 'run_cursor_context' as ProviderRunId,
+      now: () => at,
+    };
+    parseCursorStreamLine(
+      JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [],
+          usage: {
+            input_tokens: 10,
+            output_tokens: 5,
+            cache_read_input_tokens: 20,
+            cache_creation_input_tokens: 30,
+          },
+        },
+      }),
+      turnContext,
+    );
+    parseCursorStreamLine(
+      JSON.stringify({
+        type: 'assistant',
+        message: {
+          content: [],
+          usage: {
+            input_tokens: 40,
+            output_tokens: 8,
+            cache_read_input_tokens: 50,
+            cache_creation_input_tokens: 60,
+          },
+        },
+      }),
+      turnContext,
+    );
+    const events = parseCursorStreamLine(
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        usage: { input_tokens: 1_000, output_tokens: 500 },
+      }),
+      turnContext,
+    );
+
+    expect(events[0]).toMatchObject({
+      kind: 'usage',
+      usage: { contextTokens: 158 },
+    });
+  });
+
   it('emits unknown_payload for unrecognised payload types', () => {
     const raw = { type: 'cursor_internal', seq: 7 };
     const events = parse(JSON.stringify(raw));

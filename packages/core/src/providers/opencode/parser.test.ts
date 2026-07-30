@@ -105,9 +105,40 @@ describe('parseJsonLine, opencode 1.14.48', () => {
         outputTokens: 60,
         cachedInputTokens: 20,
         cacheCreationInputTokens: 5,
+        contextTokens: 185,
         estimatedCostUsd: 0.0123,
       },
     });
+  });
+
+  it('uses the last step usage as the current context', () => {
+    resetOpenCodeParseState({ runId: RUN_ID });
+    const first = parse({
+      payload: {
+        type: 'step_finish',
+        part: {
+          type: 'step-finish',
+          tokens: { input: 100, output: 10, cache: { read: 20, write: 5 } },
+        },
+      },
+    });
+    const last = parse({
+      payload: {
+        type: 'step_finish',
+        part: {
+          type: 'step-finish',
+          tokens: {
+            input: 200,
+            output: 20,
+            reasoning: 10,
+            cache: { read: 40, write: 15 },
+          },
+        },
+      },
+    });
+
+    expect(first[0]).toMatchObject({ kind: 'usage', usage: { contextTokens: 135 } });
+    expect(last[0]).toMatchObject({ kind: 'usage', usage: { contextTokens: 285 } });
   });
 
   it('maps nested API errors and emits unknown payloads defensively', () => {

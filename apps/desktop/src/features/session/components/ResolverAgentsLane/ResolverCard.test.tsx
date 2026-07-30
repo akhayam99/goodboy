@@ -52,6 +52,7 @@ type Params = {
     readonly model: string;
     readonly inputTokens: number;
     readonly outputTokens: number;
+    readonly contextTokens?: number;
   }>;
   readonly reportedCommitSha?: string | null;
   readonly onOpenChat?: () => void;
@@ -63,7 +64,13 @@ const renderCard = ({
   status = 'done',
   telemetry: cardTelemetry = telemetry,
   contextUsage = [
-    { provider: 'anthropic', model: 'claude-haiku-4-5', inputTokens: 50_000, outputTokens: 0 },
+    {
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      inputTokens: 50_000,
+      outputTokens: 0,
+      contextTokens: 50_000,
+    },
   ],
   reportedCommitSha = null,
   onOpenChat = () => undefined,

@@ -18,6 +18,7 @@ export type ProviderUsage = {
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly cacheCreationInputTokens?: number;
+  readonly contextTokens?: number;
   readonly estimatedCostUsd: number;
 };
 

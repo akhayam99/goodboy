@@ -21,6 +21,7 @@ type TelemetryRow = {
   output_tokens: number;
   cached_input_tokens: number;
   cache_creation_input_tokens: number;
+  context_tokens: number | null;
   estimated_cost_usd: number;
   recorded_at: number;
 };
@@ -37,6 +38,7 @@ function toDomain(row: TelemetryRow): TelemetryRecord {
     outputTokens: row.output_tokens,
     cachedInputTokens: row.cached_input_tokens,
     cacheCreationInputTokens: row.cache_creation_input_tokens,
+    ...(row.context_tokens != null && { contextTokens: row.context_tokens }),
     estimatedCostUsd: row.estimated_cost_usd,
     recordedAt: new Date(row.recorded_at).toISOString() as IsoDateTime,
   };
@@ -45,8 +47,8 @@ function toDomain(row: TelemetryRow): TelemetryRecord {
 export const insertTelemetry = async (db: Database, record: TelemetryRecord): Promise<void> => {
   await db.execute(
     `INSERT INTO telemetry_records
-      (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, cached_input_tokens, cache_creation_input_tokens, estimated_cost_usd, recorded_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, cached_input_tokens, cache_creation_input_tokens, context_tokens, estimated_cost_usd, recorded_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       record.id,
       record.runId,
@@ -58,6 +60,7 @@ export const insertTelemetry = async (db: Database, record: TelemetryRecord): Pr
       record.outputTokens,
       record.cachedInputTokens ?? 0,
       record.cacheCreationInputTokens ?? 0,
+      record.contextTokens ?? null,
       record.estimatedCostUsd,
       Date.parse(record.recordedAt),
     ],

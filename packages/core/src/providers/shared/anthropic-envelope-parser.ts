@@ -7,6 +7,7 @@ export type ParseContext = {
   readonly runId: ProviderRunId;
   readonly now: () => IsoDateTime;
   readonly onUnknown?: (type: string, payload: unknown) => void;
+  lastAssistantContextTokens?: number;
 };
 
 export type AnthropicEnvelopeParserOptions = {
@@ -18,6 +19,7 @@ const KNOWN_PAYLOAD_TYPES: ReadonlySet<string> = new Set(['system', 'assistant',
 
 type AssistantMessage = {
   readonly content?: ReadonlyArray<AssistantContentBlock>;
+  readonly usage?: UsagePayload;
 };
 
 type AssistantContentBlock =
@@ -48,6 +50,29 @@ type UsagePayload = {
   readonly outputTokens?: number;
   readonly cacheReadTokens?: number;
   readonly cacheCreationInputTokens?: number;
+};
+
+type ContextTokenParams = {
+  readonly usage: UsagePayload | undefined;
+};
+
+const contextTokensFromUsage = ({ usage }: ContextTokenParams): number | null => {
+  if (usage == null) {
+    return null;
+  }
+  const input = usage.input_tokens ?? usage.inputTokens;
+  const output = usage.output_tokens ?? usage.outputTokens;
+  const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
+  const cacheCreation = usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens;
+  if (
+    typeof input !== 'number' &&
+    typeof output !== 'number' &&
+    typeof cached !== 'number' &&
+    typeof cacheCreation !== 'number'
+  ) {
+    return null;
+  }
+  return (input ?? 0) + (output ?? 0) + (cached ?? 0) + (cacheCreation ?? 0);
 };
 
 const FILE_EDIT_TOOLS: ReadonlySet<string> = new Set([
@@ -150,8 +175,14 @@ export const parseAnthropicEnvelopeLine = (
   const at = ctx.now();
 
   switch (payload.type) {
-    case 'assistant':
-      return parseAssistant(payload.message as AssistantMessage | undefined, ctx, at);
+    case 'assistant': {
+      const message = payload.message as AssistantMessage | undefined;
+      const contextTokens = contextTokensFromUsage({ usage: message?.usage });
+      if (contextTokens != null) {
+        ctx.lastAssistantContextTokens = contextTokens;
+      }
+      return parseAssistant(message, ctx, at);
+    }
 
     case 'user':
       return parseUser(payload.message as UserMessage | undefined, ctx, at);
@@ -162,12 +193,15 @@ export const parseAnthropicEnvelopeLine = (
       const output = usage.output_tokens ?? usage.outputTokens;
       const cached = usage.cache_read_input_tokens ?? usage.cacheReadTokens;
       const cacheCreation = usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens;
+      const contextTokens = ctx.lastAssistantContextTokens;
+      delete ctx.lastAssistantContextTokens;
       const events: TurnEvent[] = [];
       if (
         typeof input === 'number' ||
         typeof output === 'number' ||
         typeof cached === 'number' ||
-        typeof cacheCreation === 'number'
+        typeof cacheCreation === 'number' ||
+        contextTokens != null
       ) {
         events.push({
           kind: 'usage',
@@ -177,6 +211,7 @@ export const parseAnthropicEnvelopeLine = (
             outputTokens: output ?? 0,
             cachedInputTokens: cached ?? 0,
             cacheCreationInputTokens: cacheCreation ?? 0,
+            ...(contextTokens != null && { contextTokens }),
             estimatedCostUsd: 0,
           },
           at,

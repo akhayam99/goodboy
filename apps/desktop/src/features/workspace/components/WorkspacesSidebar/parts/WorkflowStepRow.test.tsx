@@ -95,6 +95,7 @@ const renderRow = ({
                 model: 'claude-sonnet-4-5',
                 inputTokens: 900,
                 outputTokens: 90,
+                contextTokens: 990,
               },
             ]
           : []

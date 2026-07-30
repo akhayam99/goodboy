@@ -62,6 +62,7 @@ export const recordUsageTelemetry = async (
     outputTokens: event.usage.outputTokens,
     cachedInputTokens: event.usage.cachedInputTokens,
     cacheCreationInputTokens: event.usage.cacheCreationInputTokens ?? 0,
+    ...(event.usage.contextTokens != null && { contextTokens: event.usage.contextTokens }),
     estimatedCostUsd: cost,
     recordedAt: now(),
   };

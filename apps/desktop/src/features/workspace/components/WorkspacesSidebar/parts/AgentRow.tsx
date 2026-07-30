@@ -70,10 +70,13 @@ export const AgentRow = ({
     setIsConfirmingDelete(false);
   }, [isEditing]);
 
+  const lastTurnContextTokens = telemetry == null ? null : contextTokensForUsage(telemetry);
   const lastTurn =
     telemetry == null
       ? null
-      : `last turn: ${contextTokensForUsage(telemetry)} tokens · ${formatCost(telemetry.estimatedCostUsd)}`;
+      : lastTurnContextTokens == null
+        ? `last turn: ${formatCost(telemetry.estimatedCostUsd)}`
+        : `last turn: ${lastTurnContextTokens} tokens · ${formatCost(telemetry.estimatedCostUsd)}`;
   const titleParts = [
     `agent ${run.ordinal + 1}`,
     `status: ${run.status}`,

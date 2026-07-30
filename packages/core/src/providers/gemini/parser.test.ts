@@ -60,6 +60,7 @@ describe('parseJsonLine (gemini v0.x)', () => {
           outputTokens: 50,
           cachedInputTokens: 10,
           cacheCreationInputTokens: 4,
+          contextTokens: 150,
           estimatedCostUsd: 0,
         },
         at,

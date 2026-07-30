@@ -14,6 +14,7 @@ export type ProviderContextUsage = {
   readonly outputTokens: number;
   readonly cachedInputTokens?: number;
   readonly cacheCreationInputTokens?: number;
+  readonly contextTokens?: number;
 };
 
 type ProviderBarProps = {
@@ -23,10 +24,10 @@ type ProviderBarProps = {
 
 const ProviderBar = ({ usage, showProvider }: ProviderBarProps) => {
   const window = contextWindowFor(usage.model);
-  if (window == null) {
+  const used = contextTokensForUsage(usage);
+  if (used == null || window == null || window <= 0) {
     return null;
   }
-  const used = contextTokensForUsage(usage);
   const pct = Math.min(1, used / window);
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
   const modelLabel = getModelDescriptor(usage.model)?.label ?? usage.model;
@@ -69,13 +70,17 @@ type Props = {
 };
 
 export const ContextWindowBar = ({ usage }: Props) => {
-  if (usage.length === 0) {
+  const visibleUsage = usage.filter((entry) => {
+    const window = contextWindowFor(entry.model);
+    return contextTokensForUsage(entry) != null && window != null && window > 0;
+  });
+  if (visibleUsage.length === 0) {
     return null;
   }
-  const showProvider = usage.length > 1;
+  const showProvider = visibleUsage.length > 1;
   return (
     <div className="flex flex-col gap-1">
-      {usage.map((u) => (
+      {visibleUsage.map((u) => (
         <ProviderBar key={u.provider} usage={u} showProvider={showProvider} />
       ))}
     </div>

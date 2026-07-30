@@ -206,6 +206,75 @@ describe('parseStreamJsonLine', () => {
     expect(events[1]).toMatchObject({ kind: 'done' });
   });
 
+  it('uses the last assistant API call for context tokens', () => {
+    const turnContext: ParseContext = {
+      runId: 'run_context' as ProviderRunId,
+      now: () => at,
+    };
+    const assistantUsages = [
+      {
+        input_tokens: 10,
+        output_tokens: 1,
+        cache_read_input_tokens: 20,
+        cache_creation_input_tokens: 30,
+      },
+      {
+        input_tokens: 40,
+        output_tokens: 2,
+        cache_read_input_tokens: 50,
+        cache_creation_input_tokens: 60,
+      },
+      {
+        input_tokens: 70,
+        output_tokens: 3,
+        cache_read_input_tokens: 80,
+        cache_creation_input_tokens: 90,
+      },
+    ];
+    for (const usage of assistantUsages) {
+      parseStreamJsonLine(
+        JSON.stringify({ type: 'assistant', message: { content: [], usage } }),
+        turnContext,
+      );
+    }
+    const events = parseStreamJsonLine(
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        usage: {
+          input_tokens: 1_000,
+          output_tokens: 500,
+          cache_read_input_tokens: 2_000,
+          cache_creation_input_tokens: 3_000,
+        },
+      }),
+      turnContext,
+    );
+
+    expect(events[0]).toMatchObject({
+      kind: 'usage',
+      usage: { contextTokens: 243 },
+    });
+  });
+
+  it('leaves context tokens unknown without assistant usage', () => {
+    const turnContext: ParseContext = {
+      runId: 'run_without_context' as ProviderRunId,
+      now: () => at,
+    };
+    const events = parseStreamJsonLine(
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        usage: { input_tokens: 100, output_tokens: 20 },
+      }),
+      turnContext,
+    );
+    const usage = events.find((event) => event.kind === 'usage');
+
+    expect(usage?.kind === 'usage' ? usage.usage.contextTokens : null).toBeUndefined();
+  });
+
   it('emits a permission_request per permission_denials entry, before done', () => {
     const events = parse(
       JSON.stringify({

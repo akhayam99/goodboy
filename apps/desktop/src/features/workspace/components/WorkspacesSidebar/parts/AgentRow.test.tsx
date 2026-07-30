@@ -31,6 +31,7 @@ const telemetry = {
   outputTokens: 2,
   cachedInputTokens: 20,
   cacheCreationInputTokens: 30,
+  contextTokens: 62,
   estimatedCostUsd: 0.25,
   recordedAt: '2026-01-01T00:00:00.000Z',
 } as TelemetryRecord;
@@ -53,6 +54,7 @@ const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
             model: 'claude-sonnet-4-5',
             inputTokens: 100_000,
             outputTokens: 0,
+            contextTokens: 100_000,
           },
         ]}
         turns={3}

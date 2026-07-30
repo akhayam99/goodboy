@@ -21,12 +21,15 @@ type UsagePayload = {
 };
 
 function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
+  const inputTokens = raw?.input_tokens ?? raw?.inputTokens ?? 0;
+  const outputTokens = raw?.output_tokens ?? raw?.outputTokens ?? 0;
   return {
-    inputTokens: raw?.input_tokens ?? raw?.inputTokens ?? 0,
-    outputTokens: raw?.output_tokens ?? raw?.outputTokens ?? 0,
+    inputTokens,
+    outputTokens,
     cachedInputTokens: raw?.cached_input_tokens ?? raw?.cachedInputTokens ?? 0,
     cacheCreationInputTokens:
       raw?.cache_creation_input_tokens ?? raw?.cacheCreationInputTokens ?? 0,
+    contextTokens: inputTokens + outputTokens,
     estimatedCostUsd: 0,
   };
 }
