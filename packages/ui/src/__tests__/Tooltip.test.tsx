@@ -79,4 +79,22 @@ describe('Tooltip', () => {
     expect(screen.queryByRole('tooltip')).toBeNull();
     vi.useRealTimers();
   });
+
+  it('portals the tooltip into its nearest open dialog', async () => {
+    vi.useFakeTimers();
+    const { container } = render(
+      <dialog open>
+        <Tooltip content="dialog tip">
+          <button type="button">btn</button>
+        </Tooltip>
+      </dialog>,
+    );
+    fireEvent.focus(screen.getByRole('button'));
+    await act(async () => {
+      vi.advanceTimersByTime(400);
+    });
+    const dialog = container.querySelector('dialog');
+    expect(dialog?.contains(screen.getByRole('tooltip'))).toBe(true);
+    vi.useRealTimers();
+  });
 });
