@@ -8,6 +8,7 @@ import {
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import { useAppStore } from '../../../../../store';
+import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';
 import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
 import { type EffortLevel, clampEffort } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
@@ -86,14 +87,15 @@ export const useTurnRouting = ({ session }: Params) => {
   });
   const effectiveProvider: ProviderId =
     selectedProvider ?? agentProviderOverride ?? defaultProvider;
-  const agentModelApplies =
-    agentModelOverride != null &&
-    (agentProviderOverride != null
-      ? agentProviderOverride === effectiveProvider
-      : effectiveProvider === 'anthropic');
   const effectiveModelId =
     selectedModel ??
-    (agentModelApplies ? agentModelOverride : null) ??
+    (agentPinApplies({
+      agentModelPin: agentModelOverride,
+      agentProvider: agentProviderOverride,
+      provider: effectiveProvider,
+    })
+      ? agentModelOverride
+      : null) ??
     (effectiveProvider === defaultProvider
       ? defaultModelId
       : getDefaultTurnModel({ id: effectiveProvider }));

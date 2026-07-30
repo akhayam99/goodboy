@@ -6,6 +6,7 @@ import { useMessageQueue } from './useMessageQueue';
 import type { QueuedTurn } from '../lib';
 
 const AGENT = 'agent-1' as AgentId;
+const OTHER_AGENT = 'agent-2' as AgentId;
 
 const makeTurn = (id: string, content = 'hi'): QueuedTurn => ({
   id,
@@ -147,6 +148,50 @@ describe('useMessageQueue', () => {
     expect(result.current.queue).toEqual([]);
   });
 
+  it('dispatches the exact routing override captured by the queued turn', () => {
+    const dispatchTurn = vi.fn().mockResolvedValue(undefined);
+    const override = {
+      providerId: 'anthropic',
+      model: 'claude-opus-5',
+      selection: { key: 'opus-5', effort: 'xhigh' },
+    } as const;
+    const { result, rerender } = renderHook(
+      ({ isRunning }) => useMessageQueue({ agentId: AGENT, isRunning, dispatchTurn, onEdit: noop }),
+      { initialProps: { isRunning: true } },
+    );
+    act(() => {
+      result.current.enqueue({ ...makeTurn('t1', 'queued with override'), override });
+    });
+
+    rerender({ isRunning: false });
+
+    expect(dispatchTurn).toHaveBeenCalledWith('queued with override', [], override, AGENT);
+    expect(dispatchTurn.mock.calls[0]?.[2]).toBe(override);
+  });
+
+  it('dispatches to the agent captured by the queued turn', () => {
+    const dispatchTurn = vi.fn().mockResolvedValue(undefined);
+    const { result, rerender } = renderHook(
+      ({ isRunning }) => useMessageQueue({ agentId: AGENT, isRunning, dispatchTurn, onEdit: noop }),
+      { initialProps: { isRunning: true } },
+    );
+    act(() => {
+      result.current.enqueue({
+        ...makeTurn('t1', 'queued for another agent'),
+        agentId: OTHER_AGENT,
+      });
+    });
+
+    rerender({ isRunning: false });
+
+    expect(dispatchTurn).toHaveBeenCalledWith(
+      'queued for another agent',
+      [],
+      undefined,
+      OTHER_AGENT,
+    );
+  });
+
   it('holds turns queued while idle without a running-to-idle transition', () => {
     const dispatchTurn = vi.fn().mockResolvedValue(undefined);
     const { result } = renderHook(() =>
@@ -160,7 +205,6 @@ describe('useMessageQueue', () => {
   });
 
   it('keeps separate queues per agent', () => {
-    const other = 'agent-2' as AgentId;
     const { result, rerender } = renderHook(
       ({ agentId }) =>
         useMessageQueue({ agentId, isRunning: true, dispatchTurn: resolved, onEdit: noop }),
@@ -169,7 +213,7 @@ describe('useMessageQueue', () => {
     act(() => {
       result.current.enqueue(makeTurn('a'));
     });
-    rerender({ agentId: other });
+    rerender({ agentId: OTHER_AGENT });
     expect(result.current.queue).toEqual([]);
     act(() => {
       result.current.enqueue(makeTurn('b'));

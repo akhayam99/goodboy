@@ -10,6 +10,7 @@ import type {
   RoutingDecision,
   TurnProviderOverride,
 } from '@goodboy/types';
+import { agentPinApplies } from './agentPinApplies';
 
 type Params = {
   readonly provider: ProviderId;
@@ -40,9 +41,13 @@ export const resolveTurnModelSelection = ({
   agentProvider,
   requestedEffort,
 }: Params): ModelSelection => {
-  const agentModelApplies =
-    agentModelPin != null &&
-    (agentProvider != null ? agentProvider === provider : provider === 'anthropic');
+  const applicableAgentModelPin = agentPinApplies({
+    agentModelPin,
+    agentProvider,
+    provider,
+  })
+    ? agentModelPin
+    : null;
   const candidate: Candidate =
     phaseModelOverride != null
       ? {
@@ -61,10 +66,10 @@ export const resolveTurnModelSelection = ({
                 turnOverride.model ?? turnOverride.selection?.key ?? routingDecision.selectedModel,
               ...(turnOverride.selection != null && { selection: turnOverride.selection }),
             }
-          : agentModelApplies
+          : applicableAgentModelPin != null
             ? {
                 provider: agentProvider ?? provider,
-                id: agentModelPin,
+                id: applicableAgentModelPin,
               }
             : {
                 provider,

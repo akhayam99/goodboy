@@ -121,6 +121,7 @@ vi.mock('../features/providers/routing', () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-sonnet-4-5',
     reason: 'preference',
+    fallbackUsed: false,
   })),
 }));
 
@@ -234,6 +235,7 @@ describe('sendTurn, agent routing', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'preference',
+      fallbackUsed: false,
     });
   });
 
@@ -363,6 +365,7 @@ describe('sendTurn, agent routing', () => {
       selectedProvider: 'codex',
       selectedModel: 'gpt-5.4',
       reason: 'preference',
+      fallbackUsed: false,
     });
 
     await useAppStore
@@ -424,6 +427,7 @@ describe('sendTurn, workflow carry-forward', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'preference',
+      fallbackUsed: false,
     });
   });
 
@@ -782,6 +786,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'preference',
+      fallbackUsed: false,
     });
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -832,6 +837,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-opus-4-8',
       reason: 'preference',
+      fallbackUsed: false,
     });
 
     await useAppStore
@@ -885,11 +891,13 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
         selectedProvider: 'cursor',
         selectedModel: 'gpt-5.5-high',
         reason: 'preference',
+        fallbackUsed: false,
       })
       .mockResolvedValueOnce({
         selectedProvider: 'cursor',
         selectedModel: 'composer-2.5',
         reason: 'preference',
+        fallbackUsed: false,
       });
 
     await useAppStore
@@ -913,6 +921,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'codex',
       selectedModel: 'gpt-5.5',
       reason: 'override',
+      fallbackUsed: false,
     });
     useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'max' } });
 
@@ -931,6 +940,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'gemini',
       selectedModel: 'gemini-3.1-pro',
       reason: 'override',
+      fallbackUsed: false,
     });
     useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'high' } });
 
@@ -1199,6 +1209,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'override',
+      fallbackUsed: false,
     });
 
     await useAppStore.getState().sendTurn({
@@ -1227,6 +1238,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: staleSession.modelOverride,
       reason: 'override',
+      fallbackUsed: false,
     });
 
     await useAppStore.getState().sendTurn({
@@ -1265,6 +1277,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'cursor',
       selectedModel: 'composer-2.5',
       reason: 'override',
+      fallbackUsed: false,
     });
     useAppStore.setState({
       sessions: [
@@ -1343,6 +1356,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'cursor',
       selectedModel: 'composer-2.5',
       reason: 'override',
+      fallbackUsed: false,
     });
 
     await useAppStore.getState().sendTurn({
@@ -1476,6 +1490,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
       reason: 'override',
+      fallbackUsed: false,
     });
 
     await useAppStore.getState().sendTurn({
