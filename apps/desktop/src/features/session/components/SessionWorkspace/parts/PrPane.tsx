@@ -8,7 +8,6 @@ import {
   GitMerge,
   GitPullRequest,
   MessageSquare,
-  RefreshCw,
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
@@ -28,6 +27,7 @@ import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strip
 import { MissingGithubRemoteEmptyState } from '../../../../github/components/MissingGithubRemoteEmptyState';
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
+import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
@@ -199,7 +199,13 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
       return (
         <div className="animate-fade-in relative flex flex-col items-center gap-5 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-8 py-8 text-center">
           <div className="absolute right-3 top-3">
-            <RefreshButton onClick={refresh} loading={loading} error={error} />
+            <RefreshIconButton
+              label="refresh PR status"
+              iconSize={12}
+              onClick={refresh}
+              isLoading={loading}
+              error={error}
+            />
           </div>
           <span
             aria-hidden
@@ -236,7 +242,13 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
         <ExternalTasksSection tasks={codeHostTasks} />
         <div className="relative flex flex-col items-start gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-4 py-4">
           <div className="absolute right-3 top-3">
-            <RefreshButton onClick={refresh} loading={loading} error={error} />
+            <RefreshIconButton
+              label="refresh PR status"
+              iconSize={12}
+              onClick={refresh}
+              isLoading={loading}
+              error={error}
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <h2 className="text-sm font-semibold text-foreground">No pull request yet</h2>
@@ -284,7 +296,13 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
             {pr.title}
           </h2>
         </div>
-        <RefreshButton onClick={refresh} loading={loading} error={error} />
+        <RefreshIconButton
+          label="refresh PR status"
+          iconSize={12}
+          onClick={refresh}
+          isLoading={loading}
+          error={error}
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-2xs text-muted-foreground">
@@ -380,30 +398,6 @@ const ExternalTasksSection = ({ tasks }: ExternalTasksSectionProps) => {
     </div>
   );
 };
-
-const RefreshButton = ({
-  onClick,
-  loading,
-  error,
-}: {
-  onClick: () => void;
-  loading: boolean;
-  error: string | null;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={loading}
-    title={error ? `refresh failed: ${error}` : 'refresh PR status'}
-    aria-label="refresh PR status"
-    className={cn(
-      'flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50',
-      loading && 'animate-border-pulse',
-    )}
-  >
-    <RefreshCw size={12} aria-hidden />
-  </button>
-);
 
 type CiState = 'success' | 'failure' | 'pending' | 'none';
 

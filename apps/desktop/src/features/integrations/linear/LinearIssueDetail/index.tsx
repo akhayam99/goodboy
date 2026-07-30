@@ -1,6 +1,7 @@
 import { DetailPage, Markdown, MetaGrid, cn, type MetaItem } from '@goodboy/ui';
-import { ExternalLink, GitPullRequest } from 'lucide-react';
+import { GitPullRequest } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
+import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
 import { priorityTone } from '../priorityTone';
@@ -94,16 +95,7 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
           {issue.state.name}
         </span>
       }
-      actions={
-        <a
-          href={issue.url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Open in Linear <ExternalLink size={11} aria-hidden />
-        </a>
-      }
+      actions={<OpenExternalLink url={issue.url} label="Open in Linear" />}
       meta={<MetaGrid items={meta} />}
       sections={[
         {

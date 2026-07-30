@@ -1,6 +1,6 @@
 import { DetailPage, MetaGrid, type DetailSection, type MetaItem } from '@goodboy/ui';
-import { ExternalLink } from 'lucide-react';
 import type { SentryIssueDetail as Detail } from '../client';
+import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
 import { SentryLevelBadge } from '../SentryLevelBadge';
 import { SentryStackTrace } from '../SentryStackTrace';
@@ -79,14 +79,7 @@ export const SentryIssueDetail = ({
       state={<SentryLevelBadge level={view.level} />}
       actions={
         view.permalink != null && view.permalink !== '' ? (
-          <a
-            href={view.permalink}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Open in Sentry <ExternalLink size={11} aria-hidden />
-          </a>
+          <OpenExternalLink url={view.permalink} label="Open in Sentry" />
         ) : undefined
       }
       meta={<MetaGrid items={meta} />}

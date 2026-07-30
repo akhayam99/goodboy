@@ -15,7 +15,6 @@ import { ReviewPane } from './panes/ReviewPane';
 
 export { pickSmartTab } from './lib';
 export { computeTabStatus } from './status';
-export { TabBadge } from './parts/TabBadge';
 export type { GithubTabKey } from './lib';
 
 type Props = {

@@ -1,7 +1,8 @@
-import { ArrowUpRight, GitMerge, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, GitMerge } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
+import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { useAppStore } from '../../../../../store';
 
 export function GitlabMrStrip({ sessionId }: { sessionId: SessionId }) {
@@ -55,16 +56,14 @@ export function GitlabMrStrip({ sessionId }: { sessionId: SessionId }) {
           )}
           <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
         </button>
-        <button
-          type="button"
+        <RefreshIconButton
+          label="refresh MR status"
+          iconSize={12}
           onClick={() => void refreshSessionMr(sessionId, { force: true })}
-          disabled={loading}
-          title={error ? `refresh failed: ${error}` : 'refresh MR status'}
-          aria-label="refresh MR status"
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
-        >
-          <RefreshCw size={12} aria-hidden />
-        </button>
+          isLoading={loading}
+          error={error}
+          className="shrink-0"
+        />
       </div>
       {error ? (
         <span className="px-1 text-2xs text-danger" title={error}>
