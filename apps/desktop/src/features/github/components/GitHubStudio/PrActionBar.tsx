@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { PullRequestState, SessionId } from '@goodboy/types';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, Divider, IconButton, InlineConfirm } from '@goodboy/ui';
 import {
   ExternalLink,
   GitMerge,
@@ -16,8 +17,6 @@ export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | nu
 
 const BTN =
   'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
-const ICON_BTN =
-  'inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
 const TONE = {
   neutral:
@@ -34,7 +33,6 @@ type Props = {
   readonly onOpenSession: () => void;
   readonly busy: ActionBusy;
   readonly detailLoading: boolean;
-  readonly mergeConfirm: boolean;
   readonly canMerge: boolean;
   readonly mergeReason: string;
   readonly onMarkReady: () => void;
@@ -42,8 +40,7 @@ type Props = {
   readonly onClose: () => void;
   readonly onReopen: () => void;
   readonly onCreateNew: () => void;
-  readonly onMerge: () => void;
-  readonly onSetMergeConfirm: (v: boolean) => void;
+  readonly onMerge: () => Promise<void>;
   readonly onOpenGithub: () => void;
   readonly onRefresh: () => void;
 };
@@ -54,7 +51,6 @@ export const PrActionBar = ({
   onOpenSession,
   busy,
   detailLoading,
-  mergeConfirm,
   canMerge,
   mergeReason,
   onMarkReady,
@@ -63,10 +59,10 @@ export const PrActionBar = ({
   onReopen,
   onCreateNew,
   onMerge,
-  onSetMergeConfirm,
   onOpenGithub,
   onRefresh,
 }: Props) => {
+  const [isMergeConfirmOpen, setIsMergeConfirmOpen] = useState(false);
   const isTerminal = pr.state === 'merged' || pr.state === 'closed';
   const isClosed = pr.state === 'closed';
   const isQueued = pr.state === 'queued';
@@ -129,25 +125,20 @@ export const PrActionBar = ({
 
       <div className="ml-auto flex items-center gap-1.5">
         <OpenSessionButton sessionId={sessionId} onOpened={onOpenSession} variant="ghost" />
-        <button
-          type="button"
+        <IconButton
+          icon={ExternalLink}
+          iconSize={14}
+          label="open on GitHub"
           onClick={onOpenGithub}
-          title="open on GitHub"
-          aria-label="open on GitHub"
-          className={ICON_BTN}
-        >
-          <ExternalLink size={14} aria-hidden />
-        </button>
-        <button
-          type="button"
+        />
+        <IconButton
+          icon={RefreshCw}
+          iconSize={14}
+          label="refresh"
           onClick={onRefresh}
           disabled={detailLoading}
-          title="refresh"
-          aria-label="refresh"
-          className={ICON_BTN}
-        >
-          <RefreshCw size={14} aria-hidden />
-        </button>
+          busy={detailLoading}
+        />
 
         {!isTerminal && isQueued && (
           <>
@@ -163,33 +154,27 @@ export const PrActionBar = ({
         {!isTerminal && !isQueued && (
           <>
             <Divider orientation="vertical" className="mx-0.5 h-5" />
-            {mergeConfirm ? (
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-success/40 bg-success/10 px-2 py-1 text-xs">
-                <span className="text-foreground">Squash merge?</span>
-                <button
-                  type="button"
-                  onClick={onMerge}
-                  disabled={busy !== null}
-                  className={cn(
-                    'rounded bg-success px-1.5 py-0.5 text-[11px] font-semibold text-success-foreground hover:opacity-90 disabled:opacity-50',
-                    spin('merge') && 'animate-border-pulse',
-                  )}
-                >
-                  {spin('merge') ? 'merging' : 'confirm'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onSetMergeConfirm(false)}
-                  className="rounded px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
-                >
-                  cancel
-                </button>
-              </span>
+            {isMergeConfirmOpen ? (
+              <InlineConfirm
+                role="danger"
+                icon={<GitMerge size={13} aria-hidden />}
+                title="Squash merge this pull request?"
+                description="This action cannot be undone."
+                confirmLabel={spin('merge') ? 'Merging' : 'Confirm merge'}
+                onConfirm={async () => {
+                  await onMerge();
+                  setIsMergeConfirmOpen(false);
+                }}
+                onCancel={() => setIsMergeConfirmOpen(false)}
+                isBusy={spin('merge')}
+                isConfirmDisabled={canMerge === false || busy !== null}
+                className="w-64"
+              />
             ) : (
               <button
                 type="button"
-                onClick={() => onSetMergeConfirm(true)}
-                disabled={!canMerge || busy !== null}
+                onClick={() => setIsMergeConfirmOpen(true)}
+                disabled={canMerge === false || busy !== null}
                 title={mergeReason}
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',

@@ -175,11 +175,11 @@ describe('PrDetailPanel', () => {
     expect(screen.getByText('#42')).toBeDefined();
     expect(screen.getByRole('heading', { name: h.pr.title })).toBeDefined();
 
-    const titleField = screen.getByText(h.pr.title, { selector: 'div' });
-    expect(titleField.className).toContain('text-sm');
+    const titleField = screen.getByRole('button', { name: h.pr.title });
+    expect(titleField.closest('h1, h2, h3, h4, h5, h6')).toBeNull();
     fireEvent.click(titleField);
 
-    expect(screen.getByDisplayValue(h.pr.title)).toBeDefined();
+    expect(screen.getByDisplayValue(h.pr.title).tagName).toBe('INPUT');
   });
 
   it('switches the active section body', () => {

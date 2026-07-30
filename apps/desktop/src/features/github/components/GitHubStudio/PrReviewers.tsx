@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import type { PrDetail } from '@goodboy/types';
 import { CircleDashed } from 'lucide-react';
 import { MetaItem } from '../../../../shared/components/StudioDetail';
-import { Avatar } from './Avatar';
-import { latestReviews } from './latestReviews';
+import { latestTerminalReviewsByAuthor } from '../Card/lib';
+import { Avatar } from '../Card/parts/Avatar';
+import { ReviewStateIcon } from '../Card/parts/ReviewStateIcon';
 import { ReviewerPicker } from './ReviewerPicker';
-import { ReviewStateIcon } from './ReviewStateIcon';
 
 type Props = {
   readonly detail: PrDetail | null;
@@ -16,7 +16,7 @@ type Props = {
 export const PrReviewers = ({ detail, workspaceRoot, onAddReviewers }: Props) => {
   const requests = detail?.reviewRequests ?? [];
   const reviewed = useMemo(
-    () => latestReviews({ reviews: detail?.reviews ?? [] }),
+    () => latestTerminalReviewsByAuthor(detail?.reviews ?? []),
     [detail?.reviews],
   );
   const known = useMemo(
@@ -37,7 +37,7 @@ export const PrReviewers = ({ detail, workspaceRoot, onAddReviewers }: Props) =>
         <ul className="flex basis-full flex-col gap-1">
           {reviewed.map((review) => (
             <li key={review.author} className="flex items-center gap-1.5 text-xs text-foreground">
-              <ReviewStateIcon state={review.state} />
+              <ReviewStateIcon state={review.state} size={12} />
               <Avatar url={review.authorAvatarUrl} alt={review.author} />
               <span className="min-w-0 flex-1 truncate">{review.author}</span>
             </li>

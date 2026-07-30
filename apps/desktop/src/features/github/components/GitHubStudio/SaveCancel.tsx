@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import { Check, X } from 'lucide-react';
 
 type Props = {
@@ -10,29 +10,16 @@ type Props = {
 export const SaveCancel = ({ isBusy, onSave, onCancel }: Props) => {
   return (
     <div className="flex shrink-0 items-center gap-1">
-      <button
-        type="button"
+      <IconButton
+        icon={Check}
+        iconSize={14}
+        label="save"
         onClick={onSave}
         disabled={isBusy}
-        title="save"
-        aria-label="save"
-        className={cn(
-          'inline-flex items-center justify-center rounded-md bg-primary p-1.5 text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50',
-          isBusy ? 'animate-border-pulse' : null,
-        )}
-      >
-        <Check size={14} aria-hidden />
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        disabled={isBusy}
-        title="cancel"
-        aria-label="cancel"
-        className="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-      >
-        <X size={14} aria-hidden />
-      </button>
+        busy={isBusy}
+        className="border-primary bg-primary text-primary-foreground hover:border-primary hover:bg-primary/90 hover:text-primary-foreground"
+      />
+      <IconButton icon={X} iconSize={14} label="cancel" onClick={onCancel} disabled={isBusy} />
     </div>
   );
 };

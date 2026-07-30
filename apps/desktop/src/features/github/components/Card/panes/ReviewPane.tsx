@@ -34,17 +34,9 @@ const summarizeReview = (
   reviews: ReadonlyArray<PrReview>,
   requests: ReadonlyArray<PrReviewRequest>,
 ): ReviewSummary => {
-  const latestByAuthor = new Map<string, PrReview>();
-  for (const r of [...reviews].sort((a, b) =>
-    (a.submittedAt ?? '').localeCompare(b.submittedAt ?? ''),
-  )) {
-    if (r.state === 'commented' || r.state === 'pending' || r.state === 'dismissed') {
-      continue;
-    }
-    latestByAuthor.set(r.author, r);
-  }
-  const approvals = [...latestByAuthor.values()].filter((r) => r.state === 'approved');
-  const changes = [...latestByAuthor.values()].filter((r) => r.state === 'changes_requested');
+  const latestByAuthor = latestTerminalReviewsByAuthor(reviews);
+  const approvals = latestByAuthor.filter((review) => review.state === 'approved');
+  const changes = latestByAuthor.filter((review) => review.state === 'changes_requested');
   if (changes.length > 0) {
     return {
       label: `Changes requested by ${changes.map((r) => r.author).join(', ')}`,

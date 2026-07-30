@@ -113,7 +113,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
                 }
               }}
               autoFocus
-              className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-xl font-semibold text-foreground outline-none focus:border-primary"
+              className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-primary"
             />
             <SaveCancel
               isBusy={busy === 'title'}
@@ -122,12 +122,13 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
             />
           </div>
         ) : (
-          <div
+          <button
+            type="button"
             onClick={() => setEditing('title')}
-            className="cursor-text rounded-md border border-transparent px-3 py-2 text-sm text-foreground transition-colors hover:border-border-soft hover:bg-muted/20"
+            className="w-full cursor-text rounded-md border border-transparent px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-border-soft hover:bg-muted/20"
           >
             {pr.title}
-          </div>
+          </button>
         )}
       </div>
 

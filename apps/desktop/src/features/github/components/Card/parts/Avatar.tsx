@@ -4,7 +4,7 @@ type Props = {
 };
 
 export const Avatar = ({ url, alt }: Props) => {
-  if (!url) {
+  if (url == null || url === '') {
     return (
       <span
         aria-hidden
@@ -14,5 +14,6 @@ export const Avatar = ({ url, alt }: Props) => {
       </span>
     );
   }
+
   return <img src={url} alt={alt} className="h-4 w-4 shrink-0 rounded-full" loading="lazy" />;
 };

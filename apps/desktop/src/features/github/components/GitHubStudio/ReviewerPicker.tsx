@@ -3,7 +3,7 @@ import { ScrollFade, Skeleton } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../store';
 import { ghRepoCollaborators } from '../../github';
-import { Avatar } from './Avatar';
+import { Avatar } from '../Card/parts/Avatar';
 
 type Props = {
   readonly workspaceRoot: string | null;

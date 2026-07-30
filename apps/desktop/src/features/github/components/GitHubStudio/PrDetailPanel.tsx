@@ -86,7 +86,6 @@ export const PrDetailPanel = ({
   );
 
   const [busy, setBusy] = useState<ActionBusy>(null);
-  const [mergeConfirm, setMergeConfirm] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [section, setSection] = useState<PrSection>('overview');
   const [jumpThreadId, setJumpThreadId] = useState<string | null>(null);
@@ -131,7 +130,6 @@ export const PrDetailPanel = ({
     setPrs([]);
     setLocalDetail(null);
     setLocalDetailError(null);
-    setMergeConfirm(false);
     setCreateOpen(false);
     setSection('overview');
   }, [sessionId]);
@@ -363,7 +361,6 @@ export const PrDetailPanel = ({
       void 0;
     } finally {
       setBusy(null);
-      setMergeConfirm(false);
     }
   };
 
@@ -414,7 +411,7 @@ export const PrDetailPanel = ({
               <PrSwitcher prs={options} selected={selected} onSelect={setSelectedNumber} />
             ) : (
               <PullRequestChip
-                state={activePr.state}
+                state={activePr.isDraft ? 'draft' : activePr.state}
                 variant="badge"
                 number={activePr.number}
                 iconSize={12}
@@ -456,7 +453,6 @@ export const PrDetailPanel = ({
             onOpenSession={onClose}
             busy={busy}
             detailLoading={detailLoading}
-            mergeConfirm={mergeConfirm}
             canMerge={canMerge}
             mergeReason={mergeReason}
             onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
@@ -464,8 +460,7 @@ export const PrDetailPanel = ({
             onClose={() => void run('close', () => closePr(sessionId, num))}
             onReopen={() => void run('reopen', () => reopenPr(sessionId, num))}
             onCreateNew={() => setCreateOpen(true)}
-            onMerge={() => void run('merge', () => mergePr(sessionId, num))}
-            onSetMergeConfirm={setMergeConfirm}
+            onMerge={() => run('merge', () => mergePr(sessionId, num))}
             onOpenGithub={() => void openUrl(activePr.url)}
             onRefresh={refreshActive}
           />
