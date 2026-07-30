@@ -108,7 +108,6 @@ export const StandaloneAgentsLane = ({
           <AgentLaneEmpty
             title={hasNoAgents ? 'No agents yet' : 'No active agents'}
             description={hasNoAgents ? NO_AGENTS_DESCRIPTION : ALL_DONE_DESCRIPTION}
-            action={<CreateAgentPopover sessionId={sessionId} variant="tile" />}
           />
         )
       }

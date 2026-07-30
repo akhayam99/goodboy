@@ -97,7 +97,7 @@ describe('StandaloneAgentsLane', () => {
     render(<StandaloneAgentsLane session={session} variant="lens" />);
 
     expect(screen.getByText('No active agents')).toBeTruthy();
-    expect(screen.getByTestId('create-agent')).toBeTruthy();
+    expect(screen.queryByTestId('create-agent')).toBeNull();
     expect(screen.queryByTestId('agent-row')).toBeNull();
   });
 

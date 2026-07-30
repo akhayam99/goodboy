@@ -104,6 +104,9 @@ vi.mock('../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', (
     <div data-testid="agents-section" data-home={only} />
   ),
 }));
+vi.mock('../../../workflows/components/WorkflowStepInspector', () => ({
+  WorkflowStepInspector: () => <div data-testid="workflow-step-inspector" />,
+}));
 vi.mock('../ResolverAgentsLane', () => ({
   ResolverAgentsLane: () => <div data-testid="resolver-lane" />,
 }));
