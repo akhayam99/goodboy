@@ -108,6 +108,7 @@ beforeEach(() => {
   hooks.summarizerStatus = 'idle';
   store.sessionPhaseRuns = {};
   store.reviewDrafts = {};
+  store.sessionGithub = {};
   store.sessionExternalTasks = {};
   store.workspaceIntegrations = {
     'workspace-1': [{ provider: 'linear' }, { provider: 'sentry' }],
@@ -409,6 +410,40 @@ describe('LensColumn', () => {
     );
 
     expect(screen.getByRole('button', { name: 'GitLab 1' })).toBeDefined();
+  });
+
+  it('counts linked github tasks plus the open PR on the GitHub row', () => {
+    store.sessionExternalTasks = {
+      'session-1': [{ provider: 'github' }, { provider: 'linear' }],
+    };
+    store.sessionGithub = { 'session-1': { pr: { number: 42 } } };
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'GitHub 2' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Linear 1' })).toBeDefined();
+
+    cleanup();
+    store.sessionGithub = {};
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'GitHub 1' })).toBeDefined();
   });
 
   it.each([

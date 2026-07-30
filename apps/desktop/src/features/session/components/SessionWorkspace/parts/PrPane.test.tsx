@@ -264,6 +264,46 @@ describe('PrPane', () => {
     expect(screen.getByRole('button', { name: /open #7 in GitHub studio/i })).toBeDefined();
   });
 
+  it('keeps linked issues and external tasks visible without a pull request', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: null,
+        linkedIssues: [
+          {
+            number: 7,
+            title: 'Track auth rollout',
+            url: 'https://github.com/acme/goodboy/issues/7',
+            closes: true,
+          },
+        ],
+        detail: null,
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionExternalTasks = {
+      [SESSION_ID]: [
+        {
+          sessionId: SESSION_ID,
+          provider: 'github',
+          externalId: '9',
+          identifier: '#9',
+          url: 'https://github.com/acme/goodboy/issues/9',
+          title: 'Harden token refresh',
+          createdAt: DATE,
+        },
+      ],
+    };
+
+    render(<PrPane session={session} />);
+
+    expect(screen.getByRole('link', { name: /#7 Track auth rollout/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open #9 in GitHub studio/i })).toBeDefined();
+    expect(screen.getByText('No pull request yet')).toBeDefined();
+    expect(screen.getByText('ak/refactor-auth')).toBeDefined();
+    expect(screen.getByRole('button', { name: /Open a pull request/i })).toBeDefined();
+  });
+
   it('routes creating a PR to the shared PR studio surface', () => {
     const events: Array<CustomEvent> = [];
     const listener = (event: Event) => events.push(event as CustomEvent);
@@ -276,6 +316,9 @@ describe('PrPane', () => {
 
     expect(events).toHaveLength(1);
     expect(events[0]?.detail).toEqual({ sessionId: SESSION_ID });
+    expect(
+      screen.getByText('No issues or external tasks are linked to this session yet.'),
+    ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Draft with an agent' })).toBeNull();
   });
