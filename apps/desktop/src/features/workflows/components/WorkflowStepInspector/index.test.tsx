@@ -63,6 +63,7 @@ vi.mock('../../../session/hooks/useAgentMetrics', () => ({
 }));
 
 import { WorkflowStepInspector } from './index';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -140,6 +141,9 @@ afterEach(cleanup);
 
 describe('WorkflowStepInspector', () => {
   it('shows step guidance, origin, output, routing, metrics, and timestamps', () => {
+    const expectedStartedAt = formatAbsoluteDateTime({ iso: NOW });
+    const expectedCompletedAt = formatAbsoluteDateTime({ iso: agent.completedAt });
+
     render(<WorkflowStepInspector session={session} agentId={AGENT_ID} />);
 
     expect(screen.getByText('Implement the plan.')).toBeDefined();
@@ -151,7 +155,7 @@ describe('WorkflowStepInspector', () => {
     expect(screen.getByText('$1.50')).toBeDefined();
     expect(screen.getByText('1.2k')).toBeDefined();
     expect(screen.getByText('300')).toBeDefined();
-    expect(screen.getByText(/Jul 30, 2026, 14:00/)).toBeDefined();
-    expect(screen.getByText(/Jul 30, 2026, 14:05/)).toBeDefined();
+    expect(screen.getByText(expectedStartedAt)).toBeDefined();
+    expect(screen.getByText(expectedCompletedAt)).toBeDefined();
   });
 });
