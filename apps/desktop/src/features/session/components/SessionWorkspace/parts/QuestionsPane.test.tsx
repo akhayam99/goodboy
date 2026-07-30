@@ -5,9 +5,11 @@ let _openQuestions: Array<{ status: string; [k: string]: unknown }> = [];
 let _answeredQuestions: Array<{ status: string; [k: string]: unknown }> = [];
 let _oqDrafts: Record<string, unknown> = {};
 let _oqJustAnswered: string[] = [];
+let _oqPendingUndo: { question: { id: string; sessionId: string }; timer: number } | null = null;
 
 const mockAnswerOpenQuestions = vi.fn().mockResolvedValue(undefined);
 const mockDismissOpenQuestion = vi.fn().mockResolvedValue(undefined);
+const mockRestoreDismissedOpenQuestion = vi.fn().mockResolvedValue(undefined);
 const mockLoadSessionAnsweredQuestions = vi.fn().mockResolvedValue(undefined);
 const mockSelectAgent = vi.fn().mockResolvedValue(undefined);
 const mockFlashAnswered = vi.fn();
@@ -15,6 +17,8 @@ const mockToggleSuggestion = vi.fn();
 const mockSetCustomAnswer = vi.fn();
 const mockToggleCustomField = vi.fn();
 const mockClearJustAnswered = vi.fn();
+const mockBeginUndo = vi.fn();
+const mockClearUndo = vi.fn();
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -41,6 +45,9 @@ vi.mock('../../../../context/components/QuestionsTab/useOpenQuestions', () => ({
       toggleCustomField: mockToggleCustomField,
       flashAnswered: mockFlashAnswered,
       clearJustAnswered: mockClearJustAnswered,
+      pendingUndo: _oqPendingUndo,
+      beginUndo: mockBeginUndo,
+      clearUndo: mockClearUndo,
     }),
   ),
   deriveDraftAnswer: vi.fn(
@@ -77,7 +84,7 @@ vi.mock('../../SessionOverviewPane/lib', () => ({
   selectOpenQuestions: (qs: Array<{ status: string }>) => qs.filter((q) => q.status === 'open'),
 }));
 
-vi.mock('../../../../chat/components/ChatView/OpenQuestionInlineCard', () => ({
+vi.mock('../../../../chat/components/ChatView/AnsweredCard', () => ({
   AnsweredCard: (props: { question: { id: string; text: string } }) => (
     <div data-testid={`answered-card-${props.question.id}`}>{props.question.text}</div>
   ),
@@ -85,7 +92,7 @@ vi.mock('../../../../chat/components/ChatView/OpenQuestionInlineCard', () => ({
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -177,6 +184,7 @@ function setupStore(overrides: {
   openQuestions?: OpenQuestion[];
   answeredQuestions?: OpenQuestion[];
   drafts?: Record<string, unknown>;
+  pendingUndoQuestion?: OpenQuestion;
 }) {
   const agents = overrides.agents ?? [];
   const workflows = overrides.workflows ?? [];
@@ -187,6 +195,9 @@ function setupStore(overrides: {
   _answeredQuestions = answeredQuestions;
   _oqDrafts = overrides.drafts ?? {};
   _oqJustAnswered = [];
+  _oqPendingUndo = overrides.pendingUndoQuestion
+    ? { question: overrides.pendingUndoQuestion, timer: 0 }
+    : null;
   _storeState = {
     sessionPhaseRuns: { [SESSION_ID]: agents },
     phaseTemplates: { [WS_ID]: workflows },
@@ -194,6 +205,7 @@ function setupStore(overrides: {
     sessionAnsweredQuestions: { [SESSION_ID]: answeredQuestions },
     answerOpenQuestions: mockAnswerOpenQuestions,
     dismissOpenQuestion: mockDismissOpenQuestion,
+    restoreDismissedOpenQuestion: mockRestoreDismissedOpenQuestion,
     loadSessionAnsweredQuestions: mockLoadSessionAnsweredQuestions,
     selectAgent: mockSelectAgent,
   };
@@ -207,6 +219,7 @@ afterEach(() => {
   _answeredQuestions = [];
   _oqDrafts = {};
   _oqJustAnswered = [];
+  _oqPendingUndo = null;
 });
 
 describe('QuestionsPane', () => {
@@ -405,13 +418,14 @@ describe('QuestionsPane', () => {
   });
 
   describe('dismiss callback', () => {
-    it('calls dismissOpenQuestion with session id and question', () => {
+    it('calls dismissOpenQuestion and starts the undo window', async () => {
       const question = mkQuestion('q1');
       setupStore({ openQuestions: [question] });
       render(<QuestionsPane session={BASE_SESSION} />);
 
       fireEvent.click(screen.getByText('dismiss'));
       expect(mockDismissOpenQuestion).toHaveBeenCalledWith(SESSION_ID, question);
+      await waitFor(() => expect(mockBeginUndo).toHaveBeenCalledWith(question));
     });
   });
 
@@ -590,6 +604,18 @@ describe('QuestionsPane', () => {
       expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
       expect(screen.getByTestId('answered-card-aq2')).toBeDefined();
       expect(screen.getByText('scout')).toBeDefined();
+      expect(screen.queryByText('No open questions')).toBeNull();
+    });
+
+    it('restores a transiently dismissed question from the undo state', async () => {
+      const question = mkQuestion('q1');
+      setupStore({ openQuestions: [], pendingUndoQuestion: question });
+
+      render(<QuestionsPane session={BASE_SESSION} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+
+      expect(mockRestoreDismissedOpenQuestion).toHaveBeenCalledWith(SESSION_ID, question);
+      await waitFor(() => expect(mockClearUndo).toHaveBeenCalled());
     });
 
     it('clusters answered by different agents separately', () => {
