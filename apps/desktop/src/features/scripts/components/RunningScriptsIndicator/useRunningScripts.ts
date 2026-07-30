@@ -16,11 +16,6 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
   const workspaceScripts = useAppStore((state) => state.workspaceScripts);
 
   return useMemo(() => {
-    const names = new Map(
-      Object.values(workspaceScripts).flatMap((scripts) =>
-        scripts.map((script) => [script.id, script.name] as const),
-      ),
-    );
     const running: RunningScript[] = [];
     for (const session of sessions) {
       const sessionId = session.id as SessionId;
@@ -28,6 +23,11 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
       if (runs === undefined) {
         continue;
       }
+      const names = new Map(
+        (workspaceScripts[session.workspaceId] ?? []).map(
+          (script) => [script.id, script.name] as const,
+        ),
+      );
       for (const [scriptId, record] of Object.entries(runs)) {
         if (record.status !== 'pending') {
           continue;

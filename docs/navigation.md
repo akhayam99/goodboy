@@ -59,12 +59,14 @@ siblings (avatar, name, status) to switch the open agent in place, via
 
 The workflow case swaps the whole control instead of dropping the crumb: when
 the home lens is Workflows, `ChatWorkflowHeader` renders `WorkflowBreadcrumb`
-(same folder) in place of `AgentBreadcrumb`. It is a single crumb trail
-`{HomeLabel} > {StepName} > {AgentName}`, where the home label is the workflow's
-kind name (falling back to "Workflows"), the step crumb is a popover switching
-step via `selectAgent` on that step's root agent, and the agent crumb appears
-only when the step root has cluster children. There is no separate step strip
-and no "Part of {WorkflowName}" line.
+(same folder) in place of `AgentBreadcrumb`. The trail starts with
+`{HomeLabel} > {StepName}`, where the home label is the workflow's kind name
+(falling back to "Workflows") and the step crumb is a popover switching step via
+`selectAgent` on that step's root agent. When the step root has implementer
+cluster children, a third crumb appears. It shows `{AgentName}` when a child is
+selected and `{CompletedCount}/{ClusterCount} clusters` when the root is
+selected. Completed and skipped children both count as done. There is no
+separate step strip and no "Part of {WorkflowName}" line.
 
 ### Crumb trails
 

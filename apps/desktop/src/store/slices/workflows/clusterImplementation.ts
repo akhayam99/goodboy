@@ -249,7 +249,7 @@ const resolveClustersPlan = async ({
   if (consumedPlan != null) {
     return consumedPlan;
   }
-  await hydrateClusterPlanConsumptions({ set, get, plans });
+  await hydrateClusterPlanConsumptions({ set, get, plans }).catch(() => undefined);
   consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
   if (consumedPlan != null) {
     return consumedPlan;
@@ -258,13 +258,15 @@ const resolveClustersPlan = async ({
   if (matchingPlan != null) {
     return matchingPlan;
   }
-  await get().loadSessionPlans(sessionId);
+  await get()
+    .loadSessionPlans(sessionId)
+    .catch(() => undefined);
   plans = get().sessionPlans[sessionId] ?? [];
   consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
   if (consumedPlan != null) {
     return consumedPlan;
   }
-  await hydrateClusterPlanConsumptions({ set, get, plans });
+  await hydrateClusterPlanConsumptions({ set, get, plans }).catch(() => undefined);
   consumedPlan = findConsumedClustersPlan({ get, plans, containerId });
   if (consumedPlan != null) {
     return consumedPlan;
@@ -374,9 +376,19 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    void get().refreshUnreadWorkspaces();
     const next = children[completedCount];
     if (!next) {
+      await invokeAgentUpdateStatus(containerId, { status: 'failed', completedAt: nowIso() });
+      const blocked = await invokeAgentList(sessionId);
+      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
+      void get().refreshUnreadWorkspaces();
+      void get().emitNotification(
+        'error',
+        'warning',
+        'cluster blocked: missing implementer',
+        'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
+        { sessionId },
+      );
       return;
     }
     if (!hasInstructions(clusters[completedCount])) {
@@ -393,6 +405,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       );
       return;
     }
+    void get().refreshUnreadWorkspaces();
     startChild(
       set,
       get,

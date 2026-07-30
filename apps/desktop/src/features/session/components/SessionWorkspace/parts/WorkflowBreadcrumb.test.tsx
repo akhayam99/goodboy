@@ -24,6 +24,7 @@ const buildAgent = (overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent =>
     ordinal: 0,
     name: 'Implement',
     status: 'running',
+    kind: 'implementer',
     ...overrides,
   }) as Agent;
 
@@ -96,8 +97,42 @@ describe('WorkflowBreadcrumb', () => {
   it('shows the child name when a cluster child is selected', () => {
     renderCrumb(childRunning.id);
 
+    expect(screen.getByText('Implement')).toBeTruthy();
     expect(screen.getByText('cluster two')).toBeTruthy();
     expect(screen.queryByText('1/2 clusters')).toBeNull();
+  });
+
+  it('counts a skipped cluster child as done', () => {
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [root, childDone, { ...childRunning, status: 'skipped' }],
+    };
+
+    renderCrumb(root.id);
+
+    expect(screen.getByText('2/2 clusters')).toBeTruthy();
+  });
+
+  it('excludes non-implementer children from the cluster count and menu', () => {
+    const branch = buildAgent({
+      id: 'agent-branch' as AgentId,
+      name: 'parallel branch',
+      ordinal: 3,
+      kind: 'scout',
+      parentAgentId: root.id,
+      stepId: 'branch-step' as never,
+      workflowRunId: 'run-1' as never,
+    });
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [root, childDone, childRunning, branch],
+    };
+
+    renderCrumb(root.id);
+
+    expect(screen.getByText('1/2 clusters')).toBeTruthy();
+    fireEvent.click(screen.getByTitle('1/2 clusters. Switch agent.'));
+    expect(screen.getByRole('menu', { name: 'switch agent' }).textContent).not.toContain(
+      'parallel branch',
+    );
   });
 
   it('lists the root and every child in the agent menu', () => {

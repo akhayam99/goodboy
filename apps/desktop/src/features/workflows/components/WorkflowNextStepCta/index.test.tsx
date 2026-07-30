@@ -132,6 +132,11 @@ describe('WorkflowNextStepCta', () => {
     expect(screen.getByTestId('workflow-next-step-cta').getAttribute('title')).toMatch(
       /open questions are waiting/i,
     );
+    expect(
+      screen.getByRole('button', {
+        name: /run next step: scout.*blocked: open questions are waiting/i,
+      }),
+    ).toBeDefined();
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
     expect(screen.getByText(/start the next agent anyway/i)).toBeDefined();
     expect(onAdvance).not.toHaveBeenCalled();

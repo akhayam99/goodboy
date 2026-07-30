@@ -159,7 +159,7 @@ export const WorkflowNextStepCta = ({
             ? 'border-warning/50 bg-warning/10 text-warning hover:border-warning hover:bg-warning/20'
             : 'border-primary/40 bg-primary/10 text-primary hover:border-primary hover:bg-primary/20',
         )}
-        aria-label={`Run next step: ${next.name} (${getModelDescriptor(defaults.model)?.label ?? defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})`}
+        aria-label={`Run next step: ${next.name} (${getModelDescriptor(defaults.model)?.label ?? defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
       >
         {blockReason != null ? (
           <AlertTriangle

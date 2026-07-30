@@ -75,12 +75,16 @@ export const WorkflowBreadcrumb = ({
     () =>
       rootAgent == null
         ? (EMPTY_ARRAY as ReadonlyArray<Agent>)
-        : phaseRuns.filter((agent) => agent.parentAgentId === rootAgent.id),
+        : phaseRuns.filter(
+            (agent) => agent.parentAgentId === rootAgent.id && agent.kind === 'implementer',
+          ),
     [phaseRuns, rootAgent],
   );
   const currentStep = workflow?.steps.find((step) => step.id === rootAgent?.stepId) ?? null;
   const stepLabel = currentStep?.name ?? rootAgent?.name ?? null;
-  const completedClusters = clusterChildren.filter((agent) => agent.status === 'completed').length;
+  const completedClusters = clusterChildren.filter(
+    (agent) => agent.status === 'completed' || agent.status === 'skipped',
+  ).length;
   const isRootSelected = rootAgent != null && rootAgent.id === selectedAgentId;
   const agentCrumbLabel = isRootSelected
     ? `${completedClusters}/${clusterChildren.length} clusters`

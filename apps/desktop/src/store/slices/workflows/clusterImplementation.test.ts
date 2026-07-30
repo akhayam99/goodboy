@@ -273,6 +273,7 @@ describe('fanOutClusters', () => {
       expect(args.kind).toBe('implementer');
       expect(args.parentAgentId).toBe(PARENT);
       expect(args.sessionId).toBe(SID);
+      expect(args.stepId).toBeUndefined();
     }
   });
 
@@ -633,6 +634,55 @@ describe('advanceClusterImplementation', () => {
     expect(call.content).toContain('do 1');
   });
 
+  it('completes the child when plan consumption hydration fails', async () => {
+    const c0 = childAgent({ id: 'db-hydrate-0', ordinal: 0 });
+    const c1 = childAgent({ id: 'db-hydrate-1', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeListConsumptionsForPlan.mockRejectedValueOnce(new Error('read failed'));
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'db-hydrate-0', ordinal: 0, status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, c0.id, done('db-hydrate-0'));
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      c0.id,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('completes the child when reloading session plans fails', async () => {
+    const child = childAgent({ id: 'db-reload-0', ordinal: 0 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: {},
+    });
+    store.state.loadSessionPlans = vi.fn(async () => {
+      throw new Error('read failed');
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'db-reload-0', ordinal: 0, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, child.id, done('db-reload-0'));
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      child.id,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      PARENT,
+      expect.objectContaining({ status: 'completed' }),
+    );
+  });
+
   it('blocks the next child instead of sending an instruction-less kickoff when no plan is readable', async () => {
     const c0 = childAgent({ id: 'nb0', ordinal: 0 });
     const c1 = childAgent({ id: 'nb1', ordinal: 1 });
@@ -660,6 +710,46 @@ describe('advanceClusterImplementation', () => {
       expect.stringContaining('no instructions'),
       { sessionId: SID },
     );
+  });
+
+  it('fails the container and notifies when the plan has more clusters than children', async () => {
+    const c0 = childAgent({ id: 'short-0', ordinal: 0, status: 'completed' });
+    const c1 = childAgent({ id: 'short-1', ordinal: 1 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      sessionPlans: {
+        [SID]: [
+          plan({
+            clusters: [
+              { title: 'c0', instructions: 'do 0' },
+              { title: 'c1', instructions: 'do 1' },
+              { title: 'c2', instructions: 'do 2' },
+            ],
+          }),
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      c0,
+      childAgent({ id: 'short-1', ordinal: 1, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, c1.id, done('short-1'));
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(PARENT, {
+      status: 'failed',
+      completedAt: expect.any(String),
+    });
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'cluster blocked: missing implementer',
+      expect.stringContaining('more clusters'),
+      { sessionId: SID },
+    );
+    expect(store.maybeAutoAdvanceWorkflow).not.toHaveBeenCalled();
   });
 
   it('completes the container and auto-advances when the last child finishes', async () => {
