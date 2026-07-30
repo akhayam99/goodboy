@@ -51,6 +51,20 @@ describe('computeCodexCostUsd', () => {
     ).toBeCloseTo(18);
   });
 
+  it('bills cache creation at 1.25 times the input rate', () => {
+    const cacheCreationUsage: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 200_000,
+      estimatedCostUsd: 0,
+    };
+
+    expect(computeCodexCostUsd({ usage: cacheCreationUsage, model: 'gpt-5.6-sol' })).toBeCloseTo(
+      1.25,
+    );
+  });
+
   it('returns zero for unknown models', () => {
     expect(computeCodexCostUsd({ usage, model: 'unknown-codex-model' })).toBe(0);
   });

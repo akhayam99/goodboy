@@ -53,6 +53,18 @@ describe('computeCostUsd', () => {
       cachedInputTokens: 1_000_000,
       estimatedCostUsd: 0,
     };
-    expect(computeCostUsd({ usage: partial, model: 'claude-sonnet-4-6' })).toBeCloseTo(3 + 0.3);
+    expect(computeCostUsd({ usage: partial, model: 'claude-sonnet-4-6' })).toBeCloseTo(6 + 0.3);
+  });
+
+  it('bills cache creation at 1.25 times the input rate', () => {
+    const cacheCreationUsage: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 200_000,
+      estimatedCostUsd: 0,
+    };
+
+    expect(computeCostUsd({ usage: cacheCreationUsage, model: 'claude-opus-5' })).toBeCloseTo(1.25);
   });
 });

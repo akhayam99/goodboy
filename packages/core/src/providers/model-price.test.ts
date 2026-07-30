@@ -59,4 +59,14 @@ describe('getModelPrice', () => {
   it('returns codex gpt-5.4 pricing', () => {
     expect(getModelPrice('gpt-5.4')).toEqual({ inputPerMtok: 2.5, outputPerMtok: 15 });
   });
+
+  it.each([
+    ['gpt-5.6', 'gpt-5.6-sol'],
+    ['opus-5', 'claude-opus-5'],
+    ['sonnet-4.6', 'claude-sonnet-4-6'],
+    ['composer-2.5', 'composer-2.5'],
+  ])('maps catalog key %s to its default cli price', (key, cliId) => {
+    expect(getModelPrice(key)).not.toBeNull();
+    expect(getModelPrice(key)).toEqual(getModelPrice(cliId));
+  });
 });

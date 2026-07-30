@@ -76,7 +76,7 @@ export const ANTHROPIC_CATALOG = [
     key: 'opus-4.6',
     label: 'Opus 4.6',
     tier: 'turn',
-    contextWindow: 1_000_000,
+    contextWindow: 200_000,
     presentation: {
       family: 'claude',
       group: 'Opus',

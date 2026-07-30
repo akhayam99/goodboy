@@ -50,10 +50,10 @@ type Params = {
 
 export const computeCostUsd = ({ usage, model }: Params): number => {
   const price = priceFor(model);
-  const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
   return (
-    (billableInput * price.inputPerMtok) / 1_000_000 +
+    (usage.inputTokens * price.inputPerMtok) / 1_000_000 +
     (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
+    ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );
 };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderUsage } from '@goodboy/types';
-import { CURSOR_CHEAP_MODEL, computeCursorCostUsd, cursorPriceFor } from './cost';
+import { computeCursorCostUsd, cursorPriceFor } from './cost';
 import { computeCostUsd } from '../claude/cost';
 
 const usage: ProviderUsage = {
@@ -11,8 +11,8 @@ const usage: ProviderUsage = {
 };
 
 describe('computeCursorCostUsd', () => {
-  it('composer-2-fast (cheap default) uses Composer-tier pricing', () => {
-    expect(computeCursorCostUsd({ usage, model: CURSOR_CHEAP_MODEL })).toBeCloseTo(3 + 15);
+  it('composer-2.5-fast uses fast pricing', () => {
+    expect(computeCursorCostUsd({ usage, model: 'composer-2.5-fast' })).toBeCloseTo(3 + 15);
   });
 
   it('claude-4.6-sonnet-medium matches anthropic sonnet list price', () => {
@@ -34,9 +34,9 @@ describe('computeCursorCostUsd', () => {
     expect(computeCursorCostUsd({ usage, model: 'gpt-5.5-high' })).toBeCloseTo(5 + 30);
   });
 
-  it('unknown model falls back to composer-2-fast pricing', () => {
+  it('unknown model falls back to composer standard pricing', () => {
     expect(computeCursorCostUsd({ usage, model: 'mystery-model-9' })).toBeCloseTo(
-      computeCursorCostUsd({ usage, model: CURSOR_CHEAP_MODEL }),
+      computeCursorCostUsd({ usage, model: 'composer-2.5' }),
     );
   });
 
@@ -48,13 +48,30 @@ describe('computeCursorCostUsd', () => {
       estimatedCostUsd: 0,
     };
     expect(computeCursorCostUsd({ usage: partial, model: 'claude-4.6-sonnet-medium' })).toBeCloseTo(
-      3 + 0.3,
+      6 + 0.3,
     );
   });
 
-  it('cursorPriceFor returns composer-2-fast fallback for unknown model', () => {
+  it('bills cache creation at 1.25 times the input rate', () => {
+    const cacheCreationUsage: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 180_000,
+      estimatedCostUsd: 0,
+    };
+
+    expect(
+      computeCursorCostUsd({
+        usage: cacheCreationUsage,
+        model: 'claude-opus-5-thinking-high',
+      }),
+    ).toBeCloseTo(1.125);
+  });
+
+  it('cursorPriceFor returns composer standard fallback for unknown model', () => {
     const p = cursorPriceFor('totally-unknown');
-    const fallback = cursorPriceFor(CURSOR_CHEAP_MODEL);
+    const fallback = cursorPriceFor('composer-2.5');
     expect(p).toEqual(fallback);
   });
 });

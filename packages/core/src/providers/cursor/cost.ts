@@ -6,8 +6,6 @@ type ModelPrice = {
   readonly cachedInputPerMtok: number;
 };
 
-export const CURSOR_CHEAP_MODEL = 'composer-2.5-fast';
-
 const COMPOSER_PRICE: ModelPrice = {
   inputPerMtok: 0.5,
   outputPerMtok: 2.5,
@@ -40,7 +38,7 @@ const GPT54_PRICE: ModelPrice = {
 };
 
 export const CURSOR_PRICES: Record<string, ModelPrice> = {
-  [CURSOR_CHEAP_MODEL]: COMPOSER_FAST_PRICE,
+  'composer-2.5-fast': COMPOSER_FAST_PRICE,
   'composer-2.5': COMPOSER_PRICE,
   auto: COMPOSER_PRICE,
 
@@ -56,7 +54,7 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'gpt-5.3-codex': GPT54_PRICE,
 };
 
-const FALLBACK: ModelPrice = COMPOSER_FAST_PRICE;
+const FALLBACK: ModelPrice = COMPOSER_PRICE;
 
 export const cursorPriceFor = (model: string): ModelPrice => {
   return CURSOR_PRICES[model] ?? FALLBACK;
@@ -69,10 +67,10 @@ type Params = {
 
 export const computeCursorCostUsd = ({ usage, model }: Params): number => {
   const price = cursorPriceFor(model);
-  const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
   return (
-    (billableInput * price.inputPerMtok) / 1_000_000 +
+    (usage.inputTokens * price.inputPerMtok) / 1_000_000 +
     (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
+    ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );
 };

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CURSOR_AGENT_MODEL_IDS } from './agent-model-ids';
 import { CURSOR_CATALOG } from './catalog';
 import { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL } from './models';
-import { CURSOR_CHEAP_MODEL, CURSOR_PRICES } from './cost';
+import { CURSOR_PRICES } from './cost';
 
 const accepted = new Set<string>(CURSOR_AGENT_MODEL_IDS);
 const emittable = new Set<string>(
@@ -34,8 +34,8 @@ describe('cursor model ids', () => {
     ]);
   });
 
-  it('the default, cheap and auto slugs are emittable and accepted', () => {
-    for (const slug of [CURSOR_DEFAULT_MODEL, CURSOR_CHEAP_MODEL, CURSOR_AUTO_MODEL]) {
+  it('the default and auto slugs are emittable and accepted', () => {
+    for (const slug of [CURSOR_DEFAULT_MODEL, CURSOR_AUTO_MODEL]) {
       expect(emittable.has(slug)).toBe(true);
       expect(accepted.has(slug)).toBe(true);
     }
