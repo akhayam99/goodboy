@@ -258,6 +258,7 @@ export const App = () => {
       setWorkflowStudioOpen(false);
       setGithubStudioOpen(false);
       setProviderStudioOpen(false);
+      setImpactStudioOpen(false);
       setLinearStudioOpen(false);
       setSentryStudioOpen(false);
       setGitlabStudioOpen(false);
@@ -267,20 +268,6 @@ export const App = () => {
       setSwitcherOpen(false);
       setBudgetStudioScope(detail?.scope);
       setBudgetStudioOpen(true);
-    };
-    const onOpenImpactStudio = () => {
-      setWorkflowStudioOpen(false);
-      setGithubStudioOpen(false);
-      setProviderStudioOpen(false);
-      setBudgetStudioOpen(false);
-      setLinearStudioOpen(false);
-      setSentryStudioOpen(false);
-      setGitlabStudioOpen(false);
-      setAppSettingsOpen(false);
-      setGuideStudioOpen(false);
-      setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
-      setImpactStudioOpen(true);
     };
     const onOpenLinearStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
@@ -348,7 +335,6 @@ export const App = () => {
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
     window.addEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
     window.addEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
-    window.addEventListener('goodboy:open-impact-studio', onOpenImpactStudio);
     window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
     window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
@@ -364,7 +350,6 @@ export const App = () => {
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
       window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
       window.removeEventListener('goodboy:open-budget-studio', onOpenBudgetStudio);
-      window.removeEventListener('goodboy:open-impact-studio', onOpenImpactStudio);
       window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
       window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);

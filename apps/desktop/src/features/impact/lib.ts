@@ -1,6 +1,7 @@
 import type { SegmentedTabOption } from '@goodboy/ui';
 
 export type ImpactWindowId = 'last30' | 'all';
+export type ImpactScopeId = 'overview' | 'shipped' | 'flow' | 'efficiency';
 
 export const IMPACT_WINDOW_DAYS = 30;
 
