@@ -31,7 +31,7 @@ export const ArchiveSessionConfirm = ({ session, onClose, className }: Props) =>
 
   return (
     <InlineConfirm
-      role="primary"
+      role="alert"
       icon={<Archive size={12} aria-hidden />}
       title="Archive session?"
       description="Moves it to the Archived tab and frees memory. The worktree, branch, and history stay on disk. Reversible anytime with Unarchive."

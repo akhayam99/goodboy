@@ -1,6 +1,6 @@
 import { CopyButton, Markdown } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { extractCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
+import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import { ClustersCard } from '../ClustersCard';
 import { CommentAnalysisChip } from '../CommentAnalysisChip';
 import { CommentResolvedChip } from '../CommentResolvedChip';
@@ -17,9 +17,9 @@ type Props = {
 
 export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
   const displayText = stripControlMarkers(text);
-  const resolvedMarker = extractCommentResolved(text);
-  const hasCommentResolvedMarker =
-    resolvedMarker !== null && isReviewThreadId(resolvedMarker.threadId);
+  const hasCommentResolvedMarker = extractAllCommentResolved(text).some(({ threadId }) =>
+    isReviewThreadId(threadId),
+  );
   return (
     <TranscriptShell tone="neutral" variant="boxed" className="group relative text-sm">
       {hasCommentResolvedMarker ? null : (

@@ -1,7 +1,5 @@
-import { useMemo } from 'react';
-import { extractAllCommentAnalysis, extractAllCommentReplies } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { CommentAnalysisChipItem } from './CommentAnalysisChipItem';
+import { CommentMarkerChip } from '../CommentMarkerChip';
 
 type Props = {
   readonly assistantText: string;
@@ -10,26 +8,12 @@ type Props = {
 };
 
 export const CommentAnalysisChip = ({ assistantText, sessionId, agentId = null }: Props) => {
-  const markers = useMemo(() => extractAllCommentAnalysis(assistantText), [assistantText]);
-  const replies = useMemo(
-    () =>
-      new Map(
-        extractAllCommentReplies(assistantText).map(({ threadId, body }) => [threadId, body]),
-      ),
-    [assistantText],
-  );
-
   return (
-    <>
-      {markers.map((marker, index) => (
-        <CommentAnalysisChipItem
-          key={`${marker.threadId}:${index}`}
-          marker={marker}
-          reply={replies.get(marker.threadId) ?? null}
-          sessionId={sessionId}
-          agentId={agentId}
-        />
-      ))}
-    </>
+    <CommentMarkerChip
+      assistantText={assistantText}
+      sessionId={sessionId}
+      agentId={agentId}
+      kind="analysis"
+    />
   );
 };

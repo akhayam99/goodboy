@@ -135,10 +135,10 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     >
       <div className="flex flex-col gap-3">
         {connection.isConnected ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
+          <div className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
             <div className="flex items-center justify-between gap-2">
               <label
-                htmlFor={`${provider}-issue-url`}
+                htmlFor={`${provider}-issue-picker`}
                 className="text-xs font-medium text-foreground"
               >
                 Link an issue
@@ -152,6 +152,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               </Button>
             </div>
             <IssuePicker
+              inputId={`${provider}-issue-picker`}
               rows={candidates.rows}
               isLoading={candidates.isLoading}
               isLoaded={candidates.isLoaded}
@@ -163,21 +164,28 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               onPick={(candidate) => void handlePick(candidate)}
               onClear={() => undefined}
             />
-            <div className="flex items-center gap-2">
-              <Input
-                id={`${provider}-issue-url`}
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
-                placeholder={`Or paste a ${meta.label} issue URL`}
-                aria-label={`${meta.label} issue URL`}
-              />
-              <Button type="submit" size="sm" disabled={isLinking}>
-                <Link2 size={13} aria-hidden />
-                Link
-              </Button>
-            </div>
-            {error != null ? <p className="text-xs text-danger">{error}</p> : null}
-          </form>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-1.5">
+              <label
+                htmlFor={`${provider}-issue-url`}
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Or paste a {meta.label} issue URL
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id={`${provider}-issue-url`}
+                  value={url}
+                  onChange={(event) => setUrl(event.target.value)}
+                  placeholder={`Or paste a ${meta.label} issue URL`}
+                />
+                <Button type="submit" size="sm" disabled={isLinking}>
+                  <Link2 size={13} aria-hidden />
+                  Link
+                </Button>
+              </div>
+              {error != null ? <p className="text-xs text-danger">{error}</p> : null}
+            </form>
+          </div>
         ) : provider === 'github' ? (
           <MissingGithubRemoteEmptyState compact />
         ) : (

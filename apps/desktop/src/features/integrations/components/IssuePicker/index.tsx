@@ -4,6 +4,7 @@ import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
 
 type Props = {
+  readonly inputId?: string;
   readonly rows: ReadonlyArray<IssueCandidate>;
   readonly isLoading: boolean;
   readonly isLoaded: boolean;
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export const IssuePicker = ({
+  inputId,
   rows,
   isLoading,
   isLoaded,
@@ -142,12 +144,13 @@ export const IssuePicker = ({
         )}
       >
         <input
+          id={inputId}
           ref={inputRef}
           type="text"
           value={query}
           placeholder={isLoading ? 'Loading issues…' : placeholder}
           disabled={disabled}
-          aria-label="Issue"
+          aria-label={inputId === undefined ? 'Issue' : undefined}
           role="combobox"
           aria-expanded={isOpen}
           aria-autocomplete="list"
