@@ -19,7 +19,9 @@ vi.mock('../ThinkingIndicator', () => ({
 }));
 
 vi.mock('./OpenQuestionCluster', () => ({
-  OpenQuestionCluster: () => <div data-testid="oq" />,
+  OpenQuestionCluster: ({ questions }: { questions: ReadonlyArray<{ id: string }> }) => (
+    <div data-testid="oq">{questions.map((question) => question.id).join(',')}</div>
+  ),
 }));
 
 import { TranscriptRows } from './TranscriptRows';
@@ -33,12 +35,15 @@ const userText = (key: string, at: Date): TranscriptItem => ({
   at: at.toISOString() as IsoDateTime,
 });
 
-const renderRows = (rows: ReadonlyArray<TranscriptRow>) =>
+const renderRows = (
+  rows: ReadonlyArray<TranscriptRow>,
+  oqByTurnOrdinal: ReadonlyMap<number | null, ReadonlyArray<never>> = new Map(),
+) =>
   render(
     <ul>
       <TranscriptRows
         rows={rows}
-        oqByTurnOrdinal={new Map()}
+        oqByTurnOrdinal={oqByTurnOrdinal}
         sessionId={'s1' as SessionId}
         selectedAgentId={'a1' as AgentId}
         workingDir={null}
@@ -79,5 +84,19 @@ describe('TranscriptRows', () => {
     ]);
     expect(screen.getAllByTestId('card')).toHaveLength(2);
     expect(container.querySelectorAll('li')).toHaveLength(4);
+  });
+
+  it('renders future and null ordinal question buckets at the transcript tail', () => {
+    const oqByTurnOrdinal = new Map([
+      [4, [{ id: 'future' }]],
+      [null, [{ id: 'legacy' }]],
+    ]) as unknown as ReadonlyMap<number | null, ReadonlyArray<never>>;
+
+    renderRows([itemRow(userText('u1', new Date(2026, 4, 15, 9, 0, 0)))], oqByTurnOrdinal);
+
+    expect(screen.getAllByTestId('oq').map((question) => question.textContent)).toEqual([
+      'future',
+      'legacy',
+    ]);
   });
 });

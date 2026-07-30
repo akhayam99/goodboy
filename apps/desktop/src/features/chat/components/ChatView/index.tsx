@@ -221,6 +221,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
   const openQuestionScrollTarget = useAppStore((s) => s.openQuestionScrollTarget);
   const clearOpenQuestionScroll = useAppStore((s) => s.clearOpenQuestionScroll);
+  const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
 
   useEffect(() => {
     void loadSessionOpenQuestions(session.id);
@@ -231,16 +232,17 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   }, [session.id, loadSessionAnsweredQuestions]);
 
   const oqByTurnOrdinal = useMemo(() => {
-    const map = new Map<number, OpenQuestion[]>();
+    const map = new Map<number | null, OpenQuestion[]>();
     for (const q of [...openQuestions, ...answeredQuestions]) {
-      if (q.createdByAgentId !== selectedAgentId || q.turnOrdinal == null) {
+      if (q.createdByAgentId !== selectedAgentId) {
         continue;
       }
-      const bucket = map.get(q.turnOrdinal);
+      const ordinal = q.turnOrdinal ?? null;
+      const bucket = map.get(ordinal);
       if (bucket) {
         bucket.push(q);
       } else {
-        map.set(q.turnOrdinal, [q]);
+        map.set(ordinal, [q]);
       }
     }
     for (const bucket of map.values()) {
@@ -248,6 +250,27 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
     }
     return map;
   }, [openQuestions, answeredQuestions, selectedAgentId]);
+
+  const otherAgentQuestion = useMemo(
+    () =>
+      openQuestions.find(
+        (question) =>
+          question.createdByAgentId != null && question.createdByAgentId !== selectedAgentId,
+      ) ?? null,
+    [openQuestions, selectedAgentId],
+  );
+  const otherAgentQuestionCount = useMemo(() => {
+    if (otherAgentQuestion?.createdByAgentId == null) {
+      return 0;
+    }
+    return openQuestions.filter(
+      (question) => question.createdByAgentId === otherAgentQuestion.createdByAgentId,
+    ).length;
+  }, [openQuestions, otherAgentQuestion]);
+  const otherAgentName =
+    phaseRuns.find((run) => run.id === otherAgentQuestion?.createdByAgentId)?.name ??
+    'another agent';
+  const otherAgentId = otherAgentQuestion?.createdByAgentId ?? null;
 
   useEffect(() => {
     const target = openQuestionScrollTarget;
@@ -411,10 +434,10 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           fadeSize="h-12"
           viewportClassName="px-6 pb-4 pt-6 [scrollbar-gutter:stable]"
         >
-          {transcriptStale || deferredItems.length === 0 ? (
-            loading.transcript || transcriptStale ? (
-              <TranscriptSkeleton />
-            ) : isProviderDisconnected ? (
+          {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
+            <TranscriptSkeleton />
+          ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 ? (
+            isProviderDisconnected ? (
               <div className="flex h-full items-center justify-center">
                 <div className="mx-auto w-full max-w-[880px]">
                   <AuthRequiredCallout
@@ -481,6 +504,28 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           </button>
         )}
       </div>
+      {selectedAgentId != null &&
+      otherAgentQuestion != null &&
+      otherAgentId != null &&
+      otherAgentQuestionCount > 0 ? (
+        <div className="flex shrink-0 justify-center">
+          <button
+            type="button"
+            className="rounded-md border border-warning/20 bg-warning/5 px-3 py-1.5 text-xs font-medium text-warning transition-colors hover:bg-warning/10"
+            onClick={() => {
+              void selectAgent(session.id, otherAgentId);
+              requestOpenQuestionScroll({
+                agentId: otherAgentId,
+                questionId: otherAgentQuestion.id,
+              });
+            }}
+          >
+            {otherAgentQuestionCount}{' '}
+            {otherAgentQuestionCount === 1 ? 'open question' : 'open questions'} from{' '}
+            {otherAgentName}
+          </button>
+        </div>
+      ) : null}
       {isEnded ? (
         <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
           session ended. no further turns. branch preserved.

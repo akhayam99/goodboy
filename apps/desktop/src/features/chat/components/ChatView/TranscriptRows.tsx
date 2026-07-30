@@ -10,7 +10,7 @@ import { dayKey, formatDayLabel } from './lib';
 
 type Props = {
   rows: ReadonlyArray<TranscriptRow>;
-  oqByTurnOrdinal: ReadonlyMap<number, ReadonlyArray<OpenQuestion>>;
+  oqByTurnOrdinal: ReadonlyMap<number | null, ReadonlyArray<OpenQuestion>>;
   sessionId: SessionId;
   selectedAgentId: AgentId | null;
   workingDir: string | null;
@@ -103,6 +103,24 @@ export const TranscriptRows = ({
   });
 
   flushOrdinal(userTurnOrdinal);
+  const remainingOrdinals = [...oqByTurnOrdinal.keys()]
+    .filter((ordinal): ordinal is number => ordinal !== null && ordinal > userTurnOrdinal)
+    .sort((a, b) => a - b);
+  for (const ordinal of remainingOrdinals) {
+    flushOrdinal(ordinal);
+  }
+  const tailCards = oqByTurnOrdinal.get(null);
+  if (tailCards != null && tailCards.length > 0) {
+    out.push(
+      <li key="oq-tail">
+        <OpenQuestionCluster
+          questions={tailCards}
+          sessionId={sessionId}
+          viewerAgentId={selectedAgentId}
+        />
+      </li>,
+    );
+  }
   return (
     <>
       {out}
