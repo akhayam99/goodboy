@@ -175,4 +175,10 @@ describe('parseUnifiedDiff', () => {
     expect(files[0]?.path).toBe('same.ts');
     expect(files[0]?.oldPath).toBeUndefined();
   });
+
+  it('returns for a pathological file header without backtracking', () => {
+    const diff = `diff --git a/${'a b/'.repeat(5000)}`;
+
+    expect(parseUnifiedDiff(diff)).toEqual([]);
+  });
 });

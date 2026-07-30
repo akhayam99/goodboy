@@ -197,7 +197,7 @@ export const parseLinkedIssuesFromBody = (
   repoUrl: string,
 ): ReadonlyArray<LinkedIssue> => {
   const seen = new Map<number, LinkedIssue>();
-  const repoBase = repoUrl.replace(/\/pull\/\d+.*$/, '').replace(/\.git$/, '');
+  const repoBase = (repoUrl.split('/pull/', 1)[0] ?? repoUrl).replace(/\.git$/, '');
   for (const match of body.matchAll(LINKED_KEYWORD_RE)) {
     const keyword = match[1]?.toLowerCase();
     const numberStr = match[2];
