@@ -195,6 +195,10 @@ const writeSidebarPref = (collapsed: boolean): void => {
 
 type ReviewedMap = Record<string, string>;
 
+type RegisterFileRefParams = {
+  path: string;
+};
+
 const viewKeyOf = (view: DiffView): string => {
   if (view.kind === 'commit') {
     return `commit:${view.sha}`;
@@ -266,6 +270,8 @@ export const DiffViewerContent = ({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarPref);
   const [activePath, setActivePath] = useState<string | null>(null);
   const fileRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const fileRefCallbacks = useRef<Map<string, React.RefCallback<HTMLElement>>>(new Map());
+  const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
   const pendingScrollPath = useRef<string | null>(null);
@@ -578,22 +584,40 @@ export const DiffViewerContent = ({
       scrollRef.current?.querySelector<HTMLElement>('.overflow-y-auto') ?? scrollRef.current;
     const obs = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            const p = e.target.getAttribute('data-file-path');
-            if (p) {
-              setActivePath(p);
-            }
+        let topmostEntry: IntersectionObserverEntry | null = null;
+        for (const entry of entries) {
+          if (!entry.isIntersecting) {
+            continue;
           }
+          if (
+            topmostEntry !== null &&
+            entry.boundingClientRect.top >= topmostEntry.boundingClientRect.top
+          ) {
+            continue;
+          }
+          topmostEntry = entry;
+        }
+        if (topmostEntry === null) {
+          return;
+        }
+        const path = topmostEntry.target.getAttribute('data-file-path');
+        if (path !== null) {
+          setActivePath(path);
         }
       },
       { root: viewport, rootMargin: '0px 0px -70% 0px', threshold: 0 },
     );
+    intersectionObserverRef.current = obs;
     for (const el of fileRefs.current.values()) {
       obs.observe(el);
     }
-    return () => obs.disconnect();
-  }, [files, mountedCount]);
+    return () => {
+      obs.disconnect();
+      if (intersectionObserverRef.current === obs) {
+        intersectionObserverRef.current = null;
+      }
+    };
+  }, [files]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((v) => {
@@ -726,16 +750,28 @@ export const DiffViewerContent = ({
     await addDiffComment(sessionId, filePath, body);
   };
 
-  const registerFileRef = useCallback(
-    (path: string) => (el: HTMLElement | null) => {
-      if (el) {
-        fileRefs.current.set(path, el);
-      } else {
-        fileRefs.current.delete(path);
+  const registerFileRef = useCallback(({ path }: RegisterFileRefParams) => {
+    const existingCallback = fileRefCallbacks.current.get(path);
+    if (existingCallback !== undefined) {
+      return existingCallback;
+    }
+
+    const callback: React.RefCallback<HTMLElement> = (element) => {
+      const previousElement = fileRefs.current.get(path);
+      if (previousElement !== undefined && previousElement !== element) {
+        intersectionObserverRef.current?.unobserve(previousElement);
       }
-    },
-    [],
-  );
+      if (element === null) {
+        fileRefs.current.delete(path);
+        return;
+      }
+
+      fileRefs.current.set(path, element);
+      intersectionObserverRef.current?.observe(element);
+    };
+    fileRefCallbacks.current.set(path, callback);
+    return callback;
+  }, []);
 
   const isEmpty = !loading && !error && files.length === 0;
   const isPane = presentation === 'pane';
@@ -988,7 +1024,7 @@ export const DiffViewerContent = ({
                   <FileDiffCard
                     key={file.path}
                     file={file}
-                    registerRef={registerFileRef(file.path)}
+                    registerRef={registerFileRef({ path: file.path })}
                     reviewState={reviewStateByPath.get(file.path) ?? 'none'}
                     onToggleReviewed={(next) => toggleReviewed(file, next)}
                     canOpenEditor={Boolean(workingDir)}

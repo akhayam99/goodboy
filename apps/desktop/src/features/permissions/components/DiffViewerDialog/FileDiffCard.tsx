@@ -18,7 +18,6 @@ import {
   TOOLBAR_ICON_BTN,
   VISIBLE_LINES_STEP,
   anchorKey,
-  lineAnchor,
   type ReviewState,
 } from './lib';
 import { CommentItem } from './comments/CommentItem';
@@ -421,28 +420,51 @@ export const FileDiffCard = ({
                       );
                     }
                     const { line, hi, li } = row;
-                    const anchor = lineAnchor(line);
-                    const lineComments = anchor
-                      ? (commentsByAnchor.get(anchorKey(anchor)) ?? [])
-                      : [];
-                    const isActive =
-                      anchor !== null &&
+                    const oldAnchor: DiffCommentAnchor | null =
+                      line.oldLine === null ? null : { side: 'old', lineNumber: line.oldLine };
+                    const newAnchor: DiffCommentAnchor | null =
+                      line.newLine === null ? null : { side: 'new', lineNumber: line.newLine };
+                    const lineComments = [
+                      ...(oldAnchor === null
+                        ? []
+                        : (commentsByAnchor.get(anchorKey(oldAnchor)) ?? [])),
+                      ...(newAnchor === null
+                        ? []
+                        : (commentsByAnchor.get(anchorKey(newAnchor)) ?? [])),
+                    ];
+                    const isActiveOld =
+                      oldAnchor !== null &&
                       activeAnchor !== null &&
-                      activeAnchor.side === anchor.side &&
-                      activeAnchor.lineNumber === anchor.lineNumber;
+                      activeAnchor.side === oldAnchor.side &&
+                      activeAnchor.lineNumber === oldAnchor.lineNumber;
+                    const isActiveNew =
+                      newAnchor !== null &&
+                      activeAnchor !== null &&
+                      activeAnchor.side === newAnchor.side &&
+                      activeAnchor.lineNumber === newAnchor.lineNumber;
+                    const isActive = isActiveOld || isActiveNew;
                     const linePrefix = LINE_PREFIX[line.kind];
-                    const rangeCommented = anchor !== null && commentedRange.has(anchorKey(anchor));
-                    const selecting = inDrag(anchor);
+                    const oldRangeCommented =
+                      oldAnchor !== null && commentedRange.has(anchorKey(oldAnchor));
+                    const dragAnchor =
+                      drag?.side === 'old' ? oldAnchor : drag?.side === 'new' ? newAnchor : null;
+                    const selecting = inDrag(dragAnchor);
                     return (
                       <Fragment key={`hunk-${hi}-line-${li}`}>
                         <tr
                           onMouseEnter={() => {
-                            if (drag && anchor && anchor.side === drag.side) {
-                              setDrag((d) => (d ? { ...d, end: anchor.lineNumber } : d));
+                            if (drag === null) {
+                              return;
                             }
+                            const hoverAnchor = drag.side === 'old' ? oldAnchor : newAnchor;
+                            if (hoverAnchor === null) {
+                              return;
+                            }
+                            setDrag((current) =>
+                              current === null ? null : { ...current, end: hoverAnchor.lineNumber },
+                            );
                           }}
                           className={cn(
-                            'group',
                             line.kind === 'add' && 'bg-success/[0.07]',
                             line.kind === 'del' && 'bg-danger/[0.07]',
                             selecting && 'bg-primary/15',
@@ -450,28 +472,41 @@ export const FileDiffCard = ({
                         >
                           <td
                             onPointerDown={
-                              canComment && anchor !== null
+                              canComment && oldAnchor !== null
                                 ? (event) => {
                                     event.preventDefault();
                                     setDrag({
-                                      side: anchor.side,
-                                      start: anchor.lineNumber,
-                                      end: anchor.lineNumber,
+                                      side: oldAnchor.side,
+                                      start: oldAnchor.lineNumber,
+                                      end: oldAnchor.lineNumber,
                                     });
                                   }
                                 : undefined
                             }
+                            onKeyDown={
+                              canComment && oldAnchor !== null
+                                ? (event) => {
+                                    if (event.key !== 'Enter' && event.key !== ' ') {
+                                      return;
+                                    }
+                                    event.preventDefault();
+                                    setActiveAnchor(oldAnchor);
+                                  }
+                                : undefined
+                            }
+                            role={canComment && oldAnchor !== null ? 'button' : undefined}
+                            tabIndex={canComment && oldAnchor !== null ? 0 : undefined}
                             aria-label={
-                              canComment && anchor !== null
-                                ? `comment on line ${anchor.lineNumber}`
+                              canComment && line.oldLine !== null
+                                ? `comment on old line ${line.oldLine}`
                                 : undefined
                             }
                             className={cn(
                               'w-9 select-none border-l-2 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50',
                               canComment &&
-                                anchor !== null &&
-                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground',
-                              rangeCommented
+                                oldAnchor !== null &&
+                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
+                              oldRangeCommented
                                 ? 'border-warning/60'
                                 : line.kind === 'add'
                                   ? 'border-success/50'
@@ -484,27 +519,40 @@ export const FileDiffCard = ({
                           </td>
                           <td
                             onPointerDown={
-                              canComment && anchor !== null
+                              canComment && newAnchor !== null
                                 ? (event) => {
                                     event.preventDefault();
                                     setDrag({
-                                      side: anchor.side,
-                                      start: anchor.lineNumber,
-                                      end: anchor.lineNumber,
+                                      side: newAnchor.side,
+                                      start: newAnchor.lineNumber,
+                                      end: newAnchor.lineNumber,
                                     });
                                   }
                                 : undefined
                             }
+                            onKeyDown={
+                              canComment && newAnchor !== null
+                                ? (event) => {
+                                    if (event.key !== 'Enter' && event.key !== ' ') {
+                                      return;
+                                    }
+                                    event.preventDefault();
+                                    setActiveAnchor(newAnchor);
+                                  }
+                                : undefined
+                            }
+                            role={canComment && newAnchor !== null ? 'button' : undefined}
+                            tabIndex={canComment && newAnchor !== null ? 0 : undefined}
                             aria-label={
-                              canComment && anchor !== null
-                                ? `comment on line ${anchor.lineNumber}`
+                              canComment && line.newLine !== null
+                                ? `comment on new line ${line.newLine}`
                                 : undefined
                             }
                             className={cn(
                               'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50',
                               canComment &&
-                                anchor !== null &&
-                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground',
+                                newAnchor !== null &&
+                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
                             )}
                           >
                             {line.newLine ?? ''}
@@ -567,7 +615,7 @@ export const FileDiffCard = ({
                             </td>
                           </tr>
                         )}
-                        {isActive && anchor ? (
+                        {isActive && activeAnchor !== null ? (
                           <tr>
                             <td colSpan={3} className="bg-background">
                               <div
@@ -578,11 +626,9 @@ export const FileDiffCard = ({
                                   label={
                                     activeAnchor?.endLineNumber
                                       ? `commenting on lines ${activeAnchor.lineNumber}–${activeAnchor.endLineNumber}`
-                                      : `commenting on line ${anchor.lineNumber}`
+                                      : `commenting on line ${activeAnchor.lineNumber}`
                                   }
-                                  onSubmit={(body) =>
-                                    handleSubmitComment(activeAnchor ?? anchor, body)
-                                  }
+                                  onSubmit={(body) => handleSubmitComment(activeAnchor, body)}
                                   onCancel={() => setActiveAnchor(null)}
                                 />
                               </div>

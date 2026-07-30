@@ -94,7 +94,6 @@ const positionFor = (anchor: DOMRect, tip: DOMRect, side: TooltipSide): Coords =
     }
   }
 
-  // clamp into viewport on the cross axis
   const left = Math.max(GAP, Math.min(pos.left, vw - tip.width - GAP));
   const top = Math.max(GAP, Math.min(pos.top, vh - tip.height - GAP));
   return { top, left, side: chosen };
@@ -136,9 +135,6 @@ export const Tooltip = ({ content, side = 'top', children }: TooltipProps) => {
     reposition();
   }, [visible, content, reposition]);
 
-  // The portaled tip is position:fixed, computed once on show. Keep it pinned to
-  // the anchor while visible by re-running on scroll (capture, to catch nested
-  // scrollers) and resize.
   useEffect(() => {
     if (!visible) {
       return;
@@ -151,7 +147,6 @@ export const Tooltip = ({ content, side = 'top', children }: TooltipProps) => {
     };
   }, [visible, reposition]);
 
-  // React 19: ref is a regular prop, available on children.props.ref.
   const childRef = (children.props as { ref?: React.Ref<HTMLElement> }).ref;
   const mergedRef = useCallback(
     (node: HTMLElement | null) => {
@@ -180,11 +175,15 @@ export const Tooltip = ({ content, side = 'top', children }: TooltipProps) => {
       children.props.onBlur?.(e);
     },
   });
+  const portalTarget =
+    typeof document === 'undefined'
+      ? null
+      : (anchorRef.current?.closest('dialog[open]') ?? document.body);
 
   return (
     <>
       {enhanced}
-      {visible && typeof document !== 'undefined'
+      {visible && portalTarget !== null
         ? createPortal(
             <span
               ref={tipRef}
@@ -201,7 +200,7 @@ export const Tooltip = ({ content, side = 'top', children }: TooltipProps) => {
             >
               {content}
             </span>,
-            document.body,
+            portalTarget,
           )
         : null}
     </>

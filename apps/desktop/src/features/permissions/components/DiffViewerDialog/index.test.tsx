@@ -286,8 +286,7 @@ describe('line comment add (single + multi-line drag)', () => {
     fixtures.files = fileFixture();
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
-    const lineNumbers = screen.getAllByLabelText('comment on line 1');
-    fireEvent.pointerDown(lineNumbers[0]!);
+    fireEvent.pointerDown(screen.getByLabelText('comment on new line 1'));
     fireEvent.pointerUp(window);
     const composerLabel = await screen.findByText('commenting on line 1');
     const scrollContent = composerLabel.closest('[data-diff-scroll-content]');
@@ -300,8 +299,7 @@ describe('line comment add (single + multi-line drag)', () => {
     fixtures.files = fileFixture();
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
-    const lineNumbers = screen.getAllByLabelText('comment on line 1');
-    fireEvent.pointerDown(lineNumbers[0]!);
+    fireEvent.pointerDown(screen.getByLabelText('comment on new line 1'));
     const lastRow = screen.getByText(/gamma/).closest('tr');
     expect(lastRow).not.toBeNull();
     fireEvent.mouseEnter(lastRow as HTMLElement);
@@ -335,6 +333,43 @@ describe('line comment add (single + multi-line drag)', () => {
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     expect(await screen.findByText('lines 2–3')).toBeDefined();
     expect(screen.getByText('spans a range')).toBeDefined();
+  });
+
+  it('labels old and new line cells with the numbers they display', async () => {
+    fixtures.files = [
+      {
+        path: 'src/context.ts',
+        status: 'modified',
+        additions: 0,
+        deletions: 0,
+        binary: false,
+        hunks: [
+          {
+            header: '@@ -10,1 +20,1 @@',
+            oldStart: 10,
+            oldLines: 1,
+            newStart: 20,
+            newLines: 1,
+            lines: [{ kind: 'context', oldLine: 10, newLine: 20, text: 'shared' }],
+          },
+        ],
+      },
+    ];
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
+
+    expect(await screen.findByRole('button', { name: 'comment on old line 10' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'comment on new line 20' })).toBeDefined();
+    expect(screen.queryByLabelText('comment on old line 20')).toBeNull();
+  });
+
+  it('opens a single-line composer from a line cell with Enter', async () => {
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
+    const lineCell = await screen.findByRole('button', { name: 'comment on new line 1' });
+
+    fireEvent.keyDown(lineCell, { key: 'Enter' });
+
+    expect(await screen.findByText('commenting on line 1')).toBeDefined();
   });
 
   it('keeps colSpan controls sticky within the wide diff table', async () => {
@@ -376,7 +411,7 @@ describe('line comment add (single + multi-line drag)', () => {
     ];
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
     const showMoreButton = await screen.findByRole('button', { name: /show 1 more lines/i });
-    fireEvent.pointerDown(screen.getAllByLabelText('comment on line 1')[0]!);
+    fireEvent.pointerDown(screen.getByLabelText('comment on new line 1'));
     fireEvent.pointerUp(window);
 
     const scrollContents = [
@@ -530,6 +565,62 @@ const makeFiles = (count: number, prefix = 'file') =>
     ],
   }));
 
+type EmitIntersectionParams = {
+  entries: ReadonlyArray<{
+    target: Element;
+    top: number;
+  }>;
+};
+
+type IdleCallbackState = {
+  current: IdleRequestCallback | null;
+};
+
+class TestIntersectionObserver implements IntersectionObserver {
+  static instances: TestIntersectionObserver[] = [];
+
+  readonly root = null;
+  readonly rootMargin = '0px';
+  readonly thresholds = [0];
+  readonly targets = new Set<Element>();
+
+  constructor(private readonly callback: IntersectionObserverCallback) {
+    TestIntersectionObserver.instances.push(this);
+  }
+
+  disconnect(): void {
+    this.targets.clear();
+  }
+
+  observe(target: Element): void {
+    this.targets.add(target);
+  }
+
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+
+  unobserve(target: Element): void {
+    this.targets.delete(target);
+  }
+
+  emit({ entries }: EmitIntersectionParams): void {
+    const records = entries.map(({ target, top }) => {
+      const rect = new DOMRect(0, top, 100, 100);
+      return {
+        boundingClientRect: rect,
+        intersectionRatio: 1,
+        intersectionRect: rect,
+        isIntersecting: true,
+        rootBounds: null,
+        target,
+        time: 0,
+      } satisfies IntersectionObserverEntry;
+    });
+    this.callback(records, this);
+  }
+}
+
 describe('progressive batching', () => {
   it('mounts and scrolls to a file beyond the first batch when its rail entry is clicked', async () => {
     vi.stubGlobal(
@@ -575,6 +666,62 @@ describe('progressive batching', () => {
     expect(container.querySelectorAll('[data-file-path]').length).toBe(25);
 
     vi.useRealTimers();
+  });
+
+  it('keeps the active file stable while idle batches mount', async () => {
+    TestIntersectionObserver.instances = [];
+    const idleCallbackState: IdleCallbackState = { current: null };
+    vi.stubGlobal('IntersectionObserver', TestIntersectionObserver);
+    vi.stubGlobal(
+      'requestIdleCallback',
+      vi.fn((callback: IdleRequestCallback) => {
+        idleCallbackState.current = callback;
+        return 1;
+      }),
+    );
+    vi.stubGlobal('cancelIdleCallback', vi.fn());
+    localStorage.setItem('goodboy:diff-sidebar-collapsed', '0');
+    fixtures.files = makeFiles(25);
+    const { container } = render(
+      <DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />,
+    );
+    await screen.findByTitle('src/file22.ts');
+    const firstCard = container.querySelector('[data-file-path="src/file0.ts"]');
+    const secondCard = container.querySelector('[data-file-path="src/file1.ts"]');
+    if (
+      firstCard === null ||
+      secondCard === null ||
+      TestIntersectionObserver.instances[0] === undefined
+    ) {
+      throw new Error('expected initial diff cards and observer');
+    }
+
+    act(() => {
+      TestIntersectionObserver.instances[0]?.emit({
+        entries: [
+          { target: firstCard, top: 0 },
+          { target: secondCard, top: 100 },
+        ],
+      });
+    });
+    const activeRailEntry = screen
+      .getAllByTitle('src/file0.ts')
+      .find((element) => element.parentElement?.className.includes('group relative') === true);
+    expect(activeRailEntry?.parentElement?.className).toContain('border-primary');
+
+    const scheduledIdleCallback = idleCallbackState.current;
+    if (scheduledIdleCallback === null) {
+      throw new Error('expected an idle batch callback');
+    }
+    await act(async () => {
+      scheduledIdleCallback({
+        didTimeout: false,
+        timeRemaining: () => 50,
+      });
+    });
+
+    expect(TestIntersectionObserver.instances).toHaveLength(1);
+    expect(activeRailEntry?.parentElement?.className).toContain('border-primary');
   });
 
   it('resets batch count when the diff source changes', async () => {
