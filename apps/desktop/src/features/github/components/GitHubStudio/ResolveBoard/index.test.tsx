@@ -44,6 +44,16 @@ function thread(
   return { head: comment(over), replies };
 }
 
+const setHint = (value: string) => {
+  fireEvent.change(screen.getByRole('textbox', { name: /Resolver hint/i }), {
+    target: { value },
+  });
+};
+
+const closePopover = () => {
+  fireEvent.keyDown(window, { key: 'Escape' });
+};
+
 beforeEach(() => {
   h.providers = [{ id: 'anthropic', connection: 'connected' }];
 });
@@ -100,7 +110,7 @@ describe('ResolveBoard', () => {
     );
   });
 
-  it('applies mode and hint to a single resolver', () => {
+  it('applies mode and hint from the card popover to that resolver', () => {
     const onSpawnOne = vi.fn<(thread: CommentThread, choice: ResolveModelChoice) => void>();
     render(
       <ResolveBoard
@@ -115,21 +125,22 @@ describe('ResolveBoard', () => {
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /Resolve with/i }));
     });
+    expect(screen.getByRole('dialog', { name: 'configure resolver' })).toBeDefined();
     act(() => {
       fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
-      fireEvent.change(screen.getByRole('textbox', { name: /Resolver hint/i }), {
-        target: { value: 'Avoid schema changes.' },
-      });
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /^Resolve$/i }));
+      setHint('Avoid schema changes.');
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resolve comment' }));
     });
     expect(onSpawnOne.mock.calls[0]?.[1]).toEqual(
       expect.objectContaining({ mode: 'analyze', hint: 'Avoid schema changes.' }),
     );
   });
 
-  it('shares mode and hint across every resolver in a batch', () => {
+  it('keeps a per-card hint on that card only', () => {
     const onSpawnBatch =
       vi.fn<
         (
@@ -148,24 +159,113 @@ describe('ResolveBoard', () => {
       />,
     );
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: /Resolve all with/i }));
+      fireEvent.click(screen.getAllByRole('button', { name: /Resolve with/i })[0]!);
     });
     act(() => {
-      fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
-      fireEvent.change(screen.getByRole('textbox', { name: /Resolver hint/i }), {
-        target: { value: 'Keep the public API stable.' },
-      });
+      setHint('Only here.');
+    });
+    act(() => {
+      closePopover();
     });
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /Spawn 2 resolvers/i }));
     });
     const choices = onSpawnBatch.mock.calls[0]?.[1];
-    expect(choices?.c1).toEqual(
-      expect.objectContaining({ mode: 'analyze', hint: 'Keep the public API stable.' }),
+    expect(choices?.c1).toEqual(expect.objectContaining({ hint: 'Only here.' }));
+    expect(choices?.c2).toEqual(expect.objectContaining({ hint: '' }));
+  });
+
+  it('applies batch defaults to cards without an explicit override', () => {
+    const onSpawnBatch =
+      vi.fn<
+        (
+          threads: ReadonlyArray<CommentThread>,
+          choiceById: Readonly<Record<string, ResolveModelChoice>>,
+        ) => void
+      >();
+    render(
+      <ResolveBoard
+        roleModels={null}
+        threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
+        onSpawnOne={vi.fn()}
+        onSpawnBatch={onSpawnBatch}
+        onSpawnCombined={vi.fn()}
+        onOpenThread={vi.fn()}
+      />,
     );
+    act(() => {
+      fireEvent.click(screen.getAllByRole('button', { name: /Resolve with/i })[0]!);
+    });
+    act(() => {
+      setHint('Card override.');
+    });
+    act(() => {
+      closePopover();
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Resolve all with/i }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
+    });
+    act(() => {
+      setHint('Batch default.');
+    });
+    act(() => {
+      closePopover();
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Spawn 2 resolvers/i }));
+    });
+    const choices = onSpawnBatch.mock.calls[0]?.[1];
+    expect(choices?.c1).toEqual(expect.objectContaining({ mode: 'fix', hint: 'Card override.' }));
     expect(choices?.c2).toEqual(
-      expect.objectContaining({ mode: 'analyze', hint: 'Keep the public API stable.' }),
+      expect.objectContaining({ mode: 'analyze', hint: 'Batch default.' }),
     );
+  });
+
+  it('apply-to-all overwrites every per-card override', () => {
+    const onSpawnBatch =
+      vi.fn<
+        (
+          threads: ReadonlyArray<CommentThread>,
+          choiceById: Readonly<Record<string, ResolveModelChoice>>,
+        ) => void
+      >();
+    render(
+      <ResolveBoard
+        roleModels={null}
+        threads={[thread({ id: 'c1' }), thread({ id: 'c2', threadId: 'PRRT_2' })]}
+        onSpawnOne={vi.fn()}
+        onSpawnBatch={onSpawnBatch}
+        onSpawnCombined={vi.fn()}
+        onOpenThread={vi.fn()}
+      />,
+    );
+    act(() => {
+      fireEvent.click(screen.getAllByRole('button', { name: /Resolve with/i })[0]!);
+    });
+    act(() => {
+      setHint('Card override.');
+    });
+    act(() => {
+      closePopover();
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Resolve all with/i }));
+    });
+    act(() => {
+      setHint('Everywhere.');
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Apply to all cards' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Spawn 2 resolvers/i }));
+    });
+    const choices = onSpawnBatch.mock.calls[0]?.[1];
+    expect(choices?.c1).toEqual(expect.objectContaining({ hint: 'Everywhere.' }));
+    expect(choices?.c2).toEqual(expect.objectContaining({ hint: 'Everywhere.' }));
   });
 
   it('renders the head comment plus its replies as context', () => {
@@ -202,8 +302,9 @@ describe('ResolveBoard', () => {
     expect(screen.getByText(/Nothing to resolve/i)).toBeDefined();
   });
 
-  it('spawns one combined resolver for the selected threads', () => {
-    const onSpawnCombined = vi.fn();
+  it('spawns one combined resolver with the batch defaults', () => {
+    const onSpawnCombined =
+      vi.fn<(threads: ReadonlyArray<CommentThread>, choice: ResolveModelChoice) => void>();
     render(
       <ResolveBoard
         roleModels={null}
@@ -215,11 +316,26 @@ describe('ResolveBoard', () => {
       />,
     );
     act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /Resolve all with/i }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
+    });
+    act(() => {
+      setHint('Read only please.');
+    });
+    act(() => {
+      closePopover();
+    });
+    act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Spawn 1 combined resolver' }));
     });
     expect(onSpawnCombined).toHaveBeenCalledOnce();
     expect(
-      onSpawnCombined.mock.calls[0]?.[0].map((item: CommentThread) => item.head.threadId),
+      onSpawnCombined.mock.calls[0]?.[0]?.map((item: CommentThread) => item.head.threadId),
     ).toEqual(['PRRT_1', 'PRRT_2']);
+    expect(onSpawnCombined.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ mode: 'analyze', hint: 'Read only please.' }),
+    );
   });
 });

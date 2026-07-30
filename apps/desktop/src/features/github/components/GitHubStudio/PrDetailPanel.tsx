@@ -254,10 +254,7 @@ export const PrDetailPanel = ({
     })();
   };
 
-  const onSpawnCombined = (
-    batch: ReadonlyArray<CommentThread>,
-    choiceById: Readonly<Record<string, ResolveModelChoice>>,
-  ) => {
+  const onSpawnCombined = (batch: ReadonlyArray<CommentThread>, choice: ResolveModelChoice) => {
     if (activePr == null || batch.length < 2 || batch.length > 8) {
       return;
     }
@@ -268,11 +265,6 @@ export const PrDetailPanel = ({
     if (fresh.length < 2) {
       return;
     }
-    const first = fresh[0];
-    if (first === undefined) {
-      return;
-    }
-    const choice = choiceById[first.head.id] ?? {};
     void (async () => {
       await spawnResolver(buildCombinedCommentAgentArgs(fresh, activePr, choice), choice, true);
       await setCurrentSession(sessionId);
