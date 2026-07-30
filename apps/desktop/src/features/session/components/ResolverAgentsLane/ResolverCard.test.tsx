@@ -130,13 +130,15 @@ describe('ResolverCard', () => {
     expect(screen.getByTestId('agent-metrics-block')).toBeTruthy();
     expect(screen.getByTitle('in: 400 tokens (cumulative)')).toBeTruthy();
     expect(screen.getByTitle('out: 40 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle(/^started 2026-05-28/)).toBeTruthy();
+    expect(screen.getByTitle(/^started .+2026/)).toBeTruthy();
     expect(container.querySelectorAll('[title*="context:"]').length).toBeGreaterThan(0);
   });
 
   it('keeps the resolver name and its origin readable alongside the metrics', () => {
     renderCard();
-    expect(screen.getByText('resolve comment 12')).toBeTruthy();
+    expect(
+      screen.getByText('resolve comment 12').previousElementSibling?.getAttribute('title'),
+    ).toBe('done');
     expect(screen.queryByText(/^\d+\/\d+$/)).toBeNull();
     expect(screen.getByText('Review comment')).toBeTruthy();
   });

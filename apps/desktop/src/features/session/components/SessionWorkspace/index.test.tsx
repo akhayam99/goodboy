@@ -389,6 +389,28 @@ describe('SessionWorkspace agent overlay', () => {
 
     expect(screen.getByTestId('agent-inspector').textContent).toBe(running.id);
   });
+
+  it('closes the resolver inspector after the last resolver is deleted', () => {
+    const resolver = {
+      ...selectedAgent,
+      id: 'resolver-last',
+      kind: 'resolver',
+      stepId: undefined,
+      workflowRunId: undefined,
+      sourceThreadId: 'thread-last',
+    } as Agent;
+    store.activeLens = { [SESSION_ID]: 'resolve' };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [resolver] };
+    const view = render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
+
+    store.sessionPhaseRuns = { [SESSION_ID]: [] };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByRole('separator', { name: 'resize inspector panel' })).toBeNull();
+  });
 });
 
 describe('SessionWorkspace agents inspector', () => {
@@ -470,6 +492,25 @@ describe('SessionWorkspace agents inspector', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [newer] };
     view.rerender(<SessionWorkspace session={session} isActive />);
     expect(screen.getByTestId('agent-inspector').textContent).toBe(newer.id);
+  });
+
+  it('closes the agent inspector after the last agent is deleted', () => {
+    const lastAgent = {
+      ...selectedAgent,
+      id: 'agent-last',
+      stepId: undefined,
+      workflowRunId: undefined,
+    } as Agent;
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [lastAgent] };
+    const view = render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
+
+    store.sessionPhaseRuns = { [SESSION_ID]: [] };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByRole('separator', { name: 'resize inspector panel' })).toBeNull();
   });
 });
 

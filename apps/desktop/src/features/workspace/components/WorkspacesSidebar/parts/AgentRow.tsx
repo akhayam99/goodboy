@@ -10,6 +10,7 @@ import { AgentKindChip } from '../../../../../features/session/components/AgentK
 import { AgentCard } from '../../../../../features/session/components/AgentCard';
 import { AgentCardAction } from '../../../../../features/session/components/AgentCard/AgentCardAction';
 import { AgentCardActions } from '../../../../../features/session/components/AgentCard/AgentCardActions';
+import { AgentStatusIcon } from '../../../../../features/session/components/AgentCard/AgentStatusIcon';
 import { AgentCardTitle } from '../../../../../features/session/components/AgentCard/AgentCardTitle';
 import { agentCardTone } from '../../../../../features/session/components/AgentCard/agentCardTone';
 import {
@@ -18,10 +19,7 @@ import {
 } from '../../../../../features/session/components/AgentMetrics';
 import { AgentLastUpdate } from '../../../../../shared/components/AgentLastUpdate';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
-import { AgentStatusBadge } from './AgentStatusBadge';
-
-const ACTIONS_CLASS = 'w-40';
-const COMPACT_ACTIONS_CLASS = 'w-20';
+const ACTIONS_CLASS = 'w-20';
 
 type Props = {
   readonly run: Agent;
@@ -111,6 +109,7 @@ export const AgentRow = ({
             kind={kind}
             title={`agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
           />
+          <AgentStatusIcon status={run.status} />
         </>
       }
       title={
@@ -122,21 +121,19 @@ export const AgentRow = ({
           onRenameCancel={onRenameCancel}
         />
       }
-      trailing={<AgentStatusBadge status={run.status} />}
       actions={
-        <AgentCardActions
-          className={onInspect === undefined ? COMPACT_ACTIONS_CLASS : ACTIONS_CLASS}
-        >
-          {onInspect !== undefined && (
-            <AgentCardAction
-              icon={PanelRight}
-              label="Toggle agent details"
-              text="Details"
-              pressed={isInspected}
-              active={isInspected}
-              onClick={onInspect}
-            />
-          )}
+        <AgentCardActions className={ACTIONS_CLASS}>
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            {onInspect !== undefined && (
+              <AgentCardAction
+                icon={PanelRight}
+                label="Toggle agent details"
+                pressed={isInspected}
+                active={isInspected}
+                onClick={onInspect}
+              />
+            )}
+          </span>
           <span className="flex size-6 shrink-0 items-center justify-center">
             {isMarkDoneAvailable && (
               <AgentCardAction
@@ -148,7 +145,7 @@ export const AgentRow = ({
               />
             )}
           </span>
-          <span className="flex w-[3.25rem] shrink-0 items-center justify-end">
+          <span className="flex size-6 shrink-0 items-center justify-center">
             <AgentCardAction
               icon={Trash2}
               label="delete agent"

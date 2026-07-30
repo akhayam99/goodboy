@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatRelativeDuration } from './relativeDate';
+import { formatAbsoluteDateTime, formatRelativeDuration } from './relativeDate';
 
 const iso = (ms: number) => new Date(ms).toISOString();
 const NOW = 1_700_000_000_000;
@@ -43,5 +43,20 @@ describe('formatRelativeDuration', () => {
 
   it('returns empty string for invalid toIso', () => {
     expect(formatRelativeDuration(iso(NOW), 'garbage')).toBe('');
+  });
+});
+
+describe('formatAbsoluteDateTime', () => {
+  it('formats a locale-aware absolute date and time', () => {
+    expect(
+      formatAbsoluteDateTime({
+        iso: '2026-07-30T00:51:00',
+        locale: 'en-GB',
+      }),
+    ).toBe('30 Jul 2026, 00:51');
+  });
+
+  it('returns an empty string for an invalid timestamp', () => {
+    expect(formatAbsoluteDateTime({ iso: 'not-a-date', locale: 'en-GB' })).toBe('');
   });
 });

@@ -99,7 +99,7 @@ export const WorkflowsPane = ({ session }: Props) => {
           </>
         ) : null}
         <ScrollFade className="min-w-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
-          <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 motion-safe:animate-studio-in">
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 motion-safe:animate-studio-in">
             {hasRuns ? (
               <AgentsSection
                 task={session}

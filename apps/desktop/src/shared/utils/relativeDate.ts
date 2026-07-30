@@ -23,6 +23,26 @@ export const formatRelativeDuration = (fromIso: string, toIso?: string): string 
   return `${d}d`;
 };
 
+type AbsoluteDateTimeParams = {
+  readonly iso: string;
+  readonly locale?: Intl.LocalesArgument;
+};
+
+export const formatAbsoluteDateTime = ({ iso, locale }: AbsoluteDateTimeParams): string => {
+  const timestamp = Date.parse(iso);
+  if (Number.isNaN(timestamp)) {
+    return '';
+  }
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(timestamp);
+};
+
 type FormatRelativeAgeParams = {
   readonly fromIso: string;
   readonly nowMs?: number;

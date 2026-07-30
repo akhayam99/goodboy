@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
@@ -11,35 +11,6 @@ vi.mock('../../../../store', () => ({
   useSessionLoading: () => h.state.loading,
   EMPTY_ARRAY: [] as never[],
   agentHasUnread: () => false,
-}));
-
-vi.mock('@goodboy/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/ui')>()),
-  SegmentedTabs: ({
-    options,
-    value,
-    onChange,
-    ariaLabel,
-  }: {
-    options: ReadonlyArray<{ value: string; label: string }>;
-    value: string;
-    onChange: (value: string) => void;
-    ariaLabel: string;
-  }) => (
-    <div role="tablist" aria-label={ariaLabel}>
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="tab"
-          aria-selected={option.value === value}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  ),
 }));
 
 vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
@@ -106,74 +77,66 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('StandaloneAgentsLane', () => {
-  it('always shows both tabs with their counts, even at zero', () => {
+  it('reports its completed count without rendering status tabs', () => {
+    const onCompletedCountChange = vi.fn();
     setAgents([]);
-    render(<StandaloneAgentsLane session={session} variant="lens" />);
+    render(
+      <StandaloneAgentsLane
+        session={session}
+        variant="lens"
+        onCompletedCountChange={onCompletedCountChange}
+      />,
+    );
 
-    expect(screen.getByRole('tab', { name: 'Active (0)' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Completed (0)' })).toBeTruthy();
+    expect(onCompletedCountChange).toHaveBeenCalledWith(0);
+    expect(screen.queryByRole('tablist')).toBeNull();
   });
 
-  it('offers a create-agent action from the empty Active view and none from Completed', () => {
-    setAgents([]);
+  it('shows the active empty state while completed agents are hidden', () => {
+    setAgents([buildAgent({ id: 'done' as AgentId, name: 'done agent', doneAt: NOW })]);
     render(<StandaloneAgentsLane session={session} variant="lens" />);
 
-    expect(screen.getByText('No agents yet')).toBeTruthy();
+    expect(screen.getByText('No active agents')).toBeTruthy();
     expect(screen.getByTestId('create-agent')).toBeTruthy();
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Completed (0)' }));
-
-    expect(screen.getByText('No completed agents yet.')).toBeTruthy();
-    expect(screen.queryByTestId('create-agent')).toBeNull();
+    expect(screen.queryByTestId('agent-row')).toBeNull();
   });
 
-  it('splits active and completed agents newest-first within their own tab', () => {
+  it('adds completed agents below active agents and mutes only completed rows', () => {
     setAgents([
       buildAgent({ id: 'active-old' as AgentId, name: 'active old', ordinal: 0 }),
       buildAgent({ id: 'done-old' as AgentId, name: 'done old', ordinal: 1, doneAt: NOW }),
       buildAgent({ id: 'active-new' as AgentId, name: 'active new', ordinal: 2 }),
       buildAgent({ id: 'done-new' as AgentId, name: 'done new', ordinal: 3, doneAt: NOW }),
     ]);
-    render(<StandaloneAgentsLane session={session} variant="lens" />);
+    render(<StandaloneAgentsLane session={session} variant="lens" showCompleted />);
 
     expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
       'active new',
       'active old',
-    ]);
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Completed (2)' }));
-
-    expect(screen.getAllByTestId('agent-row').map((row) => row.textContent)).toEqual([
       'done new',
       'done old',
     ]);
-    expect(screen.getAllByTestId('agent-row')[0]?.getAttribute('data-muted')).toBe('true');
+    expect(screen.getAllByTestId('agent-row').map((row) => row.getAttribute('data-muted'))).toEqual(
+      ['false', 'false', 'true', 'true'],
+    );
   });
 
-  it('keeps Active selected when its last agent is marked done', () => {
+  it('shows the active empty state when its last agent is marked done', () => {
     setAgents([buildAgent({ id: 'solo' as AgentId, name: 'solo agent' })]);
     const view = render(<StandaloneAgentsLane session={session} variant="lens" />);
 
-    expect(screen.getByRole('tab', { name: 'Active (1)' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
+    expect(screen.getByTestId('agent-row').textContent).toBe('solo agent');
 
     setAgents([buildAgent({ id: 'solo' as AgentId, name: 'solo agent', doneAt: NOW })]);
     view.rerender(<StandaloneAgentsLane session={session} variant="lens" />);
 
-    expect(screen.getByRole('tab', { name: 'Active (0)' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
     expect(screen.getByText('No active agents')).toBeTruthy();
   });
 
-  it('opens on Active even when every agent is already done', () => {
+  it('hides completed agents by default', () => {
     setAgents([buildAgent({ id: 'done' as AgentId, name: 'done agent', doneAt: NOW })]);
     render(<StandaloneAgentsLane session={session} variant="lens" />);
 
-    expect(screen.getByRole('tab', { name: 'Active (0)' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
     expect(screen.queryByTestId('agent-row')).toBeNull();
   });
 

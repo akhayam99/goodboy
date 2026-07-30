@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 vi.mock('@goodboy/ui', () => ({
@@ -16,15 +16,25 @@ vi.mock('../../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({
     variant,
     inspectedAgentId,
+    showCompleted,
+    onCompletedCountChange,
   }: {
     readonly variant?: string;
     readonly inspectedAgentId?: string | null;
+    readonly showCompleted?: boolean;
+    readonly onCompletedCountChange?: (completedCount: number) => void;
   }) => (
-    <div
-      data-testid="agents-lane"
-      data-variant={variant}
-      data-inspected={String(inspectedAgentId)}
-    />
+    <>
+      <div
+        data-testid="agents-lane"
+        data-variant={variant}
+        data-inspected={String(inspectedAgentId)}
+        data-show-completed={String(showCompleted)}
+      />
+      <button type="button" onClick={() => onCompletedCountChange?.(2)}>
+        Report completed agents
+      </button>
+    </>
   ),
 }));
 
@@ -52,6 +62,8 @@ describe('AgentsPane', () => {
         meta={undefined}
         inspectedAgentId={null}
         onInspectAgent={vi.fn()}
+        showCompleted={false}
+        onShowCompletedChange={vi.fn()}
       />,
     );
 
@@ -70,11 +82,35 @@ describe('AgentsPane', () => {
         meta={undefined}
         inspectedAgentId={'agent-7' as never}
         onInspectAgent={vi.fn()}
+        showCompleted={false}
+        onShowCompletedChange={vi.fn()}
       />,
     );
 
     const lane = screen.getByTestId('agents-lane');
     expect(lane.getAttribute('data-variant')).toBe('lens');
     expect(lane.getAttribute('data-inspected')).toBe('agent-7');
+  });
+
+  it('places the completed toggle before create and forwards its state', () => {
+    const onShowCompletedChange = vi.fn();
+    render(
+      <AgentsPane
+        session={SESSION}
+        meta={undefined}
+        inspectedAgentId={null}
+        onInspectAgent={vi.fn()}
+        showCompleted={false}
+        onShowCompletedChange={onShowCompletedChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Report completed agents' }));
+    const toggle = screen.getByRole('button', { name: 'Completed (2)' });
+    const create = screen.getByTestId('header-spawn');
+    expect(toggle.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(toggle);
+    expect(onShowCompletedChange).toHaveBeenCalledWith(true);
+    expect(screen.getByTestId('agents-lane').getAttribute('data-show-completed')).toBe('false');
   });
 });

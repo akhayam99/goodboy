@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
+import type { Agent, AgentId, AgentStatus, SessionId, TelemetryRecord } from '@goodboy/types';
 
 vi.mock('../../../../../store', () => ({
   agentHasUnread: () => false,
@@ -88,7 +88,7 @@ describe('AgentRow', () => {
     expect(screen.getByTestId('agent-metrics-block')).toBeTruthy();
     expect(screen.getByTitle('in: 100 tokens (cumulative)')).toBeTruthy();
     expect(screen.getByTitle('out: 20 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle(/^started 2026-05-28/)).toBeTruthy();
+    expect(screen.getByTitle(/^started .+2026/)).toBeTruthy();
   });
 
   it('shows the per-provider context gauge without being selected', () => {
@@ -101,7 +101,7 @@ describe('AgentRow', () => {
     expect(container.querySelectorAll('[title^="in: "]')).toHaveLength(1);
     expect(container.querySelectorAll('[title^="out: "]')).toHaveLength(1);
     expect(screen.getAllByText('3t')).toHaveLength(1);
-    expect(screen.getAllByTitle(/^started 2026-05-28/)).toHaveLength(1);
+    expect(screen.getAllByTitle(/^started .+2026/)).toHaveLength(1);
   });
 
   it('shows the same metrics when selected', () => {
@@ -111,10 +111,16 @@ describe('AgentRow', () => {
     expect(screen.getAllByTestId('agent-metrics-block')).toHaveLength(1);
   });
 
-  it('shows the agent status next to its name', () => {
-    renderRow(false);
-    expect(screen.getByText('scout one').nextElementSibling?.textContent).toBe('completed');
-  });
+  it.each<AgentStatus>(['pending', 'running', 'completed', 'failed', 'skipped'])(
+    'shows the %s status icon before the agent name',
+    (status) => {
+      renderRow(false, { status });
+      expect(screen.getByText('scout one').previousElementSibling?.getAttribute('title')).toBe(
+        status,
+      );
+      expect(screen.queryByText(status)).toBeNull();
+    },
+  );
 
   it('offers mark done for a stopped standalone agent', () => {
     renderRow(false);

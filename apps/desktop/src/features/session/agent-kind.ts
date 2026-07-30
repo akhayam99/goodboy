@@ -324,7 +324,9 @@ export const visibleAgentKinds = ({
   if (workspaceKind === 'simple') {
     return ['generic'];
   }
-  return AGENT_KIND_ORDER.filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false);
+  return AGENT_KIND_ORDER.filter((kind) => AGENT_KIND_DEFAULTS[kind].visible !== false).sort(
+    (left, right) => AGENT_KIND_META[left].label.localeCompare(AGENT_KIND_META[right].label),
+  );
 };
 
 const STEP_ROLE_KIND_LOOKUP: Record<string, AgentKind> = {

@@ -4,6 +4,7 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentDuration } from '../AgentMetrics/AgentDuration';
 import { AgentStatusBadge } from '../../../workspace/components/WorkspacesSidebar/parts/AgentStatusBadge';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { InspectorSection } from '../InspectorSection';
 
 type Props = {
@@ -23,7 +24,9 @@ export const IdentitySection = ({ agent, kind, provider, model, effort }: Props)
     <RoutingBadge variant="full" provider={provider} model={model} effort={effort} />
     <dl className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-2 gap-y-1 text-2xs">
       <dt className="text-muted-foreground/60">Started</dt>
-      <dd className="truncate font-mono text-foreground/80">{agent.startedAt ?? 'not started'}</dd>
+      <dd className="text-foreground/80">
+        {agent.startedAt == null ? 'not started' : formatAbsoluteDateTime({ iso: agent.startedAt })}
+      </dd>
       <dt className="text-muted-foreground/60">Duration</dt>
       <dd className="text-foreground/80">
         <AgentDuration run={agent} />

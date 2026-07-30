@@ -1,6 +1,9 @@
 import type { Agent } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import {
+  formatAbsoluteDateTime,
+  formatRelativeDuration,
+} from '../../../../shared/utils/relativeDate';
 
 type Props = {
   readonly run: Agent;
@@ -19,10 +22,11 @@ export const AgentDuration = ({ run }: Props) => {
   }
 
   const worked = formatRelativeDuration(run.startedAt, run.completedAt);
+  const startedAt = formatAbsoluteDateTime({ iso: run.startedAt });
   const tooltip =
     run.completedAt != null
-      ? `started ${run.startedAt}\ncompleted ${run.completedAt}\nworked ${worked}`
-      : `started ${run.startedAt}\nworking for ${worked}`;
+      ? `started ${startedAt}\ncompleted ${formatAbsoluteDateTime({ iso: run.completedAt })}\nworked ${worked}`
+      : `started ${startedAt}\nworking for ${worked}`;
 
   return (
     <span className="font-mono" title={tooltip}>

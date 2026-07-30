@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AdHocRow } from '../../../workspace/components/WorkspacesSidebar/parts/AdHocRow';
 import { AgentLane } from '../AgentLane';
 import { AgentLaneEmpty } from '../AgentLane/AgentLaneEmpty';
 import { AgentLaneNote } from '../AgentLane/AgentLaneNote';
-import type { CompletionTab } from '../AgentLane/completionTab';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { AgentListSkeleton } from './AgentListSkeleton';
 import { useStandaloneAgentsLane } from './useStandaloneAgentsLane';
@@ -20,6 +19,8 @@ type Props = {
   readonly showCreateControl?: boolean;
   readonly inspectedAgentId?: AgentId | null;
   readonly onInspectAgent?: (agentId: AgentId) => void;
+  readonly showCompleted?: boolean;
+  readonly onCompletedCountChange?: (completedCount: number) => void;
 };
 
 export const StandaloneAgentsLane = ({
@@ -28,20 +29,28 @@ export const StandaloneAgentsLane = ({
   showCreateControl = true,
   inspectedAgentId = null,
   onInspectAgent,
+  showCompleted = false,
+  onCompletedCountChange,
 }: Props) => {
   const sessionId = session.id as SessionId;
   const lane = useStandaloneAgentsLane({ session });
-  const [tab, setTab] = useState<CompletionTab>('active');
   const isLens = variant === 'lens';
   const agents = visibleLaneAgents({
     isLens,
-    tab,
+    showCompleted,
     active: lane.activeAgents,
     completed: lane.completedAgents,
     all: lane.standaloneAgents,
   });
   const hasNoAgents = lane.standaloneAgents.length === 0;
   const isLoadingEmpty = lane.isAgentsLoading && hasNoAgents;
+
+  useEffect(() => {
+    if (!isLens || onCompletedCountChange == null) {
+      return;
+    }
+    onCompletedCountChange(lane.completedAgents.length);
+  }, [isLens, lane.completedAgents.length, onCompletedCountChange]);
 
   const list = (
     <ul className="flex flex-col gap-1">
@@ -69,7 +78,7 @@ export const StandaloneAgentsLane = ({
           isInspected={run.id === inspectedAgentId}
           onInspectAgent={onInspectAgent}
           onMarkDone={lane.onMarkDone}
-          isMuted={isLens && tab === 'completed'}
+          isMuted={isLens && run.doneAt != null}
         />
       ))}
     </ul>
@@ -91,13 +100,8 @@ export const StandaloneAgentsLane = ({
 
   return (
     <AgentLane
-      ariaLabel="Filter agents by status"
-      activeCount={lane.activeAgents.length}
-      completedCount={lane.completedAgents.length}
-      tab={tab}
-      onTabChange={setTab}
       isEmpty={agents.length === 0}
-      emptyActive={
+      empty={
         isLoadingEmpty ? (
           <AgentListSkeleton />
         ) : (
@@ -108,7 +112,6 @@ export const StandaloneAgentsLane = ({
           />
         )
       }
-      emptyCompleted={<AgentLaneNote text="No completed agents yet." />}
       footer={error}
     >
       {list}

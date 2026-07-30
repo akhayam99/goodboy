@@ -131,7 +131,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     <PaneShell
       title={meta.label}
       description={`External ${meta.label} issues linked to this session.`}
-      width="3xl"
     >
       <div className="flex flex-col gap-3">
         {connection.isConnected ? (

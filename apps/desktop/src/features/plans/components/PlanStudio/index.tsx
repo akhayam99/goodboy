@@ -168,7 +168,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
       <Divider />
       <div className="flex min-h-0 flex-1">
         {plans.length === 0 ? (
-          <div className="mx-auto w-full max-w-2xl px-6 py-5">
+          <div className="mx-auto w-full max-w-5xl px-6 py-5">
             <EmptyState
               bordered
               tone="success"
@@ -180,7 +180,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
         ) : (
           <>
             <div className="min-h-0 flex-1">
-              <div className="mx-auto flex h-full min-h-0 min-w-0 w-full max-w-3xl flex-col gap-2 px-6 py-4">
+              <div className="mx-auto flex h-full min-h-0 min-w-0 w-full max-w-5xl flex-col gap-2 px-6 py-4">
                 {selected ? (
                   <>
                     <div className="flex shrink-0 items-start gap-3">

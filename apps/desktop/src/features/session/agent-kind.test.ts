@@ -578,7 +578,16 @@ describe('visibility by workspace kind', () => {
 
   it('restores every role and kind once the workspace is a dev project', () => {
     expect(visibleAgentRoles({ workspaceKind: 'repo' }).length).toBeGreaterThan(3);
-    expect(visibleAgentKinds({ workspaceKind: 'repo' })).toContain('implementer');
-    expect(visibleAgentKinds({ workspaceKind: 'repo' })).toContain('reviewer');
+    expect(visibleAgentKinds({ workspaceKind: 'repo' })).toEqual([
+      'generic',
+      'debugger',
+      'docs',
+      'implementer',
+      'planner',
+      'pr-reviewer',
+      'reviewer',
+      'scout',
+      'tester',
+    ]);
   });
 });

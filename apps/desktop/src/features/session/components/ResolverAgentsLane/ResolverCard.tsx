@@ -9,14 +9,15 @@ import { AgentCardAction } from '../AgentCard/AgentCardAction';
 import { AgentCardActions } from '../AgentCard/AgentCardActions';
 import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
-import { ResolverStateBadge, resolverBadgeState } from '../ResolverStateBadge';
+import { resolverBadgeState } from '../ResolverStateBadge';
+import { ResolverStateIcon } from '../ResolverStateBadge/ResolverStateIcon';
 import { ResolverActions } from '../ResolverActions';
 import { resolverOrigin } from '../../resolver-origin';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { resolverCardTone } from './resolverCardTone';
 
-const ACTIONS_CLASS = 'w-24';
+const ACTIONS_CLASS = 'w-14';
 
 type Props = {
   readonly agent: Agent;
@@ -79,6 +80,7 @@ export const ResolverCard = ({
       isMuted={isMuted}
       rowTitle={rowTitle}
       onOpen={onOpenChat}
+      leading={<ResolverStateIcon state={resolverBadgeState(status)} />}
       title={
         <span
           className={cn(
@@ -89,13 +91,11 @@ export const ResolverCard = ({
           {agent.name}
         </span>
       }
-      trailing={<ResolverStateBadge state={resolverBadgeState(status)} />}
       actions={
         <AgentCardActions className={ACTIONS_CLASS}>
           <AgentCardAction
             icon={PanelRight}
             label="Toggle resolver details"
-            text="Details"
             pressed={isInspected}
             active={isInspected}
             onClick={onInspect}

@@ -43,7 +43,7 @@ describe('AgentMetrics, full density block', () => {
 
   it('renders a live duration for a started run', () => {
     renderMetrics(run, aggregate);
-    expect(screen.getByTitle(/^started 2026-05-28/)).toBeDefined();
+    expect(screen.getByTitle(/^started .+2026/)).toBeDefined();
   });
 
   it('never reprints cost or turn count, those live on the inline strip', () => {

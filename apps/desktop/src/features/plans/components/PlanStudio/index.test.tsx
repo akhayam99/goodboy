@@ -112,6 +112,7 @@ describe('PlanStudio subpage', () => {
     expect(shell.className).toContain('relative');
     expect(shell.className).not.toContain('fixed');
     expect(shell.className).not.toContain('z-50');
+    expect(container.querySelector('.max-w-5xl')).not.toBeNull();
   });
 
   it('selects initial plan by id when initialPlanId is provided', () => {
@@ -137,8 +138,11 @@ describe('PlanStudio subpage', () => {
         runCount: 0,
       },
     ];
-    render(<PlanStudio sessionId={'sess-1' as never} initialPlanId={'plan-2' as never} />);
+    const { container } = render(
+      <PlanStudio sessionId={'sess-1' as never} initialPlanId={'plan-2' as never} />,
+    );
     expect(screen.getByText('body two')).toBeDefined();
+    expect(container.querySelector('.max-w-5xl')).not.toBeNull();
   });
 
   it('renders no plan list and no CTA for a single plan', () => {

@@ -83,6 +83,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const [lensColumnWidth, setLensColumnWidth] = useColumnWidth(STORAGE_KEYS.lensColumnWidth, 240);
   const [inspectedResolverId, setInspectedResolverId] = useState<AgentId | null>(null);
   const [inspectedAgentId, setInspectedAgentId] = useState<AgentId | null>(null);
+  const [showCompletedAgents, setShowCompletedAgents] = useState(false);
+  const [showCompletedResolvers, setShowCompletedResolvers] = useState(false);
   const hasInitializedResolverInspector = useRef(false);
   const hasInitializedAgentInspector = useRef(false);
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId]);
@@ -197,7 +199,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       ? undefined
       : `${resolverCounts.queued} queued, ${resolverCounts.resolved} resolved`;
   useEffect(() => {
-    if (lens !== 'agents' || standaloneAgents.length === 0) {
+    if (lens !== 'agents') {
+      return;
+    }
+    if (standaloneAgents.length === 0) {
+      if (inspectedAgentId !== null) {
+        setInspectedAgentId(null);
+      }
       return;
     }
     const isInspectedAgentPresent =
@@ -222,7 +230,20 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   }, [inspectedAgentId, lens, openQuestions, standaloneAgents]);
 
   useEffect(() => {
-    if (hasInitializedResolverInspector.current || resolverIndex.links.length === 0) {
+    if (resolverIndex.links.length === 0) {
+      if (inspectedResolverId !== null) {
+        setInspectedResolverId(null);
+      }
+      return;
+    }
+    const isInspectedResolverPresent =
+      inspectedResolverId !== null &&
+      resolverIndex.links.some(({ agent }) => agent.id === inspectedResolverId);
+    if (isInspectedResolverPresent) {
+      hasInitializedResolverInspector.current = true;
+      return;
+    }
+    if (inspectedResolverId === null && hasInitializedResolverInspector.current) {
       return;
     }
     const running = resolverIndex.links.find(({ status }) => status === 'running');
@@ -232,7 +253,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     );
     hasInitializedResolverInspector.current = true;
     setInspectedResolverId((running ?? awaiting ?? unresolved)?.agent.id ?? null);
-  }, [resolverIndex]);
+  }, [inspectedResolverId, resolverIndex]);
 
   useEffect(() => {
     if (showAgentOverlay && overlayHome === 'resolve' && selectedAgentId !== null) {
@@ -363,10 +384,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                     meta={resolveMeta}
                     inspectedResolverId={inspectedResolverId}
                     onInspectResolver={setInspectedResolverId}
+                    showCompleted={showCompletedResolvers}
+                    onShowCompletedChange={setShowCompletedResolvers}
                   />
                 ) : null}
                 {lens === 'scripts' ? (
-                  <PaneShell title="Scripts" width="5xl">
+                  <PaneShell title="Scripts">
                     <ScriptsPanel
                       workspaceId={session.workspaceId}
                       sessionId={sessionId}
@@ -413,6 +436,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                     meta={agentsMeta}
                     inspectedAgentId={inspectedAgentId}
                     onInspectAgent={setInspectedAgentId}
+                    showCompleted={showCompletedAgents}
+                    onShowCompletedChange={setShowCompletedAgents}
                   />
                 </Pane>
               </div>
