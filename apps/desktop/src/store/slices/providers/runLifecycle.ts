@@ -208,7 +208,7 @@ export const runLifecycle = async (
             ? payload.status
             : storedStatus({ providerId: 'opencode', providers: state.providers }),
         openrouter:
-          providerId === 'opencode' || providerId === 'openrouter'
+          providerId === 'opencode'
             ? { ...payload.status, id: 'openrouter' }
             : storedStatus({ providerId: 'openrouter', providers: state.providers }),
       };

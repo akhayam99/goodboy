@@ -14,14 +14,17 @@ const lifecycleMocks = vi.hoisted(() => ({
     lifecycleMocks.exitHandler = handler;
     return vi.fn();
   }),
-  resolveLifecycleCommand: vi.fn(() => 'provider command'),
 }));
 
 vi.mock('../../../features/providers/providers', () => ({
   buildProviderList: providerMocks.buildProviderList,
 }));
 
-vi.mock('../../../features/providers/provider-lifecycle', () => lifecycleMocks);
+vi.mock('../../../features/providers/provider-lifecycle', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../../features/providers/provider-lifecycle')>();
+  return { ...actual, ...lifecycleMocks };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -29,7 +32,7 @@ beforeEach(() => {
 });
 
 describe('runLifecycle', () => {
-  it('writes an openrouter lifecycle exit status to the openrouter slot', async () => {
+  it('writes an opencode lifecycle exit status to both shared binary slots', async () => {
     const refreshProviders = vi.fn(async () => undefined);
     let state: Record<string, unknown> = {
       providerLifecycle: { ...INITIAL_LIFECYCLE_MAP },
@@ -55,7 +58,7 @@ describe('runLifecycle', () => {
     const get = vi.fn(() => state);
 
     await runLifecycle(set as never, get as never, {
-      providerId: 'openrouter',
+      providerId: 'opencode',
       action: 'login',
     });
     const invocation = lifecycleMocks.invokeProviderLifecycleRun.mock.calls[0]?.[0];
@@ -63,6 +66,13 @@ describe('runLifecycle', () => {
     if (invocation === undefined) {
       return;
     }
+    expect(lifecycleMocks.invokeProviderLifecycleRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'opencode',
+        action: 'login',
+        command: 'opencode auth login',
+      }),
+    );
 
     const status = {
       id: 'opencode',
@@ -73,7 +83,7 @@ describe('runLifecycle', () => {
     };
     lifecycleMocks.exitHandler?.({
       runId: invocation.runId,
-      providerId: 'openrouter',
+      providerId: 'opencode',
       action: 'login',
       exitCode: 0,
       status,
@@ -82,11 +92,11 @@ describe('runLifecycle', () => {
 
     expect(providerMocks.buildProviderList).toHaveBeenCalledWith(
       expect.objectContaining({
-        opencode: null,
+        opencode: status,
         openrouter: { ...status, id: 'openrouter' },
       }),
       expect.objectContaining({
-        openrouter: { state: 'connected', identity: 'account' },
+        opencode: { state: 'connected', identity: 'account' },
       }),
       new Set(),
     );

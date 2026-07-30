@@ -3,6 +3,7 @@ import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { computeCostUsd } from '../providers/claude/cost';
 import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
+import { cliModelId } from '../providers/cliModelId';
 import { isSlotKey, SLOT_KEYS, type SlotKey } from '../context/slots';
 import { extractJson } from './extract-json';
 import { SUMMARIZER_SYSTEM_PROMPT } from './prompt';
@@ -82,7 +83,10 @@ export class Summarizer {
   constructor(deps: SummarizerDeps) {
     this.providerId = deps.providerId;
     this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
-    this.model = deps.model ?? getCheapModel(deps.providerId);
+    this.model = cliModelId({
+      provider: deps.providerId,
+      model: deps.model ?? getCheapModel(deps.providerId),
+    });
     this.workingDir = deps.workingDir;
     this.invokeFn = deps.invokeFn;
   }

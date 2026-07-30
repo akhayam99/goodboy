@@ -1,5 +1,6 @@
 import type { CatalogModel, ProviderId } from '@goodboy/types';
 import { MODEL_CATALOGS } from './catalogs';
+import { CURSOR_AUTO_MODEL } from './cursor/models';
 
 const catalogCliId = (model: CatalogModel): string => {
   switch (model.provider) {
@@ -16,12 +17,11 @@ const catalogCliId = (model: CatalogModel): string => {
       return variant.cliId;
     }
     case 'cursor': {
-      const combo =
-        model.combos.find((candidate) => candidate.maxMode === false) ?? model.combos[0];
-      if (combo == null) {
+      const combo = model.combos.find((candidate) => candidate.maxMode === false);
+      if (model.combos.length === 0) {
         throw new Error(`cursor model has no combos: ${model.key}`);
       }
-      return combo.slug;
+      return combo?.slug ?? CURSOR_AUTO_MODEL;
     }
     default: {
       const exhaustive: never = model;

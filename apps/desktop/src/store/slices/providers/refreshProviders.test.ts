@@ -32,11 +32,17 @@ describe('refreshProviders', () => {
       providerCredentials: [{ providerId: 'openrouter' }],
     }));
     await refreshProviders(set as never, get as never)();
-    expect(providerMocks.refreshProviderDetection).toHaveBeenCalledTimes(6);
+    expect(providerMocks.refreshProviderDetection).toHaveBeenCalledTimes(5);
     expect(providerMocks.refreshProviderDetection).toHaveBeenCalledWith({ id: 'opencode' });
-    expect(providerMocks.refreshProviderDetection).toHaveBeenCalledWith({ id: 'openrouter' });
+    expect(providerMocks.refreshProviderDetection).not.toHaveBeenCalledWith({ id: 'openrouter' });
     expect(providerMocks.checkProviderAuth).toHaveBeenCalledWith('opencode');
     expect(providerMocks.checkProviderAuth).toHaveBeenCalledWith('openrouter');
+    expect(providerMocks.buildProviderList.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        opencode: providerMocks.status,
+        openrouter: { ...providerMocks.status, id: 'openrouter' },
+      }),
+    );
     expect(providerMocks.buildProviderList.mock.calls[0]?.[2]).toEqual(new Set(['openrouter']));
   });
 });

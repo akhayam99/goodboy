@@ -107,6 +107,45 @@ describe('Summarizer client transport', () => {
     expect(args?.['workingDir']).toBe('/tmp/worktree/session-1');
   });
 
+  it('uses the haiku cli id and haiku pricing for a catalog model', async () => {
+    let request: Record<string, unknown> | undefined;
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(
+      _cmd: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => {
+      request = args;
+      return {
+        stdout: JSON.stringify({
+          result: '{"upserts":[]}',
+          subtype: 'success',
+          usage: {
+            input_tokens: 1_000_000,
+            output_tokens: 1_000_000,
+            cache_read_input_tokens: 0,
+          },
+        }),
+        stderr: '',
+        exitCode: 0,
+      } as T;
+    };
+    const summarizer = new Summarizer({
+      providerId: 'anthropic',
+      model: 'haiku-4.5',
+      invokeFn,
+    });
+
+    const result = await summarizer.summarize({
+      prevSlots: [],
+      turnInput: 'q',
+      turnOutput: 'a',
+    });
+    const args = request?.['args'] as Record<string, unknown> | undefined;
+
+    expect(args?.['model']).toBe('claude-haiku-4-5');
+    expect(result.model).toBe('claude-haiku-4-5');
+    expect(result.usage.estimatedCostUsd).toBeCloseTo(6);
+  });
+
   it('rejects an anthropic error payload that exits zero', async () => {
     const stdout = JSON.stringify({
       result: 'Sistema bloccato',

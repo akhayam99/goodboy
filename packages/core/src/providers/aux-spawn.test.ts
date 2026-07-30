@@ -28,9 +28,7 @@ const expectedCliId = ({ model }: ExpectedCliIdParams): string => {
     case 'codex':
       return model.variants[0]?.cliId ?? '';
     case 'cursor':
-      return (
-        model.combos.find((combo) => combo.maxMode === false)?.slug ?? model.combos[0]?.slug ?? ''
-      );
+      return model.combos.find((combo) => combo.maxMode === false)?.slug ?? 'auto';
     default: {
       const exhaustive: never = model;
       throw new Error(`unknown catalog model: ${String(exhaustive)}`);
@@ -67,6 +65,21 @@ describe('runAuxOneShot', () => {
     });
 
     expect(seen[0]?.['model']).toBe('claude-sonnet-4-6');
+  });
+
+  it('degrades a max-only cursor catalog model to auto', async () => {
+    const { seen, invokeFn } = capture();
+
+    await runAuxOneShot({
+      providerId: 'cursor',
+      model: 'opus-5',
+      binary: 'cursor-agent',
+      userMessage: 'u',
+      systemPrompt: 's',
+      invokeFn,
+    });
+
+    expect(seen[0]?.['model']).toBe('auto');
   });
 
   it('omits workingDir when it is absent', async () => {
