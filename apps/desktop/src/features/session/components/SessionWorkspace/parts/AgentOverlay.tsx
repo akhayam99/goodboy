@@ -6,6 +6,7 @@ import { AgentInspector } from '../../AgentInspector';
 import { agentOverlayHeader } from './agentOverlayHeader';
 import { useColumnWidth } from '../../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
+import { WorkflowStepInspector } from '../../../../workflows/components/WorkflowStepInspector';
 
 type Props = {
   readonly session: Session;
@@ -78,6 +79,22 @@ export const AgentOverlay = ({
           />
           <div className="flex shrink-0 flex-col bg-background" style={{ width: inspectorWidth }}>
             <AgentInspector sessionId={sessionId} agentId={selectedAgentId} />
+          </div>
+        </>
+      ) : null}
+      {overlayHome === 'workflows' && selectedAgentId !== null ? (
+        <>
+          <ResizeHandle
+            value={inspectorWidth}
+            min={260}
+            max={560}
+            onChange={setInspectorWidth}
+            onReset={() => setInspectorWidth(320)}
+            side="right"
+            ariaLabel="resize workflow step inspector"
+          />
+          <div className="flex shrink-0 flex-col bg-background" style={{ width: inspectorWidth }}>
+            <WorkflowStepInspector session={session} agentId={selectedAgentId} />
           </div>
         </>
       ) : null}

@@ -114,12 +114,17 @@ describe('ChatWorkflowAdvance', () => {
     );
   });
 
-  it('hides the CTA while a step is still running', () => {
-    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'running'), agent(1, 'pending')] };
+  it('warns and confirms while the predecessor turn is still running', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    store.agentTurnState = { 'agent-0': { kind: 'running' } };
     renderStrip();
 
-    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
+    const cta = screen.getByTestId('workflow-next-step-cta');
+    expect(cta.className).toContain('border-warning');
+    fireEvent.click(cta);
     expect(store.activateWorkflowAgent).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'start anyway' }));
+    expect(store.activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
   });
 
   it('forces past a stuck step only after an explicit confirmation', () => {

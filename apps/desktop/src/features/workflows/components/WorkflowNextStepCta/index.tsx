@@ -118,7 +118,7 @@ export const WorkflowNextStepCta = ({
       </div>
     );
   }
-  if (!next || blockReason === 'turn-running') {
+  if (!next) {
     return null;
   }
   const stepVerbosity = next.verbosity;

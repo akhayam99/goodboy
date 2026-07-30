@@ -15,6 +15,7 @@ import type {
 
 const h = vi.hoisted(() => {
   const state: Record<string, unknown> = {};
+  const detachWorkflowFromSession = vi.fn(async () => undefined);
   const setPanelSectionExpanded = vi.fn((sessionId: string, section: string, expanded: boolean) => {
     const prev = (state.sessionPanelExpanded ?? {}) as Record<string, Record<string, boolean>>;
     state.sessionPanelExpanded = {
@@ -22,7 +23,7 @@ const h = vi.hoisted(() => {
       [sessionId]: { ...prev[sessionId], [section]: expanded },
     };
   });
-  return { state, setPanelSectionExpanded };
+  return { state, detachWorkflowFromSession, setPanelSectionExpanded };
 });
 
 vi.mock('../../../../../store', () => ({
@@ -70,6 +71,22 @@ vi.mock('@goodboy/ui', () => ({
           {option.label}
         </button>
       ))}
+    </div>
+  ),
+  InlineConfirm: ({
+    title,
+    confirmLabel,
+    onConfirm,
+  }: {
+    title: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  }) => (
+    <div>
+      <span>{title}</span>
+      <button type="button" onClick={onConfirm}>
+        {confirmLabel}
+      </button>
     </div>
   ),
 }));
@@ -139,9 +156,11 @@ vi.mock(
   () => ({ GoalAttachmentsStrip: () => null }),
 );
 vi.mock('../../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
+vi.mock('../../../../providers/components/CostBadge', () => ({ CostBadge: () => null }));
 
 vi.mock('../../../../../features/workflows/components/WorkflowNextStepCta', () => ({
   pickNextWorkflowStep: () => null,
+  WorkflowNextStepCta: () => null,
 }));
 vi.mock('../../../../../features/context/openQuestionsGate', () => ({
   workflowRunHasOpenQuestions: () => false,
@@ -221,10 +240,13 @@ function reset() {
     phaseTemplates: {},
     sessionWorkflows: {},
     discardWorkflow: vi.fn(),
+    detachWorkflowFromSession: h.detachWorkflowFromSession,
+    forceAdvanceWorkflowStep: vi.fn(),
     reorderSessionWorkflows: vi.fn(),
     setWorkflowRunAutoRun: vi.fn(),
     startWorkflowRun: vi.fn(),
     summarizerStatus: {},
+    agentTurnState: {},
     setPanelSectionExpanded: h.setPanelSectionExpanded,
     sessionPanelExpanded: {},
     workflowExpand: {},
@@ -406,6 +428,47 @@ describe('AgentsSection collapse defaults', () => {
 
     expect(screen.queryByTitle('1 agent reply to review')).not.toBeNull();
     expect(screen.queryByTitle('2 agent replies to review')).toBeNull();
+  });
+
+  it('deletes a workflow run through the store action', () => {
+    const runId = 'run-delete' as WorkflowRunId;
+    h.state.sessionWorkflows = {
+      [SESSION_ID]: [
+        {
+          id: 'wf-delete',
+          workspaceId: WS_ID,
+          name: 'delete me',
+          description: '',
+          steps: [],
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
+      ],
+    };
+
+    render(
+      <AgentsSection
+        task={buildSession({
+          workflowRuns: [
+            {
+              id: runId,
+              workflowId: 'wf-delete',
+              ordinal: 0,
+              currentStep: 0,
+              triggerMode: 'immediate',
+              autoRun: false,
+            } as never,
+          ],
+        })}
+        only="workflows"
+        workflowVariant="detail"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+    expect(h.detachWorkflowFromSession).toHaveBeenCalledWith(SESSION_ID, runId);
   });
 
   it('workflow unread badge excludes the currently-viewed selected child', () => {

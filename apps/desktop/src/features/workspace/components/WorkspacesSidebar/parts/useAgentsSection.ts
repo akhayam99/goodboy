@@ -69,6 +69,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const forceAdvanceWorkflowStep = useAppStore((s) => s.forceAdvanceWorkflowStep);
+  const detachWorkflowFromSession = useAppStore((s) => s.detachWorkflowFromSession);
   const renameAgent = useAppStore((s) => s.renameAgent);
   const attachedRuns = useAttachedWorkflowRuns({ session: task });
   const discardWorkflow = useAppStore((s) => s.discardWorkflow);
@@ -93,6 +94,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const workflowExpanded = useAppStore((s) => s.sessionPanelExpanded[task.id]?.workflow ?? true);
   const tree = useSessionAgentTree({ phaseRuns, selectedAgentId, isTaskActive });
+  const agentTurnState = useAppStore((s) => s.agentTurnState);
 
   const actionableStepIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -114,12 +116,15 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
         agents: tree.agentsByRunId.get(run.id) ?? EMPTY_ARRAY,
         hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
         isSummarizerRunning: summarizerBusy,
-        isTurnRunning: false,
+        isTurnRunning: (tree.agentsByRunId.get(run.id) ?? EMPTY_ARRAY).some((agent) => {
+          const turn = agentTurnState[agent.id];
+          return turn?.kind === 'running' || turn?.kind === 'starting';
+        }),
       });
       map.set(run.id, state.kind === 'blocked' ? state.reason : null);
     }
     return map;
-  }, [attachedRuns, tree.agentsByRunId, openQuestions, summarizerBusy]);
+  }, [attachedRuns, tree.agentsByRunId, openQuestions, summarizerBusy, agentTurnState]);
 
   const onDiscardWorkflow = useCallback(
     async (runId: WorkflowRunId) => {
@@ -130,6 +135,17 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
       }
     },
     [discardWorkflow, task.id],
+  );
+
+  const onDeleteWorkflow = useCallback(
+    async (runId: WorkflowRunId) => {
+      try {
+        await detachWorkflowFromSession(task.id, runId);
+      } catch (err) {
+        setSpawnError(formatError(err));
+      }
+    },
+    [detachWorkflowFromSession, task.id],
   );
 
   const onReorderWorkflow = useCallback(
@@ -238,6 +254,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     isTranscriptLoading: loading.transcript,
     metrics,
     onDiscardWorkflow,
+    onDeleteWorkflow,
     onPickAgent,
     onRenameCommit,
     onReorderWorkflow,

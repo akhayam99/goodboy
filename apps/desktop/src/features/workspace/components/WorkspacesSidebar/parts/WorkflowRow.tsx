@@ -28,6 +28,7 @@ import {
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
+import { WorkflowStepStrip } from '../../../../../features/workflows/components/WorkflowStepStrip';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
@@ -38,8 +39,8 @@ import { WorkflowStepRow } from './WorkflowStepRow';
 import { ScoutSubtree } from './ScoutSubtree';
 import { ClusterChildRow } from './ClusterChildRow';
 import { WorkflowKillButton } from './WorkflowKillButton';
+import { WorkflowDeleteButton } from './WorkflowDeleteButton';
 import { WorkflowRunStatus } from './WorkflowRunStatus';
-import { WorkflowStepRuns } from './WorkflowStepRuns';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -61,6 +62,7 @@ type Props = {
   readonly setWorkflowRunAutoRun: AppStore['setWorkflowRunAutoRun'];
   readonly onReorderWorkflow: (runId: WorkflowRunId, direction: 'up' | 'down') => Promise<void>;
   readonly onDiscardWorkflow: (runId: WorkflowRunId) => Promise<void>;
+  readonly onDeleteWorkflow: (runId: WorkflowRunId) => Promise<void>;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
@@ -102,6 +104,7 @@ export const WorkflowRow = ({
   setWorkflowRunAutoRun,
   onReorderWorkflow,
   onDiscardWorkflow,
+  onDeleteWorkflow,
   agentKindOverride,
   agentModelOverride,
   childrenByParentId,
@@ -245,7 +248,43 @@ export const WorkflowRow = ({
             ) : null}
           </button>
         )}
-        {!isDiscarded && !isCompleted && (
+        {isDetail ? (
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+            {isQueuedManual ? (
+              <button
+                type="button"
+                onClick={() => void startWorkflowRun(task.id, run.id)}
+                className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-success transition-colors hover:bg-success/15"
+              >
+                <Play size={14} aria-hidden />
+                Start
+              </button>
+            ) : null}
+            {!isDiscarded && !isCompleted ? (
+              <button
+                type="button"
+                onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                title={run.autoRun ? 'autorun on, click to pause' : 'autorun off, click to enable'}
+                aria-label={run.autoRun ? 'autorun on' : 'autorun off'}
+                aria-pressed={run.autoRun}
+                className={cn(
+                  'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold transition-colors',
+                  run.autoRun
+                    ? 'text-danger hover:bg-danger/15'
+                    : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
+                )}
+              >
+                {run.autoRun ? <Zap size={14} aria-hidden /> : <ZapOff size={14} aria-hidden />}
+                Autorun
+              </button>
+            ) : null}
+            {!isDiscarded ? (
+              <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
+            ) : null}
+            <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
+          </div>
+        ) : null}
+        {!isDetail && !isDiscarded && !isCompleted && (
           <div className="flex shrink-0 items-center">
             {isQueuedManual ? (
               <button
@@ -300,7 +339,7 @@ export const WorkflowRow = ({
             <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
           </div>
         )}
-        {!isDiscarded && isCompleted && (
+        {!isDetail && !isDiscarded && isCompleted && (
           <div className="flex shrink-0 items-center">
             <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
           </div>
@@ -317,139 +356,119 @@ export const WorkflowRow = ({
       ) : null}
       {expanded ? (
         wfAgents.length > 0 ? (
-          <div
-            className={cn(
-              'flex flex-col gap-1 pb-1',
-              isDetail ? null : forceExpanded ? 'pl-1' : 'pl-3',
-            )}
-          >
-            {wfAgents.map((run, index) => {
-              const isActionable = run.stepId === actionableStepId && run.status === 'pending';
-              const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
-              const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
-              const stepModel = step?.modelOverride;
-              const resolvedModel =
-                stepModel ??
-                agentModelOverride[run.id] ??
-                run.modelOverride ??
-                kindRouting({ kind, roleModels }).model;
-              const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
-              const clustersExpanded = clusterExpand.get(run.id) ?? false;
-              const clusterUnread = countUnread(clusterChildren);
-              return (
-                <Fragment key={run.id}>
-                  <WorkflowStepRow
-                    run={run}
-                    kind={kind}
-                    index={index}
-                    step={step}
-                    showBrief={isDetail}
-                    detailContent={
-                      !isDetail || clusterChildren.length === 0 ? null : kind === 'scout' ? (
-                        <ScoutSubtree
-                          containerId={run.id}
-                          depth={0}
-                          childrenByParentId={childrenByParentId}
-                          aggregatesByAgentId={aggregatesByAgentId}
-                          selectedAgentId={selectedAgentId}
-                          isTaskActive={isTaskActive}
-                          expandState={clusterExpand}
-                          onToggle={toggleClusterExpand}
-                          onSelect={onPickAgent}
-                          variant="detail"
-                        />
-                      ) : (
-                        <WorkflowStepRuns
-                          run={run}
-                          agents={clusterChildren}
-                          isExpanded={clustersExpanded}
-                          unreadCount={clusterUnread}
-                          aggregatesByAgentId={aggregatesByAgentId}
-                          selectedAgentId={selectedAgentId}
-                          isTaskActive={isTaskActive}
-                          onToggle={() => toggleClusterExpand(run.id)}
-                          onSelect={onPickAgent}
-                        />
-                      )
-                    }
-                    resolvedModel={resolvedModel}
-                    isActionable={isActionable}
-                    blockReason={isActionable ? wfBlockReason : null}
-                    isSelected={run.id === selectedAgentId}
-                    isTaskActive={isTaskActive}
-                    isEditing={editingId === run.id}
-                    telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
-                    aggregate={aggregatesByAgentId.get(run.id) ?? null}
-                    contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
-                    turns={turnsByAgentId.get(run.id) ?? 0}
-                    turnsLoading={run.id === selectedAgentId && isTranscriptLoading}
-                    onStart={() => void onStartStepAgent(run)}
-                    onSelect={() => onPickAgent(run.id)}
-                    onRenameStart={() => setEditingId(run.id)}
-                    onRenameCommit={(name) => void onRenameCommit(run.id, name)}
-                    onRenameCancel={() => setEditingId(null)}
-                    onResolveFirst={() => onResolveFirstForRun(workflowRun)}
-                  />
-                  {isDetail || clusterChildren.length === 0 ? null : kind === 'scout' ? (
-                    <ScoutSubtree
-                      containerId={run.id}
-                      depth={0}
-                      childrenByParentId={childrenByParentId}
-                      aggregatesByAgentId={aggregatesByAgentId}
-                      selectedAgentId={selectedAgentId}
+          isDetail ? (
+            <WorkflowStepStrip
+              workflow={workflow}
+              runs={wfAgents}
+              childrenByParentId={childrenByParentId}
+              agentKindOverride={agentKindOverride}
+              agentModelOverride={agentModelOverride}
+              roleModels={roleModels}
+              selectedAgentId={selectedAgentId}
+              onSelect={onPickAgent}
+            />
+          ) : (
+            <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
+              {wfAgents.map((run, index) => {
+                const isActionable = run.stepId === actionableStepId && run.status === 'pending';
+                const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
+                const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
+                const stepModel = step?.modelOverride;
+                const resolvedModel =
+                  stepModel ??
+                  agentModelOverride[run.id] ??
+                  run.modelOverride ??
+                  kindRouting({ kind, roleModels }).model;
+                const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
+                const clustersExpanded = clusterExpand.get(run.id) ?? false;
+                const clusterUnread = countUnread(clusterChildren);
+                return (
+                  <Fragment key={run.id}>
+                    <WorkflowStepRow
+                      run={run}
+                      kind={kind}
+                      index={index}
+                      step={step}
+                      resolvedModel={resolvedModel}
+                      isActionable={isActionable}
+                      blockReason={isActionable ? wfBlockReason : null}
+                      isSelected={run.id === selectedAgentId}
                       isTaskActive={isTaskActive}
-                      expandState={clusterExpand}
-                      onToggle={toggleClusterExpand}
-                      onSelect={onPickAgent}
+                      isEditing={editingId === run.id}
+                      telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
+                      aggregate={aggregatesByAgentId.get(run.id) ?? null}
+                      contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
+                      turns={turnsByAgentId.get(run.id) ?? 0}
+                      turnsLoading={run.id === selectedAgentId && isTranscriptLoading}
+                      onStart={() => void onStartStepAgent(run)}
+                      onSelect={() => onPickAgent(run.id)}
+                      onRenameStart={() => setEditingId(run.id)}
+                      onRenameCommit={(name) => void onRenameCommit(run.id, name)}
+                      onRenameCancel={() => setEditingId(null)}
+                      onResolveFirst={() => onResolveFirstForRun(workflowRun)}
                     />
-                  ) : (
-                    <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleClusterExpand(run.id)}
-                        aria-expanded={clustersExpanded}
-                        aria-label={`${clustersExpanded ? 'collapse' : 'expand'} clusters for ${run.name}`}
-                        className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50 transition-colors hover:text-muted-foreground"
-                      >
-                        {clustersExpanded ? (
-                          <ChevronDown size={10} aria-hidden className="shrink-0" />
-                        ) : (
-                          <ChevronRight size={10} aria-hidden className="shrink-0" />
-                        )}
-                        <span className="min-w-0 truncate">
-                          clusters {clusterChildren.filter((c) => c.status === 'completed').length}/
-                          {clusterChildren.length}
-                        </span>
-                        {!clustersExpanded && clusterUnread > 0 ? (
-                          <span
-                            className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
-                            title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
-                          >
-                            <span aria-hidden className="size-1 rounded-full bg-warning" />
-                            {clusterUnread}
+                    {clusterChildren.length === 0 ? null : kind === 'scout' ? (
+                      <ScoutSubtree
+                        containerId={run.id}
+                        depth={0}
+                        childrenByParentId={childrenByParentId}
+                        aggregatesByAgentId={aggregatesByAgentId}
+                        selectedAgentId={selectedAgentId}
+                        isTaskActive={isTaskActive}
+                        expandState={clusterExpand}
+                        onToggle={toggleClusterExpand}
+                        onSelect={onPickAgent}
+                      />
+                    ) : (
+                      <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleClusterExpand(run.id)}
+                          aria-expanded={clustersExpanded}
+                          aria-label={`${clustersExpanded ? 'collapse' : 'expand'} clusters for ${run.name}`}
+                          className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+                        >
+                          {clustersExpanded ? (
+                            <ChevronDown size={10} aria-hidden className="shrink-0" />
+                          ) : (
+                            <ChevronRight size={10} aria-hidden className="shrink-0" />
+                          )}
+                          <span className="min-w-0 truncate">
+                            clusters{' '}
+                            {clusterChildren.filter((c) => c.status === 'completed').length}/
+                            {clusterChildren.length}
                           </span>
-                        ) : null}
-                      </button>
-                      {clustersExpanded
-                        ? clusterChildren.map((child, ci) => (
-                            <ClusterChildRow
-                              key={child.id}
-                              child={child}
-                              index={ci}
-                              total={clusterChildren.length}
-                              costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
-                              isSelected={child.id === selectedAgentId}
-                              isTaskActive={isTaskActive}
-                              onSelect={() => onPickAgent(child.id)}
-                            />
-                          ))
-                        : null}
-                    </div>
-                  )}
-                </Fragment>
-              );
-            })}
-          </div>
+                          {!clustersExpanded && clusterUnread > 0 ? (
+                            <span
+                              className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
+                              title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
+                            >
+                              <span aria-hidden className="size-1 rounded-full bg-warning" />
+                              {clusterUnread}
+                            </span>
+                          ) : null}
+                        </button>
+                        {clustersExpanded
+                          ? clusterChildren.map((child, ci) => (
+                              <ClusterChildRow
+                                key={child.id}
+                                child={child}
+                                index={ci}
+                                total={clusterChildren.length}
+                                costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
+                                isSelected={child.id === selectedAgentId}
+                                isTaskActive={isTaskActive}
+                                onSelect={() => onPickAgent(child.id)}
+                              />
+                            ))
+                          : null}
+                      </div>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </div>
+          )
         ) : (
           <p className={cn('pb-1 text-2xs text-muted-foreground/60', !isDetail && 'pl-3')}>
             No agents yet for this workflow.

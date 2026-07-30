@@ -92,6 +92,7 @@ export const AgentsSection = ({
                 setWorkflowRunAutoRun={section.setWorkflowRunAutoRun}
                 onReorderWorkflow={section.onReorderWorkflow}
                 onDiscardWorkflow={section.onDiscardWorkflow}
+                onDeleteWorkflow={section.onDeleteWorkflow}
                 agentKindOverride={section.agentKindOverride}
                 agentModelOverride={section.agentModelOverride}
                 childrenByParentId={section.childrenByParentId}

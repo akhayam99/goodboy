@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -122,12 +122,14 @@ type RenderParams = {
   readonly runOverride?: WorkflowRun;
   readonly childrenByParentId?: ReadonlyMap<string, Agent[]>;
   readonly clusterExpand?: ReadonlyMap<string, boolean>;
+  readonly onDeleteWorkflow?: (runId: WorkflowRunId) => Promise<void>;
 };
 
 const renderDetail = ({
   runOverride = run,
   childrenByParentId = new Map(),
   clusterExpand = new Map(),
+  onDeleteWorkflow = vi.fn(async () => undefined),
 }: RenderParams = {}) =>
   render(
     <WorkflowRow
@@ -150,6 +152,7 @@ const renderDetail = ({
       setWorkflowRunAutoRun={vi.fn(async () => undefined)}
       onReorderWorkflow={vi.fn(async () => undefined)}
       onDiscardWorkflow={vi.fn(async () => undefined)}
+      onDeleteWorkflow={onDeleteWorkflow}
       agentKindOverride={{}}
       agentModelOverride={{}}
       childrenByParentId={childrenByParentId}
@@ -224,45 +227,19 @@ describe('WorkflowRow detail dashboard', () => {
 
     const goal = screen.getByRole('region', { name: 'what you asked for' });
     const attachments = screen.getByTestId('goal-attachments');
-    const firstStep = screen.getByTestId(`step-${agents[0]!.id}`);
+    const steps = screen.getByTestId('workflow-step-strip');
 
     expect(goal.compareDocumentPosition(attachments)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(attachments.compareDocumentPosition(firstStep)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(attachments.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('places non-scout runs inside the owning step without an indented rail', () => {
-    const child = {
-      ...agents[1]!,
-      id: 'cluster-1' as AgentId,
-      name: 'Plan run',
-      status: 'completed',
-      parentAgentId: agents[1]!.id,
-    } as Agent;
-    renderDetail({
-      childrenByParentId: new Map([[agents[1]!.id, [child]]]),
-    });
+  it('deletes the workflow run after confirmation', () => {
+    const onDeleteWorkflow = vi.fn(async () => undefined);
+    renderDetail({ onDeleteWorkflow });
 
-    const stepRow = screen.getByTestId(`step-${agents[1]!.id}`);
-    const runs = within(stepRow).getByRole('button', { name: 'expand runs for Plan' });
-    expect(runs).toBeDefined();
-    expect(within(stepRow).getByText('Runs (1/1)')).toBeDefined();
-    expect(stepRow.contains(runs)).toBe(true);
-    expect(stepRow.querySelector('.ml-3')).toBeNull();
-    expect(stepRow.querySelector('.border-l')).toBeNull();
-  });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
-  it('places scout subtrees inside the owning step in detail mode', () => {
-    const child = {
-      ...agents[0]!,
-      id: 'scout-child-1' as AgentId,
-      name: 'Scout run',
-      parentAgentId: agents[0]!.id,
-    } as Agent;
-    renderDetail({
-      childrenByParentId: new Map([[agents[0]!.id, [child]]]),
-    });
-
-    const stepRow = screen.getByTestId(`step-${agents[0]!.id}`);
-    expect(within(stepRow).getByTestId('scout-subtree-detail')).toBeDefined();
+    expect(onDeleteWorkflow).toHaveBeenCalledWith(RUN_ID);
   });
 });
