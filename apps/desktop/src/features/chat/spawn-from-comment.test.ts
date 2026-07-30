@@ -203,4 +203,52 @@ describe('spawn-from-comment', () => {
       'Every review thread id above must receive exactly one marker',
     );
   });
+
+  it('keeps the omitted and explicit fix-mode combined prompts byte-identical', () => {
+    const threads = [
+      { head: makeComment({ threadId: 'PRRT_1' }), replies: [] },
+      { head: makeComment({ id: 'review-2', threadId: 'PRRT_2' }), replies: [] },
+    ];
+    const omitted = buildCombinedCommentAgentArgs(threads, PR).initialPrompt;
+    const explicit = buildCombinedCommentAgentArgs(threads, PR, {
+      mode: 'fix',
+      hint: '  ',
+    }).initialPrompt;
+    expect(omitted).toBe(explicit);
+    expect(omitted).not.toContain('Operator notes');
+    expect(omitted).not.toContain('Analysis mode');
+  });
+
+  it('appends the read-only analysis contract to the combined prompt in analyze mode', () => {
+    const args = buildCombinedCommentAgentArgs(
+      [
+        { head: makeComment({ threadId: 'PRRT_1' }), replies: [] },
+        { head: makeComment({ id: 'review-2', threadId: 'PRRT_2' }), replies: [] },
+      ],
+      PR,
+      { mode: 'analyze' },
+    );
+    expect(args.mode).toBe('analyze');
+    expect(args.initialPrompt).toContain('Analyze all 2 review threads together in one pass.');
+    expect(args.initialPrompt).toContain('Analysis mode: do not modify or commit any file.');
+    expect(args.initialPrompt).toContain(
+      'summary must be one paragraph of plain text with no double quotes',
+    );
+  });
+
+  it('appends trimmed operator notes to the combined prompt', () => {
+    const args = buildCombinedCommentAgentArgs(
+      [
+        { head: makeComment({ threadId: 'PRRT_1' }), replies: [] },
+        { head: makeComment({ id: 'review-2', threadId: 'PRRT_2' }), replies: [] },
+      ],
+      PR,
+      { hint: '  Use the existing helper.\nAvoid schema changes.  ' },
+    );
+    expect(args.mode).toBeUndefined();
+    expect(args.initialPrompt).toContain(
+      'Operator notes:\nUse the existing helper.\nAvoid schema changes.',
+    );
+    expect(args.initialPrompt.endsWith('Avoid schema changes.')).toBe(true);
+  });
 });

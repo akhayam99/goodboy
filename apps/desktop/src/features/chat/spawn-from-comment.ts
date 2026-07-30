@@ -107,11 +107,14 @@ export type CommentAgentArgs = {
 export const buildCombinedCommentAgentPrompt = (
   comments: ReadonlyArray<CommentThread>,
   pr: PullRequestState,
+  choice: ResolveModelChoice = {},
 ): string => {
+  const mode = choice.mode ?? 'fix';
+  const verb = mode === 'analyze' ? 'Analyze' : 'Fix';
   const lines: Array<string> = [
     `Context: PR #${pr.number} on branch \`${pr.headBranch}\`.`,
     '',
-    `Fix all ${comments.length} review threads together in one pass.`,
+    `${verb} all ${comments.length} review threads together in one pass.`,
   ];
   for (const [index, thread] of comments.entries()) {
     const comment = thread.head;
@@ -145,6 +148,23 @@ export const buildCombinedCommentAgentPrompt = (
     '<<comment-reply id="PRRT_...">>your answer for that thread<</comment-reply>>',
     'A block is posted only on the thread whose id it names, so never reuse one answer for several ids.',
   );
+  if (mode === 'analyze') {
+    lines.push('');
+    lines.push('Analysis mode: do not modify or commit any file.');
+    lines.push('Investigate every thread and produce a short analysis for each.');
+    lines.push('Decide for each thread whether it is worth fixing.');
+    lines.push(
+      'Use the <<comment-analysis threadId="PRRT_..." verdict="fix" summary="...">> marker for every thread, never <<comment-resolved>>.',
+    );
+    lines.push('Use verdict="wontfix" instead when a thread is not worth fixing.');
+    lines.push('The summary must be one paragraph of plain text with no double quotes.');
+  }
+  const operatorNotes = (choice.hint ?? '').trim();
+  if (operatorNotes.length > 0) {
+    lines.push('');
+    lines.push('Operator notes:');
+    lines.push(operatorNotes);
+  }
   return lines.join('\n');
 };
 
@@ -161,16 +181,18 @@ export const buildCombinedCommentAgentArgs = (
   const sourceThreadIds = threads.flatMap((thread) =>
     thread.head.threadId != null ? [thread.head.threadId] : [],
   );
+  const mode = choice.mode ?? 'fix';
   return {
     name: `resolve: ${threads.length} review threads`,
     kind: 'resolver',
     model: choice.model ?? defaults.model,
     ...(choice.provider !== undefined && { provider: choice.provider }),
     effort: choice.effort ?? defaults.effort,
-    initialPrompt: buildCombinedCommentAgentPrompt(threads, pr),
+    initialPrompt: buildCombinedCommentAgentPrompt(threads, pr, choice),
     sourceThreadIds,
     sourceCommentUrl: first.head.url,
     sourceKind: 'review_comment',
+    ...(mode !== 'fix' && { mode }),
   };
 };
 
