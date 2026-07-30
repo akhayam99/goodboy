@@ -25,6 +25,8 @@ type Props = {
   readonly children?: ReactNode;
   readonly onOpen: () => void;
   readonly onRenameStart?: () => void;
+  readonly onMouseEnter?: () => void;
+  readonly onMouseLeave?: () => void;
 };
 
 export const AgentCard = ({
@@ -43,6 +45,8 @@ export const AgentCard = ({
   children,
   onOpen,
   onRenameStart,
+  onMouseEnter,
+  onMouseLeave,
 }: Props) => (
   <li
     role={isInert ? undefined : 'button'}
@@ -51,6 +55,8 @@ export const AgentCard = ({
     aria-pressed={isInert ? undefined : isSelected}
     onClick={isInert ? undefined : onOpen}
     onDoubleClick={isInert || onRenameStart == null ? undefined : onRenameStart}
+    onMouseEnter={onMouseEnter}
+    onMouseLeave={onMouseLeave}
     onKeyDown={(event) => {
       if (isInert) {
         return;

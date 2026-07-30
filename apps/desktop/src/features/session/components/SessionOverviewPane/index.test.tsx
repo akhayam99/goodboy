@@ -24,6 +24,7 @@ type Store = {
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   selectAgent: ReturnType<typeof vi.fn>;
+  markAllAgentsSeen: ReturnType<typeof vi.fn>;
   loadPendingResolutions: ReturnType<typeof vi.fn>;
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
@@ -55,6 +56,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     setFocusedWorkflowRun: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
+    markAllAgentsSeen: vi.fn(async () => undefined),
     loadPendingResolutions: vi.fn(async () => undefined),
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
@@ -81,7 +83,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
-  agentHasUnread: () => false,
+  agentHasUnread: (agent: { hasUnread?: boolean }) => agent.hasUnread === true,
   useAppStore: <T,>(selector: (s: Store) => T) => selector(store),
   useCurrentWorkspace: () => hooks.workspace,
   useNonResolverStandaloneAgents: () =>
@@ -224,6 +226,8 @@ beforeEach(() => {
   store.activateWorkflowAgent.mockResolvedValue(undefined);
   store.selectAgent.mockReset();
   store.selectAgent.mockResolvedValue(undefined);
+  store.markAllAgentsSeen.mockReset();
+  store.markAllAgentsSeen.mockResolvedValue(undefined);
   store.loadPendingResolutions.mockReset();
   store.loadPendingResolutions.mockResolvedValue(undefined);
   store.phaseTemplates = {};
@@ -259,6 +263,17 @@ describe('SessionOverviewPane header meta (cluster A)', () => {
   it('falls back to Untitled session when the goal is blank', () => {
     renderPane(baseSession({ goal: '' }));
     expect(screen.getByRole('heading', { name: /untitled session/i })).toBeDefined();
+  });
+
+  it('shows the bulk seen action only for unread agents and clears the session', () => {
+    store.sessionPhaseRuns = {
+      'sess-1': [{ ...standaloneAgent('completed'), hasUnread: true }],
+    };
+    renderPane();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark all seen' }));
+
+    expect(store.markAllAgentsSeen).toHaveBeenCalledWith('sess-1');
   });
 
   it('shows the branch chip, cost chip, summarizer and session age', () => {

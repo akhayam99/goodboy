@@ -14,6 +14,7 @@ import { WorkflowStepBrief } from './WorkflowStepBrief';
 import { WorkflowStepPlanBadge } from './WorkflowStepPlanBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../../workflows/blockCopy';
+import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
 
 type Props = {
   readonly run: Agent;
@@ -71,6 +72,11 @@ export const WorkflowStepRow = ({
   const isStartable = isActionable && !isBlocked;
   const isRunning = run.status === 'running';
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
+  const hoverMarkViewed = useHoverMarkViewed({
+    sessionId: run.sessionId,
+    agentId: run.id,
+    hasUnread,
+  });
   const promptPrefix = step?.promptPrefix.trim() ?? '';
   const expectedOutput = step?.expectedOutput?.trim() ?? '';
   const outputSummary = run.outputSummary?.trim() ?? '';
@@ -166,7 +172,12 @@ export const WorkflowStepRow = ({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className={containerClass} data-testid="workflow-step-card">
+      <div
+        className={containerClass}
+        data-testid="workflow-step-card"
+        onMouseEnter={hoverMarkViewed.onMouseEnter}
+        onMouseLeave={hoverMarkViewed.onMouseLeave}
+      >
         <div
           role={isPendingFuture ? undefined : 'button'}
           tabIndex={isEditing || isPendingFuture ? -1 : 0}

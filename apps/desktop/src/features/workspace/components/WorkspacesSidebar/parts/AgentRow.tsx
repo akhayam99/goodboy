@@ -18,6 +18,7 @@ import {
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetrics';
 import { AgentLastUpdate } from '../../../../../shared/components/AgentLastUpdate';
+import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 const ACTIONS_CLASS = 'w-20';
 
@@ -89,12 +90,18 @@ export const AgentRow = ({
   ].filter((part): part is string => part !== null);
   const isMarkDoneAvailable =
     onMarkDone !== undefined && run.status !== 'running' && run.doneAt == null;
+  const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
+  const hoverMarkViewed = useHoverMarkViewed({
+    sessionId: run.sessionId,
+    agentId: run.id,
+    hasUnread,
+  });
 
   return (
     <AgentCard
       tone={agentCardTone({
         isRunning: run.status === 'running',
-        hasUnread: agentHasUnread(run, isSelected && isTaskActive),
+        hasUnread,
       })}
       isSelected={isSelected}
       isInspected={isInspected}
@@ -103,6 +110,8 @@ export const AgentRow = ({
       rowTitle={titleParts.join('\n')}
       onOpen={onClick}
       onRenameStart={onRenameStart}
+      onMouseEnter={hoverMarkViewed.onMouseEnter}
+      onMouseLeave={hoverMarkViewed.onMouseLeave}
       leading={
         <>
           <span

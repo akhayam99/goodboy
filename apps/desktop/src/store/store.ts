@@ -329,6 +329,8 @@ export type AppActions = {
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   deselectAgent(sessionId: SessionId): void;
   markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  markAgentSeen(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  markAllAgentsSeen(sessionId: SessionId): Promise<void>;
   setAgentDone(sessionId: SessionId, agentId: AgentId): Promise<void>;
   clearAgentDone(sessionId: SessionId, agentId: AgentId): Promise<void>;
   spawnAgent(
