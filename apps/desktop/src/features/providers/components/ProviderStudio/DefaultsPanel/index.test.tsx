@@ -107,12 +107,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const TASK_LABELS = [
-  'Summaries',
-  'Branch names',
-  'Planning',
-  'Agent titles',
+  'Step summaries',
+  'Branch naming',
+  'Plan drafting',
+  'Agent naming',
+  'Workflow orchestrator',
   'PR and MR drafts',
-  'Rebase agent',
+  'Rebase',
 ];
 
 const openRolesTab = () => fireEvent.click(screen.getByRole('tab', { name: /Agent roles/ }));
@@ -160,12 +161,9 @@ describe('DefaultsPanel', () => {
   it('renders every task model row', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('Summaries')).toBeDefined();
-    expect(screen.getByText('Branch names')).toBeDefined();
-    expect(screen.getByText('Planning')).toBeDefined();
-    expect(screen.getByText('Agent titles')).toBeDefined();
-    expect(screen.getByText('PR and MR drafts')).toBeDefined();
-    expect(screen.getByText('Rebase agent')).toBeDefined();
+    for (const label of TASK_LABELS) {
+      expect(screen.getByText(label)).toBeDefined();
+    }
   });
 
   it('shows the resolved model for automatic task preferences, never the word auto', () => {
@@ -173,11 +171,11 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        label === 'Rebase agent' ? 'sonnet-4.6' : 'haiku-4.5',
+        label === 'Rebase' ? 'sonnet-4.6' : 'haiku-4.5',
       );
     }
     expect(screen.queryByText(/auto/)).toBeNull();
-    expect(screen.getByLabelText('Summaries routing status: default')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: default')).toBeDefined();
 
     openRolesTab();
     expect(screen.getByLabelText('Planner routing status: default')).toBeDefined();
@@ -186,8 +184,8 @@ describe('DefaultsPanel', () => {
   it('marks a task override as custom and resets it to default', async () => {
     const { rerender } = render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByLabelText('Summaries routing status: default')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Summaries routing model' }));
+    expect(screen.getByLabelText('Step summaries routing status: default')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing model' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
@@ -199,7 +197,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Summaries routing status: custom')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: custom')).toBeDefined();
     const reset = screen.getByRole('button', { name: 'Reset to default' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);
@@ -210,7 +208,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Summaries routing status: default')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: default')).toBeDefined();
   });
 
   it('renders a row per agent role', () => {
@@ -325,10 +323,10 @@ describe('DefaultsPanel', () => {
   it('keeps provider changes local while automatic is selected', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Summaries routing provider' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing provider' }));
 
     expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
-    const modelPicker = screen.getByRole('button', { name: 'Summaries routing model' });
+    const modelPicker = screen.getByRole('button', { name: 'Step summaries routing model' });
 
     fireEvent.click(modelPicker);
 
@@ -347,7 +345,7 @@ describe('DefaultsPanel', () => {
 
     expect(screen.getByText('Default provider')).toBeDefined();
     expect(screen.getByText('Routing pool')).toBeDefined();
-    expect(screen.getByText('Summaries')).toBeDefined();
+    expect(screen.getByText('Step summaries')).toBeDefined();
     expect(screen.queryByText('Scout')).toBeNull();
 
     openRolesTab();

@@ -1,4 +1,5 @@
 import type {
+  AnthropicModel,
   CatalogModel,
   CursorModel,
   EffortAxis,
@@ -8,7 +9,9 @@ import type {
   ToggleAxis,
   VariantAxis,
 } from '@goodboy/types';
+import { ANTHROPIC_CATALOG } from './claude/catalog';
 import { resolveCursorCombo } from './cursorCombo';
+import { EFFORT_ORDER } from './effortOrder';
 
 const CURSOR_EFFORT_ORDER = [
   'low',
@@ -17,6 +20,12 @@ const CURSOR_EFFORT_ORDER = [
   'xhigh',
   'max',
 ] satisfies ReadonlyArray<EffortLevel>;
+
+const ANTHROPIC_MODELS: ReadonlyArray<AnthropicModel> = ANTHROPIC_CATALOG;
+
+const ANTHROPIC_EFFORT_ORDER: ReadonlyArray<EffortLevel> = EFFORT_ORDER.filter((level) =>
+  ANTHROPIC_MODELS.some((candidate) => candidate.efforts.includes(level)),
+);
 
 type Params = {
   readonly model: CatalogModel;
@@ -120,8 +129,13 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
   switch (model.provider) {
     case 'anthropic':
       return {
-        effort:
-          model.efforts.length > 0 ? effortAxis({ label: 'Effort', efforts: model.efforts }) : null,
+        effort: {
+          label: 'Effort',
+          levels: ANTHROPIC_EFFORT_ORDER.map((level) => ({
+            level,
+            available: model.efforts.includes(level),
+          })),
+        },
         variant: null,
         toggles: [],
         requiresMaxMode: false,

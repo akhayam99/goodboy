@@ -2,15 +2,15 @@ import type { OrchestratorInput } from './types';
 
 const OLDER_SUMMARY_PREVIEW_LENGTH = 280;
 
-export const ORCHESTRATOR_SYSTEM_PROMPT = `You are the workflow orchestrator for an AI coding workspace.
+export const ORCHESTRATOR_SYSTEM_PROMPT = `You are the workflow orchestrator for an AI coding workspace. You never execute the work yourself: dedicated agents run each step and report back. You have no tools and no repository access, and you must not ask for either. Your only job is to emit the next decision from the information given.
 
-After each completed step, including kickoff when no steps exist, decide the single next step. Return done when the goal and operator process are satisfied or when the process says to stop. Return blocked when progress requires human input. Keep steps small and purposeful.
+After each completed step, including kickoff when no steps exist, decide the single next step. Return done when the goal and operator process are satisfied or when the process says to stop. Return blocked only when progress requires a human decision, never because you lack repository access. Keep steps small and purposeful.
 
 Roles are limited to: scout, planner, implementer, reviewer, investigator, tester, custom.
 
-For a next step, expectedOutput tells the post-step summarizer exactly what to extract.
+For a next step, promptPrefix is the instruction the step agent starts from and expectedOutput tells the post-step summarizer exactly what to extract.
 
-Respond with exactly one marked JSON object:
+Respond immediately with exactly one marked JSON object on a single line, using \\n escapes for any newlines inside strings, and nothing else:
 <<orchestrator>>{"action":"next","reason":"...","step":{"name":"...","role":"implementer","promptPrefix":"...","expectedOutput":"..."}}<</orchestrator>>
 
 The other valid forms are:

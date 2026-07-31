@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import type { SessionId } from '@goodboy/types';
 
 const { state, toastMock } = vi.hoisted(() => ({
@@ -22,9 +23,19 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 vi.mock('../../../../shared/components/OverflowMenu', () => ({
-  OverflowMenu: ({ label, triggerClassName }: { label: string; triggerClassName: string }) => (
-    <button type="button" aria-label={label} className={triggerClassName}>
-      menu
+  OverflowMenu: ({
+    label,
+    triggerClassName,
+    trigger,
+    side,
+  }: {
+    label: string;
+    triggerClassName: string;
+    trigger: ReactNode;
+    side?: string;
+  }) => (
+    <button type="button" aria-label={label} className={triggerClassName} data-side={side}>
+      {trigger}
     </button>
   ),
 }));
@@ -44,9 +55,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('EditorMenu', () => {
-  it('renders the open-worktree trigger at footer icon weight', () => {
+  it('renders the open-worktree trigger with a visible Open label opening upward', () => {
     render(<EditorMenu sessionId={'sess-1' as SessionId} />);
-    expect(screen.getByRole('button', { name: /open worktree/i }).className).toContain('size-6');
+    const trigger = screen.getByRole('button', { name: /open worktree/i });
+    expect(trigger.textContent).toContain('Open');
+    expect(trigger.getAttribute('data-side')).toBe('top');
   });
 
   it('loads detected editors once when none are known yet', () => {

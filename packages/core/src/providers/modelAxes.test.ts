@@ -68,12 +68,34 @@ describe('modelAxes', () => {
     });
   });
 
-  it('omits effort for anthropic models without authored efforts', () => {
+  it('marks unsupported anthropic effort levels as unavailable instead of hiding them', () => {
+    const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'sonnet-4.6');
+    if (model == null) {
+      throw new Error('missing anthropic sonnet-4.6');
+    }
+    expect(modelAxes({ model, selection: { key: model.key } }).effort?.levels).toEqual([
+      { level: 'low', available: true },
+      { level: 'medium', available: true },
+      { level: 'high', available: true },
+      { level: 'xhigh', available: false },
+      { level: 'max', available: false },
+    ]);
+  });
+
+  it('renders a fully unavailable effort row for anthropic models without authored efforts', () => {
     const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'haiku-4.5');
     if (model == null) {
       throw new Error('missing anthropic haiku-4.5');
     }
-    expect(modelAxes({ model, selection: { key: model.key } }).effort).toBeNull();
+    const axes = modelAxes({ model, selection: { key: model.key } });
+    expect(axes.effort?.levels.map((entry) => entry.level)).toEqual([
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+    ]);
+    expect(axes.effort?.levels.every((entry) => entry.available === false)).toBe(true);
   });
 
   it('reports Max Mode from the resolved cursor combo', () => {

@@ -4,7 +4,7 @@ export type OrchestratorStep = {
   readonly name: string;
   readonly role: AgentRole;
   readonly promptPrefix: string;
-  readonly expectedOutput: string;
+  readonly expectedOutput?: string;
 };
 
 export type OrchestratorDecision =

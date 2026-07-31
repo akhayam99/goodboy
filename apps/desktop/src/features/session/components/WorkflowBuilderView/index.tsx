@@ -160,6 +160,21 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
 
 const PLANNER_EFFORT: EffortLevel = defaultsForRole('planner').effort;
 
+export const uniqueWorkflowName = (
+  requested: string,
+  existing: ReadonlyArray<Workflow>,
+): string => {
+  const names = new Set(existing.filter((t) => !t.deletedAt).map((t) => t.name));
+  if (!names.has(requested)) {
+    return requested;
+  }
+  let suffix = 2;
+  while (names.has(`${requested} ${suffix}`)) {
+    suffix += 1;
+  }
+  return `${requested} ${suffix}`;
+};
+
 type Stage = 0 | 1 | 2;
 
 const SECTION_LABEL_CLS =
@@ -637,12 +652,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       }
       const now = new Date().toISOString() as Workflow['createdAt'];
       const workflowId = `wf_builder_${crypto.randomUUID()}` as WorkflowId;
-      const name =
+      const name = uniqueWorkflowName(
         mode === 'custom'
           ? (plan?.workflowName ?? 'Custom workflow')
           : mode === 'dynamic'
             ? 'Orchestrated workflow'
-            : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow');
+            : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow'),
+        phaseTemplates,
+      );
       const description =
         mode === 'custom'
           ? (plan?.reasoning ?? '')

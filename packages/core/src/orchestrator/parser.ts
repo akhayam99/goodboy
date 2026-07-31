@@ -18,6 +18,63 @@ const nonEmptyString = (value: unknown): string | null => {
   return value.trim();
 };
 
+const stripCodeFences = (value: string): string =>
+  value
+    .replace(/^```[a-z]*\s*/i, '')
+    .replace(/```\s*$/, '')
+    .trim();
+
+const escapeControlCharsInStrings = (value: string): string => {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+  for (const char of value) {
+    if (inString && !escaped && (char === '\n' || char === '\r' || char === '\t')) {
+      result += char === '\n' ? '\\n' : char === '\r' ? '\\r' : '\\t';
+      continue;
+    }
+    if (escaped) {
+      escaped = false;
+    } else if (char === '\\') {
+      escaped = true;
+    } else if (char === '"') {
+      inString = !inString;
+    }
+    result += char;
+  }
+  return result;
+};
+
+const parseJson = (value: string): unknown | null => {
+  const candidate = stripCodeFences(value);
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    try {
+      return JSON.parse(escapeControlCharsInStrings(candidate));
+    } catch {
+      return null;
+    }
+  }
+};
+
+const decisionSlice = (raw: string): string | null => {
+  const start = raw.indexOf(START_MARKER);
+  if (start < 0) {
+    return null;
+  }
+  const contentStart = start + START_MARKER.length;
+  const end = raw.indexOf(END_MARKER, contentStart);
+  if (end >= 0) {
+    return raw.slice(contentStart, end).trim();
+  }
+  const lastBrace = raw.lastIndexOf('}');
+  if (lastBrace <= contentStart) {
+    return null;
+  }
+  return raw.slice(contentStart, lastBrace + 1).trim();
+};
+
 const parseStep = (value: unknown): OrchestratorStep | null => {
   const step = asRecord(value);
   if (step === null) {
@@ -27,43 +84,28 @@ const parseStep = (value: unknown): OrchestratorStep | null => {
   const role = nonEmptyString(step['role']);
   const promptPrefix = nonEmptyString(step['promptPrefix']);
   const expectedOutput = nonEmptyString(step['expectedOutput']);
-  if (
-    name === null ||
-    role === null ||
-    !isAgentRole(role) ||
-    promptPrefix === null ||
-    expectedOutput === null
-  ) {
+  if (name === null || promptPrefix === null) {
     return null;
   }
-  return { name, role, promptPrefix, expectedOutput };
+  return {
+    name,
+    role: role !== null && isAgentRole(role) ? role : 'custom',
+    promptPrefix,
+    ...(expectedOutput !== null && { expectedOutput }),
+  };
 };
 
 export const parseOrchestratorDecision = (raw: string): OrchestratorDecision | null => {
-  const start = raw.indexOf(START_MARKER);
-  if (start < 0) {
+  const slice = decisionSlice(raw);
+  if (slice === null) {
     return null;
   }
-  const contentStart = start + START_MARKER.length;
-  const end = raw.indexOf(END_MARKER, contentStart);
-  if (end < 0) {
-    return null;
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw.slice(contentStart, end).trim());
-  } catch {
-    return null;
-  }
-  const decision = asRecord(parsed);
+  const decision = asRecord(parseJson(slice));
   if (decision === null) {
     return null;
   }
   const action = decision['action'];
-  const reason = nonEmptyString(decision['reason']);
-  if (reason === null) {
-    return null;
-  }
+  const reason = nonEmptyString(decision['reason']) ?? '';
   if (action === 'done' || action === 'blocked') {
     return { action, reason };
   }

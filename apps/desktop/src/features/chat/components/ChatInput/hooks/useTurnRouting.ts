@@ -171,11 +171,12 @@ export const useTurnRouting = ({ session }: Params) => {
   const setSelectedModel = useCallback(
     (id: string | null) => {
       setSelectedModelState(id);
+      void storeSetSessionConfig(session.id, { modelOverride: id });
       if (selectedAgentId) {
         void storeSetAgentConfig(session.id, selectedAgentId, { modelOverride: id });
       }
     },
-    [storeSetAgentConfig, session.id, selectedAgentId],
+    [storeSetSessionConfig, storeSetAgentConfig, session.id, selectedAgentId],
   );
 
   const realignEffort = useCallback(

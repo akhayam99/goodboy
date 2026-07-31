@@ -35,38 +35,38 @@ const TASKS: ReadonlyArray<{
 }> = [
   {
     id: 'summarizer',
-    label: 'Summaries',
-    help: 'Condenses step output into short summaries',
+    label: 'Step summaries',
+    help: 'Condenses each finished step into the summary the next step starts from',
   },
   {
     id: 'branch_naming',
-    label: 'Branch names',
-    help: 'Generates branch slugs for new sessions',
+    label: 'Branch naming',
+    help: 'Turns the session goal into a git branch name when the session is created',
   },
   {
     id: 'plan_generation',
-    label: 'Planning',
-    help: 'Drafts plans and custom workflows',
+    label: 'Plan drafting',
+    help: 'Writes step plans in the workflow builder and Plan Studio',
   },
   {
     id: 'agent_naming',
-    label: 'Agent titles',
-    help: 'Names agents from your first request',
+    label: 'Agent naming',
+    help: 'Titles new agents, and the session itself, from your first message',
   },
   {
     id: 'workflow_orchestrator',
     label: 'Workflow orchestrator',
-    help: 'Decides the next step of a dynamic workflow run',
+    help: 'Reads each finished step of a dynamic workflow and picks the next one, or ends the run',
   },
   {
     id: 'pr_draft',
     label: 'PR and MR drafts',
-    help: 'Default agent config when drafting pull requests',
+    help: 'Preselected model for the agent that drafts a pull or merge request',
   },
   {
     id: 'rebase',
-    label: 'Rebase agent',
-    help: 'Default agent config when rebasing a session onto main',
+    label: 'Rebase',
+    help: 'Preselected model for the agent that rebases the session branch onto main',
   },
 ];
 
