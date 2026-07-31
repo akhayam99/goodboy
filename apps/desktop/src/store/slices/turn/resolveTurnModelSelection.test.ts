@@ -177,6 +177,33 @@ describe('resolveTurnModelSelection', () => {
     expect(selection.key).toBe('sonnet-4.5');
   });
 
+  it('preserves the requested effort when routing degrades to the fallback model', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      routingDecision: {
+        ...ROUTING_DECISION,
+        fallbackUsed: true,
+        fallbackFrom: 'cursor',
+      },
+      turnOverride: { providerId: 'anthropic', model: 'claude-opus-5' },
+      requestedEffort: 'high',
+    });
+
+    expect(selection).toEqual({ key: 'sonnet-4.5', effort: 'high' });
+  });
+
+  it('carries the discarded override selection effort into the routing default', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      turnOverride: {
+        providerId: 'cursor',
+        selection: { key: 'composer-2.5', effort: 'high' },
+      },
+    });
+
+    expect(selection).toEqual({ key: 'sonnet-4.5', effort: 'high' });
+  });
+
   it('remaps a foreign phase model id after unknown normalization without throwing', () => {
     const selection = resolveTurnModelSelection({
       ...BASE_PARAMS,

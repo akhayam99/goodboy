@@ -1,13 +1,5 @@
 import type { EffortLevel } from '@goodboy/types';
-
-const EFFORT_ORDER = [
-  'minimal',
-  'low',
-  'medium',
-  'high',
-  'xhigh',
-  'max',
-] satisfies ReadonlyArray<EffortLevel>;
+import { EFFORT_ORDER } from './effortOrder';
 
 type Params = {
   readonly requested: EffortLevel;

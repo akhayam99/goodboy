@@ -83,6 +83,7 @@ export const resolveTurnModelSelection = ({
         id: routingDecision.selectedModel,
       }
     : candidate;
+  const preservedEffort = requestedEffort ?? candidate.selection?.effort;
   const mappedId = resolveModelForProvider({
     provider,
     modelId: selectedCandidate.id,
@@ -90,14 +91,14 @@ export const resolveTurnModelSelection = ({
   const normalized = resolveStoredModelSelection({
     provider,
     id: selectedCandidate.selection?.key ?? selectedCandidate.id,
-    ...(requestedEffort != null && { effort: requestedEffort }),
+    ...(preservedEffort != null && { effort: preservedEffort }),
   });
   const baseSelection =
     normalized.report?.kind === 'unknown'
       ? resolveStoredModelSelection({
           provider,
           id: mappedId,
-          ...(requestedEffort != null && { effort: requestedEffort }),
+          ...(preservedEffort != null && { effort: preservedEffort }),
         }).selection
       : normalized.selection;
   if (selectedCandidate.selection == null || normalized.report?.kind === 'unknown') {
