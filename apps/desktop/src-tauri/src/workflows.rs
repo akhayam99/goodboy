@@ -450,6 +450,39 @@ pub fn workflow_get(
     }
 }
 
+fn live_name_taken(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+    name: &str,
+    id: &str,
+) -> Result<bool, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT 1 FROM workflows
+         WHERE workspace_id = ?1 AND name = ?2 AND id <> ?3 AND deleted_at IS NULL
+         LIMIT 1",
+    )?;
+    stmt.exists(rusqlite::params![workspace_id, name, id])
+}
+
+fn resolve_live_name(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
+    requested: &str,
+    id: &str,
+) -> Result<String, rusqlite::Error> {
+    if !live_name_taken(conn, workspace_id, requested, id)? {
+        return Ok(requested.to_string());
+    }
+    let mut suffix = 2;
+    loop {
+        let candidate = format!("{requested} {suffix}");
+        if !live_name_taken(conn, workspace_id, &candidate, id)? {
+            return Ok(candidate);
+        }
+        suffix += 1;
+    }
+}
+
 #[tauri::command]
 pub fn workflow_upsert(
     state: State<'_, Db>,
@@ -464,7 +497,9 @@ pub fn workflow_upsert(
     } else {
         let existing: Option<String> = {
             let mut stmt = conn.prepare(
-                "SELECT id FROM workflows WHERE workspace_id = ?1 AND name = ?2 LIMIT 1",
+                "SELECT id FROM workflows
+                 WHERE workspace_id = ?1 AND name = ?2 AND deleted_at IS NULL
+                 LIMIT 1",
             )?;
             let mut rows = stmt.query_map(
                 rusqlite::params![input.workspace_id, input.name],
@@ -477,6 +512,8 @@ pub fn workflow_upsert(
         };
         existing.unwrap_or_else(crate::util::uuid_v4)
     };
+
+    let name = resolve_live_name(&conn, &input.workspace_id, &input.name, &id)?;
 
     let created_at: String = {
         let mut stmt =
@@ -502,7 +539,7 @@ pub fn workflow_upsert(
         rusqlite::params![
             id,
             input.workspace_id,
-            input.name,
+            name,
             input.description,
             input.goal,
             input.process_text,
@@ -601,7 +638,7 @@ pub fn workflow_upsert(
     Ok(WorkflowRow {
         id,
         workspace_id: input.workspace_id,
-        name: input.name,
+        name,
         description: input.description,
         goal: input.goal,
         process_text: input.process_text,
@@ -1169,6 +1206,55 @@ mod tests {
         )
         .unwrap();
         conn
+    }
+
+    fn workflows_table_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE workflows (
+                id TEXT PRIMARY KEY, workspace_id TEXT, name TEXT, description TEXT,
+                created_at TEXT, updated_at TEXT, deleted_at INTEGER, is_preset INTEGER,
+                goal TEXT, process_text TEXT
+            );
+            CREATE UNIQUE INDEX idx_workflows_workspace_name_live
+              ON workflows(workspace_id, name) WHERE deleted_at IS NULL;",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn insert_workflow(conn: &rusqlite::Connection, id: &str, name: &str, deleted: Option<i64>) {
+        conn.execute(
+            "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at, deleted_at, is_preset)
+             VALUES (?1, 'ws1', ?2, '', '2026-01-01', '2026-01-01', ?3, 0)",
+            rusqlite::params![id, name, deleted],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn resolve_live_name_keeps_a_free_name() {
+        let conn = workflows_table_conn();
+        insert_workflow(&conn, "w1", "Orchestrated workflow", Some(1));
+        let name = resolve_live_name(&conn, "ws1", "Orchestrated workflow", "w2").unwrap();
+        assert_eq!(name, "Orchestrated workflow");
+    }
+
+    #[test]
+    fn resolve_live_name_suffixes_against_live_rows() {
+        let conn = workflows_table_conn();
+        insert_workflow(&conn, "w1", "Orchestrated workflow", None);
+        insert_workflow(&conn, "w2", "Orchestrated workflow 2", None);
+        let name = resolve_live_name(&conn, "ws1", "Orchestrated workflow", "w3").unwrap();
+        assert_eq!(name, "Orchestrated workflow 3");
+    }
+
+    #[test]
+    fn resolve_live_name_ignores_the_row_being_updated() {
+        let conn = workflows_table_conn();
+        insert_workflow(&conn, "w1", "Ship It", None);
+        let name = resolve_live_name(&conn, "ws1", "Ship It", "w1").unwrap();
+        assert_eq!(name, "Ship It");
     }
 
     #[test]
