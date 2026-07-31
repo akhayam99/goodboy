@@ -11,7 +11,7 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { Button, Eyebrow, cn } from '@goodboy/ui';
+import { Button, Eyebrow, cn, tintClasses } from '@goodboy/ui';
 import type {
   LinkedIssue,
   PrCheckRun,
@@ -232,7 +232,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
           </div>
           <Button onClick={openStudio}>
             Open a pull request
-            <ArrowUpRight size={13} aria-hidden className="ml-1.5 shrink-0 opacity-70" />
+            <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
           </Button>
         </div>
       );
@@ -265,7 +265,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
           )}
           <Button size="sm" onClick={openStudio}>
             Open a pull request
-            <ArrowUpRight size={13} aria-hidden className="ml-1.5 shrink-0 opacity-70" />
+            <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
           </Button>
         </div>
       </div>
@@ -434,10 +434,10 @@ const computeCiState = (checks: ReadonlyArray<PrCheckRun>): CiState => {
 
 const CiBadge = ({ state }: { state: CiState }) => {
   const map: Record<CiState, { icon: LucideIcon; className: string; label: string }> = {
-    success: { icon: CheckCircle2, className: 'text-success', label: 'CI passing' },
-    failure: { icon: XCircle, className: 'text-danger', label: 'CI failing' },
-    pending: { icon: Clock, className: 'text-warning', label: 'CI running' },
-    none: { icon: Clock, className: 'text-muted-foreground/40', label: 'no CI' },
+    success: { icon: CheckCircle2, className: tintClasses('success').text, label: 'CI passing' },
+    failure: { icon: XCircle, className: tintClasses('danger').text, label: 'CI failing' },
+    pending: { icon: Clock, className: tintClasses('warning').text, label: 'CI running' },
+    none: { icon: Clock, className: `${tintClasses('neutral').text}/40`, label: 'no CI' },
   };
   const entry = map[state];
   const Icon = entry.icon;
@@ -455,9 +455,9 @@ const ReviewBadge = ({
   decision: 'approved' | 'changes_requested' | 'review_required';
 }) => {
   const map = {
-    approved: { className: 'text-success', label: 'Approved' },
-    changes_requested: { className: 'text-warning', label: 'Changes requested' },
-    review_required: { className: 'text-muted-foreground', label: 'Review required' },
+    approved: { className: tintClasses('success').text, label: 'Approved' },
+    changes_requested: { className: tintClasses('warning').text, label: 'Changes requested' },
+    review_required: { className: tintClasses('neutral').text, label: 'Review required' },
   } as const;
   const entry = map[decision];
   return <span className={cn('font-medium', entry.className)}>{entry.label}</span>;

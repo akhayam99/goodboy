@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { ArrowDown } from 'lucide-react';
 import type { Agent, ProviderRunId } from '@goodboy/types';
-import { ScrollFade, StatusDot } from '@goodboy/ui';
+import { Divider, ScrollFade, StatusDot } from '@goodboy/ui';
 import { useAppStore, useTranscript } from '../../../../store';
 import { filterEventsByRunId, reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
@@ -60,17 +60,15 @@ export const ParallelColumn = ({
   const label = agent?.name ?? `run ${index + 1}`;
 
   return (
-    <div
-      data-run-column={runId}
-      className="flex min-w-0 flex-col border-r border-border last:border-r-0"
-    >
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
+    <div data-run-column={runId} className="flex min-w-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted-foreground">
         <AgentAvatar kind={kind} size="sm" title={label} />
         <span className="min-w-0 truncate text-foreground/80">{label}</span>
         {isRunning ? (
           <StatusDot tone="info" size="sm" pulsing ariaLabel="running" className="ml-auto" />
         ) : null}
       </div>
+      <Divider />
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
         <ScrollFade className="flex-1" viewportClassName="px-3 py-3">
           {rows.length === 0 ? (

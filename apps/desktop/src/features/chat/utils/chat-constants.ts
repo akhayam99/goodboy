@@ -99,6 +99,27 @@ export const VERBOSITY_TEXT: Record<VerbosityLevel, string> = {
   verbose: 'text-danger',
 };
 
+const FAMILY_LABEL: Record<ModelFamily, string> = {
+  claude: 'Claude',
+  gpt: 'GPT',
+  codex: 'Codex',
+  gemini: 'Gemini',
+  composer: 'Composer',
+  'cursor-auto': 'Cursor',
+  other: '',
+};
+
+type SlugWordsParams = {
+  readonly slug: string;
+};
+
+const slugToWords = ({ slug }: SlugWordsParams): string =>
+  slug
+    .split(/[-_\s/]+/)
+    .filter((part) => part !== '')
+    .map((part) => (/^[a-z]/.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+    .join(' ');
+
 export const modelLabel = (id: string): string => {
   const descriptor = getModelDescriptor(id);
   if (descriptor) {
@@ -109,7 +130,17 @@ export const modelLabel = (id: string): string => {
     const family = m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1).toLowerCase();
     return `${family} ${m[2]}.${m[3]}`;
   }
-  return id;
+  const parsed = parseModelId(id);
+  const family = FAMILY_LABEL[parsed.family];
+  const isSubfamilyRedundant =
+    parsed.subfamily == null ||
+    family === '' ||
+    parsed.subfamily.toLowerCase().startsWith(family.toLowerCase());
+  const subfamily = isSubfamilyRedundant ? '' : slugToWords({ slug: parsed.subfamily });
+  const label = [family, subfamily, slugToWords({ slug: parsed.variantLabel })]
+    .filter((part) => part !== '')
+    .join(' ');
+  return label === '' ? id : label;
 };
 
 export type { ModelFamily };

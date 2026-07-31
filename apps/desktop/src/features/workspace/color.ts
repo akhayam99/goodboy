@@ -1,14 +1,14 @@
 import type { WorkspaceId } from '@goodboy/types';
 
 export const WORKSPACE_ACCENTS = [
-  '#5ec8c0',
-  '#6aa8ff',
-  '#a98bff',
-  '#ef8fb3',
-  '#e0a45e',
-  '#7bc96f',
-  '#e57373',
-  '#4fb6e0',
+  'var(--color-workspace-1)',
+  'var(--color-workspace-2)',
+  'var(--color-workspace-3)',
+  'var(--color-workspace-4)',
+  'var(--color-workspace-5)',
+  'var(--color-workspace-6)',
+  'var(--color-workspace-7)',
+  'var(--color-workspace-8)',
 ] as const;
 
 function hashId(id: string): number {

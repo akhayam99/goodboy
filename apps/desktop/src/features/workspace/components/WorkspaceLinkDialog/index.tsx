@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Input, SegmentedTabs, StatusDot, cn } from '@goodboy/ui';
+import { Button, Dialog, Input, ScrollFade, SegmentedTabs, StatusDot, cn } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import { Boxes, Check, Folder, FolderGit2, FolderPlus } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -404,40 +404,42 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
               <>
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-semibold text-foreground">pick repos to link</span>
-                  <ul className="flex max-h-44 flex-col gap-0.5 overflow-y-auto">
-                    {linkable.map((ws) => {
-                      const isOn = selected.includes(ws.id);
-                      return (
-                        <li key={ws.id}>
-                          <button
-                            type="button"
-                            onClick={() => toggleMember(ws)}
-                            className={cn(
-                              'flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors',
-                              isOn
-                                ? 'border-primary/50 bg-primary/5'
-                                : 'border-transparent hover:bg-muted/50',
-                            )}
-                          >
-                            <span
+                  <ScrollFade className="max-h-44">
+                    <ul className="flex flex-col gap-0.5">
+                      {linkable.map((ws) => {
+                        const isOn = selected.includes(ws.id);
+                        return (
+                          <li key={ws.id}>
+                            <button
+                              type="button"
+                              onClick={() => toggleMember(ws)}
                               className={cn(
-                                'flex size-4 shrink-0 items-center justify-center rounded border',
+                                'flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors',
                                 isOn
-                                  ? 'border-primary bg-primary text-primary-foreground'
-                                  : 'border-border',
+                                  ? 'border-primary/50 bg-primary/5'
+                                  : 'border-transparent hover:bg-muted/50',
                               )}
                             >
-                              {isOn ? <Check size={11} aria-hidden /> : null}
-                            </span>
-                            <span className="font-medium text-foreground">{ws.name}</span>
-                            <span className="ml-auto truncate text-muted-foreground">
-                              {ws.rootPath}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                              <span
+                                className={cn(
+                                  'flex size-4 shrink-0 items-center justify-center rounded border',
+                                  isOn
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border',
+                                )}
+                              >
+                                {isOn ? <Check size={11} aria-hidden /> : null}
+                              </span>
+                              <span className="font-medium text-foreground">{ws.name}</span>
+                              <span className="ml-auto truncate text-muted-foreground">
+                                {ws.rootPath}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </ScrollFade>
                 </div>
 
                 {selectedWorkspaces.length > 0 && (

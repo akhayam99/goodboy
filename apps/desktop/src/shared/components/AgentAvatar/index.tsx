@@ -24,16 +24,16 @@ const KIND_IMAGE: Record<AgentKind, string | null> = {
 };
 
 const KIND_COLOR: Record<AgentKind, string> = {
-  generic: 'oklch(0.71 0.16 17)',
-  scout: 'oklch(0.74 0.13 233)',
-  planner: 'oklch(0.7 0.16 295)',
-  implementer: 'oklch(0.76 0.15 158)',
-  debugger: 'oklch(0.81 0.14 84)',
-  tester: 'oklch(0.78 0.12 188)',
-  reviewer: 'oklch(0.78 0.12 213)',
-  'pr-reviewer': 'oklch(0.68 0.16 275)',
-  docs: 'oklch(0.77 0.15 62)',
-  resolver: 'oklch(0.82 0.18 130)',
+  generic: 'var(--color-agent-generic)',
+  scout: 'var(--color-agent-scout)',
+  planner: 'var(--color-agent-planner)',
+  implementer: 'var(--color-agent-implementer)',
+  debugger: 'var(--color-agent-debugger)',
+  tester: 'var(--color-agent-tester)',
+  reviewer: 'var(--color-agent-reviewer)',
+  'pr-reviewer': 'var(--color-agent-pr-reviewer)',
+  docs: 'var(--color-agent-docs)',
+  resolver: 'var(--color-agent-resolver)',
 };
 
 const SIZE_CLASS: Record<AvatarSize, string> = {

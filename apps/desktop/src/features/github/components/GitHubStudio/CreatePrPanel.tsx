@@ -297,7 +297,7 @@ export const CreatePrPanel = ({
             ) : (
               <>
                 Create PR
-                <ArrowRight size={13} className="ml-1.5" aria-hidden />
+                <ArrowRight size={13} aria-hidden />
               </>
             )}
           </Button>
@@ -311,7 +311,7 @@ export const CreatePrPanel = ({
               'Drafting…'
             ) : (
               <>
-                <Sparkles size={13} className="mr-1.5" aria-hidden />
+                <Sparkles size={13} aria-hidden />
                 Draft with agent
               </>
             )}

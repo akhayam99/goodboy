@@ -1,15 +1,7 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 
-type StateTone = 'neutral' | 'success' | 'danger' | 'info' | 'warning';
-
-const TONE_CLASS: Record<StateTone, string> = {
-  neutral: 'bg-muted text-muted-foreground',
-  success: 'bg-success/15 text-success',
-  danger: 'bg-danger/15 text-danger',
-  info: 'bg-info/15 text-info',
-  warning: 'bg-warning/15 text-warning',
-};
+type StateTone = Extract<Tone, 'neutral' | 'success' | 'danger' | 'info' | 'warning'>;
 
 type Props = {
   readonly tone?: StateTone;
@@ -17,8 +9,9 @@ type Props = {
 };
 
 export const IssueStateBadge = ({ tone = 'neutral', children }: Props) => {
+  const t = tintClasses(tone);
   return (
-    <span className={cn('rounded px-1.5 py-0.5 text-2xs font-medium', TONE_CLASS[tone])}>
+    <span className={cn('rounded px-1.5 py-0.5 text-2xs font-medium', t.bg, t.text)}>
       {children}
     </span>
   );

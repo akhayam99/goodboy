@@ -16,7 +16,7 @@ import {
 } from '../../../../shared/components/StudioDetail';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
 import { issuePullRequests, type LinearIssue } from '../client';
@@ -155,7 +155,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   const linkedPrs = issuePullRequests(issue);
   const labels = issue.labels?.nodes ?? [];
   const priorityLabel = issue.priorityLabel ?? 'No priority';
-  const updated = formatRelativeDuration(issue.updatedAt);
+  const updated = formatAbsoluteDateTime({ iso: issue.updatedAt });
 
   return (
     <StudioDetailLayout
@@ -244,7 +244,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
               ))}
             </MetaItem>
           ) : null}
-          {updated !== '' ? <MetaItem label="Updated">{updated} ago</MetaItem> : null}
+          {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
         </>
       }
     >

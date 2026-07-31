@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, ScrollFade } from '@goodboy/ui';
 import { TranscriptChevron } from '../TranscriptChevron';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
@@ -41,9 +41,9 @@ export const CollapsibleString = ({ value, label }: Props) => {
         </>
       }
     >
-      <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words text-foreground/80">
-        {value}
-      </pre>
+      <ScrollFade className="max-h-60">
+        <pre className="whitespace-pre-wrap break-words text-foreground/80">{value}</pre>
+      </ScrollFade>
     </TranscriptDisclosure>
   );
 };

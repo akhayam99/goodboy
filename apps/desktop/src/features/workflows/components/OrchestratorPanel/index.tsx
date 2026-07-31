@@ -1,14 +1,6 @@
 import { useState } from 'react';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Loader2,
-  Play,
-  RotateCcw,
-  Sparkles,
-  Wand2,
-} from 'lucide-react';
-import { cn, Markdown } from '@goodboy/ui';
+import { AlertTriangle, CheckCircle2, Play, RotateCcw, Sparkles, Wand2 } from 'lucide-react';
+import { cn, Markdown, StatusDot } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
@@ -85,7 +77,7 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
     >
       <div className="flex items-center gap-1.5 text-2xs font-semibold">
         {phase === 'deciding' ? (
-          <Loader2 size={12} aria-hidden className="shrink-0 motion-safe:animate-spin" />
+          <StatusDot tone="info" size="sm" pulsing ariaLabel="deciding" />
         ) : phase === 'done' ? (
           <CheckCircle2 size={12} aria-hidden className="shrink-0" />
         ) : phase === 'failed' || phase === 'blocked' ? (

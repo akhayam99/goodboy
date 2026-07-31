@@ -40,7 +40,7 @@ export const StageBoardSection = ({}: Props) => (
             term: 'building / done',
             desc: 'In-progress or finished work that does not need you yet. Kept out of the way.',
             icon: <FolderGit2 size={11} aria-hidden />,
-            tone: 'muted',
+            tone: 'neutral',
           },
         ]}
       />

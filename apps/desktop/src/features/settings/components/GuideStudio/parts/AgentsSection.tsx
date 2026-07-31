@@ -56,7 +56,7 @@ export const AgentsSection = ({}: Props) => (
           <span className="text-muted-foreground/40">·</span>
           <Chip tone="success">cost</Chip>
           <span className="text-muted-foreground/40">·</span>
-          <Chip tone="muted">⏱ age</Chip>
+          <Chip tone="neutral">⏱ age</Chip>
         </div>
         <p className="text-2xs leading-relaxed text-muted-foreground">
           Below that line, a thin bar shows context window utilization. Hover for exact numbers.

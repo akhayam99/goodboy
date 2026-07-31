@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -11,7 +12,7 @@ import type { ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowDown } from 'lucide-react';
 import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
-import { ScrollFade } from '@goodboy/ui';
+import { Divider, ScrollFade } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -42,9 +43,6 @@ import { ParallelColumn } from './ParallelColumn';
 import { TranscriptRows } from './TranscriptRows';
 import { useTranscriptErrorToasts } from '../../hooks/useTranscriptErrorToasts';
 import { useScrollPin } from './useScrollPin';
-import { tintClasses } from '@goodboy/ui';
-
-const neutralAccent = tintClasses('neutral');
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 
 type Props = {
@@ -362,39 +360,36 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   if (isSplitView) {
     return (
       <div className="flex h-full flex-col">
-        <div
-          className="flex-1 overflow-hidden"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${parallelRunIds.length}, minmax(0, 1fr))`,
-          }}
-        >
+        <div className="flex flex-1 overflow-hidden">
           {parallelRunIds.map((runId, i) => (
-            <ParallelColumn
-              key={runId}
-              runId={runId}
-              index={i}
-              events={events}
-              workingDir={worktreePath}
-              onRefreshAuth={() => void refreshProviders()}
-              onOpenDiff={handleOpenDiff}
-            />
+            <Fragment key={runId}>
+              {i > 0 ? <Divider orientation="vertical" /> : null}
+              <ParallelColumn
+                runId={runId}
+                index={i}
+                events={events}
+                workingDir={worktreePath}
+                onRefreshAuth={() => void refreshProviders()}
+                onOpenDiff={handleOpenDiff}
+              />
+            </Fragment>
           ))}
         </div>
         {allParallelTerminal ? (
-          <div
-            className={`flex items-center justify-between border-t bg-muted/40 px-4 py-2 ${neutralAccent.border}`}
-          >
-            <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
-            <button
-              type="button"
-              data-testid="merge-dialog-trigger"
-              className="rounded border border-border bg-background px-3 py-1 text-xs motion-safe:transition-colors hover:bg-muted"
-              onClick={() => setMergeDialogOpen(true)}
-            >
-              Merge
-            </button>
-          </div>
+          <>
+            <Divider />
+            <div className="flex items-center justify-between bg-muted/40 px-4 py-2">
+              <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
+              <button
+                type="button"
+                data-testid="merge-dialog-trigger"
+                className="rounded border border-border bg-background px-3 py-1 text-xs motion-safe:transition-colors hover:bg-muted"
+                onClick={() => setMergeDialogOpen(true)}
+              >
+                Merge
+              </button>
+            </div>
+          </>
         ) : null}
         <MergeDialog
           open={mergeDialogOpen}
@@ -404,9 +399,12 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           onCancel={() => setMergeDialogOpen(false)}
         />
         {isEnded ? (
-          <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-            session ended. no further turns. branch preserved.
-          </div>
+          <>
+            <Divider />
+            <div className="px-4 py-3 text-xs text-muted-foreground">
+              session ended. no further turns. branch preserved.
+            </div>
+          </>
         ) : (
           <ChatInput
             key={session.id}
@@ -529,9 +527,12 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         </div>
       ) : null}
       {isEnded ? (
-        <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          session ended. no further turns. branch preserved.
-        </div>
+        <>
+          <Divider />
+          <div className="px-4 py-3 text-xs text-muted-foreground">
+            session ended. no further turns. branch preserved.
+          </div>
+        </>
       ) : selectedAgentId ? (
         <ChatInput
           key={session.id}

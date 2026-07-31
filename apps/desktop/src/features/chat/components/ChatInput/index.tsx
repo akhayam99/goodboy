@@ -1,13 +1,14 @@
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Paperclip, Send, Square } from 'lucide-react';
-import { Divider, Textarea, cn } from '@goodboy/ui';
+import { Divider, Textarea, cn, formatUsd } from '@goodboy/ui';
 import type { Session, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
-import { useAppStore } from '../../../../store';
+import { useAppStore, useSessionCost } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast } from '../../../../app/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
 import { ProviderUsagePill } from '../ProviderUsagePill';
+import { CostBadge } from '../../../providers/components/CostBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
@@ -50,6 +51,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const activeAgentKind: AgentKind | null =
     agentKindOverride ?? (selectedAgentName ? inferAgentKindFromName(selectedAgentName) : null);
   const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
+  const sessionCost = useSessionCost(session.id);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
@@ -475,6 +477,13 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               </button>
             </div>
             <div className="flex items-center gap-2">
+              {sessionCost > 0 && (
+                <CostBadge
+                  value={sessionCost}
+                  title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
+                  className="text-xs text-muted-foreground"
+                />
+              )}
               <ProviderUsagePill provider={routing.effectiveProvider} />
               <RoutingPicker
                 variant="pill"

@@ -2,6 +2,7 @@ import { DetailPage, Markdown, MetaGrid, cn, type MetaItem } from '@goodboy/ui';
 import { GitPullRequest } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
 import { useLinearIssueComments } from '../useLinearIssueComments';
@@ -41,7 +42,7 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
     { label: 'Assignee', value: issue.assignee?.name },
     { label: 'Team', value: issue.team.key },
     { label: 'Project', value: issue.project?.name },
-    { label: 'Updated', value: new Date(issue.updatedAt).toLocaleDateString() },
+    { label: 'Updated', value: formatAbsoluteDateTime({ iso: issue.updatedAt }) },
     {
       label: 'Labels',
       wide: true,

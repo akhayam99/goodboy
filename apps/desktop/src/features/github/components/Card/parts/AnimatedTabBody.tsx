@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { ScrollFade } from '@goodboy/ui';
 
 type Props = {
   readonly activeKey: string;
@@ -34,8 +35,10 @@ export const AnimatedTabBody = ({ activeKey, children }: Props) => {
       className="overflow-hidden rounded-md border border-border-soft bg-subtle transition-[height] duration-200 ease-out motion-reduce:transition-none"
       style={height != null ? { height } : undefined}
     >
-      <div ref={innerRef} key={activeKey} className="min-h-16 max-h-48 overflow-y-auto px-2.5 py-2">
-        {children}
+      <div ref={innerRef} key={activeKey} className="min-h-16">
+        <ScrollFade className="max-h-48" fadeFrom="subtle" viewportClassName="px-2.5 py-2">
+          {children}
+        </ScrollFade>
       </div>
     </div>
   );

@@ -77,10 +77,7 @@ function BootBrand() {
   return (
     <div className="flex flex-col items-center gap-5">
       <div className="relative flex h-24 w-24 items-center justify-center text-primary">
-        <div
-          className="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
-          style={{ boxShadow: '0 0 50px oklch(from var(--color-primary) l c h / 0.25)' }}
-        >
+        <div className="shadow-glow-primary relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft">
           <DogMascot size={52} className="text-primary" />
         </div>
       </div>

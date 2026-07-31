@@ -9,7 +9,7 @@ import {
   StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromSentry } from '../goal-from-sentry';
@@ -87,13 +87,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     isLoading: detailLoading,
     error: detailError,
   });
-  const firstSeen = issue.firstSeen == null ? '' : formatRelativeDuration(issue.firstSeen);
-  const lastSeen = issue.lastSeen == null ? '' : formatRelativeDuration(issue.lastSeen);
+  const firstSeen = issue.firstSeen == null ? '' : formatAbsoluteDateTime({ iso: issue.firstSeen });
+  const lastSeen = issue.lastSeen == null ? '' : formatAbsoluteDateTime({ iso: issue.lastSeen });
   const stats = [
     ...(issue.count != null ? [{ label: 'Events', value: issue.count }] : []),
     ...(issue.userCount != null ? [{ label: 'Users', value: String(issue.userCount) }] : []),
-    ...(firstSeen !== '' ? [{ label: 'First seen', value: `${firstSeen} ago` }] : []),
-    ...(lastSeen !== '' ? [{ label: 'Last seen', value: `${lastSeen} ago` }] : []),
+    ...(firstSeen !== '' ? [{ label: 'First seen', value: firstSeen }] : []),
+    ...(lastSeen !== '' ? [{ label: 'Last seen', value: lastSeen }] : []),
   ];
 
   const options: ReadonlyArray<SegmentedTabOption<IssueSection>> = [

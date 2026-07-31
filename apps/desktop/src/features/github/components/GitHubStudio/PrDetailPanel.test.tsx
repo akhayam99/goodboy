@@ -214,6 +214,19 @@ describe('PrDetailPanel', () => {
     expect(screen.getByText('Conversation body')).toBeDefined();
   });
 
+  it('keeps the reviewers and metadata rail readable across sections', () => {
+    renderPanel();
+
+    const tablist = screen.getByRole('tablist', { name: 'Pull request sections' });
+    expect(screen.getByText('Reviewers')).toBeDefined();
+    expect(screen.getByText('Base branch')).toBeDefined();
+
+    fireEvent.click(within(tablist).getByRole('tab', { name: 'Checks' }));
+
+    expect(screen.getByText('Checks body')).toBeDefined();
+    expect(screen.getByText('Reviewers')).toBeDefined();
+  });
+
   it('shows the pull request switcher only when multiple pull requests are available', async () => {
     const firstRender = renderPanel();
 

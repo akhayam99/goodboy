@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import { ScrollFade } from '@goodboy/ui';
 
 type Props = {
   readonly tail: string;
@@ -11,9 +12,11 @@ export const ErrorPanel = ({ tail }: Props) => {
         <AlertTriangle size={11} aria-hidden />
         <span>The command failed</span>
       </div>
-      <pre className="max-h-24 overflow-y-auto whitespace-pre-wrap break-words font-mono text-[10px] leading-snug text-foreground/80">
-        {tail.trim() || 'No output captured.'}
-      </pre>
+      <ScrollFade className="max-h-24">
+        <pre className="whitespace-pre-wrap break-words font-mono text-[10px] leading-snug text-foreground/80">
+          {tail.trim() || 'No output captured.'}
+        </pre>
+      </ScrollFade>
     </div>
   );
 };

@@ -30,6 +30,7 @@ vi.mock('../../../../worktree/useBranchConflict', () => ({ useBranchConflict: ()
 vi.mock('../../../../worktree/worktree', () => ({ removeWorktree: vi.fn() }));
 
 import { GithubIssueDetailPanel } from './index';
+import { formatAbsoluteDateTime } from '../../../../../shared/utils/relativeDate';
 
 const ISSUE: GithubIssue = {
   number: 42,
@@ -94,6 +95,6 @@ describe('GithubIssueDetailPanel', () => {
     );
 
     expect(screen.getByText('Updated')).toBeDefined();
-    expect(screen.getByText(/\dd ago/)).toBeDefined();
+    expect(screen.getByText(formatAbsoluteDateTime({ iso: ISSUE.updatedAt }))).toBeDefined();
   });
 });

@@ -45,6 +45,7 @@ vi.mock('../useLinearIssueComments', () => ({
 }));
 
 import { IssueDetailPanel } from './IssueDetailPanel';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 
 const ISSUE: LinearIssue = {
   id: 'issue-1',
@@ -87,7 +88,7 @@ describe('IssueDetailPanel', () => {
     expect(screen.getByText('Grace Hopper')).toBeDefined();
     expect(screen.getByText('Desktop')).toBeDefined();
     expect(screen.getByText('Updated')).toBeDefined();
-    expect(screen.getByText('2h ago')).toBeDefined();
+    expect(screen.getByText(formatAbsoluteDateTime({ iso: ISSUE.updatedAt }))).toBeDefined();
   });
 
   it('keeps comments behind a badged conversation tab', async () => {

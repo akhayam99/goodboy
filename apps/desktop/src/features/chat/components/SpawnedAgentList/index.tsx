@@ -1,10 +1,9 @@
 import type { Agent, AgentId } from '@goodboy/types';
 import { cn, StatusDot } from '@goodboy/ui';
-import { Check, Clock, Loader2 } from 'lucide-react';
+import { Check, Clock } from 'lucide-react';
 import { tintClasses } from '@goodboy/ui';
 
 const accent = tintClasses('merged');
-const infoAccent = tintClasses('info');
 const successAccent = tintClasses('success');
 
 export type SpawnStatus = Agent['status'] | 'planned';
@@ -28,7 +27,7 @@ type Props = {
 
 const statusIcon = (status: SpawnStatus) =>
   status === 'running' ? (
-    <Loader2 size={14} className={cn('animate-spin', infoAccent.icon)} aria-hidden />
+    <StatusDot tone="info" size="md" pulsing ariaLabel="running" />
   ) : status === 'completed' ? (
     <span className={cn('flex size-4 items-center justify-center rounded-full', successAccent.bg)}>
       <Check size={10} className={successAccent.icon} aria-hidden />

@@ -1,12 +1,18 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import type { AgentCardTone } from './agentCardTone';
 
-const TONE_CLASS: Record<AgentCardTone, string> = {
-  default: '',
-  running: 'border-info/60',
-  attention: 'border-warning/70',
-  success: 'border-success/50',
+const AGENT_CARD_TONE: Record<Exclude<AgentCardTone, 'default'>, Tone> = {
+  running: 'info',
+  attention: 'warning',
+  success: 'success',
+};
+
+const agentCardBorderClass = (tone: AgentCardTone): string => {
+  if (tone === 'default') {
+    return '';
+  }
+  return tintClasses(AGENT_CARD_TONE[tone]).border;
 };
 
 type Props = {
@@ -73,7 +79,7 @@ export const AgentCard = ({
       isMuted && 'opacity-60',
       isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
       tone === 'default' && (isSelected ? 'border-border' : 'border-transparent'),
-      TONE_CLASS[tone],
+      agentCardBorderClass(tone),
       isInspected && 'ring-1 ring-inset ring-border',
     )}
   >

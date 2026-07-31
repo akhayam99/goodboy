@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, Divider, Popover, SectionHeader } from '@goodboy/ui';
+import { cn, Divider, Popover, ScrollFade, SectionHeader } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import {
   ChevronDown,
@@ -315,16 +315,18 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
         </button>
       </div>
       <Divider className="shrink-0" />
-      <pre className="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/80">
-        {result.stdout}
-        {result.stderr ? (
-          <span className="text-danger">
-            {result.stdout ? '\n' : ''}
-            {result.stderr}
-          </span>
-        ) : null}
-        {!result.stdout && !result.stderr && '(no output)'}
-      </pre>
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-2">
+        <pre className="m-0 whitespace-pre-wrap break-all font-mono text-2xs leading-relaxed text-foreground/80">
+          {result.stdout}
+          {result.stderr ? (
+            <span className="text-danger">
+              {result.stdout ? '\n' : ''}
+              {result.stderr}
+            </span>
+          ) : null}
+          {!result.stdout && !result.stderr && '(no output)'}
+        </pre>
+      </ScrollFade>
     </Popover>,
     document.body,
   );

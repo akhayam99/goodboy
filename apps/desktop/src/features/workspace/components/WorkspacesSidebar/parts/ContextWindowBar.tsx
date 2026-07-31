@@ -1,7 +1,8 @@
 import { cn } from '@goodboy/ui';
-import { contextTokensForUsage, getModelDescriptor } from '@goodboy/core';
+import { contextTokensForUsage } from '@goodboy/core';
 import { Gauge } from 'lucide-react';
 import type { ProviderName } from '@goodboy/types';
+import { modelLabel } from '../../../../../features/chat/utils/chat-constants';
 import { formatTokens } from '../../../../../features/session/agent-row-format';
 import { contextUsageTone } from '../../../../../features/session/contextUsageTone';
 import { contextWindowFor } from '../../../../../features/session/contextWindowFor';
@@ -30,9 +31,8 @@ const ProviderBar = ({ usage, showProvider }: ProviderBarProps) => {
   }
   const pct = Math.min(1, used / window);
   const windowLabel = window >= 1_000_000 ? `${window / 1_000_000}M` : `${window / 1_000}k`;
-  const modelLabel = getModelDescriptor(usage.model)?.label ?? usage.model;
   const tooltip =
-    `${usage.provider} · ${modelLabel}\n` +
+    `${usage.provider} · ${modelLabel(usage.model)}\n` +
     `context: ${used.toLocaleString()} / ${window.toLocaleString()} tokens (${Math.round(pct * 100)}%)\n` +
     `last turn context: ${usage.inputTokens.toLocaleString()} input · ${(usage.cachedInputTokens ?? 0).toLocaleString()} cache read · ${(usage.cacheCreationInputTokens ?? 0).toLocaleString()} cache write · ${usage.outputTokens.toLocaleString()} output`;
   return (

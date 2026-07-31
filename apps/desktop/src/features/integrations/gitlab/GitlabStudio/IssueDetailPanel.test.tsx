@@ -31,6 +31,7 @@ vi.mock('../../../worktree/useBranchConflict', () => ({ useBranchConflict: () =>
 vi.mock('../../../worktree/worktree', () => ({ removeWorktree: vi.fn() }));
 
 import { IssueDetailPanel } from './IssueDetailPanel';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 
 const ISSUE: GitlabIssue = {
   id: 71,
@@ -71,6 +72,6 @@ describe('IssueDetailPanel', () => {
     expect(screen.getByText('v1.3')).toBeDefined();
     expect(screen.getByText('bug')).toBeDefined();
     expect(screen.getByText('Updated')).toBeDefined();
-    expect(screen.getByText('2h ago')).toBeDefined();
+    expect(screen.getByText(formatAbsoluteDateTime({ iso: ISSUE.updatedAt }))).toBeDefined();
   });
 });

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ScrollFade } from '@goodboy/ui';
 import { AgentAvatar } from '../../../shared/components/AgentAvatar';
 import type { QuickActionItem } from '../types';
 
@@ -50,34 +51,38 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
       {items.length === 0 ? (
         <p className="px-3 py-2 text-xs text-muted-foreground">{emptyHint}</p>
       ) : (
-        <ul ref={listRef} className="max-h-48 overflow-y-auto py-1">
-          {items.map((item, i) => (
-            <li
-              key={item.id}
-              className={`flex cursor-pointer items-center gap-3 px-3 py-2 ${
-                i === activeIndex ? 'bg-muted' : 'hover:bg-muted/50'
-              }`}
-              onMouseEnter={() => setActiveIndex(i)}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onSelect(item);
-              }}
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="truncate text-xs font-medium text-foreground">{item.label}</span>
-                {item.sublabel ? (
-                  <span className="truncate text-2xs text-muted-foreground">{item.sublabel}</span>
+        <ScrollFade className="max-h-48" viewportClassName="py-1">
+          <ul ref={listRef}>
+            {items.map((item, i) => (
+              <li
+                key={item.id}
+                className={`flex cursor-pointer items-center gap-3 px-3 py-2 ${
+                  i === activeIndex ? 'bg-muted' : 'hover:bg-muted/50'
+                }`}
+                onMouseEnter={() => setActiveIndex(i)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onSelect(item);
+                }}
+              >
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate text-xs font-medium text-foreground">{item.label}</span>
+                  {item.sublabel ? (
+                    <span className="truncate text-2xs text-muted-foreground">{item.sublabel}</span>
+                  ) : null}
+                </div>
+                {item.trailing ? (
+                  <span className="flex shrink-0 items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
+                    <span>{item.trailing.label}</span>
+                    {item.trailing.kind ? (
+                      <AgentAvatar kind={item.trailing.kind} size="sm" />
+                    ) : null}
+                  </span>
                 ) : null}
-              </div>
-              {item.trailing ? (
-                <span className="flex shrink-0 items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
-                  <span>{item.trailing.label}</span>
-                  {item.trailing.kind ? <AgentAvatar kind={item.trailing.kind} size="sm" /> : null}
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </ScrollFade>
       )}
     </div>
   );
