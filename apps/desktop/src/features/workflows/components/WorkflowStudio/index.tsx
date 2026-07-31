@@ -13,7 +13,7 @@ export const WorkflowStudio = ({ workspaceId, workspaceName, onClose }: Props) =
   return (
     <StudioShell
       icon={SECTION_ICONS.workflows}
-      title="Workflow Studio"
+      title="Workflow studio"
       workspaceName={workspaceName}
       closeLabel="close workflow studio"
       onClose={onClose}

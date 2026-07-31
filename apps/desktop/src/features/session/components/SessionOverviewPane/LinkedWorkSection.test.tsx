@@ -66,7 +66,7 @@ describe('LinkedWorkSection', () => {
     expect(screen.getByText('No linked issues or tasks yet.')).toBeDefined();
   });
 
-  it('renders every linked issue and opens its external URL', () => {
+  it('renders every linked issue and opens the in-app github issue page', () => {
     store.sessionGithub = {
       'sess-1': {
         linkedIssues: [
@@ -82,7 +82,19 @@ describe('LinkedWorkSection', () => {
     expect(screen.getByText('First issue')).toBeDefined();
     expect(screen.getByText('#9')).toBeDefined();
     expect(screen.getByText('Second issue')).toBeDefined();
+    const seen: CustomEvent[] = [];
+    const listener = (e: Event) => seen.push(e as CustomEvent);
+    const prListener = vi.fn();
+    window.addEventListener('goodboy:open-github-studio', listener);
+    window.addEventListener('goodboy:open-github-session', prListener);
     fireEvent.click(screen.getByRole('button', { name: /#9 Second issue/i }));
+    window.removeEventListener('goodboy:open-github-studio', listener);
+    window.removeEventListener('goodboy:open-github-session', prListener);
+    expect(seen[0]?.detail).toEqual({ sessionId: 'sess-1', issueExternalId: '9' });
+    expect(prListener).not.toHaveBeenCalled();
+    expect(mocks.openUrl).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getAllByRole('link', { name: 'Open in GitHub' })[1]!);
     expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/issues/9');
   });
 

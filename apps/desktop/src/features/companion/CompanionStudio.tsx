@@ -88,7 +88,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
     <StudioShell
       icon={Smartphone}
       title="Pair device"
-      workspaceName="Connect Goodboy Mobile"
+      workspaceName="Connect Goodboy mobile"
       closeLabel="Close pairing"
       onClose={onClose}
     >

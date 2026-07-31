@@ -19,7 +19,7 @@ export const WelcomeStep = () => {
           Welcome to Goodboy
         </h2>
         <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-          Two steps and you are ready to run agents.
+          Connect a provider and a workspace to run agents.
         </p>
       </div>
 

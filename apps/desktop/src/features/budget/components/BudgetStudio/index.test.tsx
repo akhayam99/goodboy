@@ -68,7 +68,7 @@ afterEach(cleanup);
 describe('BudgetStudio', () => {
   it('renders the overview scope by default', () => {
     render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
-    expect(screen.getByText('Budget Studio')).toBeDefined();
+    expect(screen.getByText('Budget studio')).toBeDefined();
     expect(screen.getByText(/spend by provider/i)).toBeDefined();
   });
 

@@ -42,7 +42,7 @@ vi.mock('../../../worktree/useRemoteHostKind', () => ({
 }));
 vi.mock('./GithubIssueDetailPanel', () => ({
   GithubIssueDetailPanel: ({ issue }: IssueDetailProps) => (
-    <div>{issue?.title ?? 'No issue detail'}</div>
+    <div>issue detail: {issue?.title ?? 'none'}</div>
   ),
 }));
 vi.mock('../../../review/components/ReviewInboxList', () => ({
@@ -72,13 +72,18 @@ vi.mock('../../../../shared/components/StudioShell', () => ({
 
 import { GitHubStudio } from './index';
 
-const renderStudio = () =>
+type RenderParams = {
+  readonly initialIssueExternalId?: string | null;
+};
+
+const renderStudio = ({ initialIssueExternalId = null }: RenderParams = {}) =>
   render(
     <GitHubStudio
       workspaceId={'workspace-1' as WorkspaceId}
       rootPath="/repo"
       workspaceName="Goodboy"
       initialSessionId={'session-1' as SessionId}
+      initialIssueExternalId={initialIssueExternalId}
       onClose={vi.fn()}
     />,
   );
@@ -132,6 +137,30 @@ describe('GitHubStudio', () => {
 
     expect(screen.getByText('Open')).toBeDefined();
     expect(screen.getAllByText('Add issue dashboard').length).toBeGreaterThan(0);
+  });
+
+  it('lands on the requested issue detail page instead of the first issue', () => {
+    h.useGithubIssues.mockReturnValue({
+      groups: [
+        {
+          key: 'open',
+          label: 'Open',
+          rows: [
+            { issue: { ...ISSUE, number: 7, title: 'Unrelated issue' }, sessionId: null },
+            { issue: ISSUE, sessionId: null },
+          ],
+        },
+      ],
+      loading: false,
+      error: null,
+      refetch: h.refetch,
+    });
+
+    renderStudio({ initialIssueExternalId: '42' });
+
+    expect(screen.getByRole('tab', { name: 'Issues' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.queryByText('Pull request detail')).toBeNull();
+    expect(screen.getByText(/issue detail: Add issue dashboard/)).toBeDefined();
   });
 
   it('renders an issues refresh button in the header', () => {

@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { cn, Divider, ScrollFade, SectionHeader, StatusDot } from '@goodboy/ui';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Divider, ScrollFade, SectionHeader, StatusDot } from '@goodboy/ui';
 import {
   ArrowRight,
   Download,
@@ -17,6 +17,7 @@ import {
 } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
+import { useToast } from '../../../../app/components/Toast';
 import { PROVIDER_BRAND } from '../provider-brand';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
@@ -53,6 +54,7 @@ function Detail({
   const lifecycle = useAppStore((s) => s.providerLifecycle[id]);
   const logoutProvider = useAppStore((s) => s.logoutProvider);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
+  const { showToast } = useToast();
 
   const [refreshing, setRefreshing] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -65,6 +67,14 @@ function Detail({
       setRefreshing(false);
     }
   }, [refreshProviders]);
+
+  const wasError = useRef(info.connection === 'error');
+  useEffect(() => {
+    if (info.connection === 'error' && !wasError.current) {
+      showToast('error', info.error ?? `${info.label} detection failed`);
+    }
+    wasError.current = info.connection === 'error';
+  }, [info.connection, info.error, info.label, showToast]);
 
   const inFlight =
     lifecycle.phase === 'installing' ||
@@ -116,10 +126,12 @@ function Detail({
                 onView={() => onConnect(lifecycle.action ?? 'install')}
               />
             ) : info.connection === 'error' ? (
-              <ErrorCard
-                message={info.error}
-                onRetry={() => void onRefresh()}
-                retrying={refreshing}
+              <EmptyCard
+                icon={TriangleAlert}
+                title="Detection failed"
+                ctaLabel="Retry"
+                onCta={() => void onRefresh()}
+                ctaDisabled={refreshing}
               />
             ) : info.connection === 'missing' ? (
               <EmptyCard
@@ -232,12 +244,14 @@ function EmptyCard({
   description,
   ctaLabel,
   onCta,
+  ctaDisabled = false,
 }: {
   readonly icon: LucideIcon;
   readonly title: string;
-  readonly description: string;
+  readonly description?: string;
   readonly ctaLabel: string;
   readonly onCta: () => void;
+  readonly ctaDisabled?: boolean;
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-muted/10 px-6 py-10 text-center">
@@ -246,12 +260,15 @@ function EmptyCard({
       </span>
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium text-foreground">{title}</span>
-        <span className="max-w-xs text-2xs text-muted-foreground">{description}</span>
+        {description ? (
+          <span className="max-w-xs text-2xs text-muted-foreground">{description}</span>
+        ) : null}
       </div>
       <button
         type="button"
         onClick={onCta}
-        className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        disabled={ctaDisabled}
+        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {ctaLabel}
       </button>
@@ -271,36 +288,5 @@ function InFlightCard({ label, onView }: { readonly label: string; readonly onVi
         View progress <ArrowRight size={12} aria-hidden />
       </span>
     </button>
-  );
-}
-
-function ErrorCard({
-  message,
-  onRetry,
-  retrying,
-}: {
-  readonly message: string | null;
-  readonly onRetry: () => void;
-  readonly retrying: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4">
-      <div className="flex items-center gap-2 text-danger">
-        <TriangleAlert size={15} aria-hidden />
-        <span className="text-sm font-medium">Detection failed</span>
-      </div>
-      {message ? <p className="text-2xs text-muted-foreground">{message}</p> : null}
-      <button
-        type="button"
-        disabled={retrying}
-        onClick={onRetry}
-        className={cn(
-          'inline-flex w-fit items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium',
-          'text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50',
-        )}
-      >
-        <RotateCw size={12} aria-hidden /> Retry
-      </button>
-    </div>
   );
 }

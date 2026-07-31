@@ -182,7 +182,7 @@ export const NotificationCenter = () => {
                               <Divider />
                             </li>
                           )}
-                          <NotificationItem notification={n} />
+                          <NotificationItem notification={n} onNavigated={() => setOpen(false)} />
                         </Fragment>
                       ))}
                     </ul>
@@ -198,53 +198,105 @@ export const NotificationCenter = () => {
 };
 
 type NotificationItemProps = {
-  notification: Notification;
+  readonly notification: Notification;
+  readonly onNavigated: () => void;
 };
 
-function NotificationItem({ notification: n }: NotificationItemProps) {
+const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProps) => {
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const selectAgent = useAppStore((s) => s.selectAgent);
   const store = useAppStore.getState();
   const action = n.action != null ? mapNotificationAction(n.action, store) : undefined;
   const [pickerOpen, setPickerOpen] = useState(false);
-  return (
-    <li className={cn('flex items-start gap-2 px-3 py-2.5', !n.read && 'bg-muted/40')}>
+  const sessionId = n.sessionId;
+  const agentId = n.action?.kind === 'retry-step-summary' ? n.action.agentId : null;
+
+  const body = (
+    <>
       <span className={cn('mt-0.5 shrink-0', severityClass(n.severity))}>
         {severityIcon(n.severity)}
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-foreground leading-snug">{n.title}</p>
-        {n.body && (
-          <p className="mt-0.5 whitespace-pre-wrap break-words text-xs leading-snug text-muted-foreground">
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-xs font-medium leading-snug text-foreground">{n.title}</span>
+        {n.body != null && n.body !== '' ? (
+          <span className="whitespace-pre-wrap break-words text-xs leading-snug text-muted-foreground">
             {n.body}
-          </p>
-        )}
-        <p className="mt-0.5 text-2xs text-muted-foreground/70">
+          </span>
+        ) : null}
+        <span className="text-2xs text-muted-foreground/70">
           {formatRelativeAge({ fromIso: n.ts })}
-        </p>
-        {action != null ? (
-          <div className="mt-1 flex items-center gap-1.5">
-            <button
-              type="button"
-              className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
-              onClick={action.onClick}
-            >
-              {action.label}
-            </button>
-            <button
-              type="button"
-              className="rounded px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={() => setPickerOpen((v) => !v)}
-            >
-              Retry with…
-            </button>
-          </div>
-        ) : null}
-        {action != null && pickerOpen && n.action != null ? (
+        </span>
+      </span>
+    </>
+  );
+
+  const navigate = () => {
+    if (sessionId == null) {
+      return;
+    }
+    const workspaceId = n.workspaceId;
+    void (async () => {
+      if (workspaceId != null && workspaceId !== useAppStore.getState().currentWorkspaceId) {
+        await setCurrentWorkspace(workspaceId);
+      }
+      const state = useAppStore.getState();
+      if (!state.sessions.some((candidate) => candidate.id === sessionId)) {
+        return;
+      }
+      if (state.currentSessionId === sessionId) {
+        setActiveLens(sessionId, null);
+      } else {
+        await setCurrentSession(sessionId);
+      }
+      if (agentId == null) {
+        return;
+      }
+      await selectAgent(sessionId, agentId);
+    })().catch(() => {});
+    onNavigated();
+  };
+
+  return (
+    <li className={cn('flex flex-col gap-1 px-3 py-2.5', !n.read && 'bg-muted/40')}>
+      {sessionId == null ? (
+        <span className="flex items-start gap-2">{body}</span>
+      ) : (
+        <button
+          type="button"
+          onClick={navigate}
+          className="flex w-full items-start gap-2 rounded-md text-left transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+        >
+          {body}
+        </button>
+      )}
+      {action != null ? (
+        <div className="flex items-center gap-1.5 pl-5">
+          <button
+            type="button"
+            className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
+            onClick={action.onClick}
+          >
+            {action.label}
+          </button>
+          <button
+            type="button"
+            className="rounded px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => setPickerOpen((v) => !v)}
+          >
+            Retry with…
+          </button>
+        </div>
+      ) : null}
+      {action != null && pickerOpen && n.action != null ? (
+        <div className="pl-5">
           <RetryWithPicker action={n.action} onDone={() => setPickerOpen(false)} />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </li>
   );
-}
+};
 
 type RetryWithPickerProps = {
   readonly action: NotificationAction;

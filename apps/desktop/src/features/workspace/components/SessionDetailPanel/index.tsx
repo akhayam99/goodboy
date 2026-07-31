@@ -23,7 +23,7 @@ export const SessionDetailPanel = ({ session }: Props) => {
     <div className="flex shrink-0 items-center gap-2 px-2 pb-2 pt-2.5">
       <SessionStageBadge session={session} />
       <div className="group/goal flex min-w-0 flex-1 items-center gap-1.5">
-        {rename.renaming ? (
+        {rename.editing ? (
           <div className="flex flex-1 flex-col gap-0.5">
             <Input
               autoFocus

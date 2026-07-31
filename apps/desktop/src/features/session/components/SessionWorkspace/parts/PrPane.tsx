@@ -28,6 +28,7 @@ import { MissingGithubRemoteEmptyState } from '../../../../github/components/Mis
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
+import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
@@ -238,7 +239,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
     }
     return (
       <div className="animate-fade-in flex flex-col gap-3">
-        <LinkedIssuesSection issues={linkedIssues} />
+        <LinkedIssuesSection issues={linkedIssues} sessionId={sessionId} />
         <ExternalTasksSection tasks={codeHostTasks} />
         <div className="relative flex flex-col items-start gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-4 py-4">
           <div className="absolute right-3 top-3">
@@ -324,7 +325,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
         </span>
       </div>
 
-      <LinkedIssuesSection issues={linkedIssues} />
+      <LinkedIssuesSection issues={linkedIssues} sessionId={sessionId} />
       <ExternalTasksSection tasks={codeHostTasks} />
 
       <button
@@ -347,9 +348,10 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
 
 type LinkedIssuesSectionProps = {
   readonly issues: ReadonlyArray<LinkedIssue>;
+  readonly sessionId: SessionId;
 };
 
-const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
+const LinkedIssuesSection = ({ issues, sessionId }: LinkedIssuesSectionProps) => {
   if (issues.length === 0) {
     return null;
   }
@@ -358,17 +360,31 @@ const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
       <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
       <div className="flex flex-col gap-1">
         {issues.map((issue) => (
-          <a
+          <div
             key={issue.url}
-            href={issue.url}
-            target="_blank"
-            rel="noreferrer"
             className="flex items-center gap-2 rounded-lg bg-muted/25 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
           >
-            <span className="shrink-0 font-mono">#{issue.number}</span>
-            <span className="min-w-0 flex-1 truncate">{issue.title ?? 'GitHub issue'}</span>
-            <ArrowUpRight size={12} aria-hidden className="shrink-0" />
-          </a>
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent('goodboy:open-github-studio', {
+                    detail: { sessionId, issueExternalId: String(issue.number) },
+                  }),
+                )
+              }
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            >
+              <span className="shrink-0 font-mono">#{issue.number}</span>
+              <span className="min-w-0 flex-1 truncate">{issue.title ?? 'GitHub issue'}</span>
+              <ArrowUpRight size={12} aria-hidden className="shrink-0" />
+            </button>
+            <ExternalRefActions
+              url={issue.url}
+              label={`issue #${issue.number}`}
+              hostLabel="GitHub"
+            />
+          </div>
         ))}
       </div>
     </div>

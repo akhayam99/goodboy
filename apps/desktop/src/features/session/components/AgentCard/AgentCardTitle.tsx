@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { cn } from '@goodboy/ui';
+import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
 
 type Props = {
   readonly name: string;
@@ -16,14 +16,12 @@ export const AgentCardTitle = ({
   onRenameCommit,
   onRenameCancel,
 }: Props) => {
-  const [draft, setDraft] = useState(name);
-
-  useEffect(() => {
-    if (!isEditing) {
-      return;
-    }
-    setDraft(name);
-  }, [isEditing, name]);
+  const rename = useInlineRename({
+    value: name,
+    isEditing,
+    onCommit: onRenameCommit,
+    onCancel: onRenameCancel,
+  });
 
   if (!isEditing) {
     return (
@@ -42,25 +40,19 @@ export const AgentCardTitle = ({
   return (
     <input
       autoFocus
-      value={draft}
+      value={rename.draft}
       aria-label="rename agent"
-      onChange={(event) => setDraft(event.target.value)}
+      onChange={(event) => rename.setDraft(event.target.value)}
       onClick={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => {
-        event.stopPropagation();
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          onRenameCommit(draft);
-          return;
-        }
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          onRenameCancel();
-        }
-      }}
-      onBlur={() => onRenameCommit(draft)}
-      className="min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
+      onKeyDown={rename.onKeyDown}
+      onBlur={rename.onBlur}
+      title={rename.error ?? undefined}
+      aria-invalid={rename.error !== null}
+      className={cn(
+        'min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1',
+        rename.error !== null ? 'ring-danger' : 'ring-primary',
+      )}
     />
   );
 };

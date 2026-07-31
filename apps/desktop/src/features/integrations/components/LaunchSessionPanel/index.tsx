@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Button,
   Divider,
+  FieldRow,
   Input,
   SectionHeader,
   SegmentedTabs,
   StatusDot,
   Textarea,
 } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, GitBranch, MessagesSquare, Target } from 'lucide-react';
+import { AlertTriangle, ArrowRight, GitBranch, MessagesSquare } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -23,7 +24,6 @@ import { SetupWorkflowToggle } from '../../../session/components/SetupWorkflowTo
 import { useSetupWorkflowPreference } from '../../../session/hooks/useSetupWorkflowPreference';
 import { removeWorktree } from '../../../worktree/worktree';
 import { useBranchConflict } from '../../../worktree/useBranchConflict';
-import { LaunchField } from './parts/LaunchField';
 
 type AdoptableBranch = {
   readonly label: string;
@@ -179,7 +179,7 @@ export const LaunchSessionPanel = ({
         }
       />
 
-      <LaunchField label="Goal" icon={<Target size={13} aria-hidden className="text-primary" />}>
+      <FieldRow label="Goal">
         <Textarea
           value={goal}
           onChange={(event) => setGoal(event.target.value)}
@@ -188,80 +188,90 @@ export const LaunchSessionPanel = ({
           maxRows={10}
           disabled={busy}
           aria-label="Session goal"
+          className="w-full sm:w-96"
         />
-      </LaunchField>
+      </FieldRow>
 
       {isBranchless ? null : (
-        <LaunchField
-          label="Branch"
-          icon={<GitBranch size={13} aria-hidden className="text-success" />}
-        >
-          <div className="flex flex-col gap-2">
-            {adoptable != null && (
-              <SegmentedTabs
-                ariaLabel="branch source"
-                options={[
-                  { value: 'adopt', label: adoptable.label, disabled: busy },
-                  { value: 'fresh', label: 'Start fresh', disabled: busy },
-                ]}
-                value={mode}
-                onChange={setModeChoice}
-                size="sm"
-              />
-            )}
-            {isAdopting ? (
-              <div className="flex flex-col gap-1">
-                <div className="flex min-h-8 items-center gap-2 bg-subtle/40 px-2.5 font-mono text-sm">
-                  {adoptable.isResolving ? (
-                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                      <StatusDot tone="info" size="sm" pulsing /> resolving…
+        <>
+          <Divider />
+          <section className="flex flex-col">
+            <SectionHeader
+              icon={<GitBranch size={12} aria-hidden />}
+              label="Branch"
+              action={
+                adoptable != null ? (
+                  <SegmentedTabs
+                    ariaLabel="branch source"
+                    options={[
+                      { value: 'adopt', label: adoptable.label, disabled: busy },
+                      { value: 'fresh', label: 'Start fresh', disabled: busy },
+                    ]}
+                    value={mode}
+                    onChange={setModeChoice}
+                    size="sm"
+                  />
+                ) : null
+              }
+            />
+            <FieldRow
+              label={isAdopting ? 'Adopted branch' : 'Branch name'}
+              help={isAdopting ? adoptable.hint : undefined}
+            >
+              <div className="flex w-full flex-col gap-1.5">
+                {isAdopting ? (
+                  <div className="flex min-h-8 items-center gap-2 bg-subtle/40 px-2.5 font-mono text-sm">
+                    {adoptable.isResolving ? (
+                      <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                        <StatusDot tone="info" size="sm" pulsing /> resolving…
+                      </span>
+                    ) : adoptedBranch != null ? (
+                      <span className="truncate text-foreground">{adoptedBranch}</span>
+                    ) : (
+                      <span className="truncate text-danger">
+                        {adoptable.error ?? 'No branch found'}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                      {prefix + '/'}
                     </span>
-                  ) : adoptedBranch != null ? (
-                    <span className="truncate text-foreground">{adoptedBranch}</span>
-                  ) : (
-                    <span className="truncate text-danger">
-                      {adoptable.error ?? 'No branch found'}
+                    <Input
+                      value={branchSlug}
+                      onChange={(event) =>
+                        setBranchSlug(
+                          sanitizeBranchSlug({
+                            input: event.target.value,
+                            maxLength: SLUG_MAX_LEN,
+                          }),
+                        )
+                      }
+                      placeholder="branch-slug"
+                      className="h-8 flex-1 font-mono text-sm"
+                      disabled={busy}
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      aria-label="Branch slug"
+                    />
+                  </div>
+                )}
+                {conflictPath != null && (
+                  <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2 text-2xs leading-relaxed text-foreground">
+                    <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+                    <span>
+                      This branch is already checked out in another worktree (
+                      <span className="break-all font-mono">{conflictPath}</span>). Launching erases
+                      that worktree and recreates it here.
                     </span>
-                  )}
-                </div>
-                <span className="text-2xs leading-relaxed text-muted-foreground/70">
-                  {adoptable.hint}
-                </span>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                  {prefix + '/'}
-                </span>
-                <Input
-                  value={branchSlug}
-                  onChange={(event) =>
-                    setBranchSlug(
-                      sanitizeBranchSlug({ input: event.target.value, maxLength: SLUG_MAX_LEN }),
-                    )
-                  }
-                  placeholder="branch-slug"
-                  className="h-8 flex-1 font-mono text-sm"
-                  disabled={busy}
-                  autoCapitalize="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  aria-label="Branch slug"
-                />
-              </div>
-            )}
-            {conflictPath != null && (
-              <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2 text-2xs leading-relaxed text-foreground">
-                <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
-                <span>
-                  This branch is already checked out in another worktree (
-                  <span className="break-all font-mono">{conflictPath}</span>). Launching erases
-                  that worktree and recreates it here.
-                </span>
-              </div>
-            )}
-          </div>
-        </LaunchField>
+            </FieldRow>
+          </section>
+        </>
       )}
 
       {isMissingBase && <BaseBranchGuide />}

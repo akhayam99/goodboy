@@ -595,8 +595,6 @@ export type AppActions = {
   runPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
   acceptSessionNudgeHandoff(sessionId: SessionId): Promise<void>;
-  setSessionsSidebarCollapsed(next: boolean): void;
-  toggleSessionsSidebar(): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
@@ -716,7 +714,6 @@ export const initialState: AppState = {
   openQuestionScrollTarget: null,
   sessionLoading: {},
   boardReady: true,
-  sessionsSidebarCollapsed: false,
   terminalSessions: {},
   terminalTabs: {},
   activeTerminalTab: {},

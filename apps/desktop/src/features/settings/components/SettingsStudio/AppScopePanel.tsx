@@ -40,10 +40,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importResult, setImportResult] = useState<ConfigBundleImportResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-  const [wipeState, setWipeState] = useState<'idle' | 'confirm' | 'wiping' | 'done' | 'error'>(
-    'idle',
-  );
-  const [wipeError, setWipeError] = useState<string | null>(null);
+  const [wipeState, setWipeState] = useState<'idle' | 'confirm' | 'wiping' | 'done'>('idle');
 
   const anchorsRef = useRef<Record<string, HTMLElement | null>>({});
 
@@ -99,13 +96,12 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
   const onWipe = async () => {
     setWipeState('wiping');
-    setWipeError(null);
     try {
       await wipeLocalDatabase();
       setWipeState('done');
     } catch (err) {
-      setWipeState('error');
-      setWipeError(formatError(err));
+      setWipeState('confirm');
+      showToast('error', formatError(err));
     }
   };
 
@@ -248,7 +244,6 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                 </Button>
               )}
             </FieldRow>
-            {wipeError ? <p className="text-xs text-danger">{wipeError}</p> : null}
           </section>
         </div>
       </div>

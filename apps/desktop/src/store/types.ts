@@ -259,7 +259,6 @@ export type AppState = UpdaterState & {
   readonly sessionNudges: Readonly<Record<SessionId, SessionNudge | null>>;
   readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
   readonly boardReady: boolean;
-  readonly sessionsSidebarCollapsed: boolean;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;

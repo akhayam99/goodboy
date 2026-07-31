@@ -4,7 +4,6 @@ export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffSidebarCollapsed: `${PREFIX}diff-sidebar-collapsed`,
-  sessionsSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   lensColumnWidth: `${PREFIX}lens-column-width`,
   inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
   reviewBoardListWidth: `${PREFIX}review-board-list-width`,
