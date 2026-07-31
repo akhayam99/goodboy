@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -82,7 +82,7 @@ vi.mock('@goodboy/ui', () => ({
     confirmLabel: string;
     onConfirm: () => void;
   }) => (
-    <div>
+    <div role="group" aria-label={title}>
       <span>{title}</span>
       <button type="button" onClick={onConfirm}>
         {confirmLabel}
@@ -466,7 +466,8 @@ describe('AgentsSection collapse defaults', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirm = screen.getByRole('group', { name: 'Delete workflow run?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
     expect(h.detachWorkflowFromSession).toHaveBeenCalledWith(SESSION_ID, runId);
   });

@@ -18,47 +18,58 @@ const parsedItem = {
   parsed: true,
 } as Extract<TranscriptItem, { kind: 'workflow_kickoff' }>;
 
+const itemWith = (patch: Partial<Extract<TranscriptItem, { kind: 'workflow_kickoff' }>>) =>
+  ({ ...parsedItem, ...patch }) as Extract<TranscriptItem, { kind: 'workflow_kickoff' }>;
+
 const expand = () => fireEvent.click(screen.getByRole('button', { expanded: false }));
 
 describe('WorkflowKickoffCard', () => {
-  it('always shows the goal in full, never behind the chevron', () => {
+  it('shows the goal as a truncated preview on the header row while collapsed', () => {
     render(<WorkflowKickoffCard item={parsedItem} />);
-    const goal = screen.getByText('Ship the onboarding wizard');
-    expect(goal).toBeDefined();
-    expect(goal.className).not.toContain('truncate');
-    expect(goal.className).not.toContain('line-clamp');
-    expect(screen.getByText(/goal/i)).toBeDefined();
+
+    const preview = screen.getByText('Ship the onboarding wizard');
+    expect(preview.className).toContain('truncate');
+    expect(screen.queryByText('goal')).toBeNull();
   });
 
-  it('keeps instructions and marker collapsed until expanded', () => {
-    render(<WorkflowKickoffCard item={parsedItem} />);
-    expect(screen.queryByText('Focus on the providers step only.')).toBeNull();
-    expect(screen.queryByText('Complete ONLY this workflow step.')).toBeNull();
-  });
-
-  it('reveals instructions and marker once expanded', () => {
+  it('reveals the full goal, then the instructions, then the marker once expanded', () => {
     render(<WorkflowKickoffCard item={parsedItem} />);
     expand();
+
+    const labels = screen
+      .getAllByText(/^(goal|what to do|marker to emit)$/)
+      .map((el) => el.textContent);
+    expect(labels).toEqual(['goal', 'what to do', 'marker to emit']);
+    const fullGoal = screen
+      .getAllByText('Ship the onboarding wizard')
+      .filter((el) => !el.className.includes('truncate'));
+    expect(fullGoal.length).toBe(1);
     expect(screen.getByText('Focus on the providers step only.')).toBeDefined();
     expect(screen.getByText('Complete ONLY this workflow step.')).toBeDefined();
-    expect(screen.getByText(/what to do/i)).toBeDefined();
-    expect(screen.getByText(/marker to emit/i)).toBeDefined();
   });
 
-  it('can collapse again after expanding', () => {
+  it('can collapse the goal again after expanding', () => {
     render(<WorkflowKickoffCard item={parsedItem} />);
     expand();
-    expect(screen.getByText('Focus on the providers step only.')).toBeDefined();
+    expect(screen.getByText('goal')).toBeDefined();
+
     fireEvent.click(screen.getByRole('button', { expanded: true }));
+
+    expect(screen.queryByText('goal')).toBeNull();
     expect(screen.queryByText('Focus on the providers step only.')).toBeNull();
+  });
+
+  it('offers the toggle when the goal is the only detail', () => {
+    render(<WorkflowKickoffCard item={itemWith({ instructions: '', marker: '' })} />);
+
+    expand();
+
+    expect(screen.getByText('goal')).toBeDefined();
   });
 
   it('falls back to raw text when not parsed', () => {
-    const raw = { ...parsedItem, parsed: false } as Extract<
-      TranscriptItem,
-      { kind: 'workflow_kickoff' }
-    >;
-    render(<WorkflowKickoffCard item={raw} />);
+    render(<WorkflowKickoffCard item={itemWith({ parsed: false })} />);
+
     expect(screen.queryByText('raw kickoff text')).toBeNull();
     expand();
     expect(screen.getByText('raw kickoff text')).toBeDefined();
@@ -68,36 +79,28 @@ describe('WorkflowKickoffCard', () => {
     render(<WorkflowKickoffCard item={parsedItem} />);
     expect(screen.getByText(/workflow start/i)).toBeDefined();
     cleanup();
-    const raw = { ...parsedItem, parsed: false } as Extract<
-      TranscriptItem,
-      { kind: 'workflow_kickoff' }
-    >;
-    render(<WorkflowKickoffCard item={raw} />);
+
+    render(<WorkflowKickoffCard item={itemWith({ parsed: false })} />);
     expect(screen.getByText(/workflow start/i)).toBeDefined();
   });
 
   it('omits "what to do" section when instructions are empty', () => {
-    const noInstructions = { ...parsedItem, instructions: '' } as Extract<
-      TranscriptItem,
-      { kind: 'workflow_kickoff' }
-    >;
-    render(<WorkflowKickoffCard item={noInstructions} />);
+    render(<WorkflowKickoffCard item={itemWith({ instructions: '' })} />);
     expand();
-    expect(screen.queryByText(/what to do/i)).toBeNull();
+
+    expect(screen.queryByText('what to do')).toBeNull();
   });
 
   it('omits "marker to emit" section when marker is empty', () => {
-    const noMarker = { ...parsedItem, marker: '' } as Extract<
-      TranscriptItem,
-      { kind: 'workflow_kickoff' }
-    >;
-    render(<WorkflowKickoffCard item={noMarker} />);
+    render(<WorkflowKickoffCard item={itemWith({ marker: '' })} />);
     expand();
-    expect(screen.queryByText(/marker to emit/i)).toBeNull();
+
+    expect(screen.queryByText('marker to emit')).toBeNull();
   });
 
   it('renders the timestamp', () => {
     render(<WorkflowKickoffCard item={parsedItem} />);
+
     expect(screen.getByText(/\d{2}:\d{2}:\d{2}/)).toBeDefined();
   });
 });
