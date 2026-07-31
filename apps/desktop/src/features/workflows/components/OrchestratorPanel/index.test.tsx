@@ -33,6 +33,9 @@ beforeEach(() => {
     retryWorkflowOrchestration: vi.fn(async () => undefined),
     continueWorkflowRun: vi.fn(async () => undefined),
     setWorkflowOrchestratorHints: vi.fn(async () => undefined),
+    setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
+    sessions: [],
+    workspaceOverrides: {},
     providers: [
       { id: 'anthropic', connection: 'connected' },
       { id: 'codex', connection: 'missing' },
@@ -59,7 +62,7 @@ describe('OrchestratorPanel', () => {
     );
   });
 
-  it('shows the failure and offers a retry on another provider', () => {
+  it('shows the failure and offers a retry', () => {
     render(
       <OrchestratorPanel
         sessionId={SESSION_ID}
@@ -69,13 +72,8 @@ describe('OrchestratorPanel', () => {
       />,
     );
     expect(screen.getByTestId('orchestrator-error').textContent).toContain('usage limit reached');
-    fireEvent.click(screen.getByTestId('orchestrator-retry-provider'));
-    fireEvent.click(screen.getByRole('button', { name: 'anthropic' }));
-    expect(storeState['retryWorkflowOrchestration']).toHaveBeenCalledWith(
-      SESSION_ID,
-      RUN_ID,
-      expect.objectContaining({ providerId: 'anthropic' }),
-    );
+    fireEvent.click(screen.getByTestId('orchestrator-retry'));
+    expect(storeState['retryWorkflowOrchestration']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
   it('keeps a completed run extendable with a note', () => {

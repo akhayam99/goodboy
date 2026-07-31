@@ -29,6 +29,7 @@ export type {
   GitlabWorkspaceIntegration,
   LinearIntegrationConfig,
   LinearWorkspaceIntegration,
+  OrchestratorRouting,
   Session,
   SentryIntegrationConfig,
   SessionExternalTask,

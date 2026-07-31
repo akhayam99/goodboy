@@ -50,4 +50,6 @@ export type OrchestratorInput = {
   readonly providerId: ProviderId;
   readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
+  readonly stepsUsed: number;
+  readonly stepBudget: number;
 };

@@ -17,6 +17,7 @@ import {
   updateSessionWorkflowTriggerMode,
   updateWorkflowOrder,
   updateWorkflowRunOrchestrationOutcome,
+  updateWorkflowRunOrchestratorRouting,
 } from './session-workflow';
 
 const workspaceId = 'ws-1' as WorkspaceId;
@@ -349,6 +350,88 @@ describe('session_workflows trigger-mode queries', () => {
       const runs = await listWorkflowsForSession(db, sessionId);
       const first = runs.find((r) => r.id === ('run-1' as WorkflowRunId));
       expect(first!.orchestrationOutcome).toBe('done');
+    });
+  });
+
+  describe('orchestrator reason and routing', () => {
+    const attachDynamic = async () =>
+      attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        true,
+        NOW,
+        undefined,
+        'immediate',
+        undefined,
+        'dynamic',
+      );
+
+    it('keeps the reason the orchestrator gave for ending the run', async () => {
+      await attachDynamic();
+      await updateWorkflowRunOrchestrationOutcome(
+        db,
+        'run-1' as WorkflowRunId,
+        'done',
+        'the fix and its test are in, the docs are left',
+      );
+      const run = (await listWorkflowsForSession(db, sessionId))[0]!;
+      expect(run.orchestrationReason).toBe('the fix and its test are in, the docs are left');
+    });
+
+    it('drops the reason when the run is reopened', async () => {
+      await attachDynamic();
+      await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done', 'all set');
+      await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, null);
+      const run = (await listWorkflowsForSession(db, sessionId))[0]!;
+      expect(run.orchestrationReason).toBeUndefined();
+    });
+
+    it('round-trips the routing pinned on the run and clears it', async () => {
+      await attachDynamic();
+      await updateWorkflowRunOrchestratorRouting(db, 'run-1' as WorkflowRunId, {
+        providerId: 'codex',
+        model: 'gpt-5.6',
+        effort: 'high',
+      });
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestratorRouting).toEqual({
+        providerId: 'codex',
+        model: 'gpt-5.6',
+        effort: 'high',
+      });
+      await updateWorkflowRunOrchestratorRouting(db, 'run-1' as WorkflowRunId, null);
+      expect(
+        (await listWorkflowsForSession(db, sessionId))[0]!.orchestratorRouting,
+      ).toBeUndefined();
+    });
+
+    it('carries the reason and the routing through a reorder', async () => {
+      await attachDynamic();
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-2' as WorkflowRunId,
+        workflowId2,
+        true,
+        NOW,
+      );
+      await updateWorkflowRunOrchestrationOutcome(db, 'run-1' as WorkflowRunId, 'done', 'all set');
+      await updateWorkflowRunOrchestratorRouting(db, 'run-1' as WorkflowRunId, {
+        providerId: 'codex',
+        model: 'gpt-5.6',
+      });
+      await updateWorkflowOrder(
+        db,
+        sessionId,
+        ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
+        NOW,
+      );
+      const run = (await listWorkflowsForSession(db, sessionId)).find(
+        (candidate) => candidate.id === ('run-1' as WorkflowRunId),
+      )!;
+      expect(run.orchestrationReason).toBe('all set');
+      expect(run.orchestratorRouting).toEqual({ providerId: 'codex', model: 'gpt-5.6' });
     });
   });
 

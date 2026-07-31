@@ -12,17 +12,16 @@ export const continueWorkflowRun = (set: SetFn, get: GetFn) => {
       return;
     }
     const trimmed = note?.trim() ?? '';
-    if (trimmed !== '') {
-      const merged = [run.orchestratorHints, trimmed].filter(Boolean).join('\n');
-      await get().setWorkflowOrchestratorHints(sessionId, workflowRunId, merged);
-    }
     await updateWorkflowRunOrchestrationOutcome(tauriDatabase, workflowRunId, null);
     patchWorkflowRun({
       set,
       sessionId,
       workflowRunId,
-      patch: (current) => withoutKeys(current, ['orchestrationOutcome', 'orchestrationError']),
+      patch: (current) =>
+        withoutKeys(current, ['orchestrationOutcome', 'orchestrationReason', 'orchestrationError']),
     });
-    await get().orchestrateNextStep(sessionId, workflowRunId);
+    await get().orchestrateNextStep(sessionId, workflowRunId, {
+      ...(trimmed !== '' && { extraHints: trimmed }),
+    });
   };
 };

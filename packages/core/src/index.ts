@@ -343,6 +343,8 @@ export {
 export {
   parseOrchestratorDecision,
   buildOrchestratorUserPrompt,
+  ORCHESTRATOR_STEP_BUDGET,
+  ORCHESTRATOR_STEP_HARD_CAP,
   ORCHESTRATOR_SYSTEM_PROMPT,
   OrchestratorClient,
   OrchestratorClientSpawnError,
