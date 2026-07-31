@@ -9,8 +9,8 @@ import { useToast } from '../../../../app/components/Toast';
 
 const REFERENCE_EDITORS = new Set(['code', 'cursor']);
 
-const ICON_BUTTON =
-  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+const TRIGGER_BUTTON =
+  'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -97,8 +97,15 @@ export const EditorMenu = ({ sessionId }: Props) => {
     <OverflowMenu
       items={items}
       label="open worktree"
-      triggerClassName={ICON_BUTTON}
-      trigger={<FolderOpen size={13} aria-hidden />}
+      align="left"
+      side="top"
+      triggerClassName={TRIGGER_BUTTON}
+      trigger={
+        <>
+          <FolderOpen size={13} aria-hidden />
+          <span>Open</span>
+        </>
+      }
     />
   );
 };

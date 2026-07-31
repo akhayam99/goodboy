@@ -30,6 +30,7 @@ type OverflowMenuProps = {
   readonly trigger?: ReactNode;
   readonly disabled?: boolean;
   readonly align?: 'left' | 'right';
+  readonly side?: 'top' | 'bottom';
 };
 
 export const OverflowMenu = ({
@@ -39,6 +40,7 @@ export const OverflowMenu = ({
   trigger,
   disabled,
   align = 'right',
+  side = 'bottom',
 }: OverflowMenuProps) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,7 +93,8 @@ export const OverflowMenu = ({
           role="menu"
           ariaLabel={label}
           className={cn(
-            'absolute top-full z-30 mt-1 min-w-[180px] py-1',
+            'absolute z-30 min-w-[180px] py-1',
+            side === 'top' ? 'bottom-full mb-1' : 'top-full mt-1',
             align === 'right' ? 'right-0' : 'left-0',
           )}
         >
