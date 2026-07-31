@@ -1,5 +1,8 @@
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
-import { updateWorkflowRunOrchestrationOutcome } from '@goodboy/db';
+import {
+  updateWorkflowRunOrchestrationError,
+  updateWorkflowRunOrchestrationOutcome,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
@@ -12,6 +15,7 @@ export const retryWorkflowOrchestration = (set: SetFn, get: GetFn) => {
       return;
     }
     await updateWorkflowRunOrchestrationOutcome(tauriDatabase, workflowRunId, null);
+    await updateWorkflowRunOrchestrationError(tauriDatabase, workflowRunId, null);
     patchWorkflowRun({
       set,
       sessionId,

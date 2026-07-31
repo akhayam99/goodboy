@@ -18,40 +18,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
-
-type SessionWorkflowRow = {
-  workflow_run_id: string;
-  workflow_id: string;
-  ordinal: number;
-  current_step_ordinal: number;
-  auto_run: number;
-  trigger_mode: string;
-  execution_mode: string;
-  orchestration_outcome: string | null;
-  chain_after_run_id: string | null;
-  goal: string | null;
-  discarded_at: string | null;
-};
-
-const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
-  return {
-    id: row.workflow_run_id as WorkflowRunId,
-    workflowId: row.workflow_id as WorkflowId,
-    ordinal: row.ordinal,
-    currentStep: row.current_step_ordinal,
-    autoRun: row.auto_run !== 0,
-    triggerMode: row.trigger_mode as WorkflowTriggerMode,
-    executionMode: row.execution_mode as WorkflowExecutionMode,
-    ...(row.orchestration_outcome != null && {
-      orchestrationOutcome: row.orchestration_outcome as WorkflowOrchestrationOutcome,
-    }),
-    ...(row.chain_after_run_id != null && {
-      chainAfterId: row.chain_after_run_id as WorkflowRunId,
-    }),
-    ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
-    ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
-  };
-};
+import { SESSION_WORKFLOW_COLS, toWorkflowRun, type SessionWorkflowRow } from './session-workflow';
 
 type SessionRow = {
   id: string;
@@ -161,7 +128,7 @@ async function loadWorkflowsForSession(
   sessionId: string,
 ): Promise<ReadonlyArray<WorkflowRun>> {
   const rows = await db.select<SessionWorkflowRow>(
-    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
+    `SELECT ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC`,
     [sessionId],
   );
   return rows.map(toWorkflowRun);
@@ -334,7 +301,7 @@ const hydrateSessions = async (
   const sessionIds = rows.map((r) => r.id);
   const placeholders = sessionIds.map(() => '?').join(', ');
   const workflowRows = await db.select<SessionWorkflowRow & { session_id: string }>(
-    `SELECT session_id, workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
+    `SELECT session_id, ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id IN (${placeholders}) ORDER BY session_id, ordinal ASC`,
     sessionIds,
   );
 

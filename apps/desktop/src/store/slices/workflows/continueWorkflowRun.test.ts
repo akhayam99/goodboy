@@ -8,6 +8,7 @@ const { updateOutcomeSpy, updateHintsSpy } = vi.hoisted(() => ({
 
 vi.mock('@goodboy/db', () => ({
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
+  updateWorkflowRunOrchestrationError: vi.fn(async () => undefined),
   updateWorkflowRunOrchestratorHints: updateHintsSpy,
 }));
 

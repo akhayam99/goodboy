@@ -46,7 +46,8 @@ export const WorkflowStepGraphBranch = ({
   const doneChildCount = children.filter(
     (child) => child.status === 'completed' || child.status === 'skipped',
   ).length;
-  const showBranch = isBranchOpen && depth < MAX_DEPTH;
+  const canBranch = children.length > 0 && depth < MAX_DEPTH;
+  const showBranch = isBranchOpen && canBranch;
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
@@ -56,14 +57,14 @@ export const WorkflowStepGraphBranch = ({
         provider={routing.provider}
         model={routing.model}
         marker={marker}
-        childCount={children.length}
+        childCount={canBranch ? children.length : 0}
         doneChildCount={doneChildCount}
         isBranchOpen={isBranchOpen}
         isSelected={selectedAgentId === run.id}
         onToggleBranch={() => setIsBranchOpen((open) => !open)}
         onSelect={() => onSelect(run.id)}
       />
-      {showBranch && children.length > 0 ? (
+      {showBranch ? (
         <div className="flex min-w-0 pl-8">
           <div className="flex min-w-0 flex-1 flex-col gap-1 border-l border-border-soft/60 pl-2">
             {[...children]

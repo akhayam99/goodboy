@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ClipboardList, Loader2, Play, RotateCcw, Wand2 } from 'lucide-react';
+import { AlertTriangle, ClipboardList, Play } from 'lucide-react';
 import { InlineConfirm, cn } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
-import type { Agent, RoleModelPreferences, Step, Workflow, WorkflowRun } from '@goodboy/types';
+import type { Agent, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import { inferAgentKindFromName } from '../../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../resolveStepRouting';

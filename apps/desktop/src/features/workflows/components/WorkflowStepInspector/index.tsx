@@ -1,4 +1,3 @@
-import { MessagesSquare } from 'lucide-react';
 import { Divider, Markdown, ScrollFade } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { stripControlMarkers } from '@goodboy/core';
