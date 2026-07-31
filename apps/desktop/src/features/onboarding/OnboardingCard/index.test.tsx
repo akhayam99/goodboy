@@ -6,7 +6,7 @@ const { finishMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('../onboarding-store', () => ({
-  ONBOARDING_STEPS: [
+  visibleOnboardingSteps: () => [
     { id: 'workspace', title: 'Workspace', why: 'Workspace', group: 'setup' },
     { id: 'session', title: 'Session', why: 'Session', group: 'build' },
   ],

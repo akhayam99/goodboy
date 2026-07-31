@@ -13,8 +13,8 @@ const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
   ghStatusMock: vi.fn(async () => ({ scoped: false }) as unknown),
 }));
 
-vi.mock('../../onboarding-store', () => ({
-  ONBOARDING_STEPS: [
+const { STEPS } = vi.hoisted(() => ({
+  STEPS: [
     { id: 'workspace', title: 'x', why: 'x' },
     { id: 'codeHost', title: 'x', why: 'x' },
     { id: 'tools', title: 'x', why: 'x' },
@@ -23,6 +23,12 @@ vi.mock('../../onboarding-store', () => ({
     { id: 'plan', title: 'x', why: 'x' },
     { id: 'palette', title: 'x', why: 'x' },
   ],
+}));
+
+vi.mock('../../onboarding-store', () => ({
+  ONBOARDING_STEPS: STEPS,
+  visibleOnboardingSteps: ({ isSimple }: { readonly isSimple: boolean }) =>
+    isSimple ? STEPS.filter((step) => step.id !== 'codeHost') : STEPS,
   getCompleted: () => completed,
   isCollapsed: () => false,
   isFinished: () => false,
@@ -123,13 +129,13 @@ describe('useOnboardingProgress auto-mark', () => {
     expect(result.current.isDone).toBe(false);
   });
 
-  it('removes integration steps from progress for a simple workspace', () => {
-    completed = ['workspace', 'session', 'agent', 'plan', 'palette'];
+  it('removes the code host step but keeps the tracker step for a simple workspace', () => {
+    completed = ['workspace', 'tools', 'session', 'agent', 'plan', 'palette'];
     workspaces.push({ id: 'w1', kind: 'simple' });
     const { result } = renderHook(() => useOnboardingProgress());
     expect(result.current.isSimple).toBe(true);
-    expect(result.current.completedCount).toBe(5);
-    expect(result.current.totalCount).toBe(5);
+    expect(result.current.completedCount).toBe(6);
+    expect(result.current.totalCount).toBe(6);
     expect(result.current.isDone).toBe(true);
     expect(ghStatusMock).not.toHaveBeenCalled();
   });

@@ -128,23 +128,25 @@ export const AppFooter = ({
                 active={activeStudio === 'gitlab'}
                 connected={gitlabEnabled}
               />
-              <FooterButton
-                icon={<IntegrationGlyph provider="linear" size="xs" />}
-                label="Linear"
-                title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
-                onClick={onOpenLinear}
-                active={activeStudio === 'linear'}
-                connected={linearEnabled}
-              />
-              <FooterButton
-                icon={<IntegrationGlyph provider="sentry" size="xs" />}
-                label="Sentry"
-                title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
-                onClick={onOpenSentry}
-                active={activeStudio === 'sentry'}
-                connected={sentryEnabled}
-              />
             </>
+          )}
+          <FooterButton
+            icon={<IntegrationGlyph provider="linear" size="xs" />}
+            label="Linear"
+            title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
+            onClick={onOpenLinear}
+            active={activeStudio === 'linear'}
+            connected={linearEnabled}
+          />
+          {isSimpleWorkspace ? null : (
+            <FooterButton
+              icon={<IntegrationGlyph provider="sentry" size="xs" />}
+              label="Sentry"
+              title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
+              onClick={onOpenSentry}
+              active={activeStudio === 'sentry'}
+              connected={sentryEnabled}
+            />
           )}
         </div>
 
