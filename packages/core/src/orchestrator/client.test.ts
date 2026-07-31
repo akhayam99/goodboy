@@ -30,6 +30,8 @@ describe('OrchestratorClient', () => {
       providerId: 'anthropic',
       modelMenu: [{ id: 'haiku-4.5', label: 'Haiku 4.5', note: 'cheap, fast' }],
       roleDefaults: [{ role: 'implementer', model: 'sonnet-5', effort: 'medium' }],
+      stepsUsed: 0,
+      stepBudget: 8,
     });
 
     const args = request?.['args'] as Record<string, unknown> | undefined;
@@ -65,6 +67,8 @@ describe('OrchestratorClient', () => {
       providerId: 'anthropic',
       modelMenu: [{ id: 'haiku-4.5', label: 'Haiku 4.5', note: 'cheap, fast' }],
       roleDefaults: [{ role: 'implementer', model: 'sonnet-5', effort: 'medium' }],
+      stepsUsed: 0,
+      stepBudget: 8,
     });
 
     const args = request?.['args'] as Record<string, unknown> | undefined;
@@ -88,6 +92,8 @@ describe('OrchestratorClient', () => {
       providerId: 'codex',
       modelMenu: [],
       roleDefaults: [],
+      stepsUsed: 0,
+      stepBudget: 8,
     });
 
     expect(result.decision).toBeNull();
@@ -112,6 +118,8 @@ describe('OrchestratorClient', () => {
         providerId: 'codex',
         modelMenu: [],
         roleDefaults: [],
+        stepsUsed: 0,
+        stepBudget: 8,
       }),
     ).rejects.toThrow('orchestrator decision timed out');
   });

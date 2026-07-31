@@ -9,7 +9,7 @@ import type {
   WorkspaceScriptId,
 } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
-import type { ModelEffort } from './provider-registry';
+import type { ModelEffort, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
 
 export type WorkspaceKind = 'repo' | 'composite' | 'simple';
@@ -63,6 +63,12 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
+export type OrchestratorRouting = Readonly<{
+  providerId: ProviderId;
+  model: string;
+  effort?: ModelEffort;
+}>;
+
 export type WorkflowRun = Readonly<{
   id: WorkflowRunId;
   workflowId: WorkflowId;
@@ -72,8 +78,10 @@ export type WorkflowRun = Readonly<{
   triggerMode: WorkflowTriggerMode;
   executionMode: WorkflowExecutionMode;
   orchestrationOutcome?: WorkflowOrchestrationOutcome;
+  orchestrationReason?: string;
   orchestrationError?: string;
   orchestratorHints?: string;
+  orchestratorRouting?: OrchestratorRouting;
   chainAfterId?: WorkflowRunId;
   goal?: string;
   discardedAt?: IsoDateTime;
