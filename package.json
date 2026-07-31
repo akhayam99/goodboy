@@ -1,6 +1,6 @@
 {
   "name": "goodboy",
-  "version": "0.1.49",
+  "version": "0.1.50",
   "private": true,
   "description": "AI workspace orchestrator. Local-first, provider-agnostic.",
   "license": "MIT",
