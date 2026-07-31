@@ -67,7 +67,7 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
             </>
           }
           title={issue.title}
-          actions={<OpenExternalLink url={issue.url} label="Open in GitHub" />}
+          actions={<OpenExternalLink url={issue.url} label="Open in GitHub" copyLabel="issue" />}
         />
       }
       rail={

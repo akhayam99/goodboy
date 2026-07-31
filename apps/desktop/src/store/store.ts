@@ -105,6 +105,10 @@ import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
+import type {
+  OrchestrateOptions,
+  OrchestratorRouting,
+} from './slices/workflows/orchestrateNextStep';
 import { createSettingsSlice } from './slices/settings';
 import { createConflictsSlice } from './slices/conflicts';
 import { createTranscriptsSlice } from './slices/transcripts';
@@ -277,8 +281,26 @@ export type AppActions = {
     options?: { readonly onlyWhenBlocked?: boolean },
   ): Promise<void>;
   maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
-  orchestrateNextStep(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  retryWorkflowOrchestration(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
+  orchestrateNextStep(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    options?: OrchestrateOptions,
+  ): Promise<void>;
+  retryWorkflowOrchestration(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    routing?: OrchestratorRouting,
+  ): Promise<void>;
+  continueWorkflowRun(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    note?: string,
+  ): Promise<void>;
+  setWorkflowOrchestratorHints(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    hints: string,
+  ): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
   appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;

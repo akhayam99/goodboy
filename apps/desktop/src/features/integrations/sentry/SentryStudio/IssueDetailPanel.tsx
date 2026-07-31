@@ -110,7 +110,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           }
           actions={
             view.permalink != null && view.permalink !== '' ? (
-              <OpenExternalLink url={view.permalink} label="Open in Sentry" />
+              <OpenExternalLink url={view.permalink} label="Open in Sentry" copyLabel="issue" />
             ) : undefined
           }
         />

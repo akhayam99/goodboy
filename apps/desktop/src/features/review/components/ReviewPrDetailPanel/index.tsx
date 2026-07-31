@@ -14,6 +14,7 @@ import { formatError } from '../../../../shared/lib/errors';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
+import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
 import { AuthorAvatar } from '../AuthorAvatar';
 
 type Props = {
@@ -101,6 +102,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
           >
             Open in {hostLabel} <ExternalLink size={11} aria-hidden />
           </a>
+          <CopyLinkButton url={pr.url} label={`PR #${pr.number}`} />
         </div>
         <h2 className="text-lg font-semibold leading-snug text-foreground">{pr.title}</h2>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-2xs text-muted-foreground">

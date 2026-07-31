@@ -72,6 +72,8 @@ export type WorkflowRun = Readonly<{
   triggerMode: WorkflowTriggerMode;
   executionMode: WorkflowExecutionMode;
   orchestrationOutcome?: WorkflowOrchestrationOutcome;
+  orchestrationError?: string;
+  orchestratorHints?: string;
   chainAfterId?: WorkflowRunId;
   goal?: string;
   discardedAt?: IsoDateTime;

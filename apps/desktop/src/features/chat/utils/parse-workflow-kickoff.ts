@@ -1,6 +1,6 @@
-const GOAL_LABEL = 'Workflow goal:';
-const PLAN_LABEL = 'Active plan to execute:';
-const MARKER_ANCHOR = 'Complete ONLY this workflow step';
+const GOAL_LABEL = '**Goal**';
+const PLAN_LABEL = '**Plan**';
+const MARKER_ANCHOR = '**Scope** this step only';
 
 export type ParsedWorkflowKickoff = {
   goal: string;

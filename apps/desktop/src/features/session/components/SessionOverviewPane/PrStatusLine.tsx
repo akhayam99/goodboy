@@ -2,6 +2,7 @@ import { Check, XCircle } from 'lucide-react';
 import type { PullRequestState, PullRequestStateKind } from '@goodboy/types';
 import { StatusDot } from '@goodboy/ui';
 import { openUrl } from '../../../../shared/lib/editor';
+import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 
 type Props = {
@@ -29,6 +30,7 @@ export const PrStatusLine = ({ pr }: Props) => {
       >
         #{pr.number}
       </button>
+      <CopyLinkButton url={pr.url} label={`PR #${pr.number}`} size={10} className="p-0.5" />
       {pr.checks === 'failure' ? (
         <span title="Checks failing" className="shrink-0 text-danger">
           <XCircle size={12} aria-hidden />

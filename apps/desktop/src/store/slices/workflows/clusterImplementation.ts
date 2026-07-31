@@ -14,6 +14,7 @@ import {
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
+import { composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -27,16 +28,11 @@ function childrenOf(runs: ReadonlyArray<Agent>, containerId: AgentId): ReadonlyA
   return runs.filter((r) => r.parentAgentId === containerId).sort((a, b) => a.ordinal - b.ordinal);
 }
 
-export const composeClusterBoundary = (childId: AgentId): string =>
-  [
-    'Execute ONLY this cluster. Do not start later clusters or work on their scope.',
-    'When every item in this cluster is fully complete, emit on its own line exactly:',
-    `<<cluster-done id="${childId}">>`,
-    'Do not emit that marker until the cluster is truly done.',
-  ].join('\n');
-
 export const clusterBoundaryMarker = (childId: AgentId): string =>
   `<<cluster-done id="${childId}">>`;
+
+export const composeClusterBoundary = (childId: AgentId): string =>
+  composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) });
 
 function composeClusterKickoff(
   childId: AgentId,
@@ -48,19 +44,15 @@ function composeClusterKickoff(
   const priorTitles = clusters.slice(0, index).map((c, i) => `${i + 1}. ${c.title}`);
   const priorBlock =
     priorTitles.length > 0
-      ? `Already completed (their changes are on disk, read files as needed):\n${priorTitles.join('\n')}`
-      : 'This is the first cluster.';
-  return [
-    'You are executing ONE cluster of a larger implementation plan, in sequence.',
-    `Overall goal: ${goalTitle}`,
+      ? `**Done before you** ${priorTitles.join(', ')} (changes already on disk)`
+      : '';
+  return composeKickoff(
+    `**Goal** ${goalTitle}`,
     priorBlock,
-    '',
-    `Your cluster (${index + 1}/${clusters.length}): ${cluster?.title ?? ''}`,
-    '',
+    `**Cluster ${index + 1}/${clusters.length}** ${cluster?.title ?? ''}`,
     cluster?.instructions ?? '',
-    '',
     composeClusterBoundary(childId),
-  ].join('\n');
+  );
 }
 
 const hasInstructions = (cluster: ImplementationCluster | undefined): boolean =>
@@ -70,11 +62,10 @@ function composeContinuePrompt(
   childId: AgentId,
   cluster: ImplementationCluster | undefined,
 ): string {
-  return [
-    `You stopped before finishing this cluster${cluster ? ` (${cluster.title})` : ''}.`,
-    'Continue with the remaining items now.',
+  return composeKickoff(
+    `**Resume**${cluster ? ` ${cluster.title}` : ''}: finish the remaining items now.`,
     composeClusterBoundary(childId),
-  ].join('\n');
+  );
 }
 
 function startChild(

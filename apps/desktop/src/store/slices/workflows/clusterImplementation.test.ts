@@ -172,9 +172,9 @@ describe('selectFanOutPlan', () => {
 describe('composeClusterBoundary', () => {
   it('states the single-cluster boundary and embeds the child-scoped done marker', () => {
     const text = composeClusterBoundary('child-7' as AgentId);
-    expect(text).toContain('Execute ONLY this cluster');
-    expect(text).toContain('Do not start later clusters');
+    expect(text).toContain('**Scope** this cluster only');
     expect(text).toContain('<<cluster-done id="child-7">>');
+    expect(text.split('\n')).toHaveLength(1);
   });
 });
 
@@ -366,8 +366,8 @@ describe('advanceClusterImplementation', () => {
     expect(sendTurn).toHaveBeenCalledTimes(1);
     const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId; content: string };
     expect(call.agentId).toBe('cont-a');
-    expect(call.content).toContain('stopped before finishing');
-    expect(call.content).toContain('Do not start later clusters');
+    expect(call.content).toContain('**Resume**');
+    expect(call.content).toContain('**Scope** this cluster only');
     expect(call.content).toContain('<<cluster-done id="cont-a">>');
     expect(state.selectedAgentId).toBe(PARENT);
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
@@ -609,7 +609,7 @@ describe('advanceClusterImplementation', () => {
     expect(call.content).toContain('2/2');
     expect(call.content).toContain('c1');
     expect(call.content).toContain('do 1');
-    expect(call.content).toContain('Overall goal: goal');
+    expect(call.content).toContain('**Goal** goal');
   });
 
   it('hydrates the plans from the db when the store has none for the session', async () => {

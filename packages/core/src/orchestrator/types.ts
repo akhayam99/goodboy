@@ -46,6 +46,7 @@ export type OrchestratorInput = {
   readonly processText: string;
   readonly completedSteps: ReadonlyArray<OrchestratorCompletedStep>;
   readonly openQuestionCount: number;
+  readonly operatorHints?: string;
   readonly providerId: ProviderId;
   readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;

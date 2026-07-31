@@ -5,6 +5,7 @@ import type {
   AgentRole,
   IsoDateTime,
   ModelCostTier,
+  ModelEffort,
   ProviderId,
   ProviderRunId,
   RoleModelPreferences,
@@ -18,6 +19,7 @@ import type {
 } from '@goodboy/types';
 import {
   OrchestratorClient,
+  OrchestratorProviderError,
   PROVIDER_CAPABILITIES,
   ROLE_DEFAULTS,
   recommendedModelForRole,
@@ -27,12 +29,27 @@ import {
   type OrchestratorModelOption,
   type OrchestratorRoleDefault,
 } from '@goodboy/core';
-import { listOpenQuestionsForSession, updateWorkflowRunOrchestrationOutcome } from '@goodboy/db';
+import {
+  listOpenQuestionsForSession,
+  updateWorkflowRunOrchestrationError,
+  updateWorkflowRunOrchestrationOutcome,
+} from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
+
+export type OrchestratorRouting = {
+  readonly providerId: ProviderId;
+  readonly model: string;
+  readonly effort?: ModelEffort;
+};
+
+export type OrchestrateOptions = {
+  readonly routing?: OrchestratorRouting;
+};
 
 const orchestrationInFlight = new Set<WorkflowRunId>();
 
@@ -128,18 +145,47 @@ const persistOrchestrationOutcome = async ({
   outcome,
 }: PersistOutcomeParams): Promise<void> => {
   await updateWorkflowRunOrchestrationOutcome(tauriDatabase, workflowRunId, outcome);
-  set((state) => ({
-    sessions: state.sessions.map((session) =>
-      session.id === sessionId
-        ? {
-            ...session,
-            workflowRuns: session.workflowRuns.map((run) =>
-              run.id === workflowRunId ? { ...run, orchestrationOutcome: outcome } : run,
-            ),
-          }
-        : session,
-    ),
-  }));
+  patchWorkflowRun({
+    set,
+    sessionId,
+    workflowRunId,
+    patch: (run) => ({ ...run, orchestrationOutcome: outcome }),
+  });
+};
+
+type PersistErrorParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly message: string | null;
+};
+
+export const persistOrchestrationError = async ({
+  set,
+  sessionId,
+  workflowRunId,
+  message,
+}: PersistErrorParams): Promise<void> => {
+  await updateWorkflowRunOrchestrationError(tauriDatabase, workflowRunId, message);
+  patchWorkflowRun({
+    set,
+    sessionId,
+    workflowRunId,
+    patch: (run) =>
+      message == null
+        ? withoutKeys(run, ['orchestrationError'])
+        : { ...run, orchestrationError: message },
+  });
+};
+
+const failureLabel = (error: unknown): string => {
+  if (error instanceof OrchestratorProviderError) {
+    return `provider refused the request: ${error.detail}`;
+  }
+  if (error instanceof Error && error.message.includes('timed out')) {
+    return 'the orchestrator timed out after 120s';
+  }
+  return error instanceof Error ? error.message : String(error);
 };
 
 type UniqueNameParams = {
@@ -252,7 +298,11 @@ const appendStep = async ({
 };
 
 export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void> => {
+  return async (
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    options?: OrchestrateOptions,
+  ): Promise<void> => {
     if (orchestrationInFlight.has(workflowRunId)) {
       return;
     }
@@ -294,8 +344,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         get().workspaceOverrides?.[session.workspaceId]?.taskModels,
         defaultProvider,
       );
+      const routing = options?.routing ?? taskModel;
       const client = new OrchestratorClient({
-        ...taskModel,
+        ...routing,
         invokeFn: invoke,
         ...(get().sessionWorktrees?.[sessionId]?.[0] != null && {
           workingDir: get().sessionWorktrees[sessionId]![0],
@@ -308,12 +359,14 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           processText: workflow.processText ?? '',
           completedSteps,
           openQuestionCount: openQuestions.length,
+          ...(run.orchestratorHints != null && { operatorHints: run.orchestratorHints }),
           providerId: defaultProvider,
           modelMenu: modelMenuFor({ provider: defaultProvider, roleModels }),
           roleDefaults: roleDefaultsFor({ provider: defaultProvider, roleModels }),
         });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
+        await persistOrchestrationError({ set, sessionId, workflowRunId, message });
         emitDecision({
           get,
           sessionId,
@@ -328,6 +381,12 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       const decision = result.decision;
       if (decision == null) {
+        await persistOrchestrationError({
+          set,
+          sessionId,
+          workflowRunId,
+          message: `${routing.providerId}/${routing.model} replied with something that is not a decision`,
+        });
         emitDecision({
           get,
           sessionId,
@@ -344,6 +403,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         );
         return;
       }
+      await persistOrchestrationError({ set, sessionId, workflowRunId, message: null });
       if (decision.action === 'next') {
         const agent = await appendStep({
           set,

@@ -25,7 +25,7 @@ import {
   kindConsumesPlan,
   type AgentKind,
 } from '../../../features/session/agent-kind';
-import { buildPlanKickoffSection, composeKickoff } from '../../kickoff';
+import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../../kickoff';
 import { fanOutClusters, selectFanOutPlan } from '../workflows/clusterImplementation';
 import type { GetFn, SetFn } from './types';
 
@@ -173,7 +173,7 @@ export const spawnAgent = (set: SetFn, get: GetFn) => {
           ? (get().sessionPlans[sessionId]?.find((p) => p.id === args.triggeredPlanId) ?? null)
           : null;
       planSection = explicitPlan
-        ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
+        ? composePlanSection({ bodyMd: explicitPlan.bodyMd })
         : latestSection;
       planForKickoff = explicitPlan ?? latestPlan;
       const workflowAutoConsume = args.stepId !== undefined && latestPlan?.status === 'active';

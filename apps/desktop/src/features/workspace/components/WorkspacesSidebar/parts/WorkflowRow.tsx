@@ -27,6 +27,7 @@ import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRole
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { WorkflowOrchestratorTldr } from '../../../../../features/workflows/components/WorkflowOrchestratorTldr';
+import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
 import { WorkflowStepStrip } from '../../../../../features/workflows/components/WorkflowStepStrip';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
@@ -375,6 +376,14 @@ export const WorkflowRow = ({
             processText={(workflow.processText ?? '').trim()}
           />
           <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+          {isDynamic ? (
+            <OrchestratorPanel
+              sessionId={task.id}
+              run={run}
+              agents={wfAgents}
+              isOrchestrating={isOrchestrating}
+            />
+          ) : null}
           {isDynamic ? <WorkflowOrchestratorTldr steps={workflow.steps} /> : null}
         </div>
       ) : null}

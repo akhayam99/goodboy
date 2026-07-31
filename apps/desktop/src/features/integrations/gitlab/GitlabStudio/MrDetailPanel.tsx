@@ -279,7 +279,7 @@ export const MrDetailPanel = ({
             actions={
               <>
                 {refreshButton}
-                <OpenExternalLink url={mr.webUrl} label="Open in GitLab" />
+                <OpenExternalLink url={mr.webUrl} label="Open in GitLab" copyLabel="MR" />
               </>
             }
           />

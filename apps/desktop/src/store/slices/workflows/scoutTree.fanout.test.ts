@@ -114,7 +114,7 @@ describe('fanOutScouts workflowRunId propagation', () => {
     expect(sendTurn).toHaveBeenCalledTimes(3);
     for (const [args] of sendTurn.mock.calls) {
       expect(args.content).toContain('<<scout-domains keywords="auth,db,routing">>');
-      expect(args.content).toContain('2 to 4 bare single-word domain keywords');
+      expect(args.content).toContain('2 to 4 single-word keywords');
     }
   });
 
@@ -212,7 +212,7 @@ describe('advanceScoutTree split decision', () => {
     expect(hoisted.insertArgs).toHaveLength(0);
     expect(sendTurn).toHaveBeenCalledTimes(1);
     const [payload] = sendTurn.mock.calls[0]!;
-    expect(payload.content).toContain('do NOT split');
+    expect(payload.content).toContain('do not split');
   });
 
   it('does not fan out past the depth cap even with a split marker', async () => {

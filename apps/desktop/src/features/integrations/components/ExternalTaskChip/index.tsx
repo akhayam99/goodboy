@@ -2,6 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';
+import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
 
 type Props = {
   task: SessionExternalTask;
@@ -76,7 +77,7 @@ export const ExternalTaskChip = ({
         new CustomEvent(meta.studioEvent, { detail: { issueExternalId: task.externalId } }),
       ));
 
-  return (
+  const trigger = (
     <button
       type="button"
       onClick={(e) => {
@@ -109,5 +110,14 @@ export const ExternalTaskChip = ({
         />
       ) : null}
     </button>
+  );
+
+  if (!isRow || !task.url) return trigger;
+
+  return (
+    <span className="flex w-full min-w-0 items-center gap-1">
+      {trigger}
+      <CopyLinkButton url={task.url} label={task.identifier} />
+    </span>
   );
 };

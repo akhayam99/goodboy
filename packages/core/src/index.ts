@@ -346,6 +346,7 @@ export {
   ORCHESTRATOR_SYSTEM_PROMPT,
   OrchestratorClient,
   OrchestratorClientSpawnError,
+  OrchestratorProviderError,
   type OrchestratorClientDeps,
   type OrchestratorClientResult,
   type OrchestratorCompletedStep,

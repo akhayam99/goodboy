@@ -347,8 +347,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           }
 
           if (parallelDispatch === null) {
+            const prefix = nextDef.promptPrefix.trim();
+            const hasPrefixAlready = prefix.length > 0 && resolvedPrompt.includes(prefix);
             resolvedPrompt = buildStepPrompt({
-              definition: nextDef,
+              definition: hasPrefixAlready ? { ...nextDef, promptPrefix: '' } : nextDef,
               carryForwardContext: phasePromptCarryForward,
               userMessage: resolvedPrompt,
             });
