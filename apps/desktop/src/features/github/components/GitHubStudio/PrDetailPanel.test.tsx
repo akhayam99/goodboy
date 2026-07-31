@@ -172,6 +172,7 @@ beforeEach(() => {
   h.prs = [h.pr];
   h.store.sessionGithubPrs = { [h.sessionId]: [h.pr] };
   h.store.sessionSelectedPrNumber = {};
+  h.store.selectSessionPr.mockClear();
 });
 
 afterEach(cleanup);
@@ -225,6 +226,20 @@ describe('PrDetailPanel', () => {
     await waitFor(() => {
       expect(screen.getByTitle('2 pull requests on this branch')).toBeDefined();
     });
+  });
+
+  it('selects the requested pull request even without a comment thread', () => {
+    h.store.sessionGithubPrs = { [h.sessionId]: [h.pr, h.secondPr] };
+
+    render(
+      <PrDetailPanel
+        sessionId={h.sessionId}
+        initialPrNumber={h.secondPr.number}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(h.store.selectSessionPr).toHaveBeenCalledWith(h.sessionId, h.secondPr.number);
   });
 
   it('drives the active pr and switcher selection through store state', () => {

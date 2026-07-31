@@ -38,6 +38,7 @@ vi.mock('../../../../store', () => {
   return { useAppStore, EMPTY_ARRAY: [] };
 });
 
+import { ToastProvider } from '../../../../app/components/Toast';
 import { SkillsPanel } from './index';
 
 const buildSkill = (): Skill => ({
@@ -64,7 +65,11 @@ afterEach(cleanup);
 
 describe('SkillsPanel', () => {
   it('arms the delete with an inline confirmation before calling deleteSkill', async () => {
-    render(<SkillsPanel workspaceId={'ws-1' as never} />);
+    render(
+      <ToastProvider>
+        <SkillsPanel workspaceId={'ws-1' as never} />
+      </ToastProvider>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(state.deleteSkill).not.toHaveBeenCalled();
@@ -78,7 +83,11 @@ describe('SkillsPanel', () => {
   });
 
   it('dismisses the confirmation on cancel without deleting', () => {
-    render(<SkillsPanel workspaceId={'ws-1' as never} />);
+    render(
+      <ToastProvider>
+        <SkillsPanel workspaceId={'ws-1' as never} />
+      </ToastProvider>,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

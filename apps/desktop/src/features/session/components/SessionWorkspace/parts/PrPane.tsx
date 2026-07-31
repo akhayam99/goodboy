@@ -368,7 +368,7 @@ const LinkedIssuesSection = ({ issues, sessionId }: LinkedIssuesSectionProps) =>
               type="button"
               onClick={() =>
                 window.dispatchEvent(
-                  new CustomEvent('goodboy:open-github-session', {
+                  new CustomEvent('goodboy:open-github-studio', {
                     detail: { sessionId, issueExternalId: String(issue.number) },
                   }),
                 )

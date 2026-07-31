@@ -190,7 +190,11 @@ function makeSession(overrides: Partial<Session> = {}): Session {
 
 describe('snapshot, empty states', () => {
   it('SkillsPanel: no skills', () => {
-    const { container } = render(<SkillsPanel workspaceId={WS_ID} />);
+    const { container } = render(
+      <ToastProvider>
+        <SkillsPanel workspaceId={WS_ID} />
+      </ToastProvider>,
+    );
     expect(container.firstChild).toMatchSnapshot();
   });
 

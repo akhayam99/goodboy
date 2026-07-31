@@ -188,6 +188,7 @@ export const LaunchSessionPanel = ({
           maxRows={10}
           disabled={busy}
           aria-label="Session goal"
+          className="w-full sm:w-96"
         />
       </FieldRow>
 

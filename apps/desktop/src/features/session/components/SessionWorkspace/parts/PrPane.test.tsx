@@ -302,6 +302,18 @@ describe('PrPane', () => {
     expect(screen.getByText('No pull request yet')).toBeDefined();
     expect(screen.getByText('ak/refactor-auth')).toBeDefined();
     expect(screen.getByRole('button', { name: /Open a pull request/i })).toBeDefined();
+
+    const studioEvents: Array<CustomEvent> = [];
+    const studioListener = (event: Event) => studioEvents.push(event as CustomEvent);
+    const prListener = vi.fn();
+    window.addEventListener('goodboy:open-github-studio', studioListener);
+    window.addEventListener('goodboy:open-github-session', prListener);
+    fireEvent.click(screen.getByRole('button', { name: /#7 Track auth rollout/i }));
+    window.removeEventListener('goodboy:open-github-studio', studioListener);
+    window.removeEventListener('goodboy:open-github-session', prListener);
+
+    expect(studioEvents[0]?.detail).toEqual({ sessionId: SESSION_ID, issueExternalId: '7' });
+    expect(prListener).not.toHaveBeenCalled();
   });
 
   it('routes creating a PR to the shared PR studio surface', () => {

@@ -14,9 +14,13 @@ const { state } = vi.hoisted(() => ({
     retrySummarizer: vi.fn(),
     retryStepSummary: vi.fn(async () => undefined),
     summarizerStatus: {} as Record<string, unknown>,
-    sessions: [] as ReadonlyArray<unknown>,
+    sessions: [] as ReadonlyArray<{ readonly id: string; readonly providerPreference?: unknown }>,
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
+    currentWorkspaceId: 'ws-1' as string | null,
+    currentSessionId: null as string | null,
     setCurrentSession: vi.fn(async () => undefined),
+    setCurrentWorkspace: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
   },
 }));
@@ -39,7 +43,11 @@ beforeEach(() => {
   state.summarizerStatus = {};
   state.sessions = [];
   state.providers = [];
+  state.currentWorkspaceId = 'ws-1';
+  state.currentSessionId = null;
   state.setCurrentSession = vi.fn(async () => undefined);
+  state.setCurrentWorkspace = vi.fn(async () => undefined);
+  state.setActiveLens = vi.fn();
   state.selectAgent = vi.fn(async () => undefined);
 });
 afterEach(cleanup);
@@ -171,6 +179,7 @@ describe('NotificationCenter', () => {
   });
 
   it('navigates to the session and agent of a row and closes the panel', async () => {
+    state.sessions = [{ id: 'session-3' }];
     state.notifications = [
       {
         id: 'n3',
@@ -192,10 +201,130 @@ describe('NotificationCenter', () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /open step summary degraded/i }));
+      fireEvent.click(screen.getByRole('button', { name: /step summary degraded/i }));
     });
 
     expect(state.setCurrentSession).toHaveBeenCalledWith('session-3');
+    expect(state.selectAgent).toHaveBeenCalledWith('session-3', 'agent-3');
+    expect(screen.queryByText('step summary degraded')).toBeNull();
+  });
+
+  it('reads the body and the age of a row instead of the title alone', async () => {
+    state.sessions = [{ id: 'session-3' }];
+    state.notifications = [
+      {
+        id: 'n3',
+        read: true,
+        severity: 'warning',
+        kind: 'summarizer-degraded',
+        title: 'step summary degraded',
+        body: 'anthropic/haiku: boom',
+        ts: new Date().toISOString(),
+        sessionId: 'session-3',
+        workspaceId: 'ws-1',
+        action: null,
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+
+    expect(screen.getByRole('button', { name: /anthropic\/haiku: boom/i })).toBeDefined();
+  });
+
+  it('switches workspace before opening a session from another workspace', async () => {
+    state.currentWorkspaceId = 'ws-1';
+    state.setCurrentWorkspace = vi.fn(async () => {
+      state.currentWorkspaceId = 'ws-2';
+      state.sessions = [{ id: 'session-9' }];
+    });
+    state.notifications = [
+      {
+        id: 'n9',
+        read: true,
+        severity: 'info',
+        kind: 'info',
+        title: 'foreign session done',
+        body: null,
+        ts: new Date().toISOString(),
+        sessionId: 'session-9',
+        workspaceId: 'ws-2',
+        action: null,
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /foreign session done/i }));
+    });
+
+    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-2');
+    expect(state.setCurrentSession).toHaveBeenCalledWith('session-9');
+  });
+
+  it('brings the surface of the already current session forward', async () => {
+    state.sessions = [{ id: 'session-5' }];
+    state.currentSessionId = 'session-5';
+    state.notifications = [
+      {
+        id: 'n5',
+        read: true,
+        severity: 'info',
+        kind: 'info',
+        title: 'same session update',
+        body: null,
+        ts: new Date().toISOString(),
+        sessionId: 'session-5',
+        workspaceId: 'ws-1',
+        action: null,
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /same session update/i }));
+    });
+
+    expect(state.setActiveLens).toHaveBeenCalledWith('session-5', null);
+    expect(state.setCurrentSession).not.toHaveBeenCalled();
+  });
+
+  it('survives a failing agent selection', async () => {
+    state.sessions = [{ id: 'session-3' }];
+    state.selectAgent = vi.fn(async () => {
+      throw new Error('transcript read failed');
+    });
+    state.notifications = [
+      {
+        id: 'n3',
+        read: true,
+        severity: 'warning',
+        kind: 'summarizer-degraded',
+        title: 'step summary degraded',
+        body: 'anthropic/haiku: boom',
+        ts: new Date().toISOString(),
+        sessionId: 'session-3',
+        workspaceId: 'ws-1',
+        action: { kind: 'retry-step-summary', sessionId: 'session-3', agentId: 'agent-3' },
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /step summary degraded/i }));
+    });
+
     expect(state.selectAgent).toHaveBeenCalledWith('session-3', 'agent-3');
     expect(screen.queryByText('step summary degraded')).toBeNull();
   });

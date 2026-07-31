@@ -209,8 +209,13 @@ export const WorkflowStepRow = ({
               onClick={(e) => e.stopPropagation()}
               onDoubleClick={(e) => e.stopPropagation()}
               onKeyDown={rename.onKeyDown}
-              onBlur={() => void rename.commit()}
-              className="line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
+              onBlur={rename.onBlur}
+              title={rename.error ?? undefined}
+              aria-invalid={rename.error !== null}
+              className={cn(
+                'line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1',
+                rename.error !== null ? 'ring-danger' : 'ring-primary',
+              )}
               aria-label="rename agent"
             />
           ) : (

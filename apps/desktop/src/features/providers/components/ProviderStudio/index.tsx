@@ -91,6 +91,7 @@ export const ProviderStudio = ({
               <ProviderConnectPane
                 providerId={selected.id as ProviderId}
                 action={connectAction}
+                autoStart
                 onBack={() => setConnectAction(null)}
               />
             ) : (
