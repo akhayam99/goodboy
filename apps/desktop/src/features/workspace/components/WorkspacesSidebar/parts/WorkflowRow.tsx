@@ -13,6 +13,7 @@ import {
 import type {
   Agent,
   AgentId,
+  ProviderId,
   Session,
   TelemetryRecord,
   Workflow,
@@ -65,6 +66,7 @@ type Props = {
   readonly onDeleteWorkflow: (runId: WorkflowRunId) => Promise<void>;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
+  readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
   readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
   readonly clusterExpand: ReadonlyMap<string, boolean>;
   readonly selectedAgentId: AgentId | null;
@@ -77,8 +79,6 @@ type Props = {
   readonly isTranscriptLoading: boolean;
   readonly onStartStepAgent: (agent: Agent, model?: string) => Promise<void>;
   readonly onPickAgent: (id: AgentId) => void;
-  readonly inspectedStepId?: AgentId | null;
-  readonly onInspectStep?: (id: AgentId) => void;
   readonly setEditingId: Dispatch<SetStateAction<AgentId | null>>;
   readonly onRenameCommit: (id: AgentId, name: string) => Promise<void>;
   readonly onResolveFirstForRun: (run: WorkflowRun) => void;
@@ -109,6 +109,7 @@ export const WorkflowRow = ({
   onDeleteWorkflow,
   agentKindOverride,
   agentModelOverride,
+  agentProviderOverride,
   childrenByParentId,
   clusterExpand,
   selectedAgentId,
@@ -121,8 +122,6 @@ export const WorkflowRow = ({
   isTranscriptLoading,
   onStartStepAgent,
   onPickAgent,
-  inspectedStepId = null,
-  onInspectStep,
   setEditingId,
   onRenameCommit,
   onResolveFirstForRun,
@@ -400,9 +399,10 @@ export const WorkflowRow = ({
               childrenByParentId={childrenByParentId}
               agentKindOverride={agentKindOverride}
               agentModelOverride={agentModelOverride}
+              agentProviderOverride={agentProviderOverride}
               roleModels={roleModels}
-              selectedAgentId={onInspectStep == null ? selectedAgentId : inspectedStepId}
-              onSelect={onInspectStep ?? onPickAgent}
+              selectedAgentId={selectedAgentId}
+              onSelect={onPickAgent}
             />
           ) : (
             <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
@@ -410,12 +410,13 @@ export const WorkflowRow = ({
                 const isActionable = run.stepId === actionableStepId && run.status === 'pending';
                 const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
                 const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
-                const resolvedModel = resolveStepRouting({
+                const resolvedRouting = resolveStepRouting({
                   step: step ?? null,
                   kind,
                   roleModels,
                   agentModel: agentModelOverride[run.id] ?? run.modelOverride,
-                }).model;
+                  agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
+                });
                 const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
                 const clustersExpanded = clusterExpand.get(run.id) ?? false;
                 const clusterUnread = countUnread(clusterChildren);
@@ -425,7 +426,8 @@ export const WorkflowRow = ({
                       run={run}
                       kind={kind}
                       index={index}
-                      resolvedModel={resolvedModel}
+                      resolvedModel={resolvedRouting.model}
+                      resolvedProvider={resolvedRouting.provider}
                       isActionable={isActionable}
                       blockReason={isActionable ? wfBlockReason : null}
                       isSelected={run.id === selectedAgentId}

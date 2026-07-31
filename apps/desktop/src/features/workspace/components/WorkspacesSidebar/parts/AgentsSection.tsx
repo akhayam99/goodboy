@@ -22,8 +22,6 @@ type Props = {
   workflowRunId?: WorkflowRunId;
   workflowVariant?: 'sidebar' | 'detail';
   showWorkflowAttach?: boolean;
-  inspectedStepId?: AgentId | null;
-  onInspectStep?: (agentId: AgentId) => void;
 };
 
 export const AgentsSection = ({
@@ -32,8 +30,6 @@ export const AgentsSection = ({
   workflowRunId,
   workflowVariant = 'sidebar',
   showWorkflowAttach = true,
-  inspectedStepId = null,
-  onInspectStep,
 }: Props) => {
   const forceExpanded = only === 'workflows';
   const showSidebarSections = only == null;
@@ -99,6 +95,7 @@ export const AgentsSection = ({
                 onDeleteWorkflow={section.onDeleteWorkflow}
                 agentKindOverride={section.agentKindOverride}
                 agentModelOverride={section.agentModelOverride}
+                agentProviderOverride={section.agentProviderOverride}
                 childrenByParentId={section.childrenByParentId}
                 clusterExpand={section.clusterExpand}
                 selectedAgentId={section.selectedAgentId}
@@ -111,8 +108,6 @@ export const AgentsSection = ({
                 isTranscriptLoading={section.isTranscriptLoading}
                 onStartStepAgent={section.onStartStepAgent}
                 onPickAgent={section.onPickAgent}
-                inspectedStepId={inspectedStepId}
-                onInspectStep={onInspectStep}
                 setEditingId={section.setEditingId}
                 onRenameCommit={section.onRenameCommit}
                 onResolveFirstForRun={section.onResolveFirstForRun}

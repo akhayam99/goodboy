@@ -124,6 +124,7 @@ type RenderParams = {
   readonly childrenByParentId?: ReadonlyMap<string, Agent[]>;
   readonly clusterExpand?: ReadonlyMap<string, boolean>;
   readonly onDeleteWorkflow?: (runId: WorkflowRunId) => Promise<void>;
+  readonly onPickAgent?: (agentId: AgentId) => void;
 };
 
 const renderDetail = ({
@@ -133,6 +134,7 @@ const renderDetail = ({
   childrenByParentId = new Map(),
   clusterExpand = new Map(),
   onDeleteWorkflow = vi.fn(async () => undefined),
+  onPickAgent = vi.fn(),
 }: RenderParams = {}) =>
   render(
     <WorkflowRow
@@ -158,6 +160,7 @@ const renderDetail = ({
       onDeleteWorkflow={onDeleteWorkflow}
       agentKindOverride={{}}
       agentModelOverride={{}}
+      agentProviderOverride={{}}
       childrenByParentId={childrenByParentId}
       clusterExpand={clusterExpand}
       selectedAgentId={null}
@@ -173,7 +176,7 @@ const renderDetail = ({
       turnsByAgentId={new Map()}
       isTranscriptLoading={false}
       onStartStepAgent={vi.fn(async () => undefined)}
-      onPickAgent={vi.fn()}
+      onPickAgent={onPickAgent}
       setEditingId={vi.fn()}
       onRenameCommit={vi.fn(async () => undefined)}
       onResolveFirstForRun={vi.fn()}
@@ -234,6 +237,17 @@ describe('WorkflowRow detail dashboard', () => {
 
     expect(goal.compareDocumentPosition(attachments)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(attachments.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('opens the chat of a step when its chip is clicked', () => {
+    const onPickAgent = vi.fn();
+    renderDetail({ onPickAgent });
+
+    const steps = screen.getByTestId('workflow-step-strip');
+    const chips = steps.querySelectorAll('button');
+    fireEvent.click(chips[0] as HTMLElement);
+
+    expect(onPickAgent).toHaveBeenCalledWith(agents[0]!.id);
   });
 
   it('deletes the workflow run after confirmation', () => {
