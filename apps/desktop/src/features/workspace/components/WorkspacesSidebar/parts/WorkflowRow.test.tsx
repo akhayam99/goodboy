@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -16,18 +16,9 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const { orchestrateNextStepSpy, retryWorkflowOrchestrationSpy } = vi.hoisted(() => ({
-  orchestrateNextStepSpy: vi.fn(async () => undefined),
-  retryWorkflowOrchestrationSpy: vi.fn(async () => undefined),
-}));
-
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: unknown) => T) =>
-    selector({
-      orchestrateNextStep: orchestrateNextStepSpy,
-      retryWorkflowOrchestration: retryWorkflowOrchestrationSpy,
-    }),
+  useAppStore: <T,>(selector: (state: unknown) => T) => selector({}),
 }));
 
 vi.mock(
@@ -255,7 +246,8 @@ describe('WorkflowRow detail dashboard', () => {
     renderDetail({ onDeleteWorkflow });
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    const confirm = screen.getByRole('group', { name: 'Delete workflow run?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
     expect(onDeleteWorkflow).toHaveBeenCalledWith(RUN_ID);
   });
@@ -284,24 +276,5 @@ describe('WorkflowRow dynamic runs', () => {
 
     expect(screen.getByText('Completed')).toBeDefined();
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
-  });
-
-  it('asks the orchestrator for the next step from the CTA', () => {
-    renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents });
-
-    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
-
-    expect(orchestrateNextStepSpy).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
-  });
-
-  it('retries a blocked run through the retry affordance', () => {
-    renderDetail({
-      runOverride: { ...dynamicRun, orchestrationOutcome: 'blocked' },
-      agentsOverride: doneAgents,
-    });
-
-    fireEvent.click(screen.getByTestId('workflow-orchestrate-retry-cta'));
-
-    expect(retryWorkflowOrchestrationSpy).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 });

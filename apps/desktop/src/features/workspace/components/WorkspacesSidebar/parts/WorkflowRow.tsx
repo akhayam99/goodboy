@@ -129,8 +129,6 @@ export const WorkflowRow = ({
   skipStuckStepAndAdvance,
 }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId: task.id });
-  const orchestrateNextStep = useAppStore((s) => s.orchestrateNextStep);
-  const retryWorkflowOrchestration = useAppStore((s) => s.retryWorkflowOrchestration);
   const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
   const restoreWorkflow = useAppStore((s) => s.restoreWorkflow);
   const workflowRun = run;
@@ -363,10 +361,9 @@ export const WorkflowRow = ({
                 </button>
               </>
             )}
-            <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
           </div>
         )}
-        {!isDetail && !isDiscarded && isCompleted && (
+        {!isDetail && !isDiscarded && (
           <div className="flex shrink-0 items-center">
             <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
           </div>
@@ -387,7 +384,7 @@ export const WorkflowRow = ({
               isOrchestrating={isOrchestrating}
             />
           ) : null}
-          {isDynamic ? <WorkflowOrchestratorTldr steps={workflow.steps} /> : null}
+          {isDynamic ? <WorkflowOrchestratorTldr steps={workflow.steps} run={run} /> : null}
         </div>
       ) : null}
       {expanded ? (
@@ -513,19 +510,13 @@ export const WorkflowRow = ({
           </p>
         )
       ) : null}
-      {expanded &&
-      !isDiscarded &&
-      (isDetail || wfBlockReason === 'failed-step' || isDynamicActionable) ? (
+      {expanded && !isDiscarded && !isDynamic && (isDetail || wfBlockReason === 'failed-step') ? (
         <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
           <WorkflowNextStepCta
             workflow={workflow}
             runs={wfAgents}
             roleModels={roleModels}
             blockReason={wfBlockReason}
-            run={run}
-            isOrchestrating={isOrchestrating}
-            onOrchestrate={() => void orchestrateNextStep(task.id, run.id)}
-            onRetryOrchestration={() => void retryWorkflowOrchestration(task.id, run.id)}
             onAdvance={(step) => {
               const pending = wfAgents.find(
                 (agent) => agent.stepId === step.id && agent.status === 'pending',

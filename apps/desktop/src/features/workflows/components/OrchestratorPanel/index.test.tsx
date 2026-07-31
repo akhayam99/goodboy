@@ -30,6 +30,7 @@ const run = (overrides: Partial<WorkflowRun> = {}): WorkflowRun => ({
 
 beforeEach(() => {
   Object.assign(storeState, {
+    orchestrateNextStep: vi.fn(async () => undefined),
     retryWorkflowOrchestration: vi.fn(async () => undefined),
     continueWorkflowRun: vi.fn(async () => undefined),
     setWorkflowOrchestratorHints: vi.fn(async () => undefined),
@@ -116,5 +117,34 @@ describe('OrchestratorPanel', () => {
       RUN_ID,
       'ignore the website',
     );
+  });
+
+  it('asks the orchestrator for the next step while the run sits idle', () => {
+    render(
+      <OrchestratorPanel
+        sessionId={SESSION_ID}
+        run={run()}
+        agents={EMPTY_AGENTS}
+        isOrchestrating={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
+
+    expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('drops the next step control once the run is complete', () => {
+    render(
+      <OrchestratorPanel
+        sessionId={SESSION_ID}
+        run={run({ orchestrationOutcome: 'done' })}
+        agents={EMPTY_AGENTS}
+        isOrchestrating={false}
+      />,
+    );
+
+    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+    expect(screen.getByTestId('orchestrator-continue-toggle')).toBeDefined();
   });
 });

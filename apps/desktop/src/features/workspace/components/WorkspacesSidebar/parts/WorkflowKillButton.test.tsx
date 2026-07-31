@@ -25,6 +25,17 @@ describe('WorkflowKillButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.queryByRole('group', { name: 'Discard workflow?' })).toBeNull();
     expect(screen.getByRole('button', { name: 'discard workflow' })).toBeDefined();
+  });
+
+  it('keeps the trigger mounted and marked as expanded while armed', () => {
+    render(<WorkflowKillButton onConfirm={vi.fn()} />);
+
+    const trigger = screen.getByRole('button', { name: 'discard workflow' });
+    fireEvent.click(trigger);
+
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('group', { name: 'Discard workflow?' })).toBeDefined();
   });
 });

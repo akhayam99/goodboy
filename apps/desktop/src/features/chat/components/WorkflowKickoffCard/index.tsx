@@ -23,40 +23,37 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
   const [open, setOpen] = useState(false);
   const goal = item.parsed ? item.goal : '';
   const hasGoal = goal.length > 0;
-  const hasDetails = item.parsed
-    ? item.instructions.length > 0 || item.marker.length > 0
+  const hasBody = item.parsed
+    ? hasGoal || item.instructions.length > 0 || item.marker.length > 0
     : item.raw.length > 0;
 
   return (
     <TranscriptDisclosure
       tone="primary"
-      open={open && hasDetails}
+      open={open && hasBody}
       bodyClassName="gap-2"
       header={
-        <>
-          <TranscriptRowHeader
-            grouped
-            tone="primary"
-            icon={<Rocket size={12} aria-hidden />}
-            eyebrow="workflow start"
-            meta={formatCardTime(item.at)}
-            open={open}
-            onToggle={hasDetails ? () => setOpen((value) => !value) : undefined}
-          />
-          {hasGoal ? (
-            <div className="flex min-w-0 flex-col pb-2 pl-7 pr-2">
-              <Section label="goal">
-                <div className="overflow-x-auto text-sm leading-relaxed text-foreground">
-                  <Markdown text={goal} />
-                </div>
-              </Section>
-            </div>
-          ) : null}
-        </>
+        <TranscriptRowHeader
+          grouped
+          tone="primary"
+          icon={<Rocket size={12} aria-hidden />}
+          eyebrow="workflow start"
+          preview={hasGoal ? goal : undefined}
+          meta={formatCardTime(item.at)}
+          open={open}
+          onToggle={hasBody ? () => setOpen((value) => !value) : undefined}
+        />
       }
     >
       {item.parsed ? (
         <>
+          {hasGoal ? (
+            <Section label="goal">
+              <div className="overflow-x-auto text-sm leading-relaxed text-foreground">
+                <Markdown text={goal} />
+              </div>
+            </Section>
+          ) : null}
           {item.instructions.length > 0 ? (
             <Section label="what to do">
               <div className="overflow-x-auto text-xs text-foreground">

@@ -1,6 +1,14 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Loader2, Play, RotateCcw, Sparkles } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  Play,
+  RotateCcw,
+  Sparkles,
+  Wand2,
+} from 'lucide-react';
+import { cn, Markdown } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
@@ -48,6 +56,7 @@ const PHASE_TONE: Readonly<Record<Phase, string>> = {
 };
 
 export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: Props) => {
+  const orchestrateNextStep = useAppStore((state) => state.orchestrateNextStep);
   const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const continueWorkflowRun = useAppStore((state) => state.continueWorkflowRun);
   const setWorkflowOrchestratorHints = useAppStore((state) => state.setWorkflowOrchestratorHints);
@@ -88,14 +97,28 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
       </div>
 
       {run.orchestrationError != null ? (
-        <p data-testid="orchestrator-error" className="text-2xs leading-relaxed text-danger">
-          {run.orchestrationError}
-        </p>
+        <div data-testid="orchestrator-error" className="min-w-0 text-danger">
+          <Markdown text={run.orchestrationError} className="text-2xs leading-relaxed" />
+        </div>
       ) : null}
 
       <OrchestratorRoutingRow sessionId={sessionId} run={run} disabled={busy || isOrchestrating} />
 
       <div className="flex flex-wrap items-center gap-1.5">
+        {phase === 'idle' ? (
+          <button
+            type="button"
+            disabled={busy}
+            data-testid="workflow-orchestrate-next-cta"
+            title="ask the orchestrator to decide the next step"
+            onClick={() => void guard(() => orchestrateNextStep(sessionId, run.id))}
+            className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-2xs font-semibold text-primary hover:border-primary disabled:opacity-60"
+          >
+            <Wand2 size={11} aria-hidden />
+            next step
+          </button>
+        ) : null}
+
         {phase === 'failed' || phase === 'blocked' ? (
           <button
             type="button"

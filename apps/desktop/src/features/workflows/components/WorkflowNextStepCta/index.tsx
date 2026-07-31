@@ -23,10 +23,6 @@ export type Props = {
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
   readonly roleModels?: RoleModelPreferences | null;
-  readonly run?: WorkflowRun | null;
-  readonly onOrchestrate?: () => void | Promise<void>;
-  readonly onRetryOrchestration?: () => void | Promise<void>;
-  readonly isOrchestrating?: boolean;
 };
 
 export type PickNextWorkflowStepGate = {
@@ -69,10 +65,6 @@ export const WorkflowNextStepCta = ({
   consumesActivePlan = false,
   className,
   roleModels = null,
-  run = null,
-  onOrchestrate,
-  onRetryOrchestration,
-  isOrchestrating = false,
 }: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
@@ -93,73 +85,6 @@ export const WorkflowNextStepCta = ({
       setBusy(false);
     }
   };
-  const runDynamicAction = async (action: (() => void | Promise<void>) | undefined) => {
-    if (busy || action == null) {
-      return;
-    }
-    setBusy(true);
-    try {
-      await action();
-    } finally {
-      setBusy(false);
-    }
-  };
-  if (run?.executionMode === 'dynamic') {
-    if (isOrchestrating) {
-      return (
-        <div className={cn('relative', className)}>
-          <span
-            role="status"
-            data-testid="workflow-orchestrating-status"
-            className="flex w-fit items-center gap-1.5 rounded-md border border-info/40 bg-info/10 px-2 py-1 text-2xs font-semibold text-info"
-          >
-            <Loader2 size={12} aria-hidden className="shrink-0 motion-safe:animate-spin" />
-            orchestrator deciding the next step
-          </span>
-        </div>
-      );
-    }
-    if (run.orchestrationOutcome === 'done') {
-      return null;
-    }
-    if (run.orchestrationOutcome === 'blocked' && onRetryOrchestration != null) {
-      return (
-        <div className={cn('relative', className)}>
-          <button
-            type="button"
-            onClick={() => void runDynamicAction(onRetryOrchestration)}
-            disabled={busy}
-            data-testid="workflow-orchestrate-retry-cta"
-            title="the orchestrator marked this run blocked, retry the decision"
-            className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RotateCcw size={12} aria-hidden className="shrink-0" />
-            retry orchestration
-          </button>
-        </div>
-      );
-    }
-    const hasActiveAgents = runs.some(
-      (agent) => agent.status === 'pending' || agent.status === 'running',
-    );
-    if (!hasActiveAgents && run.orchestrationOutcome == null && onOrchestrate != null) {
-      return (
-        <div className={cn('relative', className)}>
-          <button
-            type="button"
-            onClick={() => void runDynamicAction(onOrchestrate)}
-            disabled={busy}
-            data-testid="workflow-orchestrate-next-cta"
-            title="ask the orchestrator to decide the next step"
-            className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-2xs font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Wand2 size={12} aria-hidden className="shrink-0" />
-            next step
-          </button>
-        </div>
-      );
-    }
-  }
   if (chain.kind === 'complete') {
     return null;
   }

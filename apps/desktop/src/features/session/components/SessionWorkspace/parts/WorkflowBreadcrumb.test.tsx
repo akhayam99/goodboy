@@ -135,6 +135,45 @@ describe('WorkflowBreadcrumb', () => {
     );
   });
 
+  it('renders the step crumb as static text when the workflow has a single step', () => {
+    renderCrumb(root.id);
+
+    expect(screen.getByText('Implement').getAttribute('aria-current')).toBe('page');
+    expect(screen.queryByTitle('Implement. Switch step.')).toBeNull();
+    expect(document.querySelector('[aria-haspopup="menu"][title^="Implement"]')).toBeNull();
+  });
+
+  it('opens the step menu when more than one step has started', () => {
+    const reviewRoot = buildAgent({
+      id: 'agent-root-2' as AgentId,
+      name: 'Review',
+      ordinal: 4,
+      status: 'completed',
+      stepId: 'step-2' as never,
+      workflowRunId: 'run-1' as never,
+    });
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [root, childDone, childRunning, reviewRoot],
+    };
+    h.state.phaseTemplates = {
+      'ws-1': [
+        {
+          id: 'wf-1',
+          steps: [
+            { id: 'step-1', name: 'Implement' },
+            { id: 'step-2', name: 'Review' },
+          ],
+        },
+      ],
+    };
+
+    renderCrumb(root.id);
+
+    fireEvent.click(screen.getByTitle('Implement. Switch step.'));
+
+    expect(screen.getByRole('menu', { name: 'switch step' }).textContent).toContain('Review');
+  });
+
   it('lists the root and every child in the agent menu', () => {
     renderCrumb(root.id);
 

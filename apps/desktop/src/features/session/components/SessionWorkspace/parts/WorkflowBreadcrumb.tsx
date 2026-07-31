@@ -80,6 +80,16 @@ export const WorkflowBreadcrumb = ({
           ),
     [phaseRuns, rootAgent],
   );
+  const switchableStepCount = useMemo(() => {
+    if (workflow == null) {
+      return 0;
+    }
+    return workflow.steps.filter((step) => {
+      const stepRoot = stepRoots.get(step.id);
+      return stepRoot != null && stepRoot.status !== 'pending';
+    }).length;
+  }, [workflow, stepRoots]);
+  const canSwitchStep = switchableStepCount > 1;
   const currentStep = workflow?.steps.find((step) => step.id === rootAgent?.stepId) ?? null;
   const stepLabel = currentStep?.name ?? rootAgent?.name ?? null;
   const completedClusters = clusterChildren.filter(
@@ -104,26 +114,40 @@ export const WorkflowBreadcrumb = ({
         <>
           <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />
           <div ref={stepMenu.containerRef} className="relative flex min-w-0 items-center">
-            <button
-              type="button"
-              onClick={stepMenu.toggle}
-              aria-haspopup="menu"
-              aria-expanded={stepMenu.open}
-              title={`${stepLabel}. Switch step.`}
-              className={cn(
-                CRUMB_CLASS,
-                'font-semibold text-foreground/90 hover:text-foreground',
-                clusterChildren.length > 0 && 'text-muted-foreground',
-              )}
-            >
-              <span className="min-w-0 max-w-48 truncate">{stepLabel}</span>
-              <ChevronDown
-                size={11}
-                aria-hidden
-                className={cn('shrink-0 text-muted-foreground/60', stepMenu.open && 'rotate-180')}
-              />
-            </button>
-            {stepMenu.open && workflow != null && (
+            {!canSwitchStep && (
+              <span
+                aria-current="page"
+                title={stepLabel}
+                className={cn(
+                  'min-w-0 max-w-48 truncate text-2xs font-semibold text-foreground/90',
+                  clusterChildren.length > 0 && 'text-muted-foreground',
+                )}
+              >
+                {stepLabel}
+              </span>
+            )}
+            {canSwitchStep && (
+              <button
+                type="button"
+                onClick={stepMenu.toggle}
+                aria-haspopup="menu"
+                aria-expanded={stepMenu.open}
+                title={`${stepLabel}. Switch step.`}
+                className={cn(
+                  CRUMB_CLASS,
+                  'font-semibold text-foreground/90 hover:text-foreground',
+                  clusterChildren.length > 0 && 'text-muted-foreground',
+                )}
+              >
+                <span className="min-w-0 max-w-48 truncate">{stepLabel}</span>
+                <ChevronDown
+                  size={11}
+                  aria-hidden
+                  className={cn('shrink-0 text-muted-foreground/60', stepMenu.open && 'rotate-180')}
+                />
+              </button>
+            )}
+            {canSwitchStep && stepMenu.open && workflow != null && (
               <Popover
                 role="menu"
                 ariaLabel="switch step"
