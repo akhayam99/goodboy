@@ -368,18 +368,24 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('treats an unparseable decision as blocked', async () => {
+  it('keeps the run alive when the decision is unparseable', async () => {
     decideSpy.mockResolvedValue({ decision: null });
     const state = baseState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
+    expect(updateOutcomeSpy).not.toHaveBeenCalled();
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({ action: 'blocked' }),
+    );
     expect(state['emitNotification']).toHaveBeenCalledWith(
       'error',
       'warning',
-      'dynamic workflow blocked',
-      'unparseable decision',
+      'orchestrator reply unparseable',
+      'the decision could not be parsed, use next step to retry',
       { sessionId: SESSION_ID },
     );
   });

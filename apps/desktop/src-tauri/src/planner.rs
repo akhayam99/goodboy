@@ -32,6 +32,8 @@ pub struct PlannerArgs {
     pub system_prompt: String,
     #[serde(default)]
     pub working_dir: Option<String>,
+    #[serde(default)]
+    pub tools_disabled: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -73,19 +75,26 @@ pub async fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerErro
 
 fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
     match args.provider_id.as_str() {
-        "anthropic" => Ok(vec![
-            "-p".to_string(),
-            args.user_message.clone(),
-            "--model".to_string(),
-            args.model.clone(),
-            "--system-prompt".to_string(),
-            args.system_prompt.clone(),
-            "--setting-sources".to_string(),
-            crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
-            "--output-format".to_string(),
-            "json".to_string(),
-            "--no-session-persistence".to_string(),
-        ]),
+        "anthropic" => {
+            let mut cli_args = vec![
+                "-p".to_string(),
+                args.user_message.clone(),
+                "--model".to_string(),
+                args.model.clone(),
+                "--system-prompt".to_string(),
+                args.system_prompt.clone(),
+                "--setting-sources".to_string(),
+                crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
+                "--output-format".to_string(),
+                "json".to_string(),
+                "--no-session-persistence".to_string(),
+            ];
+            if args.tools_disabled {
+                cli_args.push("--tools".to_string());
+                cli_args.push(String::new());
+            }
+            Ok(cli_args)
+        }
         "cursor" => Ok(vec![
             "-p".to_string(),
             format!("{}\n\n{}", args.system_prompt, args.user_message),
@@ -144,7 +153,23 @@ mod tests {
             user_message: "plan this".to_string(),
             system_prompt: "you plan".to_string(),
             working_dir: None,
+            tools_disabled: false,
         }
+    }
+
+    #[test]
+    fn anthropic_args_disable_tools_when_requested() {
+        let mut args = make_args("anthropic");
+        args.tools_disabled = true;
+        let cli = build_cli_args(&args).expect("anthropic args");
+        let idx = cli.iter().position(|a| a == "--tools").expect("--tools");
+        assert_eq!(cli[idx + 1], "");
+    }
+
+    #[test]
+    fn anthropic_args_keep_tools_by_default() {
+        let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
+        assert!(!cli.iter().any(|a| a == "--tools"));
     }
 
     #[test]

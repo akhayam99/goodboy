@@ -263,10 +263,24 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         });
         return;
       }
-      const decision = result.decision ?? {
-        action: 'blocked' as const,
-        reason: 'unparseable decision',
-      };
+      const decision = result.decision;
+      if (decision == null) {
+        emitDecision({
+          get,
+          sessionId,
+          workflowRunId,
+          action: 'blocked',
+          reason: 'the orchestrator reply could not be parsed, retry to continue',
+        });
+        void get().emitNotification(
+          'error',
+          'warning',
+          'orchestrator reply unparseable',
+          'the decision could not be parsed, use next step to retry',
+          { sessionId },
+        );
+        return;
+      }
       if (decision.action === 'next') {
         const agent = await appendStep({
           set,
