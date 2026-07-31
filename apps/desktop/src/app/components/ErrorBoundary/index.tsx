@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { ScrollFade } from '@goodboy/ui';
 
 type ErrorBoundaryProps = {
   readonly children: ReactNode;
@@ -42,9 +43,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             Goodboy hit a runtime error and stopped rendering. your data is safe: sessions, agents,
             and providers are all persisted to disk. reload to recover.
           </p>
-          <pre className="overflow-auto rounded bg-muted px-3 py-2 text-xs text-danger">
-            {this.state.error.message}
-          </pre>
+          <ScrollFade className="max-h-40" viewportClassName="rounded bg-muted px-3 py-2">
+            <pre className="text-xs text-danger">{this.state.error.message}</pre>
+          </ScrollFade>
           <div className="flex gap-2">
             <button
               type="button"

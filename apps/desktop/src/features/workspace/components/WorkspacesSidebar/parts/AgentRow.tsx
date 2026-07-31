@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { CircleCheck, PanelRight, Trash2 } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
-import { contextTokensForUsage, getModelDescriptor } from '@goodboy/core';
+import { contextTokensForUsage } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
+import { modelLabel } from '../../../../../features/chat/utils/chat-constants';
 import { agentHasUnread } from '../../../../../store';
 import { formatCost } from '../../../../../features/session/agent-row-format';
 import { AGENT_KIND_PALETTE, type AgentKind } from '../../../../../features/session/agent-kind';
@@ -83,9 +84,7 @@ export const AgentRow = ({
     `status: ${run.status}`,
     isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
     telemetry != null ? `provider: ${telemetry.provider}` : null,
-    telemetry != null
-      ? `model: ${getModelDescriptor(telemetry.model)?.label ?? telemetry.model}`
-      : null,
+    telemetry != null ? `model: ${modelLabel(telemetry.model)}` : null,
     lastTurn,
   ].filter((part): part is string => part !== null);
   const isMarkDoneAvailable =

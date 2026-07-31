@@ -140,7 +140,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
               <>
                 <div className="flex flex-col items-center gap-3.5">
                   <div
-                    className="size-[244px] rounded-lg border border-border-soft bg-white p-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] [&>svg]:h-full [&>svg]:w-full"
+                    className="size-[244px] rounded-lg border border-border-soft bg-white p-3.5 shadow-lg [&>svg]:h-full [&>svg]:w-full"
                     dangerouslySetInnerHTML={{ __html: info.svg }}
                   />
                   <div className="flex w-[244px] flex-col items-center gap-1.5">

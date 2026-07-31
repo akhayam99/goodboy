@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { ScrollFade, cn } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
 
@@ -117,7 +117,7 @@ export const BranchCombobox = ({
       : 'Search branch…';
 
   const popupClass = cn(
-    'absolute left-0 z-50 w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg',
+    'absolute left-0 z-50 w-full rounded-md border border-border bg-subtle shadow-lg',
     openDirection === 'up' ? 'bottom-full mb-1 max-h-48' : 'top-full mt-1 max-h-56',
   );
 
@@ -172,30 +172,32 @@ export const BranchCombobox = ({
         </button>
       </div>
       {open && filtered.length > 0 ? (
-        <ul ref={listRef} role="listbox" className={popupClass}>
-          {filtered.map((b, i) => (
-            <li
-              key={b.name}
-              role="option"
-              aria-selected={highlightIdx === i}
-              onMouseEnter={() => setHighlightIdx(i)}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                select(b.name);
-              }}
-              className={cn(
-                'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
-                highlightIdx === i ? 'bg-primary/10 text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              <span className="min-w-0 flex-1 truncate">{b.name}</span>
-              {b.inUse ? <span className="shrink-0 text-2xs text-warning">in use</span> : null}
-              {b.hasUncommitted ? (
-                <span className="shrink-0 text-2xs text-warning">dirty</span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        <ScrollFade className={popupClass} viewportClassName="py-0.5" fadeFrom="subtle">
+          <ul ref={listRef} role="listbox">
+            {filtered.map((b, i) => (
+              <li
+                key={b.name}
+                role="option"
+                aria-selected={highlightIdx === i}
+                onMouseEnter={() => setHighlightIdx(i)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  select(b.name);
+                }}
+                className={cn(
+                  'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
+                  highlightIdx === i ? 'bg-primary/10 text-foreground' : 'text-muted-foreground',
+                )}
+              >
+                <span className="min-w-0 flex-1 truncate">{b.name}</span>
+                {b.inUse ? <span className="shrink-0 text-2xs text-warning">in use</span> : null}
+                {b.hasUncommitted ? (
+                  <span className="shrink-0 text-2xs text-warning">dirty</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </ScrollFade>
       ) : null}
       {open && !loading && filtered.length === 0 && query ? (
         <div className={cn(popupClass, 'px-2 py-2 text-xs text-muted-foreground')}>

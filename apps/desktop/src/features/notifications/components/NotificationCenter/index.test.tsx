@@ -56,16 +56,31 @@ describe('NotificationCenter', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
     });
-    expect(screen.getByText(/no notifications/i)).toBeDefined();
+    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: /start a session/i })).toBeDefined();
+  });
+
+  it('dispatches a new-session request from the empty state action', async () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:new-session', listener);
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /start a session/i }));
+    });
+    expect(listener).toHaveBeenCalled();
+    window.removeEventListener('goodboy:new-session', listener);
   });
 
   it('opens the popover when the goodboy:open-notifications event is dispatched', async () => {
     render(<NotificationCenter />);
-    expect(screen.queryByText(/no notifications/i)).toBeNull();
+    expect(screen.queryByText(/nothing to catch up on/i)).toBeNull();
     await act(async () => {
       window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
     });
-    expect(screen.getByText(/no notifications/i)).toBeDefined();
+    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
     expect(state.markNotificationsRead).toHaveBeenCalled();
   });
 

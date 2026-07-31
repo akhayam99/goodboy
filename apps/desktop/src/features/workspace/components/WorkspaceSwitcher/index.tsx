@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
+import { Divider, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { WorkspaceRow } from '../WorkspaceRow';
@@ -62,38 +63,42 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         }
       }}
     >
-      <div className="w-full max-w-lg overflow-hidden rounded-lg border border-border bg-background shadow-2xl motion-safe:animate-fade-in">
+      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl motion-safe:animate-fade-in">
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Switch or open a workspace…"
-          className="w-full border-b border-border bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          className="w-full bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         />
-        <ul className="max-h-80 overflow-y-auto p-1.5">
-          {filtered.length === 0 ? (
-            <li className="px-4 py-6 text-center text-sm text-muted-foreground">No workspaces</li>
-          ) : (
-            filtered.map((w, i) => (
-              <li key={w.id}>
-                <WorkspaceRow
-                  workspace={w}
-                  density="row"
-                  highlighted={i === activeIndex}
-                  onOpen={() => select(w)}
-                />
-              </li>
-            ))
-          )}
-        </ul>
+        <Divider />
+        <ScrollFade className="max-h-80" viewportClassName="p-1.5">
+          <ul>
+            {filtered.length === 0 ? (
+              <li className="px-4 py-6 text-center text-sm text-muted-foreground">No workspaces</li>
+            ) : (
+              filtered.map((w, i) => (
+                <li key={w.id}>
+                  <WorkspaceRow
+                    workspace={w}
+                    density="row"
+                    highlighted={i === activeIndex}
+                    onOpen={() => select(w)}
+                  />
+                </li>
+              ))
+            )}
+          </ul>
+        </ScrollFade>
+        <Divider />
         <button
           type="button"
           onClick={() => {
             window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
             onClose();
           }}
-          className="flex w-full items-center gap-2 border-t border-border-soft px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+          className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
         >
           <Plus size={14} aria-hidden />
           New workspace

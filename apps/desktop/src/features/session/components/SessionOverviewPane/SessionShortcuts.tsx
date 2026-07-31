@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  AlertTriangle,
-  FolderOpen,
-  GitBranch,
-  GitPullRequest,
-  LoaderCircle,
-  Upload,
-} from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
+import { AlertTriangle, FolderOpen, GitBranch, GitPullRequest, Upload } from 'lucide-react';
+import { cn, Eyebrow } from '@goodboy/ui';
 import type { Agent, Session, SessionId, WorktreeStatus } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useRebaseAgent } from '../../hooks/useRebaseAgent';
@@ -139,30 +132,22 @@ export const SessionShortcuts = ({ session }: Props) => {
         {rebase.canRebase ? (
           <button
             type="button"
-            className={ACTION_CLASS}
+            className={cn(ACTION_CLASS, rebase.isRunning && 'spin-border spin-border-primary')}
             disabled={rebase.isRunning}
             onClick={() => void rebase.run()}
           >
-            {rebase.isRunning ? (
-              <LoaderCircle size={14} aria-hidden className="animate-spin" />
-            ) : (
-              <GitBranch size={14} aria-hidden />
-            )}
+            <GitBranch size={14} aria-hidden />
             {rebase.isRunning ? 'Rebasing...' : 'Rebase on main'}
           </button>
         ) : null}
         {canPush ? (
           <button
             type="button"
-            className={ACTION_CLASS}
+            className={cn(ACTION_CLASS, push.isBusy && 'spin-border spin-border-primary')}
             disabled={push.isBusy}
             onClick={() => void push.run()}
           >
-            {push.isBusy ? (
-              <LoaderCircle size={14} aria-hidden className="animate-spin" />
-            ) : (
-              <Upload size={14} aria-hidden />
-            )}
+            <Upload size={14} aria-hidden />
             {push.isBusy ? 'Pushing...' : 'Push branch'}
           </button>
         ) : null}

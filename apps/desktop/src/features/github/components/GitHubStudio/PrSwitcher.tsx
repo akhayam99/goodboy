@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { PullRequestState } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
+import { cn, ScrollFade } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 
@@ -35,35 +35,37 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
       {open ? (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          <ul
-            role="listbox"
-            className="absolute left-0 z-50 mt-1 max-h-72 w-96 overflow-y-auto rounded-md border border-border-soft bg-background py-1 shadow-lg"
+          <ScrollFade
+            className="absolute left-0 z-50 mt-1 max-h-72 w-96 rounded-md border border-border-soft bg-background shadow-lg"
+            viewportClassName="py-1"
           >
-            {prs.map((p) => (
-              <li key={p.number}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={p.number === selected}
-                  onClick={() => {
-                    onSelect(p.number);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/50',
-                    p.number === selected && 'bg-primary/5',
-                  )}
-                >
-                  <PullRequestChip state={p.state} variant="icon" iconSize={12} />
-                  <span className="shrink-0 tabular-nums text-muted-foreground">#{p.number}</span>
-                  <span className="min-w-0 flex-1 truncate text-foreground">{p.title}</span>
-                  {p.number === selected && (
-                    <Check size={12} aria-hidden className="shrink-0 text-primary" />
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
+            <ul role="listbox">
+              {prs.map((p) => (
+                <li key={p.number}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={p.number === selected}
+                    onClick={() => {
+                      onSelect(p.number);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/50',
+                      p.number === selected && 'bg-primary/5',
+                    )}
+                  >
+                    <PullRequestChip state={p.state} variant="icon" iconSize={12} />
+                    <span className="shrink-0 tabular-nums text-muted-foreground">#{p.number}</span>
+                    <span className="min-w-0 flex-1 truncate text-foreground">{p.title}</span>
+                    {p.number === selected && (
+                      <Check size={12} aria-hidden className="shrink-0 text-primary" />
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </ScrollFade>
         </>
       ) : null}
     </div>

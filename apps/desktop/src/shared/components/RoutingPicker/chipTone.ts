@@ -1,13 +1,29 @@
 import type { EffortLevel, VerbosityLevel } from '@goodboy/types';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 
 export type ChipTone = 'neutral' | 'light' | 'moderate' | 'heavy' | 'peak';
 
+const CHIP_INTENSITY_TONE: Record<Exclude<ChipTone, 'neutral'>, Tone> = {
+  light: 'success',
+  moderate: 'info',
+  heavy: 'warning',
+  peak: 'danger',
+};
+
+const chipActiveClass = (tone: ChipTone): string => {
+  if (tone === 'neutral') {
+    return `bg-background text-foreground ring-1 ring-inset ${tintClasses('neutral').ring}`;
+  }
+  const t = tintClasses(CHIP_INTENSITY_TONE[tone]);
+  return cn(t.bg, t.text, 'ring-1 ring-inset', t.ring);
+};
+
 export const CHIP_TONE_ACTIVE: Record<ChipTone, string> = {
-  neutral: 'bg-background text-foreground ring-1 ring-inset ring-border-soft',
-  light: 'bg-success/15 text-success ring-1 ring-inset ring-success/40',
-  moderate: 'bg-info/15 text-info ring-1 ring-inset ring-info/40',
-  heavy: 'bg-warning/15 text-warning ring-1 ring-inset ring-warning/40',
-  peak: 'bg-danger/15 text-danger ring-1 ring-inset ring-danger/40',
+  neutral: chipActiveClass('neutral'),
+  light: chipActiveClass('light'),
+  moderate: chipActiveClass('moderate'),
+  heavy: chipActiveClass('heavy'),
+  peak: chipActiveClass('peak'),
 };
 
 const EFFORT_TONE: Record<EffortLevel, ChipTone> = {

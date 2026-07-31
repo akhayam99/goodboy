@@ -63,7 +63,7 @@ export const LinearFormBody = ({ workspaceId, onConnected }: Props) => {
             </dd>
           </dl>
           <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>
-            <Unplug size={12} aria-hidden className="mr-1.5" />
+            <Unplug size={12} aria-hidden />
             {busy ? 'Disconnecting…' : 'Disconnect'}
           </Button>
         </div>

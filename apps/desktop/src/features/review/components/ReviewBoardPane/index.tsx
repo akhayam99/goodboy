@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
-import { Divider, EmptyState, ResizeHandle, ScrollFade, Skeleton, cn } from '@goodboy/ui';
+import { Divider, EmptyState, ResizeHandle, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
@@ -129,7 +129,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
               aria-label="Refresh diff"
               className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
             >
-              <RefreshCw size={12} aria-hidden className={cn(loading && 'animate-spin')} />
+              <RefreshCw size={12} aria-hidden />
             </button>
           </div>
           <Divider className="shrink-0" />

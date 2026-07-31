@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn, Skeleton } from '@goodboy/ui';
+import { cn, ScrollFade, Skeleton } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
 
@@ -216,35 +216,37 @@ export const IssuePicker = ({
       )}
 
       {isOpen && error == null && filtered.length > 0 && (
-        <ul
-          ref={listRef}
-          role="listbox"
-          className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-subtle py-0.5 shadow-lg"
+        <ScrollFade
+          className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full rounded-md border border-border bg-subtle shadow-lg"
+          viewportClassName="py-0.5"
+          fadeFrom="subtle"
         >
-          {filtered.map((row, index) => (
-            <li
-              key={`${row.provider}:${row.externalId}`}
-              role="option"
-              aria-selected={highlightIdx === index}
-              onMouseEnter={() => setHighlightIdx(index)}
-              onMouseDown={(event) => {
-                event.preventDefault();
-                select(row);
-              }}
-              className={cn(
-                'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
-                highlightIdx === index && 'bg-primary/10',
-              )}
-            >
-              <div className="flex items-center gap-2 text-sm">
-                <span className="shrink-0 font-mono text-2xs text-muted-foreground">
-                  {row.identifier}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-foreground">{row.title}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+          <ul ref={listRef} role="listbox">
+            {filtered.map((row, index) => (
+              <li
+                key={`${row.provider}:${row.externalId}`}
+                role="option"
+                aria-selected={highlightIdx === index}
+                onMouseEnter={() => setHighlightIdx(index)}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  select(row);
+                }}
+                className={cn(
+                  'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
+                  highlightIdx === index && 'bg-primary/10',
+                )}
+              >
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+                    {row.identifier}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-foreground">{row.title}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </ScrollFade>
       )}
 
       {isOpen && error == null && !isLoading && isLoaded && filtered.length === 0 && (

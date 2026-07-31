@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
+import { EmptyState } from '@goodboy/ui';
 import { ArrowRight, Inbox } from 'lucide-react';
 import {
   buildCombinedCommentAgentArgs,
@@ -12,7 +12,13 @@ import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
 import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openUrl } from '../../../../shared/lib/editor';
-import { HeaderBand } from '../../../../shared/components/StudioDetail';
+import {
+  HeaderBand,
+  MetaItem,
+  StudioDetailLayout,
+  StudioDetailTabs,
+} from '../../../../shared/components/StudioDetail';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
@@ -26,10 +32,10 @@ import { PrConversation } from './PrConversation';
 import { ResolveBoard } from './ResolveBoard';
 import { PrOverview } from './PrOverview';
 import { PrReviewers } from './PrReviewers';
-import { PrSectionTabs } from './PrSectionTabs';
 import { PrSwitcher } from './PrSwitcher';
 import { SectionBody } from './SectionBody';
 import type { PrSection } from './prSection';
+import { prSectionOptions } from './prSectionOptions';
 
 type Props = {
   readonly sessionId: SessionId | null;
@@ -105,6 +111,10 @@ export const PrDetailPanel = ({
   const detail = github?.detail ?? null;
   const detailLoading = github?.detailLoading === true;
   const detailError = github?.detailError ?? null;
+  const sectionOptions = useMemo(
+    () => (activePr == null ? [] : prSectionOptions({ pr: activePr, detail })),
+    [activePr, detail],
+  );
 
   useEffect(() => {
     setCreateOpen(false);
@@ -329,72 +339,75 @@ export const PrDetailPanel = ({
   const num = activePr.number;
   const hasStateActions = !isTerminal || isClosed;
 
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 flex-col gap-3 px-6 py-4">
-        <HeaderBand
-          meta={
-            options.length > 1 ? (
-              <PrSwitcher
-                prs={options}
-                selected={selected}
-                onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
-              />
-            ) : (
-              <PullRequestChip
-                state={activePr.isDraft ? 'draft' : activePr.state}
-                variant="badge"
-                number={activePr.number}
-                iconSize={12}
-              />
-            )
-          }
-          title={activePr.title}
-          subtitle={
-            activePr.headBranch !== '' && activePr.baseBranch !== '' ? (
-              <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
-                <span className="font-mono">{activePr.headBranch}</span>
-                <ArrowRight size={11} aria-hidden />
-                <span className="font-mono">{activePr.baseBranch}</span>
-              </span>
-            ) : undefined
-          }
-          actions={
-            <>
-              <OpenSessionButton sessionId={sessionId} onOpened={onClose} variant="ghost" />
-              <ExternalRefActions
-                url={activePr.url}
-                label={`PR #${activePr.number}`}
-                hostLabel="GitHub"
-              />
-              <RefreshIconButton
-                label="refresh"
-                iconSize={14}
-                isLoading={detailLoading}
-                onClick={refreshActive}
-              />
-            </>
-          }
+  const updated =
+    activePr.updatedAt === '' ? '' : formatAbsoluteDateTime({ iso: activePr.updatedAt });
+
+  const header = (
+    <>
+      <HeaderBand
+        meta={
+          options.length > 1 ? (
+            <PrSwitcher
+              prs={options}
+              selected={selected}
+              onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
+            />
+          ) : (
+            <PullRequestChip
+              state={activePr.isDraft ? 'draft' : activePr.state}
+              variant="badge"
+              number={activePr.number}
+              iconSize={12}
+            />
+          )
+        }
+        title={activePr.title}
+        subtitle={
+          activePr.headBranch !== '' && activePr.baseBranch !== '' ? (
+            <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
+              <span className="font-mono">{activePr.headBranch}</span>
+              <ArrowRight size={11} aria-hidden />
+              <span className="font-mono">{activePr.baseBranch}</span>
+            </span>
+          ) : undefined
+        }
+        actions={
+          <>
+            <OpenSessionButton sessionId={sessionId} onOpened={onClose} variant="ghost" />
+            <ExternalRefActions
+              url={activePr.url}
+              label={`PR #${activePr.number}`}
+              hostLabel="GitHub"
+            />
+            <RefreshIconButton
+              label="refresh"
+              iconSize={14}
+              isLoading={detailLoading}
+              onClick={refreshActive}
+            />
+          </>
+        }
+      />
+      {hasStateActions && (
+        <PrActionBar
+          pr={activePr}
+          busy={busy}
+          canMerge={canMerge}
+          mergeReason={mergeReason}
+          onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
+          onConvertDraft={() => void run('undraft', () => convertPrToDraft(sessionId, num))}
+          onClose={() => void run('close', () => closePr(sessionId, num))}
+          onReopen={() => void run('reopen', () => reopenPr(sessionId, num))}
+          onCreateNew={() => setCreateOpen(true)}
+          onMerge={() => run('merge', () => mergePr(sessionId, num))}
         />
-        {hasStateActions && (
-          <PrActionBar
-            pr={activePr}
-            busy={busy}
-            canMerge={canMerge}
-            mergeReason={mergeReason}
-            onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
-            onConvertDraft={() => void run('undraft', () => convertPrToDraft(sessionId, num))}
-            onClose={() => void run('close', () => closePr(sessionId, num))}
-            onReopen={() => void run('reopen', () => reopenPr(sessionId, num))}
-            onCreateNew={() => setCreateOpen(true)}
-            onMerge={() => run('merge', () => mergePr(sessionId, num))}
-          />
-        )}
-      </div>
+      )}
+    </>
+  );
 
-      <Divider />
-
-      {createOpen ? (
+  if (createOpen) {
+    return (
+      <StudioDetailLayout header={header} scrolls={false}>
         <CreatePrPanel
           sessionId={sessionId}
           defaultTitle={session.goal}
@@ -406,67 +419,77 @@ export const PrDetailPanel = ({
           onCancel={() => setCreateOpen(false)}
           onStudioClose={onClose}
         />
-      ) : (
+      </StudioDetailLayout>
+    );
+  }
+
+  return (
+    <StudioDetailLayout
+      header={header}
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Pull request sections"
+          options={sectionOptions}
+          value={section}
+          onChange={setSection}
+        />
+      }
+      rail={
         <>
-          <div className="shrink-0 px-6 py-3">
-            <PrSectionTabs pr={activePr} detail={detail} section={section} onSection={setSection} />
-          </div>
-          <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 pb-6" fadeSize={24}>
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-              {section === 'overview' ? (
-                <>
-                  <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
-                  <PrReviewers
-                    detail={detail}
-                    workspaceRoot={workspaceRoot}
-                    onAddReviewers={onAddReviewers}
-                  />
-                </>
-              ) : (
-                <SectionBody
-                  detailLoading={detailLoading}
-                  detailError={detailError}
-                  detail={detail}
-                  onRetry={refreshActive}
-                >
-                  {section === 'resolve' ? (
-                    <ResolveBoard
-                      threads={groupThreads(detail?.comments ?? []).filter(
-                        (thread) =>
-                          thread.head.source === 'review' && thread.head.resolved === false,
-                      )}
-                      resolverFor={resolverFor}
-                      onSpawnOne={onSpawnOne}
-                      onSpawnBatch={onSpawnBatch}
-                      onSpawnCombined={onSpawnCombined}
-                      onOpenResolver={openResolver}
-                      roleModels={roleModels}
-                      onOpenThread={(threadId) => {
-                        setJumpThreadId(threadId);
-                        setSection('comments');
-                      }}
-                    />
-                  ) : section === 'comments' ? (
-                    <PrConversation
-                      comments={detail?.comments ?? []}
-                      pr={activePr}
-                      resolverFor={resolverFor}
-                      scrollToThreadId={jumpThreadId ?? initialThreadId}
-                      onOpenUrl={(url) => void openUrl(url)}
-                    />
-                  ) : (
-                    <PrChecks
-                      checks={detail?.checks ?? []}
-                      pr={activePr}
-                      onOpenUrl={(url) => void openUrl(url)}
-                    />
-                  )}
-                </SectionBody>
-              )}
-            </div>
-          </ScrollFade>
+          <PrReviewers
+            detail={detail}
+            workspaceRoot={workspaceRoot}
+            onAddReviewers={onAddReviewers}
+          />
+          <MetaItem label="Base branch">
+            <span className="font-mono">{activePr.baseBranch}</span>
+          </MetaItem>
+          {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
         </>
+      }
+    >
+      {section === 'overview' ? (
+        <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
+      ) : (
+        <SectionBody
+          detailLoading={detailLoading}
+          detailError={detailError}
+          detail={detail}
+          onRetry={refreshActive}
+        >
+          {section === 'resolve' ? (
+            <ResolveBoard
+              threads={groupThreads(detail?.comments ?? []).filter(
+                (thread) => thread.head.source === 'review' && thread.head.resolved === false,
+              )}
+              resolverFor={resolverFor}
+              onSpawnOne={onSpawnOne}
+              onSpawnBatch={onSpawnBatch}
+              onSpawnCombined={onSpawnCombined}
+              onOpenResolver={openResolver}
+              roleModels={roleModels}
+              onOpenThread={(threadId) => {
+                setJumpThreadId(threadId);
+                setSection('comments');
+              }}
+            />
+          ) : section === 'comments' ? (
+            <PrConversation
+              comments={detail?.comments ?? []}
+              pr={activePr}
+              resolverFor={resolverFor}
+              scrollToThreadId={jumpThreadId ?? initialThreadId}
+              onOpenUrl={(url) => void openUrl(url)}
+            />
+          ) : (
+            <PrChecks
+              checks={detail?.checks ?? []}
+              pr={activePr}
+              onOpenUrl={(url) => void openUrl(url)}
+            />
+          )}
+        </SectionBody>
       )}
-    </div>
+    </StudioDetailLayout>
   );
 };

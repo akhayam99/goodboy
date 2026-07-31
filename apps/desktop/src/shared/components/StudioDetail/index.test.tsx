@@ -34,6 +34,17 @@ describe('StudioDetailLayout', () => {
 
     expect(screen.getByText('Tabs slot')).toBeDefined();
   });
+
+  it('drops the rail and the scroll region for a full-bleed body', () => {
+    render(
+      <StudioDetailLayout header={<span>Header slot</span>} scrolls={false}>
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    expect(screen.getByText('Main slot')).toBeDefined();
+    expect(screen.queryByText('Rail slot')).toBeNull();
+  });
 });
 
 describe('StudioDetailTabs', () => {

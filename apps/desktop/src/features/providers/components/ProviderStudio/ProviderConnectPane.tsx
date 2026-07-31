@@ -90,7 +90,7 @@ export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
         </div>
         <Divider orientation="vertical" />
         <ScrollFade
-          className="w-72 shrink-0"
+          className="h-full w-72 shrink-0"
           viewportClassName="bg-subtle/30 px-5 py-5"
           fadeFrom="subtle"
         >

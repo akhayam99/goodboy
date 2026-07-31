@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses, type Tone as SharedTone } from '@goodboy/ui';
 
-type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
+type Tone = Extract<SharedTone, 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'>;
 
 type Props = {
   readonly icon: ReactNode;
@@ -9,24 +9,6 @@ type Props = {
   readonly label: string;
   readonly body: string;
   readonly onClick?: () => void;
-};
-
-const TONE_BG: Record<Tone, string> = {
-  primary: 'bg-primary/10',
-  success: 'bg-success/10',
-  warning: 'bg-warning/10',
-  danger: 'bg-danger/10',
-  info: 'bg-info/10',
-  muted: 'bg-muted',
-};
-
-const TONE_FG: Record<Tone, string> = {
-  primary: 'text-primary',
-  success: 'text-success',
-  warning: 'text-warning',
-  danger: 'text-danger',
-  info: 'text-info',
-  muted: 'text-muted-foreground',
 };
 
 export const ConceptCard = ({ icon, tone, label, body, onClick }: Props) => (
@@ -38,8 +20,8 @@ export const ConceptCard = ({ icon, tone, label, body, onClick }: Props) => (
     <span
       className={cn(
         'flex h-8 w-8 items-center justify-center rounded-md',
-        TONE_BG[tone],
-        TONE_FG[tone],
+        tintClasses(tone).bg,
+        tintClasses(tone).text,
       )}
     >
       {icon}

@@ -1,7 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, Trash2 } from 'lucide-react';
-import { Divider, Popover, ScrollFade, Tooltip, cn } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  EmptyState,
+  Popover,
+  ScrollFade,
+  Skeleton,
+  Tooltip,
+  cn,
+} from '@goodboy/ui';
 import { Fragment } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction, NotificationSeverity } from '@goodboy/db';
@@ -46,6 +55,7 @@ const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
 
 export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
+  const notificationsLoading = useAppStore((s) => s.notificationsLoading);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
   const clearNotifications = useAppStore((s) => s.clearNotifications);
@@ -168,10 +178,41 @@ export const NotificationCenter = () => {
                   )}
                 </header>
                 <Divider />
-                {notifications.length === 0 ? (
-                  <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-                    No notifications
-                  </p>
+                {notificationsLoading && notifications.length === 0 ? (
+                  <div
+                    className="flex flex-col gap-3 px-3 py-2.5"
+                    role="status"
+                    aria-label="Loading notifications"
+                  >
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
+                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                          <Skeleton className="h-3 w-2/3 rounded" />
+                          <Skeleton className="h-2.5 w-1/3 rounded" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <EmptyState
+                    icon={Bell}
+                    title="Nothing to catch up on"
+                    description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
+                    action={
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setOpen(false);
+                          window.dispatchEvent(new CustomEvent('goodboy:new-session'));
+                        }}
+                      >
+                        Start a session
+                      </Button>
+                    }
+                    className="px-3 py-6"
+                  />
                 ) : (
                   <ScrollFade className="max-h-80" fadeSize={16}>
                     <ul>

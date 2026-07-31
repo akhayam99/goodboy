@@ -105,7 +105,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected }: Props) => {
             <dd className="font-mono text-foreground">{config.host}</dd>
           </dl>
           <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>
-            <Unplug size={12} aria-hidden className="mr-1.5" />
+            <Unplug size={12} aria-hidden />
             {busy ? 'Disconnecting…' : 'Disconnect'}
           </Button>
         </div>
@@ -120,7 +120,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected }: Props) => {
             onClick={() => void onDisconnectGithub()}
             disabled={busy}
           >
-            <Unplug size={12} aria-hidden className="mr-1.5" />
+            <Unplug size={12} aria-hidden />
             {busy ? 'Disconnecting…' : 'Disconnect GitHub'}
           </Button>
         </div>

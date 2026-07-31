@@ -91,6 +91,21 @@ vi.mock('@goodboy/ui', () => ({
       </button>
     </div>
   ),
+  tintClasses: (tone: string) => ({
+    bg: `bg-${tone}`,
+    bgSoft: `bg-${tone}-soft`,
+    ring: `ring-${tone}`,
+    border: `border-${tone}`,
+    borderSoft: `border-${tone}-soft`,
+    hoverBorder: `hover:border-${tone}`,
+    hoverBg: `hover:bg-${tone}`,
+    hoverBgSoft: `hover:bg-${tone}-soft`,
+    hoverText: `hover:text-${tone}`,
+    text: `text-${tone}`,
+    icon: `text-${tone}`,
+    dot: `bg-${tone}`,
+    solid: `bg-${tone} text-${tone}-foreground`,
+  }),
 }));
 
 vi.mock('./SectionToggle', () => ({

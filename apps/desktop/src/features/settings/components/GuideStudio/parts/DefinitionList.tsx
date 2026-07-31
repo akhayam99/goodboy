@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses, type Tone as SharedTone } from '@goodboy/ui';
 
-type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'muted';
+type Tone = Extract<SharedTone, 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'>;
 
 type DefinitionRow = {
   readonly term: string;
@@ -12,15 +12,6 @@ type DefinitionRow = {
 
 type Props = {
   readonly rows: ReadonlyArray<DefinitionRow>;
-};
-
-const TONE_FG: Record<Tone, string> = {
-  primary: 'text-primary',
-  success: 'text-success',
-  warning: 'text-warning',
-  danger: 'text-danger',
-  info: 'text-info',
-  muted: 'text-muted-foreground',
 };
 
 export const DefinitionList = ({ rows }: Props) => (
@@ -34,7 +25,7 @@ export const DefinitionList = ({ rows }: Props) => (
           <span
             className={cn(
               'flex size-5 shrink-0 items-center justify-center',
-              TONE_FG[row.tone ?? 'muted'],
+              tintClasses(row.tone ?? 'neutral').text,
             )}
           >
             {row.icon}
@@ -43,7 +34,7 @@ export const DefinitionList = ({ rows }: Props) => (
           <span
             className={cn(
               'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
-              TONE_FG[row.tone ?? 'muted'].replace('text-', 'bg-'),
+              tintClasses(row.tone ?? 'neutral').dot,
             )}
           />
         )}

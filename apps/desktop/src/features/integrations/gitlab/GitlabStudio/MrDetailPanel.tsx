@@ -30,7 +30,7 @@ import {
 import { IssueStateBadge, type StateTone } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
@@ -236,7 +236,7 @@ export const MrDetailPanel = ({
     }
   };
 
-  const updated = mr == null ? '' : formatRelativeDuration(mr.updatedAt);
+  const updated = mr == null ? '' : formatAbsoluteDateTime({ iso: mr.updatedAt });
   const mergeStatus =
     mr != null && mr.state === 'opened' ? humanizeMergeStatus(mr.mergeStatus) : null;
 
@@ -296,7 +296,7 @@ export const MrDetailPanel = ({
                       'Merging…'
                     ) : (
                       <>
-                        <GitMerge size={13} className="mr-1.5" aria-hidden />
+                        <GitMerge size={13} aria-hidden />
                         Merge request
                       </>
                     )}
@@ -322,7 +322,7 @@ export const MrDetailPanel = ({
               </MetaItem>
             ) : null}
             <MetaItem label="Draft">{mr.draft ? 'yes' : 'no'}</MetaItem>
-            {updated !== '' ? <MetaItem label="Updated">{updated} ago</MetaItem> : null}
+            {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
           </>
         }
       >
@@ -473,7 +473,7 @@ export const MrDetailPanel = ({
                 ) : (
                   <>
                     Create MR
-                    <ArrowRight size={13} className="ml-1.5" aria-hidden />
+                    <ArrowRight size={13} aria-hidden />
                   </>
                 )}
               </Button>
@@ -487,7 +487,7 @@ export const MrDetailPanel = ({
                   'Drafting…'
                 ) : (
                   <>
-                    <Sparkles size={13} className="mr-1.5" aria-hidden />
+                    <Sparkles size={13} aria-hidden />
                     Draft with agent
                   </>
                 )}

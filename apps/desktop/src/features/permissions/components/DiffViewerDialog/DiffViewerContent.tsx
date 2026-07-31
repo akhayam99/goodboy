@@ -988,9 +988,15 @@ export const DiffViewerContent = ({
                   />
                 ))}
                 {mountedCount < files.length && (
-                  <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
-                    <span className="h-3 w-3 animate-spin rounded-full border border-muted-foreground/30 border-t-muted-foreground" />
-                    {mountedCount} / {files.length} files
+                  <div className="flex flex-col gap-2 py-3">
+                    <div className="flex items-center gap-2 rounded-lg border border-border-soft/60 px-3 py-2.5">
+                      <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                      <Skeleton className="h-3 w-1/3 rounded" />
+                      <Skeleton className="ml-auto h-3 w-10 rounded" />
+                    </div>
+                    <span className="text-center text-xs text-muted-foreground">
+                      {mountedCount} / {files.length} files
+                    </span>
                   </div>
                 )}
               </ScrollFade>

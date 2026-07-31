@@ -48,6 +48,28 @@
   --color-provider-gitlab: oklch(0.68 0.18 45);
   --color-provider-github: oklch(0.68 0.02 260);
 
+  /* Deterministic per-workspace accent ramp, hashed from workspace id. */
+  --color-workspace-1: oklch(0.72 0.1 180);
+  --color-workspace-2: oklch(0.72 0.14 260);
+  --color-workspace-3: oklch(0.72 0.14 290);
+  --color-workspace-4: oklch(0.75 0.1 350);
+  --color-workspace-5: oklch(0.75 0.11 70);
+  --color-workspace-6: oklch(0.75 0.12 140);
+  --color-workspace-7: oklch(0.68 0.15 25);
+  --color-workspace-8: oklch(0.72 0.11 220);
+
+  /* Per-agent-kind accent, drives the mascot silhouette tint. */
+  --color-agent-generic: oklch(0.71 0.16 17);
+  --color-agent-scout: oklch(0.74 0.13 233);
+  --color-agent-planner: oklch(0.7 0.16 295);
+  --color-agent-implementer: oklch(0.76 0.15 158);
+  --color-agent-debugger: oklch(0.81 0.14 84);
+  --color-agent-tester: oklch(0.78 0.12 188);
+  --color-agent-reviewer: oklch(0.78 0.12 213);
+  --color-agent-pr-reviewer: oklch(0.68 0.16 275);
+  --color-agent-docs: oklch(0.77 0.15 62);
+  --color-agent-resolver: oklch(0.82 0.18 130);
+
   /* Syntax palette for the diff viewer (dark). On-brand hues, readable on the
      charcoal canvas. Unmapped languages fall back to foreground (no token). */
   --color-syntax-keyword: oklch(0.75 0.13 300);
@@ -261,6 +283,14 @@ html[data-theme='light'] {
   --color-provider-sentry: oklch(0.48 0.18 320);
   --color-provider-gitlab: oklch(0.56 0.18 45);
   --color-provider-github: oklch(0.42 0.03 260);
+  --color-workspace-1: oklch(0.5 0.1 180);
+  --color-workspace-2: oklch(0.5 0.15 260);
+  --color-workspace-3: oklch(0.52 0.15 290);
+  --color-workspace-4: oklch(0.55 0.14 350);
+  --color-workspace-5: oklch(0.52 0.13 70);
+  --color-workspace-6: oklch(0.52 0.13 140);
+  --color-workspace-7: oklch(0.5 0.17 25);
+  --color-workspace-8: oklch(0.5 0.12 220);
   --color-focus-ring: oklch(0.5 0.13 200 / 0.45);
   /* Syntax palette (light): same hues, lower L for contrast on the light canvas. */
   --color-syntax-keyword: oklch(0.48 0.17 300);
@@ -302,6 +332,16 @@ body {
 /* Reusable tabular-figures helper for aligned numeric columns / metrics. */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Soft ambient glow behind the brand mark, tokenized off the primary hue. */
+.shadow-glow-primary {
+  box-shadow: 0 0 50px oklch(from var(--color-primary) l c h / 0.25);
+}
+
+/* Inset highlight for a selected primary-toned chip. */
+.shadow-inset-primary {
+  box-shadow: inset 0 1px 2px oklch(from var(--color-primary) l c h / 0.18);
 }
 
 :focus-visible {

@@ -305,7 +305,7 @@ export const LaunchSessionPanel = ({
             className={busy ? 'animate-border-pulse' : undefined}
           >
             {busy ? 'Launching…' : 'Launch session'}
-            {!busy && <ArrowRight size={13} className="ml-1.5" aria-hidden />}
+            {!busy && <ArrowRight size={13} aria-hidden />}
           </Button>
         )}
       </footer>

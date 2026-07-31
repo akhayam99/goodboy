@@ -54,7 +54,7 @@ const PR_META: Record<PullRequestChipState, PrStateMeta> = {
     icon: GitMerge,
     label: 'Merged',
     textClass: 'text-merged',
-    bgClass: 'bg-[oklch(from_var(--color-merged)_l_c_h_/_0.15)]',
+    bgClass: 'bg-merged/15',
   },
   closed: {
     icon: GitPullRequestClosed,

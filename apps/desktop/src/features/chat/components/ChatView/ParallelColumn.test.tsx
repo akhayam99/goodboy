@@ -47,6 +47,7 @@ vi.mock('@goodboy/ui', () => ({
     <div className="overflow-y-auto">{children}</div>
   ),
   StatusDot: () => null,
+  Divider: () => <div role="separator" />,
 }));
 
 import { ParallelColumn } from './ParallelColumn';

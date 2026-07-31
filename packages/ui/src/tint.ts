@@ -18,6 +18,7 @@ export type TintClasses = {
   readonly hoverBorder: string;
   readonly hoverBg: string;
   readonly hoverBgSoft: string;
+  readonly hoverText: string;
   readonly text: string;
   readonly icon: string;
   readonly dot: string;
@@ -34,6 +35,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-success/40',
     hoverBg: 'hover:bg-success/20',
     hoverBgSoft: 'hover:bg-success/5',
+    hoverText: 'hover:text-success',
     text: 'text-success',
     icon: 'text-success',
     dot: 'bg-success',
@@ -48,6 +50,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-info/40',
     hoverBg: 'hover:bg-info/20',
     hoverBgSoft: 'hover:bg-info/5',
+    hoverText: 'hover:text-info',
     text: 'text-info',
     icon: 'text-info',
     dot: 'bg-info',
@@ -62,6 +65,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-warning/40',
     hoverBg: 'hover:bg-warning/20',
     hoverBgSoft: 'hover:bg-warning/5',
+    hoverText: 'hover:text-warning',
     text: 'text-warning',
     icon: 'text-warning',
     dot: 'bg-warning',
@@ -76,6 +80,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-danger/40',
     hoverBg: 'hover:bg-danger/20',
     hoverBgSoft: 'hover:bg-danger/5',
+    hoverText: 'hover:text-danger',
     text: 'text-danger',
     icon: 'text-danger',
     dot: 'bg-danger',
@@ -90,6 +95,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-primary/40',
     hoverBg: 'hover:bg-primary/20',
     hoverBgSoft: 'hover:bg-primary/5',
+    hoverText: 'hover:text-primary',
     text: 'text-primary',
     icon: 'text-primary',
     dot: 'bg-primary',
@@ -104,6 +110,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-accent/40',
     hoverBg: 'hover:bg-accent/20',
     hoverBgSoft: 'hover:bg-accent/5',
+    hoverText: 'hover:text-accent',
     text: 'text-accent',
     icon: 'text-accent',
     dot: 'bg-accent',
@@ -118,6 +125,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-merged/40',
     hoverBg: 'hover:bg-merged/20',
     hoverBgSoft: 'hover:bg-merged/5',
+    hoverText: 'hover:text-merged',
     text: 'text-merged',
     icon: 'text-merged',
     dot: 'bg-merged',
@@ -132,6 +140,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-primary/40',
     hoverBg: 'hover:bg-muted/50',
     hoverBgSoft: 'hover:bg-muted/30',
+    hoverText: 'hover:text-foreground',
     text: 'text-foreground/80',
     icon: 'text-primary/60',
     dot: 'bg-primary/60',
@@ -146,6 +155,7 @@ const TINT: Record<Tone, TintClasses> = {
     hoverBorder: 'hover:border-border-soft',
     hoverBg: 'hover:bg-muted',
     hoverBgSoft: 'hover:bg-muted/50',
+    hoverText: 'hover:text-foreground',
     text: 'text-muted-foreground',
     icon: 'text-muted-foreground',
     dot: 'bg-muted-foreground',

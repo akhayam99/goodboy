@@ -761,8 +761,7 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
       class="relative flex h-24 w-24 items-center justify-center text-primary"
     >
       <div
-        class="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
-        style="box-shadow: 0 0 50px oklch(from var(--color-primary) l c h / 0.25);"
+        class="shadow-glow-primary relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
       >
         <span
           aria-hidden="true"
@@ -837,8 +836,7 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
       class="relative flex h-24 w-24 items-center justify-center text-primary"
     >
       <div
-        class="relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
-        style="box-shadow: 0 0 50px oklch(from var(--color-primary) l c h / 0.25);"
+        class="shadow-glow-primary relative flex h-full w-full items-center justify-center rounded-full bg-subtle ring-1 ring-border-soft"
       >
         <span
           aria-hidden="true"

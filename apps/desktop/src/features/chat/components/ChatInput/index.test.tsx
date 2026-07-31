@@ -45,6 +45,7 @@ const {
     agentDraft: Record<string, string>;
     agentAttachments: Record<string, ReadonlyArray<never>>;
     agentQueue: Record<string, ReadonlyArray<{ id: string }>>;
+    sessionTelemetry: Record<string, ReadonlyArray<{ kind: string; estimatedCostUsd: number }>>;
     sessionNudges: Record<string, null>;
     sessionPhaseRuns: Record<string, ReadonlyArray<never>>;
     phaseTemplates: Record<string, never>;
@@ -89,6 +90,7 @@ const {
     agentDraft: {},
     agentAttachments: {},
     agentQueue: {},
+    sessionTelemetry: {},
     sessionNudges: {},
     sessionPhaseRuns: {},
     phaseTemplates: {},
@@ -152,12 +154,20 @@ function resetMockStore() {
     agentAttachments: {},
     agentQueue: {},
     sessionWorktrees: {},
+    sessionTelemetry: {},
   });
 }
 
 vi.mock('../../../../store', () => ({
   useAppStore: mockStore,
   EMPTY_ARRAY: [] as never[],
+  useSessionCost: (sessionId: string) => {
+    const records = mockStore.getState().sessionTelemetry[sessionId] ?? [];
+    return records.reduce(
+      (sum, record) => (record.kind === 'summarizer' ? sum : sum + record.estimatedCostUsd),
+      0,
+    );
+  },
 }));
 
 vi.mock('../../../../permissions', () => ({
@@ -240,6 +250,24 @@ describe('ChatInput, input wiring', () => {
     const textarea = screen.getByRole('textbox');
     window.dispatchEvent(new CustomEvent('goodboy:focus-composer'));
     expect(document.activeElement).toBe(textarea);
+  });
+
+  it('shows the session cost badge in the footer once spend accrues', () => {
+    mockStore.setState({
+      sessionTelemetry: {
+        'session-1': [
+          { kind: 'turn', estimatedCostUsd: 1.5 },
+          { kind: 'summarizer', estimatedCostUsd: 9 },
+        ],
+      },
+    });
+    render(<ChatInput session={makeSession()} />);
+    expect(screen.getByTitle(/session spend: \$1\.50/i)).toBeDefined();
+  });
+
+  it('hides the session cost badge when there is no spend yet', () => {
+    render(<ChatInput session={makeSession()} />);
+    expect(screen.queryByTitle(/session spend/i)).toBeNull();
   });
 
   it('textarea stays enabled when session is running so user can queue next message', () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { PullRequestState } from '@goodboy/types';
-import { cn, Divider, InlineConfirm } from '@goodboy/ui';
+import { cn, Divider, InlineConfirm, tintClasses, type Tone } from '@goodboy/ui';
 import { GitMerge, GitPullRequestDraft, Plus, RotateCcw, Send, XCircle } from 'lucide-react';
 
 export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | null;
@@ -8,13 +8,19 @@ export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | nu
 const BTN =
   'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
+const actionTone = (
+  tone: Extract<Tone, 'neutral' | 'success' | 'danger' | 'primary' | 'warning'>,
+): string => {
+  const t = tintClasses(tone);
+  return cn(t.border, t.text, t.hoverBgSoft, t.hoverText);
+};
+
 const TONE = {
-  neutral:
-    'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground',
-  success: 'border-success/40 text-success hover:bg-success/10',
-  danger: 'border-danger/40 text-danger hover:bg-danger/10',
-  primary: 'border-primary/40 text-primary hover:bg-primary/10',
-  warning: 'border-warning/40 text-warning hover:bg-warning/10',
+  neutral: actionTone('neutral'),
+  success: actionTone('success'),
+  danger: actionTone('danger'),
+  primary: actionTone('primary'),
+  warning: actionTone('warning'),
 } as const;
 
 type Props = {

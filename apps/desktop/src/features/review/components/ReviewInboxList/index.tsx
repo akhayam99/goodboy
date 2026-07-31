@@ -49,7 +49,7 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
           aria-label="Refresh pull requests"
           className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
         >
-          <RefreshCw size={12} aria-hidden className={cn(isLoading && 'animate-spin')} />
+          <RefreshCw size={12} aria-hidden />
         </button>
       </div>
       {isInitialLoading ? (

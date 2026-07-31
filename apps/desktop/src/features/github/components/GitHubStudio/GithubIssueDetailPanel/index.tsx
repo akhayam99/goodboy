@@ -9,7 +9,7 @@ import {
 } from '../../../../../shared/components/StudioDetail';
 import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
-import { formatRelativeDuration } from '../../../../../shared/utils/relativeDate';
+import { formatAbsoluteDateTime } from '../../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../../../goal-from-issue';
 import { githubBranchSlug } from '../useGithubIssues';
@@ -34,7 +34,7 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
     );
   }
 
-  const updated = formatRelativeDuration(issue.updatedAt);
+  const updated = formatAbsoluteDateTime({ iso: issue.updatedAt });
 
   const launchCard = (
     <LaunchSessionPanel
@@ -86,7 +86,7 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
               ))}
             </MetaItem>
           ) : null}
-          {updated !== '' ? <MetaItem label="Updated">{updated} ago</MetaItem> : null}
+          {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
         </>
       }
     >

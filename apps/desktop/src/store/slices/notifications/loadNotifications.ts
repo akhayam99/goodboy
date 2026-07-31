@@ -4,7 +4,13 @@ import type { SetFn } from './types';
 
 export const loadNotifications = (set: SetFn) => {
   return async () => {
-    const notifications = await listNotifications(tauriDatabase);
-    set({ notifications });
+    set({ notificationsLoading: true });
+    try {
+      const notifications = await listNotifications(tauriDatabase);
+      set({ notifications, notificationsLoading: false });
+    } catch (error) {
+      set({ notificationsLoading: false });
+      throw error;
+    }
   };
 };
