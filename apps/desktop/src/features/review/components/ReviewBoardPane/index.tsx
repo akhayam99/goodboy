@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { Divider, EmptyState, ResizeHandle, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -7,6 +7,7 @@ import type { PublishPrReviewVerdict } from '../../../../store/slices/review-dra
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
 import { classifyAgent } from '../../../session/agent-kind';
+import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { DraftsPanel } from './DraftsPanel';
 import { PublishBar } from './PublishBar';
 import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
@@ -121,16 +122,13 @@ export const ReviewBoardPane = ({ session }: Props) => {
               {loading ? '' : `${files.length} files`}
             </span>
             <span className="flex-1" />
-            <button
-              type="button"
+            <RefreshIconButton
+              label="Refresh diff"
+              isLoading={loading}
               onClick={refresh}
-              disabled={loading}
-              title="Refresh diff"
-              aria-label="Refresh diff"
-              className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
-            >
-              <RefreshCw size={12} aria-hidden />
-            </button>
+              iconSize={12}
+              className="size-6 border-transparent p-0"
+            />
           </div>
           <Divider className="shrink-0" />
           {loading ? (

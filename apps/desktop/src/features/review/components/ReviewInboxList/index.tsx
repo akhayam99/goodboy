@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { cn, EmptyState, Eyebrow, ScrollFade, Skeleton } from '@goodboy/ui';
-import { Inbox, RefreshCw } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { AuthorAvatar } from '../AuthorAvatar';
 import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
@@ -41,16 +42,13 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
         <Eyebrow label={scope === 'others' ? 'From teammates' : 'All open'} />
         <span className="text-2xs tabular-nums text-muted-foreground/50">{rows.length}</span>
         <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
-        <button
-          type="button"
+        <RefreshIconButton
+          label="Refresh pull requests"
+          isLoading={isLoading}
           onClick={() => void refreshReviewPrs(workspaceId)}
-          disabled={isLoading}
-          title="Refresh pull requests"
-          aria-label="Refresh pull requests"
-          className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
-        >
-          <RefreshCw size={12} aria-hidden />
-        </button>
+          iconSize={12}
+          className="size-6 border-transparent p-0"
+        />
       </div>
       {isInitialLoading ? (
         <div

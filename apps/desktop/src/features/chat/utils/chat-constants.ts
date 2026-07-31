@@ -115,7 +115,7 @@ type SlugWordsParams = {
 
 const slugToWords = ({ slug }: SlugWordsParams): string =>
   slug
-    .split(/[-_.\s/]+/)
+    .split(/[-_\s/]+/)
     .filter((part) => part !== '')
     .map((part) => (/^[a-z]/.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part))
     .join(' ');
