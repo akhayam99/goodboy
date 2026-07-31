@@ -14,6 +14,7 @@ import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { continueWorkflowRun } from './continueWorkflowRun';
 import { orchestrateNextStep } from './orchestrateNextStep';
 import { setWorkflowOrchestratorHints } from './setWorkflowOrchestratorHints';
+import { setWorkflowOrchestratorRouting } from './setWorkflowOrchestratorRouting';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
 import { restoreWorkflow } from './restoreWorkflow';
 import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
@@ -55,6 +56,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),
     continueWorkflowRun: continueWorkflowRun(set, get),
     setWorkflowOrchestratorHints: setWorkflowOrchestratorHints(set, get),
+    setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),
     retryStepSummary: retryStepSummary(set, get),
   };
 };

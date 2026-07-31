@@ -1,17 +1,9 @@
 import { useState } from 'react';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-  Loader2,
-  Play,
-  RotateCcw,
-  Sparkles,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2, Play, RotateCcw, Sparkles } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import { getCheapModel } from '@goodboy/core';
-import type { Agent, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
+import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
+import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -59,16 +51,13 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
   const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const continueWorkflowRun = useAppStore((state) => state.continueWorkflowRun);
   const setWorkflowOrchestratorHints = useAppStore((state) => state.setWorkflowOrchestratorHints);
-  const providers = useAppStore((state) => state.providers);
   const [hintsOpen, setHintsOpen] = useState(false);
   const [hintsDraft, setHintsDraft] = useState(run.orchestratorHints ?? '');
   const [continueNote, setContinueNote] = useState('');
   const [continueOpen, setContinueOpen] = useState(false);
-  const [providerMenuOpen, setProviderMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const phase = phaseOf({ run, agents, isOrchestrating });
-  const connected = providers.filter((provider) => provider.connection === 'connected');
 
   const guard = async (action: () => Promise<void>) => {
     if (busy) return;
@@ -78,16 +67,6 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
     } finally {
       setBusy(false);
     }
-  };
-
-  const retryWith = (providerId: ProviderId) => {
-    setProviderMenuOpen(false);
-    void guard(() =>
-      retryWorkflowOrchestration(sessionId, run.id, {
-        providerId,
-        model: getCheapModel(providerId),
-      }),
-    );
   };
 
   return (
@@ -114,46 +93,20 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
         </p>
       ) : null}
 
+      <OrchestratorRoutingRow sessionId={sessionId} run={run} disabled={busy || isOrchestrating} />
+
       <div className="flex flex-wrap items-center gap-1.5">
         {phase === 'failed' || phase === 'blocked' ? (
-          <>
-            <button
-              type="button"
-              disabled={busy}
-              data-testid="orchestrator-retry"
-              onClick={() => void guard(() => retryWorkflowOrchestration(sessionId, run.id))}
-              className="inline-flex items-center gap-1 rounded-md border border-border-soft bg-elevated px-2 py-1 text-2xs font-semibold text-foreground hover:border-border disabled:opacity-60"
-            >
-              <RotateCcw size={11} aria-hidden />
-              retry
-            </button>
-            <div className="relative">
-              <button
-                type="button"
-                disabled={busy || connected.length === 0}
-                data-testid="orchestrator-retry-provider"
-                onClick={() => setProviderMenuOpen((open) => !open)}
-                className="inline-flex items-center gap-1 rounded-md border border-border-soft bg-elevated px-2 py-1 text-2xs font-semibold text-foreground hover:border-border disabled:opacity-60"
-              >
-                retry with another provider
-                <ChevronDown size={11} aria-hidden />
-              </button>
-              {providerMenuOpen ? (
-                <div className="absolute left-0 top-full z-40 mt-1 w-48 rounded-md border border-border-soft bg-background p-1 shadow-lg">
-                  {connected.map((provider) => (
-                    <button
-                      key={provider.id}
-                      type="button"
-                      onClick={() => retryWith(provider.id)}
-                      className="flex w-full items-center rounded px-2 py-1 text-left text-2xs text-foreground hover:bg-muted/50"
-                    >
-                      {provider.id}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </>
+          <button
+            type="button"
+            disabled={busy}
+            data-testid="orchestrator-retry"
+            onClick={() => void guard(() => retryWorkflowOrchestration(sessionId, run.id))}
+            className="inline-flex items-center gap-1 rounded-md border border-border-soft bg-elevated px-2 py-1 text-2xs font-semibold text-foreground hover:border-border disabled:opacity-60"
+          >
+            <RotateCcw size={11} aria-hidden />
+            retry
+          </button>
         ) : null}
 
         {phase === 'done' ? (

@@ -19,6 +19,7 @@ import type {
   OverrideSettings,
   OpenQuestion,
   OpenQuestionId,
+  OrchestratorRouting,
   PendingResolutionOutcome,
   PermissionScope,
   PlanId,
@@ -105,10 +106,7 @@ import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
-import type {
-  OrchestrateOptions,
-  OrchestratorRouting,
-} from './slices/workflows/orchestrateNextStep';
+import type { OrchestrateOptions } from './slices/workflows/orchestrateNextStep';
 import { createSettingsSlice } from './slices/settings';
 import { createConflictsSlice } from './slices/conflicts';
 import { createTranscriptsSlice } from './slices/transcripts';
@@ -286,11 +284,7 @@ export type AppActions = {
     workflowRunId: WorkflowRunId,
     options?: OrchestrateOptions,
   ): Promise<void>;
-  retryWorkflowOrchestration(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    routing?: OrchestratorRouting,
-  ): Promise<void>;
+  retryWorkflowOrchestration(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   continueWorkflowRun(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
@@ -300,6 +294,11 @@ export type AppActions = {
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     hints: string,
+  ): Promise<void>;
+  setWorkflowOrchestratorRouting(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    routing: OrchestratorRouting | null,
   ): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
   loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;

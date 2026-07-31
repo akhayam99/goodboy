@@ -87,20 +87,21 @@ describe('continueWorkflowRun', () => {
     const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(run.orchestrationOutcome).toBeUndefined();
     expect(run.orchestrationError).toBeUndefined();
-    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {});
   });
 
-  it('folds the note into the hints the orchestrator already has', async () => {
+  it('hands the note to the orchestrator once without pinning it to the hints', async () => {
     const state = baseState({ orchestratorHints: 'skip the docs' });
     const { set, get } = harness(state);
 
     await continueWorkflowRun(set, get)(SESSION_ID, RUN_ID, '  also check the migrations  ');
 
-    expect(updateHintsSpy).toHaveBeenCalledWith(
-      {},
-      RUN_ID,
-      'skip the docs\nalso check the migrations',
-    );
+    expect(updateHintsSpy).not.toHaveBeenCalled();
+    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      extraHints: 'also check the migrations',
+    });
+    const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(run.orchestratorHints).toBe('skip the docs');
   });
 
   it('leaves a static run alone', async () => {

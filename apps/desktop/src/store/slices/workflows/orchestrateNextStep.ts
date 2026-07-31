@@ -5,7 +5,7 @@ import type {
   AgentRole,
   IsoDateTime,
   ModelCostTier,
-  ModelEffort,
+  OrchestratorRouting,
   ProviderId,
   ProviderRunId,
   RoleModelPreferences,
@@ -18,6 +18,8 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import {
+  ORCHESTRATOR_STEP_BUDGET,
+  ORCHESTRATOR_STEP_HARD_CAP,
   OrchestratorClient,
   OrchestratorProviderError,
   PROVIDER_CAPABILITIES,
@@ -41,14 +43,9 @@ import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 
-export type OrchestratorRouting = {
-  readonly providerId: ProviderId;
-  readonly model: string;
-  readonly effort?: ModelEffort;
-};
-
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
+  readonly extraHints?: string;
 };
 
 const orchestrationInFlight = new Set<WorkflowRunId>();
@@ -136,6 +133,7 @@ type PersistOutcomeParams = {
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
   readonly outcome: WorkflowOrchestrationOutcome;
+  readonly reason: string;
 };
 
 const persistOrchestrationOutcome = async ({
@@ -143,13 +141,24 @@ const persistOrchestrationOutcome = async ({
   sessionId,
   workflowRunId,
   outcome,
+  reason,
 }: PersistOutcomeParams): Promise<void> => {
-  await updateWorkflowRunOrchestrationOutcome(tauriDatabase, workflowRunId, outcome);
+  const trimmed = reason.trim();
+  await updateWorkflowRunOrchestrationOutcome(
+    tauriDatabase,
+    workflowRunId,
+    outcome,
+    trimmed === '' ? null : trimmed,
+  );
   patchWorkflowRun({
     set,
     sessionId,
     workflowRunId,
-    patch: (run) => ({ ...run, orchestrationOutcome: outcome }),
+    patch: (run) => ({
+      ...run,
+      orchestrationOutcome: outcome,
+      ...(trimmed !== '' && { orchestrationReason: trimmed }),
+    }),
   });
 };
 
@@ -325,6 +334,40 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (workflow == null) {
         return;
       }
+      const budgetExceeded = (get().budgetAlerts ?? []).some(
+        (alert) =>
+          alert.dismissedAt === undefined &&
+          ((alert.kind === 'session-exceeded' && alert.sessionId === sessionId) ||
+            alert.kind === 'provider-exceeded'),
+      );
+      if (budgetExceeded) {
+        await persistOrchestrationError({
+          set,
+          sessionId,
+          workflowRunId,
+          message: 'the budget cap is reached, raise it in Budget to keep this run going',
+        });
+        return;
+      }
+      if (workflow.steps.length >= ORCHESTRATOR_STEP_HARD_CAP) {
+        const reason = `the run reached the hard cap of ${ORCHESTRATOR_STEP_HARD_CAP} steps without closing. Review what the steps produced and start a new run for what is left.`;
+        await persistOrchestrationOutcome({
+          set,
+          sessionId,
+          workflowRunId,
+          outcome: 'blocked',
+          reason,
+        });
+        emitDecision({ get, sessionId, workflowRunId, action: 'blocked', reason });
+        void get().emitNotification(
+          'error',
+          'warning',
+          'dynamic workflow hit the step cap',
+          reason,
+          { sessionId },
+        );
+        return;
+      }
       setDeciding({ set, workflowRunId, isDeciding: true });
       const agents = [
         ...runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId),
@@ -344,7 +387,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         get().workspaceOverrides?.[session.workspaceId]?.taskModels,
         defaultProvider,
       );
-      const routing = options?.routing ?? taskModel;
+      const routing = options?.routing ?? run.orchestratorRouting ?? taskModel;
+      const hints = [run.orchestratorHints, options?.extraHints]
+        .map((entry) => entry?.trim() ?? '')
+        .filter((entry) => entry !== '')
+        .join('\n');
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invoke,
@@ -359,10 +406,12 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           processText: workflow.processText ?? '',
           completedSteps,
           openQuestionCount: openQuestions.length,
-          ...(run.orchestratorHints != null && { operatorHints: run.orchestratorHints }),
+          ...(hints !== '' && { operatorHints: hints }),
           providerId: defaultProvider,
           modelMenu: modelMenuFor({ provider: defaultProvider, roleModels }),
           roleDefaults: roleDefaultsFor({ provider: defaultProvider, roleModels }),
+          stepsUsed: workflow.steps.length,
+          stepBudget: ORCHESTRATOR_STEP_BUDGET,
         });
       } catch (error) {
         const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
@@ -440,6 +489,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         sessionId,
         workflowRunId,
         outcome: decision.action,
+        reason: decision.reason,
       });
       emitDecision({
         get,

@@ -52,7 +52,11 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 
-import { OrchestratorClient } from '@goodboy/core';
+import {
+  ORCHESTRATOR_STEP_BUDGET,
+  ORCHESTRATOR_STEP_HARD_CAP,
+  OrchestratorClient,
+} from '@goodboy/core';
 import { orchestrateNextStep } from './orchestrateNextStep';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -254,7 +258,7 @@ describe('orchestrateNextStep', () => {
       'All required tests pass.',
       { sessionId: SESSION_ID },
     );
-    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done');
+    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done', expect.any(String));
     const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(updated.orchestrationOutcome).toBe('done');
   });
@@ -295,7 +299,12 @@ describe('orchestrateNextStep', () => {
       'A product choice is required.',
       { sessionId: SESSION_ID },
     );
-    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'blocked');
+    expect(updateOutcomeSpy).toHaveBeenCalledWith(
+      {},
+      WORKFLOW_RUN_ID,
+      'blocked',
+      expect.any(String),
+    );
     const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(updated.orchestrationOutcome).toBe('blocked');
   });
@@ -334,7 +343,7 @@ describe('orchestrateNextStep', () => {
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
     expect(decideSpy).toHaveBeenCalledTimes(2);
-    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done');
+    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done', expect.any(String));
   });
 
   it('targets the run latest agent over the session selection for decision events', async () => {
@@ -480,6 +489,92 @@ describe('orchestrateNextStep', () => {
 
     expect(OrchestratorClient).toHaveBeenCalledWith(
       expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6' }),
+    );
+  });
+
+  it('routes the decision through the model pinned on the run', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: {},
+      model: 'gpt-5.6',
+    });
+    const state = baseState();
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    state['sessions'] = [
+      {
+        ...sessions[0]!,
+        workflowRuns: [
+          {
+            ...sessions[0]!.workflowRuns[0]!,
+            orchestratorRouting: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+          },
+        ],
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(OrchestratorClient).toHaveBeenCalledWith(
+      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6', effort: 'high' }),
+    );
+  });
+
+  it('tells the orchestrator how much of the step budget is spent', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: {},
+      model: 'haiku-4.5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ stepsUsed: 1, stepBudget: ORCHESTRATOR_STEP_BUDGET }),
+    );
+  });
+
+  it('blocks the run once it reaches the hard step cap instead of asking for more', async () => {
+    const state = baseState();
+    const template = state['phaseTemplates'] as Record<string, ReadonlyArray<Workflow>>;
+    const base = template[WORKSPACE_ID]![0]!;
+    const capped: Workflow = {
+      ...base,
+      steps: Array.from({ length: ORCHESTRATOR_STEP_HARD_CAP }, (_, index) => ({
+        ...base.steps[0]!,
+        id: `step-${index}` as StepId,
+        ordinal: index,
+        name: `Step ${index}`,
+      })),
+    };
+    state['phaseTemplates'] = { [WORKSPACE_ID]: [capped] };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).not.toHaveBeenCalled();
+    expect(updateOutcomeSpy).toHaveBeenCalledWith(
+      {},
+      WORKFLOW_RUN_ID,
+      'blocked',
+      expect.stringContaining('hard cap'),
+    );
+  });
+
+  it('refuses to start a step while the budget cap is reached', async () => {
+    const state = baseState();
+    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).not.toHaveBeenCalled();
+    expect(updateErrorSpy).toHaveBeenCalledWith(
+      {},
+      WORKFLOW_RUN_ID,
+      expect.stringContaining('budget cap'),
     );
   });
 });
