@@ -59,7 +59,7 @@ export const LaunchSessionPanel = ({
   goalSeed,
   branchSlugSeed,
   externalTask,
-  adoptable = null,
+  adoptable: adoptableInput = null,
   onClose,
 }: Props) => {
   const createSession = useAppStore((state) => state.createSession);
@@ -67,6 +67,11 @@ export const LaunchSessionPanel = ({
   const rootPath = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
   );
+  const isBranchless = useAppStore(
+    (state) =>
+      state.workspaces.find((workspace) => workspace.id === workspaceId)?.kind === 'simple',
+  );
+  const adoptable = isBranchless ? null : adoptableInput;
   const { showToast } = useToast();
   const [setupWorkflow, setSetupWorkflow] = useSetupWorkflowPreference();
   const [goal, setGoal] = useState(goalSeed);
@@ -94,17 +99,23 @@ export const LaunchSessionPanel = ({
   const isSlugValid = isValidBranchSlug({ slug: branchSlug });
   const isAdopting = mode === 'adopt' && adoptable != null;
   const adoptedBranch = isAdopting ? adoptable.branch : null;
-  const effectiveBranch = isAdopting
-    ? adoptedBranch
-    : isSlugValid
-      ? `${prefix}/${branchSlug.trim()}`
-      : null;
+  const effectiveBranch = isBranchless
+    ? null
+    : isAdopting
+      ? adoptedBranch
+      : isSlugValid
+        ? `${prefix}/${branchSlug.trim()}`
+        : null;
   const conflict = useBranchConflict(effectiveBranch, rootPath);
   const conflictSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
   const conflictPath = conflict?.kind === 'worktree' ? conflict.path : null;
   const openableSessionId = linkedSessionId ?? conflictSessionId;
   const isMissingBase = error != null && isMissingBaseRefError(error);
-  const isBranchReady = isAdopting ? adoptedBranch != null && !adoptable.isResolving : isSlugValid;
+  const isBranchReady = isBranchless
+    ? true
+    : isAdopting
+      ? adoptedBranch != null && !adoptable.isResolving
+      : isSlugValid;
   const canLaunch = goal.trim() !== '' && isBranchReady && !busy && conflictPath == null;
 
   const launch = async (eraseWorktreePath?: string) => {
@@ -117,8 +128,9 @@ export const LaunchSessionPanel = ({
       const { session } = await createSession({
         workspaceId,
         goal,
-        branchPrefix: prefix,
-        branchSlug: branchSlug.trim() || undefined,
+        ...(isBranchless
+          ? {}
+          : { branchPrefix: prefix, branchSlug: branchSlug.trim() || undefined }),
         ...(adoptedBranch != null ? { existingBranch: adoptedBranch } : {}),
         externalTask,
         openWorkflowBuilder: setupWorkflow,
@@ -179,76 +191,78 @@ export const LaunchSessionPanel = ({
         />
       </LaunchField>
 
-      <LaunchField
-        label="Branch"
-        icon={<GitBranch size={13} aria-hidden className="text-success" />}
-      >
-        <div className="flex flex-col gap-2">
-          {adoptable != null && (
-            <SegmentedTabs
-              ariaLabel="branch source"
-              options={[
-                { value: 'adopt', label: adoptable.label, disabled: busy },
-                { value: 'fresh', label: 'Start fresh', disabled: busy },
-              ]}
-              value={mode}
-              onChange={setModeChoice}
-              size="sm"
-            />
-          )}
-          {isAdopting ? (
-            <div className="flex flex-col gap-1">
-              <div className="flex min-h-8 items-center gap-2 bg-subtle/40 px-2.5 font-mono text-sm">
-                {adoptable.isResolving ? (
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                    <StatusDot tone="info" size="sm" pulsing /> resolving…
-                  </span>
-                ) : adoptedBranch != null ? (
-                  <span className="truncate text-foreground">{adoptedBranch}</span>
-                ) : (
-                  <span className="truncate text-danger">
-                    {adoptable.error ?? 'No branch found'}
-                  </span>
-                )}
-              </div>
-              <span className="text-2xs leading-relaxed text-muted-foreground/70">
-                {adoptable.hint}
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                {prefix + '/'}
-              </span>
-              <Input
-                value={branchSlug}
-                onChange={(event) =>
-                  setBranchSlug(
-                    sanitizeBranchSlug({ input: event.target.value, maxLength: SLUG_MAX_LEN }),
-                  )
-                }
-                placeholder="branch-slug"
-                className="h-8 flex-1 font-mono text-sm"
-                disabled={busy}
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Branch slug"
+      {isBranchless ? null : (
+        <LaunchField
+          label="Branch"
+          icon={<GitBranch size={13} aria-hidden className="text-success" />}
+        >
+          <div className="flex flex-col gap-2">
+            {adoptable != null && (
+              <SegmentedTabs
+                ariaLabel="branch source"
+                options={[
+                  { value: 'adopt', label: adoptable.label, disabled: busy },
+                  { value: 'fresh', label: 'Start fresh', disabled: busy },
+                ]}
+                value={mode}
+                onChange={setModeChoice}
+                size="sm"
               />
-            </div>
-          )}
-          {conflictPath != null && (
-            <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2 text-2xs leading-relaxed text-foreground">
-              <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
-              <span>
-                This branch is already checked out in another worktree (
-                <span className="break-all font-mono">{conflictPath}</span>). Launching erases that
-                worktree and recreates it here.
-              </span>
-            </div>
-          )}
-        </div>
-      </LaunchField>
+            )}
+            {isAdopting ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex min-h-8 items-center gap-2 bg-subtle/40 px-2.5 font-mono text-sm">
+                  {adoptable.isResolving ? (
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                      <StatusDot tone="info" size="sm" pulsing /> resolving…
+                    </span>
+                  ) : adoptedBranch != null ? (
+                    <span className="truncate text-foreground">{adoptedBranch}</span>
+                  ) : (
+                    <span className="truncate text-danger">
+                      {adoptable.error ?? 'No branch found'}
+                    </span>
+                  )}
+                </div>
+                <span className="text-2xs leading-relaxed text-muted-foreground/70">
+                  {adoptable.hint}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                  {prefix + '/'}
+                </span>
+                <Input
+                  value={branchSlug}
+                  onChange={(event) =>
+                    setBranchSlug(
+                      sanitizeBranchSlug({ input: event.target.value, maxLength: SLUG_MAX_LEN }),
+                    )
+                  }
+                  placeholder="branch-slug"
+                  className="h-8 flex-1 font-mono text-sm"
+                  disabled={busy}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-label="Branch slug"
+                />
+              </div>
+            )}
+            {conflictPath != null && (
+              <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2 text-2xs leading-relaxed text-foreground">
+                <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+                <span>
+                  This branch is already checked out in another worktree (
+                  <span className="break-all font-mono">{conflictPath}</span>). Launching erases
+                  that worktree and recreates it here.
+                </span>
+              </div>
+            )}
+          </div>
+        </LaunchField>
+      )}
 
       {isMissingBase && <BaseBranchGuide />}
 

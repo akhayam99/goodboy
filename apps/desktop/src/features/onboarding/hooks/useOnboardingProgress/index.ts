@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useAppStore, useCurrentSession, useWorkspaces } from '../../../../store';
 import { ghStatus } from '../../../github/github';
 import {
-  ONBOARDING_STEPS,
+  visibleOnboardingSteps,
   getCompleted,
   isCollapsed,
   isFinished,
@@ -99,7 +99,7 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     if (!isSimple && (gitlabConnected || githubScoped) && !persistedCompleted.has('codeHost')) {
       markStepComplete('codeHost');
     }
-    if (!isSimple && hasTools && !persistedCompleted.has('tools')) {
+    if (hasTools && !persistedCompleted.has('tools')) {
       markStepComplete('tools');
     }
     if (sessionCount > 0 && !persistedCompleted.has('session')) {
@@ -124,9 +124,7 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     currentSession,
   ]);
 
-  const visibleSteps = isSimple
-    ? ONBOARDING_STEPS.filter((step) => step.id !== 'codeHost' && step.id !== 'tools')
-    : ONBOARDING_STEPS;
+  const visibleSteps = visibleOnboardingSteps({ isSimple });
   const totalCount = visibleSteps.length;
   const completedCount = visibleSteps.filter((step) => persistedCompleted.has(step.id)).length;
 

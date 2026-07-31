@@ -1,7 +1,7 @@
 import { Check, Sparkles, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import {
-  ONBOARDING_STEPS,
+  visibleOnboardingSteps,
   collapse,
   finish,
   reopen,
@@ -37,9 +37,7 @@ export const OnboardingCard = () => {
 };
 
 function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
-  const visibleSteps = progress.isSimple
-    ? ONBOARDING_STEPS.filter((step) => step.id !== 'codeHost' && step.id !== 'tools')
-    : ONBOARDING_STEPS;
+  const visibleSteps = visibleOnboardingSteps({ isSimple: progress.isSimple });
   return (
     <>
       <div className="flex items-center justify-between">
@@ -148,9 +146,7 @@ export const OnboardingChip = () => {
     return null;
   }
 
-  const visibleSteps = progress.isSimple
-    ? ONBOARDING_STEPS.filter((step) => step.id !== 'codeHost' && step.id !== 'tools')
-    : ONBOARDING_STEPS;
+  const visibleSteps = visibleOnboardingSteps({ isSimple: progress.isSimple });
 
   return (
     <div className="group inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle/60 px-1.5 py-1 motion-safe:transition-colors hover:border-border">

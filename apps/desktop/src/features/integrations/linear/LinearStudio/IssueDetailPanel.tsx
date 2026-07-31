@@ -54,8 +54,12 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   const rootPath = useAppStore(
     (s) => s.workspaces.find((w) => w.id === workspaceId)?.rootPath ?? null,
   );
+  const isBranchless = useAppStore(
+    (s) => s.workspaces.find((w) => w.id === workspaceId)?.kind === 'simple',
+  );
 
-  const adoptablePr = issue ? (issuePullRequests(issue).find((pr) => pr.repo) ?? null) : null;
+  const adoptablePr =
+    issue && !isBranchless ? (issuePullRequests(issue).find((pr) => pr.repo) ?? null) : null;
 
   const [prBranch, setPrBranch] = useState<string | null>(null);
   const [prResolving, setPrResolving] = useState(false);

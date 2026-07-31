@@ -13,7 +13,9 @@ const h = vi.hoisted(() => ({
   loadSetting: vi.fn(async () => null),
   showToast: vi.fn(),
   store: {
-    workspaces: [{ id: 'workspace-1', rootPath: '/repo' }],
+    workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }] as ReadonlyArray<
+      Record<string, unknown>
+    >,
   },
 }));
 
@@ -63,6 +65,7 @@ beforeEach(() => {
   localStorage.clear();
   h.createSession.mockClear();
   h.showToast.mockClear();
+  h.store.workspaces = [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }];
 });
 
 afterEach(cleanup);
@@ -118,5 +121,38 @@ describe('LaunchSessionPanel', () => {
 
     expect(screen.getByRole('tab', { name: /Continue on PR #12/ })).toBeDefined();
     expect(screen.getByText('ak/fix-the-flake')).toBeDefined();
+  });
+
+  it('drops the branch field and the branch payload in a repo-less workspace', async () => {
+    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
+
+    render(
+      <LaunchSessionPanel
+        workspaceId={WORKSPACE_ID}
+        linkedSessionId={null}
+        goalSeed="Fix the flake"
+        branchSlugSeed="7-fix-the-flake"
+        externalTask={EXTERNAL_TASK}
+        adoptable={{
+          label: 'Continue on PR #12',
+          branch: 'ak/fix-the-flake',
+          hint: 'Adopts the branch of PR #12.',
+          isResolving: false,
+          error: null,
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Branch slug')).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Continue on PR #12/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+
+    await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
+    const payload = h.createSession.mock.calls[0]?.[0] ?? {};
+    expect(payload.branchPrefix).toBeUndefined();
+    expect(payload.branchSlug).toBeUndefined();
+    expect(payload.existingBranch).toBeUndefined();
   });
 });

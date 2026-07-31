@@ -150,7 +150,7 @@ describe('AppFooter', () => {
     expect(onOpenGitlab).toHaveBeenCalledOnce();
   });
 
-  it('replaces the git integrations with the conversion CTA in a simple workspace', () => {
+  it('keeps Linear and swaps the git integrations for the conversion CTA in a simple workspace', () => {
     const onConvertToDevProject = vi.fn();
 
     render(
@@ -175,8 +175,8 @@ describe('AppFooter', () => {
 
     expect(screen.queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Connect Linear' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
     expect(
       screen.getByRole('button', { name: 'open the workflow library for this workspace' }),
     ).toBeDefined();

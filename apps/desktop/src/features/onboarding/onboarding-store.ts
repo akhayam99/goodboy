@@ -12,6 +12,10 @@ export type OnboardingStepId =
 
 export type OnboardingGroup = 'setup' | 'build';
 
+type VisibleStepsParams = {
+  readonly isSimple: boolean;
+};
+
 export const ONBOARDING_STEPS: ReadonlyArray<{
   readonly id: OnboardingStepId;
   readonly title: string;
@@ -61,6 +65,9 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
     group: 'build',
   },
 ];
+
+export const visibleOnboardingSteps = ({ isSimple }: VisibleStepsParams) =>
+  isSimple ? ONBOARDING_STEPS.filter((step) => step.id !== 'codeHost') : ONBOARDING_STEPS;
 
 const SETTING_PROGRESS = 'onboarding.progress';
 const SETTING_COLLAPSED = 'onboarding.collapsed';

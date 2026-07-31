@@ -16,7 +16,7 @@ const STEP_COUNT = 8;
 const SETUP_START_STEP = 3;
 const EXIT_MS = 200;
 const ALL_STEPS = Array.from({ length: STEP_COUNT }, (_, index) => index);
-const SIMPLE_STEPS = [0, 1, 2, 3, 7];
+const SIMPLE_STEPS = [0, 1, 2, 3, 5, 7];
 
 type Cta = {
   readonly label: string;

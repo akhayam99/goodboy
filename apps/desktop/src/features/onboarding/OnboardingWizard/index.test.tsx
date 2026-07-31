@@ -148,7 +148,7 @@ describe('OnboardingWizard', () => {
       expect(screen.queryByTestId('stepper')).toBeNull();
     });
 
-    it('jumps from preferences to ready for a simple workspace', () => {
+    it('keeps only the tracker step between preferences and ready for a simple workspace', () => {
       setHook({
         mode: 'setup',
         hasWorkspace: true,
@@ -158,9 +158,10 @@ describe('OnboardingWizard', () => {
       render(<OnboardingWizard />);
       expect(screen.getByTestId('PreferencesStep')).toBeDefined();
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+      expect(screen.getByTestId('TrackerStep')).toBeDefined();
+      fireEvent.click(screen.getByRole('button', { name: /skip for now/i }));
       expect(screen.getByTestId('ReadyStep')).toBeDefined();
       expect(screen.queryByTestId('CodeHostStep')).toBeNull();
-      expect(screen.queryByTestId('TrackerStep')).toBeNull();
       expect(screen.queryByTestId('SentryStep')).toBeNull();
     });
   });
