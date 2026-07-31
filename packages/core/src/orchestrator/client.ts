@@ -86,6 +86,7 @@ export class OrchestratorClient {
             binary: this.binary,
             userMessage,
             systemPrompt: ORCHESTRATOR_SYSTEM_PROMPT,
+            toolsDisabled: true,
             ...(this.workingDir != null && { workingDir: this.workingDir }),
           },
         }),
