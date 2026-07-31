@@ -1,4 +1,4 @@
-import type { ProviderId } from '@goodboy/types';
+import type { ModelEffort, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { computeProviderCostUsd } from '../providers/provider-cost';
 import { cliModelId } from '../providers/cliModelId';
@@ -26,6 +26,7 @@ type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 export type OrchestratorClientDeps = {
   readonly providerId: ProviderId;
   readonly model: string;
+  readonly effort?: ModelEffort;
   readonly binary?: string;
   readonly workingDir?: string;
   readonly timeoutMs?: number;
@@ -54,6 +55,7 @@ export class OrchestratorClient {
   private readonly providerId: ProviderId;
   private readonly binary: string;
   private readonly model: string;
+  private readonly effort: ModelEffort | undefined;
   private readonly workingDir: string | undefined;
   private readonly timeoutMs: number;
   private readonly invokeFn: InvokeFn;
@@ -62,6 +64,7 @@ export class OrchestratorClient {
     this.providerId = deps.providerId;
     this.binary = deps.binary ?? getDefaultBinary(deps.providerId);
     this.model = cliModelId({ provider: deps.providerId, model: deps.model });
+    this.effort = deps.effort;
     this.workingDir = deps.workingDir;
     this.timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.invokeFn = deps.invokeFn;
@@ -87,6 +90,7 @@ export class OrchestratorClient {
             userMessage,
             systemPrompt: ORCHESTRATOR_SYSTEM_PROMPT,
             toolsDisabled: true,
+            ...(this.effort != null && { effort: this.effort }),
             ...(this.workingDir != null && { workingDir: this.workingDir }),
           },
         }),

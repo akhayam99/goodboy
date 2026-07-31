@@ -24,6 +24,7 @@ import {
 import { DropdownPortal } from '../../hooks/useDropdown/DropdownPortal';
 import { useDropdown } from '../../hooks/useDropdown';
 import { AxesSection } from './AxesSection';
+import { verbosityTone } from './chipTone';
 import { CatalogGrid } from './CatalogGrid';
 import { PickerChip } from './PickerChip';
 import { PickerSection } from './PickerSection';
@@ -498,6 +499,7 @@ export const RoutingPicker = ({
                         key={level}
                         label={VERBOSITY_LABEL[level]}
                         active={verbosity === level}
+                        tone={verbosityTone(level)}
                         onSelect={() => onVerbosity(level)}
                       />
                     ))}

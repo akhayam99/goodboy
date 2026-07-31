@@ -36,6 +36,7 @@ const generateAgentTitle = async ({
   prompt,
   providerId,
   model,
+  effort,
   workingDir,
 }: GenerateParams): Promise<string> => {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -50,6 +51,7 @@ const generateAgentTitle = async ({
       runAuxOneShot({
         providerId,
         model,
+        ...(effort != null && { effort }),
         binary: getDefaultBinary(providerId),
         userMessage: prompt,
         systemPrompt: TITLE_SYSTEM_PROMPT,

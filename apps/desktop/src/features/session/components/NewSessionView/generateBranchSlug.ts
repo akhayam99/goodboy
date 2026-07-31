@@ -1,5 +1,5 @@
 import { extractAuxOutput, getDefaultBinary, runAuxOneShot } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
+import type { ModelEffort, ProviderId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { parseBranchSlugAnswer } from './parseBranchSlugAnswer';
 
@@ -16,6 +16,7 @@ type Params = {
   readonly goal: string;
   readonly providerId: ProviderId;
   readonly model: string;
+  readonly effort?: ModelEffort;
   readonly fallbackSlug: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
   readonly workingDir?: string;
@@ -38,6 +39,7 @@ export const generateBranchSlug = async ({
   goal,
   providerId,
   model,
+  effort,
   fallbackSlug,
   invokeFn,
   workingDir,
@@ -53,6 +55,7 @@ export const generateBranchSlug = async ({
       runAuxOneShot({
         providerId,
         model,
+        ...(effort != null && { effort }),
         binary: getDefaultBinary(providerId),
         userMessage: `Goal: ${goal}`,
         systemPrompt: BRANCH_SLUG_SYSTEM_PROMPT,

@@ -14,6 +14,22 @@ describe('resolveTaskModel', () => {
     });
   });
 
+  it('keeps a stored effort alongside the model', () => {
+    const prefs: TaskModelPreferences = {
+      workflow_orchestrator: {
+        providerId: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        effort: 'high',
+      },
+    };
+
+    expect(resolveTaskModel('workflow_orchestrator', prefs, 'anthropic')).toEqual({
+      providerId: 'anthropic',
+      model: 'sonnet-4.6',
+      effort: 'high',
+    });
+  });
+
   it('uses the default provider cheap model when no preference exists', () => {
     expect(resolveTaskModel('branch_naming', null, 'anthropic')).toEqual({
       providerId: 'anthropic',

@@ -43,6 +43,7 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     ariaLabel,
     provider,
     model,
+    effort,
     recommendation,
     onProvider,
     onModel,
@@ -50,6 +51,7 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     ariaLabel: string;
     provider: string;
     model: string;
+    effort: { editable: boolean; value?: string; onChange?: (level: string) => void };
     recommendation?: { provider?: string; model?: string };
     onProvider: (provider: string) => void;
     onModel: (model: string) => void;
@@ -75,6 +77,14 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
         onClick={() => onModel('claude-haiku-4-5')}
       >
         pick haiku
+      </button>
+      <button
+        type="button"
+        aria-label={`${ariaLabel} high effort`}
+        disabled={!effort.editable}
+        onClick={() => effort.onChange?.('high')}
+      >
+        {effort.value ?? ''}
       </button>
     </>
   ),
@@ -209,6 +219,51 @@ describe('DefaultsPanel', () => {
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
     expect(screen.getByLabelText('Step summaries routing status: default')).toBeDefined();
+  });
+
+  it('persists an effort for a task model', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow orchestrator routing model' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Workflow orchestrator routing high effort' }),
+    );
+
+    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        taskModels: {
+          workflow_orchestrator: {
+            providerId: 'anthropic',
+            model: 'claude-sonnet-4-6',
+            effort: 'high',
+          },
+        },
+      }),
+    );
+  });
+
+  it('drops the effort when the task model has no effort ladder', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        taskModels: {
+          summarizer: { providerId: 'anthropic', model: 'sonnet-4.6', effort: 'high' },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing cheap model' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        taskModels: {
+          summarizer: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+        },
+      }),
+    );
   });
 
   it('renders a row per agent role', () => {
