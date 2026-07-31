@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, Eyebrow, StatusDot, type Tone } from '@goodboy/ui';
 import { PROVIDER_BETA, type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -11,11 +11,11 @@ type Props = {
   readonly onSelectDefaults: () => void;
 };
 
-const STATUS_DOT: Record<ProviderConnectionState, string> = {
-  connected: 'bg-success',
-  installed_disconnected: 'bg-warning',
-  missing: 'bg-muted-foreground/40',
-  error: 'bg-danger',
+const STATUS_TONE: Record<ProviderConnectionState, Tone> = {
+  connected: 'success',
+  installed_disconnected: 'warning',
+  missing: 'neutral',
+  error: 'danger',
 };
 
 const STATUS_LABEL: Record<ProviderConnectionState, string> = {
@@ -29,9 +29,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
   return (
     <div className="flex flex-col gap-4 p-2">
       <section className="flex flex-col gap-1">
-        <span className="px-2.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          Configuration
-        </span>
+        <Eyebrow label="Configuration" className="px-2.5" />
         <button
           type="button"
           onClick={onSelectDefaults}
@@ -48,9 +46,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
         </button>
       </section>
       <section className="flex flex-col gap-1">
-        <span className="px-2.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          Providers
-        </span>
+        <Eyebrow label="Providers" className="px-2.5" />
         <div className="flex flex-col gap-0.5">
           {providers.map((p) => {
             const id = p.id as ProviderId;
@@ -90,10 +86,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                   </span>
                   <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
                 </span>
-                <span
-                  className={cn('size-2 shrink-0 rounded-full', STATUS_DOT[p.connection])}
-                  aria-hidden
-                />
+                <StatusDot tone={STATUS_TONE[p.connection]} size="md" />
               </button>
             );
           })}

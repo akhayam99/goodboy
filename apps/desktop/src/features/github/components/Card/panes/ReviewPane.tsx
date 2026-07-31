@@ -11,7 +11,8 @@ import {
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import type { PrReview, PrReviewRequest, PullRequestState } from '@goodboy/types';
 import { isBot } from '../../../comment-threads';
-import { formatRelative, latestTerminalReviewsByAuthor } from '../lib';
+import { latestTerminalReviewsByAuthor } from '../lib';
+import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { Avatar } from '../parts/Avatar';
 import { ReviewStateIcon } from '../parts/ReviewStateIcon';
 
@@ -122,9 +123,7 @@ export const ReviewPane = ({
                 </span>
               ) : null}
               <span className="ml-auto shrink-0 text-[9px] text-muted-foreground/70">
-                {r.submittedAt
-                  ? formatRelative(Date.now() - new Date(r.submittedAt).getTime())
-                  : ''}
+                {r.submittedAt ? formatRelativeAge({ fromIso: r.submittedAt }) : ''}
               </span>
             </li>
           ))}

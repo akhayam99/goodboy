@@ -8,10 +8,9 @@ import type {
   WorkspaceKind,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import { Button, FieldRow, cn } from '@goodboy/ui';
+import { Button, FieldRow, Switch, cn } from '@goodboy/ui';
 import { FolderGit2, GitBranch, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { ProviderChip } from '../../../providers/components/ProviderChip';
-import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
@@ -244,7 +243,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
             label="Parallel scouts"
             help="Split broad searches across parallel sub-scouts. Much faster on large codebases."
           >
-            <ToggleSwitch
+            <Switch
               label={scoutFanout ? 'On' : 'Off'}
               checked={scoutFanout}
               disabled={busy}

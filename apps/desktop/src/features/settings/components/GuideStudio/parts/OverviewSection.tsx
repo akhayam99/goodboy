@@ -1,9 +1,9 @@
 import { BookOpen, GitBranch, LayoutDashboard, MessageSquare, Sparkles } from 'lucide-react';
+import { Eyebrow } from '@goodboy/ui';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { Callout } from './Callout';
 import { ConceptCard } from './ConceptCard';
-import { Eyebrow } from './Eyebrow';
 import { SectionHeader } from './SectionHeader';
 
 type Section =
@@ -42,7 +42,7 @@ export const OverviewSection = ({ onJump }: Props) => (
     </Callout>
 
     <div>
-      <Eyebrow>Mental model</Eyebrow>
+      <Eyebrow label="Mental model" />
       <div className="mt-3 grid grid-cols-2 gap-3">
         <ConceptCard
           icon={<LayoutDashboard size={14} aria-hidden />}

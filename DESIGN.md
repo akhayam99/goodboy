@@ -62,9 +62,9 @@ functional. One register per surface; let the other supply only texture.
   count threshold. A control's position is fixed so it can be learned. The
   sidebar has no collapse rail or toggle; it is either hidden (board-only
   Overview) or at its persisted width.
-- **Settings match the scope they edit.** Configuration splits into three
+- **Settings match the scope they edit.** Configuration splits into two
   surfaces by ownership: application settings is a full-page studio; workspace
-  and session settings are lightweight scoped panes. Each surface edits only
+  settings is a lightweight scoped pane. Each surface edits only
   what belongs to its scope. Changes save instantly: no Save/Cancel footer, no
   stacking one settings surface on another. The scope of a setting matches the
   scope of the surface it's edited on.
@@ -178,7 +178,8 @@ before sending, a running total after.
   closes the surface: the error on the left, exactly one primary button on the
   right, cancel and alternates as ghost or secondary. A stepper is the exception
   and needs the information to genuinely not fit one screen: only the workflow
-  builder has one (goal, approach, steps). Everything else scrolls.
+  builder (goal, approach, steps) and the first-run onboarding wizard have one.
+  Everything else scrolls.
 - **Empty states teach the board model.** Every empty state says what the
   thing is, why it matters, and offers one action to create it. And it teaches
   the board, not the chat: set your first goal, what needs you, where spend

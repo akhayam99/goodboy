@@ -1,5 +1,5 @@
 import { Gauge } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, formatUsd } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -26,7 +26,7 @@ export const ProviderUsagePill = ({ provider }: { provider: ProviderId }) => {
     return 'text-danger';
   })();
   const reset = nextMonthlyResetLabel();
-  const tooltip = `${provider}: $${entry.spentUsd.toFixed(2)} / $${entry.capUsd.toFixed(2)} used (${Math.round(pctUsed * 100)}%) · resets ${reset}`;
+  const tooltip = `${provider}: ${formatUsd(entry.spentUsd)} / ${formatUsd(entry.capUsd)} used (${Math.round(pctUsed * 100)}%) · resets ${reset}`;
   return (
     <span
       title={tooltip}

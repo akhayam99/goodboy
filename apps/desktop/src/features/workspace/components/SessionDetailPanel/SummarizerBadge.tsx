@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, RotateCw } from 'lucide-react';
-import { StatusDot, cn } from '@goodboy/ui';
+import { StatusDot, cn, formatUsd } from '@goodboy/ui';
 import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSummarizerStatus } from '../../../../store';
 
@@ -35,14 +35,14 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   const costTooltip =
     totals.count === 0
       ? 'summarizer has not run yet'
-      : `summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · $${totals.estimatedCostUsd.toFixed(4)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
+      : `summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · ${formatUsd(totals.estimatedCostUsd)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
 
   const costPill = (
     <span
       title={costTooltip}
-      className="rounded-full bg-subtle px-2 py-0.5 text-2xs text-muted-foreground"
+      className="rounded-full bg-subtle px-2 py-0.5 text-2xs tabular-nums text-muted-foreground"
     >
-      Σ ${totals.estimatedCostUsd.toFixed(4)}
+      Σ {formatUsd(totals.estimatedCostUsd)}
     </span>
   );
 

@@ -1,5 +1,5 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, formatUsd, formatUsdPrecise, StatusDot } from '@goodboy/ui';
 import {
   ChevronDown,
   ChevronRight,
@@ -217,7 +217,10 @@ export const WorkflowRow = ({
                     </span>
                   </>
                 ) : null}
-                <CostBadge value={runCostUsd} title={`$${runCostUsd.toFixed(4)} for this run`} />
+                <CostBadge
+                  value={runCostUsd}
+                  title={`${formatUsdPrecise(runCostUsd)} for this run`}
+                />
               </div>
             </div>
           </div>
@@ -246,7 +249,7 @@ export const WorkflowRow = ({
                 className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
                 title={`${unreadCount} agent ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
               >
-                <span aria-hidden className="size-1.5 rounded-full bg-warning" />
+                <StatusDot tone="warning" size="sm" />
                 {unreadCount}
               </span>
             ) : null}

@@ -1,4 +1,4 @@
-import { cn, formatUsd } from '@goodboy/ui';
+import { cn, Eyebrow, formatUsd } from '@goodboy/ui';
 import { LayoutDashboard } from 'lucide-react';
 import type { ProviderSpendEntry } from '../../../../store';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
@@ -123,9 +123,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
 function GroupLabel({ label, count }: { label: string; count?: number }) {
   return (
     <div className="flex items-center gap-1.5 px-1 pb-0.5">
-      <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-        {label}
-      </span>
+      <Eyebrow label={label} />
       {count !== undefined && (
         <span className="text-2xs tabular-nums text-muted-foreground/50">{count}</span>
       )}

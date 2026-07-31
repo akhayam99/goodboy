@@ -1,5 +1,5 @@
 import type { Agent, AgentId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
+import { cn, StatusDot } from '@goodboy/ui';
 import { Check, Clock, Loader2 } from 'lucide-react';
 import { tintClasses } from '@goodboy/ui';
 
@@ -34,7 +34,7 @@ const statusIcon = (status: SpawnStatus) =>
       <Check size={10} className={successAccent.icon} aria-hidden />
     </span>
   ) : status === 'failed' ? (
-    <span className="size-2 rounded-full bg-danger" aria-hidden />
+    <StatusDot tone="danger" size="md" />
   ) : (
     <Clock size={14} className="text-muted-foreground/60" aria-hidden />
   );

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Eyebrow } from './Eyebrow';
+import { Eyebrow } from '@goodboy/ui';
 
 type Props = {
   readonly title: string;
@@ -8,7 +8,7 @@ type Props = {
 
 export const Block = ({ title, children }: Props) => (
   <div className="flex flex-col gap-3">
-    <Eyebrow>{title}</Eyebrow>
+    <Eyebrow label={title} />
     {children}
   </div>
 );

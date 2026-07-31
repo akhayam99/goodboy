@@ -8,6 +8,7 @@ import {
   resolverBadgeState,
 } from '../../../session/components/ResolverStateBadge';
 import type { ResolverLink } from '../../../session/resolver-linkage';
+import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 
 type Props = {
   readonly comments: ReadonlyArray<PrComment>;
@@ -139,7 +140,7 @@ function ConversationThread({
           </span>
         ) : null}
         <span className="opacity-50">·</span>
-        <span>{formatRelative(Date.now() - new Date(head.createdAt).getTime())}</span>
+        <span>{formatRelativeAge({ fromIso: head.createdAt })}</span>
         {open ? (
           <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
             <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
@@ -196,7 +197,7 @@ function ConversationThread({
                   <Avatar url={r.authorAvatarUrl} alt={r.author} />
                   <span className="font-medium text-foreground">{r.author}</span>
                   <span className="opacity-50">·</span>
-                  <span>{formatRelative(Date.now() - new Date(r.createdAt).getTime())}</span>
+                  <span>{formatRelativeAge({ fromIso: r.createdAt })}</span>
                 </div>
                 <div className="[overflow-wrap:anywhere]">
                   {r.body.trim() ? (
@@ -226,24 +227,4 @@ function Avatar({ url, alt }: { url: string | null; alt: string }) {
     );
   }
   return <img src={url} alt={alt} className="h-5 w-5 shrink-0 rounded-full" loading="lazy" />;
-}
-
-function formatRelative(ms: number): string {
-  if (!Number.isFinite(ms) || ms < 0) {
-    return 'just now';
-  }
-  const s = Math.round(ms / 1_000);
-  if (s < 45) {
-    return 'just now';
-  }
-  const m = Math.round(s / 60);
-  if (m < 60) {
-    return `${m}m ago`;
-  }
-  const h = Math.round(m / 60);
-  if (h < 24) {
-    return `${h}h ago`;
-  }
-  const d = Math.round(h / 24);
-  return `${d}d ago`;
 }

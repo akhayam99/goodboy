@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import {
   Button,
+  Checkbox,
   cn,
   Divider,
   FieldRow,
@@ -259,13 +260,7 @@ export const CreatePrPanel = ({
               label="Open as draft"
               help="Creates the pull request in GitHub's draft state."
             >
-              <input
-                type="checkbox"
-                checked={draft}
-                onChange={(e) => setDraft(e.target.checked)}
-                className="accent-primary"
-                disabled={busy !== null}
-              />
+              <Checkbox checked={draft} onChange={setDraft} disabled={busy !== null} />
             </FieldRow>
           </section>
         </section>

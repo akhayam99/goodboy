@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, RoleModelPreferences } from '@goodboy/types';
-import { EmptyState } from '@goodboy/ui';
+import { Checkbox, EmptyState } from '@goodboy/ui';
 import { ChevronDown, Sliders, Sparkles } from 'lucide-react';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
@@ -100,20 +100,12 @@ export const ResolveBoard = ({
   return (
     <div className="flex flex-col gap-3">
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-md border border-border-soft bg-background/95 px-2.5 py-2 backdrop-blur">
-        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-foreground">
-          <input
-            type="checkbox"
-            checked={allSelected}
-            ref={(el) => {
-              if (el) {
-                el.indeterminate = !allSelected && selected.length > 0;
-              }
-            }}
-            onChange={toggleAll}
-            className="size-3.5 accent-primary"
-          />
-          <span className="font-medium">{selected.length} selected</span>
-        </label>
+        <Checkbox
+          checked={allSelected}
+          indeterminate={!allSelected && selected.length > 0}
+          onChange={toggleAll}
+          label={<span className="font-medium">{selected.length} selected</span>}
+        />
 
         <div className="ml-auto">
           <ResolveConfigPopover

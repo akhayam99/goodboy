@@ -10,7 +10,7 @@ import {
   Trash2,
   type LucideIcon,
 } from 'lucide-react';
-import { Chip, cn, Tooltip } from '@goodboy/ui';
+import { Chip, cn, formatUsd, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -187,7 +187,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           {sessionCost > 0 && (
             <CostBadge
               value={sessionCost}
-              title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
+              title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
               className="shrink-0 text-2xs font-medium tabular-nums text-muted-foreground"
             />
           )}

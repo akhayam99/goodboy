@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { cn, EmptyState, Eyebrow, ScrollFade, Skeleton } from '@goodboy/ui';
 import { Inbox, RefreshCw } from 'lucide-react';
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -16,13 +16,7 @@ type Props = {
   readonly onSelect: (pr: ReviewablePr) => void;
 };
 
-export const ReviewInboxList = ({
-  workspaceId,
-  provider,
-  scope,
-  focusedPrId,
-  onSelect,
-}: Props) => {
+export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onSelect }: Props) => {
   const reviewPrs = useAppStore((s) => s.reviewPrs[workspaceId]);
   const refreshReviewPrs = useAppStore((s) => s.refreshReviewPrs);
   const items = reviewPrs?.items;
@@ -44,9 +38,7 @@ export const ReviewInboxList = ({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center gap-1.5 px-3 pb-1 pt-3">
-        <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          {scope === 'others' ? 'From teammates' : 'All open'}
-        </span>
+        <Eyebrow label={scope === 'others' ? 'From teammates' : 'All open'} />
         <span className="text-2xs tabular-nums text-muted-foreground/50">{rows.length}</span>
         <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
         <button

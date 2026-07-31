@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrCheckRun, PrComment, PrDetail, PrReview, PullRequestState } from '@goodboy/types';
-import { formatDuration, formatRelative, latestTerminalReviewsByAuthor, pickSmartTab } from './lib';
+import { formatDuration, latestTerminalReviewsByAuthor, pickSmartTab } from './lib';
 
 const makePr = (over: Partial<PullRequestState> = {}): PullRequestState => ({
   number: 1,
@@ -157,32 +157,5 @@ describe('formatDuration', () => {
 
   it('omits the seconds remainder on a whole minute', () => {
     expect(formatDuration(120_000)).toBe('2m');
-  });
-});
-
-describe('formatRelative', () => {
-  it('returns "just now" for negative input', () => {
-    expect(formatRelative(-5)).toBe('just now');
-  });
-
-  it('returns "just now" for non-finite input', () => {
-    expect(formatRelative(Number.POSITIVE_INFINITY)).toBe('just now');
-    expect(formatRelative(Number.NaN)).toBe('just now');
-  });
-
-  it('returns "just now" under 45 seconds', () => {
-    expect(formatRelative(30_000)).toBe('just now');
-  });
-
-  it('formats minutes', () => {
-    expect(formatRelative(300_000)).toBe('5m ago');
-  });
-
-  it('formats hours', () => {
-    expect(formatRelative(7_200_000)).toBe('2h ago');
-  });
-
-  it('formats days', () => {
-    expect(formatRelative(259_200_000)).toBe('3d ago');
   });
 });

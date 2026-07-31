@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Unplug } from 'lucide-react';
-import { Button, Dialog, ScrollFade, cn } from '@goodboy/ui';
+import { Button, Checkbox, Dialog, Eyebrow, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { BetaPill } from '../../../../shared/components/BetaPill';
@@ -104,9 +104,7 @@ export const WorkspaceLauncher = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="px-1 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Recent
-          </p>
+          <Eyebrow label="Recent" className="px-1" />
           <ul className="flex flex-col gap-0.5">
             {filtered.length === 0 ? (
               <li className="px-3 py-8 text-center text-sm text-muted-foreground">
@@ -146,15 +144,12 @@ export const WorkspaceLauncher = () => {
           New workspace
         </button>
 
-        <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={reopenLast}
-            onChange={(e) => void saveSetting(SETTING_REOPEN_LAST, e.target.checked ? '1' : '0')}
-            className={cn('size-3.5 rounded border-border accent-[var(--color-primary)]')}
-          />
-          Reopen last workspace on launch
-        </label>
+        <Checkbox
+          label="Reopen last workspace on launch"
+          checked={reopenLast}
+          onChange={(next) => void saveSetting(SETTING_REOPEN_LAST, next ? '1' : '0')}
+          className="text-muted-foreground"
+        />
       </div>
       <Dialog
         open={disconnectTarget !== null}

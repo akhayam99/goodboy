@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
-import { Button, FieldRow, ScrollFade, cn } from '@goodboy/ui';
+import { Button, FieldRow, ScrollFade, Switch, cn } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
-import { ToggleSwitch } from '../../../../shared/components/ToggleSwitch';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -177,7 +176,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
               label="Parallel scouts"
               help="Scouts split broad searches across parallel sub-scouts. Much faster on large codebases."
             >
-              <ToggleSwitch
+              <Switch
                 label={scoutFanout ? 'On' : 'Off'}
                 checked={scoutFanout}
                 disabled={busy}

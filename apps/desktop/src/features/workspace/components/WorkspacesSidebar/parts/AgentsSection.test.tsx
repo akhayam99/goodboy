@@ -48,6 +48,9 @@ vi.mock('@goodboy/ui', () => ({
     </div>
   ),
   cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
+  StatusDot: ({ tone }: { tone: string }) => <span data-testid={`status-dot-${tone}`} />,
+  formatUsd: (usd: number) => `$${usd}`,
+  formatUsdPrecise: (usd: number) => `$${usd}`,
   SegmentedTabs: ({
     options,
     value,

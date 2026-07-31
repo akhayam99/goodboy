@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { cn, EmptyState } from '@goodboy/ui';
+import { cn, EmptyState, Eyebrow } from '@goodboy/ui';
 import { GitBranch, Inbox } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 import type { InboxGroup } from './useGithubInbox';
@@ -30,9 +30,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
       {groups.map((group) => (
         <div key={group.key} className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 px-1 pb-0.5">
-            <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              {group.label}
-            </span>
+            <Eyebrow label={group.label} />
             <span className="text-2xs tabular-nums text-muted-foreground/50">
               {group.rows.length}
             </span>

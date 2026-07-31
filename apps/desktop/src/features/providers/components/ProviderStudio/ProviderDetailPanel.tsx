@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { cn, Divider, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { cn, Divider, ScrollFade, SectionHeader, StatusDot } from '@goodboy/ui';
 import {
   ArrowRight,
   Download,
@@ -181,7 +181,7 @@ function ConnectedAccount({
 }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-4">
-      <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden />
+      <StatusDot tone="success" size="md" />
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-sm font-medium text-foreground">
           {identity ?? 'connected'}

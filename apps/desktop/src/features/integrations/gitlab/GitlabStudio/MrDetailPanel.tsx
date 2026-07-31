@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Button,
+  Checkbox,
   Divider,
   EmptyState,
   FieldRow,
@@ -442,13 +443,7 @@ export const MrDetailPanel = ({
               label="Open as draft"
               help="Creates the merge request in GitLab's draft state."
             >
-              <input
-                type="checkbox"
-                checked={draft}
-                onChange={(e) => setDraft(e.target.checked)}
-                className="accent-primary"
-                disabled={busy !== null}
-              />
+              <Checkbox checked={draft} onChange={setDraft} disabled={busy !== null} />
             </FieldRow>
           </section>
 

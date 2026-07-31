@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, StatusDot, type Tone } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -10,7 +10,7 @@ type ModeMeta = {
   readonly value: ClaudePermissionMode;
   readonly label: string;
   readonly description: string;
-  readonly dot: string;
+  readonly tone: Tone;
   readonly text: string;
 };
 
@@ -19,28 +19,28 @@ const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
     value: 'bypassPermissions',
     label: 'Bypass',
     description: 'Agent uses all tools freely, no prompts',
-    dot: 'bg-danger',
+    tone: 'danger',
     text: 'text-danger',
   },
   {
     value: 'acceptEdits',
     label: 'Edits',
     description: 'File edits allowed, asks before bash',
-    dot: 'bg-warning',
+    tone: 'warning',
     text: 'text-warning',
   },
   {
     value: 'default',
     label: 'Default',
     description: 'Asks before writes and runs',
-    dot: 'bg-info',
+    tone: 'info',
     text: 'text-info',
   },
   {
     value: 'plan',
     label: 'Plan',
     description: 'No tool calls executed, read-only',
-    dot: 'bg-muted-foreground',
+    tone: 'neutral',
     text: 'text-muted-foreground',
   },
 ];
@@ -104,7 +104,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
         aria-expanded={open}
         className="inline-flex items-center gap-1.5 rounded-full bg-subtle px-2.5 py-0.5 text-xs transition-colors hover:bg-muted"
       >
-        <span aria-hidden className={cn('inline-block h-1.5 w-1.5 rounded-full', current.dot)} />
+        <StatusDot tone={current.tone} size="sm" />
         <span className={cn('font-medium', current.text)}>{current.label}</span>
         <ChevronDown size={11} aria-hidden className="text-muted-foreground/70" />
       </button>
@@ -131,10 +131,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
                   active ? '' : 'opacity-80',
                 )}
               >
-                <span
-                  aria-hidden
-                  className={cn('mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full', m.dot)}
-                />
+                <StatusDot tone={m.tone} size="sm" className="mt-1" />
                 <span className="min-w-0 flex-1">
                   <span className={cn('block font-medium', m.text)}>{m.label}</span>
                   <span className="block text-2xs text-muted-foreground">{m.description}</span>
