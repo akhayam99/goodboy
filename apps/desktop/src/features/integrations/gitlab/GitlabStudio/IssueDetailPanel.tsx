@@ -68,7 +68,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
             </>
           }
           title={issue.title}
-          actions={<OpenExternalLink url={issue.webUrl} label="Open in GitLab" />}
+          actions={<OpenExternalLink url={issue.webUrl} label="Open in GitLab" copyLabel="issue" />}
         />
       }
       rail={

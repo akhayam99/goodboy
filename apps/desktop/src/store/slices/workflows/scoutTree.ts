@@ -60,23 +60,19 @@ export const scoutDepth = (runs: ReadonlyArray<Agent>, agentId: AgentId): number
 function composeScoutKickoff(area: ExtractedScoutArea, depth: number): string {
   const canSplit = depth < SCOUT_DEPTH_CAP;
   return [
-    'You are a scout exploring ONE area of a larger search, running in parallel with sibling scouts.',
-    `Area: ${area.area}`,
-    `Objective: ${area.query}`,
-    '',
-    'Read ONLY what this area needs. Never edit files. Report your findings concisely in this single turn.',
+    `**Area** ${area.area} (one of several scouts running in parallel)`,
+    `**Find** ${area.query}`,
     canSplit
-      ? 'If this area is itself too broad, you MAY fan out further: emit on its own line <<scout-split>> followed by a JSON array of {"area","query"} (2 to 6 entries), then <</scout-split>>.'
-      : 'You are at maximum split depth. Do not fan out further: read your scope and summarize directly.',
-    'End your exploration reply with <<scout-domains keywords="auth,db,routing">>, listing 2 to 4 bare single-word domain keywords and no prose inside the attribute.',
+      ? '**Split** allowed via `<<scout-split>>` if this area is itself too broad.'
+      : '**Split** not allowed, you are at max depth. Read your scope and summarize.',
+    '**End with** `<<scout-domains keywords="auth,db,routing">>`, 2 to 4 single-word keywords, no prose.',
   ].join('\n');
 }
 
 function composeSelfExploreKickoff(areas: ReadonlyArray<ExtractedScoutArea>): string {
   const list = areas.map((a) => `- ${a.area}: ${a.query}`).join('\n');
   return [
-    'Multi-scout fan-out is disabled for this workspace, so do NOT split.',
-    'Explore all of these areas yourself in this turn and report one consolidated finding:',
+    '**Explore yourself** fan-out is disabled here, so do not split. Cover every area below in this turn and report one consolidated finding.',
     list,
   ].join('\n');
 }
@@ -119,8 +115,7 @@ function composeSynthesisKickoff(containerName: string, children: ReadonlyArray<
     .map((c) => `[${c.name}] (${c.status})\n${c.outputSummary ?? '(no findings reported)'}`)
     .join('\n\n');
   return [
-    `Your sub-scouts for "${containerName}" finished. Consolidate their findings into ONE report.`,
-    'Do NOT re-read the repo: synthesize only from the summaries below.',
+    `**Consolidate** the sub-scout findings for "${containerName}" into one report, from the summaries below only.`,
     '',
     blocks,
   ].join('\n');

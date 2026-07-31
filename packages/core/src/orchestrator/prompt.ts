@@ -25,6 +25,7 @@ export const buildOrchestratorUserPrompt = ({
   processText,
   completedSteps,
   openQuestionCount,
+  operatorHints,
   providerId,
   modelMenu,
   roleDefaults,
@@ -70,6 +71,14 @@ export const buildOrchestratorUserPrompt = ({
         rendered.length > 0 ? rendered : '(no output captured)',
       );
     });
+  }
+  const hints = operatorHints?.trim() ?? '';
+  if (hints.length > 0) {
+    lines.push(
+      '',
+      'Operator hints (runtime, they override your own judgement where they conflict):',
+      hints,
+    );
   }
   lines.push('', 'Return the marked decision now.');
   return lines.join('\n');

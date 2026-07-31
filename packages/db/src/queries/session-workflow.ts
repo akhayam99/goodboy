@@ -19,6 +19,8 @@ type SessionWorkflowRow = {
   trigger_mode: string;
   execution_mode: string;
   orchestration_outcome: string | null;
+  orchestration_error: string | null;
+  orchestrator_hints: string | null;
   chain_after_run_id: string | null;
   goal: string | null;
   discarded_at: string | null;
@@ -36,6 +38,10 @@ function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     ...(row.orchestration_outcome != null && {
       orchestrationOutcome: row.orchestration_outcome as WorkflowOrchestrationOutcome,
     }),
+    ...(row.orchestration_error != null &&
+      row.orchestration_error !== '' && { orchestrationError: row.orchestration_error }),
+    ...(row.orchestrator_hints != null &&
+      row.orchestrator_hints !== '' && { orchestratorHints: row.orchestrator_hints }),
     ...(row.chain_after_run_id != null && {
       chainAfterId: row.chain_after_run_id as WorkflowRunId,
     }),
@@ -49,7 +55,7 @@ export const listWorkflowsForSession = async (
   sessionId: SessionId,
 ): Promise<ReadonlyArray<WorkflowRun>> => {
   const rows = await db.select<SessionWorkflowRow>(
-    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
+    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_error, orchestrator_hints, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC',
     [sessionId],
   );
   return rows.map(toWorkflowRun);
@@ -119,7 +125,7 @@ export const updateWorkflowOrder = async (
   updatedAt: IsoDateTime,
 ): Promise<void> => {
   const existing = await db.select<SessionWorkflowRow>(
-    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ?',
+    'SELECT workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_error, orchestrator_hints, chain_after_run_id, goal, discarded_at FROM session_workflows WHERE session_id = ?',
     [sessionId],
   );
   const byRun = new Map(existing.map((r) => [r.workflow_run_id, r]));
@@ -133,7 +139,7 @@ export const updateWorkflowOrder = async (
         continue;
       }
       await db.execute(
-        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_error, orchestrator_hints) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           runId,
           sessionId,
@@ -147,6 +153,8 @@ export const updateWorkflowOrder = async (
           prev.chain_after_run_id,
           prev.execution_mode,
           prev.orchestration_outcome,
+          prev.orchestration_error,
+          prev.orchestrator_hints,
         ],
       );
     }
@@ -222,6 +230,28 @@ export const updateWorkflowRunOrchestrationOutcome = async (
   await db.execute(
     'UPDATE session_workflows SET orchestration_outcome = ? WHERE workflow_run_id = ?',
     [outcome, workflowRunId],
+  );
+};
+
+export const updateWorkflowRunOrchestrationError = async (
+  db: Database,
+  workflowRunId: WorkflowRunId,
+  message: string | null,
+): Promise<void> => {
+  await db.execute(
+    'UPDATE session_workflows SET orchestration_error = ? WHERE workflow_run_id = ?',
+    [message, workflowRunId],
+  );
+};
+
+export const updateWorkflowRunOrchestratorHints = async (
+  db: Database,
+  workflowRunId: WorkflowRunId,
+  hints: string | null,
+): Promise<void> => {
+  await db.execute(
+    'UPDATE session_workflows SET orchestrator_hints = ? WHERE workflow_run_id = ?',
+    [hints, workflowRunId],
   );
 };
 

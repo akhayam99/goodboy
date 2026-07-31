@@ -1,4 +1,4 @@
-import { Ban, Check, Link2, Pause, Wand2 } from 'lucide-react';
+import { AlertTriangle, Ban, Check, Link2, Pause, Wand2 } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { StatusDot, cn } from '@goodboy/ui';
 
@@ -48,6 +48,18 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
       <span className={cn(baseClass, 'bg-success/10 text-success')}>
         <Check size={10} aria-hidden />
         Completed
+      </span>
+    );
+  }
+  if (run.orchestrationError != null && !isRunning) {
+    return (
+      <span
+        className={cn(baseClass, 'bg-danger/10 text-danger')}
+        title={run.orchestrationError}
+        data-testid="workflow-orchestrator-failed"
+      >
+        <AlertTriangle size={10} aria-hidden />
+        Orchestrator failed
       </span>
     );
   }

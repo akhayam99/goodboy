@@ -168,7 +168,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
             </>
           }
           title={issue.title}
-          actions={<OpenExternalLink url={issue.url} label="Open in Linear" />}
+          actions={<OpenExternalLink url={issue.url} label="Open in Linear" copyLabel="issue" />}
         />
       }
       rail={

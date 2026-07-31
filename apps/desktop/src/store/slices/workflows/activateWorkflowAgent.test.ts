@@ -302,6 +302,38 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect((merged.agentTurnState as Record<string, unknown>)[AGENT_ID]).toBeDefined();
   });
 
+  it('leaves the selection alone while the operator is watching the workflows lens', async () => {
+    const { set, state, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+    Object.assign(state, { activeLens: { [SESSION_ID]: 'workflows' } });
+
+    await activate(SESSION_ID, AGENT_ID);
+
+    const merged = mergedSetPartials(set, state);
+    expect(merged.selectedAgentId).toBeUndefined();
+    expect((merged.agentTurnState as Record<string, unknown>)[AGENT_ID]).toBeDefined();
+  });
+
+  it('still navigates when the operator is reading a step chat', async () => {
+    const { set, state, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+    Object.assign(state, {
+      activeLens: { [SESSION_ID]: 'workflows' },
+      selectedAgentId: { [SESSION_ID]: 'other-agent' },
+    });
+
+    await activate(SESSION_ID, AGENT_ID);
+
+    const merged = mergedSetPartials(set, state);
+    expect((merged.selectedAgentId as Record<string, unknown>)[SESSION_ID]).toBe(AGENT_ID);
+  });
+
   it('navigate=false starts the step without setting selectedAgentId but still inits turn and sends', async () => {
     const { set, state, sendTurn, activate } = buildHarness({
       agent: makeAgent('generic', 'Execute commits'),

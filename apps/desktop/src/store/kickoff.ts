@@ -1,6 +1,9 @@
 import type { AgentId, PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listPlansForSession as invokeListPlansForSession } from '../features/plans/plans';
 
+export const composePlanSection = ({ bodyMd }: { readonly bodyMd: string }): string =>
+  `**Plan**\n${bodyMd}`;
+
 export const buildPlanKickoffSection = async (
   sessionId: SessionId,
   workflowRunId?: WorkflowRunId,
@@ -13,7 +16,7 @@ export const buildPlanKickoffSection = async (
       return { section: '', plan: latest };
     }
     return {
-      section: ['Active plan to execute:', '', latest.bodyMd].join('\n'),
+      section: composePlanSection({ bodyMd: latest.bodyMd }),
       plan: latest,
     };
   } catch {
@@ -26,15 +29,18 @@ export const composeKickoff = (...sections: ReadonlyArray<string>): string =>
 
 export const buildGoalKickoffSection = (goal?: string): string => {
   const trimmed = (goal ?? '').trim();
-  return trimmed.length > 0 ? `Workflow goal:\n\n${trimmed}` : '';
+  return trimmed.length > 0 ? `**Goal** ${trimmed}` : '';
 };
+
+type BoundaryParams = {
+  readonly unit: string;
+  readonly marker: string;
+};
+
+export const composeUnitBoundary = ({ unit, marker }: BoundaryParams): string =>
+  `**Scope** this ${unit} only, never a later one. Emit \`${marker}\` on its own line once it is truly done.`;
 
 export const stepBoundaryMarker = (agentId: AgentId): string => `<<step-done id="${agentId}">>`;
 
 export const composeStepBoundary = (agentId: AgentId): string =>
-  [
-    'Complete ONLY this workflow step. Do not start later steps or work on their scope.',
-    'When this step is fully complete, emit on its own line exactly:',
-    stepBoundaryMarker(agentId),
-    'Do not emit that marker until the step is truly done.',
-  ].join('\n');
+  composeUnitBoundary({ unit: 'step', marker: stepBoundaryMarker(agentId) });

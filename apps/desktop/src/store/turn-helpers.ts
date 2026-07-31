@@ -57,16 +57,21 @@ import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
 
-export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment>): string => {
-  const list = refs.map((r) => `- ${r.relPath}`).join('\n');
-  return [
-    '[attached-files]',
-    `The user attached ${refs.length} file${refs.length === 1 ? '' : 's'} to this message.`,
-    'Inspect each path below before answering. Images and PDFs render with your Read tool; for spreadsheets or other binary formats, read or parse the file with the appropriate tool:',
-    list,
-    '[/attached-files]',
-  ].join('\n');
+type AttachmentsBlockParams = {
+  readonly scope: string;
+  readonly paths: ReadonlyArray<string>;
 };
+
+const composeAttachmentsBlock = ({ scope, paths }: AttachmentsBlockParams): string =>
+  `**Attached** (${scope}) read each path with your Read tool before relying on it:\n${paths
+    .map((path) => `- ${path}`)
+    .join('\n')}`;
+
+export const buildAttachmentPromptBlock = (refs: ReadonlyArray<MessageAttachment>): string =>
+  composeAttachmentsBlock({
+    scope: 'this message',
+    paths: refs.map((ref) => ref.relPath),
+  });
 
 export const buildGoalAttachmentsBlock = (
   kind: AgentKind,
@@ -80,13 +85,10 @@ export const buildGoalAttachmentsBlock = (
   if (relevant.length === 0) {
     return '';
   }
-  const list = relevant.map((a) => `- ${a.relPath}`).join('\n');
-  return [
-    '## attachments',
-    `The user attached ${relevant.length} file${relevant.length === 1 ? '' : 's'} to the goal of this session.`,
-    'Read only those relevant to your role; ignore the rest. Inspect each path below with your Read tool before relying on it:',
-    list,
-  ].join('\n');
+  return composeAttachmentsBlock({
+    scope: 'session goal, read only what your role needs',
+    paths: relevant.map((att) => att.relPath),
+  });
 };
 
 export const toRelPath = (absPath: string, workingDir: string): string => {

@@ -11,11 +11,9 @@ import { contextWindowFor } from '../features/session/contextWindowFor';
 import { estimateTokens } from '../shared/utils/estimate-tokens';
 
 const CONTEXT_MARKER_HINT =
-  '## context handoff protocol\n' +
-  'when you reach a durable design decision, wrap it as `<<ctx-decision>>your decision<</ctx-decision>>`.\n' +
-  'when you have an open question that the user must answer before continuing, wrap it as `<<ctx-question>>your question<</ctx-question>>`. write the question in plain, self-contained language: the user has not read your reasoning, so spell out what you are asking and why it matters in one sentence. when the question is a bounded choice, offer 2 to 4 concrete options the user can pick in one tap via the `suggestions` attribute, pipe-separated. always include a `recommended` attribute with the single answer you would pick given the current context (match one of the suggestions verbatim when applicable), so the user can accept your default in one tap: `<<ctx-question suggestions="option a | option b | option c" recommended="option a">>your question<</ctx-question>>`.\n' +
-  'when an open question listed in the shared context above has just been answered (by the user, or because work has clarified it), wrap it as `<<ctx-resolved>>the original question text<</ctx-resolved>>`, the orchestrator removes matching lines from open_questions. emit one resolved marker per question; reuse the original phrasing closely so the substring match succeeds.\n' +
-  "the orchestrator parses these markers and persists them to this task's shared context panel, every other agent in this task will see them automatically. don't repeat what's already in the shared context above.";
+  '## context handoff protocol (parsed into the shared context above, seen by every agent, never repeat what is already there)\n' +
+  '`<<ctx-decision>>durable decision<</ctx-decision>>`. `<<ctx-resolved>>original question text, quoted closely<</ctx-resolved>>` once an open question above is answered, one per question.\n' +
+  '`<<ctx-question suggestions="a | b | c" recommended="a">>question<</ctx-question>>` when the user must answer first: self-contained, what and why in one sentence; `suggestions` = 2 to 4 pipe-separated options when bounded; `recommended` always set, verbatim from suggestions when present.';
 
 export const buildContextPreamble = (
   sharedSlots: ReadonlyArray<ContextSlot>,

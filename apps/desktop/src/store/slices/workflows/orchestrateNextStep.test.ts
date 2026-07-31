@@ -21,12 +21,14 @@ const {
   invokeAgentInsertSpy,
   listOpenQuestionsSpy,
   updateOutcomeSpy,
+  updateErrorSpy,
 } = vi.hoisted(() => ({
   decideSpy: vi.fn(),
   invokeWorkflowUpsertSpy: vi.fn(),
   invokeAgentInsertSpy: vi.fn(),
   listOpenQuestionsSpy: vi.fn(async () => []),
   updateOutcomeSpy: vi.fn(async () => undefined),
+  updateErrorSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
@@ -40,6 +42,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
+  updateWorkflowRunOrchestrationError: updateErrorSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -49,6 +52,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,
 }));
 
+import { OrchestratorClient } from '@goodboy/core';
 import { orchestrateNextStep } from './orchestrateNextStep';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -308,7 +312,7 @@ describe('orchestrateNextStep', () => {
       'error',
       'warning',
       'orchestrator failed',
-      'orchestrator decision timed out',
+      expect.stringContaining('the orchestrator timed out after 120s'),
       { sessionId: SESSION_ID },
     );
     expect(state['appendTurnEvent']).toHaveBeenCalledWith(
@@ -316,7 +320,7 @@ describe('orchestrateNextStep', () => {
       SESSION_ID,
       expect.objectContaining({
         action: 'blocked',
-        reason: 'orchestrator failed: orchestrator decision timed out',
+        reason: expect.stringContaining('orchestrator failed: the orchestrator timed out'),
       }),
     );
     expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
@@ -409,5 +413,73 @@ describe('orchestrateNextStep', () => {
     await Promise.all([first, second]);
 
     expect(decideSpy).toHaveBeenCalledTimes(1);
+  });
+  it('persists the failure so the run can explain itself, and clears it on the next decision', async () => {
+    decideSpy.mockRejectedValueOnce(new Error('usage limit reached'));
+    const state = baseState();
+    const { set, get } = harness(state);
+    const orchestrate = orchestrateNextStep(set, get);
+
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateErrorSpy).toHaveBeenCalledWith(
+      {},
+      WORKFLOW_RUN_ID,
+      expect.stringContaining('usage limit reached'),
+    );
+    const failed = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(failed.orchestrationError).toContain('anthropic');
+
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: {},
+      model: 'haiku-4.5',
+    });
+    await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateErrorSpy).toHaveBeenLastCalledWith({}, WORKFLOW_RUN_ID, null);
+    const cleared = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(cleared.orchestrationError).toBeUndefined();
+  });
+
+  it('hands the operator hints of the run to the orchestrator', async () => {
+    const state = baseState();
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    state['sessions'] = [
+      {
+        ...sessions[0]!,
+        workflowRuns: [{ ...sessions[0]!.workflowRuns[0]!, orchestratorHints: 'ignore the docs' }],
+      },
+    ];
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: {},
+      model: 'haiku-4.5',
+    });
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ operatorHints: 'ignore the docs' }),
+    );
+  });
+
+  it('routes the decision through the provider handed by the caller', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: {},
+      model: 'gpt-5.6',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
+      routing: { providerId: 'codex', model: 'gpt-5.6' },
+    });
+
+    expect(OrchestratorClient).toHaveBeenCalledWith(
+      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6' }),
+    );
   });
 });

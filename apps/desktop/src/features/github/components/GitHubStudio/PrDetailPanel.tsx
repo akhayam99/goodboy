@@ -29,6 +29,7 @@ import { PrSectionTabs } from './PrSectionTabs';
 import { PrSwitcher } from './PrSwitcher';
 import { SectionBody } from './SectionBody';
 import type { PrSection } from './prSection';
+import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
 
 type Props = {
   readonly sessionId: SessionId | null;
@@ -367,6 +368,7 @@ export const PrDetailPanel = ({
                 label="open on GitHub"
                 onClick={() => void openUrl(activePr.url)}
               />
+              <CopyLinkButton url={activePr.url} label={`PR #${activePr.number}`} size={14} />
               <RefreshIconButton
                 label="refresh"
                 iconSize={14}

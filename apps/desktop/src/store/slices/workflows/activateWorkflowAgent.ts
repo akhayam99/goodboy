@@ -13,9 +13,11 @@ import {
   buildGoalKickoffSection,
   buildPlanKickoffSection,
   composeKickoff,
+  composePlanSection,
   composeStepBoundary,
 } from '../../kickoff';
 import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
+import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
 import type { GetFn, SetFn } from './types';
 
 export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
@@ -51,7 +53,9 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
           lastActivityAt: new Date().toISOString() as IsoDateTime,
         },
       },
-      ...(navigate ? { selectedAgentId: { ...s.selectedAgentId, [sessionId]: agentId } } : {}),
+      ...(navigate && !isWatchingWorkflowLens({ state: s, sessionId })
+        ? { selectedAgentId: { ...s.selectedAgentId, [sessionId]: agentId } }
+        : {}),
     }));
 
     const effectiveKind: AgentKind =
@@ -68,7 +72,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
 
     const planSection = consumesPlan
       ? explicitPlan
-        ? ['Active plan to execute:', '', explicitPlan.bodyMd].join('\n')
+        ? composePlanSection({ bodyMd: explicitPlan.bodyMd })
         : latestSection
       : '';
     const planToConsume = explicitPlan ?? (latestPlan?.status === 'active' ? latestPlan : null);

@@ -33,6 +33,13 @@ export type OrchestratorClientDeps = {
   readonly invokeFn: InvokeFn;
 };
 
+export class OrchestratorProviderError extends Error {
+  constructor(public readonly detail: string) {
+    super(detail);
+    this.name = 'OrchestratorProviderError';
+  }
+}
+
 export class OrchestratorClientSpawnError extends Error {
   constructor(
     public readonly exitCode: number | null,
@@ -105,6 +112,9 @@ export class OrchestratorClient {
       throw new OrchestratorClientSpawnError(result.exitCode, result.stderr);
     }
     const extracted = extractAuxOutput({ providerId: this.providerId, stdout: result.stdout });
+    if (extracted.isError) {
+      throw new OrchestratorProviderError(extracted.errorMessage ?? 'provider reported an error');
+    }
     const usage: OrchestratorUsage = {
       ...extracted.usage,
       estimatedCostUsd: computeProviderCostUsd({

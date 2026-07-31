@@ -95,7 +95,7 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
           {issue.state.name}
         </span>
       }
-      actions={<OpenExternalLink url={issue.url} label="Open in Linear" />}
+      actions={<OpenExternalLink url={issue.url} label="Open in Linear" copyLabel="issue" />}
       meta={<MetaGrid items={meta} />}
       sections={[
         {

@@ -79,7 +79,7 @@ export const SentryIssueDetail = ({
       state={<SentryLevelBadge level={view.level} />}
       actions={
         view.permalink != null && view.permalink !== '' ? (
-          <OpenExternalLink url={view.permalink} label="Open in Sentry" />
+          <OpenExternalLink url={view.permalink} label="Open in Sentry" copyLabel="issue" />
         ) : undefined
       }
       meta={<MetaGrid items={meta} />}

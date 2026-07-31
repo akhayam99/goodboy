@@ -11,7 +11,9 @@ import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
 import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
+import { continueWorkflowRun } from './continueWorkflowRun';
 import { orchestrateNextStep } from './orchestrateNextStep';
+import { setWorkflowOrchestratorHints } from './setWorkflowOrchestratorHints';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
 import { restoreWorkflow } from './restoreWorkflow';
 import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
@@ -51,6 +53,8 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     maybeAutoAdvanceWorkflow: maybeAutoAdvanceWorkflow(set, get),
     orchestrateNextStep: orchestrateNextStep(set, get),
     retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),
+    continueWorkflowRun: continueWorkflowRun(set, get),
+    setWorkflowOrchestratorHints: setWorkflowOrchestratorHints(set, get),
     retryStepSummary: retryStepSummary(set, get),
   };
 };

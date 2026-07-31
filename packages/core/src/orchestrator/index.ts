@@ -3,6 +3,7 @@ export { buildOrchestratorUserPrompt, ORCHESTRATOR_SYSTEM_PROMPT } from './promp
 export {
   OrchestratorClient,
   OrchestratorClientSpawnError,
+  OrchestratorProviderError,
   type OrchestratorClientDeps,
   type OrchestratorClientResult,
   type OrchestratorUsage,
