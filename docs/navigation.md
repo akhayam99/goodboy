@@ -174,9 +174,22 @@ the dual-sidebar anti-pattern. The rule "no surface shows a left panel and a
 right panel at once" refers to two sidebars flanking content, which the app
 does not do.
 
+### The workflows lens has three levels
+
+The lens reads like the Agents lens, one level at a time, never a rail plus a
+detail at once. `WorkflowsPane` lists the attached runs; the completed and
+discarded toggles live in its header and hide their sections by default, so a
+session whose runs are all done shows an empty state instead of silently opening
+the last completed run. Selecting a card writes `focusedWorkflowRunId` and swaps
+the list for `WorkflowRunDetail`, which hosts the run through `AgentsSection`
+(`workflowVariant="detail"`). Selecting a step in the strip opens
+`WorkflowStepInspector` in an `InspectorSplit` beside the run, and the step chat
+is one explicit click from there, never an automatic redirect. The trail back is
+the breadcrumb `Overview > Workflows > {WorkflowName}`.
+
 ### Sibling panels inside a lens
 
-Four surfaces open their detail to the right of the content instead of taking a
+Five surfaces open their detail to the right of the content instead of taking a
 studio rail: `AgentInspector` (from an agent row's "Details" action in the Agents
 lens and from a resolver row's "Details" action in the Resolve lens, since it is
 one component for both: it adds `ResolverSections` when the agent classifies as a
@@ -187,6 +200,8 @@ a script row opens `ScriptDetail`, whose Edit button swaps the same panel to
 `ScriptEditor`; that is the only route to the editor), and `PlanListPanel` in
 `PlanStudio` (the "Other plans (N)" trigger in the pane header, rendered only
 when the session holds more than one plan).
+
+`WorkflowStepInspector` in `WorkflowRunDetail` is the fifth.
 
 `AgentInspector`, `SlotHistoryPanel`, and `ScriptDetail`/`ScriptEditor` share one
 primitive, `InspectorSplit`

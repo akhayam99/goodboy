@@ -1,17 +1,15 @@
 import { EmptyState, Markdown, Skeleton } from '@goodboy/ui';
 import { MessageSquare } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
-import { useLinearIssueComments } from '../useLinearIssueComments';
+import type { LinearIssueComment } from '../client';
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
-  readonly issueId: string;
+  readonly comments: ReadonlyArray<LinearIssueComment>;
+  readonly isLoading: boolean;
+  readonly error: string | null;
 };
 
-export const LinearIssueComments = ({ workspaceId, issueId }: Props) => {
-  const { comments, isLoading, error } = useLinearIssueComments({ workspaceId, issueId });
-
+export const LinearIssueComments = ({ comments, isLoading, error }: Props) => {
   if (isLoading) {
     return (
       <div role="status" aria-label="Loading comments" className="flex flex-col gap-4">

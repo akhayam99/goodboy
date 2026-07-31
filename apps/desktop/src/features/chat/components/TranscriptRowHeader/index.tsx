@@ -13,6 +13,7 @@ type Props = {
   readonly open?: boolean;
   readonly onToggle?: () => void;
   readonly badge?: ReactNode;
+  readonly grouped?: boolean;
   readonly 'aria-label'?: string;
   readonly 'data-testid'?: string;
 };
@@ -26,10 +27,13 @@ export const TranscriptRowHeader = ({
   open = false,
   onToggle,
   badge,
+  grouped = false,
   'aria-label': ariaLabel,
   'data-testid': testId,
 }: Props) => {
   const tint = tintClasses(tone);
+  const variant = grouped ? 'plain' : 'leftBorder';
+  const shape = grouped ? 'rounded-r-md py-1 pl-2 pr-2' : '';
   const content = (
     <>
       {onToggle ? <TranscriptChevron open={open} /> : <span aria-hidden className="w-3 shrink-0" />}
@@ -56,9 +60,9 @@ export const TranscriptRowHeader = ({
     return (
       <TranscriptShell
         tone={tone}
-        variant="leftBorder"
+        variant={variant}
         data-testid={testId}
-        className="flex w-full items-center gap-2 text-left"
+        className={cn('flex w-full items-center gap-2 text-left', shape)}
       >
         {content}
       </TranscriptShell>
@@ -70,12 +74,12 @@ export const TranscriptRowHeader = ({
       as="button"
       type="button"
       tone={tone}
-      variant="leftBorder"
+      variant={variant}
       aria-expanded={open}
       aria-label={ariaLabel}
       onClick={onToggle}
       data-testid={testId}
-      className={cn('flex w-full items-center gap-2 text-left', TRANSCRIPT_ROW_HOVER)}
+      className={cn('flex w-full items-center gap-2 text-left', shape, TRANSCRIPT_ROW_HOVER)}
     >
       {content}
     </TranscriptShell>

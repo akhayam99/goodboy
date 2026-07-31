@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { LinearIssue } from '../client';
 
@@ -30,7 +30,18 @@ vi.mock('../../../../app/components/Toast', () => ({
 vi.mock('../../../worktree/useBranchConflict', () => ({ useBranchConflict: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ removeWorktree: vi.fn() }));
 vi.mock('../useLinearIssueComments', () => ({
-  useLinearIssueComments: () => ({ comments: [], isLoading: false, error: null }),
+  useLinearIssueComments: () => ({
+    comments: [
+      {
+        id: 'comment-1',
+        body: 'The fix is ready for review.',
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        user: { name: 'Ada Lovelace' },
+      },
+    ],
+    isLoading: false,
+    error: null,
+  }),
 }));
 
 import { IssueDetailPanel } from './IssueDetailPanel';
@@ -77,5 +88,24 @@ describe('IssueDetailPanel', () => {
     expect(screen.getByText('Desktop')).toBeDefined();
     expect(screen.getByText('Updated')).toBeDefined();
     expect(screen.getByText('2h ago')).toBeDefined();
+  });
+
+  it('keeps comments behind a badged conversation tab', async () => {
+    render(
+      <IssueDetailPanel
+        issue={ISSUE}
+        sessionId={null}
+        workspaceId={'workspace-1' as WorkspaceId}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByRole('tab', { name: /Conversation/ })).toBeDefined());
+    expect(screen.getByRole('tab', { name: 'Conversation 1' })).toBeDefined();
+    expect(screen.queryByText('The fix is ready for review.')).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Conversation/ }));
+
+    expect(screen.getByText('The fix is ready for review.')).toBeDefined();
   });
 });

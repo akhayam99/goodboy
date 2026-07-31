@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DetailSection } from './DetailSection';
 import { HeaderBand } from './HeaderBand';
 import { MetaItem } from './MetaItem';
 import { StudioDetailLayout } from './StudioDetailLayout';
+import { StudioDetailTabs } from './StudioDetailTabs';
 
 afterEach(cleanup);
 
@@ -18,6 +19,54 @@ describe('StudioDetailLayout', () => {
     expect(screen.getByText('Header slot')).toBeDefined();
     expect(screen.getByText('Main slot')).toBeDefined();
     expect(screen.getByText('Rail slot')).toBeDefined();
+  });
+
+  it('renders the optional tab bar between the header and the body', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        rail={<span>Rail slot</span>}
+        tabs={<span>Tabs slot</span>}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    expect(screen.getByText('Tabs slot')).toBeDefined();
+  });
+});
+
+describe('StudioDetailTabs', () => {
+  it('switches section on click', () => {
+    const onChange = vi.fn();
+    render(
+      <StudioDetailTabs
+        ariaLabel="Issue sections"
+        value="overview"
+        onChange={onChange}
+        options={[
+          { value: 'overview', label: 'Overview' },
+          { value: 'conversation', label: 'Conversation' },
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
+
+    expect(onChange).toHaveBeenCalledWith('conversation');
+  });
+
+  it('renders nothing when there is a single section', () => {
+    render(
+      <StudioDetailTabs
+        ariaLabel="Issue sections"
+        value="overview"
+        onChange={vi.fn()}
+        options={[{ value: 'overview', label: 'Overview' }]}
+      />,
+    );
+
+    expect(screen.queryByRole('tablist')).toBeNull();
   });
 });
 

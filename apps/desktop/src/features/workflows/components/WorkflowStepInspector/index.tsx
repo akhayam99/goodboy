@@ -1,3 +1,4 @@
+import { MessagesSquare } from 'lucide-react';
 import { Divider, Markdown, ScrollFade } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { stripControlMarkers } from '@goodboy/core';
@@ -17,9 +18,11 @@ import { isWorkflowStepAgent } from '../../isWorkflowStepAgent';
 type Props = {
   readonly session: Session;
   readonly agentId: AgentId;
+  readonly onClose?: () => void;
+  readonly onOpenChat?: () => void;
 };
 
-export const WorkflowStepInspector = ({ session, agentId }: Props) => {
+export const WorkflowStepInspector = ({ session, agentId, onClose, onOpenChat }: Props) => {
   const agent = useAppStore(
     (state) =>
       (state.sessionPhaseRuns[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>)).find(
@@ -63,10 +66,21 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <InspectorHeader title={step.name} />
+      <InspectorHeader title={step.name} closeLabel="close step details" onClose={onClose} />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
         <div className="flex flex-col gap-4">
           <InspectorSection question="What it is">
+            {onOpenChat == null ? null : (
+              <button
+                type="button"
+                onClick={onOpenChat}
+                data-testid="workflow-step-open-chat"
+                className="flex items-center gap-1.5 self-start rounded-md bg-primary/10 px-2 py-1 text-2xs font-medium text-primary transition-colors hover:bg-primary/15"
+              >
+                <MessagesSquare size={11} aria-hidden />
+                Open the step chat
+              </button>
+            )}
             <div className="flex flex-wrap items-center gap-1.5">
               <AgentKindChip kind={kind} />
               <AgentStatusBadge status={agent.status} />

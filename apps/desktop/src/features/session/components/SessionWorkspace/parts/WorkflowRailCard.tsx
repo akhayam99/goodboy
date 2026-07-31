@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
@@ -9,7 +10,6 @@ type Props = {
   readonly workflow: Workflow;
   readonly agents: ReadonlyArray<Agent>;
   readonly predecessorName: string;
-  readonly isSelected: boolean;
   readonly onSelect: () => void;
   readonly onRestore: () => void;
 };
@@ -19,7 +19,6 @@ export const WorkflowRailCard = ({
   workflow,
   agents,
   predecessorName,
-  isSelected,
   onSelect,
   onRestore,
 }: Props) => {
@@ -38,25 +37,28 @@ export const WorkflowRailCard = ({
       <button
         type="button"
         onClick={onSelect}
-        aria-current={isSelected ? 'true' : undefined}
         className={cn(
-          'flex w-full flex-col items-start gap-1.5 rounded-md px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-          isSelected ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/40',
-          isDiscarded && 'pr-16',
+          'flex w-full items-center gap-3 rounded-lg border border-border-soft bg-elevated/40 px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+          isDiscarded && 'pr-16 opacity-70',
         )}
       >
-        <span className="line-clamp-2 text-xs font-medium text-foreground">
-          {workflowKindName(workflow)}
+        <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <span className="line-clamp-2 text-sm font-medium text-foreground">
+            {workflowKindName(workflow)}
+          </span>
+          <span className="flex flex-wrap items-center gap-2">
+            <WorkflowRunStatus
+              run={run}
+              workflow={workflow}
+              agents={agents}
+              predecessorName={predecessorName}
+            />
+            {stepLine != null ? (
+              <span className="line-clamp-1 text-2xs text-muted-foreground">{stepLine}</span>
+            ) : null}
+          </span>
         </span>
-        <WorkflowRunStatus
-          run={run}
-          workflow={workflow}
-          agents={agents}
-          predecessorName={predecessorName}
-        />
-        {stepLine != null ? (
-          <span className="line-clamp-1 w-full text-2xs text-muted-foreground">{stepLine}</span>
-        ) : null}
+        <ChevronRight size={14} aria-hidden className="shrink-0 text-muted-foreground/50" />
       </button>
       {isDiscarded ? (
         <button

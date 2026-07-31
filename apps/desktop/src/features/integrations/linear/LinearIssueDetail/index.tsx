@@ -1,9 +1,10 @@
 import { DetailPage, Markdown, MetaGrid, cn, type MetaItem } from '@goodboy/ui';
 import { GitPullRequest } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
+import { useLinearIssueComments } from '../useLinearIssueComments';
 import { priorityTone } from '../priorityTone';
 import { prStatusTone } from '../prStatusTone';
 
@@ -13,6 +14,10 @@ type Props = {
 };
 
 export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
+  const { comments, isLoading, error } = useLinearIssueComments({
+    workspaceId,
+    issueId: issue.id,
+  });
   const linkedPrs = issuePullRequests(issue);
   const priorityLabel = issue.priorityLabel ?? 'No priority';
   const labels = issue.labels?.nodes ?? [];
@@ -95,7 +100,7 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
           {issue.state.name}
         </span>
       }
-      actions={<OpenExternalLink url={issue.url} label="Open in Linear" copyLabel="issue" />}
+      actions={<ExternalRefActions url={issue.url} label="issue" hostLabel="Linear" />}
       meta={<MetaGrid items={meta} />}
       sections={[
         {
@@ -111,7 +116,7 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
         {
           id: 'comments',
           title: 'Comments',
-          children: <LinearIssueComments workspaceId={workspaceId} issueId={issue.id} />,
+          children: <LinearIssueComments comments={comments} isLoading={isLoading} error={error} />,
         },
       ]}
     />

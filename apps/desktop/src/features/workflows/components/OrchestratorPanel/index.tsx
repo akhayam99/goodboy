@@ -161,6 +161,7 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
             type="button"
             disabled={busy}
             data-testid="orchestrator-continue-toggle"
+            aria-expanded={continueOpen}
             onClick={() => setContinueOpen((open) => !open)}
             className="inline-flex items-center gap-1 rounded-md border border-border-soft bg-elevated px-2 py-1 text-2xs font-semibold text-foreground hover:border-border disabled:opacity-60"
           >
@@ -172,6 +173,7 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
         <button
           type="button"
           data-testid="orchestrator-hints-toggle"
+          aria-expanded={hintsOpen}
           onClick={() => setHintsOpen((open) => !open)}
           className="inline-flex items-center gap-1 rounded-md border border-border-soft bg-elevated px-2 py-1 text-2xs font-semibold text-foreground hover:border-border"
         >

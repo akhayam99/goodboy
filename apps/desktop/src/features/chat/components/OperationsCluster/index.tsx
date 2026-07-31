@@ -6,8 +6,8 @@ import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatDuration } from '../../utils/format-duration';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { TranscriptCard } from '../TranscriptCards';
+import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
-import { TranscriptShell } from '../TranscriptShell';
 
 type Props = {
   readonly items: ReadonlyArray<TranscriptItem>;
@@ -77,75 +77,73 @@ export const OperationsCluster = ({
   const duration = elapsedMs != null ? formatDuration({ durationMs: elapsedMs }) : null;
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <TranscriptRowHeader
-        tone="operations"
-        icon={
-          <Layers
-            size={12}
-            aria-hidden
-            data-testid="operations-state-icon"
-            className={cn('shrink-0', stateIcon)}
-          />
-        }
-        eyebrow="operations"
-        open={open}
-        onToggle={() => setOpen((value) => !value)}
-        aria-label={ariaLabel}
-        badge={
-          <span
-            className={cn(
-              'shrink-0 rounded-full px-1.5 text-2xs tabular-nums text-muted-foreground',
-              operationsTint.bg,
-            )}
-          >
-            {items.length}
-          </span>
-        }
-        preview={
-          running != null ? (
-            <span className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-mono">{running.toolName}</span>
-              {duration != null && (
-                <span className="shrink-0 font-mono tabular-nums text-muted-foreground/70">
-                  {duration}
-                </span>
-              )}
-            </span>
-          ) : showError ? (
-            <span className="flex items-center gap-1.5 text-2xs tabular-nums">
-              <span className={successTint.text}>{successCount} success</span>
-              <span aria-hidden className="text-muted-foreground/40">
-                ·
-              </span>
-              <span className={dangerTint.text}>{errorCount} failed</span>
-            </span>
-          ) : summary.length > 0 ? (
-            <span className="truncate text-2xs text-muted-foreground/60">{summary}</span>
-          ) : undefined
-        }
-        meta={running == null && duration != null ? duration : undefined}
-      />
-      {open ? (
-        <TranscriptShell
+    <TranscriptDisclosure
+      tone="operations"
+      open={open}
+      bodyClassName="gap-0.5"
+      header={
+        <TranscriptRowHeader
+          grouped
           tone="operations"
-          variant="leftBorder"
-          nested
-          className="flex min-w-0 flex-col gap-0.5 pl-6"
-        >
-          {items.map((item) => (
-            <TranscriptCard
-              key={item.key}
-              item={item}
-              sessionId={sessionId}
-              agentId={agentId}
-              workingDir={workingDir}
-              onRefreshAuth={onRefreshAuth}
-              onOpenDiff={onOpenDiff}
+          icon={
+            <Layers
+              size={12}
+              aria-hidden
+              data-testid="operations-state-icon"
+              className={cn('shrink-0', stateIcon)}
             />
-          ))}
-        </TranscriptShell>
-      ) : null}
-    </div>
+          }
+          eyebrow="operations"
+          open={open}
+          onToggle={() => setOpen((value) => !value)}
+          aria-label={ariaLabel}
+          badge={
+            <span
+              className={cn(
+                'shrink-0 rounded-full px-1.5 text-2xs tabular-nums text-muted-foreground',
+                operationsTint.bg,
+              )}
+            >
+              {items.length}
+            </span>
+          }
+          preview={
+            running != null ? (
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate font-mono">{running.toolName}</span>
+                {duration != null && (
+                  <span className="shrink-0 font-mono tabular-nums text-muted-foreground/70">
+                    {duration}
+                  </span>
+                )}
+              </span>
+            ) : showError ? (
+              <span className="flex items-center gap-1.5 text-2xs tabular-nums">
+                <span className={successTint.text}>{successCount} success</span>
+                <span aria-hidden className="text-muted-foreground/40">
+                  ·
+                </span>
+                <span className={dangerTint.text}>{errorCount} failed</span>
+              </span>
+            ) : summary.length > 0 ? (
+              <span className="truncate text-2xs text-muted-foreground/60">{summary}</span>
+            ) : undefined
+          }
+          meta={running == null && duration != null ? duration : undefined}
+        />
+      }
+    >
+      {items.map((item) => (
+        <TranscriptCard
+          key={item.key}
+          item={item}
+          sessionId={sessionId}
+          agentId={agentId}
+          workingDir={workingDir}
+          onRefreshAuth={onRefreshAuth}
+          onOpenDiff={onOpenDiff}
+        />
+      ))}
+    </TranscriptDisclosure>
   );
 };

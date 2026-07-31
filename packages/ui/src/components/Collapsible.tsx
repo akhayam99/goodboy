@@ -18,7 +18,7 @@ export const Collapsible = ({
 }: CollapsibleProps) => {
   const panelId = useId();
   return (
-    <div className={className}>
+    <div className={cn('flex flex-col rounded-md', open && 'bg-muted/30', className)}>
       <button
         type="button"
         aria-expanded={open}
@@ -38,7 +38,7 @@ export const Collapsible = ({
         </span>
       </button>
       {open ? (
-        <div id={panelId} className="px-2 py-1">
+        <div id={panelId} className="px-2 pb-2">
           {children}
         </div>
       ) : null}

@@ -1,7 +1,7 @@
 import type { MouseEventHandler, ReactNode } from 'react';
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
 
-type Variant = 'boxed' | 'leftBorder' | 'pill';
+type Variant = 'boxed' | 'leftBorder' | 'pill' | 'plain';
 
 type Props = {
   readonly as?: 'div' | 'button';

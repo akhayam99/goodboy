@@ -99,7 +99,10 @@ describe('OperationsCluster', () => {
     expect(screen.getByTestId('operations-state-icon').getAttribute('class')).toContain(
       'text-success',
     );
-    expect(screen.getByRole('button').className).toContain('border-primary/20');
+    const rail = screen.getByRole('button').parentElement!;
+    expect(rail.className).toContain('border-l-2');
+    expect(rail.className).toContain('border-primary/20');
+    expect(screen.getByRole('button').className).not.toContain('border-l-2');
     expect(container.querySelectorAll('[class*="border-danger"]')).toHaveLength(0);
     expect(container.querySelectorAll('[class*="border-success"]')).toHaveLength(0);
   });

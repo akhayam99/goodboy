@@ -155,3 +155,18 @@ Separators between regions (panes, sidebar sections, toolbar groups, dialog bloc
 use the `<Divider>` component from `@goodboy/ui` (a faded hairline), rendered as a
 sibling. Never a `border-t/-r/-b/-l` on a container to act as a divider. Borders that
 define a control's own shape (buttons, inputs, popovers, chips) are fine.
+
+## An expanded row is one group, not two
+
+A disclosure (header plus the body it reveals) is a single surface. The container
+owns the border and the open background, the header sits inside it with no border
+of its own, and the body continues under the same rail with no gap between the two.
+A second bordered shell below the header, or a `gap-*` between header and body,
+reads as two unrelated components the moment the row opens.
+
+In the chat transcript that container is
+`features/chat/components/TranscriptDisclosure`, whose header is a
+`TranscriptRowHeader` with `grouped` (which drops the header's own border). Nothing
+inside the body draws its own box: a labelled section is a `2xs` uppercase muted
+label plus its content, never a nested card. Outside the transcript the same rule is
+carried by `Collapsible` in `@goodboy/ui`.

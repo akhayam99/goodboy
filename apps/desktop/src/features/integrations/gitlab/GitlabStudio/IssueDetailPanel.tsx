@@ -8,7 +8,7 @@ import {
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
-import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
@@ -68,7 +68,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
             </>
           }
           title={issue.title}
-          actions={<OpenExternalLink url={issue.webUrl} label="Open in GitLab" copyLabel="issue" />}
+          actions={<ExternalRefActions url={issue.webUrl} label="issue" hostLabel="GitLab" />}
         />
       }
       rail={

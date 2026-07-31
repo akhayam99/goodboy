@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import type { SentryIssue } from '../client';
@@ -115,6 +115,7 @@ describe('IssueDetailPanel', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('tab', { name: 'Stack trace' }));
     await waitFor(() => expect(screen.getByText('request failed')).toBeDefined());
     const goal = screen.getByRole('textbox', { name: 'Session goal' }) as HTMLTextAreaElement;
     expect(goal.value).toBe('[GB-2] Second issue');
@@ -189,9 +190,11 @@ describe('IssueDetailPanel', () => {
       'https://sentry.io/issues/4',
     );
     expect(screen.getByText('desktop@1.2.3')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Stack trace' }));
     expect(screen.getByText('› detailFrame (src/detail.ts:42)', { selector: 'pre' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Breadcrumbs' }));
     expect(screen.getByText('GET /detail')).toBeDefined();
-    expect(screen.getByText('stack trace')).toBeDefined();
-    expect(screen.getByText('breadcrumbs')).toBeDefined();
   });
 });

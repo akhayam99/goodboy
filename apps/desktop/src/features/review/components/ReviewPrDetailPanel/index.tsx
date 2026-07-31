@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Divider, EmptyState, ScrollFade, SectionHeader } from '@goodboy/ui';
-import {
-  ArrowRight,
-  ExternalLink,
-  GitBranch,
-  MessagesSquare,
-  MousePointerClick,
-} from 'lucide-react';
+import { ArrowRight, GitBranch, MessagesSquare, MousePointerClick } from 'lucide-react';
 import type { ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
@@ -14,7 +8,7 @@ import { formatError } from '../../../../shared/lib/errors';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { AuthorAvatar } from '../AuthorAvatar';
 
 type Props = {
@@ -94,15 +88,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
             </span>
           ) : null}
           <span className="flex-1" />
-          <a
-            href={pr.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Open in {hostLabel} <ExternalLink size={11} aria-hidden />
-          </a>
-          <CopyLinkButton url={pr.url} label={`PR #${pr.number}`} />
+          <ExternalRefActions url={pr.url} label={`PR #${pr.number}`} hostLabel={hostLabel} />
         </div>
         <h2 className="text-lg font-semibold leading-snug text-foreground">{pr.title}</h2>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-2xs text-muted-foreground">

@@ -26,6 +26,9 @@ describe('SkillInvocationCard', () => {
     render(<SkillInvocationCard item={item} />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByTestId('transcript-chevron')).toBeNull();
-    expect(screen.getByText('skill').closest('div')?.className).toContain('border-primary/20');
+    const header = screen.getByText('skill').closest('div')!;
+    expect(header.className).not.toContain('border-l-2');
+    expect(header.parentElement?.className).toContain('border-l-2');
+    expect(header.parentElement?.className).toContain('border-primary/20');
   });
 });
