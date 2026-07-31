@@ -376,6 +376,12 @@ export const WorkflowRow = ({
             processText={(workflow.processText ?? '').trim()}
           />
           <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+        </div>
+      ) : null}
+      {expanded && !isDiscarded ? (
+        <div
+          className={cn('flex flex-col gap-2 pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}
+        >
           {isDynamic ? (
             <OrchestratorPanel
               sessionId={task.id}
@@ -384,7 +390,7 @@ export const WorkflowRow = ({
               isOrchestrating={isOrchestrating}
             />
           ) : null}
-          {isDynamic ? <WorkflowOrchestratorTldr steps={workflow.steps} run={run} /> : null}
+          <WorkflowOrchestratorTldr steps={workflow.steps} run={run} />
         </div>
       ) : null}
       {expanded ? (
