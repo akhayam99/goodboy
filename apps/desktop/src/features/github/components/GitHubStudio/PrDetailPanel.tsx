@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { Divider, EmptyState, IconButton, ScrollFade } from '@goodboy/ui';
-import { ArrowRight, ExternalLink, Inbox } from 'lucide-react';
+import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
+import { ArrowRight, Inbox } from 'lucide-react';
 import {
   buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
@@ -13,6 +13,7 @@ import { resolverForComment, type ResolverLink } from '../../../session/resolver
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openUrl } from '../../../../shared/lib/editor';
 import { HeaderBand } from '../../../../shared/components/StudioDetail';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
@@ -29,7 +30,6 @@ import { PrSectionTabs } from './PrSectionTabs';
 import { PrSwitcher } from './PrSwitcher';
 import { SectionBody } from './SectionBody';
 import type { PrSection } from './prSection';
-import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
 
 type Props = {
   readonly sessionId: SessionId | null;
@@ -362,13 +362,11 @@ export const PrDetailPanel = ({
           actions={
             <>
               <OpenSessionButton sessionId={sessionId} onOpened={onClose} variant="ghost" />
-              <IconButton
-                icon={ExternalLink}
-                iconSize={14}
-                label="open on GitHub"
-                onClick={() => void openUrl(activePr.url)}
+              <ExternalRefActions
+                url={activePr.url}
+                label={`PR #${activePr.number}`}
+                hostLabel="GitHub"
               />
-              <CopyLinkButton url={activePr.url} label={`PR #${activePr.number}`} size={14} />
               <RefreshIconButton
                 label="refresh"
                 iconSize={14}

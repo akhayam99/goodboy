@@ -27,7 +27,7 @@ import {
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
 import { IssueStateBadge, type StateTone } from '../../../../shared/components/IssueStateBadge';
-import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
@@ -279,7 +279,28 @@ export const MrDetailPanel = ({
             actions={
               <>
                 {refreshButton}
-                <OpenExternalLink url={mr.webUrl} label="Open in GitLab" copyLabel="MR" />
+                <ExternalRefActions url={mr.webUrl} label="MR" hostLabel="GitLab" />
+                {mr.state === 'opened' ? (
+                  <Button
+                    onClick={() => void onMerge()}
+                    disabled={
+                      busy !== null ||
+                      mr.hasConflicts ||
+                      mr.mergeStatus === 'cannot_be_merged' ||
+                      (sessionId == null && mergeProjectPath == null)
+                    }
+                    className={busy === 'merge' ? 'animate-border-pulse' : undefined}
+                  >
+                    {busy === 'merge' ? (
+                      'Merging…'
+                    ) : (
+                      <>
+                        <GitMerge size={13} className="mr-1.5" aria-hidden />
+                        Merge request
+                      </>
+                    )}
+                  </Button>
+                ) : null}
               </>
             }
           />
@@ -304,40 +325,11 @@ export const MrDetailPanel = ({
           </>
         }
       >
-        {mr.hasConflicts || mr.state === 'opened' ? (
-          <section className="flex flex-col gap-3">
-            <SectionHeader label="merge status" />
-            {mr.hasConflicts ? (
-              <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-2xs leading-relaxed text-foreground">
-                <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
-                <span>This merge request has conflicts that must be resolved before merging.</span>
-              </div>
-            ) : null}
-            {mr.state === 'opened' ? (
-              <div className="flex items-center gap-3">
-                <span className="flex-1" />
-                <Button
-                  onClick={() => void onMerge()}
-                  disabled={
-                    busy !== null ||
-                    mr.hasConflicts ||
-                    mr.mergeStatus === 'cannot_be_merged' ||
-                    (sessionId == null && mergeProjectPath == null)
-                  }
-                  className={busy === 'merge' ? 'animate-border-pulse' : undefined}
-                >
-                  {busy === 'merge' ? (
-                    'Merging…'
-                  ) : (
-                    <>
-                      <GitMerge size={13} className="mr-1.5" aria-hidden />
-                      Merge request
-                    </>
-                  )}
-                </Button>
-              </div>
-            ) : null}
-          </section>
+        {mr.hasConflicts ? (
+          <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-2xs leading-relaxed text-foreground">
+            <AlertTriangle size={12} aria-hidden className="mt-0.5 shrink-0 text-warning" />
+            <span>This merge request has conflicts that must be resolved before merging.</span>
+          </div>
         ) : null}
 
         <DetailSection label="description">

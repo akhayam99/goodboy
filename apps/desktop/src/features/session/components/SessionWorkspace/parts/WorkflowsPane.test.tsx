@@ -58,8 +58,8 @@ vi.mock('@goodboy/ui', () => ({
   cn: (...values: ReadonlyArray<unknown>) => values.filter(Boolean).join(' '),
 }));
 
-vi.mock('../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', () => ({
-  AgentsSection: ({ workflowRunId }: AgentsSectionMockProps) => (
+vi.mock('./WorkflowRunDetail', () => ({
+  WorkflowRunDetail: ({ workflowRunId }: AgentsSectionMockProps) => (
     <div data-testid="workflow-detail" data-run-id={workflowRunId} />
   ),
 }));
@@ -118,32 +118,28 @@ describe('WorkflowsPane', () => {
 
     expect(screen.getByTestId('workflow-empty')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Attach another workflow' })).toBeNull();
-    expect(screen.queryByRole('complementary', { name: 'Attached workflows' })).toBeNull();
+    expect(screen.queryByTestId('workflow-detail')).toBeNull();
   });
 
-  it('keeps one layout for a single run: no rail, attach lives in the section header', () => {
-    render(<WorkflowsPane session={buildSession({ runIds: ['run-1'] })} />);
+  it('lists the attached runs instead of opening one of them', () => {
+    render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
 
-    expect(screen.queryByRole('complementary', { name: 'Attached workflows' })).toBeNull();
-    expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-1');
+    expect(screen.getByText('First workflow')).toBeDefined();
+    expect(screen.getByText('Second workflow')).toBeDefined();
+    expect(screen.getAllByText('Next: First')).toHaveLength(2);
+    expect(screen.queryByTestId('workflow-detail')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Workflows' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Attach another workflow' })).toBeDefined();
   });
 
-  it('adds the rail for multiple runs and shows the next step instead of the step counter', () => {
+  it('opens the detail of the focused run', () => {
     store.focusedWorkflowRunId = { [SESSION_ID]: 'run-2' };
     render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
 
-    expect(screen.getByRole('complementary', { name: 'Attached workflows' })).toBeDefined();
-    expect(screen.getAllByText('Next: First')).toHaveLength(2);
-    expect(screen.queryByText('0/2 steps')).toBeNull();
     expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-2');
-    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
-    expect(screen.getByRole('separator', { name: 'resize workflows rail' })).toBeDefined();
+    expect(screen.queryByText('First workflow')).toBeNull();
   });
 
-  it('focuses a run when its rail card is clicked', () => {
-    store.focusedWorkflowRunId = { [SESSION_ID]: 'run-2' };
+  it('focuses a run when its card is clicked', () => {
     render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
 
     fireEvent.click(screen.getByText('First workflow'));
@@ -151,14 +147,34 @@ describe('WorkflowsPane', () => {
     expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
   });
 
-  it('falls back to the most recent live run when focus is stale', () => {
+  it('stays on the list when the focused run no longer exists', () => {
     store.focusedWorkflowRunId = { [SESSION_ID]: 'missing-run' };
     render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
 
-    expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-2');
-    expect(
-      screen.getByText('Second workflow').closest('button')?.getAttribute('aria-current'),
-    ).toBe('true');
+    expect(screen.queryByTestId('workflow-detail')).toBeNull();
+    expect(screen.getByText('Second workflow')).toBeDefined();
+  });
+
+  it('shows the empty state when every run is completed and none is revealed', () => {
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1', 'run-2'],
+          runOverrides: {
+            'run-1': { executionMode: 'dynamic', orchestrationOutcome: 'done' },
+            'run-2': { executionMode: 'dynamic', orchestrationOutcome: 'done' },
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByTestId('workflow-empty').textContent).toBe('Nothing running');
+    expect(screen.queryByText('First workflow')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Completed (2)' }));
+
+    expect(screen.queryByTestId('workflow-empty')).toBeNull();
+    expect(screen.getByText('First workflow')).toBeDefined();
   });
 
   it('files a discarded run under its own toggle instead of the active list', () => {
@@ -177,10 +193,9 @@ describe('WorkflowsPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
 
     expect(screen.getByText('First workflow')).toBeDefined();
-    expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-2');
   });
 
-  it('restores a discarded run from its rail card', () => {
+  it('restores a discarded run from its list card', () => {
     render(
       <WorkflowsPane
         session={buildSession({

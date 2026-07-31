@@ -1,5 +1,5 @@
 import { SectionHeader, cn } from '@goodboy/ui';
-import type { Session, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, Session, WorkflowRunId } from '@goodboy/types';
 import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
@@ -22,6 +22,8 @@ type Props = {
   workflowRunId?: WorkflowRunId;
   workflowVariant?: 'sidebar' | 'detail';
   showWorkflowAttach?: boolean;
+  inspectedStepId?: AgentId | null;
+  onInspectStep?: (agentId: AgentId) => void;
 };
 
 export const AgentsSection = ({
@@ -30,6 +32,8 @@ export const AgentsSection = ({
   workflowRunId,
   workflowVariant = 'sidebar',
   showWorkflowAttach = true,
+  inspectedStepId = null,
+  onInspectStep,
 }: Props) => {
   const forceExpanded = only === 'workflows';
   const showSidebarSections = only == null;
@@ -107,6 +111,8 @@ export const AgentsSection = ({
                 isTranscriptLoading={section.isTranscriptLoading}
                 onStartStepAgent={section.onStartStepAgent}
                 onPickAgent={section.onPickAgent}
+                inspectedStepId={inspectedStepId}
+                onInspectStep={onInspectStep}
                 setEditingId={section.setEditingId}
                 onRenameCommit={section.onRenameCommit}
                 onResolveFirstForRun={section.onResolveFirstForRun}

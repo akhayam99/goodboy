@@ -183,15 +183,6 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
   }, [sessionId]);
 
-  const onOpenPr = useCallback(() => {
-    if (prNumber == null) {
-      return;
-    }
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-github-session', { detail: { sessionId, prNumber } }),
-    );
-  }, [prNumber, sessionId]);
-
   return {
     activeEntries: entries.active,
     commentByThreadId,
@@ -204,9 +195,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     onForceNext,
     onJump,
     onOpenChat,
-    onOpenPr,
     onOpenResolveBoard,
-    prNumber,
     queuedCount,
     reportedCommitShaByAgentId,
     selectedAgentId,

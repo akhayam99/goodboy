@@ -8,7 +8,7 @@ import {
   StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
 import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
-import { OpenExternalLink } from '../../../../../shared/components/OpenExternalLink';
+import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { formatRelativeDuration } from '../../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../../../goal-from-issue';
@@ -67,7 +67,7 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
             </>
           }
           title={issue.title}
-          actions={<OpenExternalLink url={issue.url} label="Open in GitHub" copyLabel="issue" />}
+          actions={<ExternalRefActions url={issue.url} label="issue" hostLabel="GitHub" />}
         />
       }
       rail={

@@ -77,6 +77,8 @@ type Props = {
   readonly isTranscriptLoading: boolean;
   readonly onStartStepAgent: (agent: Agent, model?: string) => Promise<void>;
   readonly onPickAgent: (id: AgentId) => void;
+  readonly inspectedStepId?: AgentId | null;
+  readonly onInspectStep?: (id: AgentId) => void;
   readonly setEditingId: Dispatch<SetStateAction<AgentId | null>>;
   readonly onRenameCommit: (id: AgentId, name: string) => Promise<void>;
   readonly onResolveFirstForRun: (run: WorkflowRun) => void;
@@ -119,6 +121,8 @@ export const WorkflowRow = ({
   isTranscriptLoading,
   onStartStepAgent,
   onPickAgent,
+  inspectedStepId = null,
+  onInspectStep,
   setEditingId,
   onRenameCommit,
   onResolveFirstForRun,
@@ -397,8 +401,8 @@ export const WorkflowRow = ({
               agentKindOverride={agentKindOverride}
               agentModelOverride={agentModelOverride}
               roleModels={roleModels}
-              selectedAgentId={selectedAgentId}
-              onSelect={onPickAgent}
+              selectedAgentId={onInspectStep == null ? selectedAgentId : inspectedStepId}
+              onSelect={onInspectStep ?? onPickAgent}
             />
           ) : (
             <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>

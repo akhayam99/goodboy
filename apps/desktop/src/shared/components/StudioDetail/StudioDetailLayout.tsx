@@ -4,13 +4,17 @@ import { Divider, ScrollFade } from '@goodboy/ui';
 type Props = {
   readonly header: ReactNode;
   readonly rail: ReactNode;
+  readonly tabs?: ReactNode;
   readonly children: ReactNode;
 };
 
-export const StudioDetailLayout = ({ header, rail, children }: Props) => {
+export const StudioDetailLayout = ({ header, rail, tabs, children }: Props) => {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 px-6 py-4">{header}</div>
+      <div className="flex shrink-0 flex-col gap-3 px-6 py-4">
+        {header}
+        {tabs}
+      </div>
       <Divider />
       <div className="flex min-h-0 flex-1">
         <ScrollFade className="h-full min-w-0 flex-1" viewportClassName="px-6 py-6" fadeSize={24}>

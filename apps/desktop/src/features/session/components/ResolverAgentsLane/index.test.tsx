@@ -142,12 +142,29 @@ describe('ResolverAgentsLane', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
-  it('offers a resolve action from the active empty state', () => {
+  it('offers a single resolve action from the active empty state', () => {
     setResolvers([]);
     renderLane();
 
     expect(screen.getByText('Nothing to resolve')).toBeTruthy();
-    expect(screen.getAllByRole('button', { name: /Resolve comments/ }).length).toBeGreaterThan(1);
+    expect(screen.getAllByRole('button', { name: /Resolve comments/ })).toHaveLength(1);
+  });
+
+  it('never offers an open pull request control', () => {
+    h.state.sessionGithub = { [SESSION_ID]: { pr: { number: 42 } } };
+    setResolvers([]);
+    renderLane();
+
+    expect(screen.queryByRole('button', { name: /open the pull request/i })).toBeNull();
+    expect(screen.queryByText('Open PR')).toBeNull();
+  });
+
+  it('keeps the resolve action in the footer once resolvers are listed', () => {
+    setResolvers([buildResolver({ id: 'solo' as AgentId, name: 'solo resolver' })]);
+    renderLane();
+
+    expect(screen.getAllByRole('button', { name: /Resolve comments/ })).toHaveLength(1);
+    expect(screen.getByTestId('resolver-row')).toBeTruthy();
   });
 
   it('adds completed resolvers below active resolvers and mutes them', () => {

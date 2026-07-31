@@ -1,13 +1,14 @@
-import { Divider, EmptyState, StatCard } from '@goodboy/ui';
-import { ListTree, MousePointerClick } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Divider, EmptyState, StatCard, type SegmentedTabOption } from '@goodboy/ui';
+import { Footprints, LayoutList, ListTree, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
-  DetailSection,
   HeaderBand,
   MetaItem,
   StudioDetailLayout,
+  StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
-import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
@@ -26,9 +27,12 @@ type Props = {
   readonly onClose: () => void;
 };
 
+type IssueSection = 'overview' | 'stack' | 'breadcrumbs';
+
 const SLUG_MAX_LEN = 30;
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
+  const [section, setSection] = useState<IssueSection>('overview');
   const {
     detail,
     isLoading: detailLoading,
@@ -38,6 +42,10 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     issueId: issue?.id ?? null,
   });
   const issueDetail = detail != null && detail.issueId === issue?.id ? detail : null;
+
+  useEffect(() => {
+    setSection('overview');
+  }, [issue?.id]);
 
   if (!issue) {
     return (
@@ -88,6 +96,15 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     ...(lastSeen !== '' ? [{ label: 'Last seen', value: `${lastSeen} ago` }] : []),
   ];
 
+  const options: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
+    { value: 'overview', label: 'Overview', icon: LayoutList },
+    { value: 'stack', label: 'Stack trace', icon: ListTree },
+    ...(view.hasBreadcrumbs
+      ? [{ value: 'breadcrumbs' as const, label: 'Breadcrumbs', icon: Footprints }]
+      : []),
+  ];
+  const activeSection = options.some((option) => option.value === section) ? section : 'overview';
+
   return (
     <StudioDetailLayout
       header={
@@ -110,9 +127,17 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           }
           actions={
             view.permalink != null && view.permalink !== '' ? (
-              <OpenExternalLink url={view.permalink} label="Open in Sentry" copyLabel="issue" />
+              <ExternalRefActions url={view.permalink} label="issue" hostLabel="Sentry" />
             ) : undefined
           }
+        />
+      }
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Issue sections"
+          value={activeSection}
+          onChange={setSection}
+          options={options}
         />
       }
       rail={
@@ -128,29 +153,32 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         </>
       }
     >
-      {stats.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {stats.map((stat) => (
-            <StatCard key={stat.label} label={stat.label} value={stat.value} valueSize="lg" />
-          ))}
+      {activeSection === 'overview' ? (
+        stats.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            {stats.map((stat) => (
+              <StatCard key={stat.label} label={stat.label} value={stat.value} valueSize="lg" />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm italic text-muted-foreground/60">No event stats yet.</p>
+        )
+      ) : null}
+
+      {activeSection === 'stack' ? (
+        <div className="rounded-lg border border-border-soft bg-muted/10 p-4">
+          <SentryStackTrace frames={view.frames} isLoading={detailLoading} error={detailError} />
         </div>
       ) : null}
 
-      <DetailSection
-        label="stack trace"
-        icon={<ListTree size={13} aria-hidden className="text-muted-foreground" />}
-      >
-        <SentryStackTrace frames={view.frames} isLoading={detailLoading} error={detailError} />
-      </DetailSection>
-
-      {view.hasBreadcrumbs ? (
-        <DetailSection label="breadcrumbs">
+      {activeSection === 'breadcrumbs' ? (
+        <div className="rounded-lg border border-border-soft bg-muted/10 p-4">
           <SentryBreadcrumbs
             breadcrumbs={view.breadcrumbs}
             isLoading={detailLoading}
             error={detailError}
           />
-        </DetailSection>
+        </div>
       ) : null}
     </StudioDetailLayout>
   );

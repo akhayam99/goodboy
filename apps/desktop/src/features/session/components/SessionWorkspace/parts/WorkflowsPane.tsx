@@ -1,18 +1,17 @@
 import { useState } from 'react';
 import { Ban, Check } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
-import { Divider, ResizeHandle, ScrollFade } from '@goodboy/ui';
+import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { isWorkflowRunComplete } from '../../../../workflows/isWorkflowRunComplete';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowRailSectionToggle } from './WorkflowRailSectionToggle';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
-import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
 import { WorkflowStartButton } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowStartButton';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRailCard } from './WorkflowRailCard';
-import { useColumnWidth } from '../../../../../shared/hooks/useColumnWidth';
-import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
+import { WorkflowRunDetail } from './WorkflowRunDetail';
 
 type Props = {
   readonly session: Session;
@@ -20,7 +19,6 @@ type Props = {
 
 export const WorkflowsPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
-  const [railWidth, setRailWidth] = useColumnWidth(STORAGE_KEYS.workflowsRailWidth, 240);
   const attachedRuns = useAttachedWorkflowRuns({ session });
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -50,13 +48,8 @@ export const WorkflowsPane = ({ session }: Props) => {
     isWorkflowRunComplete({ run, workflow, agents: agentsByRunId.get(run.id) ?? EMPTY_ARRAY }),
   );
   const active = live.filter((entry) => !completed.includes(entry));
-  const selectedRun =
-    attachedRuns.find(({ run }) => run.id === focusedWorkflowRunId) ??
-    active[active.length - 1] ??
-    attachedRuns[attachedRuns.length - 1] ??
-    null;
-  const hasRuns = attachedRuns.length > 0 && selectedRun != null;
-  const showRail = attachedRuns.length > 1;
+  const focusedRun = attachedRuns.find(({ run }) => run.id === focusedWorkflowRunId) ?? null;
+  const hasRuns = attachedRuns.length > 0;
 
   const renderCard = ({ run, workflow }: { run: WorkflowRun; workflow: Workflow }) => {
     const predecessorName = run.chainAfterId
@@ -69,7 +62,6 @@ export const WorkflowsPane = ({ session }: Props) => {
           workflow={workflow}
           agents={agentsByRunId.get(run.id) ?? EMPTY_ARRAY}
           predecessorName={predecessorName}
-          isSelected={run.id === selectedRun?.run.id}
           onSelect={() => setFocusedWorkflowRun(sessionId, run.id)}
           onRestore={() => void restoreWorkflow(sessionId, run.id)}
         />
@@ -90,76 +82,62 @@ export const WorkflowsPane = ({ session }: Props) => {
             </span>
           ) : null}
         </div>
-        {hasRuns ? <WorkflowAttachButton sessionId={sessionId} placement="header" /> : null}
+        <div className="flex items-center gap-1.5">
+          {focusedRun == null ? (
+            <>
+              <WorkflowRailSectionToggle
+                label="Completed"
+                count={completed.length}
+                isShown={showCompleted}
+                icon={Check}
+                onChange={setShowCompleted}
+              />
+              <WorkflowRailSectionToggle
+                label="Discarded"
+                count={discarded.length}
+                isShown={showDiscarded}
+                icon={Ban}
+                onChange={setShowDiscarded}
+              />
+            </>
+          ) : null}
+          {hasRuns ? <WorkflowAttachButton sessionId={sessionId} placement="header" /> : null}
+        </div>
       </div>
       <Divider />
       <div className="flex min-h-0 flex-1">
-        {showRail ? (
-          <>
-            <aside
-              className="flex shrink-0 flex-col"
-              style={{ width: railWidth }}
-              aria-label="Attached workflows"
-            >
-              <ScrollFade className="min-h-0 flex-1">
-                <div className="flex flex-col gap-2 p-3">
-                  <ul className="flex flex-col gap-1">{active.map(renderCard)}</ul>
-                  {completed.length > 0 ? (
-                    <div className="flex flex-col gap-1">
-                      <WorkflowRailSectionToggle
-                        label="Completed"
-                        count={completed.length}
-                        isShown={showCompleted}
-                        icon={Check}
-                        onChange={setShowCompleted}
-                      />
-                      {showCompleted ? (
-                        <ul className="flex flex-col gap-1">{completed.map(renderCard)}</ul>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {discarded.length > 0 ? (
-                    <div className="flex flex-col gap-1">
-                      <WorkflowRailSectionToggle
-                        label="Discarded"
-                        count={discarded.length}
-                        isShown={showDiscarded}
-                        icon={Ban}
-                        onChange={setShowDiscarded}
-                      />
-                      {showDiscarded ? (
-                        <ul className="flex flex-col gap-1">{discarded.map(renderCard)}</ul>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              </ScrollFade>
-            </aside>
-            <ResizeHandle
-              value={railWidth}
-              min={200}
-              max={400}
-              onChange={setRailWidth}
-              onReset={() => setRailWidth(240)}
-              ariaLabel="resize workflows rail"
-            />
-          </>
-        ) : null}
-        <ScrollFade className="min-w-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 motion-safe:animate-studio-in">
-            {hasRuns ? (
-              <AgentsSection
-                task={session}
-                only="workflows"
-                workflowRunId={selectedRun.run.id}
-                workflowVariant="detail"
-                showWorkflowAttach={false}
-              />
-            ) : (
-              <WorkflowStartButton sessionId={sessionId} />
-            )}
-          </div>
-        </ScrollFade>
+        {focusedRun != null ? (
+          <WorkflowRunDetail session={session} workflowRunId={focusedRun.run.id} />
+        ) : (
+          <ScrollFade className="min-w-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 motion-safe:animate-studio-in">
+              {!hasRuns ? <WorkflowStartButton sessionId={sessionId} /> : null}
+              {hasRuns && active.length === 0 && !showCompleted && !showDiscarded ? (
+                <EmptyState
+                  bordered
+                  tone="success"
+                  icon={SECTION_ICONS.workflows}
+                  title="Nothing running"
+                  description={
+                    completed.length > 0
+                      ? 'Every attached workflow is done. Reveal the completed ones to reread them, or attach another.'
+                      : 'No live workflow on this session. Attach one to start.'
+                  }
+                  action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
+                />
+              ) : null}
+              {active.length > 0 ? (
+                <ul className="flex flex-col gap-2">{active.map(renderCard)}</ul>
+              ) : null}
+              {showCompleted && completed.length > 0 ? (
+                <ul className="flex flex-col gap-2">{completed.map(renderCard)}</ul>
+              ) : null}
+              {showDiscarded && discarded.length > 0 ? (
+                <ul className="flex flex-col gap-2">{discarded.map(renderCard)}</ul>
+              ) : null}
+            </div>
+          </ScrollFade>
+        )}
       </div>
     </div>
   );

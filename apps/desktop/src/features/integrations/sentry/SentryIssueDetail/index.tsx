@@ -1,6 +1,6 @@
 import { DetailPage, MetaGrid, type DetailSection, type MetaItem } from '@goodboy/ui';
 import type { SentryIssueDetail as Detail } from '../client';
-import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
 import { SentryLevelBadge } from '../SentryLevelBadge';
 import { SentryStackTrace } from '../SentryStackTrace';
@@ -79,7 +79,7 @@ export const SentryIssueDetail = ({
       state={<SentryLevelBadge level={view.level} />}
       actions={
         view.permalink != null && view.permalink !== '' ? (
-          <OpenExternalLink url={view.permalink} label="Open in Sentry" copyLabel="issue" />
+          <ExternalRefActions url={view.permalink} label="issue" hostLabel="Sentry" />
         ) : undefined
       }
       meta={<MetaGrid items={meta} />}

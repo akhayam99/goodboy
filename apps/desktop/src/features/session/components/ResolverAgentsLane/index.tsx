@@ -44,11 +44,9 @@ export const ResolverAgentsLane = ({
       toolbar={
         <ResolverLaneToolbar
           sessionId={lane.sessionId}
-          prNumber={lane.prNumber}
           queuedCount={lane.queuedCount}
           isStalled={lane.isStalled}
           onForceNext={lane.onForceNext}
-          onOpenPr={lane.onOpenPr}
         />
       }
       isEmpty={!hasVisibleEntries}
@@ -59,7 +57,11 @@ export const ResolverAgentsLane = ({
           action={<ResolveCommentsAction variant="tile" onOpen={lane.onOpenResolveBoard} />}
         />
       }
-      footer={<ResolveCommentsAction variant="link" onOpen={lane.onOpenResolveBoard} />}
+      footer={
+        hasVisibleEntries ? (
+          <ResolveCommentsAction variant="link" onOpen={lane.onOpenResolveBoard} />
+        ) : null
+      }
     >
       <ResolverRows
         entries={lane.activeEntries}

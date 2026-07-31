@@ -3,8 +3,8 @@ import { Route } from 'lucide-react';
 import { Markdown } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
+import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
-import { TranscriptShell } from '../TranscriptShell';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'orchestrator_decision' }>;
@@ -13,26 +13,24 @@ type Props = {
 export const OrchestratorDecisionCard = ({ item }: Props) => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex flex-col gap-0.5">
-      <TranscriptRowHeader
-        tone="primary"
-        icon={<Route size={12} aria-hidden />}
-        eyebrow="orchestrator"
-        preview={item.stepName ?? item.action}
-        meta={formatCardTime(item.at)}
-        open={open}
-        onToggle={() => setOpen((value) => !value)}
-      />
-      {open && (
-        <TranscriptShell
+    <TranscriptDisclosure
+      tone="primary"
+      open={open}
+      bodyClassName="gap-2 text-xs text-foreground/80"
+      header={
+        <TranscriptRowHeader
+          grouped
           tone="primary"
-          variant="leftBorder"
-          nested
-          className="flex flex-col gap-2 pl-6 text-xs text-foreground/80"
-        >
-          <Markdown text={item.reason} />
-        </TranscriptShell>
-      )}
-    </div>
+          icon={<Route size={12} aria-hidden />}
+          eyebrow="orchestrator"
+          preview={item.stepName ?? item.action}
+          meta={formatCardTime(item.at)}
+          open={open}
+          onToggle={() => setOpen((value) => !value)}
+        />
+      }
+    >
+      <Markdown text={item.reason} />
+    </TranscriptDisclosure>
   );
 };

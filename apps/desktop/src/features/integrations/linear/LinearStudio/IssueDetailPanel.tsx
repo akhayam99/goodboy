@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Divider, EmptyState, Markdown, SectionHeader, cn } from '@goodboy/ui';
-import { GitPullRequest, MousePointerClick } from 'lucide-react';
+import { Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
+import { FileText, GitPullRequest, MessageSquare, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
@@ -12,16 +12,20 @@ import {
   HeaderBand,
   MetaItem,
   StudioDetailLayout,
+  StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
-import { OpenExternalLink } from '../../../../shared/components/OpenExternalLink';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
+import { useLinearIssueComments } from '../useLinearIssueComments';
 import { priorityTone } from '../priorityTone';
 import { prStatusTone } from '../prStatusTone';
+
+type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: LinearIssue | null;
@@ -61,6 +65,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   const adoptablePr =
     issue && !isBranchless ? (issuePullRequests(issue).find((pr) => pr.repo) ?? null) : null;
 
+  const [section, setSection] = useState<IssueSection>('overview');
+  const {
+    comments,
+    isLoading: commentsLoading,
+    error: commentsError,
+  } = useLinearIssueComments({ workspaceId, issueId: issue?.id ?? null });
+
   const [prBranch, setPrBranch] = useState<string | null>(null);
   const [prResolving, setPrResolving] = useState(false);
   const [prError, setPrError] = useState<string | null>(null);
@@ -68,6 +79,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   useEffect(() => {
     setPrBranch(null);
     setPrError(null);
+    setSection('overview');
   }, [issue]);
 
   useEffect(() => {
@@ -168,7 +180,23 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
             </>
           }
           title={issue.title}
-          actions={<OpenExternalLink url={issue.url} label="Open in Linear" copyLabel="issue" />}
+          actions={<ExternalRefActions url={issue.url} label="issue" hostLabel="Linear" />}
+        />
+      }
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Issue sections"
+          value={section}
+          onChange={setSection}
+          options={[
+            { value: 'overview', label: 'Overview', icon: FileText },
+            {
+              value: 'conversation',
+              label: 'Conversation',
+              icon: MessageSquare,
+              ...(comments.length > 0 && { badge: String(comments.length) }),
+            },
+          ]}
         />
       }
       rail={
@@ -220,18 +248,21 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         </>
       }
     >
-      <DetailSection label="description">
-        {issue.description != null && issue.description !== '' ? (
-          <Markdown text={issue.description} className="text-sm leading-relaxed" />
-        ) : (
-          <p className="text-sm italic text-muted-foreground/60">No description.</p>
-        )}
-      </DetailSection>
-
-      <section className="flex flex-col gap-3">
-        <SectionHeader label="comments" />
-        <LinearIssueComments workspaceId={workspaceId} issueId={issue.id} />
-      </section>
+      {section === 'overview' ? (
+        <DetailSection label="description">
+          {issue.description != null && issue.description !== '' ? (
+            <Markdown text={issue.description} className="text-sm leading-relaxed" />
+          ) : (
+            <p className="text-sm italic text-muted-foreground/60">No description.</p>
+          )}
+        </DetailSection>
+      ) : (
+        <LinearIssueComments
+          comments={comments}
+          isLoading={commentsLoading}
+          error={commentsError}
+        />
+      )}
     </StudioDetailLayout>
   );
 };
