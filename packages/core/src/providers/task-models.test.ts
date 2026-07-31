@@ -54,7 +54,7 @@ describe('resolveTaskModel', () => {
   it('uses a mid model for anthropic rebase tasks', () => {
     expect(resolveTaskModel('rebase', null, 'anthropic')).toEqual({
       providerId: 'anthropic',
-      model: 'sonnet-4.6',
+      model: 'sonnet-5',
     });
   });
 

@@ -32,7 +32,7 @@ export const resolveTaskModel = (
     model:
       task === 'rebase'
         ? defaultProviderId === 'anthropic'
-          ? 'sonnet-4.6'
+          ? 'sonnet-5'
           : getDefaultTurnModel({ id: defaultProviderId })
         : getCheapModel(defaultProviderId),
   };

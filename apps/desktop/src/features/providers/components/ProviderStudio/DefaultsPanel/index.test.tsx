@@ -181,7 +181,7 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        label === 'Rebase' ? 'sonnet-4.6' : 'haiku-4.5',
+        label === 'Rebase' ? 'sonnet-5' : 'haiku-4.5',
       );
     }
     expect(screen.queryByText(/auto/)).toBeNull();

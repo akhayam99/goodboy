@@ -18,7 +18,7 @@ export const ROLE_DEFAULTS = {
   },
   investigator: {
     provider: 'anthropic',
-    model: 'sonnet-4.6',
+    model: 'sonnet-5',
     effort: 'medium',
     description: 'reproduce, diagnose, root-cause, patch the failure',
   },
@@ -30,25 +30,25 @@ export const ROLE_DEFAULTS = {
   },
   implementer: {
     provider: 'anthropic',
-    model: 'sonnet-4.6',
+    model: 'sonnet-5',
     effort: 'medium',
     description: 'apply the planned change in small commits',
   },
   reviewer: {
     provider: 'anthropic',
-    model: 'sonnet-4.6',
+    model: 'sonnet-5',
     effort: 'medium',
     description: 'audit the diff, run tests, flag drift',
   },
   tester: {
     provider: 'anthropic',
-    model: 'sonnet-4.6',
+    model: 'sonnet-5',
     effort: 'medium',
     description: 'write tests covering happy path + edge cases',
   },
   custom: {
     provider: 'anthropic',
-    model: 'sonnet-4.6',
+    model: 'sonnet-5',
     effort: 'medium',
     description: 'user-defined role',
   },
