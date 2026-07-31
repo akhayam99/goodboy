@@ -45,7 +45,7 @@ A session always has at least one agent (auto-spawned at creation). Spawning mor
 The workspace is the aggregator of the project. That means every integration surface has to be readable inside Goodboy, not just linked out to a browser tab.
 
 - **Shipped, workspace scope.** GitHub (PR state, checks, review decisions, comments, diff), GitLab (merge requests), Linear (issues), Sentry (issues and events).
-- **In progress, workspace scope.** One page anatomy for every integration object instead of four hand-rolled scroll views: Linear and Sentry issues already read through it, GitHub and GitLab do not yet. Then actions from inside Goodboy: comment, assign, transition, resolve. Write paths, not just reads.
+- **In progress, workspace scope.** One page anatomy for every integration object instead of four hand-rolled scroll views: Linear issues, Sentry issues, GitHub issues, and GitLab issues and merge requests already read through it; the GitHub pull request page does not yet. Then actions from inside Goodboy: comment, assign, transition, resolve. Write paths, not just reads.
 - **Later, company scope.** Slack and Teams for the conversation a task came out of, Google Calendar and Meet for the meeting it was decided in, Jira for the organizations that plan there.
 
 The rule for every integration: share the layout, never the logic. A Sentry issue and a GitHub pull request look coherent side by side because the page anatomy is one primitive, not because we pretended their data models are the same. They are not.
