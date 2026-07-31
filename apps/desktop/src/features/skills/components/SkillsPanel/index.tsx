@@ -13,6 +13,7 @@ import {
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -84,6 +85,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
   const saveSkill = useAppStore((s) => s.saveSkill);
   const deleteSkill = useAppStore((s) => s.deleteSkill);
   const rescanSkills = useAppStore((s) => s.rescanSkills);
+  const { showToast } = useToast();
 
   const [editingSkill, setEditingSkill] = useState<Skill | null | 'new'>(null);
   const [form, setForm] = useState<EditorForm>(emptyForm());
@@ -155,7 +157,11 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
   };
 
   const onDelete = async (skill: Skill) => {
-    await deleteSkill(skill.id, workspaceId);
+    try {
+      await deleteSkill(skill.id, workspaceId);
+    } catch (err) {
+      showToast('error', formatError(err), { title: 'delete failed' });
+    }
   };
 
   const onRescan = async () => {
@@ -352,7 +358,7 @@ const SkillEditor = ({
             placeholder="skill prompt body…"
             rows={6}
             disabled={saving}
-            className="w-full font-mono text-xs sm:w-72"
+            className="w-full font-mono text-xs sm:w-96"
           />
         </FieldRow>
       </section>

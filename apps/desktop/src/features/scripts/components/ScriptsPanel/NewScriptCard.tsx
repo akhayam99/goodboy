@@ -36,7 +36,7 @@ export const NewScriptCard = ({
         value={body}
         onChange={(event) => onBodyChange(event.target.value)}
         placeholder={'#!/bin/bash\ncp ../main/.env .env'}
-        className="w-full font-mono text-xs sm:w-72"
+        className="w-full font-mono text-xs sm:w-96"
         autoGrow
         minRows={5}
         maxRows={24}

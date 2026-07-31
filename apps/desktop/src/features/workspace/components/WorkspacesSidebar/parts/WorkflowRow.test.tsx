@@ -185,7 +185,7 @@ describe('WorkflowRow detail dashboard', () => {
     const meta = screen.getByText('Step 2 of 2').parentElement;
 
     expect(meta?.textContent).toContain('Plan');
-    expect(screen.getByTitle('$0.250 for this run')).toBeDefined();
+    expect(screen.getByTitle('$0.2500 for this run')).toBeDefined();
   });
 
   it('shows the run goal it was started with', () => {

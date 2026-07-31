@@ -20,7 +20,7 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
       return;
     }
     setDraft(value);
-  }, [editing, value]);
+  }, [editing]);
 
   const start = () => {
     setDraft(value);
@@ -50,17 +50,24 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     if (e.key === 'Enter') {
       e.preventDefault();
-      e.stopPropagation();
       void commit();
       return;
     }
     if (e.key === 'Escape') {
       e.preventDefault();
-      e.stopPropagation();
       cancel();
     }
+  };
+
+  const onBlur = () => {
+    if (draft.trim() === '') {
+      cancel();
+      return;
+    }
+    void commit();
   };
 
   return {
@@ -73,5 +80,6 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
     cancel,
     commit,
     onKeyDown,
+    onBlur,
   };
 };

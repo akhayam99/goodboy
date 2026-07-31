@@ -46,8 +46,13 @@ export const AgentCardTitle = ({
       onClick={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
       onKeyDown={rename.onKeyDown}
-      onBlur={() => void rename.commit()}
-      className="min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
+      onBlur={rename.onBlur}
+      title={rename.error ?? undefined}
+      aria-invalid={rename.error !== null}
+      className={cn(
+        'min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1',
+        rename.error !== null ? 'ring-danger' : 'ring-primary',
+      )}
     />
   );
 };

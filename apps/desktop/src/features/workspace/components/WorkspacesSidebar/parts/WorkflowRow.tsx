@@ -1,5 +1,5 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn, formatUsd, StatusDot } from '@goodboy/ui';
+import { cn, formatUsd, formatUsdPrecise, StatusDot } from '@goodboy/ui';
 import {
   ChevronDown,
   ChevronRight,
@@ -217,7 +217,10 @@ export const WorkflowRow = ({
                     </span>
                   </>
                 ) : null}
-                <CostBadge value={runCostUsd} title={`${formatUsd(runCostUsd)} for this run`} />
+                <CostBadge
+                  value={runCostUsd}
+                  title={`${formatUsdPrecise(runCostUsd)} for this run`}
+                />
               </div>
             </div>
           </div>

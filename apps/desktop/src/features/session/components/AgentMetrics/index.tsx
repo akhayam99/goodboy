@@ -1,4 +1,4 @@
-import { cn, formatUsd } from '@goodboy/ui';
+import { cn, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
@@ -76,7 +76,9 @@ export const AgentMetrics = ({
         <CostBadge
           value={aggregate?.estimatedCostUsd ?? 0}
           title={
-            aggregate == null ? 'no cost yet' : `${formatUsd(aggregate.estimatedCostUsd)} spent`
+            aggregate == null
+              ? 'no cost yet'
+              : `${formatUsdPrecise(aggregate.estimatedCostUsd)} spent`
           }
         />
         {summary != null && pct != null ? (

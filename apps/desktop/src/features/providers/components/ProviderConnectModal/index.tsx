@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dialog } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { ProviderConnectPane } from '../ProviderStudio/ProviderConnectPane';
+import { ProviderConnectDialog } from './ProviderConnectDialog';
 
 type Props = {
   readonly providerId: ProviderId | null;
@@ -30,8 +30,11 @@ export const ProviderConnectModal = ({ providerId, initialAction, onClose }: Pro
     );
   }
   return (
-    <Dialog open={open} onClose={onClose} size="xl" showClose={false} bodyClassName="p-0">
-      <ProviderConnectPane providerId={target} action={pinnedAction} onBack={onClose} />
-    </Dialog>
+    <ProviderConnectDialog
+      providerId={target}
+      action={pinnedAction}
+      open={open}
+      onClose={onClose}
+    />
   );
 };

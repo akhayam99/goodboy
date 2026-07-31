@@ -12,11 +12,6 @@ import { Input } from './Input';
 import { Select } from './Select';
 import { Textarea } from './Textarea';
 
-// A child is "labelable" (worth a real <label htmlFor>/id association) only when
-// it renders a native form control. Detect intrinsic input/select/textarea by
-// tag string, or our form primitives that forward id onto such an element.
-// Everything else (Button, Switch, div/span/ul, custom components) gets an
-// inert <span> so clicking the descriptive label text can't activate a button.
 const LABELABLE_TAGS = new Set(['input', 'select', 'textarea']);
 const LABELABLE_COMPONENTS = new Set<ElementType>([Input, Select, Textarea, Checkbox]);
 

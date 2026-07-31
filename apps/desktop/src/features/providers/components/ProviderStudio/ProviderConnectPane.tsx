@@ -16,53 +16,72 @@ import {
   useProviderConnect,
 } from '../ProviderConnectModal/useProviderConnect';
 
+export type ProviderConnectChrome = 'studio' | 'modal';
+
 type Props = {
   readonly providerId: ProviderId;
   readonly action: ProviderLifecycleAction;
+  readonly autoStart: boolean;
+  readonly chrome?: ProviderConnectChrome;
   readonly onBack: () => void;
 };
 
-export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
+export const ProviderConnectPane = ({
+  providerId,
+  action,
+  autoStart,
+  chrome = 'studio',
+  onBack,
+}: Props) => {
   const { lifecycle, provider, guide, command, inFlight, connected, primary, runPrimary } =
-    useProviderConnect(providerId, action, true);
+    useProviderConnect(providerId, action, autoStart);
 
   const brand = PROVIDER_BRAND[providerId];
   const Icon = brand.icon;
+  const isModal = chrome === 'modal';
+  const actions = (
+    <>
+      {!connected && !inFlight && !isModal ? (
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          Close
+        </Button>
+      ) : null}
+      <Button variant={primary.variant} size="sm" onClick={() => runPrimary(onBack)}>
+        {primary.label}
+      </Button>
+    </>
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-3 px-8 py-4">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Back to account"
-          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <ArrowLeft size={16} aria-hidden />
-        </button>
-        <Icon
-          size={18}
-          strokeWidth={2}
-          aria-hidden
-          className="shrink-0"
-          style={{ color: `var(${brand.cssVar})` }}
-        />
-        <span className="text-base font-semibold lowercase text-foreground">
-          {provider?.label ?? providerId}
-        </span>
-        <StatusPill phase={lifecycle.phase} connection={provider?.connection ?? 'missing'} />
-        <div className="flex-1" />
-        {!connected && !inFlight ? (
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            Close
-          </Button>
-        ) : null}
-        <Button variant={primary.variant} size="sm" onClick={() => runPrimary(onBack)}>
-          {primary.label}
-        </Button>
-      </div>
-      <Divider />
-
+      {!isModal && (
+        <>
+          <div className="flex items-center gap-3 px-8 py-4">
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Back to account"
+              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <ArrowLeft size={16} aria-hidden />
+            </button>
+            <Icon
+              size={18}
+              strokeWidth={2}
+              aria-hidden
+              className="shrink-0"
+              style={{ color: `var(${brand.cssVar})` }}
+            />
+            <span className="text-base font-semibold lowercase text-foreground">
+              {provider?.label ?? providerId}
+            </span>
+            <StatusPill phase={lifecycle.phase} connection={provider?.connection ?? 'missing'} />
+            <div className="flex-1" />
+            {actions}
+          </div>
+          <Divider />
+        </>
+      )}
       <div className="flex min-h-0 flex-1">
         <div className="flex min-h-0 flex-1 flex-col gap-4 px-8 py-5">
           {lifecycle.action ? <Stepper action={lifecycle.action} /> : null}
@@ -97,6 +116,13 @@ export const ProviderConnectPane = ({ providerId, action, onBack }: Props) => {
           <GuidePanel guide={guide} />
         </ScrollFade>
       </div>
+
+      {isModal && (
+        <>
+          <Divider />
+          <div className="flex shrink-0 items-center justify-end gap-2 px-6 py-3">{actions}</div>
+        </>
+      )}
     </div>
   );
 };

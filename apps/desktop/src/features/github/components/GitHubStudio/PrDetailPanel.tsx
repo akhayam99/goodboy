@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
 import { ArrowRight, Inbox } from 'lucide-react';
@@ -98,6 +98,7 @@ export const PrDetailPanel = ({
   const [createOpen, setCreateOpen] = useState(false);
   const [section, setSection] = useState<PrSection>('overview');
   const [jumpThreadId, setJumpThreadId] = useState<string | null>(null);
+  const requestedPrRef = useRef<string | null>(null);
 
   const primary = github?.pr ?? null;
   const primaryNumber = primary?.number ?? null;
@@ -122,18 +123,26 @@ export const PrDetailPanel = ({
   }, [sessionId]);
 
   useEffect(() => {
+    if (sessionId == null || initialPrNumber == null) {
+      return;
+    }
+    const requested = `${sessionId}:${initialPrNumber}`;
+    if (requestedPrRef.current === requested) {
+      return;
+    }
+    if (!options.some((candidate) => candidate.number === initialPrNumber)) {
+      return;
+    }
+    requestedPrRef.current = requested;
+    void selectSessionPr(sessionId, initialPrNumber);
+  }, [sessionId, initialPrNumber, options, selectSessionPr]);
+
+  useEffect(() => {
     if (initialThreadId == null) {
       return;
     }
-    if (
-      sessionId != null &&
-      initialPrNumber != null &&
-      options.some((candidate) => candidate.number === initialPrNumber)
-    ) {
-      void selectSessionPr(sessionId, initialPrNumber);
-    }
     setSection('comments');
-  }, [sessionId, initialThreadId, initialPrNumber, options, selectSessionPr]);
+  }, [initialThreadId]);
 
   useEffect(() => {
     if (sessionId == null || activePr == null) {

@@ -124,7 +124,7 @@ const PairDeviceCta = () => {
     >
       <Smartphone size={11} aria-hidden />
       <span>Pair</span>
-      {linked ? <StatusDot tone="success" size="sm" className="ml-0.5" /> : null}
+      {linked ? <StatusDot tone="success" size="sm" /> : null}
     </button>
   );
 };

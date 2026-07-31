@@ -245,6 +245,8 @@ type NotificationItemProps = {
 
 const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProps) => {
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const store = useAppStore.getState();
   const action = n.action != null ? mapNotificationAction(n.action, store) : undefined;
@@ -275,12 +277,25 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
     if (sessionId == null) {
       return;
     }
-    void setCurrentSession(sessionId).then(() => {
+    const workspaceId = n.workspaceId;
+    void (async () => {
+      if (workspaceId != null && workspaceId !== useAppStore.getState().currentWorkspaceId) {
+        await setCurrentWorkspace(workspaceId);
+      }
+      const state = useAppStore.getState();
+      if (!state.sessions.some((candidate) => candidate.id === sessionId)) {
+        return;
+      }
+      if (state.currentSessionId === sessionId) {
+        setActiveLens(sessionId, null);
+      } else {
+        await setCurrentSession(sessionId);
+      }
       if (agentId == null) {
         return;
       }
-      void selectAgent(sessionId, agentId);
-    });
+      await selectAgent(sessionId, agentId);
+    })().catch(() => {});
     onNavigated();
   };
 
@@ -292,7 +307,6 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
         <button
           type="button"
           onClick={navigate}
-          aria-label={`open ${n.title}`}
           className="flex w-full items-start gap-2 rounded-md text-left transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
           {body}

@@ -1,4 +1,4 @@
-import { StatusDot, cn, formatUsd } from '@goodboy/ui';
+import { StatusDot, cn, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
@@ -77,7 +77,12 @@ export const ClusterChildRow = ({
         </span>
       ) : null}
       {costUsd > 0 ? (
-        <span className="shrink-0 tabular-nums text-muted-foreground/60">{formatUsd(costUsd)}</span>
+        <span
+          className="shrink-0 tabular-nums text-muted-foreground/60"
+          title={formatUsdPrecise(costUsd)}
+        >
+          {formatUsd(costUsd)}
+        </span>
       ) : null}
     </button>
   );
