@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import type { Agent } from '@goodboy/types';
+import type { Agent, ProviderId } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
@@ -8,6 +8,7 @@ import { WorkflowStepStatusGlyph } from './WorkflowStepStatusGlyph';
 type Props = {
   readonly run: Agent;
   readonly kind: AgentKind;
+  readonly provider: ProviderId;
   readonly model: string;
   readonly children: ReadonlyArray<Agent>;
   readonly isSelected: boolean;
@@ -17,6 +18,7 @@ type Props = {
 export const WorkflowStepStripItem = ({
   run,
   kind,
+  provider,
   model,
   children,
   isSelected,
@@ -45,7 +47,7 @@ export const WorkflowStepStripItem = ({
           <WorkflowStepStatusGlyph status={run.status} />
         )}
       </span>
-      <RoutingBadge model={model} className="max-w-28 shrink-0" />
+      <RoutingBadge provider={provider} model={model} className="max-w-28 shrink-0" />
     </button>
   );
 };

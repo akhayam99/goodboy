@@ -1,6 +1,13 @@
 import { Fragment } from 'react';
 import { ArrowRight } from 'lucide-react';
-import type { Agent, AgentId, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  ProviderId,
+  RoleModelPreferences,
+  Step,
+  Workflow,
+} from '@goodboy/types';
 import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
 import { resolveStepRouting } from '../../resolveStepRouting';
 import { WorkflowStepStripItem } from './WorkflowStepStripItem';
@@ -11,6 +18,7 @@ type Props = {
   readonly childrenByParentId: ReadonlyMap<string, ReadonlyArray<Agent>>;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
+  readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
   readonly roleModels: RoleModelPreferences | null;
   readonly selectedAgentId: AgentId | null;
   readonly onSelect: (id: AgentId) => void;
@@ -22,6 +30,7 @@ export const WorkflowStepStrip = ({
   childrenByParentId,
   agentKindOverride,
   agentModelOverride,
+  agentProviderOverride,
   roleModels,
   selectedAgentId,
   onSelect,
@@ -38,12 +47,13 @@ export const WorkflowStepStrip = ({
       {sortedRuns.map((run, index) => {
         const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
         const step = run.stepId == null ? null : (stepById.get(run.stepId) ?? null);
-        const model = resolveStepRouting({
+        const routing = resolveStepRouting({
           step,
           kind,
           roleModels,
           agentModel: agentModelOverride[run.id] ?? run.modelOverride,
-        }).model;
+          agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
+        });
 
         return (
           <Fragment key={run.id}>
@@ -53,7 +63,8 @@ export const WorkflowStepStrip = ({
             <WorkflowStepStripItem
               run={run}
               kind={kind}
-              model={model}
+              provider={routing.provider}
+              model={routing.model}
               children={childrenByParentId.get(run.id) ?? []}
               isSelected={selectedAgentId === run.id}
               onSelect={() => onSelect(run.id)}

@@ -12,6 +12,7 @@ export type TurnProviderOverride = {
   readonly providerId: ProviderId;
   readonly model?: string;
   readonly selection?: ModelSelection;
+  readonly explicit?: boolean;
 };
 
 export const DEFAULT_SESSION_PROVIDER_PREFERENCE: SessionProviderPreference = {

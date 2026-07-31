@@ -50,37 +50,40 @@ export const resolveTurnModelSelection = ({
   })
     ? agentModelPin
     : null;
+  const turnCandidate: Candidate | null =
+    turnOverride == null
+      ? null
+      : {
+          provider: turnOverride.providerId,
+          id: turnOverride.model ?? turnOverride.selection?.key ?? routingDecision.selectedModel,
+          ...(turnOverride.selection != null && { selection: turnOverride.selection }),
+        };
   const candidate: Candidate =
     retryModel != null
       ? { provider, id: retryModel }
-      : phaseModelOverride != null
-        ? {
-            provider: phaseProviderOverride ?? provider,
-            id: phaseModelOverride,
-          }
-        : autoStepModel != null
+      : turnCandidate != null && turnOverride?.explicit === true
+        ? turnCandidate
+        : phaseModelOverride != null
           ? {
-              provider: autoStepModel.provider,
-              id: autoStepModel.model,
+              provider: phaseProviderOverride ?? provider,
+              id: phaseModelOverride,
             }
-          : turnOverride != null
+          : autoStepModel != null
             ? {
-                provider: turnOverride.providerId,
-                id:
-                  turnOverride.model ??
-                  turnOverride.selection?.key ??
-                  routingDecision.selectedModel,
-                ...(turnOverride.selection != null && { selection: turnOverride.selection }),
+                provider: autoStepModel.provider,
+                id: autoStepModel.model,
               }
-            : applicableAgentModelPin != null
-              ? {
-                  provider: agentProvider ?? provider,
-                  id: applicableAgentModelPin,
-                }
-              : {
-                  provider,
-                  id: routingDecision.selectedModel,
-                };
+            : turnCandidate != null
+              ? turnCandidate
+              : applicableAgentModelPin != null
+                ? {
+                    provider: agentProvider ?? provider,
+                    id: applicableAgentModelPin,
+                  }
+                : {
+                    provider,
+                    id: routingDecision.selectedModel,
+                  };
   const shouldUseRoutingDefault =
     retryModel == null &&
     (routingDecision.fallbackUsed || candidate.provider !== routingDecision.selectedProvider);

@@ -118,7 +118,12 @@ export const useTurnRouting = ({ session }: Params) => {
         }).selection
       : storedSelection.selection;
   const routingOverride: TurnProviderOverride | undefined = allowOverride
-    ? { providerId: effectiveProvider, model: effectiveModel, selection: effectiveSelection }
+    ? {
+        providerId: effectiveProvider,
+        model: effectiveModel,
+        selection: effectiveSelection,
+        explicit: selectedProvider !== null || selectedModel !== null,
+      }
     : undefined;
 
   const connectedProviderIds = connectedProviders.map((p) => p.id);

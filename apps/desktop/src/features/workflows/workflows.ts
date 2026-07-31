@@ -204,7 +204,7 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
     ...(row.modelOverride != null && { modelOverride: row.modelOverride }),
-    ...(row.providerOverride != null && { providerOverride: row.providerOverride }),
+    ...(row.providerOverride != null && { providerOverride: row.providerOverride as ProviderId }),
     ...(row.sourceThreadId != null && { sourceThreadId: row.sourceThreadId }),
     ...(sourceThreadIds.length > 0 && { sourceThreadIds }),
     ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),
@@ -344,6 +344,9 @@ export type AgentInsertArgs = {
   readonly completedAt?: IsoDateTime;
   readonly kind?: string;
   readonly verbosity?: VerbosityLevel;
+  readonly effort?: AgentEffort;
+  readonly modelOverride?: string;
+  readonly providerOverride?: ProviderId;
   readonly sourceThreadId?: string;
   readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl?: string;
@@ -368,6 +371,9 @@ export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> =>
       completedAt: run.completedAt ?? null,
       kind: run.kind ?? null,
       verbosity: run.verbosity ?? null,
+      effort: run.effort ?? null,
+      modelOverride: run.modelOverride ?? null,
+      providerOverride: run.providerOverride ?? null,
       sourceThreadId: run.sourceThreadId ?? null,
       sourceThreadIds:
         run.sourceThreadIds !== undefined ? JSON.stringify(run.sourceThreadIds) : null,

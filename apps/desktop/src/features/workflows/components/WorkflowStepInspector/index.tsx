@@ -14,15 +14,15 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { useAttachedWorkflowRuns } from '../../useAttachedWorkflowRuns';
 import { isWorkflowStepAgent } from '../../isWorkflowStepAgent';
+import { resolveStepRouting } from '../../resolveStepRouting';
+import { roleModelsForSession } from '../../../../store/slices/overrides/roleModelsForSession';
 
 type Props = {
   readonly session: Session;
   readonly agentId: AgentId;
-  readonly onClose?: () => void;
-  readonly onOpenChat?: () => void;
 };
 
-export const WorkflowStepInspector = ({ session, agentId, onClose, onOpenChat }: Props) => {
+export const WorkflowStepInspector = ({ session, agentId }: Props) => {
   const agent = useAppStore(
     (state) =>
       (state.sessionPhaseRuns[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>)).find(
@@ -37,6 +37,7 @@ export const WorkflowStepInspector = ({ session, agentId, onClose, onOpenChat }:
     (state) => state.agentProviderOverride?.[agentId] ?? agent?.providerOverride ?? null,
   );
   const attachedRuns = useAttachedWorkflowRuns({ session });
+  const roleModels = useAppStore((state) => roleModelsForSession({ state, sessionId: session.id }));
   const metrics = useAgentMetrics({ sessionId: session.id });
 
   if (agent == null || !isWorkflowStepAgent({ agent })) {
@@ -58,29 +59,25 @@ export const WorkflowStepInspector = ({ session, agentId, onClose, onOpenChat }:
   const contextUsage = metrics.providerUsageByAgentId.get(agentId) ?? EMPTY_ARRAY;
   const dominantUsage = contextUsage[0] ?? null;
   const kind = classifyAgent(agent, kindOverride);
-  const model = telemetry?.model ?? dominantUsage?.model ?? step.modelOverride ?? modelOverride;
-  const provider = telemetry?.provider ?? dominantUsage?.provider ?? providerOverride;
+  const planned = resolveStepRouting({
+    step,
+    kind,
+    roleModels,
+    agentModel: modelOverride,
+    agentProvider: providerOverride,
+  });
+  const model = telemetry?.model ?? dominantUsage?.model ?? planned.model;
+  const provider = telemetry?.provider ?? dominantUsage?.provider ?? planned.provider;
   const instructions = step.promptPrefix.trim();
   const expectedOutput = step.expectedOutput?.trim() ?? '';
   const outputSummary = agent.outputSummary?.trim() ?? '';
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <InspectorHeader title={step.name} closeLabel="close step details" onClose={onClose} />
+      <InspectorHeader title={step.name} />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
         <div className="flex flex-col gap-4">
           <InspectorSection question="What it is">
-            {onOpenChat == null ? null : (
-              <button
-                type="button"
-                onClick={onOpenChat}
-                data-testid="workflow-step-open-chat"
-                className="flex items-center gap-1.5 self-start rounded-md bg-primary/10 px-2 py-1 text-2xs font-medium text-primary transition-colors hover:bg-primary/15"
-              >
-                <MessagesSquare size={11} aria-hidden />
-                Open the step chat
-              </button>
-            )}
             <div className="flex flex-wrap items-center gap-1.5">
               <AgentKindChip kind={kind} />
               <AgentStatusBadge status={agent.status} />

@@ -12,6 +12,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandColor } from '../../../providers/components/provider-brand';
 import { WorkflowStepStrip } from './index';
 
 const WORKFLOW_ID = 'workflow-1' as WorkflowId;
@@ -81,6 +82,7 @@ describe('WorkflowStepStrip', () => {
         runs={runs}
         childrenByParentId={new Map([[runs[0]!.id, [child]]])}
         agentKindOverride={{}}
+        agentProviderOverride={{}}
         agentModelOverride={{}}
         roleModels={null}
         selectedAgentId={runs[1]!.id}
@@ -94,5 +96,25 @@ describe('WorkflowStepStrip', () => {
     expect(screen.getByText('gpt-5.1-codex')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /scout/i }));
     expect(onSelect).toHaveBeenCalledWith(runs[0]!.id);
+  });
+
+  it('shows the provider the agent runs on instead of guessing it from the model id', () => {
+    render(
+      <WorkflowStepStrip
+        workflow={workflow}
+        runs={runs}
+        childrenByParentId={new Map()}
+        agentKindOverride={{}}
+        agentProviderOverride={{ 'agent-2': 'cursor' }}
+        agentModelOverride={{}}
+        roleModels={null}
+        selectedAgentId={null}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    const chip = screen.getByRole('button', { name: /implement/i });
+    expect(chip.outerHTML).toContain(brandColor('cursor'));
+    expect(chip.outerHTML).not.toContain(brandColor('codex'));
   });
 });

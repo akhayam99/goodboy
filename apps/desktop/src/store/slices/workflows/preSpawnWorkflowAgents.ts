@@ -52,19 +52,8 @@ export const preSpawnWorkflowAgents = async ({
 
   for (const [index, step] of sortedSteps.entries()) {
     const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
-    const agent = await invokeAgentInsert({
-      sessionId,
-      stepId: step.id,
-      ...(workflowRunId != null && { workflowRunId }),
-      ordinal: baseOrdinal + index,
-      name: step.name,
-      status: 'pending',
-      kind,
-      ...(defaultVerbosity != null && { verbosity: defaultVerbosity }),
-    });
     const provider = step.providerOverride ?? defaultProvider;
-    providerOverrides[agent.id] = provider;
-    modelOverrides[agent.id] = resolveModelForProvider({
+    const model = resolveModelForProvider({
       provider,
       modelId:
         step.modelOverride ??
@@ -76,6 +65,21 @@ export const preSpawnWorkflowAgents = async ({
             })
           : kindRouting({ kind, roleModels }).model),
     });
+    const agent = await invokeAgentInsert({
+      sessionId,
+      stepId: step.id,
+      ...(workflowRunId != null && { workflowRunId }),
+      ordinal: baseOrdinal + index,
+      name: step.name,
+      status: 'pending',
+      kind,
+      ...(defaultVerbosity != null && { verbosity: defaultVerbosity }),
+      providerOverride: provider,
+      modelOverride: model,
+      ...(step.effort != null && { effort: step.effort }),
+    });
+    providerOverrides[agent.id] = provider;
+    modelOverrides[agent.id] = model;
     kindOverrides[agent.id] = kind;
     if (step.effort != null) {
       effortOverrides[agent.id] = step.effort;
