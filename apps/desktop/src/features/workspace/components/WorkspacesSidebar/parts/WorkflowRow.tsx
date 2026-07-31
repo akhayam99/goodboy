@@ -29,7 +29,7 @@ import type { AgentAggregate } from '../../../../../features/session/components/
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { WorkflowOrchestratorTldr } from '../../../../../features/workflows/components/WorkflowOrchestratorTldr';
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
-import { WorkflowStepStrip } from '../../../../../features/workflows/components/WorkflowStepStrip';
+import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
@@ -390,7 +390,7 @@ export const WorkflowRow = ({
       {expanded ? (
         wfAgents.length > 0 ? (
           isDetail ? (
-            <WorkflowStepStrip
+            <WorkflowStepGraph
               workflow={workflow}
               runs={wfAgents}
               childrenByParentId={childrenByParentId}
