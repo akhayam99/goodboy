@@ -6,7 +6,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useDropdown } from '../../../../../shared/hooks/useDropdown';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import { resolveRootAgent } from '../../../agent-kind';
-import { WorkflowStripStatus } from './WorkflowStripStatus';
+import { WorkflowStepStatus } from '../../../../workflows/components/WorkflowStepStatus';
 
 const CRUMB_CLASS =
   'flex min-w-0 items-center gap-1 rounded-sm text-2xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40';
@@ -179,10 +179,10 @@ export const WorkflowBreadcrumb = ({
                               : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
                           )}
                         >
-                          <WorkflowStripStatus
+                          <WorkflowStepStatus
                             status={stepRoot?.status ?? null}
                             label={step.name}
-                            variant="pill"
+                            variant="glyph"
                           />
                           <span className="shrink-0 tabular-nums text-muted-foreground/50">
                             {index + 1}
@@ -246,10 +246,10 @@ export const WorkflowBreadcrumb = ({
                             : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
                         )}
                       >
-                        <WorkflowStripStatus
+                        <WorkflowStepStatus
                           status={agent.status}
                           label={agent.name}
-                          variant="child"
+                          variant="dot"
                         />
                         <span className="min-w-0 flex-1 truncate">{agent.name}</span>
                         <RoutingBadge

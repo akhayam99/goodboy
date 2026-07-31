@@ -13,7 +13,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 
-type SessionWorkflowRow = {
+export type SessionWorkflowRow = {
   workflow_run_id: string;
   workflow_id: string;
   ordinal: number;
@@ -33,7 +33,7 @@ type SessionWorkflowRow = {
   discarded_at: string | null;
 };
 
-const SESSION_WORKFLOW_COLS =
+export const SESSION_WORKFLOW_COLS =
   'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, chain_after_run_id, goal, discarded_at';
 
 const toRouting = (row: SessionWorkflowRow): OrchestratorRouting | null => {
@@ -47,7 +47,7 @@ const toRouting = (row: SessionWorkflowRow): OrchestratorRouting | null => {
   };
 };
 
-function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
+export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
   const routing = toRouting(row);
   return {
     id: row.workflow_run_id as WorkflowRunId,

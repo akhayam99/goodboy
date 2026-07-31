@@ -224,7 +224,7 @@ describe('WorkflowRow detail dashboard', () => {
 
     const goal = screen.getByRole('region', { name: 'what you asked for' });
     const attachments = screen.getByTestId('goal-attachments');
-    const steps = screen.getByTestId('workflow-step-strip');
+    const steps = screen.getByTestId('workflow-step-graph');
 
     expect(goal.compareDocumentPosition(attachments)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(attachments.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
@@ -234,7 +234,7 @@ describe('WorkflowRow detail dashboard', () => {
     const onPickAgent = vi.fn();
     renderDetail({ onPickAgent });
 
-    const steps = screen.getByTestId('workflow-step-strip');
+    const steps = screen.getByTestId('workflow-step-graph');
     const chips = steps.querySelectorAll('button');
     fireEvent.click(chips[0] as HTMLElement);
 

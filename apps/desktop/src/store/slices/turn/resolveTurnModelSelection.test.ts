@@ -297,4 +297,20 @@ describe('resolveTurnModelSelection', () => {
       toggles: { thinking: false, fast: true },
     });
   });
+
+  it('keeps an explicit composer pick that points at another provider', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      routingDecision: {
+        selectedProvider: 'anthropic',
+        selectedModel: 'claude-sonnet-4-5',
+        fallbackUsed: false,
+        reason: 'preferred',
+      },
+      phaseModelOverride: 'claude-haiku-4-5',
+      turnOverride: { providerId: 'anthropic', model: 'claude-opus-5', explicit: true },
+    });
+
+    expect(selection.key).toBe('opus-5');
+  });
 });

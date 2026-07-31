@@ -11,6 +11,7 @@ type UseAgentSwitchSyncArgs = {
   readonly currentProviderRef: RefObject<ProviderId | null>;
   readonly currentModelRef: RefObject<string | null>;
   readonly currentEffortRef: RefObject<EffortLevel>;
+  readonly setIsPicked: (v: boolean) => void;
   readonly setSelectedProviderState: (v: ProviderId | null) => void;
   readonly setSelectedModelState: (v: string | null) => void;
   readonly setEffortState: (v: EffortLevel) => void;
@@ -27,6 +28,7 @@ export function useAgentSwitchSync({
   currentProviderRef,
   currentModelRef,
   currentEffortRef,
+  setIsPicked,
   setSelectedProviderState,
   setSelectedModelState,
   setEffortState,
@@ -71,6 +73,7 @@ export function useAgentSwitchSync({
     const restoredVerbosity =
       (restoredAgent?.verbosity as VerbosityLevel | undefined) ?? workspaceDefaultVerbosity ?? null;
 
+    setIsPicked(false);
     setSelectedProviderState(restoredProvider);
     setSelectedModelState(restoredModel);
     if (restoredEffort !== null) {

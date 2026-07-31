@@ -19,6 +19,7 @@ import {
   updateWorkflowRunOrchestrationOutcome,
   updateWorkflowRunOrchestratorRouting,
 } from './session-workflow';
+import { listSessionsForWorkspace } from './session';
 
 const workspaceId = 'ws-1' as WorkspaceId;
 const sessionId = 'ses-1' as SessionId;
@@ -463,6 +464,50 @@ describe('session_workflows trigger-mode queries', () => {
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.triggerMode).toBe('immediate');
       expect(runs[0]!.chainAfterId).toBeUndefined();
+    });
+  });
+});
+
+describe('session hydration carries the orchestrator state', () => {
+  let db: Database;
+
+  beforeEach(async () => {
+    db = await seed();
+  });
+
+  it('reads the reason and the routing on the path the app boots from', async () => {
+    await attachWorkflowToSession(
+      db,
+      sessionId,
+      'run-1' as WorkflowRunId,
+      workflowId,
+      true,
+      NOW,
+      undefined,
+      'immediate',
+      undefined,
+      'dynamic',
+    );
+    await updateWorkflowRunOrchestrationOutcome(
+      db,
+      'run-1' as WorkflowRunId,
+      'done',
+      'the fix and its test are in',
+    );
+    await updateWorkflowRunOrchestratorRouting(db, 'run-1' as WorkflowRunId, {
+      providerId: 'codex',
+      model: 'gpt-5.6',
+      effort: 'high',
+    });
+
+    const sessions = await listSessionsForWorkspace(db, workspaceId);
+    const run = sessions[0]!.workflowRuns[0]!;
+
+    expect(run.orchestrationReason).toBe('the fix and its test are in');
+    expect(run.orchestratorRouting).toEqual({
+      providerId: 'codex',
+      model: 'gpt-5.6',
+      effort: 'high',
     });
   });
 });

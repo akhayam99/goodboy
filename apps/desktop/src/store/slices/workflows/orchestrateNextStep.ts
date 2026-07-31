@@ -154,11 +154,10 @@ const persistOrchestrationOutcome = async ({
     set,
     sessionId,
     workflowRunId,
-    patch: (run) => ({
-      ...run,
-      orchestrationOutcome: outcome,
-      ...(trimmed !== '' && { orchestrationReason: trimmed }),
-    }),
+    patch: (run) =>
+      trimmed === ''
+        ? { ...withoutKeys(run, ['orchestrationReason']), orchestrationOutcome: outcome }
+        : { ...run, orchestrationOutcome: outcome, orchestrationReason: trimmed },
   });
 };
 

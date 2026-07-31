@@ -380,7 +380,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       : undefined;
     const retryOverride: TurnProviderOverride | undefined =
       retry != null ? { providerId: retry.provider, model: retry.model } : undefined;
-    const effectiveOverride = retryOverride ?? phaseOverride ?? turnOverride ?? agentOverride;
+    const pickedOverride = turnOverride?.explicit === true ? turnOverride : undefined;
+    const effectiveOverride =
+      retryOverride ?? pickedOverride ?? phaseOverride ?? turnOverride ?? agentOverride;
 
     const routingPreference =
       (effectiveOverride === agentOverride && agentOverride !== undefined) || retry != null
@@ -436,6 +438,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       throw new Error(`resolved model args omit ${modelFlag} for ${provider}`);
     }
     const model = spawnModel;
+    if (
+      pickedOverride != null &&
+      (provider !== pickedOverride.providerId ||
+        (pickedOverride.model != null && modelSelection.key !== pickedOverride.model))
+    ) {
+      void get().emitNotification(
+        'error',
+        'warning',
+        'the turn did not run on the model you picked',
+        `you picked ${pickedOverride.providerId}/${pickedOverride.model ?? modelSelection.key}, the turn ran on ${provider}/${modelSelection.key}`,
+        { sessionId },
+      );
+    }
     const explicitEffortFlag =
       provider === 'anthropic'
         ? '--effort'

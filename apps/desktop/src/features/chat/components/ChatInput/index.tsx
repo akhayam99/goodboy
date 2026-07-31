@@ -149,6 +149,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     currentProviderRef: routing.currentProviderRef,
     currentModelRef: routing.currentModelRef,
     currentEffortRef: routing.currentEffortRef,
+    setIsPicked: routing.setIsPicked,
     setSelectedProviderState: routing.setSelectedProviderState,
     setSelectedModelState: routing.setSelectedModelState,
     setEffortState: routing.setEffortState,

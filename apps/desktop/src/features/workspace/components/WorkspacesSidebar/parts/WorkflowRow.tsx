@@ -29,7 +29,7 @@ import type { AgentAggregate } from '../../../../../features/session/components/
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { WorkflowOrchestratorTldr } from '../../../../../features/workflows/components/WorkflowOrchestratorTldr';
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
-import { WorkflowStepStrip } from '../../../../../features/workflows/components/WorkflowStepStrip';
+import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
@@ -376,6 +376,12 @@ export const WorkflowRow = ({
             processText={(workflow.processText ?? '').trim()}
           />
           <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+        </div>
+      ) : null}
+      {expanded && !isDiscarded ? (
+        <div
+          className={cn('flex flex-col gap-2 pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}
+        >
           {isDynamic ? (
             <OrchestratorPanel
               sessionId={task.id}
@@ -384,13 +390,13 @@ export const WorkflowRow = ({
               isOrchestrating={isOrchestrating}
             />
           ) : null}
-          {isDynamic ? <WorkflowOrchestratorTldr steps={workflow.steps} run={run} /> : null}
+          <WorkflowOrchestratorTldr steps={workflow.steps} run={run} />
         </div>
       ) : null}
       {expanded ? (
         wfAgents.length > 0 ? (
           isDetail ? (
-            <WorkflowStepStrip
+            <WorkflowStepGraph
               workflow={workflow}
               runs={wfAgents}
               childrenByParentId={childrenByParentId}

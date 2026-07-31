@@ -5,14 +5,14 @@ import { StatusDot } from '@goodboy/ui';
 type Props = {
   readonly status: AgentStatus | null;
   readonly label: string;
-  readonly variant: 'pill' | 'child';
+  readonly variant?: 'glyph' | 'dot';
 };
 
-export const WorkflowStripStatus = ({ status, label, variant }: Props) => {
+export const WorkflowStepStatus = ({ status, label, variant = 'glyph' }: Props) => {
   const resolvedStatus = status ?? 'pending';
   const ariaLabel = `${label} status: ${resolvedStatus}`;
 
-  if (variant === 'child') {
+  if (variant === 'dot') {
     const tone =
       resolvedStatus === 'completed'
         ? 'success'

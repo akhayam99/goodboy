@@ -1,5 +1,5 @@
 import { SectionHeader, cn } from '@goodboy/ui';
-import type { AgentId, Session, WorkflowRunId } from '@goodboy/types';
+import type { Session, WorkflowRunId } from '@goodboy/types';
 import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';

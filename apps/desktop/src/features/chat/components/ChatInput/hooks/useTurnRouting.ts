@@ -56,6 +56,7 @@ export const useTurnRouting = ({ session }: Params) => {
     }
     return persistedModel;
   });
+  const [isPicked, setIsPicked] = useState(false);
   const [effort, setEffortState] = useState<EffortLevel>(
     () => asEffortLevel(session.effort) ?? 'medium',
   );
@@ -122,7 +123,7 @@ export const useTurnRouting = ({ session }: Params) => {
         providerId: effectiveProvider,
         model: effectiveModel,
         selection: effectiveSelection,
-        explicit: selectedProvider !== null || selectedModel !== null,
+        explicit: isPicked,
       }
     : undefined;
 
@@ -164,6 +165,7 @@ export const useTurnRouting = ({ session }: Params) => {
 
   const setSelectedProvider = useCallback(
     (id: ProviderId | null) => {
+      setIsPicked(true);
       setSelectedProviderState(id);
       void storeSetSessionConfig(session.id, { providerOverride: id });
       if (selectedAgentId) {
@@ -175,6 +177,7 @@ export const useTurnRouting = ({ session }: Params) => {
 
   const setSelectedModel = useCallback(
     (id: string | null) => {
+      setIsPicked(true);
       setSelectedModelState(id);
       void storeSetSessionConfig(session.id, { modelOverride: id });
       if (selectedAgentId) {
@@ -200,6 +203,7 @@ export const useTurnRouting = ({ session }: Params) => {
       if (!allowOverride) {
         return;
       }
+      setIsPicked(true);
       setSelectedProviderState(id);
       setSelectedModelState(null);
       void storeSetSessionConfig(session.id, { providerOverride: id, modelOverride: null });
@@ -245,6 +249,7 @@ export const useTurnRouting = ({ session }: Params) => {
   return {
     selectedProvider,
     setSelectedProviderState,
+    setIsPicked,
     selectedModel,
     setSelectedModelState,
     effort,
