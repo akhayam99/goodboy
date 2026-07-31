@@ -1,6 +1,6 @@
 [package]
 name = "goodboy-desktop"
-version = "0.1.46"
+version = "0.1.47"
 description = "Goodboy desktop app"
 authors = ["Amin Khayam"]
 license = "MIT"
