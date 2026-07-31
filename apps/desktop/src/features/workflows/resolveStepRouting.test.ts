@@ -58,4 +58,27 @@ describe('resolveStepRouting', () => {
 
     expect(routing.effort).toBe('xhigh');
   });
+
+  it('reports the provider the agent actually runs on, not one guessed from the model', () => {
+    const routing = resolveStepRouting({
+      step: step({ modelOverride: 'gpt-5.6' }),
+      kind: 'generic',
+      roleModels: null,
+      agentProvider: 'cursor',
+    });
+
+    expect(routing.provider).toBe('cursor');
+    expect(routing.model).toBe('gpt-5.6');
+  });
+
+  it('lets the provider pinned on the step win over the one of the agent', () => {
+    const routing = resolveStepRouting({
+      step: step({ providerOverride: 'codex' }),
+      kind: 'generic',
+      roleModels: null,
+      agentProvider: 'cursor',
+    });
+
+    expect(routing.provider).toBe('codex');
+  });
 });

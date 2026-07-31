@@ -99,7 +99,7 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
       effort: row.effort as ModelEffort,
     }),
     ...(row.model_override && { modelOverride: row.model_override }),
-    ...(row.provider_override && { providerOverride: row.provider_override }),
+    ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
     ...(row.kind && { kind: row.kind }),
     ...(domains.length > 0 && { domains }),
   };

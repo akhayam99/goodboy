@@ -122,7 +122,7 @@ describe('resolveTurnModelSelection', () => {
     expect(selection.key).toBe('sonnet-4.5');
   });
 
-  it('gives the auto step model precedence over a turn override', () => {
+  it('gives the auto step model precedence over a turn override the user never touched', () => {
     const selection = resolveTurnModelSelection({
       ...BASE_PARAMS,
       autoStepModel: { provider: 'anthropic', model: 'claude-haiku-4-5' },
@@ -130,6 +130,26 @@ describe('resolveTurnModelSelection', () => {
     });
 
     expect(selection.key).toBe('haiku-4.5');
+  });
+
+  it('sends the model the user picked in the composer, not the auto step model', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      autoStepModel: { provider: 'anthropic', model: 'claude-haiku-4-5' },
+      turnOverride: { providerId: 'anthropic', model: 'claude-opus-5', explicit: true },
+    });
+
+    expect(selection.key).toBe('opus-5');
+  });
+
+  it('sends the model the user picked in the composer, not the step definition', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      phaseModelOverride: 'claude-haiku-4-5',
+      turnOverride: { providerId: 'anthropic', model: 'claude-opus-5', explicit: true },
+    });
+
+    expect(selection.key).toBe('opus-5');
   });
 
   it('gives the turn override precedence over an agent pin', () => {

@@ -49,10 +49,12 @@ export function useAgentSwitchSync({
     const outgoingAgentId = lastAgentIdRef.current;
     lastAgentIdRef.current = selectedAgentId;
 
-    if (outgoingAgentId !== null) {
+    const outgoingProvider = currentProviderRef.current;
+    const outgoingModel = currentModelRef.current;
+    if (outgoingAgentId !== null && (outgoingProvider !== null || outgoingModel !== null)) {
       void storeSetAgentConfig(session.id, outgoingAgentId, {
-        providerOverride: currentProviderRef.current,
-        modelOverride: currentModelRef.current,
+        providerOverride: outgoingProvider,
+        modelOverride: outgoingModel,
         effort: currentEffortRef.current,
       });
     }

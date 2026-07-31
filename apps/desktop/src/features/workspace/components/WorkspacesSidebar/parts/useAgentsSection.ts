@@ -1,6 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, AgentId, Session, WorkflowRun, WorkflowRunId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  ProviderId,
+  Session,
+  WorkflowRun,
+  WorkflowRunId,
+} from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -57,6 +64,22 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
         const model = s.agentModelOverride[run.id];
         if (model) {
           out[run.id] = model;
+        }
+      }
+      return out;
+    }),
+  );
+  const agentProviderOverride = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, ProviderId> = {};
+      const runs = s.sessionPhaseRuns[task.id];
+      if (!runs) {
+        return out;
+      }
+      for (const run of runs) {
+        const provider = s.agentProviderOverride?.[run.id];
+        if (provider) {
+          out[run.id] = provider;
         }
       }
       return out;
@@ -239,6 +262,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     actionableStepIdByRunId,
     agentKindOverride,
     agentModelOverride,
+    agentProviderOverride,
     agentsByRunId: tree.agentsByRunId,
     agentsExpanded,
     attachedRuns,

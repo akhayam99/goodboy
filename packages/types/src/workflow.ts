@@ -101,7 +101,7 @@ export type Agent = Readonly<{
   verbosity?: VerbosityLevel;
   effort?: ModelEffort;
   modelOverride?: string;
-  providerOverride?: string;
+  providerOverride?: ProviderId;
   kind?: string;
   sourceThreadId?: string;
   sourceThreadIds?: ReadonlyArray<string>;

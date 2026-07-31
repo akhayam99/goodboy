@@ -220,6 +220,11 @@ pub struct PhaseRunInsertInput {
     pub completed_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
+    pub effort: Option<String>,
+    #[serde(rename = "modelOverride")]
+    pub model_override: Option<String>,
+    #[serde(rename = "providerOverride")]
+    pub provider_override: Option<String>,
     #[serde(rename = "parentAgentId")]
     pub parent_agent_id: Option<String>,
     #[serde(rename = "workflowRunId")]
@@ -966,6 +971,14 @@ pub fn agent_list_for_session(
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
 }
 
+const AGENT_INSERT_SQL: &str = "INSERT INTO agents
+   (id, session_id, step_id, ordinal, name, status,
+    provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
+    effort, model_override, provider_override,
+    parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind,
+    domains_json)
+ VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)";
+
 #[tauri::command]
 pub fn agent_insert(
     state: State<'_, Db>,
@@ -975,12 +988,7 @@ pub fn agent_insert(
     let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
 
     conn.execute(
-        "INSERT INTO agents
-           (id, session_id, step_id, ordinal, name, status,
-            provider_run_id, output_summary, started_at, completed_at, kind, verbosity,
-            parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind,
-            domains_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+        AGENT_INSERT_SQL,
         rusqlite::params![
             id,
             input.session_id,
@@ -994,6 +1002,9 @@ pub fn agent_insert(
             input.completed_at,
             input.kind,
             input.verbosity,
+            input.effort,
+            input.model_override,
+            input.provider_override,
             input.parent_agent_id,
             input.workflow_run_id,
             input.source_thread_id,
@@ -1022,9 +1033,9 @@ pub fn agent_insert(
         done_at: None,
         kind: input.kind,
         verbosity: input.verbosity,
-        effort: None,
-        model_override: None,
-        provider_override: None,
+        effort: input.effort,
+        model_override: input.model_override,
+        provider_override: input.provider_override,
         parent_agent_id: input.parent_agent_id,
         workflow_run_id: input.workflow_run_id,
         source_thread_id: input.source_thread_id,
@@ -1313,5 +1324,48 @@ mod tests {
         assert!(row.model_override.is_none());
         assert!(row.provider_override.is_none());
         assert!(row.provider_session_provider_id.is_none());
+    }
+
+    #[test]
+    fn agent_insert_sql_writes_the_routing_columns() {
+        let conn = agents_table_conn();
+        conn.execute(
+            AGENT_INSERT_SQL,
+            rusqlite::params![
+                "a3",
+                "s1",
+                "step-1",
+                0,
+                "implement",
+                "pending",
+                None::<String>,
+                None::<String>,
+                None::<String>,
+                None::<String>,
+                "implementer",
+                None::<String>,
+                "high",
+                "gpt-5.6",
+                "codex",
+                None::<String>,
+                "run-1",
+                None::<String>,
+                None::<String>,
+                None::<String>,
+                None::<String>,
+                None::<String>,
+            ],
+        )
+        .unwrap();
+
+        let sql = format!("SELECT {cols} FROM agents WHERE id = ?1", cols = AGENT_SESSION_COLS);
+        let mut stmt = conn.prepare(&sql).unwrap();
+        let row = stmt
+            .query_row(rusqlite::params!["a3"], session_row_from_row)
+            .unwrap();
+
+        assert_eq!(row.effort.as_deref(), Some("high"));
+        assert_eq!(row.model_override.as_deref(), Some("gpt-5.6"));
+        assert_eq!(row.provider_override.as_deref(), Some("codex"));
     }
 }

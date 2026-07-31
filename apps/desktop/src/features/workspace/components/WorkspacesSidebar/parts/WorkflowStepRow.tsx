@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
 import { AlertTriangle, Check, Clock, Play } from 'lucide-react';
-import type { Agent, TelemetryRecord } from '@goodboy/types';
+import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
@@ -20,6 +20,7 @@ type Props = {
   readonly kind: AgentKind;
   readonly index: number;
   readonly resolvedModel: string;
+  readonly resolvedProvider: ProviderId;
   readonly isActionable: boolean;
   readonly blockReason: WorkflowBlockReason | null;
   readonly isSelected: boolean;
@@ -43,6 +44,7 @@ export const WorkflowStepRow = ({
   kind,
   index,
   resolvedModel,
+  resolvedProvider,
   isActionable,
   blockReason,
   isSelected,
@@ -244,6 +246,7 @@ export const WorkflowStepRow = ({
             turns={turns}
             turnsLoading={turnsLoading}
             plannedModel={resolvedModel}
+            plannedProvider={resolvedProvider}
             muted={isPendingFuture}
             density={isPendingFuture ? 'compact' : 'full'}
           />

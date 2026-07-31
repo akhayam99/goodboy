@@ -175,6 +175,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
     let agents = rows(
         &conn,
         "SELECT id, session_id, step_id, ordinal, name, kind, status, provider_run_id, output_summary, \
+         effort, model_override, provider_override, \
          group_id, parallel_index, parent_agent_id, workflow_run_id, started_at, completed_at, deleted_at \
          FROM agents WHERE deleted_at IS NULL",
     )?;

@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import type { Agent, TelemetryRecord } from '@goodboy/types';
+import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import { CostBadge } from '../../../providers/components/CostBadge';
@@ -25,6 +25,7 @@ type Props = {
   readonly turnsLoading: boolean;
   readonly density: 'compact' | 'full';
   readonly plannedModel?: string | null;
+  readonly plannedProvider?: ProviderId | null;
   readonly muted?: boolean;
 };
 
@@ -37,6 +38,7 @@ export const AgentMetrics = ({
   turnsLoading,
   density,
   plannedModel = null,
+  plannedProvider = null,
   muted = false,
 }: Props) => {
   const dominant = contextUsage[0] ?? null;
@@ -44,6 +46,7 @@ export const AgentMetrics = ({
   const provider =
     telemetry?.provider ??
     dominant?.provider ??
+    plannedProvider ??
     (plannedModel != null ? getModelProvider(plannedModel) : undefined);
   const summary = contextUsageSummary({ usage: contextUsage });
   const pct = summary == null ? null : Math.round(summary.pct * 100);
