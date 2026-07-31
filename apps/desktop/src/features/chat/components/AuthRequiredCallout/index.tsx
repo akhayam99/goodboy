@@ -1,10 +1,10 @@
-import { Button } from '@goodboy/ui';
+import { TriangleAlert } from 'lucide-react';
+import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
 import { TranscriptShell } from '../TranscriptShell';
-import { MARKER_ACCENT } from '../marker-accents';
 
-const accent = MARKER_ACCENT.warning;
+const warningTint = tintClasses('warning');
 
 type Props = {
   readonly providerId: ProviderId;
@@ -24,15 +24,23 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
   };
 
   return (
-    <TranscriptShell tone="warning" variant="boxed" className="text-sm">
+    <TranscriptShell tone="warning" variant="boxed" emphasis className="flex flex-col gap-2">
       <div className="flex items-start gap-2">
-        <span className={`mt-0.5 ${accent.icon}`}>⚠</span>
-        <div className="flex-1">
-          <p className="font-medium text-foreground">{label} is not signed in.</p>
-          {identity ? (
-            <p className="mt-0.5 text-xs text-muted-foreground">last known identity: {identity}</p>
-          ) : null}
-          <div className="mt-2 flex gap-2">
+        <TriangleAlert
+          size={14}
+          aria-hidden
+          className={cn('shrink-0 translate-y-0.5', warningTint.icon)}
+        />
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-[13px] font-medium leading-relaxed text-foreground">
+              {label} is not signed in.
+            </p>
+            {identity ? (
+              <p className="text-xs text-muted-foreground">last known identity: {identity}</p>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" onClick={onConnect}>
               Connect now ↗
             </Button>

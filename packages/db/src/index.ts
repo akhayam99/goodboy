@@ -53,6 +53,7 @@ export {
   attachWorkflowToSession,
   detachWorkflowFromSession,
   discardWorkflowInSession,
+  restoreWorkflowInSession,
   updateWorkflowOrder,
   updateSessionWorkflowStep,
   updateSessionWorkflowAutoRun,

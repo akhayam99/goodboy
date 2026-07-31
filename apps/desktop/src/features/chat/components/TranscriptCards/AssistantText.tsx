@@ -7,7 +7,6 @@ import { CommentResolvedChip } from '../CommentResolvedChip';
 import { CommentWontfixChip } from '../CommentWontfixChip';
 import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
-import { TranscriptShell } from '../TranscriptShell';
 
 type Props = {
   text: string;
@@ -21,7 +20,7 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
     isReviewThreadId(threadId),
   );
   return (
-    <TranscriptShell tone="neutral" variant="boxed" className="group relative text-sm">
+    <div className="group relative flex flex-col gap-2 text-sm leading-relaxed">
       {hasCommentResolvedMarker ? null : (
         <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
           <CopyButton value={text} label="message" />
@@ -29,7 +28,7 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
       )}
       {displayText.length > 0 ? <Markdown text={displayText} /> : null}
       {sessionId ? (
-        <div className="flex flex-col items-start gap-2 empty:hidden [&:not(:empty)]:mt-2">
+        <div className="flex flex-col items-start gap-2 empty:hidden">
           <PlanChip assistantText={text} sessionId={sessionId} />
           <ClustersCard assistantText={text} sessionId={sessionId} />
           <HandoffChip assistantText={text} sessionId={sessionId} />
@@ -38,6 +37,6 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
           <CommentWontfixChip assistantText={text} sessionId={sessionId} agentId={agentId} />
         </div>
       ) : null}
-    </TranscriptShell>
+    </div>
   );
 };

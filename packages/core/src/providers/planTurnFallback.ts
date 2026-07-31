@@ -1,0 +1,159 @@
+import type { ModelCostTier, ModelDescriptor, ProviderId } from '@goodboy/types';
+import { PROVIDER_CAPABILITIES } from './capabilities';
+
+export type TurnFailureKind =
+  | 'authentication'
+  | 'rate_limit'
+  | 'model_not_available'
+  | 'unreachable'
+  | 'other';
+
+export type TurnFallbackPlan = {
+  readonly provider: ProviderId;
+  readonly model: string;
+};
+
+type Params = {
+  readonly failure: TurnFailureKind;
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly attempt: number;
+};
+
+type TierParams = {
+  readonly tier: ModelCostTier;
+};
+
+type DescriptorParams = {
+  readonly provider: ProviderId;
+  readonly model: string;
+};
+
+type ClosestParams = {
+  readonly provider: ProviderId;
+  readonly tier: ModelCostTier;
+  readonly weight: number | null;
+  readonly excludeModel: string | null;
+  readonly maxTierIndex: number | null;
+};
+
+type OtherProviderParams = {
+  readonly provider: ProviderId;
+  readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly tier: ModelCostTier;
+  readonly weight: number | null;
+};
+
+const MAX_ATTEMPTS = 2;
+
+const COST_TIER_ORDER: ReadonlyArray<ModelCostTier> = ['cheap', 'mid', 'expensive'];
+
+const tierIndex = ({ tier }: TierParams): number => {
+  return COST_TIER_ORDER.indexOf(tier);
+};
+
+const descriptorFor = ({ provider, model }: DescriptorParams): ModelDescriptor | null => {
+  return PROVIDER_CAPABILITIES[provider].models.find((candidate) => candidate.id === model) ?? null;
+};
+
+const pickClosest = ({
+  provider,
+  tier,
+  weight,
+  excludeModel,
+  maxTierIndex,
+}: ClosestParams): string | null => {
+  const target = tierIndex({ tier });
+  const candidates = PROVIDER_CAPABILITIES[provider].models.filter((candidate) => {
+    if (excludeModel != null && candidate.id === excludeModel) {
+      return false;
+    }
+    if (maxTierIndex == null) {
+      return true;
+    }
+    return tierIndex({ tier: candidate.costTier }) <= maxTierIndex;
+  });
+  const ranked = [...candidates].sort((a, b) => {
+    const tierGap =
+      Math.abs(tierIndex({ tier: a.costTier }) - target) -
+      Math.abs(tierIndex({ tier: b.costTier }) - target);
+    if (tierGap !== 0) {
+      return tierGap;
+    }
+    if (weight == null) {
+      return b.weight - a.weight;
+    }
+    return Math.abs(a.weight - weight) - Math.abs(b.weight - weight);
+  });
+  return ranked[0]?.id ?? null;
+};
+
+const otherProviderPlan = ({
+  provider,
+  connectedProviders,
+  tier,
+  weight,
+}: OtherProviderParams): TurnFallbackPlan | null => {
+  const target = connectedProviders.find((candidate) => candidate !== provider);
+  if (target == null) {
+    return null;
+  }
+  const model = pickClosest({
+    provider: target,
+    tier,
+    weight,
+    excludeModel: null,
+    maxTierIndex: null,
+  });
+  if (model == null) {
+    return null;
+  }
+  return { provider: target, model };
+};
+
+export const planTurnFallback = ({
+  failure,
+  provider,
+  model,
+  connectedProviders,
+  attempt,
+}: Params): TurnFallbackPlan | null => {
+  if (attempt >= MAX_ATTEMPTS || failure === 'other') {
+    return null;
+  }
+  const failed = descriptorFor({ provider, model });
+  const tier = failed?.costTier ?? 'mid';
+  const weight = failed?.weight ?? null;
+  if (failure === 'authentication') {
+    return otherProviderPlan({ provider, connectedProviders, tier, weight });
+  }
+  if (failure === 'unreachable' && attempt === 0) {
+    return { provider, model };
+  }
+  if (failure === 'rate_limit' && attempt === 0) {
+    const cheaper = pickClosest({
+      provider,
+      tier,
+      weight,
+      excludeModel: model,
+      maxTierIndex: Math.max(tierIndex({ tier }) - 1, 0),
+    });
+    if (cheaper != null) {
+      return { provider, model: cheaper };
+    }
+  }
+  if (failure === 'model_not_available' && attempt === 0) {
+    const sibling = pickClosest({
+      provider,
+      tier,
+      weight,
+      excludeModel: model,
+      maxTierIndex: null,
+    });
+    if (sibling != null) {
+      return { provider, model: sibling };
+    }
+  }
+  return otherProviderPlan({ provider, connectedProviders, tier, weight });
+};

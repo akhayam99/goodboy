@@ -33,6 +33,7 @@ const strongRing: Record<Tone, string> = {
   primary: 'ring-primary/40',
   accent: 'ring-accent/40',
   merged: 'ring-merged/40',
+  operations: 'ring-primary/40',
   neutral: 'ring-border-soft',
 };
 

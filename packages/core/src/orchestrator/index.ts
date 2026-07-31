@@ -11,5 +11,7 @@ export type {
   OrchestratorCompletedStep,
   OrchestratorDecision,
   OrchestratorInput,
+  OrchestratorModelOption,
+  OrchestratorRoleDefault,
   OrchestratorStep,
 } from './types';

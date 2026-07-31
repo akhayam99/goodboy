@@ -40,10 +40,11 @@ import { ClusterProgressDashboard } from './ClusterProgressDashboard';
 import { selectClusterDashboard } from './clusterDashboard';
 import { ParallelColumn } from './ParallelColumn';
 import { TranscriptRows } from './TranscriptRows';
+import { useTranscriptErrorToasts } from '../../hooks/useTranscriptErrorToasts';
 import { useScrollPin } from './useScrollPin';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 
-const neutralAccent = MARKER_ACCENT.neutral;
+const neutralAccent = tintClasses('neutral');
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 
 type Props = {
@@ -60,6 +61,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   ) as AgentId | null;
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
+  useTranscriptErrorToasts({ items, sessionId: session.id, agentId: selectedAgentId });
   const taggedItems = useMemo(
     () => ({ agentId: selectedAgentId, items }),
     [selectedAgentId, items],

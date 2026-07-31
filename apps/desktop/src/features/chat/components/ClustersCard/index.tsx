@@ -3,7 +3,7 @@ import { Layers } from 'lucide-react';
 import { extractClustersFromMarker } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
 import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
 import { clusterBody } from '../SpawnedAgentList/clusterBody';
@@ -14,7 +14,7 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
-const accent = MARKER_ACCENT.merged;
+const accent = tintClasses('primary');
 
 export const ClustersCard = ({ assistantText, sessionId }: Props) => {
   const clusters = useMemo(() => extractClustersFromMarker(assistantText), [assistantText]);
@@ -50,9 +50,9 @@ export const ClustersCard = ({ assistantText, sessionId }: Props) => {
   };
 
   return (
-    <TranscriptShell tone="merged" variant="boxed" emphasis className="mt-2">
-      <div data-testid="clusters-card">
-        <div className={`mb-1.5 flex items-center gap-1.5 text-xs font-medium ${accent.text}`}>
+    <TranscriptShell tone="neutral" variant="boxed">
+      <div data-testid="clusters-card" className="flex flex-col gap-1.5">
+        <div className={`flex items-center gap-1.5 text-xs font-medium ${accent.text}`}>
           <Layers size={12} aria-hidden />
           <span>
             {clusters.length} cluster{clusters.length !== 1 ? 's' : ''}

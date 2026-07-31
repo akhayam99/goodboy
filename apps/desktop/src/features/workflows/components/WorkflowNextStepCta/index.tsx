@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ClipboardList, Play, RotateCcw, Wand2 } from 'lucide-react';
+import { AlertTriangle, ClipboardList, Loader2, Play, RotateCcw, Wand2 } from 'lucide-react';
 import { InlineConfirm, cn } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
 import type { Agent, RoleModelPreferences, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
-import { kindRouting, inferAgentKindFromName } from '../../../../features/session/agent-kind';
+import { inferAgentKindFromName } from '../../../../features/session/agent-kind';
+import { resolveStepRouting } from '../../resolveStepRouting';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
@@ -25,6 +26,7 @@ export type Props = {
   readonly run?: WorkflowRun | null;
   readonly onOrchestrate?: () => void | Promise<void>;
   readonly onRetryOrchestration?: () => void | Promise<void>;
+  readonly isOrchestrating?: boolean;
 };
 
 export type PickNextWorkflowStepGate = {
@@ -70,6 +72,7 @@ export const WorkflowNextStepCta = ({
   run = null,
   onOrchestrate,
   onRetryOrchestration,
+  isOrchestrating = false,
 }: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState(false);
@@ -77,7 +80,7 @@ export const WorkflowNextStepCta = ({
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
-  const defaults = kindRouting({ kind, roleModels });
+  const routing = resolveStepRouting({ step: next, kind, roleModels });
   const doForce = async () => {
     if (busy) {
       return;
@@ -102,6 +105,20 @@ export const WorkflowNextStepCta = ({
     }
   };
   if (run?.executionMode === 'dynamic') {
+    if (isOrchestrating) {
+      return (
+        <div className={cn('relative', className)}>
+          <span
+            role="status"
+            data-testid="workflow-orchestrating-status"
+            className="flex w-fit items-center gap-1.5 rounded-md border border-info/40 bg-info/10 px-2 py-1 text-2xs font-semibold text-info"
+          >
+            <Loader2 size={12} aria-hidden className="shrink-0 motion-safe:animate-spin" />
+            orchestrator deciding the next step
+          </span>
+        </div>
+      );
+    }
     if (run.orchestrationOutcome === 'done') {
       return null;
     }
@@ -180,6 +197,10 @@ export const WorkflowNextStepCta = ({
   if (!next) {
     return null;
   }
+  const pendingAgent = runs.find((agent) => agent.stepId === next.id && agent.status === 'pending');
+  if (pendingAgent == null) {
+    return null;
+  }
   const stepVerbosity = next.verbosity;
   const doAdvance = async () => {
     if (busy) {
@@ -188,7 +209,7 @@ export const WorkflowNextStepCta = ({
     setBusy(true);
     setPendingConfirm(false);
     try {
-      await onAdvance(next, defaults.model, stepVerbosity);
+      await onAdvance(next, routing.model, stepVerbosity);
     } finally {
       setBusy(false);
     }
@@ -210,7 +231,7 @@ export const WorkflowNextStepCta = ({
         title={
           blockReason != null
             ? WORKFLOW_BLOCK_COPY[blockReason]
-            : `effort: ${defaults.effort}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`
+            : `effort: ${routing.effort}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}`
         }
         className={cn(
           'flex items-center gap-1.5 rounded-md border px-2 py-1 text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
@@ -218,7 +239,7 @@ export const WorkflowNextStepCta = ({
             ? 'border-warning/50 bg-warning/10 text-warning hover:border-warning hover:bg-warning/20'
             : 'border-primary/40 bg-primary/10 text-primary hover:border-primary hover:bg-primary/20',
         )}
-        aria-label={`Run next step: ${next.name} (${getModelDescriptor(defaults.model)?.label ?? defaults.model}, ${defaults.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
+        aria-label={`Run next step: ${next.name} (${getModelDescriptor(routing.model)?.label ?? routing.model}, ${routing.effort} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
       >
         {blockReason != null ? (
           <AlertTriangle
@@ -233,8 +254,8 @@ export const WorkflowNextStepCta = ({
         <span className="truncate">run next step: {next.name}</span>
         <RoutingBadge
           className="shrink-0 opacity-70"
-          model={defaults.model}
-          effort={defaults.effort}
+          model={routing.model}
+          effort={routing.effort}
         />
         {consumesActivePlan ? (
           <span className="shrink-0" title="advancing will consume the active plan">

@@ -21,9 +21,13 @@ const parsedItem = {
 const expand = () => fireEvent.click(screen.getByRole('button', { expanded: false }));
 
 describe('WorkflowKickoffCard', () => {
-  it('shows the goal as a preview in the collapsed header', () => {
+  it('always shows the goal in full, never behind the chevron', () => {
     render(<WorkflowKickoffCard item={parsedItem} />);
-    expect(screen.getByText('Ship the onboarding wizard')).toBeDefined();
+    const goal = screen.getByText('Ship the onboarding wizard');
+    expect(goal).toBeDefined();
+    expect(goal.className).not.toContain('truncate');
+    expect(goal.className).not.toContain('line-clamp');
+    expect(screen.getByText(/goal/i)).toBeDefined();
   });
 
   it('keeps instructions and marker collapsed until expanded', () => {
@@ -32,7 +36,7 @@ describe('WorkflowKickoffCard', () => {
     expect(screen.queryByText('Complete ONLY this workflow step.')).toBeNull();
   });
 
-  it('reveals goal, instructions and marker once expanded', () => {
+  it('reveals instructions and marker once expanded', () => {
     render(<WorkflowKickoffCard item={parsedItem} />);
     expand();
     expect(screen.getByText('Focus on the providers step only.')).toBeDefined();

@@ -1,6 +1,5 @@
 import type { MouseEventHandler, ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
-import { MARKER_ACCENT, type Tone } from '../marker-accents';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 
 type Variant = 'boxed' | 'leftBorder' | 'pill';
 
@@ -35,14 +34,14 @@ export const TranscriptShell = ({
   'aria-expanded': ariaExpanded,
   'data-testid': testId,
 }: Props) => {
-  const accent = MARKER_ACCENT[tone];
+  const accent = tintClasses(tone);
   const shellClassName = cn(
-    variant === 'boxed' && 'rounded-md border px-3 py-2',
-    variant === 'boxed' && accent.border,
+    variant === 'boxed' && 'rounded-lg border px-3 py-2',
+    variant === 'boxed' && (emphasis ? accent.border : accent.borderSoft),
     variant === 'boxed' && (emphasis ? accent.bg : accent.bgSoft),
     variant === 'leftBorder' &&
-      (nested ? 'py-2 pl-3 pr-2' : 'rounded-r-md border-l-2 py-1 pl-2 pr-2'),
-    variant === 'leftBorder' && !nested && accent.border,
+      (nested ? 'border-l-2 py-2 pl-2 pr-2' : 'rounded-r-md border-l-2 py-1 pl-2 pr-2'),
+    variant === 'leftBorder' && (nested ? accent.borderSoft : accent.border),
     variant === 'pill' && 'rounded-full border px-2.5 py-1',
     variant === 'pill' && accent.border,
     variant === 'pill' && accent.bg,
@@ -65,5 +64,9 @@ export const TranscriptShell = ({
     );
   }
 
-  return <div className={shellClassName}>{children}</div>;
+  return (
+    <div className={shellClassName} data-testid={testId}>
+      {children}
+    </div>
+  );
 };

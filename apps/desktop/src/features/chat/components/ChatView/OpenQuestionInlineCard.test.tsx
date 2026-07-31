@@ -59,11 +59,12 @@ describe('OpenQuestionInlineCard', () => {
 
     expect(container.querySelector('[data-oq-anchor="oq-1"]')).toBeTruthy();
     expect(screen.queryByText('send answer')).toBeNull();
+    fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('You answered:')).toBeTruthy();
     expect(screen.getByText('Postgres')).toBeTruthy();
   });
 
-  it('keeps the answer readable without expanding the card', () => {
+  it('collapses a settled question to a single row until it is expanded', () => {
     const answered: OpenQuestion = {
       ...baseQuestion,
       status: 'answered',
@@ -73,6 +74,9 @@ describe('OpenQuestionInlineCard', () => {
 
     render(<OpenQuestionInlineCard question={answered} sessionId={'sess-1' as never} />);
 
+    expect(screen.getByText('Use Postgres or SQLite?')).toBeTruthy();
+    expect(screen.queryByText('Postgres, because the migration path is shorter')).toBeNull();
+    fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('Postgres, because the migration path is shorter')).toBeTruthy();
   });
 

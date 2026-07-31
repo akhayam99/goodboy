@@ -1,17 +1,14 @@
 import { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
-import { Markdown, cn } from '@goodboy/ui';
+import { ArrowRight, Milestone } from 'lucide-react';
+import { Markdown, tintClasses } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
-import { formatStepDuration } from './formatStepDuration';
+import { formatDuration } from '../../utils/format-duration';
 import { stripWorkflowHandoffHeading } from './stripWorkflowHandoffHeading';
-import { MARKER_ACCENT } from '../marker-accents';
-import { TranscriptChevron } from '../TranscriptChevron';
-import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
+import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
 
-const accent = MARKER_ACCENT.merged;
-const warningAccent = MARKER_ACCENT.warning;
+const warningTint = tintClasses('warning');
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'step_transition' }>;
@@ -24,59 +21,49 @@ export const PhaseTransitionCard = ({ item }: Props) => {
   const hasContext = context.trim().length > 0;
 
   return (
-    <div>
-      <TranscriptShell
-        as="button"
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        tone="merged"
-        variant="leftBorder"
-        className={cn('flex w-full items-center gap-2 text-left', TRANSCRIPT_ROW_HOVER)}
-      >
-        <TranscriptChevron open={open} />
-        <span
-          className={cn(
-            'shrink-0 text-2xs font-medium uppercase tracking-wide opacity-80',
-            accent.text,
-          )}
-        >
-          step
-        </span>
-        {item.degraded === true && (
-          <span
-            className={cn(
-              'shrink-0 rounded-md px-1 py-px text-2xs font-medium',
-              warningAccent.bg,
-              warningAccent.text,
+    <div className="flex flex-col gap-0.5">
+      <TranscriptRowHeader
+        tone="primary"
+        icon={<Milestone size={12} aria-hidden />}
+        eyebrow="step"
+        open={open}
+        onToggle={() => setOpen((value) => !value)}
+        badge={
+          item.degraded === true && (
+            <span
+              className={`shrink-0 rounded-md px-1 py-px text-2xs font-medium ${warningTint.bg} ${warningTint.text}`}
+            >
+              degraded handoff
+            </span>
+          )
+        }
+        preview={
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate">
+              {item.fromStep.ordinal + 1}. {item.fromStep.name}
+            </span>
+            <ArrowRight size={12} aria-hidden className="shrink-0 opacity-60" />
+            <span className="truncate">
+              {item.toStep.ordinal + 1}. {item.toStep.name}
+            </span>
+          </span>
+        }
+        meta={
+          <span className="flex items-center gap-1.5">
+            {item.durationMs != null && (
+              <span>{formatDuration({ durationMs: item.durationMs })}</span>
             )}
-          >
-            degraded handoff
+            <span>{timestamp}</span>
           </span>
-        )}
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-foreground/70">
-          <span className="truncate">
-            {item.fromStep.ordinal + 1}. {item.fromStep.name}
-          </span>
-          <ArrowRight size={11} aria-hidden className={cn('shrink-0 opacity-60', accent.icon)} />
-          <span className="truncate">
-            {item.toStep.ordinal + 1}. {item.toStep.name}
-          </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-1.5 font-mono text-2xs text-muted-foreground">
-          {item.durationMs != null && (
-            <span>{formatStepDuration({ durationMs: item.durationMs })}</span>
-          )}
-          <span>{timestamp}</span>
-        </span>
-      </TranscriptShell>
+        }
+      />
 
       {open && hasContext ? (
         <TranscriptShell
-          tone="merged"
+          tone="primary"
           variant="leftBorder"
           nested
-          className="ml-2 flex flex-col gap-1"
+          className="flex flex-col gap-2 pl-6"
         >
           <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
             carried forward

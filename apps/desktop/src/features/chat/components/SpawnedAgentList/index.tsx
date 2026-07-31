@@ -1,11 +1,11 @@
 import type { Agent, AgentId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { Check, Clock, Loader2 } from 'lucide-react';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 
-const accent = MARKER_ACCENT.merged;
-const infoAccent = MARKER_ACCENT.info;
-const successAccent = MARKER_ACCENT.success;
+const accent = tintClasses('merged');
+const infoAccent = tintClasses('info');
+const successAccent = tintClasses('success');
 
 export type SpawnStatus = Agent['status'] | 'planned';
 

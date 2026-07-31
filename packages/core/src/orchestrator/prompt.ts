@@ -1,3 +1,4 @@
+import { providerEffortLevels } from '../providers/providerEffortLevels';
 import type { OrchestratorInput } from './types';
 
 const OLDER_SUMMARY_PREVIEW_LENGTH = 280;
@@ -10,8 +11,10 @@ Roles are limited to: scout, planner, implementer, reviewer, investigator, teste
 
 For a next step, promptPrefix is the instruction the step agent starts from and expectedOutput tells the post-step summarizer exactly what to extract.
 
+You also route the step. model and effort are optional: omit both to accept the role default listed in the request. Set model only to one of the listed model ids and effort only to one of the listed effort levels. Pick a stronger model when the step genuinely needs it (planning, cross-file reasoning, tricky debugging) and a cheap one for lookup, scouting and mechanical edits.
+
 Respond immediately with exactly one marked JSON object on a single line, using \\n escapes for any newlines inside strings, and nothing else:
-<<orchestrator>>{"action":"next","reason":"...","step":{"name":"...","role":"implementer","promptPrefix":"...","expectedOutput":"..."}}<</orchestrator>>
+<<orchestrator>>{"action":"next","reason":"...","step":{"name":"...","role":"implementer","promptPrefix":"...","expectedOutput":"...","model":"...","effort":"medium"}}<</orchestrator>>
 
 The other valid forms are:
 <<orchestrator>>{"action":"done","reason":"..."}<</orchestrator>>
@@ -22,6 +25,9 @@ export const buildOrchestratorUserPrompt = ({
   processText,
   completedSteps,
   openQuestionCount,
+  providerId,
+  modelMenu,
+  roleDefaults,
 }: OrchestratorInput): string => {
   const lines = [
     'Goal:',
@@ -32,8 +38,26 @@ export const buildOrchestratorUserPrompt = ({
     '',
     `Open questions: ${openQuestionCount}`,
     '',
-    'Completed steps:',
+    `Models (provider ${providerId}):`,
   ];
+  if (modelMenu.length === 0) {
+    lines.push('(none, omit model)');
+  } else {
+    modelMenu.forEach((model) => {
+      lines.push(`${model.id} - ${model.label} - ${model.note}`);
+    });
+  }
+  lines.push(
+    '',
+    `Effort levels: ${providerEffortLevels({ provider: providerId }).join(', ')}`,
+    '',
+    'Role defaults:',
+    roleDefaults.length === 0
+      ? '(none)'
+      : roleDefaults.map((entry) => `${entry.role}=${entry.model}/${entry.effort}`).join(', '),
+    '',
+    'Completed steps:',
+  );
   if (completedSteps.length === 0) {
     lines.push('(none)');
   } else {

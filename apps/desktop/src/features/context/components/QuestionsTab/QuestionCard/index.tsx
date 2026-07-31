@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Check, MessageCircleQuestion, X } from 'lucide-react';
-import { cn, Markdown } from '@goodboy/ui';
+import { cn, Markdown, tintClasses } from '@goodboy/ui';
 import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
-import { MARKER_ACCENT } from '../../../../chat/components/marker-accents';
 import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
 import { SuggestionChip } from '../SuggestionChip';
 import { CustomAnswerField } from '../CustomAnswerField';
 import { deriveSuggestions } from '../deriveSuggestions';
 
-const warningAccent = MARKER_ACCENT.warning;
+const warningTint = tintClasses('warning');
 
 type Props = {
   question: OpenQuestion;
@@ -64,11 +63,10 @@ export const QuestionCard = ({
   return (
     <TranscriptShell
       tone="warning"
-      variant="leftBorder"
+      variant="boxed"
+      emphasis
       className={cn(
         'group flex flex-col gap-2 transition-[background-color,transform] duration-200',
-        warningAccent.bgSoft,
-        warningAccent.hoverBgSoft,
         animate
           ? 'motion-safe:animate-answer-lock motion-reduce:bg-success/5'
           : 'motion-safe:animate-fade-in',
@@ -77,9 +75,9 @@ export const QuestionCard = ({
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
           <MessageCircleQuestion
-            size={13}
+            size={14}
             aria-hidden
-            className={cn('shrink-0 translate-y-0.5', warningAccent.icon)}
+            className={cn('shrink-0 translate-y-0.5', warningTint.icon)}
           />
           <Markdown
             text={question.text}
@@ -102,7 +100,7 @@ export const QuestionCard = ({
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 pl-[21px]">
+      <div className="flex flex-wrap items-center gap-1.5 pl-6">
         {suggestions.map((suggestion) => (
           <SuggestionChip
             key={suggestion}
@@ -120,7 +118,7 @@ export const QuestionCard = ({
         />
       </div>
 
-      <div className="flex items-center gap-2 pl-[21px] text-2xs text-muted-foreground">
+      <div className="flex items-center gap-2 pl-6 text-2xs text-muted-foreground">
         <span>{formatRelativeAge({ fromIso: question.createdAt })}</span>
         {question.ownedByStepOrdinal != null && (
           <span className="rounded-md bg-muted px-1 py-0.5 font-mono text-2xs text-muted-foreground">

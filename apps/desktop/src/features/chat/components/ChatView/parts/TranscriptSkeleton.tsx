@@ -1,7 +1,7 @@
 import { Skeleton, SkeletonText } from '@goodboy/ui';
-import { MARKER_ACCENT } from '../../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 
-const accent = MARKER_ACCENT.neutral;
+const accent = tintClasses('neutral');
 
 export const TranscriptSkeleton = () => {
   return (

@@ -6,6 +6,7 @@ import {
   buildStepPrompt,
   findReusableAgent,
   isFallbackStepOutputSummary,
+  planTurnFallback,
   resolveModelArgs,
   resolveStoredModelSelection,
   runsForWorkflowRun,
@@ -28,6 +29,7 @@ import type {
   BudgetAlert,
   IsoDateTime,
   Message,
+  MessageAttachment,
   MessageId,
   PermissionRule,
   ProviderId,
@@ -49,6 +51,7 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/work
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { simpleSessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
+import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
@@ -64,6 +67,7 @@ import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } fro
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import {
+  buildAttachmentPromptBlock,
   buildGoalAttachmentsBlock,
   capturePlanFromTurn,
   captureScoutDomainsFromTurn,
@@ -80,6 +84,7 @@ import { persistAttachments } from './persistAttachments';
 import { dispatchParallelTurn } from './dispatchParallelTurn';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
+import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -92,6 +97,12 @@ type Input = {
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
   onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
+  retry?: {
+    readonly attempt: number;
+    readonly provider: ProviderId;
+    readonly model: string;
+    readonly attachmentRefs: ReadonlyArray<MessageAttachment>;
+  };
 };
 
 // Machine-derived context slot carrying `git diff --numstat` lines for the
@@ -101,13 +112,14 @@ type Input = {
 const FILES_TOUCHED_NUMSTAT_SLOT = 'files_touched_numstat';
 
 export const sendTurn = (set: SetFn, get: GetFn) => {
-  return async ({
+  const run = async ({
     sessionId,
     agentId,
     content,
     attachments,
     override,
     onNewAlerts,
+    retry,
   }: Input): Promise<void> => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
@@ -185,14 +197,25 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let resolvedPrompt = slashResult.resolvedPrompt;
 
     const attachmentInputs = attachments ?? [];
-    const attachmentResult = await persistAttachments(get, {
-      attachmentInputs,
-      workingDir,
-      activeAgentId,
-      sessionId,
-      resolvedPrompt,
-      now,
-    });
+    const alreadyPersistedRefs = retry?.attachmentRefs ?? [];
+    const attachmentResult =
+      retry != null
+        ? {
+            ok: true as const,
+            attachmentRefs: alreadyPersistedRefs,
+            resolvedPrompt:
+              alreadyPersistedRefs.length > 0
+                ? `${resolvedPrompt}\n\n${buildAttachmentPromptBlock(alreadyPersistedRefs)}`
+                : resolvedPrompt,
+          }
+        : await persistAttachments(get, {
+            attachmentInputs,
+            workingDir,
+            activeAgentId,
+            sessionId,
+            resolvedPrompt,
+            now,
+          });
     if (!attachmentResult.ok) {
       return;
     }
@@ -353,10 +376,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const agentOverride: TurnProviderOverride | undefined = agentProvider
       ? { providerId: agentProvider, ...(agentModelPin != null && { model: agentModelPin }) }
       : undefined;
-    const effectiveOverride = phaseOverride ?? turnOverride ?? agentOverride;
+    const retryOverride: TurnProviderOverride | undefined =
+      retry != null ? { providerId: retry.provider, model: retry.model } : undefined;
+    const effectiveOverride = retryOverride ?? phaseOverride ?? turnOverride ?? agentOverride;
 
     const routingPreference =
-      effectiveOverride === agentOverride && agentOverride !== undefined
+      (effectiveOverride === agentOverride && agentOverride !== undefined) || retry != null
         ? { ...session.providerPreference, allowTurnOverride: true }
         : session.providerPreference;
 
@@ -392,6 +417,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const modelSelection = resolveTurnModelSelection({
       provider,
       routingDecision,
+      retryModel: retry != null && retry.provider === provider ? retry.model : null,
       phaseModelOverride: phaseDefinition?.modelOverride ?? null,
       phaseProviderOverride: phaseDefinition?.providerOverride ?? null,
       autoStepModel,
@@ -465,25 +491,27 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
         };
       });
-      const userMessage: Message = {
-        id: crypto.randomUUID() as MessageId,
-        sessionId,
-        agentId: activeAgentId,
-        role: 'user',
-        content: userTurnText,
-        createdAt: now(),
-        ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
-      };
-      await insertMessage(tauriDatabase, userMessage);
-      get().appendTurnEvent(activeAgentId, sessionId, {
-        kind: 'user_text',
-        runId,
-        text: userTurnText,
-        ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
-        provider,
-        model,
-        at: userMessage.createdAt,
-      });
+      if (retry == null) {
+        const userMessage: Message = {
+          id: crypto.randomUUID() as MessageId,
+          sessionId,
+          agentId: activeAgentId,
+          role: 'user',
+          content: userTurnText,
+          createdAt: now(),
+          ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
+        };
+        await insertMessage(tauriDatabase, userMessage);
+        get().appendTurnEvent(activeAgentId, sessionId, {
+          kind: 'user_text',
+          runId,
+          text: userTurnText,
+          ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
+          provider,
+          model,
+          at: userMessage.createdAt,
+        });
+      }
 
       const run: ProviderRun = {
         id: runId,
@@ -1005,6 +1033,58 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               providerId: provider,
               identity: get().authResults?.[provider]?.identity ?? null,
             });
+      const cancelledBeforeFailure = cancelledRunIds.delete(runId);
+      const failure = classifyProviderError({ message: rawMessage });
+      const fallbackPlan = cancelledBeforeFailure
+        ? null
+        : planTurnFallback({
+            failure: failure.kind,
+            provider,
+            model: modelSelection.key,
+            connectedProviders,
+            attempt: retry?.attempt ?? 0,
+          });
+      if (fallbackPlan != null) {
+        await updateProviderRunStatus(tauriDatabase, runId, {
+          kind: 'failed',
+          finishedAt: now(),
+          error: rawMessage,
+        });
+        get().appendTurnEvent(activeAgentId, sessionId, {
+          kind: 'error',
+          runId,
+          message,
+          at: now(),
+        });
+        get().appendTurnEvent(activeAgentId, sessionId, {
+          kind: 'error',
+          runId,
+          message: fallbackNoticeMessage({
+            provider,
+            failure: failure.kind,
+            plan: fallbackPlan,
+          }),
+          at: now(),
+        });
+        const retryState: TurnState = { kind: 'idle', lastActivityAt: now() };
+        const retryDerived = applyAgentTurnState(set, sessionId, activeAgentId, retryState, now());
+        await updateSessionState(tauriDatabase, sessionId, retryDerived, now());
+        await run({
+          sessionId,
+          agentId: activeAgentId,
+          content,
+          ...(attachments !== undefined && { attachments }),
+          ...(override !== undefined && { override }),
+          ...(onNewAlerts !== undefined && { onNewAlerts }),
+          retry: {
+            attempt: (retry?.attempt ?? 0) + 1,
+            provider: fallbackPlan.provider,
+            model: fallbackPlan.model,
+            attachmentRefs,
+          },
+        });
+        return;
+      }
       const errorState: TurnState = {
         kind: 'error',
         message,
@@ -1097,4 +1177,5 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       throw lastError;
     }
   };
+  return run;
 };

@@ -1,9 +1,9 @@
 import { ArrowUpRight, FileEdit } from 'lucide-react';
 import { displayPath } from '../../../../shared/utils/display-path';
 import { TranscriptShell } from '../TranscriptShell';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 
-const infoAccent = MARKER_ACCENT.info;
+const infoAccent = tintClasses('info');
 
 const EDIT_LABEL: Record<'create' | 'modify' | 'delete', string> = {
   create: 'created',
@@ -22,7 +22,7 @@ export const FileEditBlock = ({ path, editType, workingDir, onOpenDiff }: Props)
   const rel = displayPath(path, workingDir);
   const inner = (
     <>
-      <FileEdit size={11} aria-hidden className="shrink-0 text-muted-foreground" />
+      <FileEdit size={12} aria-hidden className="shrink-0 text-muted-foreground" />
       <span className={`text-2xs uppercase tracking-wide ${infoAccent.text}`}>
         {EDIT_LABEL[editType]}
       </span>
@@ -31,7 +31,7 @@ export const FileEditBlock = ({ path, editType, workingDir, onOpenDiff }: Props)
       </code>
       {onOpenDiff ? (
         <ArrowUpRight
-          size={11}
+          size={12}
           aria-hidden
           className={`ml-auto shrink-0 opacity-0 transition-opacity group-hover:opacity-100 ${infoAccent.icon}`}
         />

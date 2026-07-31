@@ -1,9 +1,8 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { formatCardTime } from '../../../chat/utils/format-card-time';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
-import { MARKER_ACCENT } from '../../../chat/components/marker-accents';
 import { RetryButton } from './RetryButton';
 
 type Props = {
@@ -13,8 +12,8 @@ type Props = {
 };
 
 const DECISION_TONE: Record<'allow' | 'deny', string> = {
-  allow: MARKER_ACCENT.success.text,
-  deny: MARKER_ACCENT.danger.text,
+  allow: tintClasses('success').text,
+  deny: tintClasses('danger').text,
 };
 
 export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
@@ -27,13 +26,13 @@ export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
   return (
     <TranscriptShell tone="neutral" variant="boxed" className="flex flex-col gap-1.5 text-xs">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="rounded-md bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           perm decision
         </span>
         <code className="font-mono text-foreground">{item.toolName}</code>
         <span className={cn('font-semibold', DECISION_TONE[item.decision])}>{item.decision}</span>
         {item.ruleId !== null && (
-          <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-2xs text-secondary-foreground">
+          <span className="rounded-md bg-secondary px-1.5 py-0.5 font-mono text-2xs text-secondary-foreground">
             {item.ruleId}
           </span>
         )}

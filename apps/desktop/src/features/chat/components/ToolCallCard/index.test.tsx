@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { ToolCallCard } from './index';
 
@@ -69,6 +69,17 @@ describe('ToolCallCard', () => {
   it('shows error badge when isError', () => {
     render(<ToolCallCard item={tool({ isError: true })} />);
     expect(screen.getByText('error')).toBeTruthy();
+  });
+
+  it('appends the run duration to the header once the tool ends', () => {
+    vi.useFakeTimers();
+    const { rerender } = render(<ToolCallCard item={tool({ ended: false, output: null })} />);
+    act(() => {
+      vi.advanceTimersByTime(2_000);
+    });
+    rerender(<ToolCallCard item={tool()} />);
+    expect(screen.getByText('2s')).toBeTruthy();
+    vi.useRealTimers();
   });
 
   it('toggles between structured and raw json', () => {

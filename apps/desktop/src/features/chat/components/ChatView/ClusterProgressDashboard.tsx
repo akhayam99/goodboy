@@ -2,7 +2,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { ChevronRight, Layers } from 'lucide-react';
 import { useState } from 'react';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
 import { clusterBody } from '../SpawnedAgentList/clusterBody';
 import type { ClusterDashboardItem } from './clusterDashboard';
@@ -17,7 +17,7 @@ type Props = {
   readonly onAdvance: (childAgentId: AgentId) => void;
 };
 
-const accent = MARKER_ACCENT.merged;
+const accent = tintClasses('merged');
 
 export const ClusterProgressDashboard = ({
   sessionId,

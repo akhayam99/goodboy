@@ -330,4 +330,31 @@ describe('WorkflowNextStepCta dynamic runs', () => {
     );
     expect(container.innerHTML).toBe('');
   });
+  it('shows a live indicator while the orchestrator is deciding', () => {
+    render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={[run('s1' as StepId, 'completed', 0)]}
+        onAdvance={vi.fn()}
+        run={dynamicRun({})}
+        isOrchestrating
+        onOrchestrate={vi.fn()}
+        onRetryOrchestration={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId('workflow-orchestrating-status')).toBeDefined();
+    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+  });
+
+  it('renders no advance CTA while the step it points at is running', () => {
+    const { container } = render(
+      <WorkflowNextStepCta
+        workflow={wf()}
+        runs={preCreated('running', 'pending', 'pending')}
+        onAdvance={vi.fn()}
+        blockReason="turn-running"
+      />,
+    );
+    expect(container.innerHTML).toBe('');
+  });
 });

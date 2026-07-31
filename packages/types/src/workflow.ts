@@ -61,6 +61,7 @@ export type Step = Readonly<{
   effort?: AgentEffort;
   verbosity?: VerbosityLevel;
   parallelGroup?: number;
+  orchestratorReason?: string;
   deletedAt?: IsoDateTime;
 }>;
 

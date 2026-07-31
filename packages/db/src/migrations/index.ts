@@ -90,6 +90,7 @@ import { m089TelemetryCacheTokens } from './m089-telemetry-cache-tokens';
 import { m090TelemetryContextTokens } from './m090-telemetry-context-tokens';
 import { m091WorkflowExecutionMode } from './m091-workflow-execution-mode';
 import { m092WorkflowNameUniqueLive } from './m092-workflow-name-unique-live';
+import { m093StepOrchestratorReason } from './m093-step-orchestrator-reason';
 
 export type Migration = {
   readonly version: number;
@@ -189,4 +190,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 90, sql: m090TelemetryContextTokens },
   { version: 91, sql: m091WorkflowExecutionMode },
   { version: 92, sql: m092WorkflowNameUniqueLive },
+  { version: 93, sql: m093StepOrchestratorReason },
 ];

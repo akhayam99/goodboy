@@ -1,10 +1,12 @@
-import type { AgentRole } from '@goodboy/types';
+import type { AgentRole, ModelEffort, ProviderId } from '@goodboy/types';
 
 export type OrchestratorStep = {
   readonly name: string;
   readonly role: AgentRole;
   readonly promptPrefix: string;
   readonly expectedOutput?: string;
+  readonly model?: string;
+  readonly effort?: ModelEffort;
 };
 
 export type OrchestratorDecision =
@@ -27,9 +29,24 @@ export type OrchestratorCompletedStep = {
   readonly outputSummary?: string;
 };
 
+export type OrchestratorModelOption = {
+  readonly id: string;
+  readonly label: string;
+  readonly note: string;
+};
+
+export type OrchestratorRoleDefault = {
+  readonly role: AgentRole;
+  readonly model: string;
+  readonly effort: ModelEffort;
+};
+
 export type OrchestratorInput = {
   readonly goal: string;
   readonly processText: string;
   readonly completedSteps: ReadonlyArray<OrchestratorCompletedStep>;
   readonly openQuestionCount: number;
+  readonly providerId: ProviderId;
+  readonly modelMenu: ReadonlyArray<OrchestratorModelOption>;
+  readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
 };

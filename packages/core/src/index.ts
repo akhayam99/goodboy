@@ -125,6 +125,11 @@ export { resolveTaskModel } from './providers/task-models';
 export { resolveRoleRouting, type ResolvedRoleRouting } from './providers/role-models';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
+export {
+  planTurnFallback,
+  type TurnFailureKind,
+  type TurnFallbackPlan,
+} from './providers/planTurnFallback';
 export { cliModelId } from './providers/cliModelId';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
 export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
@@ -346,6 +351,8 @@ export {
   type OrchestratorCompletedStep,
   type OrchestratorDecision,
   type OrchestratorInput,
+  type OrchestratorModelOption,
+  type OrchestratorRoleDefault,
   type OrchestratorStep,
   type OrchestratorUsage,
 } from './orchestrator';

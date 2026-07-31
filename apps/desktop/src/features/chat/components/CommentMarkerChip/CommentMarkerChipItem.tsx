@@ -6,7 +6,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { commentChipDismissal } from '../../../../shared/utils/commentChipDismissal';
 import { CommentReplyPreview } from '../CommentReplyPreview';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
 import type { CommentMarker } from './commentMarker';
 import { COMMENT_MARKER_CONFIG } from './commentMarkerConfig';
@@ -79,9 +79,9 @@ export const CommentMarkerChipItem = ({ marker, reply, sessionId, agentId }: Pro
       <TranscriptShell
         tone="success"
         variant="pill"
-        className={`inline-flex flex-wrap items-center gap-1.5 text-xs font-medium ${MARKER_ACCENT.success.text}`}
+        className={`inline-flex flex-wrap items-center gap-1.5 text-xs font-medium ${tintClasses('success').text}`}
       >
-        <CheckCheck size={11} aria-hidden />
+        <CheckCheck size={12} aria-hidden />
         <span>
           {marker.kind === 'resolved' ? 'conversation resolved' : 'marked solved with explanation'}
         </span>
@@ -102,7 +102,7 @@ export const CommentMarkerChipItem = ({ marker, reply, sessionId, agentId }: Pro
   if (marker.kind === 'analysis') {
     const isFix = marker.value.verdict === 'fix';
     const tone = isFix ? 'info' : 'warning';
-    const accent = isFix ? MARKER_ACCENT.info : MARKER_ACCENT.warning;
+    const accent = isFix ? tintClasses('info') : tintClasses('warning');
 
     return (
       <TranscriptShell
@@ -136,9 +136,9 @@ export const CommentMarkerChipItem = ({ marker, reply, sessionId, agentId }: Pro
         className="flex flex-wrap items-center gap-1.5 text-xs"
       >
         {queued ? (
-          <Clock size={12} aria-hidden className={MARKER_ACCENT.info.icon} />
+          <Clock size={12} aria-hidden className={tintClasses('info').icon} />
         ) : (
-          <CheckCheck size={12} aria-hidden className={MARKER_ACCENT.success.icon} />
+          <CheckCheck size={12} aria-hidden className={tintClasses('success').icon} />
         )}
         <span className="font-medium text-foreground">
           {queued ? 'solved locally · pending push' : 'fix committed locally'}
@@ -160,7 +160,7 @@ export const CommentMarkerChipItem = ({ marker, reply, sessionId, agentId }: Pro
       variant="boxed"
       className="flex flex-wrap items-center gap-1.5 text-xs"
     >
-      <Ban size={12} aria-hidden className={MARKER_ACCENT.warning.icon} />
+      <Ban size={12} aria-hidden className={tintClasses('warning').icon} />
       <span className="font-medium text-foreground">not worth a change</span>
       <span className="font-mono text-2xs text-muted-foreground">{threadId}</span>
       <span className="min-w-0 flex-1 text-muted-foreground">{marker.value.reason}</span>

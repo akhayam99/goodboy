@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
+import { tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { PermissionScopePicker } from '../PermissionScopePicker';
 import { formatCardTime } from '../../../chat/utils/format-card-time';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
-import { MARKER_ACCENT } from '../../../chat/components/marker-accents';
 import { formatRequestInput } from './formatRequestInput';
 
-const warningAccent = MARKER_ACCENT.warning;
-const resolvedAccent = MARKER_ACCENT.success;
+const warningTint = tintClasses('warning');
+const resolvedTint = tintClasses('success');
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_request' }>;
@@ -26,15 +26,20 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const showPicker = !resolved && sessionId !== null && agentId !== null;
 
   return (
-    <TranscriptShell tone="warning" variant="boxed" className="flex flex-col gap-1.5 text-xs">
+    <TranscriptShell
+      tone="warning"
+      variant="boxed"
+      emphasis
+      className="flex flex-col gap-2 text-xs"
+    >
       <div className="flex flex-wrap items-center gap-2">
-        <ShieldAlert size={11} aria-hidden className={warningAccent.icon} />
-        <span className="rounded bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+        <ShieldAlert size={14} aria-hidden className={warningTint.icon} />
+        <span className="rounded-md bg-background px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           approval needed
         </span>
         <code className="font-mono text-foreground">{item.toolName}</code>
         {resolved ? (
-          <span className={`ml-auto text-2xs ${resolvedAccent.text}`}>resolved</span>
+          <span className={`ml-auto text-2xs ${resolvedTint.text}`}>resolved</span>
         ) : (
           <span className="ml-auto text-2xs text-muted-foreground">{timestamp}</span>
         )}
@@ -44,7 +49,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
         or deny.
       </span>
       {inputPreview !== null && (
-        <pre className="min-w-0 whitespace-pre-wrap break-words rounded bg-background/60 px-2 py-1 font-mono text-2xs text-muted-foreground">
+        <pre className="min-w-0 whitespace-pre-wrap break-words rounded-md bg-background/60 px-2 py-1 font-mono text-2xs text-muted-foreground">
           {inputPreview}
         </pre>
       )}

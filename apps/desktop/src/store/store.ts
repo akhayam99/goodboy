@@ -246,6 +246,7 @@ export type AppActions = {
   ): Promise<void>;
   detachWorkflowFromSession(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   discardWorkflow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
+  restoreWorkflow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   reorderSessionWorkflows(
     sessionId: SessionId,
     workflowRunIds: ReadonlyArray<WorkflowRunId>,
@@ -646,6 +647,7 @@ export const initialState: AppState = {
   stepLibrary: {},
   sessionWorkflows: {},
   sessionPhaseRuns: {},
+  orchestratingWorkflowRuns: {},
   selectedAgentId: {},
   agentRunHistory: {},
   agentTurnState: {},

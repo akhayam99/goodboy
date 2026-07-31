@@ -258,7 +258,7 @@ describe('WorkflowRow dynamic runs', () => {
     renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
 
     expect(screen.queryByText('Completed')).toBeNull();
-    expect(screen.getByText('Deciding next step')).toBeDefined();
+    expect(screen.getByText('Next step due')).toBeDefined();
     expect(screen.getByText('deciding next step')).toBeDefined();
   });
 

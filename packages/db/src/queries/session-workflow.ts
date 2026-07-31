@@ -174,6 +174,18 @@ export const discardWorkflowInSession = async (
   await bumpSessionUpdatedAt(db, sessionId, discardedAt);
 };
 
+export const restoreWorkflowInSession = async (
+  db: Database,
+  sessionId: SessionId,
+  workflowRunId: WorkflowRunId,
+  restoredAt: IsoDateTime,
+): Promise<void> => {
+  await db.execute('UPDATE session_workflows SET discarded_at = NULL WHERE workflow_run_id = ?', [
+    workflowRunId,
+  ]);
+  await bumpSessionUpdatedAt(db, sessionId, restoredAt);
+};
+
 export const updateSessionWorkflowStep = async (
   db: Database,
   sessionId: SessionId,

@@ -57,7 +57,47 @@ const renderRows = (
 
 afterEach(cleanup);
 
+const kickoff = (key: string): TranscriptItem => ({
+  kind: 'workflow_kickoff',
+  key,
+  at: new Date(2026, 4, 15, 9, 0, 0).toISOString() as IsoDateTime,
+  goal: 'ship it',
+  instructions: '',
+  marker: '',
+  raw: 'raw',
+  parsed: true,
+});
+
+const decision = (key: string): TranscriptItem => ({
+  kind: 'orchestrator_decision',
+  key,
+  action: 'next',
+  reason: 'because',
+  at: new Date(2026, 4, 15, 9, 1, 0).toISOString() as IsoDateTime,
+});
+
 describe('TranscriptRows', () => {
+  it('renders adjacent workflow rows as one continuous rail group', () => {
+    const { container } = renderRows([
+      itemRow(kickoff('k1')),
+      itemRow(decision('d1')),
+      itemRow({ kind: 'assistant_text', key: 'a1', text: 'hi' }),
+    ]);
+    const rows = container.querySelectorAll('li');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.className).toContain('flex flex-col');
+    expect(rows[0]!.querySelectorAll('[data-testid="card"]')).toHaveLength(2);
+  });
+
+  it('breaks the rail group when a non-workflow row interrupts it', () => {
+    const { container } = renderRows([
+      itemRow(kickoff('k1')),
+      itemRow({ kind: 'assistant_text', key: 'a1', text: 'hi' }),
+      itemRow(decision('d1')),
+    ]);
+    expect(container.querySelectorAll('li')).toHaveLength(3);
+  });
+
   it('renders no separator for a run completion', () => {
     const { container } = renderRows([
       itemRow(userText('u1', new Date(2026, 4, 15, 9, 0, 0))),

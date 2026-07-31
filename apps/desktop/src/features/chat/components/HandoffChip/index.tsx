@@ -5,9 +5,9 @@ import { extractHandoff } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { TranscriptShell } from '../TranscriptShell';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 
-const accent = MARKER_ACCENT.info;
+const accent = tintClasses('info');
 
 type Props = {
   readonly assistantText: string;
@@ -52,7 +52,7 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
       variant="pill"
       className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
-      <ArrowRight size={11} aria-hidden />
+      <ArrowRight size={12} aria-hidden />
       <span>spawn {meta.label.toLowerCase()}</span>
       {handoff.reason ? <span className="text-muted-foreground">· {handoff.reason}</span> : null}
     </TranscriptShell>

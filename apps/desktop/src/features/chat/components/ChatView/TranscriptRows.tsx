@@ -7,6 +7,7 @@ import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { dayKey, formatDayLabel } from './lib';
+import { isWorkflowRailRow } from './workflowRailGroup';
 
 type Props = {
   rows: ReadonlyArray<TranscriptRow>;
@@ -34,8 +35,27 @@ export const TranscriptRows = ({
   const out: ReactNode[] = [];
   let lastDay: string | null = null;
   let userTurnOrdinal = 0;
+  let railGroup: Array<ReactNode> = [];
+  let railGroupKey: string | null = null;
+
+  const flushRailGroup = () => {
+    if (railGroup.length === 0 || railGroupKey === null) {
+      return;
+    }
+    out.push(
+      <li
+        key={`workflow-rail-${railGroupKey}`}
+        className="flex flex-col [contain-intrinsic-size:auto_80px] [content-visibility:auto]"
+      >
+        {railGroup}
+      </li>,
+    );
+    railGroup = [];
+    railGroupKey = null;
+  };
 
   const flushOrdinal = (ordinal: number) => {
+    flushRailGroup();
     const cards = oqByTurnOrdinal.get(ordinal);
     if (!cards || cards.length === 0) {
       return;
@@ -77,6 +97,22 @@ export const TranscriptRows = ({
         lastDay = day;
       }
     }
+    if (row.kind === 'item' && isWorkflowRailRow({ row })) {
+      railGroupKey = railGroupKey ?? row.key;
+      railGroup.push(
+        <TranscriptCard
+          key={row.key}
+          item={row.item}
+          sessionId={sessionId}
+          agentId={selectedAgentId}
+          workingDir={workingDir}
+          onRefreshAuth={onRefreshAuth}
+          onOpenDiff={onOpenDiff}
+        />,
+      );
+      return;
+    }
+    flushRailGroup();
     out.push(
       <li key={row.key} className="[content-visibility:auto] [contain-intrinsic-size:auto_80px]">
         {row.kind === 'operations' ? (

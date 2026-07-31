@@ -21,4 +21,11 @@ describe('SkillInvocationCard', () => {
     expect(screen.getByText('file.ts')).toBeDefined();
     expect(screen.getByText('--check')).toBeDefined();
   });
+
+  it('sits on the machinery rail without an expand affordance', () => {
+    render(<SkillInvocationCard item={item} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByTestId('transcript-chevron')).toBeNull();
+    expect(screen.getByText('skill').closest('div')?.className).toContain('border-primary/20');
+  });
 });
