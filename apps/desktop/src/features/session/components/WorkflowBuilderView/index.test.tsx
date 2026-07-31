@@ -106,7 +106,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
 }));
 
 import { PlannerClient } from '@goodboy/core';
-import { WorkflowBuilderView } from './index';
+import { WorkflowBuilderView, uniqueWorkflowName } from './index';
 
 const session: Session = {
   id: 'sess-1',
@@ -198,6 +198,28 @@ async function draftPlan() {
 const stepToggles = () => screen.getAllByRole('button', { name: /^step \d+:/i });
 
 const expandStep = (index: number) => fireEvent.click(stepToggles()[index]!);
+
+describe('uniqueWorkflowName', () => {
+  it('keeps the requested name when no live workflow uses it', () => {
+    const existing = [presetWorkflow('wf-1', 'Refactor')];
+
+    expect(uniqueWorkflowName('Orchestrated workflow', existing)).toBe('Orchestrated workflow');
+  });
+
+  it('suffixes past live duplicates and ignores deleted ones', () => {
+    const deleted = {
+      ...presetWorkflow('wf-0', 'Orchestrated workflow 2'),
+      deletedAt: '2026-01-02T00:00:00.000Z',
+    } as unknown as Workflow;
+    const existing = [
+      presetWorkflow('wf-1', 'Orchestrated workflow'),
+      presetWorkflow('wf-2', 'Orchestrated workflow 3'),
+      deleted,
+    ];
+
+    expect(uniqueWorkflowName('Orchestrated workflow', existing)).toBe('Orchestrated workflow 2');
+  });
+});
 
 describe('WorkflowBuilderView (studio chrome)', () => {
   it('renders the studio header with the title and workspace name', () => {
@@ -611,7 +633,7 @@ describe('WorkflowBuilderView (preset mode - dirty flows)', () => {
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     const saved = mockSavePhaseTemplate.mock.calls[0]![0];
-    expect(saved.name).toBe('Ship It');
+    expect(saved.name).toBe('Ship It 2');
     expect(saved.steps[0]!.name).toBe('Custom Scout');
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, expect.any(Object)),
