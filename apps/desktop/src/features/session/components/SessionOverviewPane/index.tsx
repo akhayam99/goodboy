@@ -239,7 +239,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
               )}
             </div>
           </div>
-          {rename.renaming ? (
+          {rename.editing ? (
             <div className="flex flex-col gap-1">
               <Input
                 autoFocus
@@ -275,7 +275,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: SessionOverviewPa
             </div>
           )}
           {pullRequest != null ? (
-            <PrStatusLine pr={pullRequest} />
+            <PrStatusLine pr={pullRequest} sessionId={session.id as SessionId} />
           ) : stage.reason ? (
             <p className="text-sm leading-relaxed text-muted-foreground">{stage.reason}</p>
           ) : null}

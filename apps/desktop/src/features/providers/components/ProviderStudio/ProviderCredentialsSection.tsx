@@ -3,6 +3,8 @@ import { Button, Input, SectionHeader } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { formatError } from '../../../../shared/lib/errors';
+import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -14,6 +16,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const deleteCredential = useAppStore((s) => s.deleteCredential);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const apiKeyEnv = PROVIDER_API_KEY_ENV[providerId];
+  const { showToast } = useToast();
 
   const mine = useMemo(
     () => credentials.filter((c) => c.providerId === providerId),
@@ -24,13 +27,11 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const [label, setLabel] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const reset = useCallback(() => {
     setAdding(false);
     setLabel('');
     setApiKey('');
-    setError(null);
   }, []);
 
   const onSave = useCallback(async () => {
@@ -38,17 +39,16 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
       return;
     }
     setBusy(true);
-    setError(null);
     try {
       await createCredential(providerId, label, apiKey);
       await refreshProviders();
       reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      showToast('error', formatError(err));
     } finally {
       setBusy(false);
     }
-  }, [apiKey, label, providerId, createCredential, refreshProviders, reset]);
+  }, [apiKey, label, providerId, createCredential, refreshProviders, reset, showToast]);
 
   const onDelete = useCallback(
     async (credentialId: CredentialId) => {
@@ -132,7 +132,6 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={`${apiKeyEnv} value`}
           />
-          {error ? <p className="text-2xs text-danger">{error}</p> : null}
           <div className="flex items-center justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={reset} disabled={busy}>
               Cancel

@@ -7,7 +7,6 @@ const { state, currentWorkspace } = vi.hoisted(() => ({
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     archivedSessions: {} as Record<string, ReadonlyArray<unknown>>,
     providers: [] as ReadonlyArray<{ connection: string }>,
-    sessionsSidebarCollapsed: false,
     setCurrentSession: vi.fn(),
     loadArchivedSessions: vi.fn(),
   },

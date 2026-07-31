@@ -68,7 +68,7 @@ export const evaluateMobileMerge = (
     return { ok: false, reason: 'no PR is associated with this session' };
   }
   if (pr.isDraft) {
-    return { ok: false, reason: 'PR is a draft — mark it ready before merging' };
+    return { ok: false, reason: 'PR is a draft: mark it ready before merging' };
   }
   if (pr.state === 'merged' || pr.state === 'closed') {
     return { ok: false, reason: `PR is already ${pr.state}` };
@@ -86,7 +86,7 @@ export const evaluateMobileMerge = (
     };
   }
   if (pr.mergeable === false) {
-    return { ok: false, reason: 'PR has conflicts — resolve them first' };
+    return { ok: false, reason: 'PR has conflicts: resolve them first' };
   }
   return { ok: true };
 };
@@ -269,11 +269,11 @@ export const evaluateMobileCreateSession = (args: {
   // arriving in the same tick can't all pass the (empty) window. The reservation
   // is counted against the cap immediately; the caller commits/releases it.
   if (isRateLimited(now)) {
-    return { ok: false, reason: 'too many session launches — slow down and retry shortly' };
+    return { ok: false, reason: 'too many session launches: slow down and retry shortly' };
   }
   const reservation = reserveSlot();
   if (!reservation) {
-    return { ok: false, reason: 'too many session launches — slow down and retry shortly' };
+    return { ok: false, reason: 'too many session launches: slow down and retry shortly' };
   }
   return { ok: true, workspaceId: workspaceId as WorkspaceId, provider, reservation };
 };

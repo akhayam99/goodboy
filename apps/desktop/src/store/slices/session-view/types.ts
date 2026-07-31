@@ -83,7 +83,6 @@ export type LensHistory = {
 };
 
 type SessionViewSliceState = {
-  readonly sessionsSidebarCollapsed: boolean;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
@@ -94,8 +93,6 @@ type SessionViewSliceState = {
 };
 
 type SessionViewSliceActions = {
-  setSessionsSidebarCollapsed(next: boolean): void;
-  toggleSessionsSidebar(): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;

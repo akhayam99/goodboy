@@ -3,8 +3,8 @@ import { Eyebrow } from '@goodboy/ui';
 import type { SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { openUrl } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { LinkedWorkRow } from './LinkedWorkRow';
 
@@ -84,7 +84,20 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
             tone="info"
             identifier={`#${issue.number}`}
             title={issue.title ?? 'GitHub issue'}
-            onClick={() => void openUrl(issue.url)}
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent('goodboy:open-github-session', {
+                  detail: { sessionId, issueExternalId: String(issue.number) },
+                }),
+              )
+            }
+            actions={
+              <ExternalRefActions
+                url={issue.url}
+                label={`issue #${issue.number}`}
+                hostLabel="GitHub"
+              />
+            }
           />
         ))}
         {orderedExternalTasks.map((task) => (

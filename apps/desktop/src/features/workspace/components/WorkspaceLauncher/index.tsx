@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Unplug } from 'lucide-react';
-import { Button, Checkbox, Dialog, Eyebrow, ScrollFade } from '@goodboy/ui';
+import { Checkbox, Eyebrow, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { BetaPill } from '../../../../shared/components/BetaPill';
@@ -20,7 +20,6 @@ export const WorkspaceLauncher = () => {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [disconnectTarget, setDisconnectTarget] = useState<Workspace | null>(null);
-  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -45,13 +44,8 @@ export const WorkspaceLauncher = () => {
     if (!disconnectTarget) {
       return;
     }
-    setDisconnecting(true);
-    try {
-      await deleteWorkspace(disconnectTarget.id);
-      setDisconnectTarget(null);
-    } finally {
-      setDisconnecting(false);
-    }
+    await deleteWorkspace(disconnectTarget.id);
+    setDisconnectTarget(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -111,26 +105,40 @@ export const WorkspaceLauncher = () => {
                 No workspaces found
               </li>
             ) : (
-              filtered.map((w, i) => (
-                <li key={w.id} className="group/launcher relative">
-                  <WorkspaceRow
-                    workspace={w}
-                    density="card"
-                    highlighted={i === activeIndex}
-                    onOpen={() => select(w)}
-                  />
-                  <button
-                    type="button"
-                    data-tauri-drag-region="false"
-                    aria-label={`Disconnect ${w.name}`}
-                    title={`Disconnect ${w.name}`}
-                    onClick={() => setDisconnectTarget(w)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
-                  >
-                    <Unplug size={13} aria-hidden />
-                  </button>
-                </li>
-              ))
+              filtered.map((w, i) =>
+                disconnectTarget?.id === w.id ? (
+                  <li key={w.id}>
+                    <InlineConfirm
+                      role="danger"
+                      icon={<Unplug size={12} aria-hidden />}
+                      title={`Disconnect ${w.name}?`}
+                      description="Hides it from this list. Nothing on disk is deleted, re-add the same path to bring it back with all its sessions."
+                      confirmLabel="Disconnect"
+                      onConfirm={confirmDisconnect}
+                      onCancel={() => setDisconnectTarget(null)}
+                    />
+                  </li>
+                ) : (
+                  <li key={w.id} className="group/launcher relative">
+                    <WorkspaceRow
+                      workspace={w}
+                      density="card"
+                      highlighted={i === activeIndex}
+                      onOpen={() => select(w)}
+                    />
+                    <button
+                      type="button"
+                      data-tauri-drag-region="false"
+                      aria-label={`Disconnect ${w.name}`}
+                      title={`Disconnect ${w.name}`}
+                      onClick={() => setDisconnectTarget(w)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
+                    >
+                      <Unplug size={13} aria-hidden />
+                    </button>
+                  </li>
+                ),
+              )
             )}
           </ul>
         </div>
@@ -151,38 +159,6 @@ export const WorkspaceLauncher = () => {
           className="text-muted-foreground"
         />
       </div>
-      <Dialog
-        open={disconnectTarget !== null}
-        onClose={() => setDisconnectTarget(null)}
-        size="sm"
-        title="Disconnect workspace?"
-        description={disconnectTarget?.name ?? ''}
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDisconnectTarget(null)}
-              disabled={disconnecting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => void confirmDisconnect()}
-              disabled={disconnecting}
-            >
-              Disconnect
-            </Button>
-          </>
-        }
-      >
-        <p className="leading-relaxed text-muted-foreground">
-          Hides it from this list. Nothing on disk is deleted, re-add the same path to bring it back
-          with all its sessions.
-        </p>
-      </Dialog>
     </ScrollFade>
   );
 };

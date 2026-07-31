@@ -140,7 +140,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
   return (
     <StudioShell
       icon={SECTION_ICONS.budget}
-      title="Budget Studio"
+      title="Budget studio"
       workspaceName={workspaceName}
       closeLabel="close budget studio"
       onClose={onClose}

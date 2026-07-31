@@ -28,7 +28,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
@@ -60,7 +59,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     successMessage: string,
   ) => {
     setBusy(true);
-    setError(null);
     try {
       await storeSetWorkspaceOverrides(workspaceId, {
         defaultProviderId: wsOverrides?.defaultProviderId ?? null,
@@ -77,7 +75,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       });
       showToast('success', successMessage);
     } catch (err) {
-      setError(formatError(err));
+      showToast('error', formatError(err));
     } finally {
       setBusy(false);
     }
@@ -90,14 +88,13 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       return;
     }
     setBusy(true);
-    setError(null);
     try {
       await saveSetting(settingBranchPrefix(workspaceId), next);
       setBranchPrefix(next);
       setSavedBranchPrefix(next);
       showToast('success', 'branch prefix saved');
     } catch (err) {
-      setError(formatError(err));
+      showToast('error', formatError(err));
     } finally {
       setBusy(false);
     }
@@ -105,12 +102,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
   const onDisconnect = async () => {
     setDisconnecting(true);
-    setError(null);
     try {
       await disconnect(workspaceId);
       requestClose();
     } catch (err) {
-      setError(formatError(err));
+      showToast('error', formatError(err));
       setDisconnecting(false);
     }
   };
@@ -258,8 +254,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
             </FieldRow>
           </div>
         </div>
-
-        {error ? <p className="pt-4 text-xs text-danger">{error}</p> : null}
       </div>
     </ScrollFade>
   );

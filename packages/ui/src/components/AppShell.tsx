@@ -8,7 +8,6 @@ export type AppShellProps = {
   footer?: ReactNode;
   leftSidebar?: ReactNode;
   leftHidden?: boolean;
-  leftCollapsed?: boolean;
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
@@ -20,7 +19,6 @@ const LEFT_SIDEBAR_MIN = 260;
 const LEFT_SIDEBAR_MAX = 640;
 const LEFT_SIDEBAR_DEFAULT = 340;
 export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
-const LEFT_RAIL_WIDTH = 44;
 
 const RIGHT_SIDEBAR_MIN = 260;
 const RIGHT_SIDEBAR_MAX = 560;
@@ -46,7 +44,6 @@ function readPersistedWidth(key: string, def: number, min: number, max: number):
 function buildLayout(opts: {
   collapsed: boolean;
   leftHidden: boolean;
-  leftCollapsed: boolean;
   hasLeftSidebar: boolean;
   hasRightSidebar: boolean;
   hasFooter: boolean;
@@ -60,7 +57,6 @@ function buildLayout(opts: {
   const {
     collapsed,
     leftHidden,
-    leftCollapsed,
     hasLeftSidebar,
     hasRightSidebar,
     hasFooter,
@@ -89,8 +85,8 @@ function buildLayout(opts: {
     };
   }
 
-  const leftCol = leftHidden ? '0px' : leftCollapsed ? `${LEFT_RAIL_WIDTH}px` : `${leftWidthPx}px`;
-  const handleCol = leftHidden || leftCollapsed ? '0px' : '6px';
+  const leftCol = leftHidden ? '0px' : `${leftWidthPx}px`;
+  const handleCol = leftHidden ? '0px' : '6px';
   if (!hasRightSidebar) {
     return {
       templateAreas: hasFooter
@@ -117,7 +113,6 @@ export const AppShell = ({
   footer,
   leftSidebar,
   leftHidden = false,
-  leftCollapsed = false,
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
@@ -127,7 +122,7 @@ export const AppShell = ({
   const hasFooter = footer != null;
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
-  const isLeftResizeDisabled = leftHidden || leftCollapsed;
+  const isLeftResizeDisabled = leftHidden;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
     readPersistedWidth(
       LEFT_SIDEBAR_STORAGE_KEY,
@@ -161,7 +156,6 @@ export const AppShell = ({
   const layout = buildLayout({
     collapsed: rightSidebarCollapsed,
     leftHidden,
-    leftCollapsed,
     hasLeftSidebar,
     hasRightSidebar,
     hasFooter,

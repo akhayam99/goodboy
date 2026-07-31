@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { PullRequestState } from '@goodboy/types';
+import type { PullRequestState, SessionId } from '@goodboy/types';
 
 const { mocks } = vi.hoisted(() => ({
   mocks: {
@@ -38,34 +38,50 @@ const basePr = (over: Partial<PullRequestState> = {}): PullRequestState => ({
 });
 
 describe('PrStatusLine', () => {
-  it('opens the pull request url when the number is clicked', () => {
-    render(<PrStatusLine pr={basePr()} />);
+  it('opens the in-app pr lens when the number is clicked', () => {
+    const seen: CustomEvent[] = [];
+    const listener = (e: Event) => seen.push(e as CustomEvent);
+    window.addEventListener('goodboy:open-github-session', listener);
+    render(<PrStatusLine pr={basePr()} sessionId={'sess-1' as SessionId} />);
     fireEvent.click(screen.getByRole('button', { name: '#9304' }));
+    window.removeEventListener('goodboy:open-github-session', listener);
+    expect(seen[0]?.detail).toEqual({ sessionId: 'sess-1', prNumber: 9304 });
+    expect(mocks.openUrl).not.toHaveBeenCalled();
+  });
+
+  it('keeps the browser as an explicit secondary affordance', () => {
+    render(<PrStatusLine pr={basePr()} sessionId={'sess-1' as SessionId} />);
+    fireEvent.click(screen.getByRole('link', { name: 'Open in GitHub' }));
     expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/pull/9304');
   });
 
   it('marks failing checks in the danger tone', () => {
-    render(<PrStatusLine pr={basePr({ checks: 'failure' })} />);
+    render(<PrStatusLine pr={basePr({ checks: 'failure' })} sessionId={'sess-1' as SessionId} />);
     expect(screen.getByTitle('Checks failing')).toBeDefined();
   });
 
   it('shows changes requested in amber and omits the checks indicator when unknown', () => {
-    render(<PrStatusLine pr={basePr({ reviewDecision: 'changes_requested' })} />);
+    render(
+      <PrStatusLine
+        pr={basePr({ reviewDecision: 'changes_requested' })}
+        sessionId={'sess-1' as SessionId}
+      />,
+    );
     expect(screen.getByText('Changes requested').className).toContain('text-warning');
     expect(screen.queryByTitle('Checks failing')).toBeNull();
     expect(screen.queryByTitle('Checks passing')).toBeNull();
   });
 
   it('keeps the approved and queued pill states distinct', () => {
-    render(<PrStatusLine pr={basePr({ state: 'approved' })} />);
+    render(<PrStatusLine pr={basePr({ state: 'approved' })} sessionId={'sess-1' as SessionId} />);
     expect(screen.getByText('Approved')).toBeDefined();
     cleanup();
-    render(<PrStatusLine pr={basePr({ state: 'queued' })} />);
+    render(<PrStatusLine pr={basePr({ state: 'queued' })} sessionId={'sess-1' as SessionId} />);
     expect(screen.getByText('Queued')).toBeDefined();
   });
 
   it('renders the base and head branches', () => {
-    render(<PrStatusLine pr={basePr()} />);
+    render(<PrStatusLine pr={basePr()} sessionId={'sess-1' as SessionId} />);
     expect(screen.getByText('main ← ak/feat-thing')).toBeDefined();
   });
 });

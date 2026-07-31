@@ -35,7 +35,7 @@ export const ImpactStudio = ({ workspaceId, workspaceName, onClose }: Props) => 
   return (
     <StudioShell
       icon={TrendingUp}
-      title="Impact Studio"
+      title="Impact studio"
       workspaceName={workspaceName}
       closeLabel="close impact studio"
       headerAccessory={

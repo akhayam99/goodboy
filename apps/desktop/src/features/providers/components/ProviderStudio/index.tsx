@@ -62,7 +62,7 @@ export const ProviderStudio = ({
   return (
     <StudioShell
       icon={SECTION_ICONS.providers}
-      title="Provider Studio"
+      title="Provider studio"
       workspaceName={workspaceName}
       closeLabel="close provider studio"
       onClose={onClose}

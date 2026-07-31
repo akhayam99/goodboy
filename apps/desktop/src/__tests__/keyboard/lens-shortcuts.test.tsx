@@ -14,8 +14,6 @@ const { setActiveLens, shortcutHandlers, state } = vi.hoisted(() => {
       hydrated: false,
       bootPhase: 'loading' as const,
       error: null,
-      sessionsSidebarCollapsed: false,
-      toggleSessionsSidebar: vi.fn(),
       workspaceIntegrations: {},
       workspaces: [],
       setSessionStudio: vi.fn(),

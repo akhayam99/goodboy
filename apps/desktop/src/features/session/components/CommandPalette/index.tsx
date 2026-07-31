@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Divider, ScrollFade } from '@goodboy/ui';
-import type { Agent, AgentId, Skill, WorkspaceScript } from '@goodboy/types';
+import type { Agent, AgentId, WorkspaceScript } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -18,7 +18,7 @@ import {
 import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
 import { useToast } from '../../../../app/components/Toast';
 
-type PaletteGroup = QuickActionGroup | 'recents';
+type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'recents';
 
 type PaletteItem = {
   readonly id: string;
@@ -35,20 +35,18 @@ const GROUP_LABELS: Record<PaletteGroup, string> = {
   workspace: 'Workspaces',
   session: 'Sessions',
   agent: 'Agents',
-  skill: 'Skills',
-  workflow: 'Workflows',
   script: 'Scripts',
   action: 'Actions',
   help: 'Help',
 };
+
+const PALETTE_PREFIXES = PREFIXES.filter((p) => p.group !== 'skill' && p.group !== 'workflow');
 
 const GROUP_ORDER: ReadonlyArray<PaletteGroup> = [
   'recents',
   'agent',
   'session',
   'workspace',
-  'skill',
-  'workflow',
   'script',
   'action',
   'help',
@@ -99,9 +97,6 @@ export const CommandPalette = ({
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const selectAgent = useAppStore((s) => s.selectAgent);
-  const skills = useAppStore((s) =>
-    currentWorkspace ? (s.skills[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<Skill>;
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.workspaceScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<WorkspaceScript>;
@@ -159,19 +154,6 @@ export const CommandPalette = ({
       }
     }
 
-    for (const sk of skills) {
-      out.push({
-        id: `skill:${sk.id}`,
-        label: sk.name,
-        sublabel: sk.description ?? 'skill',
-        group: 'skill',
-        onSelect: () => {
-          /* skill invocation lives in chat input, palette can only navigate.
-             Surface as a hint until we wire a deep-link into ChatInput. */
-        },
-      });
-    }
-
     for (const sc of scripts) {
       out.push({
         id: `script:${sc.id}`,
@@ -226,7 +208,6 @@ export const CommandPalette = ({
     workspaces,
     sessions,
     agents,
-    skills,
     scripts,
     currentSession,
     sessionWorktree,
@@ -290,7 +271,7 @@ export const CommandPalette = ({
       onClose();
     } else if (e.key === 'Tab' && query.length === 0) {
       e.preventDefault();
-      const first = PREFIXES[0]!;
+      const first = PALETTE_PREFIXES[0]!;
       setQuery(first.symbol);
     }
   };
@@ -324,7 +305,7 @@ export const CommandPalette = ({
         {parsed.prefix === null && query.length === 0 && (
           <>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-[10px] text-muted-foreground">
-              {PREFIXES.map((p) => (
+              {PALETTE_PREFIXES.map((p) => (
                 <button
                   key={p.symbol}
                   type="button"

@@ -12,7 +12,6 @@ const { state } = vi.hoisted(() => ({
     bulkUnarchiveTask: vi.fn(async () => undefined),
     bulkArchiveTask: vi.fn(async () => undefined),
     bulkDeleteTask: vi.fn(async () => undefined),
-    setSessionsSidebarCollapsed: vi.fn(),
   },
 }));
 
@@ -94,7 +93,6 @@ beforeEach(() => {
   state.bulkUnarchiveTask.mockClear();
   state.bulkArchiveTask.mockClear();
   state.bulkDeleteTask.mockClear();
-  state.setSessionsSidebarCollapsed.mockClear();
   state.sessionExternalTasks = {};
 });
 
@@ -112,10 +110,9 @@ describe('SessionActivityBar, baseline', () => {
     expect(screen.getByText(/no sessions yet/i)).toBeDefined();
   });
 
-  it('collapses the sessions sidebar from the header button', () => {
+  it('offers no collapse control in the header', () => {
     renderBar([]);
-    fireEvent.click(screen.getByRole('button', { name: 'hide sessions' }));
-    expect(state.setSessionsSidebarCollapsed).toHaveBeenCalledWith(true);
+    expect(screen.queryByRole('button', { name: 'hide sessions' })).toBeNull();
   });
 });
 

@@ -14,6 +14,7 @@ import { WorkflowStepPlanBadge } from './WorkflowStepPlanBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../../workflows/blockCopy';
 import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
+import { useInlineRename } from '../../../../../shared/hooks/useInlineRename';
 
 type Props = {
   readonly run: Agent;
@@ -72,13 +73,13 @@ export const WorkflowStepRow = ({
     agentId: run.id,
     hasUnread,
   });
-  const [draft, setDraft] = useState(run.name);
+  const rename = useInlineRename({
+    value: run.name,
+    isEditing,
+    onCommit: onRenameCommit,
+    onCancel: onRenameCancel,
+  });
   const [pendingConfirm, setPendingConfirm] = useState(false);
-  useEffect(() => {
-    if (isEditing) {
-      setDraft(run.name);
-    }
-  }, [isEditing, run.name]);
   useEffect(() => {
     if (!isBlocked) {
       setPendingConfirm(false);
@@ -203,21 +204,12 @@ export const WorkflowStepRow = ({
           {isEditing ? (
             <input
               autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              value={rename.draft}
+              onChange={(e) => rename.setDraft(e.target.value)}
               onClick={(e) => e.stopPropagation()}
               onDoubleClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  onRenameCommit(draft);
-                } else if (e.key === 'Escape') {
-                  e.preventDefault();
-                  onRenameCancel();
-                }
-              }}
-              onBlur={() => onRenameCommit(draft)}
+              onKeyDown={rename.onKeyDown}
+              onBlur={() => void rename.commit()}
               className="line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1 ring-primary"
               aria-label="rename agent"
             />

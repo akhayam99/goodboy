@@ -13,9 +13,7 @@ export const WorkspaceStep = ({ hasWorkspace }: Props) => {
       </span>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-          Connect a workspace
-        </h2>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Add workspace</h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
           Add a repository-backed project, or create a simple project for agents, workflows, and
           shared context.

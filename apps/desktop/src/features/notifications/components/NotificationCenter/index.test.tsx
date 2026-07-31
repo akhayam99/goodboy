@@ -16,6 +16,8 @@ const { state } = vi.hoisted(() => ({
     summarizerStatus: {} as Record<string, unknown>,
     sessions: [] as ReadonlyArray<unknown>,
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
+    setCurrentSession: vi.fn(async () => undefined),
+    selectAgent: vi.fn(async () => undefined),
   },
 }));
 
@@ -37,6 +39,8 @@ beforeEach(() => {
   state.summarizerStatus = {};
   state.sessions = [];
   state.providers = [];
+  state.setCurrentSession = vi.fn(async () => undefined);
+  state.selectAgent = vi.fn(async () => undefined);
 });
 afterEach(cleanup);
 
@@ -164,6 +168,67 @@ describe('NotificationCenter', () => {
     const expected = resolveTaskModel('summarizer', null, 'anthropic');
     expect(state.retrySummarizer).toHaveBeenCalledWith('session-2', expected);
     expect(screen.queryByRole('button', { name: /confirm retry with selected model/i })).toBeNull();
+  });
+
+  it('navigates to the session and agent of a row and closes the panel', async () => {
+    state.notifications = [
+      {
+        id: 'n3',
+        read: true,
+        severity: 'warning',
+        kind: 'summarizer-degraded',
+        title: 'step summary degraded',
+        body: 'anthropic/haiku: boom',
+        ts: new Date().toISOString(),
+        sessionId: 'session-3',
+        workspaceId: 'ws-1',
+        action: { kind: 'retry-step-summary', sessionId: 'session-3', agentId: 'agent-3' },
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /open step summary degraded/i }));
+    });
+
+    expect(state.setCurrentSession).toHaveBeenCalledWith('session-3');
+    expect(state.selectAgent).toHaveBeenCalledWith('session-3', 'agent-3');
+    expect(screen.queryByText('step summary degraded')).toBeNull();
+  });
+
+  it('does not swallow the per-notification action buttons', async () => {
+    state.summarizerStatus = {
+      'session-4': { status: 'error', lastAttempt: { turnInput: 'in', turnOutput: 'out' } },
+    };
+    state.notifications = [
+      {
+        id: 'n4',
+        read: true,
+        severity: 'error',
+        kind: 'error',
+        title: 'summarizer failed',
+        body: 'anthropic: boom',
+        ts: new Date().toISOString(),
+        sessionId: 'session-4',
+        workspaceId: 'ws-1',
+        action: { kind: 'retry-summarizer', sessionId: 'session-4' },
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^retry$/i }));
+    });
+
+    expect(state.retrySummarizer).toHaveBeenCalledWith('session-4');
+    expect(state.setCurrentSession).not.toHaveBeenCalled();
   });
 
   it('keeps a long notification list inside a bounded scroll viewport', async () => {
