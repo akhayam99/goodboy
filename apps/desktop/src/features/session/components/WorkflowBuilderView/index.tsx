@@ -680,9 +680,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         createdAt: now,
         updatedAt: now,
       };
-      await savePhaseTemplate(workflow);
+      const saved = await savePhaseTemplate(workflow);
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
-      showToast('success', `workflow started: ${name}`);
+      showToast('success', `workflow started: ${saved?.name ?? name}`);
       handleClose();
     } catch (err) {
       setError(formatError(err));
