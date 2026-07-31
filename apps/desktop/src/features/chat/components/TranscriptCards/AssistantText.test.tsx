@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 
-import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
@@ -24,15 +23,18 @@ vi.mock('../CommentResolvedChip', () => ({ CommentResolvedChip: () => null }));
 vi.mock('../CommentWontfixChip', () => ({ CommentWontfixChip: () => null }));
 vi.mock('../HandoffChip', () => ({ HandoffChip: () => null }));
 vi.mock('../PlanChip', () => ({ PlanChip: () => null }));
-vi.mock('../TranscriptShell', () => ({
-  TranscriptShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-}));
-
 import { AssistantText } from './AssistantText';
 
 afterEach(cleanup);
 
 describe('AssistantText', () => {
+  it('renders prose bare on the page, with no box around it', () => {
+    const { container } = render(<AssistantText text="assistant response" sessionId={null} />);
+    const root = container.firstElementChild!;
+
+    expect(root.className).toBe('group relative flex flex-col gap-2 text-sm leading-relaxed');
+  });
+
   it('hides copy when a non-first resolved marker belongs to a review thread', () => {
     render(<AssistantText text="assistant response" sessionId={null} />);
 

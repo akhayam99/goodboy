@@ -2,9 +2,12 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   Agent,
   AgentId,
+  AgentRole,
   IsoDateTime,
+  ModelCostTier,
   ProviderId,
   ProviderRunId,
+  RoleModelPreferences,
   SessionId,
   Step,
   StepId,
@@ -13,7 +16,17 @@ import type {
   WorkflowOrchestrationOutcome,
   WorkflowRunId,
 } from '@goodboy/types';
-import { OrchestratorClient, resolveTaskModel, runsForWorkflowRun } from '@goodboy/core';
+import {
+  OrchestratorClient,
+  PROVIDER_CAPABILITIES,
+  ROLE_DEFAULTS,
+  recommendedModelForRole,
+  resolveRoleRouting,
+  resolveTaskModel,
+  runsForWorkflowRun,
+  type OrchestratorModelOption,
+  type OrchestratorRoleDefault,
+} from '@goodboy/core';
 import { listOpenQuestionsForSession, updateWorkflowRunOrchestrationOutcome } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -22,6 +35,46 @@ import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import type { GetFn, SetFn } from './types';
 
 const orchestrationInFlight = new Set<WorkflowRunId>();
+
+type DecidingParams = {
+  readonly set: SetFn;
+  readonly workflowRunId: WorkflowRunId;
+  readonly isDeciding: boolean;
+};
+
+const setDeciding = ({ set, workflowRunId, isDeciding }: DecidingParams): void => {
+  set((state) => ({
+    orchestratingWorkflowRuns: { ...state.orchestratingWorkflowRuns, [workflowRunId]: isDeciding },
+  }));
+};
+
+const MODEL_NOTE: Readonly<Record<ModelCostTier, string>> = {
+  cheap: 'cheap, fast',
+  mid: 'balanced default',
+  expensive: 'deepest reasoning',
+};
+
+type RoutingHintParams = {
+  readonly provider: ProviderId;
+  readonly roleModels: RoleModelPreferences | null;
+};
+
+const modelMenuFor = ({ provider }: RoutingHintParams): ReadonlyArray<OrchestratorModelOption> =>
+  PROVIDER_CAPABILITIES[provider].models.map((model) => ({
+    id: model.id,
+    label: model.label,
+    note: MODEL_NOTE[model.costTier],
+  }));
+
+const roleDefaultsFor = ({
+  provider,
+  roleModels,
+}: RoutingHintParams): ReadonlyArray<OrchestratorRoleDefault> =>
+  (Object.keys(ROLE_DEFAULTS) as ReadonlyArray<AgentRole>).map((role) => ({
+    role,
+    model: recommendedModelForRole({ role, provider, prefs: roleModels }),
+    effort: resolveRoleRouting({ role, prefs: roleModels }).effort,
+  }));
 
 type EmitParams = {
   readonly get: GetFn;
@@ -134,6 +187,9 @@ const appendStep = async ({
     role: step.role,
     promptPrefix: step.promptPrefix,
     expectedOutput: step.expectedOutput,
+    ...(step.modelOverride != null && { modelOverride: step.modelOverride }),
+    ...(step.effort != null && { effort: step.effort }),
+    ...(step.orchestratorReason != null && { orchestratorReason: step.orchestratorReason }),
   };
   const saved = await invokeWorkflowUpsert({
     id: workflow.id,
@@ -219,6 +275,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (workflow == null) {
         return;
       }
+      setDeciding({ set, workflowRunId, isDeciding: true });
       const agents = [
         ...runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId),
       ].sort((left, right) => left.ordinal - right.ordinal);
@@ -229,10 +286,13 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           ...(agent.outputSummary != null && { outputSummary: agent.outputSummary }),
         }));
       const openQuestions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
+      const defaultProvider = (session.providerOverride ??
+        session.providerPreference.defaultProvider) as ProviderId;
+      const roleModels = roleModelsForSession({ state: get(), sessionId });
       const taskModel = resolveTaskModel(
         'workflow_orchestrator',
         get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-        (session.providerOverride ?? session.providerPreference.defaultProvider) as ProviderId,
+        defaultProvider,
       );
       const client = new OrchestratorClient({
         ...taskModel,
@@ -248,6 +308,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           processText: workflow.processText ?? '',
           completedSteps,
           openQuestionCount: openQuestions.length,
+          providerId: defaultProvider,
+          modelMenu: modelMenuFor({ provider: defaultProvider, roleModels }),
+          roleDefaults: roleDefaultsFor({ provider: defaultProvider, roleModels }),
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -288,7 +351,17 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           sessionId,
           workflowRunId,
           workflow,
-          step: decision.step,
+          step: {
+            name: decision.step.name,
+            role: decision.step.role,
+            promptPrefix: decision.step.promptPrefix,
+            ...(decision.step.expectedOutput != null && {
+              expectedOutput: decision.step.expectedOutput,
+            }),
+            ...(decision.step.model != null && { modelOverride: decision.step.model }),
+            ...(decision.step.effort != null && { effort: decision.step.effort }),
+            ...(decision.reason.trim() !== '' && { orchestratorReason: decision.reason.trim() }),
+          },
         });
         emitDecision({
           get,
@@ -330,6 +403,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       });
     } finally {
       orchestrationInFlight.delete(workflowRunId);
+      setDeciding({ set, workflowRunId, isDeciding: false });
     }
   };
 };

@@ -9,9 +9,9 @@ import {
   type AgentKind,
 } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 
-const workflowAccent = MARKER_ACCENT.primary;
+const workflowAccent = tintClasses('primary');
 
 type Props = {
   readonly session: Session;

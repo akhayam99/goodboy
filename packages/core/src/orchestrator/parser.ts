@@ -1,3 +1,6 @@
+import type { ModelEffort, ProviderId } from '@goodboy/types';
+import { providerEffortLevels } from '../providers/providerEffortLevels';
+import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { isAgentRole } from '../roles';
 import type { OrchestratorDecision, OrchestratorStep } from './types';
 
@@ -75,7 +78,42 @@ const decisionSlice = (raw: string): string | null => {
   return raw.slice(contentStart, lastBrace + 1).trim();
 };
 
-const parseStep = (value: unknown): OrchestratorStep | null => {
+type ModelParams = {
+  readonly provider: ProviderId;
+  readonly id: string | null;
+};
+
+const validModel = ({ provider, id }: ModelParams): string | null => {
+  if (id === null) {
+    return null;
+  }
+  const stored = resolveStoredModelSelection({ provider, id });
+  if (stored.report?.kind === 'unknown') {
+    return null;
+  }
+  return stored.selection.key;
+};
+
+type EffortParams = {
+  readonly provider: ProviderId;
+  readonly model: string | null;
+  readonly level: string | null;
+};
+
+const validEffort = ({ provider, model, level }: EffortParams): ModelEffort | null => {
+  if (level === null) {
+    return null;
+  }
+  const ladder = providerEffortLevels({ provider, ...(model !== null && { model }) });
+  return ladder.find((candidate) => candidate === level) ?? null;
+};
+
+type StepParams = {
+  readonly value: unknown;
+  readonly provider: ProviderId;
+};
+
+const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => {
   const step = asRecord(value);
   if (step === null) {
     return null;
@@ -87,15 +125,27 @@ const parseStep = (value: unknown): OrchestratorStep | null => {
   if (name === null || promptPrefix === null) {
     return null;
   }
+  const model = validModel({ provider, id: nonEmptyString(step['model']) });
+  const effort = validEffort({ provider, model, level: nonEmptyString(step['effort']) });
   return {
     name,
     role: role !== null && isAgentRole(role) ? role : 'custom',
     promptPrefix,
     ...(expectedOutput !== null && { expectedOutput }),
+    ...(model !== null && { model }),
+    ...(effort !== null && { effort }),
   };
 };
 
-export const parseOrchestratorDecision = (raw: string): OrchestratorDecision | null => {
+type Params = {
+  readonly raw: string;
+  readonly provider: ProviderId;
+};
+
+export const parseOrchestratorDecision = ({
+  raw,
+  provider,
+}: Params): OrchestratorDecision | null => {
   const slice = decisionSlice(raw);
   if (slice === null) {
     return null;
@@ -112,7 +162,7 @@ export const parseOrchestratorDecision = (raw: string): OrchestratorDecision | n
   if (action !== 'next') {
     return null;
   }
-  const step = parseStep(decision['step']);
+  const step = parseStep({ value: decision['step'], provider });
   if (step === null) {
     return null;
   }

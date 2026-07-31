@@ -12,6 +12,8 @@ type ProviderErrorClassification =
       readonly model: string;
       readonly action: ModelUnavailableAction;
     }
+  | { readonly kind: 'rate_limit' }
+  | { readonly kind: 'unreachable' }
   | { readonly kind: 'other' };
 
 type Params = {
@@ -43,6 +45,33 @@ const MODEL_NOT_AVAILABLE_PATTERNS = [
   },
 ] satisfies ReadonlyArray<ModelUnavailablePattern>;
 
+const RATE_LIMIT_PATTERNS = [
+  /rate.?limit/i,
+  /quota exceeded/i,
+  /exceeded your quota/i,
+  /usage limit/i,
+  /token limit/i,
+  /limit reached/i,
+  /too many requests/i,
+  /\b429\b/,
+];
+
+const UNREACHABLE_PATTERNS = [
+  /ECONNREFUSED/,
+  /ENOTFOUND/,
+  /ETIMEDOUT/,
+  /EAI_AGAIN/,
+  /getaddrinfo/i,
+  /socket hang up/i,
+  /network error/i,
+  /connection refused/i,
+  /bad gateway/i,
+  /service unavailable/i,
+  /gateway timeout/i,
+  /timed out/i,
+  /\b50[234]\b/,
+];
+
 export const classifyProviderError = ({ message }: Params): ProviderErrorClassification => {
   if (AUTH_ERROR_PATTERNS.some((pattern) => pattern.test(message))) {
     return { kind: 'authentication' };
@@ -58,6 +87,14 @@ export const classifyProviderError = ({ message }: Params): ProviderErrorClassif
         action: entry.action,
       };
     }
+  }
+
+  if (RATE_LIMIT_PATTERNS.some((pattern) => pattern.test(message))) {
+    return { kind: 'rate_limit' };
+  }
+
+  if (UNREACHABLE_PATTERNS.some((pattern) => pattern.test(message))) {
+    return { kind: 'unreachable' };
   }
 
   return { kind: 'other' };

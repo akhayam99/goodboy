@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ChevronUp,
   Play,
+  Undo2,
   Workflow as WorkflowIcon,
   Zap,
   ZapOff,
@@ -20,14 +21,12 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
-import {
-  kindRouting,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../../../../features/session/agent-kind';
+import { inferAgentKindFromName, type AgentKind } from '../../../../../features/session/agent-kind';
+import { resolveStepRouting } from '../../../../../features/workflows/resolveStepRouting';
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
+import { WorkflowOrchestratorTldr } from '../../../../../features/workflows/components/WorkflowOrchestratorTldr';
 import { WorkflowStepStrip } from '../../../../../features/workflows/components/WorkflowStepStrip';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
@@ -128,6 +127,8 @@ export const WorkflowRow = ({
   const roleModels = useSessionRoleModels({ sessionId: task.id });
   const orchestrateNextStep = useAppStore((s) => s.orchestrateNextStep);
   const retryWorkflowOrchestration = useAppStore((s) => s.retryWorkflowOrchestration);
+  const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
+  const restoreWorkflow = useAppStore((s) => s.restoreWorkflow);
   const workflowRun = run;
   const isDiscarded = run.discardedAt != null;
   const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
@@ -282,7 +283,7 @@ export const WorkflowRow = ({
                 className={cn(
                   'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold transition-colors',
                   run.autoRun
-                    ? 'text-danger hover:bg-danger/15'
+                    ? 'bg-primary/10 text-primary hover:bg-primary/20'
                     : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
                 )}
               >
@@ -290,9 +291,19 @@ export const WorkflowRow = ({
                 Autorun
               </button>
             ) : null}
-            {!isDiscarded ? (
+            {isDiscarded ? (
+              <button
+                type="button"
+                onClick={() => void restoreWorkflow(task.id, run.id)}
+                title="restore this workflow run"
+                className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+              >
+                <Undo2 size={14} aria-hidden />
+                Restore
+              </button>
+            ) : (
               <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-            ) : null}
+            )}
             <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
           </div>
         ) : null}
@@ -318,7 +329,7 @@ export const WorkflowRow = ({
               className={cn(
                 'rounded p-0.5 transition-colors',
                 run.autoRun
-                  ? 'text-danger hover:bg-danger/15'
+                  ? 'bg-primary/10 text-primary hover:bg-primary/20'
                   : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
               )}
             >
@@ -364,6 +375,7 @@ export const WorkflowRow = ({
             processText={(workflow.processText ?? '').trim()}
           />
           <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+          {isDynamic ? <WorkflowOrchestratorTldr steps={workflow.steps} /> : null}
         </div>
       ) : null}
       {expanded ? (
@@ -385,12 +397,12 @@ export const WorkflowRow = ({
                 const isActionable = run.stepId === actionableStepId && run.status === 'pending';
                 const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
                 const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
-                const stepModel = step?.modelOverride;
-                const resolvedModel =
-                  stepModel ??
-                  agentModelOverride[run.id] ??
-                  run.modelOverride ??
-                  kindRouting({ kind, roleModels }).model;
+                const resolvedModel = resolveStepRouting({
+                  step: step ?? null,
+                  kind,
+                  roleModels,
+                  agentModel: agentModelOverride[run.id] ?? run.modelOverride,
+                }).model;
                 const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
                 const clustersExpanded = clusterExpand.get(run.id) ?? false;
                 const clusterUnread = countUnread(clusterChildren);
@@ -496,6 +508,7 @@ export const WorkflowRow = ({
             roleModels={roleModels}
             blockReason={wfBlockReason}
             run={run}
+            isOrchestrating={isOrchestrating}
             onOrchestrate={() => void orchestrateNextStep(task.id, run.id)}
             onRetryOrchestration={() => void retryWorkflowOrchestration(task.id, run.id)}
             onAdvance={(step) => {

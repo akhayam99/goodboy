@@ -7,7 +7,7 @@ type Props = {
 
 export const TranscriptChevron = ({ open }: Props) => (
   <ChevronRight
-    size={11}
+    size={12}
     aria-hidden
     data-testid="transcript-chevron"
     className={cn(

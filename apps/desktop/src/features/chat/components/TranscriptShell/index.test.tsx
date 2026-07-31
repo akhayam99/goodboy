@@ -10,7 +10,7 @@ type VariantCase = readonly [
 ];
 
 const VARIANT_CASES: ReadonlyArray<VariantCase> = [
-  ['boxed', ['rounded-md', 'border', 'px-3', 'py-2']],
+  ['boxed', ['rounded-lg', 'border', 'px-3', 'py-2']],
   ['leftBorder', ['rounded-r-md', 'border-l-2', 'py-1', 'pl-2', 'pr-2']],
   ['pill', ['rounded-full', 'border', 'px-2.5', 'py-1']],
 ];
@@ -33,7 +33,7 @@ describe('TranscriptShell', () => {
         content
       </TranscriptShell>,
     );
-    expect(screen.getByText('content').className).toContain('border-success/40');
+    expect(screen.getByText('content').className).toContain('border-success/20');
     expect(screen.getByText('content').className).toContain('bg-success/5');
     rerender(
       <TranscriptShell tone="success" variant="boxed" emphasis>
@@ -44,13 +44,19 @@ describe('TranscriptShell', () => {
     expect(screen.getByText('content').className).toContain('bg-success/10');
   });
 
-  it('uses pure indentation for nested left borders', () => {
+  it('keeps a softened rail on nested left borders', () => {
     render(
       <TranscriptShell tone="merged" variant="leftBorder" nested>
         content
       </TranscriptShell>,
     );
-    expect(screen.getByText('content').className.split(' ')).toEqual(['py-2', 'pl-3', 'pr-2']);
+    expect(screen.getByText('content').className.split(' ')).toEqual([
+      'border-l-2',
+      'py-2',
+      'pl-2',
+      'pr-2',
+      'border-merged/20',
+    ]);
   });
 
   it('renders children and merges a caller class', () => {

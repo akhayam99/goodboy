@@ -13,6 +13,7 @@ import {
   attachWorkflowToSession,
   discardWorkflowInSession,
   listWorkflowsForSession,
+  restoreWorkflowInSession,
   updateSessionWorkflowTriggerMode,
   updateWorkflowOrder,
   updateWorkflowRunOrchestrationOutcome,
@@ -357,6 +358,16 @@ describe('session_workflows trigger-mode queries', () => {
       await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
       const runs = await listWorkflowsForSession(db, sessionId);
       expect(runs[0]!.discardedAt).toBe(NOW);
+    });
+  });
+
+  describe('restoreWorkflowInSession', () => {
+    it('clears discarded_at again', async () => {
+      await attachWorkflowToSession(db, sessionId, 'run-1' as WorkflowRunId, workflowId, true, NOW);
+      await discardWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
+      await restoreWorkflowInSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.discardedAt).toBeUndefined();
     });
   });
 

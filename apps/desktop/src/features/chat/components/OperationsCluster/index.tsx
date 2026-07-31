@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Layers } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { formatDuration } from '../../utils/format-duration';
+import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { TranscriptCard } from '../TranscriptCards';
-import { MARKER_ACCENT } from '../marker-accents';
-import { TranscriptChevron } from '../TranscriptChevron';
-import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
+import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
 
 type Props = {
@@ -18,9 +18,9 @@ type Props = {
   readonly onOpenDiff?: (filePath: string) => void;
 };
 
-function runningTool(
+const runningTool = (
   items: ReadonlyArray<TranscriptItem>,
-): Extract<TranscriptItem, { kind: 'tool_call' }> | null {
+): Extract<TranscriptItem, { kind: 'tool_call' }> | null => {
   for (let i = items.length - 1; i >= 0; i -= 1) {
     const item = items[i]!;
     if (item.kind === 'tool_call' && !item.ended) {
@@ -28,12 +28,12 @@ function runningTool(
     }
   }
   return null;
-}
+};
 
-const accent = MARKER_ACCENT.operations;
-const dangerAccent = MARKER_ACCENT.danger;
-const successAccent = MARKER_ACCENT.success;
-const runningAccent = MARKER_ACCENT.warning;
+const operationsTint = tintClasses('operations');
+const dangerTint = tintClasses('danger');
+const successTint = tintClasses('success');
+const runningTint = tintClasses('warning');
 
 export const OperationsCluster = ({
   items,
@@ -45,15 +45,16 @@ export const OperationsCluster = ({
 }: Props) => {
   const [open, setOpen] = useState(false);
   const running = runningTool(items);
+  const elapsedMs = useElapsedMs({ running: running != null });
   const errorCount = items.reduce((n, i) => (i.kind === 'tool_call' && i.isError ? n + 1 : n), 0);
   const successCount = items.length - errorCount;
   const showError = running == null && errorCount > 0;
   const stateIcon =
     running != null
-      ? cn(runningAccent.icon, 'motion-safe:animate-pulse')
+      ? cn(runningTint.icon, 'motion-safe:animate-pulse')
       : showError
-        ? dangerAccent.icon
-        : successAccent.icon;
+        ? dangerTint.icon
+        : successTint.icon;
 
   const summary = useMemo(() => {
     const counts = new Map<string, number>();
@@ -73,63 +74,64 @@ export const OperationsCluster = ({
         : ''
   }`;
 
+  const duration = elapsedMs != null ? formatDuration({ durationMs: elapsedMs }) : null;
+
   return (
     <div className="flex flex-col gap-0.5">
-      <button
-        type="button"
-        aria-expanded={open}
+      <TranscriptRowHeader
+        tone="operations"
+        icon={
+          <Layers
+            size={12}
+            aria-hidden
+            data-testid="operations-state-icon"
+            className={cn('shrink-0', stateIcon)}
+          />
+        }
+        eyebrow="operations"
+        open={open}
+        onToggle={() => setOpen((value) => !value)}
         aria-label={ariaLabel}
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs',
-          TRANSCRIPT_ROW_HOVER,
-        )}
-      >
-        <TranscriptChevron open={open} />
-        <Layers
-          size={11}
-          aria-hidden
-          data-testid="operations-state-icon"
-          className={cn('shrink-0', stateIcon)}
-        />
-        <span className={cn('font-medium', accent.text)}>operations</span>
-        <span
-          className={cn(
-            'rounded-full px-1.5 text-2xs tabular-nums',
-            accent.bg,
-            'text-muted-foreground',
-          )}
-        >
-          {items.length}
-        </span>
-        {running != null ? (
-          <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground/80">
-            <span aria-hidden className="text-muted-foreground/40">
-              ·
-            </span>
-            <span className="truncate font-mono">{running.toolName}</span>
+        badge={
+          <span
+            className={cn(
+              'shrink-0 rounded-full px-1.5 text-2xs tabular-nums text-muted-foreground',
+              operationsTint.bg,
+            )}
+          >
+            {items.length}
           </span>
-        ) : showError ? (
-          <span className="flex shrink-0 items-center gap-1.5 text-2xs tabular-nums">
-            <span aria-hidden className="text-muted-foreground/40">
-              ·
+        }
+        preview={
+          running != null ? (
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate font-mono">{running.toolName}</span>
+              {duration != null && (
+                <span className="shrink-0 font-mono tabular-nums text-muted-foreground/70">
+                  {duration}
+                </span>
+              )}
             </span>
-            <span className={successAccent.text}>{successCount} success</span>
-            <span aria-hidden className="text-muted-foreground/40">
-              ·
+          ) : showError ? (
+            <span className="flex items-center gap-1.5 text-2xs tabular-nums">
+              <span className={successTint.text}>{successCount} success</span>
+              <span aria-hidden className="text-muted-foreground/40">
+                ·
+              </span>
+              <span className={dangerTint.text}>{errorCount} failed</span>
             </span>
-            <span className={dangerAccent.text}>{errorCount} failed</span>
-          </span>
-        ) : summary.length > 0 ? (
-          <span className="truncate text-2xs text-muted-foreground/60">{summary}</span>
-        ) : null}
-      </button>
+          ) : summary.length > 0 ? (
+            <span className="truncate text-2xs text-muted-foreground/60">{summary}</span>
+          ) : undefined
+        }
+        meta={running == null && duration != null ? duration : undefined}
+      />
       {open ? (
         <TranscriptShell
           tone="operations"
           variant="leftBorder"
           nested
-          className="ml-2 flex min-w-0 flex-col gap-0.5"
+          className="flex min-w-0 flex-col gap-0.5 pl-6"
         >
           {items.map((item) => (
             <TranscriptCard

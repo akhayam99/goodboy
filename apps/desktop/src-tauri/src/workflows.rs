@@ -29,6 +29,8 @@ pub struct StepRow {
     pub verbosity: Option<String>,
     #[serde(rename = "parallelGroup")]
     pub parallel_group: Option<i64>,
+    #[serde(rename = "orchestratorReason")]
+    pub orchestrator_reason: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -123,6 +125,8 @@ pub struct StepInput {
     pub verbosity: Option<String>,
     #[serde(rename = "parallelGroup")]
     pub parallel_group: Option<i64>,
+    #[serde(rename = "orchestratorReason")]
+    pub orchestrator_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -296,7 +300,7 @@ fn load_steps(
     let mut stmt = conn.prepare(
         "SELECT id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                parallel_group
+                parallel_group, orchestrator_reason
          FROM steps
          WHERE workflow_id = ?1 AND deleted_at IS NULL
          ORDER BY ordinal ASC",
@@ -316,6 +320,7 @@ fn load_steps(
             effort: row.get(10)?,
             verbosity: row.get(11)?,
             parallel_group: row.get(12)?,
+            orchestrator_reason: row.get(13)?,
         })
     })?;
     rows.collect()
@@ -562,8 +567,8 @@ pub fn workflow_upsert(
             "INSERT INTO steps
                (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                parallel_group, deleted_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, NULL)
+                parallel_group, orchestrator_reason, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, NULL)
              ON CONFLICT(id) DO UPDATE SET
                workflow_id      = excluded.workflow_id,
                library_step_id  = excluded.library_step_id,
@@ -577,6 +582,7 @@ pub fn workflow_upsert(
                effort           = excluded.effort,
                verbosity        = excluded.verbosity,
                parallel_group   = excluded.parallel_group,
+               orchestrator_reason = excluded.orchestrator_reason,
                deleted_at       = NULL",
             rusqlite::params![
                 def_id,
@@ -592,6 +598,7 @@ pub fn workflow_upsert(
                 def.effort,
                 def.verbosity,
                 def.parallel_group,
+                def.orchestrator_reason,
             ],
         )?;
         kept_ids.push(def_id.clone());
@@ -609,6 +616,7 @@ pub fn workflow_upsert(
             effort: def.effort.clone(),
             verbosity: def.verbosity.clone(),
             parallel_group: def.parallel_group,
+            orchestrator_reason: def.orchestrator_reason.clone(),
         });
     }
 

@@ -144,6 +144,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       agentKindOverride: { ...state.agentKindOverride, ...spawned.kindOverrides },
       agentProviderOverride: { ...state.agentProviderOverride, ...spawned.providerOverrides },
       agentEffortOverride: { ...state.agentEffortOverride, ...spawned.effortOverrides },
+      focusedWorkflowRunId: { ...state.focusedWorkflowRunId, [sessionId]: workflowRunId },
     }));
 
     const attachmentInputs = options?.attachmentInputs;

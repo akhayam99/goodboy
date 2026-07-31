@@ -10,11 +10,11 @@ import { resolveProviderForTurn } from '../../../../features/providers/routing';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { PROVIDER_LABEL_LOWER } from '../../../providers/providers';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
 
-const dangerAccent = MARKER_ACCENT.danger;
-const warningAccent = MARKER_ACCENT.warning;
+const dangerAccent = tintClasses('danger');
+const warningAccent = tintClasses('warning');
 
 type Props = {
   readonly sessionPreference: SessionProviderPreference;

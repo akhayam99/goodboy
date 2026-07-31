@@ -13,6 +13,7 @@ const ROUTING_DECISION = {
 const BASE_PARAMS = {
   provider: 'anthropic',
   routingDecision: ROUTING_DECISION,
+  retryModel: null,
   phaseModelOverride: null,
   phaseProviderOverride: null,
   autoStepModel: null,
@@ -72,6 +73,33 @@ describe('agentPinApplies', () => {
 });
 
 describe('resolveTurnModelSelection', () => {
+  it('gives a retry model precedence over the phase override', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      retryModel: 'haiku-4.5',
+      phaseModelOverride: 'claude-opus-5',
+      autoStepModel: { provider: 'anthropic', model: 'claude-sonnet-4-6' },
+      turnOverride: { providerId: 'anthropic', model: 'claude-sonnet-4-6' },
+      agentModelPin: 'claude-opus-5',
+    });
+
+    expect(selection.key).toBe('haiku-4.5');
+  });
+
+  it('keeps a retry model even when routing reports a fallback', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      retryModel: 'haiku-4.5',
+      routingDecision: {
+        ...ROUTING_DECISION,
+        fallbackUsed: true,
+        fallbackFrom: 'cursor',
+      },
+    });
+
+    expect(selection.key).toBe('haiku-4.5');
+  });
+
   it('gives the phase override precedence over every other candidate', () => {
     const selection = resolveTurnModelSelection({
       ...BASE_PARAMS,

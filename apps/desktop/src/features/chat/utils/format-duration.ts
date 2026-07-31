@@ -2,7 +2,7 @@ type Params = {
   durationMs: number;
 };
 
-export const formatStepDuration = ({ durationMs }: Params): string => {
+export const formatDuration = ({ durationMs }: Params): string => {
   if (durationMs < 1_000) {
     return `${durationMs}ms`;
   }

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { TranscriptItem } from '../../utils/transcript-items';
 
 vi.mock('../TranscriptCards', () => ({
@@ -94,13 +94,42 @@ describe('OperationsCluster', () => {
     expect(screen.getByText('1')).toBeTruthy();
   });
 
-  it('carries state on the icon and never on a left border', () => {
+  it('carries state on the icon and never on the rail', () => {
     const { container } = render(<OperationsCluster items={[tool('a'), tool('b')]} />);
     expect(screen.getByTestId('operations-state-icon').getAttribute('class')).toContain(
       'text-success',
     );
-    expect(container.querySelectorAll('[class*="border-l"]')).toHaveLength(0);
+    expect(screen.getByRole('button').className).toContain('border-primary/20');
     expect(container.querySelectorAll('[class*="border-danger"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[class*="border-success"]')).toHaveLength(0);
+  });
+
+  it('keeps a user-opened cluster open once the run completes', () => {
+    const { rerender } = render(<OperationsCluster items={[tool('a', false)]} />);
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getAllByTestId('card')).toHaveLength(1);
+    rerender(<OperationsCluster items={[tool('a')]} />);
+    expect(screen.getAllByTestId('card')).toHaveLength(1);
+  });
+
+  it('runs a live elapsed timer that freezes on completion', () => {
+    vi.useFakeTimers();
+    const { rerender } = render(<OperationsCluster items={[tool('b', false)]} />);
+    act(() => {
+      vi.advanceTimersByTime(3_000);
+    });
+    expect(screen.getByText('3s')).toBeTruthy();
+    rerender(<OperationsCluster items={[tool('b')]} />);
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(screen.getByText('3s')).toBeTruthy();
+    vi.useRealTimers();
+  });
+
+  it('stays collapsed by default while a tool runs', () => {
+    render(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
+    expect(screen.queryByTestId('card')).toBeNull();
   });
 
   it('pulses the state icon while a tool runs', () => {

@@ -38,6 +38,7 @@ type RawWorkflowStepRow = {
   readonly effort: string | null;
   readonly verbosity: string | null;
   readonly parallelGroup: number | null;
+  readonly orchestratorReason: string | null;
 };
 
 type RawStepDefRow = {
@@ -119,6 +120,8 @@ function rowToStep(row: RawWorkflowStepRow): Step {
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.parallelGroup != null && { parallelGroup: row.parallelGroup }),
+    ...(row.orchestratorReason != null &&
+      row.orchestratorReason !== '' && { orchestratorReason: row.orchestratorReason }),
   };
 }
 
@@ -233,6 +236,7 @@ export type WorkflowStepUpsertArgs = {
   readonly effort?: AgentEffort;
   readonly verbosity?: VerbosityLevel;
   readonly parallelGroup?: number;
+  readonly orchestratorReason?: string;
 };
 
 export type WorkflowUpsertArgs = {
@@ -269,6 +273,7 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
         effort: d.effort ?? null,
         verbosity: d.verbosity ?? null,
         parallelGroup: d.parallelGroup ?? null,
+        orchestratorReason: d.orchestratorReason ?? null,
       })),
     },
   });

@@ -13,6 +13,7 @@ import { loadStepLibrary } from './loadStepLibrary';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { orchestrateNextStep } from './orchestrateNextStep';
 import { reorderSessionWorkflows } from './reorderSessionWorkflows';
+import { restoreWorkflow } from './restoreWorkflow';
 import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
 import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
 import { resetWorkflows } from './resetWorkflows';
@@ -37,6 +38,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     attachWorkflowToSession: attachWorkflowToSession(set, get),
     detachWorkflowFromSession: detachWorkflowFromSession(set, get),
     discardWorkflow: discardWorkflow(set, get),
+    restoreWorkflow: restoreWorkflow(set, get),
     reorderSessionWorkflows: reorderSessionWorkflows(set, get),
     setWorkflowRunAutoRun: setWorkflowRunAutoRun(set, get),
     startWorkflowRun: startWorkflowRun(set, get),

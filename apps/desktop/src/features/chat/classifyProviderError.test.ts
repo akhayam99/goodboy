@@ -34,4 +34,37 @@ describe('classifyProviderError', () => {
       kind: 'other',
     });
   });
+
+  it.each([
+    'Error: rate limit exceeded, retry after 60s',
+    'request failed with status 429',
+    'You have exceeded your quota for this billing period',
+    'usage limit reached for this account',
+  ])('classifies usage failures as a rate limit', (message) => {
+    expect(classifyProviderError({ message })).toEqual({ kind: 'rate_limit' });
+  });
+
+  it.each([
+    'connect ECONNREFUSED 127.0.0.1:443',
+    'getaddrinfo ENOTFOUND api.anthropic.com',
+    'request to https://api.example.com failed: ETIMEDOUT',
+    'socket hang up',
+    'network error while contacting the provider',
+    'upstream returned 503 Service Unavailable',
+    'the request timed out after 120s',
+  ])('classifies transport failures as unreachable', (message) => {
+    expect(classifyProviderError({ message })).toEqual({ kind: 'unreachable' });
+  });
+
+  it('keeps a Max Mode failure out of the transport buckets', () => {
+    expect(
+      classifyProviderError({
+        message: 'Max Mode Required  The model "gpt-5.5-high" requires Max Mode to be enabled.',
+      }),
+    ).toEqual({
+      kind: 'model_not_available',
+      model: 'gpt-5.5-high',
+      action: 'enable_max_mode',
+    });
+  });
 });

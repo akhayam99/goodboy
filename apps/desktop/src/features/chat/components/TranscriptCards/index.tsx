@@ -9,14 +9,11 @@ import { WorkflowKickoffCard } from '../WorkflowKickoffCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { ToolCallCard } from '../ToolCallCard';
-import { TranscriptShell } from '../TranscriptShell';
-import { MARKER_ACCENT } from '../marker-accents';
 import { AssistantText } from './AssistantText';
+import { TranscriptErrorRow } from './TranscriptErrorRow';
 import { FileEditBlock } from './FileEditBlock';
 import { UsageRow } from './UsageRow';
 import { UserText } from './UserText';
-
-const dangerAccent = MARKER_ACCENT.danger;
 
 type TranscriptCardProps = {
   readonly item: TranscriptItem;
@@ -63,11 +60,7 @@ function TranscriptCardImpl({
     case 'usage':
       return <UsageRow usage={item.usage} />;
     case 'error':
-      return (
-        <TranscriptShell tone="danger" variant="boxed" className={`text-sm ${dangerAccent.text}`}>
-          {item.message}
-        </TranscriptShell>
-      );
+      return <TranscriptErrorRow message={item.message} />;
     case 'auth_required':
       return (
         <AuthRequiredCallout

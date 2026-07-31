@@ -10,6 +10,7 @@ type Store = {
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   focusedWorkflowRunId: Record<string, string | null>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
+  restoreWorkflow: ReturnType<typeof vi.fn>;
 };
 
 type ButtonMockProps = React.ComponentProps<'button'>;
@@ -18,7 +19,10 @@ type ResizeHandleMockProps = { readonly ariaLabel: string };
 type ChildrenMockProps = { readonly children: React.ReactNode };
 type AgentsSectionMockProps = { readonly workflowRunId?: string };
 type BuildWorkflowParams = { readonly id: string; readonly name: string };
-type BuildSessionParams = { readonly runIds: ReadonlyArray<string> };
+type BuildSessionParams = {
+  readonly runIds: ReadonlyArray<string>;
+  readonly runOverrides?: Readonly<Record<string, Record<string, unknown>>>;
+};
 
 const store: Store = {
   phaseTemplates: {},
@@ -26,6 +30,7 @@ const store: Store = {
   sessionPhaseRuns: {},
   focusedWorkflowRunId: {},
   setFocusedWorkflowRun: vi.fn(),
+  restoreWorkflow: vi.fn(),
 };
 
 vi.mock('../../../../../store', () => ({
@@ -81,7 +86,7 @@ const buildWorkflow = ({ id, name }: BuildWorkflowParams) =>
 const firstWorkflow = buildWorkflow({ id: 'workflow-1', name: 'First workflow' });
 const secondWorkflow = buildWorkflow({ id: 'workflow-2', name: 'Second workflow' });
 
-const buildSession = ({ runIds }: BuildSessionParams) =>
+const buildSession = ({ runIds, runOverrides }: BuildSessionParams) =>
   ({
     id: SESSION_ID,
     workspaceId: WORKSPACE_ID,
@@ -92,6 +97,7 @@ const buildSession = ({ runIds }: BuildSessionParams) =>
       currentStep: 0,
       autoRun: true,
       triggerMode: 'immediate',
+      ...(runOverrides?.[id] ?? {}),
     })),
   }) as unknown as Session;
 
@@ -101,6 +107,7 @@ beforeEach(() => {
   store.sessionPhaseRuns = {};
   store.focusedWorkflowRunId = {};
   store.setFocusedWorkflowRun.mockReset();
+  store.restoreWorkflow.mockReset();
 });
 
 afterEach(cleanup);
@@ -144,13 +151,67 @@ describe('WorkflowsPane', () => {
     expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
   });
 
-  it('falls back to the first run when focus is stale', () => {
+  it('falls back to the most recent live run when focus is stale', () => {
     store.focusedWorkflowRunId = { [SESSION_ID]: 'missing-run' };
     render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
 
-    expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-1');
-    expect(screen.getByText('First workflow').closest('button')?.getAttribute('aria-current')).toBe(
-      'true',
+    expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-2');
+    expect(
+      screen.getByText('Second workflow').closest('button')?.getAttribute('aria-current'),
+    ).toBe('true');
+  });
+
+  it('files a discarded run under its own toggle instead of the active list', () => {
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1', 'run-2'],
+          runOverrides: { 'run-1': { discardedAt: '2026-07-21T10:00:00.000Z' } },
+        })}
+      />,
     );
+
+    expect(screen.queryByText('First workflow')).toBeNull();
+    expect(screen.getByText('Second workflow')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
+
+    expect(screen.getByText('First workflow')).toBeDefined();
+    expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-2');
+  });
+
+  it('restores a discarded run from its rail card', () => {
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1', 'run-2'],
+          runOverrides: { 'run-1': { discardedAt: '2026-07-21T10:00:00.000Z' } },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    expect(store.restoreWorkflow).toHaveBeenCalledWith(SESSION_ID, 'run-1');
+  });
+
+  it('files a completed dynamic run under the completed toggle', () => {
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1', 'run-2'],
+          runOverrides: {
+            'run-1': { executionMode: 'dynamic', orchestrationOutcome: 'done' },
+          },
+        })}
+      />,
+    );
+
+    expect(screen.queryByText('First workflow')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+
+    expect(screen.getByText('First workflow')).toBeDefined();
   });
 });

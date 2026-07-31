@@ -1,4 +1,4 @@
-import { Ban, Check, Link2, Pause } from 'lucide-react';
+import { Ban, Check, Link2, Pause, Wand2 } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { StatusDot, cn } from '@goodboy/ui';
 
@@ -61,9 +61,9 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
   }
   if (isDeciding) {
     return (
-      <span className={cn(baseClass, 'bg-info/10 text-info')}>
-        <StatusDot tone="info" size="sm" pulsing />
-        Deciding next step
+      <span className={cn(baseClass, 'bg-accent/10 text-accent')}>
+        <Wand2 size={10} aria-hidden />
+        Next step due
       </span>
     );
   }

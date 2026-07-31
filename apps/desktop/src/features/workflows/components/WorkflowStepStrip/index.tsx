@@ -1,7 +1,8 @@
 import { Fragment } from 'react';
 import { ArrowRight } from 'lucide-react';
 import type { Agent, AgentId, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
-import { kindRouting, inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { resolveStepRouting } from '../../resolveStepRouting';
 import { WorkflowStepStripItem } from './WorkflowStepStripItem';
 
 type Props = {
@@ -37,11 +38,12 @@ export const WorkflowStepStrip = ({
       {sortedRuns.map((run, index) => {
         const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
         const step = run.stepId == null ? null : (stepById.get(run.stepId) ?? null);
-        const model =
-          step?.modelOverride ??
-          agentModelOverride[run.id] ??
-          run.modelOverride ??
-          kindRouting({ kind, roleModels }).model;
+        const model = resolveStepRouting({
+          step,
+          kind,
+          roleModels,
+          agentModel: agentModelOverride[run.id] ?? run.modelOverride,
+        }).model;
 
         return (
           <Fragment key={run.id}>

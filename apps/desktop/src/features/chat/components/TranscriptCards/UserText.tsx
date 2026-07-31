@@ -205,7 +205,6 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
     <TranscriptShell
       tone="info"
       variant="boxed"
-      emphasis
       className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5"
     >
       {atts.length > 0 && (

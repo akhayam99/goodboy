@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Wrench } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
-import { MARKER_ACCENT } from '../marker-accents';
-import { TranscriptChevron } from '../TranscriptChevron';
-import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
+import { formatDuration } from '../../utils/format-duration';
+import { useElapsedMs } from '../../hooks/useElapsedMs';
+import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
 import { StructuredData } from './StructuredData';
 
@@ -12,47 +12,57 @@ type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'tool_call' }>;
 };
 
+const operationsTint = tintClasses('operations');
+const dangerTint = tintClasses('danger');
+const successTint = tintClasses('success');
+const runningTint = tintClasses('warning');
+
 export const ToolCallCard = ({ item }: Props) => {
   const [open, setOpen] = useState(false);
   const [rawMode, setRawMode] = useState(false);
   const running = !item.ended;
+  const elapsedMs = useElapsedMs({ running });
+  const duration = elapsedMs != null ? formatDuration({ durationMs: elapsedMs }) : null;
 
   const stateIcon = item.isError
-    ? MARKER_ACCENT.danger.icon
+    ? dangerTint.icon
     : running
-      ? cn(MARKER_ACCENT.warning.icon, 'motion-safe:animate-pulse')
-      : MARKER_ACCENT.success.icon;
+      ? cn(runningTint.icon, 'motion-safe:animate-pulse')
+      : successTint.icon;
 
   return (
     <div className="flex flex-col gap-0.5">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs',
-          TRANSCRIPT_ROW_HOVER,
-          item.isError && 'text-danger',
-        )}
-      >
-        <TranscriptChevron open={open} />
-        <Wrench
-          size={11}
-          aria-hidden
-          data-testid="tool-state-icon"
-          className={cn('shrink-0', stateIcon)}
-        />
-        <span className="font-mono text-muted-foreground">{item.toolName}</span>
-        {running ? null : item.isError ? (
-          <span className="text-2xs uppercase tracking-wide text-danger">error</span>
-        ) : null}
-      </button>
+      <TranscriptRowHeader
+        tone="neutral"
+        icon={
+          <Wrench
+            size={12}
+            aria-hidden
+            data-testid="tool-state-icon"
+            className={cn('shrink-0', stateIcon)}
+          />
+        }
+        eyebrow="tool"
+        open={open}
+        onToggle={() => setOpen((value) => !value)}
+        preview={
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate font-mono text-muted-foreground">{item.toolName}</span>
+            {!running && item.isError && (
+              <span className={cn('shrink-0 text-2xs uppercase tracking-wide', dangerTint.text)}>
+                error
+              </span>
+            )}
+          </span>
+        }
+        meta={duration ?? undefined}
+      />
       {open ? (
-        <div className="ml-[1.125rem] flex min-w-0 flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1 pl-6">
           <div className="flex items-center justify-end">
             <button
               type="button"
-              onClick={() => setRawMode((v) => !v)}
+              onClick={() => setRawMode((value) => !value)}
               data-testid="raw-toggle"
               className="rounded px-1.5 py-0.5 text-2xs text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground/80"
             >
@@ -65,7 +75,7 @@ export const ToolCallCard = ({ item }: Props) => {
                 tone="operations"
                 variant="leftBorder"
                 nested
-                className={cn('min-w-0 rounded-md', MARKER_ACCENT.operations.bgSoft)}
+                className={cn('min-w-0 rounded-md', operationsTint.bgSoft)}
               >
                 <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
                   input: {JSON.stringify(item.input, null, 2)}
@@ -78,7 +88,7 @@ export const ToolCallCard = ({ item }: Props) => {
                   nested
                   className={cn(
                     'min-w-0 rounded-md',
-                    item.isError ? MARKER_ACCENT.danger.bgSoft : MARKER_ACCENT.success.bgSoft,
+                    item.isError ? dangerTint.bgSoft : successTint.bgSoft,
                   )}
                 >
                   <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
@@ -93,7 +103,7 @@ export const ToolCallCard = ({ item }: Props) => {
                 tone="operations"
                 variant="leftBorder"
                 nested
-                className={cn('rounded-md text-xs', MARKER_ACCENT.operations.bgSoft)}
+                className={cn('rounded-md text-xs', operationsTint.bgSoft)}
               >
                 <StructuredData data={item.input} label="input" />
               </TranscriptShell>
@@ -104,7 +114,7 @@ export const ToolCallCard = ({ item }: Props) => {
                   nested
                   className={cn(
                     'rounded-md text-xs',
-                    item.isError ? MARKER_ACCENT.danger.bgSoft : MARKER_ACCENT.success.bgSoft,
+                    item.isError ? dangerTint.bgSoft : successTint.bgSoft,
                   )}
                 >
                   <StructuredData data={item.output} label="output" />

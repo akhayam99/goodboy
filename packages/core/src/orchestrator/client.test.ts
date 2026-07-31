@@ -27,9 +27,14 @@ describe('OrchestratorClient', () => {
       processText: 'Implement and test.',
       completedSteps: [],
       openQuestionCount: 0,
+      providerId: 'anthropic',
+      modelMenu: [{ id: 'haiku-4.5', label: 'Haiku 4.5', note: 'cheap, fast' }],
+      roleDefaults: [{ role: 'implementer', model: 'sonnet-5', effort: 'medium' }],
     });
 
     const args = request?.['args'] as Record<string, unknown> | undefined;
+    expect(args?.['userMessage']).toContain('haiku-4.5 - Haiku 4.5 - cheap, fast');
+    expect(args?.['userMessage']).toContain('implementer=sonnet-5/medium');
     expect(command).toBe('planner_run');
     expect(args?.['model']).toBe('claude-haiku-4-5');
     expect(result.model).toBe('claude-haiku-4-5');
@@ -57,6 +62,9 @@ describe('OrchestratorClient', () => {
       processText: 'Implement and test.',
       completedSteps: [],
       openQuestionCount: 0,
+      providerId: 'anthropic',
+      modelMenu: [{ id: 'haiku-4.5', label: 'Haiku 4.5', note: 'cheap, fast' }],
+      roleDefaults: [{ role: 'implementer', model: 'sonnet-5', effort: 'medium' }],
     });
 
     const args = request?.['args'] as Record<string, unknown> | undefined;
@@ -77,6 +85,9 @@ describe('OrchestratorClient', () => {
       processText: 'Implement and test.',
       completedSteps: [],
       openQuestionCount: 0,
+      providerId: 'codex',
+      modelMenu: [],
+      roleDefaults: [],
     });
 
     expect(result.decision).toBeNull();
@@ -98,6 +109,9 @@ describe('OrchestratorClient', () => {
         processText: 'Implement and test.',
         completedSteps: [],
         openQuestionCount: 0,
+        providerId: 'codex',
+        modelMenu: [],
+        roleDefaults: [],
       }),
     ).rejects.toThrow('orchestrator decision timed out');
   });

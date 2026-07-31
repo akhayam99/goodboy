@@ -30,7 +30,7 @@ export const WorkflowDeleteButton = ({ onConfirm }: Props) => {
     <button
       type="button"
       onClick={() => setIsArmed(true)}
-      className="inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md border border-danger/40 px-2 text-2xs font-semibold text-danger transition-colors hover:bg-danger/10"
+      className="inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-danger/70 transition-colors hover:bg-danger/10 hover:text-danger"
     >
       <Trash2 size={14} aria-hidden />
       Delete

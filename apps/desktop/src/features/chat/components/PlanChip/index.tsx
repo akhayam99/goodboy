@@ -4,9 +4,9 @@ import type { SessionId } from '@goodboy/types';
 import { extractPlanFromMarker } from '@goodboy/core';
 import { useSessionPlans } from '../../../../store';
 import { TranscriptShell } from '../TranscriptShell';
-import { MARKER_ACCENT } from '../marker-accents';
+import { tintClasses } from '@goodboy/ui';
 
-const accent = MARKER_ACCENT.primary;
+const accent = tintClasses('primary');
 
 type Props = {
   readonly assistantText: string;
@@ -41,7 +41,7 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       variant="pill"
       className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
-      <FileText size={11} aria-hidden />
+      <FileText size={12} aria-hidden />
       <span>{plan.title}</span>
     </TranscriptShell>
   );

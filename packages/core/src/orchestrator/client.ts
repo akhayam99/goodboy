@@ -117,7 +117,7 @@ export class OrchestratorClient {
       }),
     };
     return {
-      decision: parseOrchestratorDecision(extracted.text),
+      decision: parseOrchestratorDecision({ raw: extracted.text, provider: this.providerId }),
       usage,
       model: this.model,
     };

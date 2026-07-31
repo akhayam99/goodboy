@@ -1422,8 +1422,44 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
 
 exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
 <div
-  class="rounded-md border px-3 py-2 border-danger/40 bg-danger/5 text-sm text-danger"
+  class="flex w-full items-start gap-2 text-xs"
 >
-  provider failed to respond
+  <svg
+    aria-hidden="true"
+    class="lucide lucide-circle-alert shrink-0 translate-y-0.5 text-danger"
+    data-testid="transcript-error-icon"
+    fill="none"
+    height="12"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="12"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="10"
+    />
+    <line
+      x1="12"
+      x2="12"
+      y1="8"
+      y2="12"
+    />
+    <line
+      x1="12"
+      x2="12.01"
+      y1="16"
+      y2="16"
+    />
+  </svg>
+  <span
+    class="min-w-0 break-words text-danger"
+  >
+    provider failed to respond
+  </span>
 </div>
 `;
