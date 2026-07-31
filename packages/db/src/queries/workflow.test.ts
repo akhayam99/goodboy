@@ -3,7 +3,7 @@ import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@go
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
 import type { Database } from '../client';
-import { getWorkflow, upsertWorkflow } from './workflow';
+import { deleteWorkflow, getWorkflow, listWorkflows, upsertWorkflow } from './workflow';
 
 const workspaceId = 'ws-1' as WorkspaceId;
 const workflowId = 'wf-1' as WorkflowId;
@@ -70,5 +70,24 @@ describe('workflow queries', () => {
     const stored = await getWorkflow(db, workflowId);
 
     expect(stored!.steps[0]!.expectedOutput).toBe('a ranked risk list');
+  });
+
+  it('allows recreating a workflow with the name of a deleted one', async () => {
+    await upsertWorkflow(db, buildWorkflow());
+    await deleteWorkflow(db, workflowId);
+    await upsertWorkflow(db, { ...buildWorkflow(), id: 'wf-2' as WorkflowId, steps: [] });
+
+    const live = await listWorkflows(db, workspaceId);
+
+    expect(live.map((workflow) => workflow.id)).toEqual(['wf-2']);
+    expect(live[0]!.name).toBe('Refactor');
+  });
+
+  it('still rejects a duplicate name among live workflows', async () => {
+    await upsertWorkflow(db, buildWorkflow());
+
+    await expect(
+      upsertWorkflow(db, { ...buildWorkflow(), id: 'wf-2' as WorkflowId, steps: [] }),
+    ).rejects.toThrow();
   });
 });
