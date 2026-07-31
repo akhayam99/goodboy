@@ -32,6 +32,8 @@ pub struct SummarizeArgs {
     pub system_prompt: String,
     #[serde(default)]
     pub working_dir: Option<String>,
+    #[serde(default)]
+    pub effort: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -73,19 +75,23 @@ pub async fn summarize_session(args: SummarizeArgs) -> Result<SummarizeResult, S
 
 fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
     match args.provider_id.as_str() {
-        "anthropic" => Ok(vec![
-            "-p".to_string(),
-            args.user_message.clone(),
-            "--model".to_string(),
-            args.model.clone(),
-            "--system-prompt".to_string(),
-            args.system_prompt.clone(),
-            "--setting-sources".to_string(),
-            crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
-            "--output-format".to_string(),
-            "json".to_string(),
-            "--no-session-persistence".to_string(),
-        ]),
+        "anthropic" => {
+            let mut cli_args = vec![
+                "-p".to_string(),
+                args.user_message.clone(),
+                "--model".to_string(),
+                args.model.clone(),
+                "--system-prompt".to_string(),
+                args.system_prompt.clone(),
+                "--setting-sources".to_string(),
+                crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
+                "--output-format".to_string(),
+                "json".to_string(),
+                "--no-session-persistence".to_string(),
+            ];
+            crate::aux_spawn::push_effort_args("anthropic", args.effort.as_deref(), &mut cli_args);
+            Ok(cli_args)
+        }
         "cursor" => Ok(vec![
             "-p".to_string(),
             format!("{}\n\n{}", args.system_prompt, args.user_message),
@@ -95,16 +101,20 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
             "stream-json".to_string(),
             "--force".to_string(),
         ]),
-        "codex" => Ok(vec![
-            "exec".to_string(),
-            "--json".to_string(),
-            "-m".to_string(),
-            args.model.clone(),
-            "-s".to_string(),
-            "read-only".to_string(),
-            "--skip-git-repo-check".to_string(),
-            format!("{}\n\n{}", args.system_prompt, args.user_message),
-        ]),
+        "codex" => {
+            let mut cli_args = vec![
+                "exec".to_string(),
+                "--json".to_string(),
+                "-m".to_string(),
+                args.model.clone(),
+                "-s".to_string(),
+                "read-only".to_string(),
+                "--skip-git-repo-check".to_string(),
+            ];
+            crate::aux_spawn::push_effort_args("codex", args.effort.as_deref(), &mut cli_args);
+            cli_args.push(format!("{}\n\n{}", args.system_prompt, args.user_message));
+            Ok(cli_args)
+        }
         "gemini" => Ok(vec![
             "-p".to_string(),
             format!("{}\n\n{}", args.system_prompt, args.user_message),
@@ -124,6 +134,11 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
                 cli_args.push("--dir".to_string());
                 cli_args.push(working_dir.to_string());
             }
+            crate::aux_spawn::push_effort_args(
+                &args.provider_id,
+                args.effort.as_deref(),
+                &mut cli_args,
+            );
             cli_args.push("--agent".to_string());
             cli_args.push("plan".to_string());
             cli_args.push("--".to_string());
@@ -146,7 +161,17 @@ mod tests {
             user_message: "summarize this".to_string(),
             system_prompt: "you summarize".to_string(),
             working_dir: None,
+            effort: None,
         }
+    }
+
+    #[test]
+    fn anthropic_args_pass_effort_when_set() {
+        let mut args = make_args("anthropic");
+        args.effort = Some("medium".to_string());
+        let cli = build_cli_args(&args).expect("anthropic args");
+        let idx = cli.iter().position(|a| a == "--effort").expect("--effort");
+        assert_eq!(cli[idx + 1], "medium");
     }
 
     #[test]

@@ -1,14 +1,23 @@
 import { cn } from '@goodboy/ui';
+import { CHIP_TONE_ACTIVE, type ChipTone } from './chipTone';
 
 type Props = {
   readonly label: string;
   readonly active: boolean;
   readonly disabled?: boolean;
   readonly title?: string;
+  readonly tone?: ChipTone;
   readonly onSelect: () => void;
 };
 
-export const PickerChip = ({ label, active, disabled = false, title, onSelect }: Props) => (
+export const PickerChip = ({
+  label,
+  active,
+  disabled = false,
+  title,
+  tone = 'neutral',
+  onSelect,
+}: Props) => (
   <button
     type="button"
     onClick={onSelect}
@@ -18,7 +27,7 @@ export const PickerChip = ({ label, active, disabled = false, title, onSelect }:
     className={cn(
       'inline-flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
       active
-        ? 'bg-background font-medium text-foreground shadow-sm'
+        ? cn('font-medium shadow-sm', CHIP_TONE_ACTIVE[tone])
         : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
       disabled && 'cursor-not-allowed opacity-60',
     )}

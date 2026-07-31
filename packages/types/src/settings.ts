@@ -18,6 +18,7 @@ export type AuxTaskId =
 export type TaskModelPreference = Readonly<{
   providerId: ProviderId;
   model: string;
+  effort?: ModelEffort;
 }>;
 
 export type TaskModelPreferences = Readonly<Partial<Record<AuxTaskId, TaskModelPreference>>>;

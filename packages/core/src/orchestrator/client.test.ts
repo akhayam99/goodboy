@@ -36,6 +36,33 @@ describe('OrchestratorClient', () => {
     expect(result.decision).toEqual({ action: 'done', reason: 'The goal is satisfied.' });
   });
 
+  it('forwards the configured effort to the spawn args', async () => {
+    let request: Record<string, unknown> | undefined;
+    const invokeFn: OrchestratorClientDeps['invokeFn'] = async <T>(
+      _cmd: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => {
+      request = args;
+      return { stdout: JSON.stringify({ result: RESPONSE }), stderr: '', exitCode: 0 } as T;
+    };
+    const client = new OrchestratorClient({
+      providerId: 'anthropic',
+      model: 'sonnet-4.6',
+      effort: 'high',
+      invokeFn,
+    });
+
+    await client.decide({
+      goal: 'Fix auth',
+      processText: 'Implement and test.',
+      completedSteps: [],
+      openQuestionCount: 0,
+    });
+
+    const args = request?.['args'] as Record<string, unknown> | undefined;
+    expect(args?.['effort']).toBe('high');
+  });
+
   it('returns a null decision for unparseable output', async () => {
     const invokeFn: OrchestratorClientDeps['invokeFn'] = async <T>(): Promise<T> =>
       ({ stdout: 'not marked', stderr: '', exitCode: 0 }) as T;

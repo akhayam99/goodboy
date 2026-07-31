@@ -1,4 +1,4 @@
-import type { ProviderId } from '@goodboy/types';
+import type { ModelEffort, ProviderId } from '@goodboy/types';
 import { cliModelId } from './cliModelId';
 
 export type AuxSpawnResult = {
@@ -10,6 +10,7 @@ export type AuxSpawnResult = {
 type Params = {
   readonly providerId: ProviderId;
   readonly model: string;
+  readonly effort?: ModelEffort;
   readonly binary: string;
   readonly userMessage: string;
   readonly systemPrompt: string;
@@ -20,6 +21,7 @@ type Params = {
 export const runAuxOneShot = async ({
   providerId,
   model,
+  effort,
   binary,
   userMessage,
   systemPrompt,
@@ -30,6 +32,7 @@ export const runAuxOneShot = async ({
     args: {
       providerId,
       model: cliModelId({ provider: providerId, model }),
+      ...(effort != null && { effort }),
       binary,
       userMessage,
       systemPrompt,

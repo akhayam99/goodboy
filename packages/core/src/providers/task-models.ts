@@ -20,7 +20,11 @@ export const resolveTaskModel = (
       id: preference.model,
     });
     if (stored.report?.kind !== 'unknown') {
-      return { providerId: preference.providerId, model: stored.selection.key };
+      return {
+        providerId: preference.providerId,
+        model: stored.selection.key,
+        ...(preference.effort != null && { effort: preference.effort }),
+      };
     }
   }
   return {
@@ -28,7 +32,7 @@ export const resolveTaskModel = (
     model:
       task === 'rebase'
         ? defaultProviderId === 'anthropic'
-          ? 'sonnet-4.6'
+          ? 'sonnet-5'
           : getDefaultTurnModel({ id: defaultProviderId })
         : getCheapModel(defaultProviderId),
   };

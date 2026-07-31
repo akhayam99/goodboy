@@ -1,5 +1,6 @@
 import type { EffortAxis, EffortLevel } from '@goodboy/types';
 import { EFFORT_LABEL } from '../../../features/chat/utils/chat-constants';
+import { effortTone } from './chipTone';
 import { PickerChip } from './PickerChip';
 
 type Props = {
@@ -20,6 +21,7 @@ export const EffortChips = ({ axis, value, canEdit, onPick }: Props) => (
         key={level}
         label={EFFORT_LABEL[level]}
         active={value === level}
+        tone={effortTone(level)}
         disabled={canEdit === false || available === false}
         title={
           available === false

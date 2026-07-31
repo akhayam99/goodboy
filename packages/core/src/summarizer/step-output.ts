@@ -1,3 +1,4 @@
+import type { ModelEffort } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
@@ -28,6 +29,7 @@ type Params = {
 
 type SummarizeParams = Params & {
   readonly model: string;
+  readonly effort?: ModelEffort;
   readonly expectedOutput?: string;
 };
 
@@ -54,6 +56,7 @@ type FallbackDetection = {
 export const summarizeStepOutput = async ({
   providerId,
   binary,
+  effort,
   workingDir,
   invokeFn,
   output,
@@ -66,6 +69,7 @@ export const summarizeStepOutput = async ({
     binary: binary ?? getDefaultBinary(providerId),
     userMessage: output,
     systemPrompt: stepOutputSystemPrompt({ expectedOutput: expectedOutput ?? '' }),
+    ...(effort != null && { effort }),
     ...(workingDir != null && { workingDir }),
     invokeFn,
   });

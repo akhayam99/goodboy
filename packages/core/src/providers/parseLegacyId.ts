@@ -12,6 +12,7 @@ const LEGACY_SELECTIONS: Readonly<Record<string, ModelSelection>> = {
   'anthropic:claude-opus-4-8': { key: 'opus-4.8' },
   'anthropic:claude-opus-4-7': { key: 'opus-4.7' },
   'anthropic:claude-opus-4-6': { key: 'opus-4.6' },
+  'anthropic:claude-sonnet-5': { key: 'sonnet-5' },
   'anthropic:claude-sonnet-4-6': { key: 'sonnet-4.6' },
   'anthropic:claude-sonnet-4-5': { key: 'sonnet-4.5' },
   'anthropic:claude-haiku-4-5': { key: 'haiku-4.5' },

@@ -34,6 +34,8 @@ pub struct PlannerArgs {
     pub working_dir: Option<String>,
     #[serde(default)]
     pub tools_disabled: bool,
+    #[serde(default)]
+    pub effort: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -93,6 +95,7 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
                 cli_args.push("--tools".to_string());
                 cli_args.push(String::new());
             }
+            crate::aux_spawn::push_effort_args("anthropic", args.effort.as_deref(), &mut cli_args);
             Ok(cli_args)
         }
         "cursor" => Ok(vec![
@@ -104,14 +107,18 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
             "stream-json".to_string(),
             "--force".to_string(),
         ]),
-        "codex" => Ok(vec![
-            "exec".to_string(),
-            "--json".to_string(),
-            "--model".to_string(),
-            args.model.clone(),
-            "--".to_string(),
-            format!("{}\n\n{}", args.system_prompt, args.user_message),
-        ]),
+        "codex" => {
+            let mut cli_args = vec![
+                "exec".to_string(),
+                "--json".to_string(),
+                "--model".to_string(),
+                args.model.clone(),
+            ];
+            crate::aux_spawn::push_effort_args("codex", args.effort.as_deref(), &mut cli_args);
+            cli_args.push("--".to_string());
+            cli_args.push(format!("{}\n\n{}", args.system_prompt, args.user_message));
+            Ok(cli_args)
+        }
         "gemini" => Ok(vec![
             "-p".to_string(),
             format!("{}\n\n{}", args.system_prompt, args.user_message),
@@ -154,7 +161,36 @@ mod tests {
             system_prompt: "you plan".to_string(),
             working_dir: None,
             tools_disabled: false,
+            effort: None,
         }
+    }
+
+    #[test]
+    fn anthropic_args_pass_effort_when_set() {
+        let mut args = make_args("anthropic");
+        args.effort = Some("high".to_string());
+        let cli = build_cli_args(&args).expect("anthropic args");
+        let idx = cli.iter().position(|a| a == "--effort").expect("--effort");
+        assert_eq!(cli[idx + 1], "high");
+    }
+
+    #[test]
+    fn codex_args_pass_effort_before_the_prompt() {
+        let mut args = make_args("codex");
+        args.effort = Some("low".to_string());
+        let cli = build_cli_args(&args).expect("codex args");
+        let effort_idx = cli
+            .iter()
+            .position(|a| a == "model_reasoning_effort=\"low\"")
+            .expect("effort config");
+        let sep_idx = cli.iter().position(|a| a == "--").expect("separator");
+        assert!(effort_idx < sep_idx);
+    }
+
+    #[test]
+    fn args_without_effort_stay_unchanged() {
+        let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
+        assert!(!cli.iter().any(|a| a == "--effort"));
     }
 
     #[test]

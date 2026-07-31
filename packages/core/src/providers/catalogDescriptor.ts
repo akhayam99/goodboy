@@ -10,6 +10,7 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'opus-4.8': 80,
   'opus-4.7': 75,
   'opus-4.6': 60,
+  'sonnet-5': 16,
   'sonnet-4.6': 15,
   'sonnet-4.5': 14,
   'haiku-4.5': 5,

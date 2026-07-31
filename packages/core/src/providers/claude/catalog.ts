@@ -90,6 +90,23 @@ export const ANTHROPIC_CATALOG = [
     defaultEffort: 'high',
   },
   {
+    key: 'sonnet-5',
+    label: 'Sonnet 5',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'claude',
+      group: 'Sonnet',
+      version: '5',
+      order: 22,
+      costTier: 'mid',
+    },
+    provider: 'anthropic',
+    cliId: 'claude-sonnet-5',
+    efforts: SONNET_EFFORTS,
+    defaultEffort: 'medium',
+  },
+  {
     key: 'sonnet-4.6',
     label: 'Sonnet 4.6',
     tier: 'turn',

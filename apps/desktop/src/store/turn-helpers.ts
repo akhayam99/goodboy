@@ -231,6 +231,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     const summarizer = new Summarizer({
       providerId: taskModel.providerId,
       model: taskModel.model,
+      ...(taskModel.effort != null && { effort: taskModel.effort }),
       invokeFn: invoke,
       ...(worktreePath != null && { workingDir: worktreePath }),
     });

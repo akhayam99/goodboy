@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
-import type { AuxTaskId, ProviderId, TaskModelPreference } from '@goodboy/types';
+import type { AuxTaskId, ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
+import { clampEffort, modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { RoutingStatusControl } from './RoutingStatusControl';
+
+const DEFAULT_EFFORT: ModelEffort = 'medium';
+
+const effortForModel = (model: string, requested: ModelEffort): ModelEffort | null =>
+  modelEffortLevels(model) == null ? null : clampEffort(model, requested);
 
 type Props = {
   readonly task: AuxTaskId;
@@ -34,6 +40,8 @@ export const TaskModelRow = ({
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
   const recommendedModel = resolveTaskModel(task, null, providerId).model;
+  const effortModel = model === '' ? recommendedModel : model;
+  const effortValue = preference?.effort ?? DEFAULT_EFFORT;
 
   useEffect(() => {
     setProviderId(preferredProviderId);
@@ -54,7 +62,18 @@ export const TaskModelRow = ({
             connectedProviders={availableProviderIds}
             provider={providerId}
             model={model}
-            effort={{ editable: false }}
+            effort={{
+              editable: true,
+              value: effortForModel(effortModel, effortValue) ?? effortValue,
+              onChange: (effort) => {
+                const applied = effortForModel(effortModel, effort);
+                onChange({
+                  providerId,
+                  model: model === '' ? recommendedModel : model,
+                  ...(applied != null && { effort: applied }),
+                });
+              },
+            }}
             recommendation={{ model: recommendedModel }}
             disabled={disabled}
             onProvider={(next) => {
@@ -67,9 +86,19 @@ export const TaskModelRow = ({
               }
               onChange(resolveTaskModel(task, null, next));
             }}
-            onModel={(nextModel) =>
-              onChange(nextModel === '' ? null : { providerId, model: nextModel })
-            }
+            onModel={(nextModel) => {
+              if (nextModel === '') {
+                onChange(null);
+                return;
+              }
+              const carried =
+                preference?.effort == null ? null : effortForModel(nextModel, preference.effort);
+              onChange({
+                providerId,
+                model: nextModel,
+                ...(carried != null && { effort: carried }),
+              });
+            }}
           />
         </div>
       </div>

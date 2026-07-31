@@ -1,4 +1,4 @@
-import type { ContextSlot, ProviderId } from '@goodboy/types';
+import type { ContextSlot, ModelEffort, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { computeProviderCostUsd } from '../providers/provider-cost';
@@ -40,6 +40,7 @@ export type SummarizerDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly model?: string;
+  readonly effort?: ModelEffort;
   readonly workingDir?: string;
   readonly invokeFn: InvokeFn;
 };
@@ -78,6 +79,7 @@ export class Summarizer {
   private readonly providerId: ProviderId;
   private readonly binary: string;
   private readonly model: string;
+  private readonly effort: ModelEffort | undefined;
   private readonly workingDir: string | undefined;
   private readonly invokeFn: InvokeFn;
 
@@ -88,6 +90,7 @@ export class Summarizer {
       provider: deps.providerId,
       model: deps.model ?? getCheapModel(deps.providerId),
     });
+    this.effort = deps.effort;
     this.workingDir = deps.workingDir;
     this.invokeFn = deps.invokeFn;
   }
@@ -101,6 +104,7 @@ export class Summarizer {
       binary: this.binary,
       userMessage,
       systemPrompt: SUMMARIZER_SYSTEM_PROMPT,
+      ...(this.effort != null && { effort: this.effort }),
       ...(this.workingDir != null && { workingDir: this.workingDir }),
       invokeFn: this.invokeFn,
     });
