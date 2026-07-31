@@ -1,4 +1,4 @@
-import { StatusDot, cn } from '@goodboy/ui';
+import { StatusDot, cn, formatUsd } from '@goodboy/ui';
 import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
@@ -40,7 +40,7 @@ export const ClusterChildRow = ({
         <Check size={8} className="text-success" aria-hidden />
       </span>
     ) : child.status === 'failed' ? (
-      <span className="size-1.5 rounded-full bg-danger" aria-hidden />
+      <StatusDot tone="danger" size="sm" />
     ) : (
       <Clock size={10} className="text-muted-foreground/60" aria-hidden />
     );
@@ -77,12 +77,7 @@ export const ClusterChildRow = ({
         </span>
       ) : null}
       {costUsd > 0 ? (
-        <span
-          className="shrink-0 tabular-nums text-muted-foreground/60"
-          title={`$${costUsd.toFixed(4)}`}
-        >
-          ${costUsd.toFixed(2)}
-        </span>
+        <span className="shrink-0 tabular-nums text-muted-foreground/60">{formatUsd(costUsd)}</span>
       ) : null}
     </button>
   );

@@ -1,4 +1,5 @@
 import { ChevronsUpDown, Settings } from 'lucide-react';
+import { StatusDot } from '@goodboy/ui';
 import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 
@@ -40,11 +41,7 @@ export const WorkspaceHeader = () => {
               {currentWorkspace.name}
             </span>
             {hasUnreadElsewhere ? (
-              <span
-                aria-hidden
-                className="size-1.5 shrink-0 rounded-full bg-warning"
-                title="activity in another workspace"
-              />
+              <StatusDot tone="warning" size="sm" title="activity in another workspace" />
             ) : null}
           </span>
           <span className="truncate text-2xs leading-tight text-muted-foreground/70">

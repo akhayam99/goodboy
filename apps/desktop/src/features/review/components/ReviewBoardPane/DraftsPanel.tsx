@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { MessageSquareDiff } from 'lucide-react';
-import { EmptyState, ScrollFade } from '@goodboy/ui';
+import { EmptyState, Eyebrow, ScrollFade } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
 import { DraftCard } from './DraftCard';
 
@@ -30,9 +30,7 @@ export const DraftsPanel = ({ drafts, onEdit, onDiscard }: Props) => {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center gap-1.5 px-3 pb-1 pt-3">
-        <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          Draft comments
-        </span>
+        <Eyebrow label="Draft comments" />
         <span className="text-2xs tabular-nums text-muted-foreground/50">{drafts.length}</span>
       </div>
       {drafts.length === 0 ? (

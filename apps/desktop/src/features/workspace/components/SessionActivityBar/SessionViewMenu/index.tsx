@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, SlidersHorizontal } from 'lucide-react';
-import { Divider, Popover, Tooltip, cn } from '@goodboy/ui';
+import { Divider, Eyebrow, Popover, Tooltip, cn } from '@goodboy/ui';
 import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useSessionViewPrefs } from '../../../../../store';
 
@@ -160,9 +160,7 @@ type MenuSectionProps = {
 function MenuSection({ title, children }: MenuSectionProps) {
   return (
     <div className="px-1 py-1">
-      <p className="px-2 pb-1 pt-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground/60">
-        {title}
-      </p>
+      <Eyebrow label={title} muted className="px-2 pb-1 pt-0.5" />
       <div className="flex flex-col">{children}</div>
     </div>
   );

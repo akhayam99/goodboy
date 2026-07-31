@@ -1,6 +1,15 @@
 import { Fragment, memo, useEffect, useMemo, useState } from 'react';
 import { Archive, Check, ChevronRight, PanelLeftClose, Plus } from 'lucide-react';
-import { Button, KbdPill, cn, ScrollArea, StatusDot, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  Eyebrow,
+  formatUsd,
+  KbdPill,
+  cn,
+  ScrollArea,
+  StatusDot,
+  Tooltip,
+} from '@goodboy/ui';
 import type {
   Session,
   SessionGroupKey,
@@ -126,9 +135,7 @@ export const SessionActivityBar = ({
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-1.5 px-2.5 py-2.5">
           <div className="mb-1.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
-            <span className="text-2xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Sessions
-            </span>
+            <Eyebrow label="Sessions" />
             <div className="flex items-center gap-0.5">
               <button
                 type="button"
@@ -355,7 +362,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
         {sessionCost > 0 && (
           <CostBadge
             value={sessionCost}
-            title={`session spend: $${sessionCost.toFixed(2)} (excludes summarizer)`}
+            title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
             className="shrink-0 text-[11px] font-medium text-muted-foreground/55"
           />
         )}

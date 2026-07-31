@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Moon, Smartphone, Sun } from 'lucide-react';
-import { cn, Divider, Tooltip } from '@goodboy/ui';
+import { cn, Divider, StatusDot, Tooltip } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../shared/components/section-icons';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
@@ -124,9 +124,7 @@ const PairDeviceCta = () => {
     >
       <Smartphone size={11} aria-hidden />
       <span>Pair</span>
-      {linked ? (
-        <span aria-hidden className="ml-0.5 size-1.5 shrink-0 rounded-full bg-success" />
-      ) : null}
+      {linked ? <StatusDot tone="success" size="sm" className="ml-0.5" /> : null}
     </button>
   );
 };

@@ -10,6 +10,7 @@ import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 
 function severityIcon(severity: NotificationSeverity, size = 13) {
   switch (severity) {
@@ -35,23 +36,6 @@ function severityClass(severity: NotificationSeverity): string {
     default:
       return 'text-info';
   }
-}
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) {
-    return 'just now';
-  }
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
 }
 
 const DROPDOWN_WIDTH = 320;
@@ -233,7 +217,9 @@ function NotificationItem({ notification: n }: NotificationItemProps) {
             {n.body}
           </p>
         )}
-        <p className="mt-0.5 text-2xs text-muted-foreground/70">{relativeTime(n.ts)}</p>
+        <p className="mt-0.5 text-2xs text-muted-foreground/70">
+          {formatRelativeAge({ fromIso: n.ts })}
+        </p>
         {action != null ? (
           <div className="mt-1 flex items-center gap-1.5">
             <button

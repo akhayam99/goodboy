@@ -1,5 +1,5 @@
 import type { AgentId, ProviderId } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
+import { Checkbox, cn } from '@goodboy/ui';
 import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw, Sparkles } from 'lucide-react';
 import { modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
@@ -50,13 +50,12 @@ export const ResolveCard = ({
       )}
     >
       <div className="flex items-start gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={checked && !claimed}
           disabled={claimed}
           onChange={onToggle}
-          aria-label={`include comment by ${head.author}`}
-          className="mt-0.5 size-3.5 accent-primary disabled:opacity-40"
+          ariaLabel={`include comment by ${head.author}`}
+          className="mt-0.5"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

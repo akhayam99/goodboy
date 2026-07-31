@@ -1,5 +1,6 @@
 import { turnReducer, type ClaudeFlagSet } from '@goodboy/core';
 import { insertMessage, updateSessionState } from '@goodboy/db';
+import { formatUsd } from '@goodboy/ui';
 import type {
   AgentId,
   IsoDateTime,
@@ -93,7 +94,7 @@ export const dispatchParallelTurn = async (
       get().appendTurnEvent(activeAgentId, sessionId, {
         kind: 'error',
         runId: crypto.randomUUID() as ProviderRunId,
-        message: `parallel turn aborted: projected spend (${sessSpent.toFixed(4)} USD) would exceed session soft cap (${sessBudget.softCapUsd.toFixed(4)} USD).`,
+        message: `parallel turn aborted: projected spend (${formatUsd(sessSpent)}) would exceed session soft cap (${formatUsd(sessBudget.softCapUsd)}).`,
         at: now(),
       });
       return;

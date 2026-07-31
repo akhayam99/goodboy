@@ -1,14 +1,16 @@
-import { cn } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { cn } from '../cn';
 
-type ToggleSwitchProps = {
-  readonly label: string;
+export type SwitchProps = {
+  readonly label: ReactNode;
   readonly checked: boolean;
-  readonly disabled: boolean;
+  readonly disabled?: boolean;
   readonly beta?: boolean;
   readonly onChange: (next: boolean) => void;
+  readonly className?: string;
 };
 
-export const ToggleSwitch = ({ label, checked, disabled, beta, onChange }: ToggleSwitchProps) => (
+export const Switch = ({ label, checked, disabled, beta, onChange, className }: SwitchProps) => (
   <button
     type="button"
     role="switch"
@@ -19,6 +21,7 @@ export const ToggleSwitch = ({ label, checked, disabled, beta, onChange }: Toggl
       'inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs transition-colors',
       checked ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
       disabled && 'cursor-not-allowed opacity-50',
+      className,
     )}
   >
     <span

@@ -1,7 +1,8 @@
 import { CheckCheck, ExternalLink, Sparkles } from 'lucide-react';
 import { cn, Markdown, StatusDot } from '@goodboy/ui';
 import { type CommentThread, isBot } from '../../../comment-threads';
-import { formatRelative, TAB_ICON_BTN } from '../lib';
+import { TAB_ICON_BTN } from '../lib';
+import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { Avatar } from '../parts/Avatar';
 
 type Props = {
@@ -48,7 +49,7 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
             </span>
           ) : null}
           <span className="opacity-50">·</span>
-          <span>{formatRelative(Date.now() - new Date(head.createdAt).getTime())}</span>
+          <span>{formatRelativeAge({ fromIso: head.createdAt })}</span>
           {replies.length > 0 && (
             <span className="opacity-50">
               · +{replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
@@ -108,7 +109,7 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
                   <Avatar url={r.authorAvatarUrl} alt={r.author} />
                   <span className="truncate font-medium text-foreground">{r.author}</span>
                   <span className="opacity-50">·</span>
-                  <span>{formatRelative(Date.now() - new Date(r.createdAt).getTime())}</span>
+                  <span>{formatRelativeAge({ fromIso: r.createdAt })}</span>
                 </div>
                 {r.body.trim() ? (
                   <div className="text-[11px] text-foreground/90 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">

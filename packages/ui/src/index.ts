@@ -8,6 +8,8 @@ export {
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
+export { Checkbox } from './components/Checkbox';
+export type { CheckboxProps } from './components/Checkbox';
 export { Chip } from './components/Chip';
 export type { ChipProps } from './components/Chip';
 export { Collapsible } from './components/Collapsible';
@@ -56,6 +58,8 @@ export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';
 export { StatusDot } from './components/StatusDot';
 export type { StatusDotProps } from './components/StatusDot';
+export { Switch } from './components/Switch';
+export type { SwitchProps } from './components/Switch';
 export { Textarea } from './components/Textarea';
 export type { TextareaProps } from './components/Textarea';
 export { Tooltip } from './components/Tooltip';

@@ -1,5 +1,5 @@
 import { useNow } from '../../../../../shared/hooks/useNow';
-import { formatRelative } from '../lib';
+import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 
 type Props = {
   readonly fetchedAt: string | null;
@@ -19,7 +19,7 @@ export const StaleCaption = ({ fetchedAt }: Props) => {
       className="text-[9px] text-muted-foreground/60"
       title={`fetched at ${new Date(fetchedAt).toLocaleString()}`}
     >
-      updated {formatRelative(ageMs)}
+      updated {formatRelativeAge({ fromIso: fetchedAt, nowMs: now })}
     </span>
   );
 };

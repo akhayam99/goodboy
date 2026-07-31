@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, StatusDot, type Tone } from '@goodboy/ui';
 import type {
   TerminalTab,
   TerminalTabId,
@@ -14,10 +14,10 @@ type Props = {
   readonly onSpawn: () => void;
 };
 
-const STATUS_DOT: Record<TerminalTabStatus, string> = {
-  running: 'bg-success',
-  exited: 'bg-muted-foreground/40',
-  attention: 'bg-warning',
+const STATUS_TONE: Record<TerminalTabStatus, Tone> = {
+  running: 'success',
+  exited: 'neutral',
+  attention: 'warning',
 };
 
 export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }: Props) => {
@@ -45,10 +45,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
                 : 'text-muted-foreground hover:bg-muted/50',
             )}
           >
-            <span
-              className={cn('size-2 shrink-0 rounded-full', STATUS_DOT[t.status])}
-              aria-hidden
-            />
+            <StatusDot tone={STATUS_TONE[t.status]} size="md" />
             <span className="max-w-[10rem] truncate">{t.title}</span>
             <button
               type="button"

@@ -146,7 +146,7 @@ export const WorkflowStepRow = ({
       );
     }
     if (run.status === 'failed') {
-      return <span className="size-1.5 rounded-full bg-danger" aria-hidden />;
+      return <StatusDot tone="danger" size="sm" />;
     }
     return <Clock size={11} className="text-muted-foreground/50" aria-hidden />;
   };

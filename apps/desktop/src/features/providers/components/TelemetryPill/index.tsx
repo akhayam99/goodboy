@@ -44,12 +44,12 @@ export const TelemetryPill = () => {
         aria-label="open budget studio"
         className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs hover:bg-muted/70"
       >
-        <span className="font-medium">{formatUsd(sessionCost)}</span>
+        <span className="font-medium tabular-nums">{formatUsd(sessionCost)}</span>
         <span className="text-muted-foreground">session</span>
         <span aria-hidden className="text-muted-foreground">
           ·
         </span>
-        <span className="font-medium">{formatUsd(workspaceCost)}</span>
+        <span className="font-medium tabular-nums">{formatUsd(workspaceCost)}</span>
         {providerSpend.length > 0 && (
           <span aria-hidden className="ml-1 flex items-center -space-x-0.5">
             {providerSpend

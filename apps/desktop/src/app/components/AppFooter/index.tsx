@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, Divider, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, Divider, StatusDot, tintClasses, type Tone } from '@goodboy/ui';
 import { FolderGit2, TrendingUp } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
@@ -47,10 +47,7 @@ const FooterButton = ({
     {icon}
     <span>{label}</span>
     {connected === false ? (
-      <span
-        aria-hidden
-        className="absolute right-0 top-0 size-1.5 rounded-full bg-warning ring-1 ring-subtle"
-      />
+      <StatusDot tone="warning" size="sm" className="absolute right-0 top-0 ring-1 ring-subtle" />
     ) : null}
   </button>
 );
