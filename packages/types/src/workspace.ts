@@ -90,6 +90,7 @@ export type WorkflowRun = Readonly<{
   orchestrationError?: string;
   orchestratorHints?: string;
   orchestratorRouting?: OrchestratorRouting;
+  stepRouting?: OrchestratorRouting;
   chainAfterId?: WorkflowRunId;
   goal?: string;
   discardedAt?: IsoDateTime;

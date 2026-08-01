@@ -28,27 +28,45 @@ export type SessionWorkflowRow = {
   orchestrator_provider: string | null;
   orchestrator_model: string | null;
   orchestrator_effort: string | null;
+  step_provider: string | null;
+  step_model: string | null;
+  step_effort: string | null;
   chain_after_run_id: string | null;
   goal: string | null;
   discarded_at: string | null;
 };
 
 export const SESSION_WORKFLOW_COLS =
-  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, chain_after_run_id, goal, discarded_at';
+  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, step_provider, step_model, step_effort, chain_after_run_id, goal, discarded_at';
 
-const toRouting = (row: SessionWorkflowRow): OrchestratorRouting | null => {
-  if (row.orchestrator_provider == null || row.orchestrator_model == null) {
+type RoutingColumns = {
+  readonly provider: string | null;
+  readonly model: string | null;
+  readonly effort: string | null;
+};
+
+const toRouting = ({ provider, model, effort }: RoutingColumns): OrchestratorRouting | null => {
+  if (provider == null || model == null) {
     return null;
   }
   return {
-    providerId: row.orchestrator_provider as ProviderId,
-    model: row.orchestrator_model,
-    ...(row.orchestrator_effort != null && { effort: row.orchestrator_effort as ModelEffort }),
+    providerId: provider as ProviderId,
+    model,
+    ...(effort != null && { effort: effort as ModelEffort }),
   };
 };
 
 export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
-  const routing = toRouting(row);
+  const orchestratorRouting = toRouting({
+    provider: row.orchestrator_provider,
+    model: row.orchestrator_model,
+    effort: row.orchestrator_effort,
+  });
+  const stepRouting = toRouting({
+    provider: row.step_provider,
+    model: row.step_model,
+    effort: row.step_effort,
+  });
   return {
     id: row.workflow_run_id as WorkflowRunId,
     workflowId: row.workflow_id as WorkflowId,
@@ -66,7 +84,8 @@ export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
       row.orchestration_error !== '' && { orchestrationError: row.orchestration_error }),
     ...(row.orchestrator_hints != null &&
       row.orchestrator_hints !== '' && { orchestratorHints: row.orchestrator_hints }),
-    ...(routing != null && { orchestratorRouting: routing }),
+    ...(orchestratorRouting != null && { orchestratorRouting }),
+    ...(stepRouting != null && { stepRouting }),
     ...(row.chain_after_run_id != null && {
       chainAfterId: row.chain_after_run_id as WorkflowRunId,
     }),
@@ -108,6 +127,7 @@ export const attachWorkflowToSession = async (
   triggerMode: WorkflowTriggerMode = 'immediate',
   chainAfterRunId?: WorkflowRunId,
   executionMode: WorkflowExecutionMode = 'static',
+  stepRouting?: OrchestratorRouting,
 ): Promise<void> => {
   const maxOrdinal = await db.select<{ max_ordinal: number | null }>(
     'SELECT MAX(ordinal) as max_ordinal FROM session_workflows WHERE session_id = ?',
@@ -116,7 +136,7 @@ export const attachWorkflowToSession = async (
   const nextOrdinal = (maxOrdinal[0]?.max_ordinal ?? -1) + 1;
 
   await db.execute(
-    'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, chain_after_run_id, execution_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, chain_after_run_id, execution_mode, step_provider, step_model, step_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       workflowRunId,
       sessionId,
@@ -128,6 +148,9 @@ export const attachWorkflowToSession = async (
       triggerMode,
       chainAfterRunId ?? null,
       executionMode,
+      stepRouting?.providerId ?? null,
+      stepRouting?.model ?? null,
+      stepRouting?.effort ?? null,
     ],
   );
   await bumpSessionUpdatedAt(db, sessionId, updatedAt);
@@ -164,7 +187,7 @@ export const updateWorkflowOrder = async (
         continue;
       }
       await db.execute(
-        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, step_provider, step_model, step_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           runId,
           sessionId,
@@ -184,6 +207,9 @@ export const updateWorkflowOrder = async (
           prev.orchestrator_provider,
           prev.orchestrator_model,
           prev.orchestrator_effort,
+          prev.step_provider,
+          prev.step_model,
+          prev.step_effort,
         ],
       );
     }
@@ -270,6 +296,17 @@ export const updateWorkflowRunOrchestratorRouting = async (
 ): Promise<void> => {
   await db.execute(
     'UPDATE session_workflows SET orchestrator_provider = ?, orchestrator_model = ?, orchestrator_effort = ? WHERE workflow_run_id = ?',
+    [routing?.providerId ?? null, routing?.model ?? null, routing?.effort ?? null, workflowRunId],
+  );
+};
+
+export const updateWorkflowRunStepRouting = async (
+  db: Database,
+  workflowRunId: WorkflowRunId,
+  routing: OrchestratorRouting | null,
+): Promise<void> => {
+  await db.execute(
+    'UPDATE session_workflows SET step_provider = ?, step_model = ?, step_effort = ? WHERE workflow_run_id = ?',
     [routing?.providerId ?? null, routing?.model ?? null, routing?.effort ?? null, workflowRunId],
   );
 };

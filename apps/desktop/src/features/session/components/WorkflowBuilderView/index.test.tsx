@@ -111,7 +111,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
         };
   }) => (
     <>
-      <button type="button" onClick={() => onProvider(provider === '' ? 'cursor' : '')}>
+      <button type="button" onClick={() => onProvider(provider === 'cursor' ? '' : 'cursor')}>
         provider:{provider === '' ? 'default' : provider}
       </button>
       <button
@@ -465,6 +465,34 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       'sess-1',
       expect.any(String),
       expect.objectContaining({ autoRun: false, executionMode: 'dynamic' }),
+    );
+  });
+
+  it('attaches one routing policy for every runtime-decided step', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    fireEvent.click(continueBtn());
+
+    fireEvent.click(screen.getByRole('button', { name: /^provider:anthropic$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^model:auto$/i }));
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.objectContaining({
+        executionMode: 'dynamic',
+        stepRouting: {
+          providerId: 'cursor',
+          model: 'claude-opus-4-6',
+          effort: 'medium',
+        },
+      }),
     );
   });
 });

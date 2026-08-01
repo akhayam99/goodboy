@@ -4,6 +4,7 @@ import { cn, Markdown, StatusDot } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
+import { StepRoutingRow } from './StepRoutingRow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -95,6 +96,7 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
       ) : null}
 
       <OrchestratorRoutingRow sessionId={sessionId} run={run} disabled={busy || isOrchestrating} />
+      <StepRoutingRow sessionId={sessionId} run={run} disabled={busy || isOrchestrating} />
 
       <div className="flex flex-wrap items-center gap-1.5">
         {phase === 'idle' ? (
