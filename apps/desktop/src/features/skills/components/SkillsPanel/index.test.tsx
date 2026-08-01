@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 
 type Skill = {
   readonly id: string;
@@ -64,6 +64,25 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SkillsPanel', () => {
+  it('places edit in navigation and delete in lifecycle', () => {
+    render(
+      <ToastProvider>
+        <SkillsPanel workspaceId={'ws-1' as never} />
+      </ToastProvider>,
+    );
+
+    const navigationSlot = screen.getByRole('group', { name: 'Skill navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Skill lifecycle actions' });
+
+    expect(navigationSlot.contains(screen.getByRole('button', { name: 'Edit my-skill' }))).toBe(
+      true,
+    );
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete my-skill' }))).toBe(
+      true,
+    );
+    expect(screen.getByTitle('Edit my-skill')).toBeDefined();
+  });
+
   it('arms the delete with an inline confirmation before calling deleteSkill', async () => {
     render(
       <ToastProvider>
@@ -71,12 +90,12 @@ describe('SkillsPanel', () => {
       </ToastProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete my-skill' }));
     expect(state.deleteSkill).not.toHaveBeenCalled();
-    expect(screen.getByRole('group', { name: 'Delete "my-skill"?' })).toBeDefined();
+    const confirmation = screen.getByRole('group', { name: 'Delete "my-skill"?' });
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Delete my-skill' }));
+      fireEvent.click(within(confirmation).getByRole('button', { name: 'Delete my-skill' }));
     });
 
     expect(state.deleteSkill).toHaveBeenCalledWith('skill-1', 'ws-1');
@@ -89,7 +108,7 @@ describe('SkillsPanel', () => {
       </ToastProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete my-skill' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(state.deleteSkill).not.toHaveBeenCalled();

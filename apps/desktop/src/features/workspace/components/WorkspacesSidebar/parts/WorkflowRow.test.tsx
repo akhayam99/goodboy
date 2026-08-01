@@ -179,6 +179,34 @@ const renderDetail = ({
 afterEach(cleanup);
 
 describe('WorkflowRow detail dashboard', () => {
+  it('declares navigation and lifecycle action slots', () => {
+    renderDetail();
+
+    const navigationSlot = screen.getByRole('group', { name: 'Workflow navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+
+    expect(
+      navigationSlot.contains(screen.getByRole('button', { name: 'collapse Refactor workflow' })),
+    ).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'autorun off' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
+  });
+
+  it('keeps completed detail navigation non-empty without lifecycle actions in it', () => {
+    const completedAgents = agents.map((agent) => ({ ...agent, status: 'completed' as const }));
+    renderDetail({ agentsOverride: completedAgents });
+
+    const navigationSlot = screen.getByRole('group', { name: 'Workflow navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+
+    expect(navigationSlot.children).toHaveLength(1);
+    expect(
+      navigationSlot.contains(screen.getByRole('button', { name: 'collapse Refactor workflow' })),
+    ).toBe(true);
+    expect(screen.queryByRole('button', { name: 'autorun off' })).toBeNull();
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
+  });
+
   it('answers where the run is and what it cost', () => {
     renderDetail();
 

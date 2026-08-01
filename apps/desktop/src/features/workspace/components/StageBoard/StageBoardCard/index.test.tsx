@@ -230,11 +230,17 @@ describe('StageBoardCard linked request', () => {
 });
 
 describe('StageBoardCard actions visibility', () => {
-  it('renders static actions without opacity-0 class', () => {
+  it('keeps navigation and lifecycle actions in stable declared slots', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const archiveBtn = screen.getByLabelText('archive');
-    const actionsContainer = archiveBtn.closest('span.mt-auto');
-    expect(actionsContainer?.className).not.toContain('opacity-0');
+    const detailsBtn = screen.getByLabelText('Open session details');
+    const navigationSlot = screen.getByRole('group', { name: 'Session navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Session lifecycle actions' });
+
+    expect(navigationSlot.contains(detailsBtn)).toBe(true);
+    expect(lifecycleSlot.contains(archiveBtn)).toBe(true);
+    expect(detailsBtn.className).not.toContain('opacity-0');
+    expect(archiveBtn.className).not.toContain('opacity-0');
   });
 
   it('renders action buttons with hover color classes', () => {

@@ -6,7 +6,6 @@ import { ContextWindowBar } from '../../../workspace/components/WorkspacesSideba
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
-import { AgentCardActions } from '../AgentCard/AgentCardActions';
 import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { resolverBadgeState } from '../ResolverStateBadge';
@@ -17,8 +16,6 @@ import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { resolverCardTone } from './resolverCardTone';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
-
-const ACTIONS_CLASS = 'w-14';
 
 type Props = {
   readonly agent: Agent;
@@ -99,15 +96,8 @@ export const ResolverCard = ({
           {agent.name}
         </span>
       }
-      actions={
-        <AgentCardActions className={ACTIONS_CLASS}>
-          <AgentCardAction
-            icon={PanelRight}
-            label="Toggle resolver details"
-            pressed={isInspected}
-            active={isInspected}
-            onClick={onInspect}
-          />
+      navigationAction={
+        <>
           <span className="flex size-6 shrink-0 items-center justify-center">
             {canJump && (
               <AgentCardAction
@@ -118,7 +108,14 @@ export const ResolverCard = ({
               />
             )}
           </span>
-        </AgentCardActions>
+          <AgentCardAction
+            icon={PanelRight}
+            label="Toggle resolver details"
+            pressed={isInspected}
+            active={isInspected}
+            onClick={onInspect}
+          />
+        </>
       }
       headline={
         <span className="inline-flex w-fit items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">

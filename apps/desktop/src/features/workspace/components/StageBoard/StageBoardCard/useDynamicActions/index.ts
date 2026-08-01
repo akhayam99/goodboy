@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { HelpCircle, MessageSquare, Play, type LucideIcon } from 'lucide-react';
+import type { Tone } from '@goodboy/ui';
 import type {
   Agent,
   OpenQuestion,
@@ -16,7 +17,7 @@ import type { BoardNavigation } from '../../useBoardNavigation';
 export type DynamicAction = {
   readonly key: string;
   readonly icon: LucideIcon;
-  readonly color: string;
+  readonly tone: Extract<Tone, 'primary' | 'warning'>;
   readonly label: string;
   readonly onClick: () => void;
 };
@@ -61,7 +62,7 @@ export const useDynamicActions = (
       actions.push({
         key: 'run',
         icon: Play,
-        color: 'text-primary',
+        tone: 'primary',
         label: 'run next step',
         onClick: () => nav.openWorkflows(session),
       });
@@ -70,7 +71,7 @@ export const useDynamicActions = (
       actions.push({
         key: 'questions',
         icon: HelpCircle,
-        color: 'text-warning',
+        tone: 'warning',
         label: openCount === 1 ? '1 open question' : `${openCount} open questions`,
         onClick: () => nav.openQuestions(session),
       });
@@ -79,7 +80,7 @@ export const useDynamicActions = (
       actions.push({
         key: 'unread',
         icon: MessageSquare,
-        color: 'text-primary',
+        tone: 'primary',
         label: 'unread reply',
         onClick: () => nav.openAgent(session),
       });

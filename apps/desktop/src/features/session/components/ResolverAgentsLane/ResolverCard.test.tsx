@@ -161,7 +161,12 @@ describe('ResolverCard', () => {
 
     expect(screen.queryByRole('button', { name: 'Open resolver chat' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle resolver details' }));
+    const details = screen.getByRole('button', { name: 'Toggle resolver details' });
+    const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
+    expect(navigationSlot.contains(details)).toBe(true);
+    expect(details.className).not.toContain('opacity-0');
+
+    fireEvent.click(details);
     expect(onInspect).toHaveBeenCalledOnce();
     expect(onOpenChat).toHaveBeenCalledOnce();
   });

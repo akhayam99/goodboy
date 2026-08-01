@@ -168,12 +168,14 @@ describe('ScriptsPanel', () => {
     expect(screen.getByRole('button', { name: 'Collapse setup' })).toBeDefined();
   });
 
-  it('deletes a script through the overflow menu after confirmation', async () => {
+  it('deletes a script through its lifecycle action after confirmation', async () => {
     state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'More actions for setup' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete script' }));
+    const lifecycleSlot = screen.getByRole('group', { name: 'Script lifecycle actions' });
+    const deleteAction = screen.getByRole('button', { name: 'Delete script' });
+    expect(lifecycleSlot.contains(deleteAction)).toBe(true);
+    fireEvent.click(deleteAction);
     expect(state.deleteScript).not.toHaveBeenCalled();
     expect(screen.getByRole('group', { name: 'Delete "setup"?' })).toBeDefined();
     await act(async () => {

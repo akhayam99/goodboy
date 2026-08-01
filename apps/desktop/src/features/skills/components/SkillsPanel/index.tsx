@@ -9,10 +9,11 @@ import {
   InlineConfirm,
   Input,
   SectionHeader,
-  SelectableRow,
   Textarea,
 } from '@goodboy/ui';
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
+import { CardAction } from '../../../../shared/components/CardAction';
+import { CardActionSlot } from '../../../../shared/components/CardActionSlot';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -247,38 +248,41 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
   const [isDeleteArmed, setIsDeleteArmed] = useState(false);
 
   return (
-    <li className="relative">
-      <SelectableRow
-        selected={false}
-        onClick={onEdit}
-        title={`Edit ${skill.name}`}
-        className="flex-col items-start gap-0.5 px-2.5 py-2 pr-20"
-      >
-        <span className="truncate text-sm font-medium text-foreground">/{skill.name}</span>
-        {skill.description !== '' ? (
-          <span className="truncate text-xs text-muted-foreground">{skill.description}</span>
-        ) : null}
-        <span className="truncate text-2xs text-muted-foreground/60">{skill.filePath}</span>
-      </SelectableRow>
-      <div className="absolute right-2 top-1.5 flex items-center gap-0.5">
+    <li className="flex flex-col gap-1">
+      <div className="group/skill-card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] gap-x-2 rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground">
         <button
           type="button"
-          aria-label="Edit"
-          title={`Edit ${skill.name}`}
           onClick={onEdit}
-          className="flex size-7 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-muted hover:text-foreground"
+          title={`Edit ${skill.name}`}
+          className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
-          <Pencil size={13} aria-hidden />
+          <span className="truncate text-sm font-medium text-foreground">/{skill.name}</span>
+          {skill.description !== '' ? (
+            <span className="truncate text-xs text-muted-foreground">{skill.description}</span>
+          ) : null}
+          <span className="truncate text-2xs text-muted-foreground/60">{skill.filePath}</span>
         </button>
-        <button
-          type="button"
-          aria-label="Delete"
-          title={`Delete ${skill.name}`}
-          onClick={() => setIsDeleteArmed(true)}
-          className="flex size-7 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-danger/10 hover:text-danger"
-        >
-          <Trash2 size={13} aria-hidden />
-        </button>
+        <div className="col-start-2 row-start-1 flex items-start gap-1 px-2 py-1.5">
+          <CardActionSlot label="Skill lifecycle actions">
+            <CardAction
+              icon={Trash2}
+              label={`Delete ${skill.name}`}
+              tone="danger"
+              size="default"
+              active={isDeleteArmed}
+              expanded={isDeleteArmed}
+              onClick={() => setIsDeleteArmed(true)}
+            />
+          </CardActionSlot>
+          <CardActionSlot label="Skill navigation actions">
+            <CardAction
+              icon={Pencil}
+              label={`Edit ${skill.name}`}
+              size="default"
+              onClick={onEdit}
+            />
+          </CardActionSlot>
+        </div>
       </div>
 
       {isDeleteArmed ? (

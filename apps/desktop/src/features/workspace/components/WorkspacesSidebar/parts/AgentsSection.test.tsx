@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import type {
   Agent,
   AgentId,
@@ -51,6 +52,7 @@ vi.mock('@goodboy/ui', () => ({
   StatusDot: ({ tone }: { tone: string }) => <span data-testid={`status-dot-${tone}`} />,
   formatUsd: (usd: number) => `$${usd}`,
   formatUsdPrecise: (usd: number) => `$${usd}`,
+  Tooltip: ({ children }: { children: ReactNode }) => children,
   SegmentedTabs: ({
     options,
     value,

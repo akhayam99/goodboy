@@ -199,6 +199,13 @@ before sending, a running total after.
   and reduced-motion gated.
 - **Confirm what is destructive, nothing else.** Two-step confirms are for
   irreversible actions only; they must not tax routine clicks.
+- **One card action grammar.** Every card declares two stable action slots:
+  navigation at the top right, and lifecycle plus destructive actions at the
+  bottom right. The navigation action is always visible. Hover reveal may
+  expose lifecycle actions without moving either slot, and keyboard focus must
+  reveal the same actions. Icon actions use the shared `Tooltip` component,
+  never the native `title` attribute. Destructive actions keep their two-step
+  confirmation.
 
 ## Motion
 

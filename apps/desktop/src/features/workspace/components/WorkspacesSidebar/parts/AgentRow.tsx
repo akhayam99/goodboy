@@ -10,7 +10,6 @@ import { AGENT_KIND_PALETTE, type AgentKind } from '../../../../../features/sess
 import { AgentKindChip } from '../../../../../features/session/components/AgentKindChip';
 import { AgentCard } from '../../../../../features/session/components/AgentCard';
 import { AgentCardAction } from '../../../../../features/session/components/AgentCard/AgentCardAction';
-import { AgentCardActions } from '../../../../../features/session/components/AgentCard/AgentCardActions';
 import { AgentStatusIcon } from '../../../../../features/session/components/AgentCard/AgentStatusIcon';
 import { AgentCardTitle } from '../../../../../features/session/components/AgentCard/AgentCardTitle';
 import { agentCardTone } from '../../../../../features/session/components/AgentCard/agentCardTone';
@@ -21,7 +20,6 @@ import {
 import { AgentLastUpdate } from '../../../../../shared/components/AgentLastUpdate';
 import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
-const ACTIONS_CLASS = 'w-20';
 
 type Props = {
   readonly run: Agent;
@@ -135,19 +133,21 @@ export const AgentRow = ({
           onRenameCancel={onRenameCancel}
         />
       }
-      actions={
-        <AgentCardActions className={ACTIONS_CLASS}>
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            {onInspect !== undefined && (
-              <AgentCardAction
-                icon={PanelRight}
-                label="Toggle agent details"
-                pressed={isInspected}
-                active={isInspected}
-                onClick={onInspect}
-              />
-            )}
-          </span>
+      navigationAction={
+        onInspect !== undefined ? (
+          <AgentCardAction
+            icon={PanelRight}
+            label="Toggle agent details"
+            pressed={isInspected}
+            active={isInspected}
+            onClick={onInspect}
+          />
+        ) : (
+          <span className="size-6" aria-hidden />
+        )
+      }
+      lifecycleActions={
+        <>
           <span className="flex size-6 shrink-0 items-center justify-center">
             {isMarkDoneAvailable && (
               <AgentCardAction
@@ -169,11 +169,10 @@ export const AgentRow = ({
               onClick={() => setIsConfirmingDelete(true)}
             />
           </span>
-        </AgentCardActions>
+        </>
       }
-    >
-      <div className="flex flex-col gap-0.5">
-        {isConfirmingDelete && (
+      confirmation={
+        isConfirmingDelete ? (
           <InlineConfirm
             role="danger"
             icon={<Trash2 size={12} aria-hidden />}
@@ -186,7 +185,10 @@ export const AgentRow = ({
             }}
             onCancel={() => setIsConfirmingDelete(false)}
           />
-        )}
+        ) : null
+      }
+    >
+      <div className="flex flex-col gap-0.5">
         <AgentMetrics
           run={run}
           telemetry={telemetry}
