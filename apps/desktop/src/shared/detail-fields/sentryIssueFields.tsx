@@ -12,12 +12,7 @@ export const sentryIssueFields: DetailFieldRegistry<SentryIssueProperties> = [
     kind: 'field',
     key: 'culprit',
     label: 'Culprit',
-    render: ({ entity }) => {
-      if (entity.culprit == null || entity.culprit === '') {
-        return null;
-      }
-      return <span className="font-mono text-2xs">{entity.culprit}</span>;
-    },
+    render: ({ entity }) => <span className="font-mono text-2xs">{entity.culprit}</span>,
   },
   {
     kind: 'field',

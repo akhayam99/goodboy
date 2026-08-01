@@ -7,11 +7,13 @@ type Props = {
 
 export const MetaItem = ({ label, children }: Props) => {
   return (
-    <dl className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <dt className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
-      <dd className="flex flex-wrap items-center gap-1.5 text-xs text-foreground">{children}</dd>
-    </dl>
+      <dd className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-foreground wrap-anywhere">
+        {children}
+      </dd>
+    </div>
   );
 };

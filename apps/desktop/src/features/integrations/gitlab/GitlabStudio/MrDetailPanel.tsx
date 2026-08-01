@@ -24,7 +24,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
   HeaderBand,
-  MetaItem,
+  RailBlock,
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
@@ -321,9 +321,9 @@ export const MrDetailPanel = ({
         />
       }
       rail={
-        <MetaItem label="Branch">
+        <RailBlock label="Branch">
           <span className="font-mono">{branch ?? 'no branch'}</span>
-        </MetaItem>
+        </RailBlock>
       }
     >
       {session != null && sessionId != null ? (

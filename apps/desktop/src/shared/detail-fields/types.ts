@@ -6,10 +6,6 @@ export type DetailEntry = {
   readonly node: ReactNode;
 };
 
-export type ResolvedDetailFields = ReadonlyArray<DetailEntry> & {
-  readonly __brand: 'ResolvedDetailFields';
-};
-
 type RenderParams<T> = {
   readonly entity: T;
 };

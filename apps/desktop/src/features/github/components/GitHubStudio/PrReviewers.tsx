@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { PrDetail } from '@goodboy/types';
 import { CircleDashed } from 'lucide-react';
-import { MetaItem } from '../../../../shared/components/StudioDetail';
+import { RailBlock } from '../../../../shared/components/StudioDetail';
 import { latestTerminalReviewsByAuthor } from '../Card/lib';
 import { Avatar } from '../Card/parts/Avatar';
 import { ReviewStateIcon } from '../Card/parts/ReviewStateIcon';
@@ -29,7 +29,7 @@ export const PrReviewers = ({ detail, workspaceRoot, onAddReviewers }: Props) =>
   );
 
   return (
-    <MetaItem label="Reviewers">
+    <RailBlock label="Reviewers">
       <ReviewerPicker workspaceRoot={workspaceRoot} exclude={known} onAdd={onAddReviewers} />
       {reviewed.length === 0 && requests.length === 0 ? (
         <span className="basis-full text-2xs text-muted-foreground/60">No reviewers yet.</span>
@@ -57,6 +57,6 @@ export const PrReviewers = ({ detail, workspaceRoot, onAddReviewers }: Props) =>
           ))}
         </ul>
       )}
-    </MetaItem>
+    </RailBlock>
   );
 };

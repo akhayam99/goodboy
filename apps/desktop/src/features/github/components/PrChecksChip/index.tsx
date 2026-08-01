@@ -9,11 +9,10 @@ type ChecksMeta = {
   readonly icon: LucideIcon;
 };
 
-const CHECKS_META: Record<PrChecksState, ChecksMeta> = {
+const CHECKS_META: Record<Exclude<PrChecksState, 'none'>, ChecksMeta> = {
   success: { tone: 'success', label: 'CI passing', icon: Check },
   failure: { tone: 'danger', label: 'CI failing', icon: XCircle },
   pending: { tone: 'warning', label: 'CI running', icon: Clock },
-  none: { tone: 'neutral', label: 'No CI', icon: Clock },
 };
 
 type Props = {
@@ -21,7 +20,13 @@ type Props = {
 };
 
 export const PrChecksChip = ({ checks }: Props) => {
-  const meta = CHECKS_META[prChecksSummary({ checks })];
+  const state = prChecksSummary({ checks });
+
+  if (state === 'none') {
+    return <span className="text-2xs text-muted-foreground/70">No CI</span>;
+  }
+
+  const meta = CHECKS_META[state];
   const Icon = meta.icon;
 
   return (

@@ -56,7 +56,14 @@ export const SentryIssueDetail = ({
   const options: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
     { value: 'stack', label: 'Stack trace', icon: ListTree },
     ...(view.hasBreadcrumbs
-      ? [{ value: 'breadcrumbs' as const, label: 'Breadcrumbs', icon: Footprints }]
+      ? [
+          {
+            value: 'breadcrumbs' as const,
+            label: 'Breadcrumbs',
+            icon: Footprints,
+            badge: String(view.breadcrumbCount),
+          },
+        ]
       : []),
   ];
   const activeSection = options.some((option) => option.value === section) ? section : 'stack';

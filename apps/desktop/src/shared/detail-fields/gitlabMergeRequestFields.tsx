@@ -47,7 +47,7 @@ export const gitlabMergeRequestFields: DetailFieldRegistry<GitlabMergeRequest> =
     kind: 'field',
     key: 'draft',
     label: 'Draft',
-    render: ({ entity }) => (entity.draft ? 'yes' : 'no'),
+    render: ({ entity }) => (entity.draft ? 'yes' : null),
   },
   {
     kind: 'field',

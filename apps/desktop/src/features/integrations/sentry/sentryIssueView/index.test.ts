@@ -47,6 +47,7 @@ describe('sentryIssueView', () => {
       tags: [{ key: 'release', value: 'desktop@1.2.3' }],
       frames: [frame],
       breadcrumbs: [breadcrumb],
+      breadcrumbCount: 1,
       hasBreadcrumbs: true,
     });
   });
@@ -64,6 +65,7 @@ describe('sentryIssueView', () => {
       tags: [],
       frames: [],
       breadcrumbs: [],
+      breadcrumbCount: 0,
       hasBreadcrumbs: false,
     });
   });
@@ -92,5 +94,6 @@ describe('sentryIssueView', () => {
     });
 
     expect(view.hasBreadcrumbs).toBe(false);
+    expect(view.breadcrumbCount).toBe(1);
   });
 });

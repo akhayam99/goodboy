@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCheck, CircleDashed, CircleSlash, type LucideIcon } from 'lucide-react';
+import { AlertCircle, CheckCheck, CircleDashed, type LucideIcon } from 'lucide-react';
 import { Chip, type Tone } from '@goodboy/ui';
 import type { PullRequestState } from '@goodboy/types';
 
@@ -22,14 +22,7 @@ type Props = {
 
 export const ReviewDecisionChip = ({ decision }: Props) => {
   if (decision == null) {
-    return (
-      <Chip
-        tone="neutral"
-        size="sm"
-        icon={<CircleSlash size={11} aria-hidden />}
-        label="No review decision"
-      />
-    );
+    return <span className="text-2xs text-muted-foreground/70">No review yet</span>;
   }
 
   const meta = DECISION_META[decision];
