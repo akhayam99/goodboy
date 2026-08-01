@@ -943,13 +943,15 @@ export const DiffViewerContent = ({
           <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
         ) : files.length === 0 ? (
           <ScrollFade className="min-h-0 min-w-0 flex-1">
-            <div className={cn('mx-auto w-full', !isPane && 'max-w-2xl px-6 py-5')}>
+            <div className={cn('mx-auto w-full max-w-5xl', !isPane && 'px-6 py-5')}>
               <EmptyState
                 bordered
                 tone="success"
                 icon={CONCEPT_ICONS.diff}
                 title={emptyStateLabel(view, isGitAware)}
                 description={emptyStateBlurb(view, isGitAware) ?? undefined}
+                size="lg"
+                headingLevel={2}
               />
             </div>
           </ScrollFade>

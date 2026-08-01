@@ -67,13 +67,15 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       closeLabel="close sentry studio"
       headerAccessory={
         isConnected ? (
-          <IconButton
-            icon={RefreshCw}
-            label="Refresh issues"
-            onClick={refetch}
-            disabled={loading}
-            busy={loading}
-          />
+          rows.length > 0 ? (
+            <IconButton
+              icon={RefreshCw}
+              label="Refresh issues"
+              onClick={refetch}
+              disabled={loading}
+              busy={loading}
+            />
+          ) : null
         ) : null
       }
       onClose={onClose}
@@ -92,6 +94,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                 hasMore={hasMore}
                 loading={loading}
                 error={error}
+                onRefresh={refetch}
               />
             }
             detail={

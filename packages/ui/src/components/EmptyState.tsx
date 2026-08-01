@@ -18,6 +18,18 @@ type Size = 'sm' | 'lg' | 'xl';
 
 const HEADING_TAG = { 2: 'h2', 3: 'h3' } as const;
 
+const DEFAULT_PRESENTATION = {
+  bordered: false,
+  tone: 'neutral',
+  size: 'sm',
+  headingLevel: 3,
+} satisfies {
+  readonly bordered: boolean;
+  readonly tone: Tone;
+  readonly size: Size;
+  readonly headingLevel: keyof typeof HEADING_TAG;
+};
+
 const SIZE_CLASSES = {
   sm: {
     root: 'flex flex-col items-center gap-3 px-6 py-10 text-center',
@@ -64,18 +76,15 @@ export const EmptyState = ({
   title,
   description,
   action,
-  bordered = false,
-  tone,
+  bordered = DEFAULT_PRESENTATION.bordered,
+  tone = DEFAULT_PRESENTATION.tone,
   className,
-  size = 'sm',
-  headingLevel,
+  size = DEFAULT_PRESENTATION.size,
+  headingLevel = DEFAULT_PRESENTATION.headingLevel,
 }: EmptyStateProps) => {
-  const tint = tone != null ? tintClasses(tone) : null;
-  const iconBg = tint != null ? tint.bg : 'bg-muted';
-  const iconColor = tint != null ? tint.icon : 'text-muted-foreground';
+  const tint = tintClasses(tone);
   const classes = SIZE_CLASSES[size];
-  const Title = headingLevel != null ? HEADING_TAG[headingLevel] : 'span';
-  const Description = headingLevel != null ? 'p' : 'span';
+  const Title = HEADING_TAG[headingLevel];
 
   return (
     <div
@@ -87,7 +96,11 @@ export const EmptyState = ({
     >
       {Icon != null ? (
         <span
-          className={cn('flex size-12 items-center justify-center rounded-full', iconBg, iconColor)}
+          className={cn(
+            'flex size-12 items-center justify-center rounded-full',
+            tint.bg,
+            tint.icon,
+          )}
         >
           <Icon size={24} aria-hidden />
         </span>
@@ -97,7 +110,7 @@ export const EmptyState = ({
       <div className={classes.content}>
         <Title className={classes.title}>{title}</Title>
         {description != null && description !== '' ? (
-          <Description className={classes.description}>{description}</Description>
+          <p className={classes.description}>{description}</p>
         ) : null}
       </div>
       {action ?? null}

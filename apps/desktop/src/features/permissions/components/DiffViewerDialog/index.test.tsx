@@ -195,6 +195,7 @@ describe('DiffViewerPane', () => {
     expect(refresh.parentElement?.className).toContain('gap-1.5');
     expect(refresh.parentElement?.className).toContain('pt-0.5');
     expect(container.querySelector('[class*="max-w-2xl"]')).toBeNull();
+    expect(container.querySelector('[class*="max-w-5xl"]')).not.toBeNull();
   });
 
   it('keeps the selector available when a non-default pane view becomes empty', async () => {

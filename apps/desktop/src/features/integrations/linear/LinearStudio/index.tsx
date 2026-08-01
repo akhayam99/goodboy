@@ -74,13 +74,15 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       closeLabel="close linear studio"
       headerAccessory={
         isConnected ? (
-          <IconButton
-            icon={RefreshCw}
-            label="Refresh issues"
-            onClick={refetch}
-            disabled={loading}
-            busy={loading}
-          />
+          groups.length > 0 ? (
+            <IconButton
+              icon={RefreshCw}
+              label="Refresh issues"
+              onClick={refetch}
+              disabled={loading}
+              busy={loading}
+            />
+          ) : null
         ) : null
       }
       onClose={onClose}
@@ -97,6 +99,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                 onSelect={setFocused}
                 loading={loading}
                 error={error}
+                onRefresh={refetch}
               />
             }
             detail={

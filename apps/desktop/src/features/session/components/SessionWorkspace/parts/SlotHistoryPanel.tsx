@@ -55,7 +55,7 @@ const HistoryEntry = ({
             entry.author === 'user' ? 'bg-accent/10 text-accent' : 'bg-info/10 text-info',
           )}
         >
-          {entry.author === 'user' ? 'you' : 'agent'}
+          {entry.author}
         </span>
         <span className="text-2xs text-muted-foreground">
           {formatRelativeAge({ fromIso: entry.createdAt })}

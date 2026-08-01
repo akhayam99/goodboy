@@ -47,8 +47,17 @@ vi.mock('@goodboy/ui', () => ({
   Divider: ({ orientation }: DividerMockProps) => (
     <div data-testid="divider" data-orientation={orientation ?? 'horizontal'} />
   ),
-  EmptyState: ({ title }: { readonly title: string }) => (
-    <div data-testid="workflow-empty">{title}</div>
+  EmptyState: ({
+    title,
+    action,
+  }: {
+    readonly title: string;
+    readonly action?: React.ReactNode;
+  }) => (
+    <div data-testid="workflow-empty">
+      {title}
+      {action}
+    </div>
   ),
   ResizeHandle: ({ ariaLabel }: ResizeHandleMockProps) => (
     <div role="separator" aria-label={ariaLabel} />
@@ -127,6 +136,7 @@ describe('WorkflowsPane', () => {
     expect(screen.getByText('First workflow')).toBeDefined();
     expect(screen.getByText('Second workflow')).toBeDefined();
     expect(screen.getAllByText('Next: First')).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
     expect(screen.queryByTestId('workflow-detail')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Workflows' })).toBeDefined();
   });
@@ -168,8 +178,9 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    expect(screen.getByTestId('workflow-empty').textContent).toBe('Nothing running');
+    expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
     expect(screen.queryByText('First workflow')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Completed (2)' }));
 

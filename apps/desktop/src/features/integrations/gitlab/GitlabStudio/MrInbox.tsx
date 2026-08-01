@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react';
-import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
+import {
+  Button,
+  EmptyState,
+  ScrollFade,
+  SectionHeader,
+  SelectableRow,
+  Skeleton,
+} from '@goodboy/ui';
 import { GitMerge, Search } from 'lucide-react';
 import type { GitlabMergeRequest } from '../client';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -11,6 +18,7 @@ type Props = {
   readonly onSelect: (mr: GitlabMergeRequest) => void;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly onRefresh: () => void;
 };
 
 type DateParams = {
@@ -25,8 +33,9 @@ const shortDate = ({ iso }: DateParams): string => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
-export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error }: Props) => {
+export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefresh }: Props) => {
   const [query, setQuery] = useState('');
+  const hasQuery = query.trim() !== '';
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (normalized === '') {
@@ -81,11 +90,14 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error }: Props
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
             icon={CONCEPT_ICONS.gitlab}
-            title={query.trim() === '' ? 'Inbox clear' : 'No matching merge requests'}
+            title={!hasQuery ? 'Inbox clear' : 'No matching merge requests'}
             description={
-              query.trim() === ''
-                ? 'No open merge requests assigned to you.'
-                : 'Try a different search term.'
+              !hasQuery ? 'No open merge requests assigned to you.' : 'Try a different search term.'
+            }
+            action={
+              <Button variant="ghost" size="sm" onClick={hasQuery ? () => setQuery('') : onRefresh}>
+                {hasQuery ? 'Clear search' : 'Refresh'}
+              </Button>
             }
           />
         </div>

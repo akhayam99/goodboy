@@ -50,6 +50,10 @@ export const WorkflowsPane = ({ session }: Props) => {
   const active = live.filter((entry) => !completed.includes(entry));
   const focusedRun = attachedRuns.find(({ run }) => run.id === focusedWorkflowRunId) ?? null;
   const hasRuns = attachedRuns.length > 0;
+  const hasVisibleRuns =
+    active.length > 0 ||
+    (showCompleted && completed.length > 0) ||
+    (showDiscarded && discarded.length > 0);
 
   const renderCard = ({ run, workflow }: { run: WorkflowRun; workflow: Workflow }) => {
     const predecessorName = run.chainAfterId
@@ -101,7 +105,9 @@ export const WorkflowsPane = ({ session }: Props) => {
               />
             </>
           ) : null}
-          {hasRuns ? <WorkflowAttachButton sessionId={sessionId} placement="header" /> : null}
+          {hasRuns && (focusedRun != null || hasVisibleRuns) ? (
+            <WorkflowAttachButton sessionId={sessionId} placement="header" />
+          ) : null}
         </div>
       </div>
       <Divider />

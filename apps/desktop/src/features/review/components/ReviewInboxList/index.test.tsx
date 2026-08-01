@@ -173,6 +173,10 @@ describe('ReviewInboxList', () => {
     renderList('others');
 
     expect(screen.getByText('No open PRs from teammates')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Refresh pull requests' })).toBeNull();
+    h.refreshReviewPrs.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(h.refreshReviewPrs).toHaveBeenCalledWith(WORKSPACE_ID);
   });
 
   it('shows loading skeletons before the first fetch resolves', () => {

@@ -34,7 +34,7 @@ const SLOT_DESCRIPTION: Record<SlotKey, string> = {
 const SLOT_EMPTY_CTA: Record<SlotKey, string> = {
   goal: 'Add the session goal',
   decisions: 'Log a decision',
-  last_output_summary: 'Write a manual session summary',
+  last_output_summary: 'Write a session summary',
 };
 
 const SLOT_TONE: Record<SlotKey, Tone> = {
@@ -43,12 +43,8 @@ const SLOT_TONE: Record<SlotKey, Tone> = {
   last_output_summary: 'info',
 };
 
-const SLOT_EMPTY_DESCRIPTION: Record<SlotKey, string> = {
-  goal: 'What this session is meant to achieve.',
-  decisions: 'Choices already locked in for this session.',
-  last_output_summary:
-    'What this session has accomplished, its current state, and what is in flight.',
-};
+const SLOT_EMPTY_DESCRIPTION =
+  'The summarizer fills this at the end of a turn. Create an agent or a workflow to begin.';
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>(['decisions', 'last_output_summary']);
 
@@ -266,7 +262,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
                     : CONCEPT_ICONS.sessionSummary
               }
               title={SLOT_EMPTY_CTA[slotKey]}
-              description={SLOT_EMPTY_DESCRIPTION[slotKey]}
+              description={SLOT_EMPTY_DESCRIPTION}
               action={
                 <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
                   Add

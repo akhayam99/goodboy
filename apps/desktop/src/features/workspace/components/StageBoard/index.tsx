@@ -72,18 +72,23 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
 
   return (
     <div className="flex h-full w-full flex-col gap-4 p-6">
-      <div className="flex shrink-0 items-center justify-between gap-4">
-        <span className="flex items-baseline gap-2">
-          <Eyebrow label="Stage board" />
-          <span className="text-2xs tabular-nums text-muted-foreground/60">{sessions.length}</span>
-        </span>
-        <Button size="sm" onClick={onCreateSession}>
-          <Plus size={14} aria-hidden />
-          New session
-        </Button>
-      </div>
-
-      <Divider />
+      {!empty ? (
+        <>
+          <div className="flex shrink-0 items-center justify-between gap-4">
+            <span className="flex items-baseline gap-2">
+              <Eyebrow label="Stage board" />
+              <span className="text-2xs tabular-nums text-muted-foreground/60">
+                {sessions.length}
+              </span>
+            </span>
+            <Button size="sm" onClick={onCreateSession}>
+              <Plus size={14} aria-hidden />
+              New session
+            </Button>
+          </div>
+          <Divider />
+        </>
+      ) : null}
 
       {!boardReady ? (
         <BoardSkeleton />

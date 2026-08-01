@@ -1,5 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { Chip, EmptyState, Eyebrow, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
+import {
+  Button,
+  Chip,
+  EmptyState,
+  Eyebrow,
+  ScrollFade,
+  SelectableRow,
+  Skeleton,
+} from '@goodboy/ui';
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
@@ -46,13 +54,15 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
         <Eyebrow label={scope === 'others' ? 'From teammates' : 'All open'} />
         <span className="text-2xs tabular-nums text-muted-foreground/50">{rows.length}</span>
         <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
-        <RefreshIconButton
-          label="Refresh pull requests"
-          isLoading={isLoading}
-          onClick={() => void refreshReviewPrs(workspaceId)}
-          iconSize={12}
-          className="size-6 border-transparent p-0"
-        />
+        {rows.length > 0 ? (
+          <RefreshIconButton
+            label="Refresh pull requests"
+            isLoading={isLoading}
+            onClick={() => void refreshReviewPrs(workspaceId)}
+            iconSize={12}
+            className="size-6 border-transparent p-0"
+          />
+        ) : null}
       </div>
       {isInitialLoading ? (
         <div
@@ -95,6 +105,11 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
               scope === 'others'
                 ? 'Pull requests by other authors will show up here.'
                 : 'Open pull requests on this repository will show up here.'
+            }
+            action={
+              <Button variant="ghost" size="sm" onClick={() => void refreshReviewPrs(workspaceId)}>
+                Refresh
+              </Button>
             }
           />
         </div>

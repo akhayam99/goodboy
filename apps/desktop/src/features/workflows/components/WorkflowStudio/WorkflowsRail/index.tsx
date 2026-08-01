@@ -35,18 +35,20 @@ export const WorkflowsRail = ({
         <SectionHeader
           label={`Presets (${presets.length})`}
           action={
-            <button
-              type="button"
-              onClick={onNew}
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-medium transition-colors',
-                editing === 'new'
-                  ? 'border-primary/30 bg-primary/10 text-foreground'
-                  : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
-              )}
-            >
-              <Plus size={11} aria-hidden /> New
-            </button>
+            presets.length > 0 ? (
+              <button
+                type="button"
+                onClick={onNew}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-medium transition-colors',
+                  editing === 'new'
+                    ? 'border-primary/30 bg-primary/10 text-foreground'
+                    : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
+                )}
+              >
+                <Plus size={11} aria-hidden /> New
+              </button>
+            ) : null
           }
         />
       </div>
