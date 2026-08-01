@@ -47,6 +47,18 @@ export const createSessionDir = async ({
   });
 };
 
+type RemoveSessionDirectoryParams = {
+  readonly basePath: string;
+  readonly path: string;
+};
+
+export const removeSessionDirectory = async ({
+  basePath,
+  path,
+}: RemoveSessionDirectoryParams): Promise<void> => {
+  await invoke('session_dir_remove', { args: { basePath, path } });
+};
+
 export type SimpleSessionScanEntry = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;

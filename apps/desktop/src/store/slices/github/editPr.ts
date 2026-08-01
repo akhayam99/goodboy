@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 export type EditPrOptions = {
@@ -17,6 +18,10 @@ export const editPr = (_set: SetFn, get: GetFn) => {
     if (!workspace) {
       return;
     }
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null) {
+      return;
+    }
 
     const args = ['pr', 'edit', String(prNumber)];
     if (opts.title !== undefined) {
@@ -30,7 +35,7 @@ export const editPr = (_set: SetFn, get: GetFn) => {
     }
 
     const res = await tauriGhRunner.run(args, {
-      cwd: workspace.rootPath,
+      cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
     });
     if (res.exitCode !== 0) {

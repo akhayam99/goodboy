@@ -2,6 +2,7 @@ import { detectRepoSlug, fetchPrDetail } from '@goodboy/core';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { formatError } from '../../../shared/lib/errors';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -36,6 +37,10 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
     if (!workspace) {
       return;
     }
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null) {
+      return;
+    }
     const fresh = existing?.detailFetchedAt
       ? Date.now() - new Date(existing.detailFetchedAt).getTime()
       : Number.POSITIVE_INFINITY;
@@ -62,7 +67,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath, session.workspaceId);
+        const slug = await detectRepoSlug(tauriGhRunner, repo.repoRoot, session.workspaceId);
         if (!slug) {
           set((state) => ({
             sessionGithub: {
@@ -83,7 +88,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           return;
         }
         const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, {
-          cwd: workspace.rootPath,
+          cwd: repo.repoRoot,
           workspaceId: session.workspaceId,
         });
         set((state) => ({

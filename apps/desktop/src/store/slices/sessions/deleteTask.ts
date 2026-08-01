@@ -2,7 +2,8 @@ import type { ProviderRunId, SessionId } from '@goodboy/types';
 import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
-import { removeWorktree } from '../../../features/worktree/worktree';
+import { removeSessionDirectory, removeWorktree } from '../../../features/worktree/worktree';
+import { formatError } from '../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { GetFn, SetFn } from './types';
 
@@ -37,14 +38,43 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       workspaceKind: workspace?.kind,
       branch: get().sessionBranches[sessionId],
     });
-    if (workspace && !isBranchless) {
-      for (const worktreePath of paths) {
+    const cleanupFailures: unknown[] = [];
+    if (workspace?.kind === 'composite' && !isBranchless) {
+      const mounts = get().sessionMounts[sessionId] ?? [];
+      for (const mount of mounts) {
         try {
-          await removeWorktree(workspace.rootPath, worktreePath);
-        } catch {
-          // worktree may already be gone
+          await removeWorktree(mount.repoRoot, mount.worktreePath);
+        } catch (error) {
+          cleanupFailures.push(error);
         }
       }
+      const containerPath = paths[0];
+      if (containerPath != null) {
+        try {
+          await removeSessionDirectory({ basePath: workspace.rootPath, path: containerPath });
+        } catch (error) {
+          cleanupFailures.push(error);
+        }
+      }
+    }
+    if (workspace?.kind !== 'composite' && workspace != null && !isBranchless) {
+      const worktreePath = paths[0];
+      if (worktreePath != null) {
+        try {
+          await removeWorktree(workspace.rootPath, worktreePath);
+        } catch (error) {
+          cleanupFailures.push(error);
+        }
+      }
+    }
+    if (cleanupFailures.length > 0) {
+      void get().emitNotification(
+        'error',
+        'warning',
+        `failed to remove ${cleanupFailures.length} session paths`,
+        cleanupFailures.map((error) => formatError(error)).join('\n'),
+        { sessionId, workspaceId: session.workspaceId },
+      );
     }
     const sessionGoal = session.goal;
     const sessionWorkspaceId = session.workspaceId;
@@ -59,6 +89,10 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       }
       const nextWorktrees = { ...state.sessionWorktrees };
       delete nextWorktrees[sessionId];
+      const nextMounts = { ...state.sessionMounts };
+      delete nextMounts[sessionId];
+      const nextActiveMount = { ...state.sessionActiveMount };
+      delete nextActiveMount[sessionId];
       const nextBranches = { ...state.sessionBranches };
       delete nextBranches[sessionId];
       const nextPhaseRuns = { ...state.sessionPhaseRuns };
@@ -95,6 +129,8 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         transcripts: nextTranscripts,
         messages: nextMessages,
         sessionWorktrees: nextWorktrees,
+        sessionMounts: nextMounts,
+        sessionActiveMount: nextActiveMount,
         sessionBranches: nextBranches,
         sessionPhaseRuns: nextPhaseRuns,
         sessionGithub: nextGithub,

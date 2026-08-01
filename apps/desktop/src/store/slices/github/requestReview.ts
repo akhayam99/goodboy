@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 export const requestReview = (_set: SetFn, get: GetFn) => {
@@ -16,10 +17,14 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
     if (!workspace) {
       return;
     }
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null) {
+      return;
+    }
 
     const res = await tauriGhRunner.run(
       ['pr', 'edit', String(prNumber), '--add-reviewer', logins.join(',')],
-      { cwd: workspace.rootPath, workspaceId: session.workspaceId },
+      { cwd: repo.repoRoot, workspaceId: session.workspaceId },
     );
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr edit --add-reviewer exited with ${res.exitCode}`;

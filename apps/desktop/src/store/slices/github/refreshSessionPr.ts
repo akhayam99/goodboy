@@ -3,6 +3,7 @@ import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { formatError } from '../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -28,6 +29,12 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     if (!workspace || isBranchlessSession({ workspaceKind: workspace.kind, branch })) {
       return;
     }
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null && workspace.kind != null) {
+      return;
+    }
+    const repoRoot = repo?.repoRoot ?? workspace.rootPath;
+    const repoBranch = repo?.branch ?? branch;
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,
@@ -48,7 +55,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath, session.workspaceId);
+        const slug = await detectRepoSlug(tauriGhRunner, repoRoot, session.workspaceId);
         if (!slug) {
           set((state) => ({
             sessionGithubPrs: { ...state.sessionGithubPrs, [sessionId]: [] },
@@ -73,8 +80,8 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           }));
           return;
         }
-        const prs = await listPrsForBranch(tauriGhRunner, slug, branch, {
-          cwd: workspace.rootPath,
+        const prs = await listPrsForBranch(tauriGhRunner, slug, repoBranch, {
+          cwd: repoRoot,
           workspaceId: session.workspaceId,
         });
         const canonicalPr = prs[0] ?? null;
@@ -86,7 +93,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
         const displayedPr = selectedPr ?? canonicalPr;
         const linked = displayedPr
           ? await fetchLinkedIssues(tauriGhRunner, slug, displayedPr, {
-              cwd: workspace.rootPath,
+              cwd: repoRoot,
               workspaceId: session.workspaceId,
             })
           : [];

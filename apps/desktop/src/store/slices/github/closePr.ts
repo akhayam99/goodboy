@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 export const closePr = (_set: SetFn, get: GetFn) => {
@@ -13,8 +14,12 @@ export const closePr = (_set: SetFn, get: GetFn) => {
     if (!workspace) {
       return;
     }
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null) {
+      return;
+    }
     const res = await tauriGhRunner.run(['pr', 'close', String(num)], {
-      cwd: workspace.rootPath,
+      cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
     });
     if (res.exitCode !== 0) {

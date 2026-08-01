@@ -1,5 +1,6 @@
 import type { PrMergeMethod, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 // `gh pr merge` takes exactly one strategy flag. Squash is the desktop default
@@ -21,8 +22,12 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
     if (!workspace) {
       return;
     }
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null) {
+      return;
+    }
     const res = await tauriGhRunner.run(['pr', 'merge', String(num), MERGE_FLAG[method]], {
-      cwd: workspace.rootPath,
+      cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
     });
     if (res.exitCode !== 0) {
