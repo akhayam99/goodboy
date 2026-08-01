@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { cn, EmptyState, Eyebrow } from '@goodboy/ui';
+import { EmptyState, Eyebrow, SelectableRow } from '@goodboy/ui';
 import { GitBranch, Inbox } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 import type { InboxGroup } from './useGithubInbox';
@@ -41,16 +41,11 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
               const active = row.session.id === focusedSessionId;
               return (
                 <li key={row.session.id}>
-                  <button
-                    type="button"
+                  <SelectableRow
+                    selected={active}
                     onClick={() => onSelect(row.session.id)}
                     title={row.session.goal}
-                    className={cn(
-                      'flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-colors',
-                      active
-                        ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                    )}
+                    className="items-center gap-1.5 px-2 py-1.5"
                   >
                     {row.pr ? (
                       <PullRequestChip state={row.pr.state} variant="icon" iconSize={12} />
@@ -74,7 +69,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
                         className="size-1.5 shrink-0 rounded-full bg-danger"
                       />
                     ) : null}
-                  </button>
+                  </SelectableRow>
                 </li>
               );
             })}

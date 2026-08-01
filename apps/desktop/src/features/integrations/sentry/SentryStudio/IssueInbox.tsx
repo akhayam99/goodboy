@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { cn, EmptyState, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
 import { Inbox, MessagesSquare, Search, Users } from 'lucide-react';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import type { SentryIssue } from '../client';
@@ -96,17 +96,12 @@ export const IssueInbox = ({
               const lastSeen = row.issue.lastSeen ? formatRelativeDuration(row.issue.lastSeen) : '';
               return (
                 <li key={row.issue.id}>
-                  <button
-                    type="button"
+                  <SelectableRow
+                    selected={active}
                     onClick={() => onSelect(row.issue)}
                     title={row.issue.title}
-                    aria-current={active}
-                    className={cn(
-                      'flex w-full flex-col gap-1 rounded-md px-2.5 py-2 text-left transition-colors',
-                      active
-                        ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-                        : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
-                    )}
+                    ariaCurrent={active}
+                    className="flex-col gap-1 px-2.5 py-2"
                   >
                     <div className="flex items-center gap-2">
                       <SentryLevelBadge level={row.issue.level} density="compact" />
@@ -136,7 +131,7 @@ export const IssueInbox = ({
                       ) : null}
                       {lastSeen ? <span className="ml-auto">{lastSeen}</span> : null}
                     </div>
-                  </button>
+                  </SelectableRow>
                 </li>
               );
             })}
