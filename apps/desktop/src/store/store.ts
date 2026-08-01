@@ -102,6 +102,11 @@ import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import { createNewSessionDraftsSlice } from './slices/newSessionDrafts';
+import type {
+  ClearNewSessionDraftParams,
+  SetNewSessionDraftParams,
+} from './slices/newSessionDrafts/types';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
@@ -398,6 +403,8 @@ export type AppActions = {
   setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
+  setNewSessionDraft(params: SetNewSessionDraftParams): void;
+  clearNewSessionDraft(params: ClearNewSessionDraftParams): void;
   setWorkflowDraft(sessionId: SessionId, draft: WorkflowBuilderDraft): void;
   clearWorkflowDraft(sessionId: SessionId): void;
   setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
@@ -710,6 +717,7 @@ export const initialState: AppState = {
   resolverState: {},
   resolverThreadOutcomes: {},
   agentDraft: {},
+  newSessionDrafts: {},
   workflowDrafts: {},
   agentAttachments: {},
   agentQueue: {},
@@ -755,6 +763,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPermissionsSlice(set, get),
   ...createProvidersSlice(set, get),
   ...createAgentsSlice(set, get),
+  ...createNewSessionDraftsSlice({ set }),
   ...createWorkflowDraftsSlice(set, get),
   ...createSlotsSlice(set, get),
   ...createOverridesSlice(set, get),

@@ -65,6 +65,7 @@ import type { LensHistory, LensKind, SessionStudio } from './slices/session-view
 import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import type { NewSessionDraft } from './slices/newSessionDrafts/types';
 
 export type ResolverThreadOutcome =
   | { readonly kind: 'resolved'; readonly commitSha: string; readonly reply?: string }
@@ -244,6 +245,7 @@ export type AppState = UpdaterState & {
     Record<AgentId, Readonly<Record<string, ResolverThreadOutcome>>>
   >;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
+  readonly newSessionDrafts: Readonly<Record<WorkspaceId, NewSessionDraft | undefined>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
   readonly agentQueue: Readonly<Record<AgentId, ReadonlyArray<AgentQueuedTurn>>>;

@@ -26,6 +26,7 @@ import { sanitizeBranchSlug as sanitizeBranchSlugValue } from '../../../../share
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/providerOrder';
 import { useSetupWorkflowPreference } from '../../hooks/useSetupWorkflowPreference';
+import { EMPTY_NEW_SESSION_DRAFT } from '../../../../store/slices/newSessionDrafts/emptyNewSessionDraft';
 import { generateBranchSlug } from './generateBranchSlug';
 import { NewSessionFooter } from './NewSessionFooter';
 import { NewSessionForm } from './NewSessionForm';
@@ -46,6 +47,9 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const createSession = useAppStore((s) => s.createSession);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const loadSetting = useAppStore((s) => s.loadSetting);
+  const setNewSessionDraft = useAppStore((s) => s.setNewSessionDraft);
+  const clearNewSessionDraft = useAppStore((s) => s.clearNewSessionDraft);
+  const draft = useAppStore((s) => s.newSessionDrafts[workspaceId] ?? EMPTY_NEW_SESSION_DRAFT);
   const providers = useAppStore((s) => s.providers);
   const { showToast } = useToast();
   const settingKey = settingBranchPrefix(workspaceId);
@@ -53,19 +57,14 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const isSimple = workspace?.kind === 'simple';
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
 
-  const [goal, setGoal] = useState('');
-  const [branchSlug, setBranchSlug] = useState('');
-  const [slugTouched, setSlugTouched] = useState(false);
+  const { goal, branchSlug, slugTouched, branchMode, existingBranch, issue } = draft;
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [slugGenerating, setSlugGenerating] = useState(false);
-  const [branchMode, setBranchMode] = useState<'new' | 'existing'>('new');
   const [existingBranches, setExistingBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
-  const [existingBranch, setExistingBranch] = useState<string>('');
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [issue, setIssue] = useState<IssueCandidate | null>(null);
   const [setupWorkflow, setSetupWorkflow] = useSetupWorkflowPreference();
 
   const {
@@ -120,17 +119,23 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         return;
       }
       e.preventDefault();
+      clearNewSessionDraft({ workspaceId });
       onClose();
     };
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [busy, onClose]);
+  }, [busy, clearNewSessionDraft, onClose, workspaceId]);
 
   const onPickIssue = (candidate: IssueCandidate) => {
-    setIssue(candidate);
-    setGoal(candidate.goal);
-    setBranchSlug(candidate.branchSlug);
-    setSlugTouched(true);
+    setNewSessionDraft({
+      workspaceId,
+      draft: {
+        issue: candidate,
+        goal: candidate.goal,
+        branchSlug: candidate.branchSlug,
+        slugTouched: true,
+      },
+    });
   };
 
   useEffect(() => {
@@ -156,8 +161,12 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     if (slugTouched) {
       return;
     }
-    setBranchSlug(slugifyBranch({ input: goal, maxLength: SLUG_MAX_LEN }));
-  }, [goal, slugTouched]);
+    const nextBranchSlug = slugifyBranch({ input: goal, maxLength: SLUG_MAX_LEN });
+    if (nextBranchSlug === branchSlug) {
+      return;
+    }
+    setNewSessionDraft({ workspaceId, draft: { branchSlug: nextBranchSlug } });
+  }, [branchSlug, goal, setNewSessionDraft, slugTouched, workspaceId]);
 
   const handleGenerateSlug = () => {
     const trimmed = goal.trim();
@@ -179,12 +188,14 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     })
       .then((result) => {
         if (result.accepted) {
-          setBranchSlug(result.slug);
-          setSlugTouched(true);
+          setNewSessionDraft({
+            workspaceId,
+            draft: { branchSlug: result.slug, slugTouched: true },
+          });
           return;
         }
         if (!slugTouched) {
-          setBranchSlug(result.slug);
+          setNewSessionDraft({ workspaceId, draft: { branchSlug: result.slug } });
         }
         showToast('warning', 'Branch name generation failed, kept the name derived from the goal', {
           context: result.error ?? 'unknown error',
@@ -218,6 +229,11 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
 
   const onOpenConflictSession = (id: SessionId) => {
     void setCurrentSession(id);
+    onClose();
+  };
+
+  const onCancel = () => {
+    clearNewSessionDraft({ workspaceId });
     onClose();
   };
 
@@ -255,6 +271,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
         ...(attachments.length > 0 ? { attachmentInputs: attachments.map(toAttachmentInput) } : {}),
         openWorkflowBuilder: setupWorkflow,
       });
+      clearNewSessionDraft({ workspaceId });
       onClose();
     } catch (err) {
       setError(formatError(err));
@@ -275,9 +292,9 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             issueSources={issueSources}
             issue={issue}
             onPickIssue={onPickIssue}
-            onClearIssue={() => setIssue(null)}
+            onClearIssue={() => setNewSessionDraft({ workspaceId, draft: { issue: null } })}
             goal={goal}
-            onGoalChange={setGoal}
+            onGoalChange={(value) => setNewSessionDraft({ workspaceId, draft: { goal: value } })}
             attachments={attachments}
             isDragging={isDragging}
             composerRef={composerRef}
@@ -285,18 +302,30 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             onFileInputChange={onFileInputChange}
             onRemoveAttachment={removeAttachment}
             branchMode={branchMode}
-            onBranchModeChange={setBranchMode}
+            onBranchModeChange={(mode) =>
+              setNewSessionDraft({ workspaceId, draft: { branchMode: mode } })
+            }
             branchPrefix={sanitizeBranchPrefix({ input: branchPrefix })}
             branchSlug={branchSlug}
             onBranchSlugChange={(value) => {
-              setBranchSlug(sanitizeBranchSlugValue({ input: value, maxLength: SLUG_MAX_LEN }));
-              setSlugTouched(true);
+              setNewSessionDraft({
+                workspaceId,
+                draft: {
+                  branchSlug: sanitizeBranchSlugValue({
+                    input: value,
+                    maxLength: SLUG_MAX_LEN,
+                  }),
+                  slugTouched: true,
+                },
+              });
             }}
             slugGenerating={slugGenerating}
             onGenerateSlug={handleGenerateSlug}
             existingBranches={existingBranches}
             existingBranch={existingBranch}
-            onExistingBranchChange={setExistingBranch}
+            onExistingBranchChange={(value) =>
+              setNewSessionDraft({ workspaceId, draft: { existingBranch: value } })
+            }
             branchesLoading={branchesLoading}
             conflictSessionId={conflictSessionId}
             conflictWorktreePath={conflictWorktreePath}
@@ -309,7 +338,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           setupWorkflow={setupWorkflow}
           onSetupWorkflowChange={setSetupWorkflow}
           busy={busy}
-          onClose={onClose}
+          onClose={onCancel}
           conflictSessionId={conflictSessionId}
           conflictWorktreePath={conflictWorktreePath}
           goalReady={goalReady}
