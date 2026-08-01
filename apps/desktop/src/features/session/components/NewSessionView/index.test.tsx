@@ -36,6 +36,14 @@ vi.mock('../../../../features/worktree/useWorkspaceRemoteHostKind', () => ({
   useWorkspaceRemoteHostKind: () => h.remoteKind,
 }));
 
+vi.mock('../../../../features/integrations/github/useGithubConnection', () => ({
+  useGithubConnection: () => ({
+    isAuthenticated: true,
+    isResolved: true,
+    refresh: vi.fn(async () => undefined),
+  }),
+}));
+
 vi.mock('../../../../features/worktree/useBranchConflict', () => ({
   useBranchConflict: () => null,
 }));

@@ -11,9 +11,10 @@ import { CreateTokenLink } from './CreateTokenLink';
 type Props = {
   workspaceId: WorkspaceId;
   onConnected?: () => void;
+  shouldAutoFocus?: boolean;
 };
 
-export const GithubFormBody = ({ workspaceId, onConnected }: Props) => {
+export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
   const [status, setStatus] = useState<GhTokenStatus | null>(null);
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
@@ -109,7 +110,7 @@ export const GithubFormBody = ({ workspaceId, onConnected }: Props) => {
           <div className="flex flex-col gap-2">
             <Input
               type="password"
-              autoFocus
+              autoFocus={shouldAutoFocus}
               placeholder="ghp_…"
               value={token}
               onChange={(e) => setToken(e.target.value)}

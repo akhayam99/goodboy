@@ -9,17 +9,11 @@ import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { PROVIDER_LENS } from '../../../integrations/providerLens';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly onSelectLens: (lens: LensKind) => void;
-};
-
-const PROVIDER_LENS: Record<SessionExternalTaskProvider, LensKind> = {
-  linear: 'linear',
-  sentry: 'sentry',
-  gitlab: 'gitlab_issues',
-  github: 'pr',
 };
 
 const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
@@ -88,13 +82,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
             leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
             identifier={`#${issue.number}`}
             title={issue.title ?? 'GitHub issue'}
-            onClick={() =>
-              window.dispatchEvent(
-                new CustomEvent('goodboy:open-github-studio', {
-                  detail: { sessionId, issueExternalId: String(issue.number) },
-                }),
-              )
-            }
+            onClick={() => onSelectLens('pr')}
             actions={
               <ExternalRefActions
                 url={issue.url}
@@ -110,6 +98,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
             task={task}
             variant="full"
             appearance="row"
+            navigation="internal"
             ariaLabel={`open ${task.identifier} integration`}
             repoLabel={
               workspaceMountName({

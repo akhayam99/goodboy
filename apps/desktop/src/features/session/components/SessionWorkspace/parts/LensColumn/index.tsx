@@ -19,6 +19,7 @@ import type { LensKind } from '../../../../../../store';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
+import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { resolveAttentionLens, selectOpenQuestions } from '../../../SessionOverviewPane/lib';
 import { LensColumnFooter } from '../LensColumnFooter';
 import { LENS_SHORTCUTS, buildLensGroups } from './groups';
@@ -65,6 +66,7 @@ export const LensColumn = ({
   const workspaceIntegrations = useAppStore(
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
   );
+  const githubAuthentication = useGithubConnection({ workspaceId: session.workspaceId });
 
   const isResolver = useMemo(
     () => (agent: Agent) =>
@@ -139,24 +141,29 @@ export const LensColumn = ({
     integrations: workspaceIntegrations,
     remoteKind,
     externalTasks,
+    isGithubAuthenticated:
+      githubAuthentication.isResolved === false || githubAuthentication.isAuthenticated,
   });
   const linearConnection = resolveIntegrationConnection({
     provider: 'linear',
     integrations: workspaceIntegrations,
     remoteKind,
     externalTasks,
+    isGithubAuthenticated: false,
   });
   const sentryConnection = resolveIntegrationConnection({
     provider: 'sentry',
     integrations: workspaceIntegrations,
     remoteKind,
     externalTasks,
+    isGithubAuthenticated: false,
   });
   const gitlabConnection = resolveIntegrationConnection({
     provider: 'gitlab',
     integrations: workspaceIntegrations,
     remoteKind,
     externalTasks,
+    isGithubAuthenticated: false,
   });
   const integrationRows: ReadonlyArray<LensRow> = [
     {

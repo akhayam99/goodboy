@@ -9,9 +9,10 @@ import { formatError } from '../../../shared/lib/errors';
 type Props = {
   workspaceId: WorkspaceId;
   onConnected?: () => void;
+  shouldAutoFocus?: boolean;
 };
 
-export const SentryFormBody = ({ workspaceId, onConnected }: Props) => {
+export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const sentry = integrations.find((i) => i.provider === 'sentry') ?? null;
   const sentryConfig = (sentry?.config ?? null) as SentryIntegrationConfig | null;
@@ -82,7 +83,7 @@ export const SentryFormBody = ({ workspaceId, onConnected }: Props) => {
             <Input
               id="sentry-token"
               type="password"
-              autoFocus
+              autoFocus={shouldAutoFocus}
               placeholder="sntryu_…"
               value={token}
               onChange={(e) => setToken(e.target.value)}

@@ -65,7 +65,7 @@ describe('SessionDetailPanel', () => {
       ],
     };
     render(<SessionDetailPanel session={session} />);
-    expect(screen.getByRole('button', { name: /open GB-9 in Linear studio/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open GB-9 in Linear/i })).toBeDefined();
     expect(screen.getByText('GB-9')).toBeDefined();
     expect(screen.getByText('wire metadata')).toBeDefined();
   });

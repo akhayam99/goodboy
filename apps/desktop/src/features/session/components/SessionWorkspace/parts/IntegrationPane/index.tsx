@@ -8,7 +8,8 @@ import { openUrl } from '../../../../../../shared/lib/editor';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { ExternalTaskChip } from '../../../../../integrations/components/ExternalTaskChip';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
-import { MissingGithubRemoteEmptyState } from '../../../../../github/components/MissingGithubRemoteEmptyState';
+import { GithubConnectionEmptyState } from '../../../../../github/components/GithubConnectionEmptyState';
+import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { PaneShell } from '../PaneShell';
@@ -25,7 +26,6 @@ type Props = {
 
 type ProviderMeta = Readonly<{
   label: string;
-  studioEvent: string;
 }>;
 
 type UnlinkParams = {
@@ -34,10 +34,10 @@ type UnlinkParams = {
 };
 
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
-  linear: { label: 'Linear', studioEvent: 'goodboy:open-linear-studio' },
-  sentry: { label: 'Sentry', studioEvent: 'goodboy:open-sentry-studio' },
-  gitlab: { label: 'GitLab', studioEvent: 'goodboy:open-gitlab-studio' },
-  github: { label: 'GitHub', studioEvent: 'goodboy:open-github-studio' },
+  linear: { label: 'Linear' },
+  sentry: { label: 'Sentry' },
+  gitlab: { label: 'GitLab' },
+  github: { label: 'GitHub' },
 };
 
 export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
@@ -52,6 +52,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     (state) => state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY,
   );
   const remoteKind = useRemoteHostKind({ sessionId });
+  const githubConnection = useGithubConnection({ workspaceId });
   const tasks = useMemo(
     () => externalTasks.filter((task) => task.provider === provider),
     [externalTasks, provider],
@@ -62,6 +63,10 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     integrations,
     remoteKind,
     externalTasks,
+    isGithubAuthenticated:
+      provider !== 'github' ||
+      githubConnection.isResolved === false ||
+      githubConnection.isAuthenticated,
   });
   const hasTasks = tasks.length > 0;
 
@@ -101,9 +106,14 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       <div className="flex flex-col gap-3">
         {!connection.isConnected ? (
           provider === 'github' ? (
-            <MissingGithubRemoteEmptyState compact />
+            <GithubConnectionEmptyState
+              workspaceId={workspaceId}
+              hasGithubRemote={remoteKind === 'github'}
+              compact
+              onConnected={() => void githubConnection.refresh()}
+            />
           ) : (
-            <ConnectIntegrationEmptyState provider={provider} compact />
+            <ConnectIntegrationEmptyState provider={provider} workspaceId={workspaceId} compact />
           )
         ) : null}
         {connection.isConnected && !hasTasks ? (
@@ -121,14 +131,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
                   provider={provider}
                   providerLabel={meta.label}
                 />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="self-center"
-                  onClick={() => window.dispatchEvent(new CustomEvent(meta.studioEvent))}
-                >
-                  Open {meta.label} studio
-                </Button>
               </div>
             }
           />
@@ -144,6 +146,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
                     <ExternalTaskChip
                       task={task}
                       appearance="row"
+                      navigation="external"
                       ariaLabel={`open ${task.identifier}`}
                       onClick={() => void openUrl(task.url)}
                     />

@@ -21,6 +21,7 @@ const h = vi.hoisted(() => ({
   refetch: vi.fn(),
   remoteKind: 'github' as 'github' | null,
   useGithubIssues: vi.fn(),
+  isGithubAuthenticated: true,
 }));
 
 vi.mock('./useGithubInbox', () => ({ useGithubInbox: () => [] }));
@@ -39,6 +40,13 @@ vi.mock('../../../integrations/github/GithubFormBody', () => ({
 }));
 vi.mock('../../../worktree/useWorkspaceRemoteHostKind', () => ({
   useWorkspaceRemoteHostKind: () => h.remoteKind,
+}));
+vi.mock('../../../integrations/github/useGithubConnection', () => ({
+  useGithubConnection: () => ({
+    isAuthenticated: h.isGithubAuthenticated,
+    isResolved: true,
+    refresh: vi.fn(async () => undefined),
+  }),
 }));
 vi.mock('./GithubIssueDetailPanel', () => ({
   GithubIssueDetailPanel: ({ issue }: IssueDetailProps) => (
@@ -91,6 +99,7 @@ const renderStudio = ({ initialIssueExternalId = null }: RenderParams = {}) =>
 afterEach(() => {
   cleanup();
   h.remoteKind = 'github';
+  h.isGithubAuthenticated = true;
   h.refetch.mockClear();
   h.useGithubIssues.mockReset();
 });
@@ -171,20 +180,25 @@ describe('GitHubStudio', () => {
     expect(h.refetch).toHaveBeenCalledOnce();
   });
 
-  it('renders the remote explanation with workspace token controls', () => {
+  it('renders the remote explanation without token controls', () => {
     h.remoteKind = null;
     renderStudio();
 
-    expect(
-      screen.getByText(
-        'This workspace does not have a GitHub remote. Add one to review pull requests, or set a workspace token below.',
-      ),
-    ).toBeDefined();
-    expect(screen.getByLabelText('Personal access token')).toBeDefined();
+    expect(screen.getByText(/does not have a GitHub remote/i)).toBeDefined();
+    expect(screen.queryByLabelText('Personal access token')).toBeNull();
     expect(h.useGithubIssues).toHaveBeenCalledWith({
       workspaceId: 'workspace-1',
       rootPath: '/repo',
       isEnabled: false,
     });
+  });
+
+  it('offers token controls when the GitHub remote exists without authentication', () => {
+    h.isGithubAuthenticated = false;
+
+    renderStudio();
+
+    expect(screen.getByLabelText('Personal access token')).toBeDefined();
+    expect(screen.queryByText(/does not have a GitHub remote/i)).toBeNull();
   });
 });

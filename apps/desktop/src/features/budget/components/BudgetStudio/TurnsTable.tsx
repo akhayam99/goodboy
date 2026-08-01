@@ -56,67 +56,69 @@ export const TurnsTable = ({ turns, showSession }: Props) => {
           className="justify-center py-4"
         />
       ) : (
-        <>
-          <table className="w-full text-left text-xs">
-            <thead className="text-muted-foreground">
-              <tr>
-                <th className="px-2 py-2 font-medium">type</th>
-                <th className="px-2 py-2 font-medium">model</th>
-                {showSession ? <th className="px-2 py-2 font-medium">session</th> : null}
-                <th className="px-2 py-2 text-right font-medium">in</th>
-                <th className="px-2 py-2 text-right font-medium">out</th>
-                <th className="px-2 py-2 text-right font-medium">cost</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-soft">
-              {shown.map(({ record, sessionGoal }) => (
-                <tr key={record.id} className="transition-colors hover:bg-muted/40">
-                  <td className="px-2 py-2">
-                    <span
-                      className={cn(
-                        'rounded px-1.5 py-0.5 text-2xs font-medium uppercase',
-                        record.kind === 'summarizer'
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-primary/15 text-primary',
-                      )}
-                    >
-                      {record.kind}
-                    </span>
-                  </td>
-                  <td className="px-2 py-2">
-                    <RoutingBadge provider={record.provider} model={record.model} />
-                  </td>
-                  {showSession ? (
-                    <td
-                      className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground"
-                      title={sessionGoal}
-                    >
-                      {sessionGoal}
-                    </td>
-                  ) : null}
-                  <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
-                    {formatTokens(record.inputTokens)}
-                  </td>
-                  <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
-                    {formatTokens(record.outputTokens)}
-                  </td>
-                  <td className="px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground">
-                    {formatUsdPrecise(record.estimatedCostUsd)}
-                  </td>
+        <div className="flex max-w-full flex-col gap-1">
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full min-w-[36rem] text-left text-xs">
+              <thead className="text-muted-foreground">
+                <tr>
+                  <th className="px-2 py-2 font-medium">type</th>
+                  <th className="px-2 py-2 font-medium">model</th>
+                  {showSession ? <th className="px-2 py-2 font-medium">session</th> : null}
+                  <th className="px-2 py-2 text-right font-medium">in</th>
+                  <th className="px-2 py-2 text-right font-medium">out</th>
+                  <th className="px-2 py-2 text-right font-medium">cost</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border-soft">
+                {shown.map(({ record, sessionGoal }) => (
+                  <tr key={record.id} className="transition-colors hover:bg-muted/40">
+                    <td className="px-2 py-2">
+                      <span
+                        className={cn(
+                          'rounded px-1.5 py-0.5 text-2xs font-medium uppercase',
+                          record.kind === 'summarizer'
+                            ? 'bg-muted text-muted-foreground'
+                            : 'bg-primary/15 text-primary',
+                        )}
+                      >
+                        {record.kind}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2">
+                      <RoutingBadge provider={record.provider} model={record.model} />
+                    </td>
+                    {showSession ? (
+                      <td
+                        className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground"
+                        title={sessionGoal}
+                      >
+                        {sessionGoal}
+                      </td>
+                    ) : null}
+                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                      {formatTokens(record.inputTokens)}
+                    </td>
+                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                      {formatTokens(record.outputTokens)}
+                    </td>
+                    <td className="px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground">
+                      {formatUsdPrecise(record.estimatedCostUsd)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {remaining > 0 && (
             <button
               type="button"
               onClick={() => setVisible((v) => v + PAGE_SIZE)}
-              className="mt-1 self-center rounded-md border border-border-soft px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              className="self-center rounded-md border border-border-soft px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               Show more ({remaining})
             </button>
           )}
-        </>
+        </div>
       )}
     </StudioWidget>
   );

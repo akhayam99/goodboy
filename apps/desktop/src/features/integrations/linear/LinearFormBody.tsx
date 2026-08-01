@@ -9,9 +9,10 @@ import { formatError } from '../../../shared/lib/errors';
 type Props = {
   workspaceId: WorkspaceId;
   onConnected?: () => void;
+  shouldAutoFocus?: boolean;
 };
 
-export const LinearFormBody = ({ workspaceId, onConnected }: Props) => {
+export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const linear = integrations.find((i) => i.provider === 'linear') ?? null;
   const linearConfig = linear ? (linear.config as LinearIntegrationConfig) : null;
@@ -76,7 +77,7 @@ export const LinearFormBody = ({ workspaceId, onConnected }: Props) => {
             <Input
               id="linear-pat"
               type="password"
-              autoFocus
+              autoFocus={shouldAutoFocus}
               placeholder="lin_api_…"
               value={token}
               onChange={(e) => setToken(e.target.value)}

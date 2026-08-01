@@ -1,8 +1,9 @@
 import { Chip, cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';
-import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
+import { openUrl } from '../../../../shared/lib/editor';
 
 type Props = {
   task: SessionExternalTask;
@@ -11,12 +12,12 @@ type Props = {
   appearance?: 'chip' | 'row';
   ariaLabel?: string;
   repoLabel?: string;
+  navigation?: 'internal' | 'external';
 };
 
 type ProviderMeta = {
   label: string;
   colorClasses: string;
-  studioEvent: string;
 };
 
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
@@ -24,25 +25,21 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
     label: 'Linear',
     colorClasses:
       'border-provider-linear/30 bg-provider-linear/5 text-provider-linear hover:border-provider-linear/60 hover:bg-provider-linear/10',
-    studioEvent: 'goodboy:open-linear-studio',
   },
   sentry: {
     label: 'Sentry',
     colorClasses:
       'border-provider-sentry/30 bg-provider-sentry/5 text-provider-sentry hover:border-provider-sentry/60 hover:bg-provider-sentry/10',
-    studioEvent: 'goodboy:open-sentry-studio',
   },
   gitlab: {
     label: 'GitLab',
     colorClasses:
       'border-provider-gitlab/30 bg-provider-gitlab/5 text-provider-gitlab hover:border-provider-gitlab/60 hover:bg-provider-gitlab/10',
-    studioEvent: 'goodboy:open-gitlab-studio',
   },
   github: {
     label: 'GitHub',
     colorClasses:
       'border-provider-github/30 bg-provider-github/5 text-provider-github hover:border-provider-github/60 hover:bg-provider-github/10',
-    studioEvent: 'goodboy:open-github-studio',
   },
 };
 
@@ -53,6 +50,7 @@ export const ExternalTaskChip = ({
   appearance = 'chip',
   ariaLabel,
   repoLabel,
+  navigation = 'external',
 }: Props) => {
   const meta = PROVIDER_META[task.provider];
   const tooltip = `${task.identifier}: ${task.title}`;
@@ -73,10 +71,12 @@ export const ExternalTaskChip = ({
 
   const handleClick =
     onClick ??
-    (() =>
-      window.dispatchEvent(
-        new CustomEvent(meta.studioEvent, { detail: { issueExternalId: task.externalId } }),
-      ));
+    (() => {
+      if (task.url === '') {
+        return;
+      }
+      void openUrl(task.url);
+    });
 
   if (appearance === 'row') {
     return (
@@ -85,13 +85,16 @@ export const ExternalTaskChip = ({
         identifier={task.identifier}
         title={variant === 'full' ? task.title : undefined}
         onClick={handleClick}
-        ariaLabel={ariaLabel ?? `open ${task.identifier} in ${meta.label} studio`}
+        ariaLabel={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
         tooltip={tooltip}
+        navigation={navigation}
         {...(repoLabel != null
           ? { attribution: <Chip tone="neutral" label={repoLabel} size="xs" /> }
           : {})}
         actions={
-          task.url !== '' ? <CopyLinkButton url={task.url} label={task.identifier} /> : undefined
+          task.url !== '' ? (
+            <ExternalRefActions url={task.url} label={task.identifier} hostLabel={meta.label} />
+          ) : undefined
         }
       />
     );
@@ -105,7 +108,7 @@ export const ExternalTaskChip = ({
         handleClick();
       }}
       title={tooltip}
-      aria-label={ariaLabel ?? `open ${task.identifier} in ${meta.label} studio`}
+      aria-label={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
       className={cn(
         'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-colors',
         meta.colorClasses,

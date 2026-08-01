@@ -10,6 +10,7 @@ type Params = {
   readonly expectedWidth?: number;
   readonly openEvent?: string;
   readonly strategy?: 'absolute' | 'fixed';
+  readonly isEscapeEnabled?: boolean;
 };
 
 export const useDropdown = ({
@@ -20,6 +21,7 @@ export const useDropdown = ({
   expectedWidth = 160,
   openEvent,
   strategy = 'absolute',
+  isEscapeEnabled = true,
 }: Params) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,13 +60,13 @@ export const useDropdown = ({
       return;
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && isEscapeEnabled) {
         setOpen(false);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open]);
+  }, [isEscapeEnabled, open]);
 
   useEffect(() => {
     if (openEvent == null) {

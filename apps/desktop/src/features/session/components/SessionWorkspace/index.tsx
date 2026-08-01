@@ -416,7 +416,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 {lens === 'goal' || lens === 'decisions' || lens === 'last_output_summary' ? (
                   <SlotPane session={session} slotKey={lens} />
                 ) : null}
-                {lens === 'pr' ? <PrPane session={session} /> : null}
+                {lens === 'pr' ? <PrPane session={session} onSelectLens={onSelectLens} /> : null}
                 {lens === 'review' ? <ReviewBoardPane session={session} /> : null}
                 {lens === 'linear' ? (
                   <IntegrationPane

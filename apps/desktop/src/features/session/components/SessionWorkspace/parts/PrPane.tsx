@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowUpRight, GitBranch, GitFork, GitMerge, MessageSquare } from 'lucide-react';
+import { ArrowRight, GitBranch, GitFork, GitMerge, MessageSquare } from 'lucide-react';
 import { Button, EmptyState, Eyebrow } from '@goodboy/ui';
 import type {
   LinkedIssue,
@@ -14,28 +14,34 @@ import { PrChecksChip } from '../../../../github/components/PrChecksChip';
 import { ReviewDecisionChip } from '../../../../github/components/ReviewDecisionChip';
 import { PrSwitcher } from '../../../../github/components/GitHubStudio/PrSwitcher';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
+import { PROVIDER_LENS } from '../../../../integrations/providerLens';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { MissingGithubRemoteEmptyState } from '../../../../github/components/MissingGithubRemoteEmptyState';
+import { MissingGithubTokenEmptyState } from '../../../../github/components/MissingGithubTokenEmptyState';
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
+import { useGithubConnection } from '../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { BranchPair } from '../../../../../shared/components/BranchPair';
 import { workspaceMountName } from '../../../../../shared/utils/workspaceMountName';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
 import { PrListRow } from './PrListRow';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
+import { openUrl } from '../../../../../shared/lib/editor';
 
 type Props = {
   readonly session: Session;
+  readonly onSelectLens: (lens: LensKind) => void;
 };
 
 type PullRequestProvider = 'github' | 'gitlab';
 
-export const PrPane = ({ session }: Props) => {
+export const PrPane = ({ session, onSelectLens }: Props) => {
   const sessionId = session.id as SessionId;
   const remoteKind = useRemoteHostKind({ sessionId });
   const canonicalPullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
@@ -118,14 +124,22 @@ export const PrPane = ({ session }: Props) => {
         {activeProvider === 'gitlab' ? (
           <GitlabMrStrip sessionId={sessionId} />
         ) : (
-          <GithubPrCard session={session} isPrReview={isPrReview} />
+          <GithubPrCard session={session} isPrReview={isPrReview} onSelectLens={onSelectLens} />
         )}
       </div>
     </PaneShell>
   );
 };
 
-const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: boolean }) => {
+const GithubPrCard = ({
+  session,
+  isPrReview,
+  onSelectLens,
+}: {
+  session: Session;
+  isPrReview: boolean;
+  onSelectLens: (lens: LensKind) => void;
+}) => {
   const sessionId = session.id as SessionId;
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const branchPrs = useAppStore((s) => s.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
@@ -141,11 +155,14 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
     (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
   );
   const remoteKind = useRemoteHostKind({ sessionId });
+  const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
     integrations: workspaceIntegrations,
     remoteKind,
     externalTasks,
+    isGithubAuthenticated:
+      githubConnection.isResolved === false || githubConnection.isAuthenticated,
   }).isConnected;
   const selectedPr =
     selectedPrNumber != null
@@ -164,10 +181,21 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
     window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
 
-  if (!pr && !isGithubConnected) {
+  if (!pr && remoteKind !== 'github') {
     return (
       <div className="animate-fade-in rounded-lg border border-dashed border-border-soft bg-elevated/40">
         <MissingGithubRemoteEmptyState />
+      </div>
+    );
+  }
+
+  if (!pr && !isGithubConnected) {
+    return (
+      <div className="animate-fade-in rounded-lg border border-dashed border-border-soft bg-elevated/40">
+        <MissingGithubTokenEmptyState
+          workspaceId={session.workspaceId}
+          onConnected={() => void githubConnection.refresh()}
+        />
       </div>
     );
   }
@@ -222,7 +250,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
               ) : null}
               <Button onClick={openStudio}>
                 Open a pull request
-                <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
+                <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
               </Button>
             </>
           }
@@ -231,8 +259,12 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
     }
     return (
       <div className="animate-fade-in flex flex-col gap-3">
-        <LinkedIssuesSection issues={linkedIssues} sessionId={sessionId} />
-        <ExternalTasksSection tasks={codeHostTasks} workspace={workspace} />
+        <LinkedIssuesSection issues={linkedIssues} />
+        <ExternalTasksSection
+          tasks={codeHostTasks}
+          workspace={workspace}
+          onSelectLens={onSelectLens}
+        />
         <EmptyState
           bordered
           tone="primary"
@@ -259,7 +291,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
               ) : null}
               <Button size="sm" onClick={openStudio}>
                 Open a pull request
-                <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
+                <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
               </Button>
             </>
           }
@@ -311,8 +343,12 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
         </span>
       </div>
 
-      <LinkedIssuesSection issues={linkedIssues} sessionId={sessionId} />
-      <ExternalTasksSection tasks={codeHostTasks} workspace={workspace} />
+      <LinkedIssuesSection issues={linkedIssues} />
+      <ExternalTasksSection
+        tasks={codeHostTasks}
+        workspace={workspace}
+        onSelectLens={onSelectLens}
+      />
 
       <button
         type="button"
@@ -320,7 +356,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
         className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground/[0.04] px-3 py-2 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08]"
       >
         Open PR
-        <ArrowUpRight size={13} aria-hidden className="shrink-0 opacity-70" />
+        <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
       </button>
 
       {error ? (
@@ -334,10 +370,9 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
 
 type LinkedIssuesSectionProps = {
   readonly issues: ReadonlyArray<LinkedIssue>;
-  readonly sessionId: SessionId;
 };
 
-const LinkedIssuesSection = ({ issues, sessionId }: LinkedIssuesSectionProps) => {
+const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
   if (issues.length === 0) {
     return null;
   }
@@ -346,31 +381,21 @@ const LinkedIssuesSection = ({ issues, sessionId }: LinkedIssuesSectionProps) =>
       <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
       <div className="flex flex-col gap-1">
         {issues.map((issue) => (
-          <div
+          <LinkedWorkRow
             key={issue.url}
-            className="flex items-center gap-2 rounded-lg bg-muted/25 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-          >
-            <button
-              type="button"
-              onClick={() =>
-                window.dispatchEvent(
-                  new CustomEvent('goodboy:open-github-studio', {
-                    detail: { sessionId, issueExternalId: String(issue.number) },
-                  }),
-                )
-              }
-              className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-            >
-              <span className="shrink-0 font-mono">#{issue.number}</span>
-              <span className="min-w-0 flex-1 truncate">{issue.title ?? 'GitHub issue'}</span>
-              <ArrowUpRight size={12} aria-hidden className="shrink-0" />
-            </button>
-            <ExternalRefActions
-              url={issue.url}
-              label={`issue #${issue.number}`}
-              hostLabel="GitHub"
-            />
-          </div>
+            leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
+            identifier={`#${issue.number}`}
+            title={issue.title ?? 'GitHub issue'}
+            navigation="external"
+            onClick={() => void openUrl(issue.url)}
+            actions={
+              <ExternalRefActions
+                url={issue.url}
+                label={`issue #${issue.number}`}
+                hostLabel="GitHub"
+              />
+            }
+          />
         ))}
       </div>
     </div>
@@ -380,9 +405,10 @@ const LinkedIssuesSection = ({ issues, sessionId }: LinkedIssuesSectionProps) =>
 type ExternalTasksSectionProps = {
   readonly tasks: ReadonlyArray<SessionExternalTask>;
   readonly workspace: Workspace | null;
+  readonly onSelectLens: (lens: LensKind) => void;
 };
 
-const ExternalTasksSection = ({ tasks, workspace }: ExternalTasksSectionProps) => {
+const ExternalTasksSection = ({ tasks, workspace, onSelectLens }: ExternalTasksSectionProps) => {
   if (tasks.length === 0) {
     return null;
   }
@@ -395,6 +421,17 @@ const ExternalTasksSection = ({ tasks, workspace }: ExternalTasksSectionProps) =
             key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
             task={task}
             appearance="row"
+            navigation={task.provider === 'github' ? 'external' : 'internal'}
+            ariaLabel={
+              task.provider === 'github'
+                ? `open ${task.identifier} in GitHub`
+                : `open ${task.identifier} integration`
+            }
+            onClick={
+              task.provider === 'github'
+                ? () => void openUrl(task.url)
+                : () => onSelectLens(PROVIDER_LENS[task.provider])
+            }
             repoLabel={
               workspaceMountName({
                 workspace,

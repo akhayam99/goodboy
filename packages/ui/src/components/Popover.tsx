@@ -8,6 +8,7 @@ export type PopoverProps = {
   readonly role?: 'menu' | 'dialog' | 'listbox';
   readonly ariaLabel?: string;
   readonly innerRef?: Ref<HTMLDivElement>;
+  readonly tabIndex?: number;
 };
 
 export const Popover = ({
@@ -17,12 +18,14 @@ export const Popover = ({
   role,
   ariaLabel,
   innerRef,
+  tabIndex,
 }: PopoverProps) => {
   return (
     <div
       ref={innerRef}
       role={role}
       aria-label={ariaLabel}
+      tabIndex={tabIndex}
       style={style}
       className={cn(
         'overflow-hidden rounded-md border border-border bg-elevated text-xs shadow-lg',

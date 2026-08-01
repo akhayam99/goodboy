@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Input, formatUsd } from '@goodboy/ui';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
@@ -22,9 +22,14 @@ export const CapEditor = ({
 }: Props) => {
   const [draft, setDraft] = useState(currentCapUsd !== null ? String(currentCapUsd) : '');
   const [busy, setBusy] = useState(false);
+  const previousCapRef = useRef(currentCapUsd);
 
   useEffect(() => {
-    setDraft(currentCapUsd !== null ? String(currentCapUsd) : '');
+    const previousCap = previousCapRef.current;
+    const previousValue = previousCap !== null ? String(previousCap) : '';
+    const nextValue = currentCapUsd !== null ? String(currentCapUsd) : '';
+    setDraft((currentValue) => (currentValue === previousValue ? nextValue : currentValue));
+    previousCapRef.current = currentCapUsd;
   }, [currentCapUsd]);
 
   const parsed = parseCap(draft);

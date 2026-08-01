@@ -49,6 +49,18 @@ import { GithubFormBody } from './GithubFormBody';
 
 describe('GithubFormBody', () => {
   describe('token form (happy path)', () => {
+    it('only focuses the token field when the containing surface opts in', async () => {
+      const view = render(<GithubFormBody workspaceId={WS_ID} />);
+      const inlineField = await screen.findByLabelText(/GitHub personal access token/i);
+      expect(inlineField).not.toBe(document.activeElement);
+
+      view.unmount();
+      render(<GithubFormBody workspaceId={WS_ID} shouldAutoFocus />);
+      expect(await screen.findByLabelText(/GitHub personal access token/i)).toBe(
+        document.activeElement,
+      );
+    });
+
     it('queries gh status for the workspace on mount', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
       await waitFor(() => expect(ghStatusMock).toHaveBeenCalledWith(WS_ID));
