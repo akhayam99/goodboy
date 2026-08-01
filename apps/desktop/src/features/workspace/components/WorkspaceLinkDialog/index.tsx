@@ -16,7 +16,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       onClose={onClose}
       size="md"
       title="Add workspace"
-      description="Add a project, link projects, or create a simple workspace."
+      description="Add a project, link projects, or create a standalone workspace."
       footer={<div ref={setFooterContainer} className="contents" />}
     >
       {open ? (

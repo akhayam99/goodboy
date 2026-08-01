@@ -28,6 +28,9 @@ afterEach(() => {
 });
 
 import { AppFooter } from './index';
+import { BetaPill } from '../../../shared/components/BetaPill';
+
+const BETA_CENTERING = 'pointer-events-none absolute inset-x-0 mx-auto w-fit';
 
 describe('AppFooter', () => {
   it('centers beta and opens each section', () => {
@@ -73,7 +76,8 @@ describe('AppFooter', () => {
       }),
     );
 
-    expect(beta.className).toContain('absolute inset-x-0 mx-auto w-fit');
+    const { container } = render(<BetaPill className={BETA_CENTERING} />);
+    expect(beta.className).toBe(container.firstElementChild?.className);
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
     expect(onOpenProviders).toHaveBeenCalledOnce();
     expect(onOpenBudget).toHaveBeenCalledOnce();
