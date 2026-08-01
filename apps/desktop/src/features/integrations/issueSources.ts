@@ -10,6 +10,7 @@ export type IssueSource = {
 type Params = {
   readonly integrations: ReadonlyArray<WorkspaceIntegration>;
   readonly remoteKind: RemoteHostKind | null;
+  readonly isGithubAuthenticated: boolean;
 };
 
 const SOURCES: ReadonlyArray<IssueSource> = [
@@ -22,6 +23,7 @@ const SOURCES: ReadonlyArray<IssueSource> = [
 export const resolveIssueSources = ({
   integrations,
   remoteKind,
+  isGithubAuthenticated,
 }: Params): ReadonlyArray<IssueSource> =>
   SOURCES.filter(
     (source) =>
@@ -30,5 +32,6 @@ export const resolveIssueSources = ({
         integrations,
         remoteKind,
         externalTasks: [],
+        isGithubAuthenticated,
       }).isConnected,
   );

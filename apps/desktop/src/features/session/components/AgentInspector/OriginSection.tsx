@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import type { DiffComment, PrComment } from '@goodboy/types';
 import { CommentSnippet } from '../CommentSnippet';
 import type { ResolverOrigin } from '../../resolver-origin';
@@ -60,7 +60,7 @@ export const OriginSection = ({
         className="inline-flex items-center gap-1 self-start rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground"
       >
         {openLabel}
-        <ArrowUpRight size={11} aria-hidden className="opacity-70" />
+        <ArrowRight size={11} aria-hidden className="opacity-70" />
       </button>
     ) : null}
     {threadLinks.length > 1 && onOpenThread !== undefined ? (
@@ -73,7 +73,7 @@ export const OriginSection = ({
             className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             {link.label}
-            <ArrowUpRight size={11} aria-hidden className="opacity-70" />
+            <ArrowRight size={11} aria-hidden className="opacity-70" />
           </button>
         ))}
       </div>

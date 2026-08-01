@@ -41,7 +41,7 @@ describe('ExternalTaskChip, full variant', () => {
 
   it('exposes an aria-label naming the identifier and provider', () => {
     render(<ExternalTaskChip task={makeTask()} />);
-    expect(screen.getByRole('button', { name: /open GB-123 in Linear studio/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open GB-123 in Linear/i })).toBeDefined();
   });
 
   it('sets the tooltip to "identifier: title"', () => {
@@ -135,6 +135,17 @@ describe('ExternalTaskChip, row appearance', () => {
 });
 
 describe('ExternalTaskChip, click behavior', () => {
+  it.each([
+    ['linear', 'https://linear.app/goodboy/issue/GB-123'],
+    ['sentry', 'https://sentry.io/issues/123'],
+    ['gitlab', 'https://gitlab.com/goodboy/issues/123'],
+    ['github', 'https://github.com/goodboy/issues/123'],
+  ] as const)('opens the %s task URL from the chip appearance', (provider, url) => {
+    render(<ExternalTaskChip task={makeTask({ provider, url })} />);
+    fireEvent.click(screen.getByRole('button'));
+    expect(mocks.openUrl).toHaveBeenCalledWith(url);
+  });
+
   it('invokes a custom onClick instead of dispatching a studio event', () => {
     const onClick = vi.fn();
     const studioListener = vi.fn();

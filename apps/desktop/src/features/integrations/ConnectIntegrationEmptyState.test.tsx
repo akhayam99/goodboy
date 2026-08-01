@@ -50,7 +50,10 @@ describe('ConnectIntegrationEmptyState', () => {
     render(<ConnectIntegrationEmptyState provider={provider} workspaceId={WORKSPACE_ID} />);
 
     expect(screen.getByText(name)).toBeDefined();
-    expect(screen.getByLabelText(fieldLabel)).toBeDefined();
+    const field = screen.getByLabelText(fieldLabel);
+    expect(field).toBeDefined();
+    expect(field).not.toBe(document.activeElement);
+    expect(screen.getByRole('heading', { name, level: 2 })).toBeDefined();
     expect(studioListener).not.toHaveBeenCalled();
 
     window.removeEventListener(`goodboy:open-${provider}-studio`, studioListener);

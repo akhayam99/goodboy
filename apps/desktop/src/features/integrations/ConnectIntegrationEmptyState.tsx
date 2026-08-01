@@ -22,7 +22,12 @@ export const ConnectIntegrationEmptyState = ({ provider, workspaceId, compact = 
   if (provider === 'linear') {
     return (
       <div className={className}>
-        <IntegrationConnectPanel provider={provider} description={PROVIDER_DESCRIPTIONS[provider]}>
+        <IntegrationConnectPanel
+          provider={provider}
+          description={PROVIDER_DESCRIPTIONS[provider]}
+          size={compact ? 'sm' : 'lg'}
+          headingLevel={compact ? undefined : 2}
+        >
           <LinearFormBody workspaceId={workspaceId} />
         </IntegrationConnectPanel>
       </div>
@@ -32,7 +37,12 @@ export const ConnectIntegrationEmptyState = ({ provider, workspaceId, compact = 
   if (provider === 'sentry') {
     return (
       <div className={className}>
-        <IntegrationConnectPanel provider={provider} description={PROVIDER_DESCRIPTIONS[provider]}>
+        <IntegrationConnectPanel
+          provider={provider}
+          description={PROVIDER_DESCRIPTIONS[provider]}
+          size={compact ? 'sm' : 'lg'}
+          headingLevel={compact ? undefined : 2}
+        >
           <SentryFormBody workspaceId={workspaceId} />
         </IntegrationConnectPanel>
       </div>
@@ -41,7 +51,12 @@ export const ConnectIntegrationEmptyState = ({ provider, workspaceId, compact = 
 
   return (
     <div className={className}>
-      <IntegrationConnectPanel provider={provider} description={PROVIDER_DESCRIPTIONS[provider]}>
+      <IntegrationConnectPanel
+        provider={provider}
+        description={PROVIDER_DESCRIPTIONS[provider]}
+        size={compact ? 'sm' : 'lg'}
+        headingLevel={compact ? undefined : 2}
+      >
         <GitlabFormBody workspaceId={workspaceId} />
       </IntegrationConnectPanel>
     </div>

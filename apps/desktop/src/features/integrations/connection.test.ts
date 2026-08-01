@@ -27,18 +27,21 @@ describe('resolveIntegrationConnection', () => {
       integrations: [integration({ provider: 'linear' })],
       remoteKind: 'other',
       externalTasks: [],
+      isGithubAuthenticated: false,
     });
     const linkedOnly = resolveIntegrationConnection({
       provider: 'sentry',
       integrations: [],
       remoteKind: 'other',
       externalTasks: [task({ provider: 'sentry' })],
+      isGithubAuthenticated: false,
     });
     const unavailable = resolveIntegrationConnection({
       provider: 'gitlab',
       integrations: [],
       remoteKind: 'github',
       externalTasks: [],
+      isGithubAuthenticated: false,
     });
 
     expect({ connected, linkedOnly, unavailable }).toEqual({
@@ -54,17 +57,31 @@ describe('resolveIntegrationConnection', () => {
       integrations: [],
       remoteKind: 'github',
       externalTasks: [],
+      isGithubAuthenticated: true,
     });
     const gitlabPr = resolveIntegrationConnection({
       provider: 'pr',
       integrations: [integration({ provider: 'gitlab' })],
       remoteKind: 'gitlab',
       externalTasks: [],
+      isGithubAuthenticated: false,
     });
 
     expect({ github, gitlabPr }).toEqual({
       github: { isConnected: true, isAvailable: true },
       gitlabPr: { isConnected: true, isAvailable: true },
     });
+  });
+
+  it('does not treat a GitHub remote as an authenticated connection', () => {
+    const github = resolveIntegrationConnection({
+      provider: 'github',
+      integrations: [],
+      remoteKind: 'github',
+      externalTasks: [],
+      isGithubAuthenticated: false,
+    });
+
+    expect(github).toEqual({ isConnected: false, isAvailable: false });
   });
 });

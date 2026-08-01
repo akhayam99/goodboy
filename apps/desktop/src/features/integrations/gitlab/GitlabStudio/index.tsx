@@ -50,6 +50,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     integrations,
     remoteKind: null,
     externalTasks: EMPTY_ARRAY,
+    isGithubAuthenticated: false,
   }).isConnected;
   const { groups, loading, error, refetch } = useGitlabIssues({
     workspaceId,
@@ -140,7 +141,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
               provider="gitlab"
               description="Connect GitLab to review merge requests from this workspace"
             >
-              <GitlabFormBody workspaceId={workspaceId} />
+              <GitlabFormBody workspaceId={workspaceId} shouldAutoFocus />
             </IntegrationConnectPanel>
           </div>
         ) : tab === 'issues' ? (

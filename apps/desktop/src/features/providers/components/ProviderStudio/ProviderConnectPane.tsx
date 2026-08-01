@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Button, Divider, ScrollFade } from '@goodboy/ui';
 import { ArrowLeft } from 'lucide-react';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
@@ -24,6 +25,7 @@ type Props = {
   readonly autoStart: boolean;
   readonly chrome?: ProviderConnectChrome;
   readonly onBack: () => void;
+  readonly onInFlightChange?: (isInFlight: boolean) => void;
 };
 
 export const ProviderConnectPane = ({
@@ -32,6 +34,7 @@ export const ProviderConnectPane = ({
   autoStart,
   chrome = 'studio',
   onBack,
+  onInFlightChange,
 }: Props) => {
   const { lifecycle, provider, guide, command, inFlight, connected, primary, runPrimary } =
     useProviderConnect(providerId, action, autoStart);
@@ -40,6 +43,11 @@ export const ProviderConnectPane = ({
   const Icon = brand.icon;
   const isModal = chrome === 'modal';
   const isInline = chrome === 'inline';
+
+  useEffect(() => {
+    onInFlightChange?.(inFlight);
+    return () => onInFlightChange?.(false);
+  }, [inFlight, onInFlightChange]);
   const actions = (
     <>
       {!connected && !inFlight && !isModal ? (

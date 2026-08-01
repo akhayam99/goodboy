@@ -12,6 +12,7 @@ type Params = {
   readonly integrations: ReadonlyArray<WorkspaceIntegration>;
   readonly remoteKind: RemoteHostKind | null;
   readonly externalTasks: ReadonlyArray<SessionExternalTask>;
+  readonly isGithubAuthenticated: boolean;
 };
 
 type Result = {
@@ -24,6 +25,7 @@ export const resolveIntegrationConnection = ({
   integrations,
   remoteKind,
   externalTasks,
+  isGithubAuthenticated,
 }: Params): Result => {
   const hasLinear = integrations.some((integration) => integration.provider === 'linear');
   const hasSentry = integrations.some((integration) => integration.provider === 'sentry');
@@ -48,11 +50,11 @@ export const resolveIntegrationConnection = ({
       hasLinkedTask = externalTasks.some((task) => task.provider === 'gitlab');
       break;
     case 'github':
-      isConnected = hasGithubRemote;
+      isConnected = hasGithubRemote && isGithubAuthenticated;
       hasLinkedTask = externalTasks.some((task) => task.provider === 'github');
       break;
     case 'pr':
-      isConnected = hasGithubRemote || (hasGitlabRemote && hasGitlab);
+      isConnected = (hasGithubRemote && isGithubAuthenticated) || (hasGitlabRemote && hasGitlab);
       hasLinkedTask = externalTasks.some(
         (task) => task.provider === 'github' || task.provider === 'gitlab',
       );

@@ -81,8 +81,15 @@ export const useDropdownDirection = ({
       const desiredLeft = align === 'end' ? rect.right - popupWidth : rect.left;
       const maxLeft = Math.max(window.innerWidth - popupWidth - VIEWPORT_MARGIN, VIEWPORT_MARGIN);
       const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const direction = spaceBelow < expectedHeight + VIEWPORT_MARGIN ? 'up' : 'down';
+      const spaceBelow = Math.max(
+        window.innerHeight - rect.bottom - DROPDOWN_GAP - VIEWPORT_MARGIN,
+        0,
+      );
+      const spaceAbove = Math.max(rect.top - DROPDOWN_GAP - VIEWPORT_MARGIN, 0);
+      const measuredHeight = popupRef.current?.getBoundingClientRect().height ?? 0;
+      const popupHeight = measuredHeight > 0 ? measuredHeight : expectedHeight;
+      const direction = spaceBelow < popupHeight && spaceAbove > spaceBelow ? 'up' : 'down';
+      const maxHeight = direction === 'down' ? spaceBelow : spaceAbove;
 
       setPosition({
         direction,
@@ -91,6 +98,7 @@ export const useDropdownDirection = ({
           bottom: direction === 'up' ? window.innerHeight - rect.top + DROPDOWN_GAP : undefined,
           left,
           maxWidth: viewportWidth,
+          maxHeight,
         },
       });
     };
@@ -101,9 +109,15 @@ export const useDropdownDirection = ({
     }
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
+    const observer =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updatePosition);
+    if (popupRef.current != null) {
+      observer?.observe(popupRef.current);
+    }
     return () => {
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
+      observer?.disconnect();
     };
   }, [align, expectedHeight, expectedWidth, open, popupRef, strategy, triggerRef]);
 

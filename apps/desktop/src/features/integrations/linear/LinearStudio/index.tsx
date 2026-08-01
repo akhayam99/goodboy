@@ -30,6 +30,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     integrations,
     remoteKind: null,
     externalTasks: EMPTY_ARRAY,
+    isGithubAuthenticated: false,
   }).isConnected;
   const { groups, loading, error, refetch } = useLinearIssues(workspaceId, isConnected);
   const [focused, setFocused] = useState<LinearIssue | null>(null);
@@ -115,7 +116,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
               provider="linear"
               description="Connect Linear to review issues from this workspace"
             >
-              <LinearFormBody workspaceId={workspaceId} />
+              <LinearFormBody workspaceId={workspaceId} shouldAutoFocus />
             </IntegrationConnectPanel>
           </div>
         )

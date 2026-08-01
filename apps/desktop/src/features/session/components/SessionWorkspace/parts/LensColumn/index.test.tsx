@@ -85,6 +85,14 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => remote.kind,
 }));
 
+vi.mock('../../../../../integrations/github/useGithubConnection', () => ({
+  useGithubConnection: () => ({
+    isAuthenticated: true,
+    isResolved: true,
+    refresh: vi.fn(async () => undefined),
+  }),
+}));
+
 vi.mock('../../../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));

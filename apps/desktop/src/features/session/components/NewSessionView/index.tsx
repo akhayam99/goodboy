@@ -18,6 +18,7 @@ import { useBranchConflict } from '../../../../features/worktree/useBranchConfli
 import { useWorkspaceRemoteHostKind } from '../../../../features/worktree/useWorkspaceRemoteHostKind';
 import type { IssueCandidate } from '../../../../features/integrations/fetchIssueCandidates';
 import { resolveIssueSources } from '../../../../features/integrations/issueSources';
+import { useGithubConnection } from '../../../../features/integrations/github/useGithubConnection';
 import { formatError } from '../../../../shared/lib/errors';
 import { isValidBranchSlug as validateBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
 import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
@@ -80,11 +81,13 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     useShallow((s) => s.workspaceIntegrations?.[workspaceId] ?? EMPTY_INTEGRATIONS),
   );
   const remoteKind = useWorkspaceRemoteHostKind({ workspaceId });
+  const githubConnection = useGithubConnection({ workspaceId });
   const issueSources = isSimple
     ? []
     : resolveIssueSources({
         integrations: workspaceIntegrations,
         remoteKind,
+        isGithubAuthenticated: githubConnection.isAuthenticated,
       });
 
   const connectedProviders = providers.filter((p) => p.connection === 'connected');

@@ -17,7 +17,9 @@ import { ExternalTaskChip } from '../../../../integrations/components/ExternalTa
 import { PROVIDER_LENS } from '../../../../integrations/providerLens';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { MissingGithubRemoteEmptyState } from '../../../../github/components/MissingGithubRemoteEmptyState';
+import { MissingGithubTokenEmptyState } from '../../../../github/components/MissingGithubTokenEmptyState';
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
+import { useGithubConnection } from '../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
@@ -29,6 +31,8 @@ import { PaneShell } from './PaneShell';
 import { PrListRow } from './PrListRow';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
+import { openUrl } from '../../../../../shared/lib/editor';
 
 type Props = {
   readonly session: Session;
@@ -151,11 +155,14 @@ const GithubPrCard = ({
     (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
   );
   const remoteKind = useRemoteHostKind({ sessionId });
+  const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
     integrations: workspaceIntegrations,
     remoteKind,
     externalTasks,
+    isGithubAuthenticated:
+      githubConnection.isResolved === false || githubConnection.isAuthenticated,
   }).isConnected;
   const selectedPr =
     selectedPrNumber != null
@@ -174,10 +181,21 @@ const GithubPrCard = ({
     window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
 
+  if (!pr && remoteKind !== 'github') {
+    return (
+      <div className="animate-fade-in rounded-lg border border-dashed border-border-soft bg-elevated/40">
+        <MissingGithubRemoteEmptyState />
+      </div>
+    );
+  }
+
   if (!pr && !isGithubConnected) {
     return (
       <div className="animate-fade-in rounded-lg border border-dashed border-border-soft bg-elevated/40">
-        <MissingGithubRemoteEmptyState workspaceId={session.workspaceId} />
+        <MissingGithubTokenEmptyState
+          workspaceId={session.workspaceId}
+          onConnected={() => void githubConnection.refresh()}
+        />
       </div>
     );
   }
@@ -355,8 +373,6 @@ type LinkedIssuesSectionProps = {
 };
 
 const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
-  const [expandedIssueUrl, setExpandedIssueUrl] = useState<string | null>(null);
-
   if (issues.length === 0) {
     return null;
   }
@@ -364,41 +380,23 @@ const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
     <div className="flex flex-col gap-1.5">
       <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
       <div className="flex flex-col gap-1">
-        {issues.map((issue) => {
-          const isExpanded = expandedIssueUrl === issue.url;
-          return (
-            <div key={issue.url} className="flex flex-col gap-2 rounded-lg bg-muted/25 px-3 py-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
-                <button
-                  type="button"
-                  aria-expanded={isExpanded}
-                  onClick={() => setExpandedIssueUrl(isExpanded ? null : issue.url)}
-                  className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-                >
-                  <span className="shrink-0 font-mono">#{issue.number}</span>
-                  <span className="min-w-0 flex-1 truncate">{issue.title ?? 'GitHub issue'}</span>
-                  <ArrowRight size={12} aria-hidden className="shrink-0" />
-                </button>
-                <ExternalRefActions
-                  url={issue.url}
-                  label={`issue #${issue.number}`}
-                  hostLabel="GitHub"
-                />
-              </div>
-              {isExpanded ? (
-                <div
-                  role="region"
-                  aria-label={`issue #${issue.number} details`}
-                  className="rounded-md bg-background/50 px-3 py-2 text-xs text-muted-foreground"
-                >
-                  {issue.closes
-                    ? 'This issue closes when the pull request merges.'
-                    : 'This issue is linked without closing on merge.'}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+        {issues.map((issue) => (
+          <LinkedWorkRow
+            key={issue.url}
+            leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
+            identifier={`#${issue.number}`}
+            title={issue.title ?? 'GitHub issue'}
+            navigation="external"
+            onClick={() => void openUrl(issue.url)}
+            actions={
+              <ExternalRefActions
+                url={issue.url}
+                label={`issue #${issue.number}`}
+                hostLabel="GitHub"
+              />
+            }
+          />
+        ))}
       </div>
     </div>
   );
@@ -423,9 +421,17 @@ const ExternalTasksSection = ({ tasks, workspace, onSelectLens }: ExternalTasksS
             key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
             task={task}
             appearance="row"
-            navigation="internal"
-            ariaLabel={`open ${task.identifier} integration`}
-            onClick={() => onSelectLens(PROVIDER_LENS[task.provider])}
+            navigation={task.provider === 'github' ? 'external' : 'internal'}
+            ariaLabel={
+              task.provider === 'github'
+                ? `open ${task.identifier} in GitHub`
+                : `open ${task.identifier} integration`
+            }
+            onClick={
+              task.provider === 'github'
+                ? () => void openUrl(task.url)
+                : () => onSelectLens(PROVIDER_LENS[task.provider])
+            }
             repoLabel={
               workspaceMountName({
                 workspace,

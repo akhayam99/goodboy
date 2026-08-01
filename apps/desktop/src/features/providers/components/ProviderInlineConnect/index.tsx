@@ -9,9 +9,10 @@ type Props = {
   readonly providerId: ProviderId;
   readonly action?: ProviderLifecycleAction;
   readonly onDone: () => void;
+  readonly onInFlightChange?: (isInFlight: boolean) => void;
 };
 
-export const ProviderInlineConnect = ({ providerId, action, onDone }: Props) => {
+export const ProviderInlineConnect = ({ providerId, action, onDone, onInFlightChange }: Props) => {
   const provider = useAppStore((state) =>
     state.providers.find((candidate) => candidate.id === providerId),
   );
@@ -19,7 +20,7 @@ export const ProviderInlineConnect = ({ providerId, action, onDone }: Props) => 
 
   if (isApiProvider({ id: providerId })) {
     return (
-      <ScrollFade className="max-h-96" fadeFrom="subtle">
+      <ScrollFade className="min-h-0 max-h-96" fadeFrom="subtle">
         <section
           aria-label={`Connect ${PROVIDER_LABEL[providerId]}`}
           className="flex flex-col gap-3 p-3"
@@ -36,13 +37,14 @@ export const ProviderInlineConnect = ({ providerId, action, onDone }: Props) => 
   }
 
   return (
-    <ScrollFade className="max-h-96" fadeFrom="subtle">
+    <ScrollFade className="min-h-0 max-h-96" fadeFrom="subtle">
       <ProviderConnectPane
         providerId={providerId}
         action={resolvedAction}
         autoStart={false}
         chrome="inline"
         onBack={onDone}
+        onInFlightChange={onInFlightChange}
       />
     </ScrollFade>
   );

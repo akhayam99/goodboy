@@ -100,6 +100,7 @@ export const RoutingPicker = ({
   ariaLabel,
   openEvent,
 }: Props) => {
+  const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
   const {
     open,
     close,
@@ -118,6 +119,7 @@ export const RoutingPicker = ({
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
     strategy: 'fixed',
+    isEscapeEnabled: isProviderConnectionInFlight === false,
   });
   const editableEffort = effort.editable ? effort : null;
   const effortValue = effort.value ?? 'medium';
@@ -335,7 +337,7 @@ export const RoutingPicker = ({
             innerRef={popupRef}
             role="dialog"
             ariaLabel={ariaLabel ?? 'model routing'}
-            className={cn(popupClassName, 'flex flex-col bg-subtle')}
+            className={cn(popupClassName, 'flex max-h-[calc(100vh-1rem)] flex-col bg-subtle')}
             style={popupStyle}
           >
             {defaultSummary != null && (
@@ -427,10 +429,11 @@ export const RoutingPicker = ({
             </PickerSection>
             <Divider />
             {connectProvider != null ? (
-              <section aria-label="Connect provider">
+              <section aria-label="Connect provider" className="min-h-0">
                 <ProviderInlineConnect
                   providerId={connectProvider}
                   onDone={() => setConnectProvider(null)}
+                  onInFlightChange={setIsProviderConnectionInFlight}
                 />
               </section>
             ) : null}

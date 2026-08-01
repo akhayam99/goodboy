@@ -6,6 +6,7 @@ import type { WorkspaceTurn } from '../../../budget/components/BudgetStudio/lib'
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
+import { manageDialogFocus } from './manageDialogFocus';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -13,7 +14,7 @@ type Props = {
 
 export const SessionCostChip = ({ sessionId }: Props) => {
   const sessionCost = useSessionCost(sessionId);
-  const capUsd = useAppStore(
+  const alertCapUsd = useAppStore(
     (state) =>
       state.budgetAlerts.find(
         (alert) =>
@@ -26,7 +27,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
   );
   const sessionBudget = useAppStore(
-    (state) => state.sessionBudgets[sessionId]?.softCapUsd ?? capUsd,
+    (state) => state.sessionBudgets[sessionId]?.softCapUsd ?? alertCapUsd,
   );
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
@@ -40,10 +41,10 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       strategy: 'fixed',
     });
   const spent = formatUsd(sessionCost);
-  const label = capUsd != null ? `${spent} / ${formatUsd(capUsd)}` : spent;
+  const label = sessionBudget != null ? `${spent} / ${formatUsd(sessionBudget)}` : spent;
   const title =
-    capUsd != null
-      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(capUsd)} cap (excluding summarizer), click for budget details`
+    sessionBudget != null
+      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap (excluding summarizer), click for budget details`
       : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summarizer), click for budget details`;
   const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
     () =>
@@ -57,6 +58,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   const [pulse, setPulse] = useState(false);
   const prevCostRef = useRef(sessionCost);
   const prevSessionIdRef = useRef(sessionId);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (prevSessionIdRef.current !== sessionId) {
@@ -80,9 +82,20 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     void loadSessionBudget(sessionId);
   }, [loadSessionBudget, loadSessionTelemetry, open, sessionId]);
 
+  useEffect(() => {
+    if (open === false || popupRef.current == null || triggerRef.current == null) {
+      return;
+    }
+    return manageDialogFocus({
+      dialog: popupRef.current,
+      returnFocusTo: triggerRef.current,
+    });
+  }, [open, popupRef]);
+
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={toggle}
         aria-haspopup="dialog"
@@ -102,6 +115,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
             innerRef={popupRef}
             role="dialog"
             ariaLabel="session budget details"
+            tabIndex={-1}
             className={cn(popupClassName, 'flex max-h-[32rem] flex-col bg-subtle')}
             style={popupStyle}
           >

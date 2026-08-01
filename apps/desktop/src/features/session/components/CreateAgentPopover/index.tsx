@@ -37,6 +37,7 @@ export const CreateAgentPopover = ({
   description,
   onSpawned,
 }: Props) => {
+  const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
   const {
     open,
     close,
@@ -53,6 +54,7 @@ export const CreateAgentPopover = ({
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
     strategy: 'fixed',
+    isEscapeEnabled: isProviderConnectionInFlight === false,
   });
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
@@ -113,7 +115,7 @@ export const CreateAgentPopover = ({
             innerRef={popupRef}
             role="dialog"
             ariaLabel="create agent"
-            className={cn(popupClassName, 'flex flex-col bg-subtle')}
+            className={cn(popupClassName, 'flex max-h-[calc(100vh-1rem)] flex-col bg-subtle')}
             style={popupStyle}
           >
             {agentKinds.length > 1 && (
@@ -139,6 +141,7 @@ export const CreateAgentPopover = ({
               <ProviderInlineConnect
                 providerId={connectProvider}
                 onDone={() => setConnectProvider(null)}
+                onInFlightChange={setIsProviderConnectionInFlight}
               />
             ) : (
               <AgentRoutingSections

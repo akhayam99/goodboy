@@ -17,6 +17,15 @@ describe('useDropdown', () => {
     expect(result.current.open).toBe(false);
   });
 
+  it('ignores Escape while the containing flow disables it', () => {
+    const { result } = renderHook(() => useDropdown({ isEscapeEnabled: false }));
+    act(() => result.current.toggle());
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    });
+    expect(result.current.open).toBe(true);
+  });
+
   it('stays closed when disabled, even on the open event', () => {
     const { result } = renderHook(() => useDropdown({ disabled: true, openEvent: 'test:open' }));
     act(() => result.current.toggle());
@@ -70,6 +79,7 @@ describe('useDropdown', () => {
       bottom: 272,
       left: 632,
       maxWidth: 1008,
+      maxHeight: 488,
     });
 
     rect = DOMRect.fromRect({ x: 0, y: 100, width: 80, height: 30 });

@@ -30,6 +30,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     integrations,
     remoteKind: null,
     externalTasks: EMPTY_ARRAY,
+    isGithubAuthenticated: false,
   }).isConnected;
   const { rows, loadMore, hasMore, loading, error, refetch } = useSentryIssues(
     workspaceId,
@@ -110,7 +111,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
               provider="sentry"
               description="Connect Sentry to review errors from this workspace"
             >
-              <SentryFormBody workspaceId={workspaceId} />
+              <SentryFormBody workspaceId={workspaceId} shouldAutoFocus />
             </IntegrationConnectPanel>
           </div>
         )

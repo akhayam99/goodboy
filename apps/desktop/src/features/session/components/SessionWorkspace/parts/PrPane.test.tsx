@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
+  GhTokenStatus,
   IsoDateTime,
   PullRequestState,
   Session,
@@ -48,6 +49,15 @@ const h = vi.hoisted(() => ({
   } satisfies Store,
   remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
   onSelectLens: vi.fn(),
+  githubStatus: {
+    available: true,
+    mode: 'gh-cli',
+    user: 'akhayam',
+    scoped: false,
+  } as GhTokenStatus,
+  ghStatus: vi.fn(),
+  ghSetToken: vi.fn(),
+  openUrl: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -71,6 +81,16 @@ vi.mock('../../../../../store/slices/worktrees/useSessionRepo', () => ({
 
 vi.mock('../../../../context/components/ContextPanel/strips/GitlabMrStrip', () => ({
   GitlabMrStrip: () => <div>GitLab merge request detail</div>,
+}));
+
+vi.mock('../../../../github/github', () => ({
+  ghStatus: h.ghStatus,
+  ghSetToken: h.ghSetToken,
+  ghClearToken: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../../../../shared/lib/editor', () => ({
+  openUrl: h.openUrl,
 }));
 
 import { PrPane } from './PrPane';
@@ -127,6 +147,23 @@ beforeEach(() => {
   ];
   h.remoteKind = 'github';
   h.onSelectLens.mockReset();
+  h.openUrl.mockClear();
+  h.githubStatus = {
+    available: true,
+    mode: 'gh-cli',
+    user: 'akhayam',
+    scoped: false,
+  };
+  h.ghStatus.mockImplementation(async () => h.githubStatus);
+  h.ghSetToken.mockImplementation(async () => {
+    h.githubStatus = {
+      available: true,
+      mode: 'pat',
+      user: 'akhayam',
+      scoped: true,
+    };
+    return h.githubStatus;
+  });
 });
 
 afterEach(cleanup);
@@ -290,8 +327,6 @@ describe('PrPane', () => {
       ],
     };
 
-    const studioListener = vi.fn();
-    window.addEventListener('goodboy:open-github-studio', studioListener);
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getByText('CI passing')).toBeDefined();
@@ -300,11 +335,10 @@ describe('PrPane', () => {
     expect(screen.getByText('main')).toBeDefined();
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'open #7 integration' }));
-    expect(h.onSelectLens).toHaveBeenCalledWith('pr');
-    expect(studioListener).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'open #7 in GitHub' }));
+    expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/goodboy/issues/7');
+    expect(h.onSelectLens).not.toHaveBeenCalled();
     expect(screen.getAllByRole('link', { name: 'Open in GitHub' })).toHaveLength(2);
-    window.removeEventListener('goodboy:open-github-studio', studioListener);
   });
 
   it('shows repository attribution on composite linked rows', () => {
@@ -379,29 +413,19 @@ describe('PrPane', () => {
       ],
     };
 
-    const studioListener = vi.fn();
-    window.addEventListener('goodboy:open-github-studio', studioListener);
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /#7 Track auth rollout/i }));
-    expect(screen.getByRole('region', { name: 'issue #7 details' }).textContent).toContain(
-      'closes when the pull request merges',
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'open #9 integration' }));
-    expect(h.onSelectLens).toHaveBeenCalledWith('pr');
-    expect(studioListener).not.toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-github-studio', studioListener);
+    expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/goodboy/issues/7');
+    fireEvent.click(screen.getByRole('button', { name: 'open #9 in GitHub' }));
+    expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/goodboy/issues/9');
+    expect(h.onSelectLens).not.toHaveBeenCalled();
     expect(screen.getByText('No pull request yet')).toBeDefined();
     expect(screen.getByText('ak/refactor-auth')).toBeDefined();
     expect(screen.getByRole('button', { name: /Open a pull request/i })).toBeDefined();
 
-    const prListener = vi.fn();
-    window.addEventListener('goodboy:open-github-session', prListener);
-    fireEvent.click(screen.getByRole('button', { name: /#7 Track auth rollout/i }));
-    window.removeEventListener('goodboy:open-github-session', prListener);
-
-    expect(prListener).not.toHaveBeenCalled();
+    expect(screen.queryByRole('region', { name: 'issue #7 details' })).toBeNull();
   });
 
   it('routes creating a PR to the shared PR studio surface', () => {
@@ -423,17 +447,31 @@ describe('PrPane', () => {
     expect(screen.queryByRole('button', { name: 'Draft with agent' })).toBeNull();
   });
 
-  it('offers a connect action instead of the create-PR state without a GitHub remote', () => {
+  it('explains that a missing GitHub remote cannot be fixed with a token', () => {
     h.remoteKind = null;
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-github-studio', listener);
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
-    expect(screen.getByText('GitHub')).toBeDefined();
-    expect(screen.getByLabelText('GitHub personal access token')).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
+    expect(screen.getByText(/does not have a GitHub remote/i)).toBeDefined();
+    expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
     expect(screen.queryByRole('button', { name: /Open a pull request/i })).toBeNull();
-    window.removeEventListener('goodboy:open-github-studio', listener);
+  });
 
-    expect(listener).not.toHaveBeenCalled();
+  it('clears the token empty state after connecting a repository with a GitHub remote', async () => {
+    h.githubStatus = {
+      available: true,
+      mode: 'absent',
+      scoped: false,
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+    const tokenInput = await screen.findByLabelText('GitHub personal access token');
+    fireEvent.change(tokenInput, { target: { value: 'ghp_valid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
+    });
+    expect(screen.getByRole('button', { name: /Open a pull request/i })).toBeDefined();
   });
 });

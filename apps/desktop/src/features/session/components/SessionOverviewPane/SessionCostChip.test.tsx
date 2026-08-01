@@ -83,6 +83,23 @@ describe('SessionCostChip', () => {
     expect(screen.getByRole('button').textContent).toBe('$1.75 / $5.00');
   });
 
+  it('uses the loaded session budget as the single cap source', () => {
+    state.sessionCost = 1.75;
+    store.budgetAlerts = [alert({ capUsd: 5 })];
+    store.sessionBudgets = {
+      [SID]: {
+        sessionId: SID,
+        softCapUsd: 8,
+        updatedAt: '2026-07-27T10:00:00.000Z',
+      } as SessionBudget,
+    };
+
+    render(<SessionCostChip sessionId={SID} />);
+
+    expect(screen.getByRole('button').textContent).toBe('$1.75 / $8.00');
+    expect(screen.getByRole('button').getAttribute('title')).toContain('of a $8.0000 cap');
+  });
+
   it('ignores a cap belonging to another session or to a provider', () => {
     state.sessionCost = 1.75;
     store.budgetAlerts = [
@@ -120,5 +137,18 @@ describe('SessionCostChip', () => {
     expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
     expect(handler).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-budget-studio', handler);
+  });
+
+  it('moves focus into the dialog and restores it after Escape', () => {
+    render(<SessionCostChip sessionId={SID} />);
+    const trigger = screen.getByRole('button');
+    trigger.focus();
+    fireEvent.click(trigger);
+
+    expect(screen.getByLabelText('session soft cap')).toBe(document.activeElement);
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog', { name: 'session budget details' })).toBeNull();
+    expect(trigger).toBe(document.activeElement);
   });
 });

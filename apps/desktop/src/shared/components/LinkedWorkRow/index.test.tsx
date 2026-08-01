@@ -80,3 +80,20 @@ describe('LinkedWorkRow, actions slot', () => {
     expect(screen.queryByText('Improve preview metadata')).toBeNull();
   });
 });
+
+describe('LinkedWorkRow, navigation', () => {
+  it('uses the external navigation icon when the row opens another application', () => {
+    const { container } = render(
+      <LinkedWorkRow
+        leading={{ kind: 'glyph', provider: 'github' }}
+        identifier="#42"
+        title="Open externally"
+        navigation="external"
+        onClick={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector('.lucide-arrow-up-right')).not.toBeNull();
+    expect(container.querySelector('.lucide-arrow-right')).toBeNull();
+  });
+});

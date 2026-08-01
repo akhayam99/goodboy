@@ -1,19 +1,20 @@
-import type { WorkspaceId } from '@goodboy/types';
 import { IntegrationConnectPanel } from '../../integrations/components/IntegrationConnectPanel';
-import { GithubFormBody } from '../../integrations/github/GithubFormBody';
 
 type Props = {
-  readonly workspaceId: WorkspaceId;
   readonly compact?: boolean;
 };
 
-export const MissingGithubRemoteEmptyState = ({ workspaceId, compact = false }: Props) => (
+export const MissingGithubRemoteEmptyState = ({ compact = false }: Props) => (
   <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>
     <IntegrationConnectPanel
       provider="github"
-      description="This workspace does not have a GitHub remote. Add one to review pull requests, or set a workspace token below."
+      description="This repository does not have a GitHub remote. Add one with Git before reviewing pull requests and issues here."
+      size={compact ? 'sm' : 'lg'}
+      headingLevel={compact ? undefined : 2}
     >
-      <GithubFormBody workspaceId={workspaceId} />
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        Goodboy does not change repository remotes from this screen.
+      </p>
     </IntegrationConnectPanel>
   </div>
 );

@@ -10,6 +10,7 @@ import { formatError } from '../../../shared/lib/errors';
 type Props = {
   workspaceId: WorkspaceId;
   onConnected?: () => void;
+  shouldAutoFocus?: boolean;
 };
 
 const DEFAULT_HOST = 'https://gitlab.com';
@@ -31,7 +32,7 @@ function normalizeHost(input: string): string {
   }
 }
 
-export const GitlabFormBody = ({ workspaceId, onConnected }: Props) => {
+export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const gitlab =
     integrations.find((i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab') ?? null;
@@ -149,7 +150,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected }: Props) => {
             <Input
               id="gitlab-pat"
               type="password"
-              autoFocus
+              autoFocus={shouldAutoFocus}
               placeholder="glpat-…"
               value={token}
               onChange={(e) => setToken(e.target.value)}
