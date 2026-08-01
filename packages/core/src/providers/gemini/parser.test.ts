@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { parseJsonLine, type ParseContext } from './parser';
 
@@ -8,19 +8,23 @@ const ctx: ParseContext = {
   now: () => at,
 };
 
-function parse(line: string) {
-  return parseJsonLine(line, ctx);
-}
+type ParseParams = {
+  readonly line: string;
+  readonly overrides?: Partial<ParseContext>;
+};
 
-describe('parseJsonLine (gemini v0.x)', () => {
-  it('returns [] for empty / blank lines', () => {
-    expect(parse('')).toEqual([]);
-    expect(parse('   ')).toEqual([]);
+const parse = ({ line, overrides = {} }: ParseParams) => {
+  return parseJsonLine(line, { ...ctx, ...overrides });
+};
+
+describe('parseJsonLine (gemini stream-json)', () => {
+  it('returns no events for blank lines', () => {
+    expect(parse({ line: '' })).toEqual([]);
+    expect(parse({ line: '   ' })).toEqual([]);
   });
 
-  it('treats plain text as an assistant_text delta with trailing newline', () => {
-    const events = parse('Hello, world!');
-    expect(events).toEqual([
+  it('keeps plain prose readable as assistant text', () => {
+    expect(parse({ line: 'Hello, world!' })).toEqual([
       {
         kind: 'assistant_text',
         runId: ctx.runId,
@@ -30,37 +34,122 @@ describe('parseJsonLine (gemini v0.x)', () => {
     ]);
   });
 
-  it('parses response.delta when CLI emits structured json', () => {
-    const events = parse(JSON.stringify({ type: 'response.delta', text: 'hi' }));
-    expect(events).toEqual([{ kind: 'assistant_text', runId: ctx.runId, delta: 'hi', at }]);
-  });
-
-  it('skips response.completed (no event needed before done)', () => {
-    expect(parse(JSON.stringify({ type: 'response.completed' }))).toEqual([]);
-  });
-
-  it('extracts usage when emitted', () => {
-    const events = parse(
-      JSON.stringify({
-        type: 'usage',
-        usage: {
-          input_tokens: 100,
-          output_tokens: 50,
-          cached_input_tokens: 10,
-          cache_creation_input_tokens: 4,
+  it('initializes the Gemini provider session from the conversation id', () => {
+    const events = parse({
+      line: JSON.stringify({
+        event: 'init',
+        conversation_id: 'fe3759b4',
+        init: {
+          model: 'gemini-3.5-flash',
+          cwd: '/tmp/x',
+          tools: ['view_file', 'run_command'],
+          permission_mode: 'request-review',
         },
       }),
+    });
+    expect(events).toEqual([
+      {
+        kind: 'provider_session_init',
+        runId: ctx.runId,
+        providerSessionId: 'fe3759b4',
+        provider: 'gemini',
+        at,
+      },
+    ]);
+  });
+
+  it('concatenates agent response deltas in stream order', () => {
+    const lines = [
+      {
+        event: 'step_update',
+        step_update: {
+          conversation_id: 'fe3759b4',
+          step_index: 2,
+          state: 'ACTIVE',
+          step_type: 'agent_response',
+          text_delta: 'line one\nline two',
+        },
+      },
+      {
+        event: 'step_update',
+        step_update: {
+          conversation_id: 'fe3759b4',
+          step_index: 2,
+          state: 'DONE',
+          step_type: 'agent_response',
+          text_delta: '\n',
+          usage: {
+            input_tokens: 17648,
+            output_tokens: 21,
+            thinking_tokens: 20,
+            cache_read_tokens: 0,
+            total_tokens: 17669,
+          },
+        },
+      },
+    ];
+    const events = lines.flatMap((line) => parse({ line: JSON.stringify(line) }));
+    expect(events).toEqual([
+      { kind: 'assistant_text', runId: ctx.runId, delta: 'line one\nline two', at },
+      { kind: 'assistant_text', runId: ctx.runId, delta: '\n', at },
+    ]);
+    expect(events.map((event) => ('delta' in event ? event.delta : '')).join('')).toBe(
+      'line one\nline two\n',
     );
+  });
+
+  it('ignores checkpoint lifecycle updates including their usage', () => {
+    const events = parse({
+      line: JSON.stringify({
+        event: 'step_update',
+        step_update: {
+          conversation_id: 'fe3759b4',
+          step_index: 3,
+          state: 'DONE',
+          step_type: 'checkpoint',
+          usage: {
+            input_tokens: 103,
+            output_tokens: 5,
+            thinking_tokens: 0,
+            cache_read_tokens: 0,
+            total_tokens: 108,
+          },
+        },
+      }),
+    });
+    expect(events).toEqual([]);
+  });
+
+  it('emits exactly one usage event from the final turn totals', () => {
+    const events = parse({
+      line: JSON.stringify({
+        event: 'result',
+        result: {
+          conversation_id: 'fe3759b4',
+          status: 'SUCCESS',
+          response: 'line one\nline two\n',
+          duration_seconds: 1.8,
+          num_turns: 1,
+          usage: {
+            input_tokens: 17751,
+            output_tokens: 26,
+            thinking_tokens: 20,
+            cache_read_tokens: 7,
+            total_tokens: 17777,
+          },
+        },
+      }),
+    });
     expect(events).toEqual([
       {
         kind: 'usage',
         runId: ctx.runId,
         usage: {
-          inputTokens: 100,
-          outputTokens: 50,
-          cachedInputTokens: 10,
-          cacheCreationInputTokens: 4,
-          contextTokens: 150,
+          inputTokens: 17751,
+          outputTokens: 26,
+          cachedInputTokens: 7,
+          cacheCreationInputTokens: 0,
+          contextTokens: 17777,
           estimatedCostUsd: 0,
         },
         at,
@@ -68,8 +157,59 @@ describe('parseJsonLine (gemini v0.x)', () => {
     ]);
   });
 
-  it('surfaces error payloads', () => {
-    const events = parse(JSON.stringify({ type: 'error', message: 'oops' }));
-    expect(events).toEqual([{ kind: 'error', runId: ctx.runId, message: 'oops', at }]);
+  it('emits usage and an error when the final result failed', () => {
+    const events = parse({
+      line: JSON.stringify({
+        event: 'result',
+        result: {
+          conversation_id: 'fe3759b4',
+          status: 'FAILED',
+          error: { message: 'quota exceeded' },
+          usage: {
+            input_tokens: 3,
+            output_tokens: 2,
+            cache_read_tokens: 1,
+          },
+        },
+      }),
+    });
+    expect(events).toEqual([
+      {
+        kind: 'usage',
+        runId: ctx.runId,
+        usage: {
+          inputTokens: 3,
+          outputTokens: 2,
+          cachedInputTokens: 1,
+          cacheCreationInputTokens: 0,
+          contextTokens: 5,
+          estimatedCostUsd: 0,
+        },
+        at,
+      },
+      {
+        kind: 'error',
+        runId: ctx.runId,
+        message: 'FAILED: quota exceeded',
+        at,
+      },
+    ]);
+  });
+
+  it('reports unrecognized events through the unknown payload callback', () => {
+    const onUnknown = vi.fn();
+    const payload = { event: 'future_event', value: 42 };
+    const events = parse({ line: JSON.stringify(payload), overrides: { onUnknown } });
+    expect(onUnknown).toHaveBeenCalledWith('future_event', payload);
+    expect(events).toEqual([
+      {
+        kind: 'unknown_payload',
+        runId: ctx.runId,
+        adapter: 'gemini',
+        payloadType: 'future_event',
+        raw: payload,
+        at,
+      },
+    ]);
   });
 });

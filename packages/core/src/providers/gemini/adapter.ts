@@ -109,7 +109,7 @@ const spawnGemini = async function* ({
     request.selection ??
     resolveStoredModelSelection({ provider: 'gemini', id: request.model }).selection;
   const modelArgs = resolveModelArgs({ provider: 'gemini', selection }).args;
-  const args = ['-p', prompt, ...modelArgs, '--sandbox'];
+  const args = ['-p', prompt, '--output-format', 'stream-json', ...modelArgs, '--sandbox'];
 
   const child: ChildProcess = spawnFn(binary, args, {
     stdio: ['ignore', 'pipe', 'pipe'],

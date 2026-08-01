@@ -82,18 +82,28 @@ describe('GeminiAdapter.spawn', () => {
     expect(events[0]).toMatchObject({ delta: 'Hello from gemini\n' });
   });
 
-  it('parses a JSON response.delta line into assistant_text', async () => {
-    const line = JSON.stringify({ type: 'response.delta', text: 'streamed' });
+  it('streams agent response text from structured output', async () => {
+    const line = JSON.stringify({
+      event: 'step_update',
+      step_update: {
+        state: 'ACTIVE',
+        step_type: 'agent_response',
+        text_delta: 'streamed',
+      },
+    });
     const child = new FakeChild([line]);
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
     expect(events.find((e) => e.kind === 'assistant_text')).toMatchObject({ delta: 'streamed' });
   });
 
-  it('emits usage with token counts from a usage JSON line', async () => {
+  it('emits usage with token counts from the final result', async () => {
     const line = JSON.stringify({
-      type: 'usage',
-      usage: { input_tokens: 100, cached_input_tokens: 30, output_tokens: 50 },
+      event: 'result',
+      result: {
+        status: 'SUCCESS',
+        usage: { input_tokens: 100, cache_read_tokens: 30, output_tokens: 50 },
+      },
     });
     const child = new FakeChild([line]);
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
@@ -104,12 +114,17 @@ describe('GeminiAdapter.spawn', () => {
     });
   });
 
-  it('surfaces a JSON error line as an error event', async () => {
-    const line = JSON.stringify({ type: 'error', message: 'quota exceeded' });
+  it('surfaces a failed final result as an error event', async () => {
+    const line = JSON.stringify({
+      event: 'result',
+      result: { status: 'FAILED', error: 'quota exceeded' },
+    });
     const child = new FakeChild([line]);
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
-    expect(events.find((e) => e.kind === 'error')).toMatchObject({ message: 'quota exceeded' });
+    expect(events.find((e) => e.kind === 'error')).toMatchObject({
+      message: 'FAILED: quota exceeded',
+    });
   });
 
   it('always emits done as the last event', async () => {
@@ -141,6 +156,8 @@ describe('GeminiAdapter.spawn', () => {
     expect(captured).toEqual([
       '-p',
       'sys\n\nhi',
+      '--output-format',
+      'stream-json',
       '--model',
       GEMINI_DEFAULT_MODEL,
       '--effort',
@@ -162,7 +179,8 @@ describe('GeminiAdapter.spawn', () => {
       model: 'gemini-3.1-pro',
       selection: { key: 'gemini-3.1-pro', effort: 'medium' },
     });
-    expect(captured.slice(2, 6)).toEqual(['--model', 'gemini-3.1-pro', '--effort', 'low']);
+    expect(captured.slice(2, 4)).toEqual(['--output-format', 'stream-json']);
+    expect(captured.slice(4, 8)).toEqual(['--model', 'gemini-3.1-pro', '--effort', 'low']);
   });
 
   it('kills the child on early break', async () => {
