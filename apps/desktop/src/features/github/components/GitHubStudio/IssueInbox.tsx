@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { cn, EmptyState, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
+import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
 import { Inbox, MessagesSquare, Search } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
 import type { GithubIssueGroup } from './useGithubIssues';
@@ -110,17 +110,12 @@ export const IssueInbox = ({ groups, focusedIssueNumber, onSelect, loading, erro
                     const isActive = row.issue.number === focusedIssueNumber;
                     return (
                       <li key={row.issue.number}>
-                        <button
-                          type="button"
+                        <SelectableRow
+                          selected={isActive}
                           onClick={() => onSelect(row.issue)}
                           title={row.issue.title}
-                          aria-current={isActive}
-                          className={cn(
-                            'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors',
-                            isActive
-                              ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-                              : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
-                          )}
+                          ariaCurrent={isActive}
+                          className="items-center gap-2.5 px-2.5 py-2"
                         >
                           <span
                             aria-hidden
@@ -140,7 +135,7 @@ export const IssueInbox = ({ groups, focusedIssueNumber, onSelect, loading, erro
                               className="shrink-0 text-success"
                             />
                           ) : null}
-                        </button>
+                        </SelectableRow>
                       </li>
                     );
                   })}

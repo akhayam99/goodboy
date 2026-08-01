@@ -1,7 +1,7 @@
+import { SectionHeader } from '@goodboy/ui';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { Block } from './Block';
 import { DefinitionList } from './DefinitionList';
-import { SectionHeader } from './SectionHeader';
 import { Tile } from './Tile';
 
 type Props = Record<never, never>;
@@ -9,10 +9,10 @@ type Props = Record<never, never>;
 export const TokensSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
+      size="page"
       icon={<SECTION_ICONS.budget size={14} aria-hidden className="text-warning" />}
-      title="Tokens & cost"
-      description="Every message, yours and the assistant's, is converted into tokens before billing. Roughly 1 token is about three quarters of an English word."
-      tone="warning"
+      label="Tokens & cost"
+      hint="Every message, yours and the assistant's, is converted into tokens before billing. Roughly 1 token is about three quarters of an English word."
     />
 
     <Block title="Input vs output">

@@ -1,18 +1,18 @@
 import { Lightbulb, MessagesSquare } from 'lucide-react';
+import { SectionHeader } from '@goodboy/ui';
 import { Block } from './Block';
 import { Callout } from './Callout';
 import { DefinitionList } from './DefinitionList';
-import { SectionHeader } from './SectionHeader';
 
 type Props = Record<never, never>;
 
 export const TurnsSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
+      size="page"
       icon={<MessagesSquare size={14} aria-hidden className="text-info" />}
-      title="Turns"
-      description="One user message plus the assistant's full response, which may include many tool calls and edits."
-      tone="info"
+      label="Turns"
+      hint="One user message plus the assistant's full response, which may include many tool calls and edits."
     />
 
     <Block title="How turns are counted">

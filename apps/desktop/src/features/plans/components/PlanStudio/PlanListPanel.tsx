@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Divider, ResizeHandle, ScrollFade, cn } from '@goodboy/ui';
+import { Divider, ResizeHandle, ScrollFade, SelectableRow, cn } from '@goodboy/ui';
 import type { PlanId, PlanWithCount } from '@goodboy/types';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
@@ -46,13 +46,12 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
               const badge = planStatusBadge({ status: plan.status });
               return (
                 <li key={plan.id}>
-                  <button
-                    type="button"
+                  <SelectableRow
+                    selected={plan.id === selectedId}
                     onClick={() => onSelect(plan.id)}
-                    aria-current={plan.id === selectedId ? 'true' : undefined}
+                    ariaCurrent={plan.id === selectedId ? 'true' : undefined}
                     className={cn(
-                      'flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors',
-                      plan.id === selectedId ? 'bg-muted' : 'hover:bg-muted/40',
+                      'flex-col items-start gap-0.5 px-2 py-1.5',
                       plan.status === 'discarded' && 'opacity-60',
                     )}
                   >
@@ -73,7 +72,7 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
                     <span className="text-[10px] text-muted-foreground">
                       {fmtTimestamp(plan.createdAt)}
                     </span>
-                  </button>
+                  </SelectableRow>
                 </li>
               );
             })}

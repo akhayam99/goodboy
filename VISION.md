@@ -86,7 +86,7 @@ Register your AI providers (Anthropic, Cursor, Codex, Gemini, OpenCode, OpenRout
 - Each workflow step picks its model automatically by role, tier, and cost; an explicit pin overrides the auto choice.
 - You see the spend in real time. No surprises at end of month.
 
-Routing is a fact about the work, so it reads like one. A model is shown as its provider mark, its authored name, and its effort, never as a raw catalog id.
+Routing is a fact about the work, so it reads like one. A model is shown as its authored name, its provider mark, and its effort, never as a raw catalog id.
 
 ### Telemetry & cost awareness
 

@@ -5,11 +5,11 @@ import type { QueryResult } from '../../hooks/useImpactMetrics';
 import { formatHours } from '../../utils/formatHours';
 import { ErrorStrip } from './ErrorStrip';
 import { PanelLoading } from './PanelLoading';
-import { PanelShell } from './PanelShell';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 
 type Props = {
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
@@ -37,7 +37,11 @@ export const ShippedPanel = ({
     reviewData?.resolutionDurationsHours.filter((hours) => hours >= 1 && hours < 24).length ?? 0;
   const slowReviews = Math.max(totalReviews - fastReviews - sameDayReviews, 0);
   return (
-    <PanelShell title="Shipped" subtitle="Pull requests, review throughput, and linked issues">
+    <StudioPanel
+      title="Shipped"
+      subtitle="Pull requests, review throughput, and linked issues"
+      maxWidthClass="max-w-5xl"
+    >
       <ErrorStrip label="pull requests" error={pullRequests.error} onRetry={onRetry} />
       <ErrorStrip label="review throughput" error={reviews.error} onRetry={onRetry} />
       <ErrorStrip label="linked issues" error={externalTasks.error} onRetry={onRetry} />
@@ -70,7 +74,7 @@ export const ShippedPanel = ({
         />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Widget label="PR funnel" hint="current cached state">
+        <StudioWidget label="PR funnel" hint="current cached state">
           <div className="flex flex-col gap-2">
             {prs?.entries.map((entry) => (
               <button
@@ -93,8 +97,8 @@ export const ShippedPanel = ({
               </span>
             ) : null}
           </div>
-        </Widget>
-        <Widget label="review throughput" hint="time from comment to resolution">
+        </StudioWidget>
+        <StudioWidget label="review throughput" hint="time from comment to resolution">
           <StackedBar
             segments={[
               {
@@ -130,8 +134,8 @@ export const ShippedPanel = ({
               Pushed resolutions: {reviewData?.pushedResolutions ?? 0}
             </span>
           </div>
-        </Widget>
-        <Widget label="hot files" hint="most resolved review comments">
+        </StudioWidget>
+        <StudioWidget label="hot files" hint="most resolved review comments">
           <div className="flex flex-col gap-1">
             {reviewData?.hotFiles.map((file) => (
               <div key={file.filePath} className="flex items-center gap-3 px-2 py-1 text-xs">
@@ -140,8 +144,8 @@ export const ShippedPanel = ({
               </div>
             ))}
           </div>
-        </Widget>
-        <Widget label="linked issues" hint="linked after launch vs launched from an issue">
+        </StudioWidget>
+        <StudioWidget label="linked issues" hint="linked after launch vs launched from an issue">
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-md bg-muted p-3">
               <span className="block text-2xs text-muted-foreground">linked</span>
@@ -158,8 +162,8 @@ export const ShippedPanel = ({
             formatValue={(value) => (value > 0 ? 'launched' : 'linked')}
             onOpenSession={onOpenSession}
           />
-        </Widget>
+        </StudioWidget>
       </div>
-    </PanelShell>
+    </StudioPanel>
   );
 };

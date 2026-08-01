@@ -1,4 +1,4 @@
-import { cn, Eyebrow, formatUsd } from '@goodboy/ui';
+import { cn, Eyebrow, formatUsd, SelectableRow } from '@goodboy/ui';
 import { LayoutDashboard } from 'lucide-react';
 import type { ProviderSpendEntry } from '../../../../store';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
@@ -16,20 +16,15 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
     <div className="flex flex-col gap-3 p-3">
       <ul className="flex flex-col gap-0.5">
         <li>
-          <button
-            type="button"
+          <SelectableRow
+            selected={scope.kind === 'overview'}
             onClick={() => onSelect({ kind: 'overview' })}
-            aria-current={scope.kind === 'overview'}
-            className={cn(
-              'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors',
-              scope.kind === 'overview'
-                ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-            )}
+            ariaCurrent={scope.kind === 'overview'}
+            className="items-center gap-2.5 px-2.5 py-2"
           >
             <LayoutDashboard size={15} aria-hidden className="shrink-0" />
             <span className="flex-1 text-sm font-medium">Overview</span>
-          </button>
+          </SelectableRow>
         </li>
       </ul>
 
@@ -43,14 +38,11 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
               const pctClamped = Math.min(entry.pct, 1);
               return (
                 <li key={entry.provider}>
-                  <button
-                    type="button"
+                  <SelectableRow
+                    selected={active}
                     onClick={() => onSelect({ kind: 'provider', provider: entry.provider })}
-                    aria-current={active}
-                    className={cn(
-                      'flex w-full flex-col gap-1.5 rounded-md px-2.5 py-2 text-left transition-colors',
-                      active ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-muted/50',
-                    )}
+                    ariaCurrent={active}
+                    className="flex-col gap-1.5 px-2.5 py-2"
                   >
                     <div className="flex items-center gap-2.5">
                       <ProviderIcon provider={entry.provider} size={15} />
@@ -69,7 +61,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                         />
                       </div>
                     ) : null}
-                  </button>
+                  </SelectableRow>
                 </li>
               );
             })}
@@ -85,17 +77,12 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
               const active = scope.kind === 'session' && scope.sessionId === s.sessionId;
               return (
                 <li key={s.sessionId}>
-                  <button
-                    type="button"
+                  <SelectableRow
+                    selected={active}
                     onClick={() => onSelect({ kind: 'session', sessionId: s.sessionId })}
-                    aria-current={active}
+                    ariaCurrent={active}
                     title={s.goal}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left transition-colors',
-                      active
-                        ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                    )}
+                    className="items-center gap-2 px-2.5 py-2"
                   >
                     {s.isCurrent ? (
                       <span
@@ -109,7 +96,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                     <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
                       {formatUsd(s.spentUsd)}
                     </span>
-                  </button>
+                  </SelectableRow>
                 </li>
               );
             })}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { cn, EmptyState, Eyebrow, ScrollFade, Skeleton } from '@goodboy/ui';
+import { EmptyState, Eyebrow, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
 import { Inbox } from 'lucide-react';
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -101,17 +101,12 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
               const isActive = pr.id === focusedPrId;
               return (
                 <li key={pr.id}>
-                  <button
-                    type="button"
+                  <SelectableRow
+                    selected={isActive}
                     onClick={() => onSelect(pr)}
                     title={pr.title}
-                    aria-current={isActive}
-                    className={cn(
-                      'flex w-full flex-col gap-1 rounded-md px-2 py-1.5 text-left transition-colors',
-                      isActive
-                        ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                    )}
+                    ariaCurrent={isActive}
+                    className="flex-col gap-1 px-2 py-1.5"
                   >
                     <span className="flex items-center gap-1.5">
                       <PullRequestChip
@@ -145,7 +140,7 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
                         </span>
                       ) : null}
                     </span>
-                  </button>
+                  </SelectableRow>
                 </li>
               );
             })}

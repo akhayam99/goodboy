@@ -51,6 +51,8 @@ export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
+export { SelectableRow } from './components/SelectableRow';
+export type { SelectableRowProps } from './components/SelectableRow';
 export { Select } from './components/Select';
 export type { SelectProps, SelectSize } from './components/Select';
 export { Skeleton, SkeletonText } from './components/Skeleton';

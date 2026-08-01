@@ -50,8 +50,8 @@ export const WorkflowStepGraphNode = ({
       <span className="min-w-0 flex-1 truncate text-2xs font-medium text-foreground">
         {run.name}
       </span>
-      <WorkflowStepStatus status={run.status} label={run.name} />
       <RoutingBadge provider={provider} model={model} className="max-w-28 shrink-0" />
+      <WorkflowStepStatus status={run.status} label={run.name} />
     </button>
     {childCount > 0 ? (
       <button
