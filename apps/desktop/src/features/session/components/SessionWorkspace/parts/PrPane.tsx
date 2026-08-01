@@ -1,26 +1,23 @@
 import { useMemo, useState } from 'react';
 import {
   ArrowUpRight,
-  CheckCircle2,
-  Clock,
   GitBranch,
   GitFork,
   GitMerge,
   GitPullRequest,
   MessageSquare,
-  XCircle,
-  type LucideIcon,
 } from 'lucide-react';
 import { Button, Eyebrow, cn, tintClasses } from '@goodboy/ui';
 import type {
   LinkedIssue,
-  PrCheckRun,
   PullRequestStateKind,
   Session,
   SessionExternalTask,
   SessionId,
 } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
+import { PrChecksChip } from '../../../../github/components/PrChecksChip';
+import { ReviewDecisionChip } from '../../../../github/components/ReviewDecisionChip';
 import { PrSwitcher } from '../../../../github/components/GitHubStudio/PrSwitcher';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
@@ -29,6 +26,7 @@ import { resolveIntegrationConnection } from '../../../../integrations/connectio
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
+import { BranchPair } from '../../../../../shared/components/BranchPair';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
@@ -179,9 +177,12 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
       <div className="animate-fade-in flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-8 py-8 text-center">
         <span
           aria-hidden
-          className="flex size-12 items-center justify-center rounded-full bg-indigo-400/15"
+          className={cn(
+            'flex size-12 items-center justify-center rounded-full',
+            tintClasses('info').bg,
+          )}
         >
-          <GitPullRequest size={24} className="text-indigo-500" />
+          <GitPullRequest size={24} className={tintClasses('info').icon} />
         </span>
         <div className="flex flex-col items-center gap-1.5">
           <h2 className="text-base font-semibold text-foreground">External review session</h2>
@@ -272,7 +273,6 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
     );
   }
 
-  const ciState = computeCiState(detail?.checks ?? []);
   const unresolved = (detail?.comments ?? []).filter(
     (c) => c.source === 'review' && c.resolved === false,
   ).length;
@@ -291,7 +291,6 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
             ) : (
               <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
             )}
-            <CiBadge state={ciState} />
           </div>
           <h2 className="text-balance text-sm font-semibold leading-snug text-foreground">
             {pr.title}
@@ -306,18 +305,10 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-2xs text-muted-foreground">
-        <span className="inline-flex min-w-0 items-center gap-1">
-          <GitBranch size={11} aria-hidden className="shrink-0" />
-          <span className="truncate font-medium text-foreground/80">{pr.headBranch}</span>
-          <span className="text-muted-foreground/50">→</span>
-          <span className="truncate">{pr.baseBranch}</span>
-        </span>
-        {pr.reviewDecision != null ? (
-          <ReviewBadge decision={pr.reviewDecision} />
-        ) : (
-          <span>No review decision</span>
-        )}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-2xs text-muted-foreground">
+        <BranchPair headBranch={pr.headBranch} baseBranch={pr.baseBranch} />
+        <ReviewDecisionChip decision={pr.reviewDecision} />
+        <PrChecksChip checks={detail?.checks ?? []} />
         <span className="inline-flex items-center gap-1">
           <MessageSquare size={11} aria-hidden />
           <span className="tabular-nums">{unresolved}</span>
@@ -413,52 +404,4 @@ const ExternalTasksSection = ({ tasks }: ExternalTasksSectionProps) => {
       </div>
     </div>
   );
-};
-
-type CiState = 'success' | 'failure' | 'pending' | 'none';
-
-const computeCiState = (checks: ReadonlyArray<PrCheckRun>): CiState => {
-  if (checks.length === 0) return 'none';
-  if (
-    checks.some(
-      (c) =>
-        c.conclusion === 'failure' || c.conclusion === 'cancelled' || c.conclusion === 'timed_out',
-    )
-  ) {
-    return 'failure';
-  }
-  if (checks.some((c) => c.conclusion === 'pending')) return 'pending';
-  if (checks.some((c) => c.conclusion === 'success')) return 'success';
-  return 'none';
-};
-
-const CiBadge = ({ state }: { state: CiState }) => {
-  const map: Record<CiState, { icon: LucideIcon; className: string; label: string }> = {
-    success: { icon: CheckCircle2, className: tintClasses('success').text, label: 'CI passing' },
-    failure: { icon: XCircle, className: tintClasses('danger').text, label: 'CI failing' },
-    pending: { icon: Clock, className: tintClasses('warning').text, label: 'CI running' },
-    none: { icon: Clock, className: `${tintClasses('neutral').text}/40`, label: 'no CI' },
-  };
-  const entry = map[state];
-  const Icon = entry.icon;
-  return (
-    <span className={cn('inline-flex items-center gap-1 text-2xs font-medium', entry.className)}>
-      <Icon size={12} aria-hidden />
-      {entry.label}
-    </span>
-  );
-};
-
-const ReviewBadge = ({
-  decision,
-}: {
-  decision: 'approved' | 'changes_requested' | 'review_required';
-}) => {
-  const map = {
-    approved: { className: tintClasses('success').text, label: 'Approved' },
-    changes_requested: { className: tintClasses('warning').text, label: 'Changes requested' },
-    review_required: { className: tintClasses('neutral').text, label: 'Review required' },
-  } as const;
-  const entry = map[decision];
-  return <span className={cn('font-medium', entry.className)}>{entry.label}</span>;
 };

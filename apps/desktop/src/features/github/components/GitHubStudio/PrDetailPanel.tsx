@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { ArrowRight, Inbox } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import {
   buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
@@ -18,6 +18,7 @@ import {
   StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
 import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
+import { BranchPair } from '../../../../shared/components/BranchPair';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
@@ -367,15 +368,7 @@ export const PrDetailPanel = ({
           )
         }
         title={activePr.title}
-        subtitle={
-          activePr.headBranch !== '' && activePr.baseBranch !== '' ? (
-            <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
-              <span className="font-mono">{activePr.headBranch}</span>
-              <ArrowRight size={11} aria-hidden />
-              <span className="font-mono">{activePr.baseBranch}</span>
-            </span>
-          ) : undefined
-        }
+        subtitle={<BranchPair headBranch={activePr.headBranch} baseBranch={activePr.baseBranch} />}
         actions={
           <>
             <OpenSessionButton sessionId={sessionId} onOpened={onClose} variant="ghost" />

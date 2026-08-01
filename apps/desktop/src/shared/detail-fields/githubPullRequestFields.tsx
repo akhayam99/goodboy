@@ -2,7 +2,9 @@ import type { PullRequestState } from '@goodboy/types';
 import { formatAbsoluteDateTime } from '../utils/relativeDate';
 import type { DetailFieldRegistry } from './types';
 
-export const githubPullRequestFields: DetailFieldRegistry<PullRequestState> = [
+type PullRequestProperties = Pick<PullRequestState, 'baseBranch' | 'updatedAt'>;
+
+export const githubPullRequestFields: DetailFieldRegistry<PullRequestProperties> = [
   {
     kind: 'field',
     key: 'baseBranch',

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Button, Divider, EmptyState, ScrollFade, SectionHeader } from '@goodboy/ui';
-import { ArrowRight, GitBranch, MessagesSquare, MousePointerClick } from 'lucide-react';
+import { Button, Chip, EmptyState, cn, tintClasses } from '@goodboy/ui';
+import { ArrowRight, MessagesSquare, MousePointerClick } from 'lucide-react';
 import type { ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
@@ -9,6 +9,13 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
+import { BranchPair } from '../../../../shared/components/BranchPair';
+import {
+  DetailSection,
+  HeaderBand,
+  StudioDetailLayout,
+} from '../../../../shared/components/StudioDetail';
+import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { AuthorAvatar } from '../AuthorAvatar';
 
 type Props = {
@@ -58,6 +65,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
   const isGitlab = pr.provider === 'gitlab';
   const identifier = isGitlab ? `!${pr.number}` : `#${pr.number}`;
   const hostLabel = isGitlab ? 'GitLab' : 'GitHub';
+  const infoTint = tintClasses('info');
 
   const reviewLocally = async () => {
     if (busy) {
@@ -75,92 +83,83 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex shrink-0 flex-col gap-2 px-8 py-4">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-            {identifier}
-          </span>
-          <PullRequestChip state={pr.isDraft ? 'draft' : pr.state} variant="badge" />
-          {pr.reviewRequested ? (
-            <span className="rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 ring-1 ring-indigo-400/30">
-              Review requested
+    <StudioDetailLayout
+      header={
+        <HeaderBand
+          meta={
+            <>
+              <span className="font-mono text-2xs tabular-nums text-muted-foreground">
+                {identifier}
+              </span>
+              <PullRequestChip state={pr.isDraft ? 'draft' : pr.state} variant="badge" />
+              {pr.reviewRequested ? <Chip tone="info" label="Review requested" /> : null}
+              <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
+                <AuthorAvatar author={pr.author} avatarUrl={pr.authorAvatarUrl} />
+                <span className="font-medium text-foreground/80">{pr.author}</span>
+              </span>
+              <span className="text-2xs text-muted-foreground">
+                updated {formatRelativeDuration(pr.updatedAt)} ago
+              </span>
+            </>
+          }
+          title={pr.title}
+          subtitle={<BranchPair headBranch={pr.headBranch} baseBranch={pr.baseBranch} />}
+          actions={
+            <ExternalRefActions url={pr.url} label={`PR #${pr.number}`} hostLabel={hostLabel} />
+          }
+        />
+      }
+      properties={resolveDetailFields({ registry: githubPullRequestFields, entity: pr })}
+    >
+      <DetailSection label="review">
+        {pr.mine ? (
+          <p className="text-sm text-muted-foreground">
+            This is your pull request. Manage it from the Mine inbox.
+          </p>
+        ) : existingSessionId != null ? (
+          <div className="flex items-center gap-3">
+            <span
+              className={cn(
+                'flex size-8 shrink-0 items-center justify-center rounded-lg',
+                infoTint.bg,
+              )}
+            >
+              <MessagesSquare size={15} className={infoTint.icon} aria-hidden />
             </span>
-          ) : null}
-          <span className="flex-1" />
-          <ExternalRefActions url={pr.url} label={`PR #${pr.number}`} hostLabel={hostLabel} />
-        </div>
-        <h2 className="text-lg font-semibold leading-snug text-foreground">{pr.title}</h2>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-2xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <AuthorAvatar author={pr.author} avatarUrl={pr.authorAvatarUrl} />
-            <span className="font-medium text-foreground/80">{pr.author}</span>
-          </span>
-          <span className="inline-flex min-w-0 items-center gap-1">
-            <GitBranch size={11} aria-hidden className="shrink-0" />
-            <span className="truncate font-mono text-foreground/80">{pr.headBranch}</span>
-            <span aria-hidden className="text-muted-foreground/50">
-              into
-            </span>
-            <span className="truncate font-mono">{pr.baseBranch}</span>
-          </span>
-          <span>updated {formatRelativeDuration(pr.updatedAt)} ago</span>
-        </div>
-      </div>
-      <Divider />
-      <div className="flex min-h-0 flex-1 justify-center">
-        <ScrollFade
-          className="h-full w-full max-w-3xl"
-          viewportClassName="px-10 py-8"
-          fadeSize={24}
-        >
-          <section className="flex flex-col gap-3">
-            <SectionHeader label="review" />
-            {pr.mine ? (
-              <div className="rounded-lg border border-border-soft bg-muted/10 px-4 py-3.5 text-sm text-muted-foreground">
-                This is your pull request. Manage it from the Mine inbox.
-              </div>
-            ) : existingSessionId != null ? (
-              <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/10 px-4 py-3.5">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-indigo-400/15">
-                  <MessagesSquare size={15} className="text-indigo-500" aria-hidden />
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-sm font-medium text-foreground">
-                    Review session already running
-                  </span>
-                  <span className="truncate text-2xs text-muted-foreground">
-                    A local review session is linked to this pull request.
-                  </span>
-                </div>
-                <OpenSessionButton
-                  sessionId={existingSessionId}
-                  onOpened={onClose}
-                  label="Open review session"
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 rounded-lg border border-border-soft bg-muted/10 p-4">
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Review locally checks out the branch in an isolated worktree and starts a
-                  read-only review agent. Draft comments stay local until you publish them.
-                </p>
-                <div className="flex items-center gap-3">
-                  {error != null ? <span className="text-xs text-danger">{error}</span> : null}
-                  <span className="flex-1" />
-                  <Button variant="ghost" onClick={() => window.open(pr.url, '_blank')}>
-                    Open in browser
-                  </Button>
-                  <Button onClick={() => void reviewLocally()} disabled={busy}>
-                    {busy ? 'Starting review session…' : 'Review locally'}
-                    {!busy ? <ArrowRight size={13} aria-hidden /> : null}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </section>
-        </ScrollFade>
-      </div>
-    </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="text-sm font-medium text-foreground">
+                Review session already running
+              </span>
+              <span className="truncate text-2xs text-muted-foreground">
+                A local review session is linked to this pull request.
+              </span>
+            </div>
+            <OpenSessionButton
+              sessionId={existingSessionId}
+              onOpened={onClose}
+              label="Open review session"
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Review locally checks out the branch in an isolated worktree and starts a read-only
+              review agent. Draft comments stay local until you publish them.
+            </p>
+            <div className="flex items-center gap-3">
+              {error != null ? <span className="text-xs text-danger">{error}</span> : null}
+              <span className="flex-1" />
+              <Button variant="ghost" onClick={() => window.open(pr.url, '_blank')}>
+                Open in browser
+              </Button>
+              <Button onClick={() => void reviewLocally()} disabled={busy}>
+                {busy ? 'Starting review session…' : 'Review locally'}
+                {!busy ? <ArrowRight size={13} aria-hidden /> : null}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DetailSection>
+    </StudioDetailLayout>
   );
 };

@@ -29,6 +29,7 @@ import {
 } from '../../../../shared/components/StudioDetail';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { IssueStateBadge, type StateTone } from '../../../../shared/components/IssueStateBadge';
+import { BranchPair } from '../../../../shared/components/BranchPair';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
@@ -255,13 +256,7 @@ export const MrDetailPanel = ({
               </>
             }
             title={mr.title}
-            subtitle={
-              <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
-                <span className="font-mono">{mr.sourceBranch}</span>
-                <ArrowRight size={11} aria-hidden />
-                <span className="font-mono">{mr.targetBranch}</span>
-              </span>
-            }
+            subtitle={<BranchPair headBranch={mr.sourceBranch} baseBranch={mr.targetBranch} />}
             actions={
               <>
                 {refreshButton}
