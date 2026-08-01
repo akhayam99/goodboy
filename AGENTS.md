@@ -100,7 +100,7 @@ Co-locate tests, 1 to 5 behavior-focused assertions, never test implementation d
 
 ## Dependencies
 
-Every dependency is a liability: min 100k weekly downloads or a known maintainer, MIT/Apache/BSD/ISC license only, `pnpm audit` clean, justify anything outside the approved core set in the PR. Full vetting checklist and rules in [docs/dependencies.md](./docs/dependencies.md).
+Every dependency is a liability: min 100k weekly downloads or a known maintainer, MIT/Apache/BSD/ISC license only, `pnpm audit` clean, justify anything outside the approved core set in the PR. On upgrades, track the stable adopted release rather than the newest tag, keep types on the runtime's LTS, and treat every major as its own migration. Full vetting checklist and rules in [docs/dependencies.md](./docs/dependencies.md).
 
 ---
 
