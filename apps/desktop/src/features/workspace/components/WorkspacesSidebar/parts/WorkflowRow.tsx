@@ -154,11 +154,11 @@ export const WorkflowRow = ({
     !wfAgents.some((a) => a.status === 'pending' || a.status === 'running');
   const unreadCount = countUnread(wfAgents);
   const isDetail = variant === 'detail';
-  const expanded = isDetail
-    ? true
-    : focusedWorkflowRunId != null
+  const defaultExpanded = isDetail || (!isDiscarded && (!isCompleted || unreadCount > 0));
+  const expanded =
+    focusedWorkflowRunId != null
       ? run.id === focusedWorkflowRunId
-      : (workflowExpand?.[run.id] ?? (!isDiscarded && (!isCompleted || unreadCount > 0)));
+      : (workflowExpand?.[run.id] ?? defaultExpanded);
   const hasStarted = wfAgents.length > 0;
   const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
   const predecessorName = run.chainAfterId
@@ -177,14 +177,17 @@ export const WorkflowRow = ({
   return (
     <div
       className={cn(
-        'flex flex-col',
-        isDetail ? 'gap-4' : forceExpanded && 'gap-1.5',
+        'grid grid-cols-[minmax(0,1fr)_auto]',
+        isDetail && expanded && 'grid-rows-[auto_1fr_auto] gap-y-4',
+        isDetail && !expanded && 'grid-rows-[auto_auto] gap-y-4',
+        !isDetail && expanded && 'grid-rows-[auto_auto] gap-y-1.5',
+        !isDetail && !expanded && 'grid-rows-[auto]',
         isDiscarded && 'opacity-70',
       )}
     >
-      <div className={cn('flex gap-2', isDetail ? 'items-start' : 'items-center gap-0.5')}>
+      <div className="col-span-2 row-start-1 grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">
         {isDetail ? (
-          <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
               <WorkflowIcon size={17} aria-hidden className="text-accent" />
             </span>
@@ -233,7 +236,7 @@ export const WorkflowRow = ({
             title={workflow.name || name}
             aria-expanded={expanded}
             aria-label={`${name} workflow`}
-            className="flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
+            className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
           >
             {forceExpanded ? (
               <WorkflowIcon size={13} aria-hidden className="shrink-0 text-accent" />
@@ -265,49 +268,20 @@ export const WorkflowRow = ({
         )}
         {isDetail ? (
           <CardActionSlot
-            kind="navigation"
             label="Workflow navigation actions"
-            className="flex-wrap"
+            className="col-start-2 row-start-1 self-start"
           >
-            {isQueuedManual ? (
-              <button
-                type="button"
-                onClick={() => void startWorkflowRun(task.id, run.id)}
-                className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-success transition-colors hover:bg-success/15"
-              >
-                <Play size={14} aria-hidden />
-                Start
-              </button>
-            ) : null}
-            {!isDiscarded && !isCompleted ? (
-              <button
-                type="button"
-                onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-                aria-label={run.autoRun ? 'autorun on' : 'autorun off'}
-                aria-pressed={run.autoRun}
-                className={cn(
-                  'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold transition-colors',
-                  run.autoRun
-                    ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                    : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
-                )}
-              >
-                {run.autoRun ? <Zap size={14} aria-hidden /> : <ZapOff size={14} aria-hidden />}
-                Autorun
-              </button>
-            ) : null}
-          </CardActionSlot>
-        ) : null}
-        {!isDetail && (
-          <CardActionSlot kind="navigation" label="Workflow navigation actions">
             <CardAction
               icon={expanded ? ChevronDown : ChevronRight}
               label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
               expanded={expanded}
               onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
             />
-            {!isDiscarded && !isCompleted ? (
-              <>
+          </CardActionSlot>
+        ) : (
+          <div className="col-start-2 row-start-1 flex items-start gap-1">
+            {!isDiscarded ? (
+              <CardActionSlot label="Workflow lifecycle actions">
                 {isQueuedManual ? (
                   <CardAction
                     icon={Play}
@@ -316,224 +290,280 @@ export const WorkflowRow = ({
                     onClick={() => void startWorkflowRun(task.id, run.id)}
                   />
                 ) : null}
-                <CardAction
-                  icon={run.autoRun ? Zap : ZapOff}
-                  label={run.autoRun ? 'autorun on' : 'autorun off'}
-                  tone="primary"
-                  pressed={run.autoRun}
-                  active={run.autoRun}
-                  onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-                />
-                {attachedRuns.length > 1 && (
-                  <>
-                    <CardAction
-                      icon={ChevronUp}
-                      label="move workflow up"
-                      disabled={!canMoveUp}
-                      onClick={() => void onReorderWorkflow(run.id, 'up')}
-                    />
-                    <CardAction
-                      icon={ChevronDown}
-                      label="move workflow down"
-                      disabled={!canMoveDown}
-                      onClick={() => void onReorderWorkflow(run.id, 'down')}
-                    />
-                  </>
-                )}
-              </>
+                {!isCompleted ? (
+                  <CardAction
+                    icon={run.autoRun ? Zap : ZapOff}
+                    label={run.autoRun ? 'autorun on' : 'autorun off'}
+                    tone="primary"
+                    pressed={run.autoRun}
+                    active={run.autoRun}
+                    onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                  />
+                ) : null}
+                <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
+              </CardActionSlot>
             ) : null}
-          </CardActionSlot>
+            <CardActionSlot label="Workflow navigation actions">
+              <CardAction
+                icon={expanded ? ChevronDown : ChevronRight}
+                label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+                expanded={expanded}
+                onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
+              />
+              {!isDiscarded && !isCompleted && attachedRuns.length > 1 ? (
+                <>
+                  <CardAction
+                    icon={ChevronUp}
+                    label="move workflow up"
+                    disabled={!canMoveUp}
+                    onClick={() => void onReorderWorkflow(run.id, 'up')}
+                  />
+                  <CardAction
+                    icon={ChevronDown}
+                    label="move workflow down"
+                    disabled={!canMoveDown}
+                    onClick={() => void onReorderWorkflow(run.id, 'down')}
+                  />
+                </>
+              ) : null}
+            </CardActionSlot>
+          </div>
         )}
       </div>
-      {isDetail && expanded ? (
-        <div className="flex flex-col gap-2">
-          <WorkflowRunAsk
-            goal={(run.goal ?? workflow.goal ?? '').trim()}
-            processText={(workflow.processText ?? '').trim()}
-          />
-          <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
-        </div>
-      ) : null}
-      {expanded && !isDiscarded ? (
-        <div
-          className={cn('flex flex-col gap-2 pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}
-        >
-          {isDynamic ? (
-            <OrchestratorPanel
-              sessionId={task.id}
-              run={run}
-              agents={wfAgents}
-              isOrchestrating={isOrchestrating}
-            />
-          ) : null}
-          <WorkflowOrchestratorTldr steps={workflow.steps} run={run} />
-        </div>
-      ) : null}
       {expanded ? (
-        wfAgents.length > 0 ? (
-          isDetail ? (
-            <WorkflowStepGraph
-              workflow={workflow}
-              runs={wfAgents}
-              childrenByParentId={childrenByParentId}
-              agentKindOverride={agentKindOverride}
-              agentModelOverride={agentModelOverride}
-              agentProviderOverride={agentProviderOverride}
-              roleModels={roleModels}
-              selectedAgentId={selectedAgentId}
-              onSelect={onPickAgent}
-            />
-          ) : (
-            <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
-              {wfAgents.map((run, index) => {
-                const isActionable = run.stepId === actionableStepId && run.status === 'pending';
-                const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
-                const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
-                const resolvedRouting = resolveStepRouting({
-                  step: step ?? null,
-                  kind,
-                  roleModels,
-                  agentModel: agentModelOverride[run.id] ?? run.modelOverride,
-                  agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
-                });
-                const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
-                const clustersExpanded = clusterExpand.get(run.id) ?? false;
-                const clusterUnread = countUnread(clusterChildren);
-                return (
-                  <Fragment key={run.id}>
-                    <WorkflowStepRow
-                      run={run}
-                      kind={kind}
-                      index={index}
-                      resolvedModel={resolvedRouting.model}
-                      resolvedProvider={resolvedRouting.provider}
-                      isActionable={isActionable}
-                      blockReason={isActionable ? wfBlockReason : null}
-                      isSelected={run.id === selectedAgentId}
-                      isTaskActive={isTaskActive}
-                      isEditing={editingId === run.id}
-                      telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
-                      aggregate={aggregatesByAgentId.get(run.id) ?? null}
-                      contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
-                      turns={turnsByAgentId.get(run.id) ?? 0}
-                      turnsLoading={run.id === selectedAgentId && isTranscriptLoading}
-                      onStart={() => void onStartStepAgent(run)}
-                      onSelect={() => onPickAgent(run.id)}
-                      onRenameStart={() => setEditingId(run.id)}
-                      onRenameCommit={(name) => void onRenameCommit(run.id, name)}
-                      onRenameCancel={() => setEditingId(null)}
-                      onResolveFirst={() => onResolveFirstForRun(workflowRun)}
-                    />
-                    {clusterChildren.length === 0 ? null : kind === 'scout' ? (
-                      <ScoutSubtree
-                        containerId={run.id}
-                        depth={0}
-                        childrenByParentId={childrenByParentId}
-                        aggregatesByAgentId={aggregatesByAgentId}
-                        selectedAgentId={selectedAgentId}
-                        isTaskActive={isTaskActive}
-                        expandState={clusterExpand}
-                        onToggle={toggleClusterExpand}
-                        onSelect={onPickAgent}
-                      />
-                    ) : (
-                      <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleClusterExpand(run.id)}
-                          aria-expanded={clustersExpanded}
-                          aria-label={`${clustersExpanded ? 'collapse' : 'expand'} clusters for ${run.name}`}
-                          className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50 transition-colors hover:text-muted-foreground"
-                        >
-                          {clustersExpanded ? (
-                            <ChevronDown size={10} aria-hidden className="shrink-0" />
-                          ) : (
-                            <ChevronRight size={10} aria-hidden className="shrink-0" />
-                          )}
-                          <span className="min-w-0 truncate">
-                            clusters{' '}
-                            {clusterChildren.filter((c) => c.status === 'completed').length}/
-                            {clusterChildren.length}
-                          </span>
-                          {!clustersExpanded && clusterUnread > 0 ? (
-                            <span
-                              className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
-                              title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
-                            >
-                              <span aria-hidden className="size-1 rounded-full bg-warning" />
-                              {clusterUnread}
-                            </span>
-                          ) : null}
-                        </button>
-                        {clustersExpanded
-                          ? clusterChildren.map((child, ci) => (
-                              <ClusterChildRow
-                                key={child.id}
-                                child={child}
-                                index={ci}
-                                total={clusterChildren.length}
-                                costUsd={aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0}
-                                isSelected={child.id === selectedAgentId}
-                                isTaskActive={isTaskActive}
-                                onSelect={() => onPickAgent(child.id)}
-                              />
-                            ))
-                          : null}
-                      </div>
-                    )}
-                  </Fragment>
-                );
-              })}
+        <div className="col-span-2 row-start-2 flex flex-col gap-2">
+          {isDetail && expanded ? (
+            <div className="flex flex-col gap-2">
+              <WorkflowRunAsk
+                goal={(run.goal ?? workflow.goal ?? '').trim()}
+                processText={(workflow.processText ?? '').trim()}
+              />
+              <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
             </div>
-          )
-        ) : (
-          <p className={cn('pb-1 text-2xs text-muted-foreground/60', !isDetail && 'pl-3')}>
-            No agents yet for this workflow.
-          </p>
-        )
-      ) : null}
-      {expanded && !isDiscarded && !isDynamic && (isDetail || wfBlockReason === 'failed-step') ? (
-        <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
-          <WorkflowNextStepCta
-            workflow={workflow}
-            runs={wfAgents}
-            roleModels={roleModels}
-            blockReason={wfBlockReason}
-            onAdvance={(step) => {
-              const pending = wfAgents.find(
-                (agent) => agent.stepId === step.id && agent.status === 'pending',
-              );
-              if (pending == null) {
-                return;
-              }
-              void onStartStepAgent(pending);
-            }}
-            onForceAdvance={() =>
-              void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })
-            }
-          />
+          ) : null}
+          {expanded && !isDiscarded ? (
+            <div
+              className={cn(
+                'flex flex-col gap-2 pb-1',
+                !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'),
+              )}
+            >
+              {isDynamic ? (
+                <OrchestratorPanel
+                  sessionId={task.id}
+                  run={run}
+                  agents={wfAgents}
+                  isOrchestrating={isOrchestrating}
+                />
+              ) : null}
+              <WorkflowOrchestratorTldr steps={workflow.steps} run={run} />
+            </div>
+          ) : null}
+          {expanded ? (
+            wfAgents.length > 0 ? (
+              isDetail ? (
+                <WorkflowStepGraph
+                  workflow={workflow}
+                  runs={wfAgents}
+                  childrenByParentId={childrenByParentId}
+                  agentKindOverride={agentKindOverride}
+                  agentModelOverride={agentModelOverride}
+                  agentProviderOverride={agentProviderOverride}
+                  roleModels={roleModels}
+                  selectedAgentId={selectedAgentId}
+                  onSelect={onPickAgent}
+                />
+              ) : (
+                <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
+                  {wfAgents.map((run, index) => {
+                    const isActionable =
+                      run.stepId === actionableStepId && run.status === 'pending';
+                    const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
+                    const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
+                    const resolvedRouting = resolveStepRouting({
+                      step: step ?? null,
+                      kind,
+                      roleModels,
+                      agentModel: agentModelOverride[run.id] ?? run.modelOverride,
+                      agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
+                    });
+                    const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
+                    const clustersExpanded = clusterExpand.get(run.id) ?? false;
+                    const clusterUnread = countUnread(clusterChildren);
+                    return (
+                      <Fragment key={run.id}>
+                        <WorkflowStepRow
+                          run={run}
+                          kind={kind}
+                          index={index}
+                          resolvedModel={resolvedRouting.model}
+                          resolvedProvider={resolvedRouting.provider}
+                          isActionable={isActionable}
+                          blockReason={isActionable ? wfBlockReason : null}
+                          isSelected={run.id === selectedAgentId}
+                          isTaskActive={isTaskActive}
+                          isEditing={editingId === run.id}
+                          telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
+                          aggregate={aggregatesByAgentId.get(run.id) ?? null}
+                          contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
+                          turns={turnsByAgentId.get(run.id) ?? 0}
+                          turnsLoading={run.id === selectedAgentId && isTranscriptLoading}
+                          onStart={() => void onStartStepAgent(run)}
+                          onSelect={() => onPickAgent(run.id)}
+                          onRenameStart={() => setEditingId(run.id)}
+                          onRenameCommit={(name) => void onRenameCommit(run.id, name)}
+                          onRenameCancel={() => setEditingId(null)}
+                          onResolveFirst={() => onResolveFirstForRun(workflowRun)}
+                        />
+                        {clusterChildren.length === 0 ? null : kind === 'scout' ? (
+                          <ScoutSubtree
+                            containerId={run.id}
+                            depth={0}
+                            childrenByParentId={childrenByParentId}
+                            aggregatesByAgentId={aggregatesByAgentId}
+                            selectedAgentId={selectedAgentId}
+                            isTaskActive={isTaskActive}
+                            expandState={clusterExpand}
+                            onToggle={toggleClusterExpand}
+                            onSelect={onPickAgent}
+                          />
+                        ) : (
+                          <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleClusterExpand(run.id)}
+                              aria-expanded={clustersExpanded}
+                              aria-label={`${clustersExpanded ? 'collapse' : 'expand'} clusters for ${run.name}`}
+                              className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+                            >
+                              {clustersExpanded ? (
+                                <ChevronDown size={10} aria-hidden className="shrink-0" />
+                              ) : (
+                                <ChevronRight size={10} aria-hidden className="shrink-0" />
+                              )}
+                              <span className="min-w-0 truncate">
+                                clusters{' '}
+                                {clusterChildren.filter((c) => c.status === 'completed').length}/
+                                {clusterChildren.length}
+                              </span>
+                              {!clustersExpanded && clusterUnread > 0 ? (
+                                <span
+                                  className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
+                                  title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
+                                >
+                                  <span aria-hidden className="size-1 rounded-full bg-warning" />
+                                  {clusterUnread}
+                                </span>
+                              ) : null}
+                            </button>
+                            {clustersExpanded
+                              ? clusterChildren.map((child, ci) => (
+                                  <ClusterChildRow
+                                    key={child.id}
+                                    child={child}
+                                    index={ci}
+                                    total={clusterChildren.length}
+                                    costUsd={
+                                      aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0
+                                    }
+                                    isSelected={child.id === selectedAgentId}
+                                    isTaskActive={isTaskActive}
+                                    onSelect={() => onPickAgent(child.id)}
+                                  />
+                                ))
+                              : null}
+                          </div>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              <p className={cn('pb-1 text-2xs text-muted-foreground/60', !isDetail && 'pl-3')}>
+                No agents yet for this workflow.
+              </p>
+            )
+          ) : null}
+          {expanded &&
+          !isDiscarded &&
+          !isDynamic &&
+          (isDetail || wfBlockReason === 'failed-step') ? (
+            <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
+              <WorkflowNextStepCta
+                workflow={workflow}
+                runs={wfAgents}
+                roleModels={roleModels}
+                blockReason={wfBlockReason}
+                onAdvance={(step) => {
+                  const pending = wfAgents.find(
+                    (agent) => agent.stepId === step.id && agent.status === 'pending',
+                  );
+                  if (pending == null) {
+                    return;
+                  }
+                  void onStartStepAgent(pending);
+                }}
+                onForceAdvance={() =>
+                  void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })
+                }
+              />
+            </div>
+          ) : null}
+          {expanded && !isDetail ? (
+            <div className={cn('pb-1', !isDetail && 'pl-3')}>
+              <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+            </div>
+          ) : null}
         </div>
       ) : null}
-      {expanded && !isDetail ? (
-        <div className={cn('pb-1', !isDetail && 'pl-3')}>
-          <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
-        </div>
+      {isDetail ? (
+        <CardActionSlot
+          label="Workflow lifecycle actions"
+          className={cn('col-start-2 self-end', expanded ? 'row-start-3' : 'row-start-2')}
+        >
+          {isQueuedManual ? (
+            <button
+              type="button"
+              onClick={() => void startWorkflowRun(task.id, run.id)}
+              className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-success transition-colors hover:bg-success/15"
+            >
+              <Play size={14} aria-hidden />
+              Start
+            </button>
+          ) : null}
+          {!isDiscarded && !isCompleted ? (
+            <button
+              type="button"
+              onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+              aria-label={run.autoRun ? 'autorun on' : 'autorun off'}
+              aria-pressed={run.autoRun}
+              className={cn(
+                'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold transition-colors',
+                run.autoRun
+                  ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                  : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
+              )}
+            >
+              {run.autoRun ? <Zap size={14} aria-hidden /> : <ZapOff size={14} aria-hidden />}
+              Autorun
+            </button>
+          ) : null}
+          {isDiscarded ? (
+            <button
+              type="button"
+              onClick={() => void restoreWorkflow(task.id, run.id)}
+              className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <Undo2 size={14} aria-hidden />
+              Restore
+            </button>
+          ) : (
+            <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
+          )}
+          <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
+        </CardActionSlot>
       ) : null}
-      <CardActionSlot kind="lifecycle" label="Workflow lifecycle actions" className="self-end">
-        {isDiscarded ? (
-          <button
-            type="button"
-            onClick={() => void restoreWorkflow(task.id, run.id)}
-            className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <Undo2 size={14} aria-hidden />
-            Restore
-          </button>
-        ) : (
-          <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-        )}
-        {isDetail && <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />}
-      </CardActionSlot>
     </div>
   );
 };

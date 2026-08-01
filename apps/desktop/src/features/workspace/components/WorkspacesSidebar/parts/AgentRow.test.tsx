@@ -194,20 +194,32 @@ describe('AgentRow', () => {
     renderRow(false);
     const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
     const lifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
-    const navigationClass = navigationSlot.className;
-    const lifecycleClass = lifecycleSlot.className;
+    const card = navigationSlot.parentElement;
+    expect(card).not.toBeNull();
+    if (card == null) {
+      return;
+    }
+    const navigationIndex = Array.from(card.children).indexOf(navigationSlot);
+    const lifecycleIndex = Array.from(card.children).indexOf(lifecycleSlot);
+
+    expect(navigationIndex).toBeGreaterThanOrEqual(0);
+    expect(lifecycleIndex).toBeGreaterThan(navigationIndex);
+    expect(screen.queryByRole('group', { name: 'Delete agent?' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'delete agent' }));
 
     const panel = screen.getByRole('group', { name: 'Delete agent?' });
+    const armedNavigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
+    const armedLifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
     expect(within(panel).getByRole('button', { name: 'Delete' })).toBeTruthy();
     expect(within(panel).getByRole('button', { name: 'Cancel' })).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Agent navigation actions' }).className).toBe(
-      navigationClass,
-    );
-    expect(screen.getByRole('group', { name: 'Agent lifecycle actions' }).className).toBe(
-      lifecycleClass,
-    );
+    expect(armedNavigationSlot.parentElement).toBe(card);
+    expect(armedLifecycleSlot.parentElement).toBe(card);
+    expect(Array.from(card.children).indexOf(armedNavigationSlot)).toBe(navigationIndex);
+    expect(Array.from(card.children).indexOf(armedLifecycleSlot)).toBe(lifecycleIndex);
+    expect(card.contains(panel)).toBe(false);
+    expect(panel.parentElement).toBe(card.parentElement);
+    expect(panel.previousElementSibling).toBe(card);
   });
 
   it('deletes only after the confirm step', () => {

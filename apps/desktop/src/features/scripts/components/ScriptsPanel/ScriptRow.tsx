@@ -121,7 +121,8 @@ export const ScriptRow = ({
         data-testid={`script-card-${script.id}`}
         data-status={status}
         className={cn(
-          'group/agent-card grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-md border px-2.5 py-2 motion-safe:transition-colors hover:bg-muted/50',
+          'group/script-card grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 rounded-md border px-2.5 py-2 motion-safe:transition-colors hover:bg-muted/50',
+          expanded ? 'grid-rows-[auto_auto] gap-y-2' : 'grid-rows-[auto]',
           presentation.borderClass,
           presentation.pulseClass,
           expanded && 'bg-muted/20',
@@ -180,19 +181,60 @@ export const ScriptRow = ({
           ) : null}
         </div>
 
-        <CardActionSlot
-          kind="navigation"
-          label="Script navigation actions"
-          className="col-start-2 row-start-1 self-start"
-        >
-          <CardAction
-            icon={expanded ? ChevronDown : ChevronRight}
-            label={`${expanded ? 'Collapse' : 'Expand'} ${script.name}`}
-            size="default"
-            expanded={expanded}
-            onClick={onToggle}
-          />
-        </CardActionSlot>
+        <div className="col-start-2 row-start-1 flex items-start gap-1">
+          <CardActionSlot label="Script lifecycle actions">
+            {runnable && status === 'pending' ? (
+              <CardAction
+                icon={Square}
+                label="Stop script"
+                tone="danger"
+                size="default"
+                onClick={onCancel}
+              />
+            ) : null}
+            {runnable && status !== 'pending' ? (
+              <CardAction
+                icon={Play}
+                label="Run script"
+                disabled={!canRun}
+                size="default"
+                onClick={onRun}
+              />
+            ) : null}
+            <CardAction
+              icon={copied ? Check : Copy}
+              label="Copy script"
+              tone={copied ? 'success' : 'neutral'}
+              size="default"
+              active={copied}
+              onClick={onCopy}
+            />
+            <CardAction
+              icon={Pencil}
+              label="Edit script"
+              size="default"
+              onClick={() => startEditing({ field: 'body' })}
+            />
+            <CardAction
+              icon={Trash2}
+              label="Delete script"
+              tone="danger"
+              size="default"
+              active={isDeleteArmed}
+              expanded={isDeleteArmed}
+              onClick={() => setIsDeleteArmed(true)}
+            />
+          </CardActionSlot>
+          <CardActionSlot label="Script navigation actions">
+            <CardAction
+              icon={expanded ? ChevronDown : ChevronRight}
+              label={`${expanded ? 'Collapse' : 'Expand'} ${script.name}`}
+              size="default"
+              expanded={expanded}
+              onClick={onToggle}
+            />
+          </CardActionSlot>
+        </div>
 
         {expanded ? (
           <div className="col-span-2 flex flex-col gap-2">
@@ -235,51 +277,6 @@ export const ScriptRow = ({
             {run !== null ? <ScriptRunOutput run={run} completedAt={completedAt} /> : null}
           </div>
         ) : null}
-
-        <CardActionSlot kind="lifecycle" label="Script lifecycle actions" className="col-span-2">
-          {runnable ? (
-            status === 'pending' ? (
-              <CardAction
-                icon={Square}
-                label="Stop script"
-                tone="danger"
-                size="default"
-                onClick={onCancel}
-              />
-            ) : (
-              <CardAction
-                icon={Play}
-                label="Run script"
-                disabled={!canRun}
-                size="default"
-                onClick={onRun}
-              />
-            )
-          ) : null}
-          <CardAction
-            icon={copied ? Check : Copy}
-            label="Copy script"
-            tone={copied ? 'success' : 'neutral'}
-            size="default"
-            active={copied}
-            onClick={onCopy}
-          />
-          <CardAction
-            icon={Pencil}
-            label="Edit script"
-            size="default"
-            onClick={() => startEditing({ field: 'body' })}
-          />
-          <CardAction
-            icon={Trash2}
-            label="Delete script"
-            tone="danger"
-            size="default"
-            active={isDeleteArmed}
-            expanded={isDeleteArmed}
-            onClick={() => setIsDeleteArmed(true)}
-          />
-        </CardActionSlot>
       </div>
 
       {isDeleteArmed ? (

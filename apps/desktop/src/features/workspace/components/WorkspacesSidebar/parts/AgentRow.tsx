@@ -171,9 +171,8 @@ export const AgentRow = ({
           </span>
         </>
       }
-    >
-      <div className="flex flex-col gap-0.5">
-        {isConfirmingDelete && (
+      confirmation={
+        isConfirmingDelete ? (
           <InlineConfirm
             role="danger"
             icon={<Trash2 size={12} aria-hidden />}
@@ -186,7 +185,10 @@ export const AgentRow = ({
             }}
             onCancel={() => setIsConfirmingDelete(false)}
           />
-        )}
+        ) : null
+      }
+    >
+      <div className="flex flex-col gap-0.5">
         <AgentMetrics
           run={run}
           telemetry={telemetry}

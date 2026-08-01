@@ -135,7 +135,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/agent-card grid h-[7.25rem] min-h-[7.25rem] shrink-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[1fr_auto] gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        'group/session-card grid h-[7.25rem] min-h-[7.25rem] shrink-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[1fr_auto] gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
         stage === 'running'
           ? 'border-info/50'
           : stage === 'attention'
@@ -209,7 +209,6 @@ export const StageBoardCard = memo(function StageBoardCard({
       </span>
 
       <CardActionSlot
-        kind="navigation"
         label="Session navigation actions"
         className="col-start-2 row-start-1 flex-col items-end self-start"
       >
@@ -242,7 +241,7 @@ export const StageBoardCard = memo(function StageBoardCard({
                   'flex size-4 shrink-0 items-center justify-center rounded border motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                   selected === true
                     ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border-soft opacity-0 hover:border-primary/50 group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100',
+                    : 'border-border-soft opacity-0 hover:border-primary/50 group-hover/session-card:opacity-100 group-focus-within/session-card:opacity-100',
                 )}
               >
                 {selected === true && <Check size={11} aria-hidden />}
@@ -256,7 +255,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           />
         </span>
         {!archived && (
-          <span className="flex w-[5.25rem] flex-wrap justify-end gap-1">
+          <span className="flex flex-nowrap justify-end gap-1">
             {dynamicActions.map((action) => (
               <CardAction
                 key={action.key}
@@ -282,7 +281,6 @@ export const StageBoardCard = memo(function StageBoardCard({
       </CardActionSlot>
 
       <CardActionSlot
-        kind="lifecycle"
         label="Session lifecycle actions"
         className="col-start-2 row-start-2 self-end"
       >

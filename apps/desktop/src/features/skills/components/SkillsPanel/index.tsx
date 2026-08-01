@@ -249,11 +249,12 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
 
   return (
     <li className="flex flex-col gap-1">
-      <div className="group/agent-card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground">
+      <div className="group/skill-card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] gap-x-2 rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground">
         <button
           type="button"
           onClick={onEdit}
-          className="row-span-2 flex min-w-0 flex-col items-start gap-0.5 rounded-md px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+          title={`Edit ${skill.name}`}
+          className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
           <span className="truncate text-sm font-medium text-foreground">/{skill.name}</span>
           {skill.description !== '' ? (
@@ -261,28 +262,27 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
           ) : null}
           <span className="truncate text-2xs text-muted-foreground/60">{skill.filePath}</span>
         </button>
-        <CardActionSlot
-          kind="navigation"
-          label="Skill navigation actions"
-          className="col-start-2 row-start-1 self-start px-2 pt-1.5"
-        >
-          <CardAction icon={Pencil} label="Edit" size="default" onClick={onEdit} />
-        </CardActionSlot>
-        <CardActionSlot
-          kind="lifecycle"
-          label="Skill lifecycle actions"
-          className="col-start-2 row-start-2 self-end px-2 pb-1.5"
-        >
-          <CardAction
-            icon={Trash2}
-            label="Delete"
-            tone="danger"
-            size="default"
-            active={isDeleteArmed}
-            expanded={isDeleteArmed}
-            onClick={() => setIsDeleteArmed(true)}
-          />
-        </CardActionSlot>
+        <div className="col-start-2 row-start-1 flex items-start gap-1 px-2 py-1.5">
+          <CardActionSlot label="Skill lifecycle actions">
+            <CardAction
+              icon={Trash2}
+              label={`Delete ${skill.name}`}
+              tone="danger"
+              size="default"
+              active={isDeleteArmed}
+              expanded={isDeleteArmed}
+              onClick={() => setIsDeleteArmed(true)}
+            />
+          </CardActionSlot>
+          <CardActionSlot label="Skill navigation actions">
+            <CardAction
+              icon={Pencil}
+              label={`Edit ${skill.name}`}
+              size="default"
+              onClick={onEdit}
+            />
+          </CardActionSlot>
+        </div>
       </div>
 
       {isDeleteArmed ? (
