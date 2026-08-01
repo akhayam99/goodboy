@@ -6,6 +6,7 @@ import type { LensKind } from '../../../../store';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
+import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 
 type Props = {
@@ -30,6 +31,10 @@ const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
 export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
+  const workspace = useAppStore((s) => {
+    const session = s.sessions.find((candidate) => candidate.id === sessionId);
+    return s.workspaces.find((candidate) => candidate.id === session?.workspaceId) ?? null;
+  });
   const linkedIssues = github?.linkedIssues ?? [];
   const orderedExternalTasks = [...externalTasks].sort(
     (left, right) => PROVIDER_ORDER[left.provider] - PROVIDER_ORDER[right.provider],
@@ -100,11 +105,17 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
         ))}
         {orderedExternalTasks.map((task) => (
           <ExternalTaskChip
-            key={`${task.provider}:${task.externalId}`}
+            key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
             task={task}
             variant="full"
             appearance="row"
             ariaLabel={`open ${task.identifier} integration`}
+            repoLabel={
+              workspaceMountName({
+                workspace,
+                mountWorkspaceId: task.mountWorkspaceId,
+              }) ?? undefined
+            }
             onClick={() => onSelectLens(PROVIDER_LENS[task.provider])}
           />
         ))}

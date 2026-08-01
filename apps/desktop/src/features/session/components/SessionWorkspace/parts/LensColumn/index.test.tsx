@@ -19,6 +19,9 @@ const { hooks, remote, store } = vi.hoisted(() => {
     },
     remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
     store: {
+      sessionMounts: {},
+      sessionActiveMount: {},
+      setSessionActiveMount: vi.fn(async () => undefined),
       agentKindOverride: {},
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
       reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,

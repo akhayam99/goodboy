@@ -35,6 +35,7 @@ import {
   type GroupedSessions,
 } from './slices/session-view';
 import { agentHasUnread } from './slices/agents/agentHasUnread';
+import { resolveSessionRepo } from './slices/worktrees/resolveSessionRepo';
 export { agentHasUnread } from './slices/agents/agentHasUnread';
 
 const DEFAULT_SESSION_VIEW_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
@@ -397,7 +398,7 @@ export const useFilesTouched = (
   isActive: boolean = true,
 ): FilesTouched => {
   const workingDir = useAppStore((s) =>
-    sessionId ? ((s.sessionWorktrees[sessionId] ?? [])[0] ?? null) : null,
+    sessionId == null ? null : (resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null),
   );
   const lastTurnFinishedAt = useAppStore((s) => {
     if (!sessionId) {

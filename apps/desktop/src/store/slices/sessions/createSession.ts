@@ -6,6 +6,7 @@ import type {
   ProviderId,
   Session,
   SessionId,
+  SessionMount,
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionProviderPreference,
@@ -65,6 +66,7 @@ type Input = {
   kickoffPrompt?: string;
   externalTask?: {
     provider: SessionExternalTaskProvider;
+    mountWorkspaceId?: WorkspaceId;
     externalId: string;
     identifier: string;
     url: string;
@@ -213,6 +215,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
     if (externalTask) {
       externalTaskRow = {
         sessionId: session.id,
+        ...(externalTask.mountWorkspaceId != null
+          ? { mountWorkspaceId: externalTask.mountWorkspaceId }
+          : {}),
         provider: externalTask.provider,
         externalId: externalTask.externalId,
         identifier: externalTask.identifier,
@@ -321,6 +326,15 @@ export const createSession = (set: SetFn, get: GetFn) => {
     }
 
     const firstAgent = prespawnedRuns[0] ?? null;
+    const sessionMounts: ReadonlyArray<SessionMount> = memberWorktrees.map(
+      ({ member, worktree: memberWorktree }) => ({
+        workspaceId: member.workspaceId,
+        mountName: member.mountName,
+        worktreePath: memberWorktree.worktreePath,
+        repoRoot: member.rootPath,
+        branch: memberWorktree.branchName,
+      }),
+    );
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
     const turnStateEntries: Record<string, { kind: 'draft' }> = {};
     for (const agent of prespawnedRuns) {
@@ -342,6 +356,10 @@ export const createSession = (set: SetFn, get: GetFn) => {
           worktree.worktreePath,
           ...memberWorktrees.map((m) => m.worktree.worktreePath),
         ],
+      },
+      sessionMounts: {
+        ...state.sessionMounts,
+        [session.id]: sessionMounts,
       },
       sessionBranches: {
         ...state.sessionBranches,

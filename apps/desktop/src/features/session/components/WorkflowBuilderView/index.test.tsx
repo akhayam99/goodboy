@@ -40,6 +40,12 @@ vi.mock('../../../../store', () => {
     storeState.workflowDrafts = next;
   };
   const getState = () => ({
+    sessions: [session],
+    workspaces: [{ id: session.workspaceId, rootPath: '/tmp/repo', kind: 'repo' }],
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionWorktrees: { [session.id]: ['/tmp/worktree'] },
+    sessionBranches: { [session.id]: 'ak/workflow' },
     savePhaseTemplate: mockSavePhaseTemplate,
     attachWorkflowToSession: mockAttach,
     phaseTemplates: storeState.phaseTemplates,
@@ -60,6 +66,16 @@ vi.mock('../../../../store', () => {
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
+}));
+
+vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
+  useSessionRepo: () => ({
+    repoRoot: '/tmp/repo',
+    worktreePath: '/tmp/worktree',
+    branch: 'ak/workflow',
+    mountName: null,
+    workspaceId: 'ws-1',
+  }),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {

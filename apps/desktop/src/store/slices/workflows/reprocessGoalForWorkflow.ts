@@ -3,6 +3,7 @@ import { rewriteWorkflowGoal } from '@goodboy/core';
 import { upsertContextSlot } from '@goodboy/db';
 import { invoke } from '@tauri-apps/api/core';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
@@ -35,7 +36,7 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
         return;
       }
 
-      const worktreePath = state.sessionWorktrees?.[sessionId]?.[0] ?? null;
+      const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
       const rewritten = await rewriteWorkflowGoal(
         {
           providerId: session.providerPreference.defaultProvider,

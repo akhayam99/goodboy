@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { PrDetail } from '@goodboy/types';
+import type { PrDetail, WorkspaceId } from '@goodboy/types';
 import { CircleDashed } from 'lucide-react';
 import { RailBlock } from '../../../../shared/components/StudioDetail';
 import { latestTerminalReviewsByAuthor } from '../Card/lib';
@@ -10,10 +10,16 @@ import { ReviewerPicker } from './ReviewerPicker';
 type Props = {
   readonly detail: PrDetail | null;
   readonly workspaceRoot: string | null;
+  readonly memberWorkspaceId?: WorkspaceId;
   readonly onAddReviewers: (logins: ReadonlyArray<string>) => void;
 };
 
-export const PrReviewers = ({ detail, workspaceRoot, onAddReviewers }: Props) => {
+export const PrReviewers = ({
+  detail,
+  workspaceRoot,
+  memberWorkspaceId,
+  onAddReviewers,
+}: Props) => {
   const requests = detail?.reviewRequests ?? [];
   const reviewed = useMemo(
     () => latestTerminalReviewsByAuthor(detail?.reviews ?? []),
@@ -30,7 +36,12 @@ export const PrReviewers = ({ detail, workspaceRoot, onAddReviewers }: Props) =>
 
   return (
     <RailBlock label="Reviewers">
-      <ReviewerPicker workspaceRoot={workspaceRoot} exclude={known} onAdd={onAddReviewers} />
+      <ReviewerPicker
+        workspaceRoot={workspaceRoot}
+        memberWorkspaceId={memberWorkspaceId}
+        exclude={known}
+        onAdd={onAddReviewers}
+      />
       {reviewed.length === 0 && requests.length === 0 ? (
         <span className="basis-full text-2xs text-muted-foreground/60">No reviewers yet.</span>
       ) : (

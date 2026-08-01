@@ -1,4 +1,5 @@
 import { CheckCheck, Pencil } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { Button, cn, Input, StatusDot } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, SessionStageInfo } from '@goodboy/types';
 import { agentHasUnread, EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../../../store';
@@ -11,6 +12,7 @@ import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
 import { PrStatusLine } from './PrStatusLine';
 import { definitionOfDone } from './definitionOfDone';
+import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Props = {
   readonly session: Session;
@@ -29,7 +31,9 @@ export const HeaderBand = ({ session, stage }: Props) => {
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const workspace = useCurrentWorkspace();
-  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+  const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
+  const storedBranch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+  const branch = repo != null && repo.mountName != null ? repo.branch : storedBranch;
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr ?? null);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
@@ -121,6 +125,7 @@ export const HeaderBand = ({ session, stage }: Props) => {
         {branch != null ? (
           <BranchChip
             branch={branch}
+            mountName={repo?.mountName ?? null}
             sessionId={sessionId}
             canEdit={
               workspace != null && !isBranchlessSession({ workspaceKind: workspace.kind, branch })

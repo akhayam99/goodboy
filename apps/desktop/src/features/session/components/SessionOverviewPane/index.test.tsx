@@ -11,7 +11,13 @@ import type {
 } from '@goodboy/types';
 
 type Store = {
+  sessions: ReadonlyArray<Session>;
+  workspaces: ReadonlyArray<Workspace>;
   sessionBranches: Record<string, string>;
+  sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  sessionMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveMount: Record<string, string>;
+  setSessionActiveMount: ReturnType<typeof vi.fn>;
   spawnAgent: ReturnType<typeof vi.fn>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   scriptRuns: Record<string, Record<string, { status: string }>>;
@@ -51,7 +57,13 @@ type Runs = {
 
 const { store, hooks, runs } = vi.hoisted(() => ({
   store: {
+    sessions: [] as ReadonlyArray<Session>,
+    workspaces: [] as ReadonlyArray<Workspace>,
     sessionBranches: {} as Record<string, string>,
+    sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
+    sessionMounts: {} as Record<string, ReadonlyArray<never>>,
+    sessionActiveMount: {} as Record<string, string>,
+    setSessionActiveMount: vi.fn(),
     spawnAgent: vi.fn(async () => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     scriptRuns: {} as Record<string, Record<string, { status: string }>>,
@@ -190,6 +202,7 @@ const completedLane = (over: Record<string, unknown> = {}) => ({
 const baseSession = (over: Partial<Session> = {}): Session =>
   ({
     id: 'sess-1',
+    workspaceId: 'ws-1',
     goal: 'refactor auth',
     state: { kind: 'idle' },
     createdAt: '2026-06-22T10:00:00.000Z',
@@ -198,12 +211,28 @@ const baseSession = (over: Partial<Session> = {}): Session =>
   }) as unknown as Session;
 
 const renderPane = (session = baseSession(), onSelectLens = vi.fn()) => {
+  store.sessions = [session];
   const view = render(<SessionOverviewPane session={session} onSelectLens={onSelectLens} />);
   return { onSelectLens, container: view.container };
 };
 
 beforeEach(() => {
+  store.sessions = [];
+  store.workspaces = [
+    {
+      id: 'ws-1',
+      name: 'My workspace',
+      rootPath: '/repo',
+      kind: 'repo',
+      createdAt: '2026-06-22T10:00:00.000Z',
+      updatedAt: '2026-06-22T10:00:00.000Z',
+    } as Workspace,
+  ];
   store.sessionBranches = {};
+  store.sessionWorktrees = { 'sess-1': ['/repo/.goodboy/worktrees/sess-1'] };
+  store.sessionMounts = {};
+  store.sessionActiveMount = {};
+  store.setSessionActiveMount.mockReset();
   store.spawnAgent.mockReset();
   store.spawnAgent.mockResolvedValue(undefined);
   store.sessionPhaseRuns = {};

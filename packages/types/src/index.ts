@@ -31,6 +31,7 @@ export type {
   LinearWorkspaceIntegration,
   OrchestratorRouting,
   Session,
+  SessionMount,
   SentryIntegrationConfig,
   SessionExternalTask,
   SessionExternalTaskProvider,

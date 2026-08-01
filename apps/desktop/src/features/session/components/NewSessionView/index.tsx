@@ -15,7 +15,7 @@ import {
   type LocalBranchInfo,
 } from '../../../../features/worktree/worktree';
 import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
-import { useRemoteHostKind } from '../../../../features/worktree/useRemoteHostKind';
+import { useWorkspaceRemoteHostKind } from '../../../../features/worktree/useWorkspaceRemoteHostKind';
 import type { IssueCandidate } from '../../../../features/integrations/fetchIssueCandidates';
 import { resolveIssueSources } from '../../../../features/integrations/issueSources';
 import { formatError } from '../../../../shared/lib/errors';
@@ -79,7 +79,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const workspaceIntegrations = useAppStore(
     useShallow((s) => s.workspaceIntegrations?.[workspaceId] ?? EMPTY_INTEGRATIONS),
   );
-  const remoteKind = useRemoteHostKind(workspaceId);
+  const remoteKind = useWorkspaceRemoteHostKind({ workspaceId });
   const issueSources = isSimple
     ? []
     : resolveIssueSources({

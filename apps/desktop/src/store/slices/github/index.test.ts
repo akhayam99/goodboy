@@ -616,6 +616,7 @@ describe('store contract', () => {
         workspaces: [buildWorkspace()],
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
         sessionGithub: {
           [SESSION_ID]: {
             pr: selectedPr,
@@ -654,6 +655,7 @@ describe('store contract', () => {
         workspaces: [buildWorkspace()],
         sessions: [buildSession()],
         sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
         sessionGithubPrs: { [SESSION_ID]: [previousPr] },
         sessionSelectedPrNumber: { [SESSION_ID]: previousPr.number },
       });
@@ -687,7 +689,7 @@ describe('store contract', () => {
         .getState()
         .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' });
       expect(ok).toBe(true);
-      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID);
+      expect(gitPushSpy).toHaveBeenCalledWith('/tmp/repo/.wt/x', 'ak/feat-x', WS_ID, WS_ID);
       const pushOrder = gitPushSpy.mock.invocationCallOrder[0] ?? 0;
       const replyOrder = addReplySpy.mock.invocationCallOrder[0] ?? 0;
       expect(pushOrder).toBeGreaterThan(0);

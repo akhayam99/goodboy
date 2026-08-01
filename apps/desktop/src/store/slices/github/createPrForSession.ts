@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 export type CreatePrOptions = {
@@ -22,6 +23,12 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     if (!workspace) {
       throw new Error('Workspace not found for this session.');
     }
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null || repo.branch.length === 0) {
+      throw new Error(
+        'No branch is linked to this session yet, open it once so its worktree resolves.',
+      );
+    }
 
     const args = ['pr', 'create'];
     const hasFields = opts?.title !== undefined || opts?.body !== undefined;
@@ -39,8 +46,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     }
 
     const res = await tauriGhRunner.run(args, {
-      cwd: workspace.rootPath,
+      cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
+      memberWorkspaceId: repo.workspaceId,
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;

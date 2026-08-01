@@ -1,6 +1,7 @@
 import type { GitlabWorkspaceIntegration, SessionId, WorkspaceId } from '@goodboy/types';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
 import { projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn } from './types';
 
 export type MrContext = {
@@ -17,9 +18,9 @@ export const resolveMrContext = async (
   get: GetFn,
   sessionId: SessionId,
 ): Promise<MrContext | null> => {
-  const branch = get().sessionBranches[sessionId];
   const session = get().sessions.find((s) => s.id === sessionId);
-  if (!branch || !session) {
+  const repo = getSessionRepo({ get, sessionId });
+  if (repo == null || repo.branch.length === 0 || !session) {
     return null;
   }
   const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
@@ -32,7 +33,7 @@ export const resolveMrContext = async (
   if (!integration) {
     return null;
   }
-  const remoteUrl = await worktreeRemoteUrl(workspace.rootPath);
+  const remoteUrl = await worktreeRemoteUrl(repo.repoRoot);
   const projectPath = projectPathFromRemoteUrl(remoteUrl);
   if (!projectPath) {
     return null;
@@ -40,8 +41,8 @@ export const resolveMrContext = async (
   return {
     sessionId,
     workspaceId: session.workspaceId,
-    rootPath: workspace.rootPath,
-    branch,
+    rootPath: repo.repoRoot,
+    branch: repo.branch,
     host: integration.config.host,
     projectPath,
     goal: session.goal,

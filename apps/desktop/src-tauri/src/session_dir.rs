@@ -9,6 +9,8 @@ pub enum SessionDirError {
     HomeUnavailable,
     #[error("directory path cannot be empty")]
     EmptyPath,
+    #[error("refusing to remove a path outside the workspace")]
+    OutsideWorkspace,
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("json error: {0}")]
@@ -22,6 +24,7 @@ impl SessionDirError {
         match self {
             SessionDirError::HomeUnavailable => "home_unavailable",
             SessionDirError::EmptyPath => "empty_path",
+            SessionDirError::OutsideWorkspace => "outside_workspace",
             SessionDirError::Io(_) => "io",
             SessionDirError::Json(_) => "json",
         }
@@ -37,6 +40,13 @@ pub struct CreateArgs {
     pub session_id: String,
     #[serde(rename = "workspaceId")]
     pub workspace_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemoveArgs {
+    #[serde(rename = "basePath")]
+    pub base_path: String,
+    pub path: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -171,6 +181,29 @@ pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, Session
         slug,
         reused,
     })
+}
+
+#[tauri::command]
+pub fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError> {
+    let base = absolute_path(expand_home(&args.base_path)?)?;
+    let target = absolute_path(expand_home(&args.path)?)?;
+    let is_contained = match (
+        std::fs::canonicalize(&base),
+        std::fs::canonicalize(&target),
+    ) {
+        (Ok(resolved_base), Ok(resolved_target)) => {
+            resolved_target.parent() == Some(resolved_base.as_path())
+        }
+        _ => target.parent() == Some(base.as_path()),
+    };
+    if !is_contained {
+        return Err(SessionDirError::OutsideWorkspace);
+    }
+    match std::fs::remove_dir_all(target) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error.into()),
+    }
 }
 
 #[tauri::command]

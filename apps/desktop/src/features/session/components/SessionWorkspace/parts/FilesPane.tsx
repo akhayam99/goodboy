@@ -8,11 +8,12 @@ import { PaneShell } from './PaneShell';
 type FilesPaneProps = {
   readonly sessionId: SessionId;
   readonly workingDir: string | null;
+  readonly worktreePath: string | null;
   readonly onClose: () => void;
 };
 
-export const FilesPane = ({ sessionId, workingDir, onClose }: FilesPaneProps) => {
-  if (!workingDir) {
+export const FilesPane = ({ sessionId, workingDir, worktreePath, onClose }: FilesPaneProps) => {
+  if (worktreePath == null) {
     return (
       <PaneShell
         title={DIFF_VIEWER_PANE_COPY.title}
@@ -32,8 +33,8 @@ export const FilesPane = ({ sessionId, workingDir, onClose }: FilesPaneProps) =>
   return (
     <DiffViewerPane
       sessionId={sessionId}
-      workingDir={workingDir}
-      worktreePath={workingDir}
+      workingDir={workingDir ?? undefined}
+      worktreePath={worktreePath}
       onClose={onClose}
     />
   );

@@ -1,0 +1,30 @@
+import { useShallow } from 'zustand/react/shallow';
+import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+import { useAppStore } from '../../store';
+import type { RemoteHostKind } from '../../shared/lib/remoteHost';
+import { useRootRemoteHostKind } from './useRootRemoteHostKind';
+
+type Params = {
+  readonly workspaceId: WorkspaceId | null;
+};
+
+export const useWorkspaceRemoteHostKind = ({ workspaceId }: Params): RemoteHostKind | null => {
+  const rootPath = useAppStore(
+    (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
+  );
+  const isSimple = useAppStore(
+    (state) =>
+      state.workspaces.find((workspace) => workspace.id === workspaceId)?.kind === 'simple',
+  );
+  const gitlabHosts = useAppStore(
+    useShallow((state) =>
+      (workspaceId == null ? [] : (state.workspaceIntegrations[workspaceId] ?? []))
+        .filter(
+          (integration): integration is GitlabWorkspaceIntegration =>
+            integration.provider === 'gitlab',
+        )
+        .map((integration) => integration.config.host),
+    ),
+  );
+  return useRootRemoteHostKind({ rootPath, gitlabHosts, isEnabled: !isSimple });
+};

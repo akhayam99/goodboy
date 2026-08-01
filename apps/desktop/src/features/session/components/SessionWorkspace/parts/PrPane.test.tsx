@@ -7,6 +7,7 @@ import type {
   SessionExternalTask,
   SessionId,
   WorkspaceId,
+  Workspace,
 } from '@goodboy/types';
 
 type Store = {
@@ -20,6 +21,11 @@ type Store = {
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
+  sessionMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveMount: Record<string, WorkspaceId>;
+  sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  sessions: ReadonlyArray<Session>;
+  workspaces: ReadonlyArray<Workspace>;
 };
 
 const h = vi.hoisted(() => ({
@@ -34,6 +40,11 @@ const h = vi.hoisted(() => ({
     refreshSessionPr: vi.fn(),
     selectSessionPr: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionWorktrees: { 'session-1': ['/tmp/goodboy/.goodboy/worktrees/refactor-auth'] },
+    sessions: [] as ReadonlyArray<Session>,
+    workspaces: [] as ReadonlyArray<Workspace>,
   } satisfies Store,
   remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
 }));
@@ -45,6 +56,16 @@ vi.mock('../../../../../store', () => ({
 
 vi.mock('../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => h.remoteKind,
+}));
+
+vi.mock('../../../../../store/slices/worktrees/useSessionRepo', () => ({
+  useSessionRepo: () => ({
+    repoRoot: '/tmp/goodboy',
+    worktreePath: '/tmp/goodboy/.goodboy/worktrees/refactor-auth',
+    branch: 'ak/refactor-auth',
+    mountName: null,
+    workspaceId: 'workspace-1',
+  }),
 }));
 
 vi.mock('../../../../context/components/ContextPanel/strips/GitlabMrStrip', () => ({
@@ -92,6 +113,17 @@ beforeEach(() => {
   h.store.sessionExternalTasks = {};
   h.store.sessionPhaseRuns = {};
   h.store.workspaceIntegrations = {};
+  h.store.sessions = [session];
+  h.store.workspaces = [
+    {
+      id: session.workspaceId,
+      name: 'Goodboy',
+      rootPath: '/tmp/goodboy',
+      kind: 'repo',
+      createdAt: DATE,
+      updatedAt: DATE,
+    },
+  ];
   h.remoteKind = 'github';
 });
 
@@ -265,6 +297,47 @@ describe('PrPane', () => {
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /open #7 in GitHub studio/i })).toBeDefined();
+  });
+
+  it('shows repository attribution on composite linked rows', () => {
+    const memberId = 'workspace-web' as WorkspaceId;
+    h.store.workspaces = [
+      {
+        id: session.workspaceId,
+        name: 'Product',
+        rootPath: '/tmp/product',
+        kind: 'composite',
+        members: [{ workspaceId: memberId, rootPath: '/tmp/web', mountName: 'web' }],
+        createdAt: DATE,
+        updatedAt: DATE,
+      },
+    ];
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionExternalTasks = {
+      [SESSION_ID]: [
+        {
+          sessionId: SESSION_ID,
+          mountWorkspaceId: memberId,
+          provider: 'github',
+          externalId: '42',
+          identifier: '#42',
+          url: PULL_REQUEST.url,
+          title: PULL_REQUEST.title,
+          createdAt: DATE,
+        },
+      ],
+    };
+
+    render(<PrPane session={session} />);
+
+    expect(screen.getByText('web')).toBeDefined();
   });
 
   it('keeps linked issues and external tasks visible without a pull request', () => {

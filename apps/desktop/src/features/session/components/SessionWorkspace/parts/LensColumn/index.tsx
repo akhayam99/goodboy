@@ -60,7 +60,7 @@ export const LensColumn = ({
     [nonResolverStandalone],
   );
   const unreadLens = useSessionUnreadLens(sessionId);
-  const remoteKind = useRemoteHostKind(session.workspaceId);
+  const remoteKind = useRemoteHostKind({ sessionId });
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workspaceIntegrations = useAppStore(
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,

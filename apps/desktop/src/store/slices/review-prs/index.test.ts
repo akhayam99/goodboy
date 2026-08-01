@@ -198,6 +198,46 @@ describe('review-prs slice', () => {
     expect(result.loading).toBe(false);
   });
 
+  it('collects attributed PRs from every resolvable composite member', async () => {
+    const webId = 'workspace-web' as WorkspaceId;
+    const apiId = 'workspace-api' as WorkspaceId;
+    const brokenId = 'workspace-broken' as WorkspaceId;
+    detectRepoSlugSpy.mockImplementation(async (_runner, rootPath: string) => {
+      if (rootPath === '/tmp/broken') {
+        throw new Error('not a repository');
+      }
+      return rootPath === '/tmp/web' ? 'acme/web' : 'acme/api';
+    });
+    listOpenPrsForRepoSpy.mockImplementation(async (_runner, slug: string) => [
+      buildRepoPr({ number: slug === 'acme/web' ? 7 : 8, title: slug }),
+    ]);
+    const { slice, getState } = buildHarness({
+      workspaces: [
+        {
+          ...buildWorkspace(),
+          kind: 'composite',
+          members: [
+            { workspaceId: webId, rootPath: '/tmp/web', mountName: 'web' },
+            { workspaceId: brokenId, rootPath: '/tmp/broken', mountName: 'broken' },
+            { workspaceId: apiId, rootPath: '/tmp/api', mountName: 'api' },
+          ],
+        },
+      ],
+    });
+
+    await slice.refreshReviewPrs(WS_ID);
+
+    expect(detectRepoSlugSpy.mock.calls.map((call) => call.slice(1))).toEqual([
+      ['/tmp/web', WS_ID, webId],
+      ['/tmp/broken', WS_ID, brokenId],
+      ['/tmp/api', WS_ID, apiId],
+    ]);
+    expect(selectReviewPrs(WS_ID)(getState()).items).toEqual([
+      expect.objectContaining({ repo: 'acme/web', mountWorkspaceId: webId }),
+      expect.objectContaining({ repo: 'acme/api', mountWorkspaceId: apiId }),
+    ]);
+  });
+
   it('merges both providers sorted by updatedAt descending', async () => {
     detectRepoSlugSpy.mockResolvedValue('org/repo');
     listOpenPrsForRepoSpy.mockResolvedValue([

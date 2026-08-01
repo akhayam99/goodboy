@@ -7,6 +7,7 @@ import { formatError } from '../../../../../shared/lib/errors';
 import { useToast } from '../../../../../app/components/Toast';
 import { EditorMenu } from '../../SessionOverviewPane/EditorMenu';
 import { SessionGitActions } from './SessionGitActions';
+import { ProjectSwitcher } from '../../ProjectSwitcher';
 
 const ICON_BUTTON =
   'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
@@ -70,6 +71,7 @@ export const LensColumnFooter = ({ session }: Props) => {
 
   return (
     <div className="flex shrink-0 items-center gap-2 px-2 py-2">
+      <ProjectSwitcher sessionId={sessionId} />
       <EditorMenu sessionId={sessionId} />
       <SessionGitActions session={session} />
       <span className="flex-1" />

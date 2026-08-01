@@ -2,8 +2,10 @@ import type { ProviderRunId, SessionId } from '@goodboy/types';
 import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
-import { removeWorktree } from '../../../features/worktree/worktree';
+import { removeSessionDirectory, removeWorktree } from '../../../features/worktree/worktree';
+import { formatError } from '../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { buildSessionMounts } from '../worktrees/buildSessionMounts';
 import type { GetFn, SetFn } from './types';
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
@@ -22,29 +24,52 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         () => undefined,
       );
     }
-    const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
-    let paths = worktreePaths;
-    if (paths.length === 0) {
-      try {
-        const rows = await listWorktreesForSession(tauriDatabase, sessionId);
-        paths = rows.map((r) => r.worktreePath);
-      } catch {
-        paths = [];
-      }
-    }
+    const rows = await listWorktreesForSession(tauriDatabase, sessionId);
+    const paths = rows.map((row) => row.worktreePath);
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
     const isBranchless = isBranchlessSession({
       workspaceKind: workspace?.kind,
       branch: get().sessionBranches[sessionId],
     });
-    if (workspace && !isBranchless) {
-      for (const worktreePath of paths) {
+    const cleanupFailures: unknown[] = [];
+    if (workspace?.kind === 'composite' && !isBranchless) {
+      const mounts = buildSessionMounts({ workspace, rows });
+      const memberCleanupFailures: unknown[] = [];
+      for (const mount of mounts) {
         try {
-          await removeWorktree(workspace.rootPath, worktreePath);
-        } catch {
-          // worktree may already be gone
+          await removeWorktree(mount.repoRoot, mount.worktreePath);
+        } catch (error) {
+          memberCleanupFailures.push(error);
+          cleanupFailures.push(error);
         }
       }
+      const containerPath = rows.find((row) => row.mountWorkspaceId == null)?.worktreePath;
+      if (containerPath != null && memberCleanupFailures.length === 0) {
+        try {
+          await removeSessionDirectory({ basePath: workspace.rootPath, path: containerPath });
+        } catch (error) {
+          cleanupFailures.push(error);
+        }
+      }
+    }
+    if (workspace?.kind !== 'composite' && workspace != null && !isBranchless) {
+      const worktreePath = paths[0];
+      if (worktreePath != null) {
+        try {
+          await removeWorktree(workspace.rootPath, worktreePath);
+        } catch (error) {
+          cleanupFailures.push(error);
+        }
+      }
+    }
+    if (cleanupFailures.length > 0) {
+      void get().emitNotification(
+        'error',
+        'warning',
+        `failed to remove ${cleanupFailures.length} session paths`,
+        cleanupFailures.map((error) => formatError(error)).join('\n'),
+        { sessionId, workspaceId: session.workspaceId },
+      );
     }
     const sessionGoal = session.goal;
     const sessionWorkspaceId = session.workspaceId;
@@ -59,6 +84,10 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       }
       const nextWorktrees = { ...state.sessionWorktrees };
       delete nextWorktrees[sessionId];
+      const nextMounts = { ...state.sessionMounts };
+      delete nextMounts[sessionId];
+      const nextActiveMount = { ...state.sessionActiveMount };
+      delete nextActiveMount[sessionId];
       const nextBranches = { ...state.sessionBranches };
       delete nextBranches[sessionId];
       const nextPhaseRuns = { ...state.sessionPhaseRuns };
@@ -95,6 +124,8 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         transcripts: nextTranscripts,
         messages: nextMessages,
         sessionWorktrees: nextWorktrees,
+        sessionMounts: nextMounts,
+        sessionActiveMount: nextActiveMount,
         sessionBranches: nextBranches,
         sessionPhaseRuns: nextPhaseRuns,
         sessionGithub: nextGithub,

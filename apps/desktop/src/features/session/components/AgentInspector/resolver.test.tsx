@@ -8,6 +8,7 @@ import type {
   ProviderRunId,
   SessionId,
   TurnEvent,
+  WorkspaceId,
 } from '@goodboy/types';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -38,6 +39,14 @@ const agent = (over: Partial<Agent> & { id: AgentId }): Agent => ({
 });
 
 const state = {
+  sessions: [{ id: SESSION_ID, workspaceId: 'workspace-1' as WorkspaceId }],
+  workspaces: [
+    {
+      id: 'workspace-1' as WorkspaceId,
+      rootPath: '/tmp/repo',
+      kind: 'repo',
+    },
+  ],
   sessionPhaseRuns: {
     [SESSION_ID]: [
       agent({
@@ -61,6 +70,9 @@ const state = {
   sessionPendingResolutions: {},
   diffComments: { [SESSION_ID]: [] },
   sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+  sessionMounts: {},
+  sessionActiveMount: {},
+  sessionBranches: { [SESSION_ID]: 'ak/resolver' },
   pendingResolverKickoff: {},
   agentTurnState: {},
   sessionGithub: {
@@ -97,6 +109,16 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../../../store/transcript', () => ({
   useTranscript: () => h.runtime.events,
+}));
+
+vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
+  useSessionRepo: () => ({
+    repoRoot: '/tmp/repo',
+    worktreePath: '/tmp/wt',
+    branch: 'ak/resolver',
+    mountName: null,
+    workspaceId: 'workspace-1',
+  }),
 }));
 
 vi.mock('@goodboy/db', () => ({ listTurnEventsForAgent: h.listTurnEventsForAgent }));

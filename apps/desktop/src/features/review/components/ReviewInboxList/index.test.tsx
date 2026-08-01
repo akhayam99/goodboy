@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ReviewablePr, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, ReviewablePr, Workspace, WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   refreshReviewPrs: vi.fn(async () => undefined),
@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
         fetchedAt: string | null;
       }
     >,
+    workspaces: [] as ReadonlyArray<Workspace>,
   },
 }));
 
@@ -37,6 +38,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 import { ReviewInboxList } from './index';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const DATE = '2026-07-22T10:00:00Z' as IsoDateTime;
 
 const pr = (overrides: Partial<ReviewablePr>): ReviewablePr => ({
   id: 'github:1',
@@ -57,7 +59,11 @@ const pr = (overrides: Partial<ReviewablePr>): ReviewablePr => ({
   ...overrides,
 });
 
-const setItems = (items: ReadonlyArray<ReviewablePr>, loading = false, error: string | null = null) => {
+const setItems = (
+  items: ReadonlyArray<ReviewablePr>,
+  loading = false,
+  error: string | null = null,
+) => {
   h.state.reviewPrs = {
     [WORKSPACE_ID]: { items, loading, error, fetchedAt: '2026-07-22T10:00:00Z' },
   };
@@ -78,6 +84,16 @@ const renderList = (scope: 'others' | 'all', onSelect = vi.fn()) => {
 
 beforeEach(() => {
   h.state.reviewPrs = {};
+  h.state.workspaces = [
+    {
+      id: WORKSPACE_ID,
+      name: 'Web',
+      rootPath: '/tmp/web',
+      kind: 'repo',
+      createdAt: DATE,
+      updatedAt: DATE,
+    },
+  ];
   h.refreshReviewPrs.mockClear();
 });
 
@@ -126,6 +142,30 @@ describe('ReviewInboxList', () => {
     expect(rows[0]).toContain('Older requested');
     expect(rows[0]).toContain('Review requested');
     expect(rows[1]).toContain('Newer plain');
+  });
+
+  it('shows repository attribution only for a composite workspace', () => {
+    const memberWorkspaceId = 'workspace-web' as WorkspaceId;
+    h.state.workspaces = [
+      {
+        id: WORKSPACE_ID,
+        name: 'Product',
+        rootPath: '/tmp/product',
+        kind: 'composite',
+        members: [{ workspaceId: memberWorkspaceId, rootPath: '/tmp/web', mountName: 'web' }],
+        createdAt: DATE,
+        updatedAt: DATE,
+      },
+    ];
+    setItems([pr({ mountWorkspaceId: memberWorkspaceId })]);
+
+    const view = renderList('others');
+    expect(screen.getByText('web')).toBeDefined();
+
+    h.state.workspaces = [{ ...h.state.workspaces[0]!, kind: 'repo' }];
+    cleanup();
+    renderList('others', view);
+    expect(screen.queryByText('web')).toBeNull();
   });
 
   it('shows the teammates empty state when nothing is reviewable', () => {

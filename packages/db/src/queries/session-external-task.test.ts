@@ -17,7 +17,7 @@ type SeedParams = {
   readonly throughVersion?: number;
 };
 
-const seed = async ({ throughVersion = 71 }: SeedParams) => {
+const seed = async ({ throughVersion = 96 }: SeedParams) => {
   const db = makeTestDatabase();
   await migrate(
     db,
@@ -99,6 +99,29 @@ describe('session_external_tasks queries', () => {
     ]);
   });
 
+  it('stores the same external id independently for different mounts', async () => {
+    const db = await seed({});
+    const webId = 'workspace-web' as WorkspaceId;
+    const apiId = 'workspace-api' as WorkspaceId;
+    const web = makeTask({ overrides: { mountWorkspaceId: webId, title: 'Web issue' } });
+    const api = makeTask({ overrides: { mountWorkspaceId: apiId, title: 'API issue' } });
+
+    await upsertSessionExternalTask({ db, task: web });
+    await upsertSessionExternalTask({ db, task: api });
+
+    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([api, web]);
+
+    await deleteSessionExternalTask({
+      db,
+      sessionId,
+      provider: web.provider,
+      externalId: web.externalId,
+      mountWorkspaceId: webId,
+    });
+
+    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([api]);
+  });
+
   it('rejects an unknown provider', async () => {
     const db = await seed({});
     await expect(
@@ -161,6 +184,11 @@ describe('session_external_tasks queries', () => {
     }
 
     await migrate(db, [migration]);
+    const mountMigration = migrations.find((candidate) => candidate.version === 96);
+    if (mountMigration == null) {
+      throw new Error('Migration 96 should exist');
+    }
+    await migrate(db, [mountMigration]);
 
     expect(await listSessionExternalTasks({ db, sessionId })).toEqual([original]);
   });
@@ -176,13 +204,31 @@ describe('session_external_tasks queries', () => {
         title: 'Keep this link',
       },
     });
-    await upsertSessionExternalTask({ db, task: gitlab });
+    await db.execute(
+      `INSERT INTO session_external_tasks
+        (session_id, provider, external_id, identifier, url, title, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        gitlab.sessionId,
+        gitlab.provider,
+        gitlab.externalId,
+        gitlab.identifier,
+        gitlab.url,
+        gitlab.title,
+        Date.parse(gitlab.createdAt),
+      ],
+    );
     const migration = migrations.find((candidate) => candidate.version === 73);
     if (migration == null) {
       throw new Error('Migration 73 should exist');
     }
 
     await migrate(db, [migration]);
+    const mountMigration = migrations.find((candidate) => candidate.version === 96);
+    if (mountMigration == null) {
+      throw new Error('Migration 96 should exist');
+    }
+    await migrate(db, [mountMigration]);
     const github = makeTask({
       overrides: {
         provider: 'github',
@@ -195,5 +241,32 @@ describe('session_external_tasks queries', () => {
     await upsertSessionExternalTask({ db, task: github });
 
     expect(await listSessionExternalTasks({ db, sessionId })).toEqual([github, gitlab]);
+  });
+
+  it('preserves existing links with null mount attribution', async () => {
+    const db = await seed({ throughVersion: 95 });
+    const original = makeTask({});
+    await db.execute(
+      `INSERT INTO session_external_tasks
+        (session_id, provider, external_id, identifier, url, title, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        original.sessionId,
+        original.provider,
+        original.externalId,
+        original.identifier,
+        original.url,
+        original.title,
+        Date.parse(original.createdAt),
+      ],
+    );
+    const migration = migrations.find((candidate) => candidate.version === 96);
+    if (migration == null) {
+      throw new Error('Migration 96 should exist');
+    }
+
+    await migrate(db, [migration]);
+
+    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([original]);
   });
 });

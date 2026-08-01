@@ -29,6 +29,7 @@ type Props = {
   readonly ariaLabel?: string;
   readonly tooltip?: string;
   readonly actions?: ReactNode;
+  readonly attribution?: ReactNode;
 };
 
 export const LinkedWorkRow = ({
@@ -39,6 +40,7 @@ export const LinkedWorkRow = ({
   ariaLabel,
   tooltip,
   actions,
+  attribution,
 }: Props) => {
   const glyph =
     leading.kind === 'icon' ? (
@@ -72,6 +74,7 @@ export const LinkedWorkRow = ({
         {title != null ? (
           <span className="min-w-0 flex-1 truncate text-sm text-foreground">{title}</span>
         ) : null}
+        {attribution}
         <ArrowRight
           size={14}
           aria-hidden

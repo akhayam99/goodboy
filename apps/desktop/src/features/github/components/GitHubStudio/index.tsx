@@ -16,7 +16,7 @@ import { IntegrationGlyph } from '../../../integrations/components/IntegrationGl
 import { IntegrationConnectPanel } from '../../../integrations/components/IntegrationConnectPanel';
 import { GithubFormBody } from '../../../integrations/github/GithubFormBody';
 import { resolveIntegrationConnection } from '../../../integrations/connection';
-import { useRemoteHostKind } from '../../../worktree/useRemoteHostKind';
+import { useWorkspaceRemoteHostKind } from '../../../worktree/useWorkspaceRemoteHostKind';
 
 type Tab = 'pull-requests' | 'issues';
 
@@ -55,7 +55,7 @@ export const GitHubStudio = ({
   onClose,
 }: Props) => {
   const groups = useGithubInbox();
-  const remoteKind = useRemoteHostKind(workspaceId);
+  const remoteKind = useWorkspaceRemoteHostKind({ workspaceId });
   const isConnected = resolveIntegrationConnection({
     provider: 'github',
     integrations: [],

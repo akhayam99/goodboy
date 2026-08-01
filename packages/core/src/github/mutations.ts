@@ -1,4 +1,4 @@
-import type { GhRunner } from './gh';
+import type { GhRunner, GhRunOptions } from './gh';
 import { GhCliError, runJson } from './gh';
 
 const RESOLVE_REVIEW_THREAD_MUTATION = `mutation($threadId:ID!){
@@ -30,7 +30,7 @@ export type ResolvedThread = {
 export const resolveReviewThread = async (
   runner: GhRunner,
   threadId: string,
-  opts: { cwd?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<ResolvedThread> => {
   const raw = await runJson<RawResolveReviewThreadResponse>(
     runner,
@@ -73,7 +73,7 @@ export const addReviewThreadReply = async (
   runner: GhRunner,
   threadId: string,
   body: string,
-  opts: { cwd?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<PostedThreadReply> => {
   const raw = await runJson<RawAddThreadReplyResponse>(
     runner,

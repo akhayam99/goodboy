@@ -6,6 +6,7 @@ import {
   invalidateLocalBranchesCache,
 } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { getSessionRepo } from './getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 type Args = {
@@ -32,26 +33,59 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
       throw new Error('branch name cannot be empty');
     }
     const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
-    const primary = worktrees[0];
-    if (!primary) {
+    if (worktrees.length === 0) {
       throw new Error(`no worktree found for session ${sessionId}`);
     }
     if (!workspace) {
       throw new Error('workspace not found for session');
     }
+    const isComposite = workspace.kind === 'composite';
+    const repo = isComposite ? getSessionRepo({ get, sessionId }) : null;
+    if (isComposite && repo == null) {
+      throw new Error(`no worktree found for session ${sessionId}`);
+    }
+    const changedWorktree =
+      repo == null
+        ? worktrees[0]
+        : (worktrees.find((candidate) => candidate.worktreePath === repo.worktreePath) ?? null);
+    if (changedWorktree == null) {
+      throw new Error(`no worktree found for session ${sessionId}`);
+    }
+    const repoRoot = repo?.repoRoot ?? workspace.rootPath;
+    const worktreePath = repo?.worktreePath ?? changedWorktree.worktreePath;
     await changeWorktreeBranch({
-      repoPath: workspace.rootPath,
-      worktreePath: primary.worktreePath,
+      repoPath: repoRoot,
+      worktreePath,
       branch: target,
       createNew,
     });
-    invalidateLocalBranchesCache(workspace.rootPath);
-    await updateSessionWorktreeBranch(tauriDatabase, sessionId, primary.parallelIndex, target);
+    invalidateLocalBranchesCache(repoRoot);
+    await updateSessionWorktreeBranch(
+      tauriDatabase,
+      sessionId,
+      changedWorktree.parallelIndex,
+      target,
+    );
     set((state) => {
       const nextGithub = { ...state.sessionGithub };
       delete nextGithub[sessionId];
+      const mounts = state.sessionMounts[sessionId] ?? [];
+      const shouldUpdateSessionBranch =
+        workspace.kind !== 'composite' || mounts[0]?.worktreePath === worktreePath;
+      const sessionMounts =
+        workspace.kind === 'composite'
+          ? {
+              ...state.sessionMounts,
+              [sessionId]: mounts.map((mount) =>
+                mount.worktreePath === worktreePath ? { ...mount, branch: target } : mount,
+              ),
+            }
+          : state.sessionMounts;
       return {
-        sessionBranches: { ...state.sessionBranches, [sessionId]: target },
+        sessionBranches: shouldUpdateSessionBranch
+          ? { ...state.sessionBranches, [sessionId]: target }
+          : state.sessionBranches,
+        sessionMounts,
         sessionGithub: nextGithub,
       };
     });

@@ -91,6 +91,11 @@ const buildHarness = ({ sessions = [session], agents = [agent] }: Params = {}) =
   const state = {
     sessionPhaseRuns: { [SESSION_ID]: agents },
     sessions,
+    workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+    sessionBranches: { [SESSION_ID]: 'ak/workflow' },
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(),
     sendTurn: vi.fn(),
@@ -128,6 +133,7 @@ describe('finalizeWorkflowStep output summary', () => {
       model: 'haiku-4.5',
       invokeFn: expect.any(Function),
       output: 'raw assistant output',
+      workingDir: '/tmp/worktree',
     });
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       AGENT_ID,
@@ -147,6 +153,11 @@ describe('finalizeWorkflowStep output summary', () => {
     const state = {
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [session],
+      workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+      sessionMounts: {},
+      sessionActiveMount: {},
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+      sessionBranches: { [SESSION_ID]: 'ak/workflow' },
       refreshUnreadWorkspaces: vi.fn(),
       emitNotification: vi.fn(),
       sendTurn: vi.fn(),
@@ -183,6 +194,11 @@ describe('finalizeWorkflowStep output summary', () => {
     const state = {
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessions: [session],
+      workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+      sessionMounts: {},
+      sessionActiveMount: {},
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+      sessionBranches: { [SESSION_ID]: 'ak/workflow' },
       refreshUnreadWorkspaces: vi.fn(),
       emitNotification: vi.fn(),
       sendTurn: vi.fn(),

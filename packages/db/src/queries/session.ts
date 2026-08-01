@@ -32,6 +32,7 @@ type SessionRow = {
   permission_mode: string | null;
   auto_run: number;
   title_user_edited: number;
+  active_mount_workspace_id: string | null;
   archived_at: number | null;
   deleted_at: number | null;
   verbosity: string | null;
@@ -106,6 +107,9 @@ const toDomain = (
     workflowRuns,
     autoRun: row.auto_run !== 0,
     titleUserEdited: row.title_user_edited !== 0,
+    ...(row.active_mount_workspace_id != null && {
+      activeMountWorkspaceId: row.active_mount_workspace_id as WorkspaceId,
+    }),
     ...(row.archived_at != null && {
       archivedAt: new Date(row.archived_at).toISOString() as IsoDateTime,
     }),
@@ -251,6 +255,23 @@ export const updateSessionTitleUserEdited = async (
   await db.execute('UPDATE sessions SET title_user_edited = ?, updated_at = ? WHERE id = ?', [
     titleUserEdited ? 1 : 0,
     Date.parse(updatedAt),
+    id,
+  ]);
+};
+
+type UpdateSessionActiveMountParams = {
+  readonly db: Database;
+  readonly id: SessionId;
+  readonly workspaceId: WorkspaceId | null;
+};
+
+export const updateSessionActiveMount = async ({
+  db,
+  id,
+  workspaceId,
+}: UpdateSessionActiveMountParams): Promise<void> => {
+  await db.execute('UPDATE sessions SET active_mount_workspace_id = ? WHERE id = ?', [
+    workspaceId,
     id,
   ]);
 };

@@ -35,6 +35,16 @@ vi.mock('../../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 vi.mock('../../../worktree/worktree', () => ({ listBranchCommits: h.listBranchCommits }));
 
+vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
+  useSessionRepo: () => ({
+    repoRoot: '/tmp/repo',
+    worktreePath: '/tmp/wt',
+    branch: 'ak/resolver',
+    mountName: null,
+    workspaceId: 'ws-1',
+  }),
+}));
+
 vi.mock('../../../context/components/ContextPanel/strips/PendingResolutionsStrip', () => ({
   PendingResolutionsStrip: () => <div data-testid="pending-strip" />,
 }));
@@ -112,6 +122,11 @@ beforeEach(() => {
   h.listBranchCommits.mockResolvedValue([]);
   Object.keys(h.state).forEach((key) => delete h.state[key]);
   Object.assign(h.state, {
+    sessions: [session],
+    workspaces: [{ id: WS_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionBranches: { [SESSION_ID]: 'ak/resolver' },
     currentSessionId: SESSION_ID,
     sessionPhaseRuns: {},
     agentKindOverride: {},

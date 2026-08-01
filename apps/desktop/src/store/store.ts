@@ -197,6 +197,7 @@ export type AppActions = {
     kickoffPrompt?: string;
     externalTask?: {
       provider: SessionExternalTaskProvider;
+      mountWorkspaceId?: WorkspaceId;
       externalId: string;
       identifier: string;
       url: string;
@@ -213,11 +214,13 @@ export type AppActions = {
     sessionId: SessionId,
     provider: SessionExternalTaskProvider,
     externalId: string,
+    mountWorkspaceId?: WorkspaceId,
   ): Promise<void>;
   changeSessionBranch(
     sessionId: SessionId,
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
+  setSessionActiveMount(input: { sessionId: SessionId; workspaceId: WorkspaceId }): Promise<void>;
   reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,
@@ -649,6 +652,8 @@ export const initialState: AppState = {
   transcripts: {},
   messages: {},
   sessionWorktrees: {},
+  sessionMounts: {},
+  sessionActiveMount: {},
   sessionBranches: {},
   sessionTelemetry: {},
   workspaceSummary: null,

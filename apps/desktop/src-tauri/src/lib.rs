@@ -121,6 +121,7 @@ pub fn run() {
       session_dir::simple_workspace_default_path,
       session_dir::simple_workspace_prepare,
       session_dir::session_dir_create,
+      session_dir::session_dir_remove,
       session_dir::simple_sessions_scan,
       session_dir::simple_session_marker_write,
       session_dir::simple_session_dir_exists,

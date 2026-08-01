@@ -4,10 +4,14 @@ import type { Agent, Session } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 
 type Store = {
+  sessions: ReadonlyArray<Session>;
+  workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: string }>;
   activeLens: Record<string, LensKind | null>;
   selectedAgentId: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionBranches: Record<string, string>;
+  sessionMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveMount: Record<string, string>;
   sessionStudio: Record<string, null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   focusedWorkflowRunId: Record<string, string | null>;
@@ -36,10 +40,14 @@ type PaneShellMockProps = {
 
 const { store, hooks } = vi.hoisted(() => ({
   store: {
+    sessions: [] as ReadonlyArray<Session>,
+    workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
     activeLens: {},
     selectedAgentId: {},
     sessionWorktrees: {},
     sessionBranches: {},
+    sessionMounts: {},
+    sessionActiveMount: {},
     sessionStudio: {},
     sessionPhaseRuns: {},
     focusedWorkflowRunId: {},
@@ -202,10 +210,13 @@ const session = {
 } as unknown as Session;
 
 beforeEach(() => {
+  store.sessions = [session];
   store.activeLens = { [SESSION_ID]: 'agents' };
   store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
   store.sessionWorktrees = {};
   store.sessionBranches = {};
+  store.sessionMounts = {};
+  store.sessionActiveMount = {};
   store.sessionStudio = { [SESSION_ID]: null };
   store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
   store.focusedWorkflowRunId = {};

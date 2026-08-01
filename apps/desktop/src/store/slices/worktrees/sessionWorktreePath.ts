@@ -1,4 +1,5 @@
 import type { SessionId } from '@goodboy/types';
+import { getSessionRepo } from './getSessionRepo';
 import type { GetFn } from './types';
 
 type Params = {
@@ -7,9 +8,9 @@ type Params = {
 };
 
 export const sessionWorktreePath = ({ get, sessionId }: Params): string => {
-  const path = (get().sessionWorktrees[sessionId] ?? [])[0];
-  if (path == null || path.length === 0) {
+  const repo = getSessionRepo({ get, sessionId });
+  if (repo == null || repo.worktreePath.length === 0) {
     throw new Error('this session has no worktree to rewrite');
   }
-  return path;
+  return repo.worktreePath;
 };

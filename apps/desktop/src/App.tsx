@@ -63,7 +63,8 @@ import {
 } from './store';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
-import { useRemoteHostKind } from './features/worktree/useRemoteHostKind';
+import { useWorkspaceRemoteHostKind } from './features/worktree/useWorkspaceRemoteHostKind';
+import { resolveSessionRepo } from './store/slices/worktrees/resolveSessionRepo';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -78,7 +79,7 @@ export const App = () => {
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
-  const remoteKind = useRemoteHostKind(currentWorkspace?.id ?? null);
+  const remoteKind = useWorkspaceRemoteHostKind({ workspaceId: currentWorkspace?.id ?? null });
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'linear',
@@ -656,16 +657,19 @@ export const App = () => {
   }, []);
 
   const currentSessionId = useAppStore((s) => s.currentSessionId);
-  const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
+  const currentSessionWorktree = useAppStore((state) =>
+    currentSessionId == null
+      ? null
+      : (resolveSessionRepo({ state, sessionId: currentSessionId })?.worktreePath ?? null),
+  );
 
   const commitDiffLoader = useCallback(async () => {
     if (!commitDiff) {
       return '';
     }
-    const worktree = currentSessionId ? (sessionWorktrees[currentSessionId]?.[0] ?? null) : null;
-    if (worktree) {
+    if (currentSessionWorktree != null) {
       try {
-        return await worktreeDiffCommit(worktree, commitDiff.sha);
+        return await worktreeDiffCommit(currentSessionWorktree, commitDiff.sha);
       } catch (error) {
         if (commitDiff.repo === '') {
           throw error;
@@ -673,7 +677,7 @@ export const App = () => {
       }
     }
     return ghCommitDiff(commitDiff.repo, commitDiff.sha);
-  }, [commitDiff, currentSessionId, sessionWorktrees]);
+  }, [commitDiff, currentSessionWorktree]);
 
   useKeyboardShortcut('cmd+,', openSettings);
   useKeyboardShortcut('cmd+/', openShortcutHelp);

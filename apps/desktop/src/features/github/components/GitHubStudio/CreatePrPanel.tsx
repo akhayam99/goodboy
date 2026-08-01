@@ -22,6 +22,7 @@ import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpaw
 import { BranchCombobox } from '../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../worktree/worktree';
 import { useAppStore } from '../../../../store';
+import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -46,12 +47,10 @@ export const CreatePrPanel = ({
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
-  const workspaceRoot = useAppStore((s) => {
-    const sess = s.sessions.find((x) => x.id === sessionId);
-    const ws = sess ? s.workspaces.find((w) => w.id === sess.workspaceId) : undefined;
-    return ws?.rootPath ?? null;
-  });
+  const repo = useSessionRepo({ sessionId });
+  const branch = repo?.branch ?? null;
+  const workspaceRoot = repo?.repoRoot ?? null;
+  const memberWorkspaceId = repo?.workspaceId;
   const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
   const workspaceId = session?.workspaceId;
   const workspaceOverrides = useAppStore((s) =>
@@ -98,20 +97,22 @@ export const CreatePrPanel = ({
     }
     let cancelled = false;
     setBranchesLoading(true);
-    void ghBaseBranches(workspaceRoot, workspaceId).then(({ defaultBranch, branches: list }) => {
-      if (cancelled) {
-        return;
-      }
-      setBranches(list);
-      setBranchesLoading(false);
-      if (defaultBranch != null) {
-        setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
-      }
-    });
+    void ghBaseBranches(workspaceRoot, workspaceId, memberWorkspaceId).then(
+      ({ defaultBranch, branches: list }) => {
+        if (cancelled) {
+          return;
+        }
+        setBranches(list);
+        setBranchesLoading(false);
+        if (defaultBranch != null) {
+          setBase((cur) => (cur.trim() === '' ? defaultBranch : cur));
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
-  }, [workspaceRoot, workspaceId]);
+  }, [memberWorkspaceId, workspaceRoot, workspaceId]);
 
   const onCreate = async () => {
     if (busy || title.trim().length === 0) {

@@ -20,6 +20,14 @@ export type WorkspaceMember = Readonly<{
   mountName: string;
 }>;
 
+export type SessionMount = Readonly<{
+  workspaceId: WorkspaceId;
+  mountName: string;
+  worktreePath: string;
+  repoRoot: string;
+  branch: string;
+}>;
+
 export type Workspace = Readonly<{
   id: WorkspaceId;
   name: string;
@@ -98,6 +106,7 @@ export type Session = Readonly<{
   workflowRuns: ReadonlyArray<WorkflowRun>;
   autoRun: boolean;
   titleUserEdited: boolean;
+  activeMountWorkspaceId?: WorkspaceId;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';
@@ -179,6 +188,7 @@ export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab' | 'gith
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
+  mountWorkspaceId?: WorkspaceId;
   provider: SessionExternalTaskProvider;
   externalId: string;
   identifier: string;

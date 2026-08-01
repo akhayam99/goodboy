@@ -42,6 +42,7 @@ import {
   resolveTaskModel,
   runsForWorkflowRun,
 } from '@goodboy/core';
+import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import type {
   AgentEffort,
   AgentRole,
@@ -211,7 +212,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session.id);
-  const sessionWorktree = useAppStore((s) => s.sessionWorktrees?.[session.id]?.[0] ?? null);
+  const sessionWorktree = useSessionRepo({ sessionId: session.id })?.worktreePath ?? null;
   const { showToast } = useToast();
 
   const {

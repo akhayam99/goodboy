@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { listWorktreesForSession, updateSessionWorktreeBranch } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { getSessionRepo } from './getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
@@ -22,22 +23,48 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
     if (!trimmed) {
       return;
     }
-    if (get().sessionBranches[sessionId] === trimmed) {
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null) {
+      return;
+    }
+    if (repo.branch === trimmed) {
       return;
     }
     const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
-    const primary = worktrees[0];
-    if (!primary) {
+    const changedWorktree = worktrees.find(
+      (candidate) => candidate.worktreePath === repo.worktreePath,
+    );
+    if (changedWorktree == null) {
       return;
     }
-    if (primary.branch !== trimmed) {
-      await updateSessionWorktreeBranch(tauriDatabase, sessionId, primary.parallelIndex, trimmed);
+    if (changedWorktree.branch !== trimmed) {
+      await updateSessionWorktreeBranch(
+        tauriDatabase,
+        sessionId,
+        changedWorktree.parallelIndex,
+        trimmed,
+      );
     }
     set((state) => {
       const nextGithub = { ...state.sessionGithub };
       delete nextGithub[sessionId];
+      const mounts = state.sessionMounts[sessionId] ?? [];
+      const shouldUpdateSessionBranch =
+        workspace?.kind !== 'composite' || mounts[0]?.worktreePath === repo.worktreePath;
+      const sessionMounts =
+        workspace?.kind === 'composite'
+          ? {
+              ...state.sessionMounts,
+              [sessionId]: mounts.map((mount) =>
+                mount.worktreePath === repo.worktreePath ? { ...mount, branch: trimmed } : mount,
+              ),
+            }
+          : state.sessionMounts;
       return {
-        sessionBranches: { ...state.sessionBranches, [sessionId]: trimmed },
+        sessionBranches: shouldUpdateSessionBranch
+          ? { ...state.sessionBranches, [sessionId]: trimmed }
+          : state.sessionBranches,
+        sessionMounts,
         sessionGithub: nextGithub,
       };
     });
