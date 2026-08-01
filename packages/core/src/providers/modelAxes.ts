@@ -129,13 +129,16 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
   switch (model.provider) {
     case 'anthropic':
       return {
-        effort: {
-          label: 'Effort',
-          levels: ANTHROPIC_EFFORT_ORDER.map((level) => ({
-            level,
-            available: model.efforts.includes(level),
-          })),
-        },
+        effort:
+          model.efforts.length > 0
+            ? {
+                label: 'Effort',
+                levels: ANTHROPIC_EFFORT_ORDER.map((level) => ({
+                  level,
+                  available: model.efforts.includes(level),
+                })),
+              }
+            : null,
         variant: null,
         toggles: [],
         requiresMaxMode: false,
@@ -159,7 +162,7 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
     case 'opencode':
     case 'openrouter':
       return {
-        effort: effortAxis({ label: 'Variant', efforts: model.efforts }),
+        effort: effortAxis({ label: 'Effort', efforts: model.efforts }),
         variant: null,
         toggles: [],
         requiresMaxMode: false,

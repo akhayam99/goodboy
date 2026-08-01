@@ -12,26 +12,26 @@ export const RoutingStatusControl = ({ label, isCustom, disabled, onReset }: Pro
   const status = isCustom ? 'custom' : 'default';
 
   return (
-    <div className="flex shrink-0 items-center gap-1">
+    <div className="flex w-24 shrink-0 items-center justify-end">
       <Chip
         tone={isCustom ? 'primary' : 'neutral'}
-        label={status}
+        label={status.toUpperCase()}
         ariaLabel={`${label} routing status: ${status}`}
         bordered={false}
-        className={isCustom ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}
+        trailing={
+          isCustom ? (
+            <button
+              type="button"
+              onClick={onReset}
+              disabled={disabled}
+              aria-label="Reset to default"
+              className="inline-flex items-center justify-center rounded-full text-current opacity-70 transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <RotateCcw size={11} aria-hidden />
+            </button>
+          ) : null
+        }
       />
-      {isCustom ? (
-        <button
-          type="button"
-          onClick={onReset}
-          disabled={disabled}
-          aria-label="Reset to default"
-          title="Reset to default"
-          className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <RotateCcw size={12} aria-hidden />
-        </button>
-      ) : null}
     </div>
   );
 };

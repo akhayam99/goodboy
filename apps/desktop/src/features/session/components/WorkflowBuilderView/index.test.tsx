@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Session, Workflow } from '@goodboy/types';
+import type { ModelEffort, Session, Workflow } from '@goodboy/types';
 import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 
 const {
@@ -95,15 +95,23 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     recommendation,
     onProvider,
     onModel,
+    effort,
   }: {
     provider: string;
     model: string;
     recommendation?: { provider?: string; model?: string };
     onProvider: (v: string) => void;
     onModel: (v: string) => void;
+    effort:
+      | { readonly editable: false; readonly value?: ModelEffort }
+      | {
+          readonly editable: true;
+          readonly value: ModelEffort;
+          readonly onChange: (value: ModelEffort) => void;
+        };
   }) => (
     <>
-      <button type="button" onClick={() => onProvider(provider === '' ? 'cursor' : '')}>
+      <button type="button" onClick={() => onProvider(provider === 'cursor' ? '' : 'cursor')}>
         provider:{provider === '' ? 'default' : provider}
       </button>
       <button
@@ -117,6 +125,11 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
       <button type="button" onClick={() => onModel('claude-sonnet-4-6')}>
         model:sonnet
       </button>
+      {effort.editable ? (
+        <button type="button" onClick={() => effort.onChange('xhigh')}>
+          effort:{effort.value}
+        </button>
+      ) : null}
     </>
   ),
 }));
@@ -181,6 +194,7 @@ afterEach(() => {
   vi.clearAllMocks();
   storeState.phaseTemplates = {};
   storeState.sessionPhaseRuns = {};
+  storeState.workspaceOverrides = {};
   storeState.workflowDrafts = {};
 });
 
@@ -453,6 +467,34 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       expect.objectContaining({ autoRun: false, executionMode: 'dynamic' }),
     );
   });
+
+  it('attaches one routing policy for every runtime-decided step', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    fireEvent.click(continueBtn());
+
+    fireEvent.click(screen.getByRole('button', { name: /^provider:anthropic$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^model:auto$/i }));
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.objectContaining({
+        executionMode: 'dynamic',
+        stepRouting: {
+          providerId: 'cursor',
+          model: 'claude-opus-4-6',
+          effort: 'medium',
+        },
+      }),
+    );
+  });
 });
 
 describe('WorkflowBuilderView (preset mode)', () => {
@@ -560,6 +602,31 @@ describe('WorkflowBuilderView (goal affordances)', () => {
     await waitFor(() => expect(goalField().value).toBe('Polished goal.'));
     fireEvent.click(screen.getByRole('button', { name: /undo goal change/i }));
     expect(goalField().value).toBe('rough goal');
+  });
+
+  it('uses the prose polish task model override', async () => {
+    storeState.workspaceOverrides = {
+      'ws-1': {
+        taskModels: {
+          prose_polish: {
+            providerId: 'anthropic',
+            model: 'claude-sonnet-4-6',
+            effort: 'high',
+          },
+        },
+      },
+    };
+    mockPolish.mockResolvedValue('Polished goal.');
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.change(goalField(), { target: { value: 'rough goal' } });
+    fireEvent.click(screen.getByRole('button', { name: /polish goal/i }));
+
+    await waitFor(() =>
+      expect(mockPolish).toHaveBeenCalledWith(
+        expect.objectContaining({ providerId: 'anthropic', model: 'sonnet-4.6', effort: 'high' }),
+        'rough goal',
+      ),
+    );
   });
 
   it('keeps the wording and toasts when polish returns nothing', async () => {
@@ -773,7 +840,7 @@ describe('WorkflowBuilderView (per-step polish)', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /polish step instruction/i })[0]!);
     await waitFor(() =>
       expect(mockPolishStep).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'anthropic' }),
+        expect.objectContaining({ providerId: 'anthropic', model: 'haiku-4.5' }),
         expect.objectContaining({ role: 'scout', instruction: 'scout prefix' }),
       ),
     );
@@ -865,6 +932,23 @@ describe('WorkflowBuilderView (planner model picker)', () => {
 
     expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
       expect.objectContaining({ providerId: 'cursor', model: 'claude-opus-4-6' }),
+    );
+  });
+
+  it('picking planner effort makes PlannerClient receive it', async () => {
+    mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('button', { name: /^effort:high$/i }));
+
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'do something' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+    await waitFor(() => screen.getByText('Ready'));
+
+    expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
+      expect.objectContaining({ effort: 'xhigh' }),
     );
   });
 

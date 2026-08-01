@@ -1,6 +1,7 @@
 import type {
   Agent,
   ModelEffort,
+  OrchestratorRouting,
   ProviderId,
   RoleModelPreferences,
   SessionId,
@@ -24,6 +25,7 @@ type Params = {
   readonly defaultProvider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
   readonly defaultVerbosity?: VerbosityLevel;
+  readonly routingOverride?: OrchestratorRouting;
 };
 
 type PreSpawnWorkflowAgentsResult = {
@@ -42,6 +44,7 @@ export const preSpawnWorkflowAgents = async ({
   defaultProvider,
   roleModels,
   defaultVerbosity,
+  routingOverride,
 }: Params): Promise<PreSpawnWorkflowAgentsResult> => {
   const agents: Agent[] = [];
   const modelOverrides: Record<string, string> = {};
@@ -52,10 +55,11 @@ export const preSpawnWorkflowAgents = async ({
 
   for (const [index, step] of sortedSteps.entries()) {
     const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
-    const provider = step.providerOverride ?? defaultProvider;
+    const provider = routingOverride?.providerId ?? step.providerOverride ?? defaultProvider;
     const model = resolveModelForProvider({
       provider,
       modelId:
+        routingOverride?.model ??
         step.modelOverride ??
         (step.role != null
           ? recommendedModelForRole({
@@ -76,13 +80,15 @@ export const preSpawnWorkflowAgents = async ({
       ...(defaultVerbosity != null && { verbosity: defaultVerbosity }),
       providerOverride: provider,
       modelOverride: model,
-      ...(step.effort != null && { effort: step.effort }),
+      ...(routingOverride?.effort != null && { effort: routingOverride.effort }),
+      ...(routingOverride == null && step.effort != null && { effort: step.effort }),
     });
     providerOverrides[agent.id] = provider;
     modelOverrides[agent.id] = model;
     kindOverrides[agent.id] = kind;
-    if (step.effort != null) {
-      effortOverrides[agent.id] = step.effort;
+    const effort = routingOverride == null ? step.effort : routingOverride.effort;
+    if (effort != null) {
+      effortOverrides[agent.id] = effort;
     }
     agents.push(agent);
   }

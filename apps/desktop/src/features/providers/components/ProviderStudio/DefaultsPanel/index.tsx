@@ -1,12 +1,6 @@
 import { useState } from 'react';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import type {
-  AgentRole,
-  AuxTaskId,
-  OverrideSettings,
-  ProviderId,
-  WorkspaceId,
-} from '@goodboy/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE, TASKS } from '@goodboy/types';
+import type { AgentRole, OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
 import { ROLE_DEFAULTS, isAgentRole } from '@goodboy/core';
 import {
   Divider,
@@ -20,11 +14,11 @@ import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
-import { PROVIDER_ORDER } from '../providerOrder';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -35,48 +29,6 @@ type ProviderParams = {
 };
 
 type DefaultsGroup = 'task' | 'role';
-
-const TASKS: ReadonlyArray<{
-  readonly id: AuxTaskId;
-  readonly label: string;
-  readonly help: string;
-}> = [
-  {
-    id: 'summarizer',
-    label: 'Step summaries',
-    help: 'Condenses each finished step into the summary the next step starts from',
-  },
-  {
-    id: 'branch_naming',
-    label: 'Branch naming',
-    help: 'Turns the session goal into a git branch name when the session is created',
-  },
-  {
-    id: 'plan_generation',
-    label: 'Plan drafting',
-    help: 'Writes step plans in the workflow builder and Plan Studio',
-  },
-  {
-    id: 'agent_naming',
-    label: 'Agent naming',
-    help: 'Titles new agents, and the session itself, from your first message',
-  },
-  {
-    id: 'workflow_orchestrator',
-    label: 'Workflow orchestrator',
-    help: 'Reads each finished step of a dynamic workflow and picks the next one, or ends the run',
-  },
-  {
-    id: 'pr_draft',
-    label: 'PR and MR drafts',
-    help: 'Preselected model for the agent that drafts a pull or merge request',
-  },
-  {
-    id: 'rebase',
-    label: 'Rebase',
-    help: 'Preselected model for the agent that rebases the session branch onto main',
-  },
-];
 
 const ROLES: ReadonlyArray<AgentRole> = Object.keys(ROLE_DEFAULTS).filter(isAgentRole);
 
@@ -168,23 +120,15 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               hint="Governs every task and role below unless it has its own override."
             />
             <FieldRow label="Default provider" help="New sessions start on it and can override it.">
-              <div className="flex max-w-64 flex-wrap justify-end gap-1">
-                {PROVIDER_ORDER.map((providerId) => (
-                  <ProviderChip
-                    key={providerId}
-                    id={providerId}
-                    selected={defaultProviderId === providerId}
-                    disabled={busy || !connectedProviderIds.includes(providerId)}
-                    onClick={() => onDefaultProvider({ providerId })}
-                    trailing={
-                      connectedProviderIds.includes(providerId) ? null : (
-                        <span className="text-2xs uppercase tracking-wide text-warning">
-                          offline
-                        </span>
-                      )
-                    }
-                  />
-                ))}
+              <div className="w-64">
+                <ProviderPicker
+                  connectedProviders={connectedProviderIds}
+                  provider={defaultProviderId}
+                  disabled={busy}
+                  onProvider={(providerId) => onDefaultProvider({ providerId })}
+                  align="end"
+                  ariaLabel="Default provider"
+                />
               </div>
             </FieldRow>
             <p className="text-2xs text-muted-foreground">
@@ -213,13 +157,6 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                         disabled={busy || isDefaultProvider}
                         onClick={() => onToggleRoutingProvider({ providerId })}
                         title={isDefaultProvider ? 'Default provider is always enabled' : undefined}
-                        trailing={
-                          isDefaultProvider ? (
-                            <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
-                              default
-                            </span>
-                          ) : null
-                        }
                       />
                     );
                   })}
@@ -246,7 +183,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                     <TaskModelRow
                       task={task.id}
                       label={task.label}
-                      help={task.help}
+                      help={task.description}
                       preference={overrides.taskModels?.[task.id] ?? null}
                       defaultProviderId={defaultProviderId}
                       connectedProviderIds={connectedProviderIds}

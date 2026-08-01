@@ -63,6 +63,7 @@ export {
   updateWorkflowRunOrchestrationError,
   updateWorkflowRunOrchestratorHints,
   updateWorkflowRunOrchestratorRouting,
+  updateWorkflowRunStepRouting,
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {

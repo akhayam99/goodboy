@@ -240,6 +240,44 @@ describe('orchestrateNextStep', () => {
     expect(invokeWorkflowUpsertSpy.mock.calls[0]![0].steps[1].name).toBe('Scout 2');
   });
 
+  it('spawns every decided step on the routing policy pinned to the run', async () => {
+    decideSpy.mockResolvedValue({
+      decision: {
+        action: 'next',
+        reason: 'Implement it.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'opus-5',
+          effort: 'max',
+        },
+      },
+    });
+    const state = baseState();
+    const current = (state['sessions'] as ReadonlyArray<Session>)[0]!;
+    state['sessions'] = [
+      {
+        ...current,
+        workflowRuns: current.workflowRuns.map((run) => ({
+          ...run,
+          stepRouting: { providerId: 'codex', model: 'gpt-5.5', effort: 'high' },
+        })),
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerOverride: 'codex',
+        modelOverride: 'gpt-5.5',
+        effort: 'high',
+      }),
+    );
+  });
+
   it('emits done and stops without adding a step', async () => {
     decideSpy.mockResolvedValue({
       decision: { action: 'done', reason: 'All required tests pass.' },

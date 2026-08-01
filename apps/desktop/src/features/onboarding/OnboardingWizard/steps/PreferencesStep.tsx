@@ -1,35 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type {
-  OverrideSettings,
-  ProviderId,
-  VerbosityLevel,
-  WorkspaceId,
-  WorkspaceKind,
-} from '@goodboy/types';
+import type { OverrideSettings, VerbosityLevel, WorkspaceId, WorkspaceKind } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { Button, EmptyState, FieldRow, Switch, cn } from '@goodboy/ui';
 import { FolderGit2, GitBranch, SlidersHorizontal, Sparkles } from 'lucide-react';
-import { ProviderChip } from '../../../providers/components/ProviderChip';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { ProviderPicker } from '../../../../shared/components/RoutingPicker/ProviderPicker';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
   readonly workspaceKind?: WorkspaceKind | null;
 };
-
-const PROVIDER_OPTIONS: ReadonlyArray<ProviderId> = [
-  'anthropic',
-  'cursor',
-  'codex',
-  'gemini',
-  'opencode',
-  'openrouter',
-];
 
 const sanitizePrefix = (input: string): string =>
   input
@@ -199,24 +184,13 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
           layout="stacked"
         >
           <div className="flex flex-col gap-2.5">
-            <div className="flex flex-wrap gap-1.5">
-              {PROVIDER_OPTIONS.map((id) => (
-                <ProviderChip
-                  key={id}
-                  id={id}
-                  selected={defaultProvider === id}
-                  disabled={busy || !connectedProviderIds.includes(id)}
-                  onClick={() => void persistOverrides({ defaultProviderId: id })}
-                  trailing={
-                    connectedProviderIds.includes(id) ? null : (
-                      <span className="text-[9px] uppercase tracking-wide text-warning">
-                        offline
-                      </span>
-                    )
-                  }
-                />
-              ))}
-            </div>
+            <ProviderPicker
+              connectedProviders={connectedProviderIds}
+              provider={defaultProvider}
+              disabled={busy}
+              onProvider={(providerId) => void persistOverrides({ defaultProviderId: providerId })}
+              ariaLabel="Default provider"
+            />
             <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-muted-foreground">
               <Sparkles size={12} aria-hidden className="mt-0.5 shrink-0 text-primary" />
               Goodboy routes work across the providers you connect, by priority and budget.

@@ -90,6 +90,22 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
   ),
 }));
 
+vi.mock('../../../../../shared/components/RoutingPicker/ProviderPicker', () => ({
+  ProviderPicker: ({
+    ariaLabel,
+    provider,
+    onProvider,
+  }: {
+    ariaLabel: string;
+    provider: string;
+    onProvider: (provider: string) => void;
+  }) => (
+    <button type="button" aria-label={ariaLabel} onClick={() => onProvider('cursor')}>
+      {provider}
+    </button>
+  ),
+}));
+
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
   defaultWorkflowId: null,
@@ -120,6 +136,7 @@ const TASK_LABELS = [
   'Step summaries',
   'Branch naming',
   'Plan drafting',
+  'Prose polish',
   'Agent naming',
   'Workflow orchestrator',
   'PR and MR drafts',
@@ -132,8 +149,8 @@ describe('DefaultsPanel', () => {
   it('uses connected providers as the routing pool and locks the default', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    const anthropic = screen.getAllByRole('button', { name: 'anthropic' })[1]!;
-    const cursor = screen.getAllByRole('button', { name: 'cursor' })[1]!;
+    const anthropic = screen.getByRole('button', { name: 'anthropic' });
+    const cursor = screen.getByRole('button', { name: 'cursor' });
 
     expect(anthropic.getAttribute('aria-pressed')).toBe('true');
     expect(anthropic.hasAttribute('disabled')).toBe(true);
@@ -143,7 +160,7 @@ describe('DefaultsPanel', () => {
   it('persists a restricted routing pool', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'cursor' })[1]!);
+    fireEvent.click(screen.getByRole('button', { name: 'cursor' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
@@ -157,7 +174,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'cursor' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Default provider' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
@@ -185,10 +202,12 @@ describe('DefaultsPanel', () => {
       );
     }
     expect(screen.queryByText(/auto/)).toBeNull();
-    expect(screen.getByLabelText('Step summaries routing status: default')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: default').textContent).toBe(
+      'DEFAULT',
+    );
 
     openRolesTab();
-    expect(screen.getByLabelText('Planner routing status: default')).toBeDefined();
+    expect(screen.getByLabelText('Planner routing status: default').textContent).toBe('DEFAULT');
   });
 
   it('marks a task override as custom and resets it to default', async () => {
@@ -207,7 +226,9 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Step summaries routing status: custom')).toBeDefined();
+    expect(screen.getByLabelText('Step summaries routing status: custom').textContent).toBe(
+      'CUSTOM',
+    );
     const reset = screen.getByRole('button', { name: 'Reset to default' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);
@@ -411,12 +432,15 @@ describe('DefaultsPanel', () => {
     expect(screen.queryByText('Summaries')).toBeNull();
   });
 
-  it('bounds the default provider and routing pool chip rows so they wrap instead of squeezing the label', () => {
+  it('bounds the default provider picker and routing pool without squeezing the label', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    const anthropicChips = screen.getAllByRole('button', { name: 'anthropic' });
-    expect(anthropicChips[0]!.parentElement?.className).toContain('max-w-64');
-    expect(anthropicChips[1]!.parentElement?.className).toContain('max-w-64');
+    expect(screen.getByRole('button', { name: 'Default provider' }).parentElement?.className).toBe(
+      'w-64',
+    );
+    expect(screen.getByRole('button', { name: 'anthropic' }).parentElement?.className).toContain(
+      'max-w-64',
+    );
   });
 
   it('shows the override count for each group in its tab label', () => {

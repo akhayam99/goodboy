@@ -165,6 +165,7 @@ export type {
   TaskModelPreferences,
   VerbosityLevel,
 } from './settings';
+export { TASKS } from './settings';
 export type { BranchCommit, DiffView, WorktreeDiffScope, WorktreeStatus } from './worktree';
 export type {
   ConfigBundle,

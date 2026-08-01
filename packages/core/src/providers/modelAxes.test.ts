@@ -4,6 +4,8 @@ import { ANTHROPIC_CATALOG } from './claude/catalog';
 import { CODEX_CATALOG } from './codex/catalog';
 import { CURSOR_CATALOG } from './cursor/catalog';
 import { modelAxes } from './modelAxes';
+import { OPENCODE_CATALOG } from './opencode/catalog';
+import { OPENROUTER_CATALOG } from './openrouter/catalog';
 import { selectionRequiresMaxMode } from './selectionRequiresMaxMode';
 
 describe('modelAxes', () => {
@@ -82,20 +84,29 @@ describe('modelAxes', () => {
     ]);
   });
 
-  it('renders a fully unavailable effort row for anthropic models without authored efforts', () => {
+  it('omits the effort axis for anthropic models without authored efforts', () => {
     const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'haiku-4.5');
     if (model == null) {
       throw new Error('missing anthropic haiku-4.5');
     }
     const axes = modelAxes({ model, selection: { key: model.key } });
-    expect(axes.effort?.levels.map((entry) => entry.level)).toEqual([
-      'low',
-      'medium',
-      'high',
-      'xhigh',
-      'max',
-    ]);
-    expect(axes.effort?.levels.every((entry) => entry.available === false)).toBe(true);
+    expect(axes.effort).toBeNull();
+  });
+
+  it('uses Effort as the effort axis label across providers', () => {
+    const models = [
+      ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'opus-5'),
+      CODEX_CATALOG[0],
+      CURSOR_CATALOG.find((candidate) => candidate.key === 'opus-5'),
+      OPENCODE_CATALOG[0],
+      OPENROUTER_CATALOG[0],
+    ];
+    for (const model of models) {
+      if (model == null) {
+        throw new Error('missing effort axis fixture');
+      }
+      expect(modelAxes({ model, selection: { key: model.key } }).effort?.label).toBe('Effort');
+    }
   });
 
   it('reports Max Mode from the resolved cursor combo', () => {

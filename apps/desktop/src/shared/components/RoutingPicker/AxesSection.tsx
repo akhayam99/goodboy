@@ -30,7 +30,7 @@ export const AxesSection = ({
   onToggle,
 }: Props) => {
   const hasNoAxes = axes.effort == null && axes.variant == null && axes.toggles.length === 0;
-  const toggleRowLabel = axes.variant == null ? 'Variant' : 'Modes';
+  const toggleRowLabel = 'Modes';
   return (
     <section aria-label="Tuning" className="flex flex-col gap-2.5 p-3">
       {hasNoAxes && (

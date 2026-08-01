@@ -69,4 +69,47 @@ describe('preSpawnWorkflowAgents', () => {
     expect(insert['modelOverride']).not.toBe('');
     expect(insert['providerOverride']).toBe('anthropic');
   });
+
+  it('gives a run policy precedence over the decided step routing', async () => {
+    const result = await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [
+        step({
+          providerOverride: 'anthropic',
+          modelOverride: 'opus-5',
+          effort: 'max',
+        }),
+      ],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+      routingOverride: { providerId: 'codex', model: 'gpt-5.5', effort: 'high' },
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert).toMatchObject({
+      providerOverride: 'codex',
+      modelOverride: 'gpt-5.5',
+      effort: 'high',
+    });
+    expect(result.effortOverrides['agent-1']).toBe('high');
+  });
+
+  it('does not carry a decided effort into a policy model with no effort', async () => {
+    const result = await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [step({ modelOverride: 'opus-5', effort: 'max' })],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+      routingOverride: { providerId: 'anthropic', model: 'haiku-4.5' },
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['modelOverride']).toBe('haiku-4.5');
+    expect(insert['effort']).toBeUndefined();
+    expect(result.effortOverrides['agent-1']).toBeUndefined();
+  });
 });

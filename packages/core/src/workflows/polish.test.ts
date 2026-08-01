@@ -29,6 +29,7 @@ describe('parsePolishedGoal', () => {
 describe('polishWorkflowGoal', () => {
   const deps = (stdout: string, exitCode = 0): GoalPolishDeps => ({
     providerId: 'anthropic',
+    model: 'sonnet-4.6',
     invokeFn: vi.fn().mockResolvedValue({ stdout, stderr: '', exitCode }),
   });
 
@@ -40,7 +41,12 @@ describe('polishWorkflowGoal', () => {
 
   it('parses the anthropic result envelope', async () => {
     const stdout = JSON.stringify({ result: '<<goal>>Polished goal.<</goal>>' });
-    expect(await polishWorkflowGoal(deps(stdout), 'rough goal')).toBe('Polished goal.');
+    const d = deps(stdout);
+    expect(await polishWorkflowGoal(d, 'rough goal')).toBe('Polished goal.');
+    expect(d.invokeFn).toHaveBeenCalledWith(
+      'summarize_session',
+      expect.objectContaining({ args: expect.objectContaining({ model: 'claude-sonnet-4-6' }) }),
+    );
   });
 
   it('returns null on non-zero exit code', async () => {

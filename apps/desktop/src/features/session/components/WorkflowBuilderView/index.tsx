@@ -47,6 +47,7 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import type {
   AgentEffort,
   AgentRole,
+  OrchestratorRouting,
   ProviderId,
   RoleModelPreferences,
   Session,
@@ -83,6 +84,7 @@ import { LaunchToggleRow } from './parts/LaunchToggleRow';
 import { StageHeading } from './parts/StageHeading';
 import { StepperRail } from './parts/StepperRail';
 import { TriggerButton } from './parts/TriggerButton';
+import { WorkflowStepRoutingPicker } from '../../../workflows/components/WorkflowStepRoutingPicker';
 
 type Props = {
   readonly session: Session;
@@ -258,6 +260,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [stage, setStage] = useState<Stage>(() => initialStage(initialDraft));
   const [plannerProviderOverride, setPlannerProviderOverride] = useState<ProviderId | ''>('');
   const [plannerModelOverride, setPlannerModelOverride] = useState('');
+  const [plannerEffortOverride, setPlannerEffortOverride] = useState<EffortLevel>(PLANNER_EFFORT);
+  const [stepRouting, setStepRouting] = useState<OrchestratorRouting | null>(null);
 
   const providerId =
     providers.find((p) => p.id === session.providerOverride)?.id ??
@@ -270,6 +274,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const resolvedPlanTaskModel = useMemo(
     () => resolveTaskModel('plan_generation', workspaceOverrides?.taskModels, providerId),
+    [workspaceOverrides, providerId],
+  );
+
+  const resolvedProsePolishTaskModel = useMemo(
+    () => resolveTaskModel('prose_polish', workspaceOverrides?.taskModels, providerId),
     [workspaceOverrides, providerId],
   );
 
@@ -377,6 +386,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSteps([]);
     setSaveAsPreset(false);
     setAutoRun(false);
+    setStepRouting(null);
     setError(null);
     setStage(0);
     setExpandedKey(null);
@@ -471,7 +481,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       const polished = await polishStepInstruction(
         {
-          providerId,
+          ...resolvedProsePolishTaskModel,
           invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
@@ -526,7 +536,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       const polished = await polishWorkflowGoal(
         {
-          providerId,
+          ...resolvedProsePolishTaskModel,
           invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
@@ -561,6 +571,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       ...(triggerMode === 'after_run' && after && { chainAfterId: after }),
       ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
       ...(mode === 'dynamic' && { executionMode: 'dynamic' as const }),
+      ...(mode === 'dynamic' && stepRouting != null && { stepRouting }),
     };
   };
 
@@ -577,7 +588,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       const effectiveModel =
         plannerModelOverride !== '' ? plannerModelOverride : plannerRecommendedModel;
-      const taskModel = { providerId: plannerEffectiveProviderId, model: effectiveModel };
+      const taskModel = {
+        providerId: plannerEffectiveProviderId,
+        model: effectiveModel,
+        effort: plannerEffortOverride,
+      };
       const client = new PlannerClient({
         ...taskModel,
         invokeFn: invoke,
@@ -1074,7 +1089,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 connectedProviders={connectedProviders}
                                 provider={plannerProviderOverride}
                                 model={plannerModelOverride}
-                                effort={{ editable: false, value: PLANNER_EFFORT }}
+                                effort={{
+                                  editable: true,
+                                  value: plannerEffortOverride,
+                                  onChange: setPlannerEffortOverride,
+                                }}
                                 recommendation={{
                                   provider: resolvedPlanTaskModel.providerId,
                                   model: plannerRecommendedModel,
@@ -1148,6 +1167,16 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           your process, prior outputs, and open questions before choosing what comes
                           next.
                         </p>
+                        <div className="flex flex-col gap-1">
+                          <span className={SECTION_LABEL_CLS}>Step agent policy</span>
+                          <WorkflowStepRoutingPicker
+                            connectedProviders={connectedProviders}
+                            defaultProvider={providerId}
+                            routing={stepRouting}
+                            disabled={blocked}
+                            onChange={setStepRouting}
+                          />
+                        </div>
                       </div>
                     ) : showSteps ? (
                       <div className="flex flex-col gap-3">

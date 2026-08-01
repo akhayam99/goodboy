@@ -18,6 +18,7 @@ import {
   updateWorkflowOrder,
   updateWorkflowRunOrchestrationOutcome,
   updateWorkflowRunOrchestratorRouting,
+  updateWorkflowRunStepRouting,
 } from './session-workflow';
 import { listSessionsForWorkspace } from './session';
 
@@ -407,6 +408,44 @@ describe('session_workflows trigger-mode queries', () => {
       ).toBeUndefined();
     });
 
+    it('round-trips the step routing policy pinned on the run and clears it', async () => {
+      await attachDynamic();
+      await updateWorkflowRunStepRouting(db, 'run-1' as WorkflowRunId, {
+        providerId: 'codex',
+        model: 'gpt-5.6-terra',
+        effort: 'high',
+      });
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.stepRouting).toEqual({
+        providerId: 'codex',
+        model: 'gpt-5.6-terra',
+        effort: 'high',
+      });
+      await updateWorkflowRunStepRouting(db, 'run-1' as WorkflowRunId, null);
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.stepRouting).toBeUndefined();
+    });
+
+    it('persists the step routing policy when the run is attached', async () => {
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-1' as WorkflowRunId,
+        workflowId,
+        true,
+        NOW,
+        undefined,
+        'immediate',
+        undefined,
+        'dynamic',
+        { providerId: 'cursor', model: 'composer-2.5', effort: 'medium' },
+      );
+
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.stepRouting).toEqual({
+        providerId: 'cursor',
+        model: 'composer-2.5',
+        effort: 'medium',
+      });
+    });
+
     it('carries the reason and the routing through a reorder', async () => {
       await attachDynamic();
       await attachWorkflowToSession(
@@ -422,6 +461,10 @@ describe('session_workflows trigger-mode queries', () => {
         providerId: 'codex',
         model: 'gpt-5.6',
       });
+      await updateWorkflowRunStepRouting(db, 'run-1' as WorkflowRunId, {
+        providerId: 'cursor',
+        model: 'composer-2.5',
+      });
       await updateWorkflowOrder(
         db,
         sessionId,
@@ -433,6 +476,7 @@ describe('session_workflows trigger-mode queries', () => {
       )!;
       expect(run.orchestrationReason).toBe('all set');
       expect(run.orchestratorRouting).toEqual({ providerId: 'codex', model: 'gpt-5.6' });
+      expect(run.stepRouting).toEqual({ providerId: 'cursor', model: 'composer-2.5' });
     });
   });
 
@@ -499,6 +543,11 @@ describe('session hydration carries the orchestrator state', () => {
       model: 'gpt-5.6',
       effort: 'high',
     });
+    await updateWorkflowRunStepRouting(db, 'run-1' as WorkflowRunId, {
+      providerId: 'cursor',
+      model: 'composer-2.5',
+      effort: 'medium',
+    });
 
     const sessions = await listSessionsForWorkspace(db, workspaceId);
     const run = sessions[0]!.workflowRuns[0]!;
@@ -508,6 +557,11 @@ describe('session hydration carries the orchestrator state', () => {
       providerId: 'codex',
       model: 'gpt-5.6',
       effort: 'high',
+    });
+    expect(run.stepRouting).toEqual({
+      providerId: 'cursor',
+      model: 'composer-2.5',
+      effort: 'medium',
     });
   });
 });

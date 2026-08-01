@@ -1,7 +1,7 @@
-import type { ProviderId } from '@goodboy/types';
+import type { TaskModelPreference } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
-import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
+import { getDefaultBinary } from '../providers/cli-defaults';
 
 const GOAL_REWRITE_SYSTEM_PROMPT = `You clean the "goal" note for an AI coding session that is driven by a multi-step agent workflow. Each workflow step runs as its own dedicated agent, so the goal note must describe ONLY the desired end result, never the process used to reach it.
 
@@ -22,8 +22,7 @@ export type GoalRewriteInput = {
   readonly stepNames: ReadonlyArray<string>;
 };
 
-export type GoalRewriteDeps = {
-  readonly providerId: ProviderId;
+export type GoalRewriteDeps = TaskModelPreference & {
   readonly binary?: string;
   readonly workingDir?: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
@@ -53,7 +52,8 @@ export const rewriteWorkflowGoal = async (
 
   const result = await runAuxOneShot({
     providerId: deps.providerId,
-    model: getCheapModel(deps.providerId),
+    model: deps.model,
+    ...(deps.effort != null && { effort: deps.effort }),
     binary: deps.binary ?? getDefaultBinary(deps.providerId),
     userMessage: buildGoalRewriteUserPrompt(input),
     systemPrompt: GOAL_REWRITE_SYSTEM_PROMPT,

@@ -77,21 +77,25 @@ describe('PreferencesStep', () => {
   describe('default provider picker', () => {
     it('disables offline providers and marks them as offline', () => {
       render(<PreferencesStep workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /default provider/i }));
       const codex = screen.getByRole('button', { name: /codex/i }) as HTMLButtonElement;
       const gemini = screen.getByRole('button', { name: /gemini/i }) as HTMLButtonElement;
       expect(codex.disabled).toBe(true);
       expect(gemini.disabled).toBe(true);
-      expect(screen.getAllByText(/offline/i).length).toBe(4);
+      expect(codex.getAttribute('title')).toContain('not connected');
+      expect(gemini.getAttribute('title')).toContain('not connected');
     });
 
     it('leaves connected providers enabled', () => {
       render(<PreferencesStep workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /default provider/i }));
       const cursor = screen.getByRole('button', { name: /cursor/i }) as HTMLButtonElement;
       expect(cursor.disabled).toBe(false);
     });
 
     it('persists the picked provider through setWorkspaceOverrides', async () => {
       render(<PreferencesStep workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /default provider/i }));
       fireEvent.click(screen.getByRole('button', { name: /cursor/i }));
       await waitFor(() =>
         expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
