@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 
 type Store = {
@@ -94,7 +94,9 @@ describe('LinkedWorkSection', () => {
     expect(prListener).not.toHaveBeenCalled();
     expect(mocks.openUrl).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getAllByRole('link', { name: 'Open in GitHub' })[1]!);
+    const secondIssueRow = screen.getByRole('button', { name: /#9 Second issue/i }).closest('div');
+    expect(secondIssueRow).not.toBeNull();
+    fireEvent.click(within(secondIssueRow!).getByRole('link', { name: 'Open in GitHub' }));
     expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/issues/9');
   });
 

@@ -5,8 +5,8 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
+import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
-import { LinkedWorkRow } from './LinkedWorkRow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -79,9 +79,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
         {linkedIssues.map((issue) => (
           <LinkedWorkRow
             key={issue.url}
-            provider="GitHub"
-            icon={GitBranch}
-            tone="info"
+            leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
             identifier={`#${issue.number}`}
             title={issue.title ?? 'GitHub issue'}
             onClick={() =>
