@@ -30,6 +30,7 @@ import type {
   SessionBudget,
   SessionExternalTask,
   SessionId,
+  SessionMount,
   SessionViewPrefs,
   Skill,
   StepDef,
@@ -183,6 +184,8 @@ export type AppState = UpdaterState & {
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
   readonly sessionWorktrees: Readonly<Record<string, ReadonlyArray<string>>>;
+  readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMount>>>;
+  readonly sessionActiveMount: Readonly<Record<string, WorkspaceId>>;
   readonly sessionBranches: Readonly<Record<string, string>>;
   readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
   readonly workspaceSummary: TelemetrySummary | null;

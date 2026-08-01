@@ -20,6 +20,14 @@ export type WorkspaceMember = Readonly<{
   mountName: string;
 }>;
 
+export type SessionMount = Readonly<{
+  workspaceId: WorkspaceId;
+  mountName: string;
+  worktreePath: string;
+  repoRoot: string;
+  branch: string;
+}>;
+
 export type Workspace = Readonly<{
   id: WorkspaceId;
   name: string;

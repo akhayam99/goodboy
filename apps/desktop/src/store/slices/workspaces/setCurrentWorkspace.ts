@@ -2,6 +2,7 @@ import type {
   Agent,
   IsoDateTime,
   ProviderRunId,
+  SessionMount,
   SessionExternalTask,
   TurnState,
   Workflow,
@@ -61,6 +62,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       sessionSlots: {},
       slotHistory: {},
       sessionWorktrees: {},
+      sessionMounts: {},
+      sessionActiveMount: {},
       sessionBranches: {},
       sessionExternalTasks: {},
       sessionPhaseRuns: {},
@@ -140,11 +143,35 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
             })
           : loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
+      const sessionMounts: Record<string, ReadonlyArray<SessionMount>> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
       for (const s of sessions) {
         const rows = worktreesBySession.get(s.id) ?? [];
+        sessionMounts[s.id] = [];
+        if (workspace?.kind === 'composite') {
+          sessionMounts[s.id] = rows.flatMap((row) => {
+            if (row.mountWorkspaceId == null) {
+              return [];
+            }
+            const member = workspace.members?.find(
+              (candidate) => candidate.workspaceId === row.mountWorkspaceId,
+            );
+            if (member == null) {
+              return [];
+            }
+            return [
+              {
+                workspaceId: row.mountWorkspaceId,
+                mountName: row.mountName ?? member.mountName,
+                worktreePath: row.worktreePath,
+                repoRoot: member.rootPath,
+                branch: row.branch,
+              },
+            ];
+          });
+        }
         if (rows.length > 0) {
           sessionWorktrees[s.id] = rows.map((r) => r.worktreePath);
           const primaryRow = rows[0];
@@ -167,6 +194,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       set((state) => ({
         sessions,
         sessionWorktrees,
+        sessionMounts,
         sessionBranches,
         sessionPhaseRuns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },

@@ -218,6 +218,7 @@ export type AppActions = {
     sessionId: SessionId,
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
+  setSessionActiveMount(input: { sessionId: SessionId; workspaceId: WorkspaceId }): void;
   reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,
@@ -649,6 +650,8 @@ export const initialState: AppState = {
   transcripts: {},
   messages: {},
   sessionWorktrees: {},
+  sessionMounts: {},
+  sessionActiveMount: {},
   sessionBranches: {},
   sessionTelemetry: {},
   workspaceSummary: null,
