@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { EmptyState, Markdown } from '@goodboy/ui';
-import { FileText, MessageSquare, MousePointerClick } from 'lucide-react';
+import { FileText, MessageSquare } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
@@ -21,6 +21,7 @@ import { goalFromIssue } from '../goal-from-issue';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
 import { useLinearIssueComments } from '../useLinearIssueComments';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type IssueSection = 'overview' | 'conversation';
 
@@ -112,7 +113,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
-          icon={MousePointerClick}
+          icon={CONCEPT_ICONS.linear}
           title="No issue selected"
           description="Pick an issue to see its details and launch a session."
         />

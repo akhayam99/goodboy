@@ -13,7 +13,7 @@ import {
   Textarea,
 } from '@goodboy/ui';
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
-import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -194,7 +194,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
     <div className="flex flex-col gap-3">
       <SectionHeader
         label="Skills"
-        icon={<SECTION_ICONS.skills size={13} aria-hidden />}
+        icon={<CONCEPT_ICONS.skills size={13} aria-hidden />}
         hint="Reusable prompt fragments agents can opt into."
         action={
           <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
 
       {skills.length === 0 ? (
         <EmptyState
-          icon={SECTION_ICONS.skills}
+          icon={CONCEPT_ICONS.skills}
           title="No skills yet"
           description="A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk."
         />

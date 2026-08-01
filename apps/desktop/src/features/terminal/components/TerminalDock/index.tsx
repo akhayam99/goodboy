@@ -3,6 +3,7 @@ import { SquareTerminal } from 'lucide-react';
 import { Button, Divider, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
 import {
   GenericTerminalPanel,
@@ -115,7 +116,7 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
         <EmptyState
           bordered
           tone="info"
-          icon={SquareTerminal}
+          icon={CONCEPT_ICONS.terminal}
           title="No terminal"
           description="Open a terminal to run commands in this worktree."
           action={

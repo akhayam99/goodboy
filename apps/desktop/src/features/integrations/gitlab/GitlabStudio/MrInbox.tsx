@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
-import { GitMerge, Inbox, Search } from 'lucide-react';
+import { GitMerge, Search } from 'lucide-react';
 import type { GitlabMergeRequest } from '../client';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { GitlabMrGroup } from './useGitlabMrs';
 
 type Props = {
@@ -79,7 +80,7 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error }: Props
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
+            icon={CONCEPT_ICONS.gitlab}
             title={query.trim() === '' ? 'Inbox clear' : 'No matching merge requests'}
             description={
               query.trim() === ''

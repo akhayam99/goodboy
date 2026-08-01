@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { Bot, CircleCheck } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { EmptyState } from '@goodboy/ui';
 import type {
   Agent,
@@ -31,6 +31,7 @@ import {
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from './PaneShell';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
 
@@ -321,7 +322,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         <EmptyState
           bordered
           tone="success"
-          icon={CircleCheck}
+          icon={CONCEPT_ICONS.questions}
           title="No open questions"
           description="When an agent needs a decision, it shows up here."
         />

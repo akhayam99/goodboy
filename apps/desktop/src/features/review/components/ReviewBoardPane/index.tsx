@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
 import { Divider, EmptyState, ResizeHandle, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -14,6 +13,7 @@ import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
 import { useReviewDiff } from './useReviewDiff';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -157,7 +157,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
               <EmptyState
                 bordered
                 tone="success"
-                icon={CheckCircle2}
+                icon={CONCEPT_ICONS.diff}
                 title="No changes in this pull request"
                 description="The diff is empty, nothing to review."
               />

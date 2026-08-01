@@ -8,6 +8,7 @@ import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import type { CommentThread } from '../../../comment-threads';
 import type { ResolverLink } from '../../../../session/resolver-linkage';
 import { useAppStore } from '../../../../../store';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { aggregateConfig, defaultConfig, type CardConfig } from './config';
 import { isClaimedLink } from './isClaimedLink';
 import { ResolveCard } from './ResolveCard';
@@ -73,7 +74,7 @@ export const ResolveBoard = ({
       <EmptyState
         bordered
         tone="neutral"
-        icon={Sparkles}
+        icon={CONCEPT_ICONS.resolve}
         title="Nothing to resolve"
         description="Open review comments will appear here."
       />

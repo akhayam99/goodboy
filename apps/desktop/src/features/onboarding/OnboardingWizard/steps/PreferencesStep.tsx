@@ -8,13 +8,14 @@ import type {
   WorkspaceKind,
 } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import { Button, FieldRow, Switch, cn } from '@goodboy/ui';
+import { Button, EmptyState, FieldRow, Switch, cn } from '@goodboy/ui';
 import { FolderGit2, GitBranch, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { ProviderChip } from '../../../providers/components/ProviderChip';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
@@ -53,31 +54,26 @@ export const PreferencesStep = ({ workspaceId, workspaceKind = 'repo' }: Props) 
       </div>
 
       {workspaceId === null ? (
-        <EmptyState />
+        <EmptyState
+          bordered
+          icon={CONCEPT_ICONS.workspace}
+          title="Add a workspace first to set its defaults."
+          action={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'))}
+            >
+              <FolderGit2 size={14} aria-hidden /> Add workspace
+            </Button>
+          }
+        />
       ) : (
         <PreferencesForm workspaceId={workspaceId} isSimple={workspaceKind === 'simple'} />
       )}
     </div>
   );
 };
-
-const EmptyState = () => (
-  <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border border-border-soft/40 bg-subtle/20 px-4 py-6 text-center">
-    <span className="flex size-10 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-muted-foreground">
-      <FolderGit2 size={18} aria-hidden />
-    </span>
-    <p className="text-xs leading-relaxed text-muted-foreground">
-      Add a workspace first to set its defaults.
-    </p>
-    <Button
-      variant="secondary"
-      size="sm"
-      onClick={() => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'))}
-    >
-      <FolderGit2 size={14} aria-hidden /> Add workspace
-    </Button>
-  </div>
-);
 
 type FormProps = {
   readonly workspaceId: WorkspaceId;

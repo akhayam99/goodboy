@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ScrollFade, SegmentedTabs } from '@goodboy/ui';
-import { TrendingUp } from 'lucide-react';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
@@ -34,7 +34,7 @@ export const ImpactStudio = ({ workspaceId, workspaceName, onClose }: Props) => 
 
   return (
     <StudioShell
-      icon={TrendingUp}
+      icon={CONCEPT_ICONS.impact}
       title="Impact studio"
       workspaceName={workspaceName}
       closeLabel="close impact studio"

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { IntegrationGlyph, type IntegrationGlyphProvider } from '../IntegrationGlyph';
+import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { integrationLabel, type IntegrationGlyphProvider } from '../IntegrationGlyph';
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;
@@ -8,13 +10,12 @@ type Props = {
 };
 
 export const IntegrationConnectPanel = ({ provider, description, children }: Props) => (
-  <div className="w-full max-w-md rounded-lg border border-border-soft bg-background p-5 shadow-sm">
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col items-center gap-2 text-center">
-        <IntegrationGlyph provider={provider} size={24} />
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-      {children}
-    </div>
-  </div>
+  <EmptyState
+    bordered
+    icon={CONCEPT_ICONS[provider]}
+    title={`Connect ${integrationLabel({ provider })}`}
+    description={description}
+    className="w-full max-w-md bg-background p-5 shadow-sm"
+    action={children}
+  />
 );

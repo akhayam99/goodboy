@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { MessageSquareDiff } from 'lucide-react';
 import { EmptyState, Eyebrow, ScrollFade } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { DraftCard } from './DraftCard';
 
 type Props = {
@@ -36,7 +36,7 @@ export const DraftsPanel = ({ drafts, onEdit, onDiscard }: Props) => {
       {drafts.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={MessageSquareDiff}
+            icon={CONCEPT_ICONS.review}
             title="No draft comments yet"
             description="Ask the agent to draft comments, or click a diff line."
           />

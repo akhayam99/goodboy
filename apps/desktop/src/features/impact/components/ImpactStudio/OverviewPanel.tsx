@@ -1,7 +1,7 @@
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { TrendingUp } from 'lucide-react';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { QueryResult } from '../../hooks/useImpactMetrics';
 import { formatHours } from '../../utils/formatHours';
 import { ErrorStrip } from './ErrorStrip';
@@ -57,7 +57,7 @@ export const OverviewPanel = ({
       {isLoading && data === null ? <PanelLoading /> : null}
       {data !== null && data.sessionCount === 0 ? (
         <EmptyState
-          icon={TrendingUp}
+          icon={CONCEPT_ICONS.impact}
           title="No activity in this window"
           description="Run sessions to see shipped outcomes, flow time, and efficiency."
           bordered

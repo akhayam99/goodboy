@@ -1,5 +1,5 @@
 import { Bug, GitBranch, GitFork, Link2, ListTodo } from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
+import { EmptyState, Eyebrow } from '@goodboy/ui';
 import type { SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -8,6 +8,7 @@ import { ExternalRefActions } from '../../../../shared/components/ExternalRefAct
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -120,9 +121,11 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
           />
         ))}
         {!hasLinkedWork ? (
-          <p className="rounded-lg bg-muted/20 px-3.5 py-2.5 text-sm text-muted-foreground">
-            No linked issues or tasks yet.
-          </p>
+          <EmptyState
+            icon={CONCEPT_ICONS.integrations}
+            title="No linked issues or tasks yet."
+            className="items-start bg-muted/20 px-3.5 py-2.5 text-left"
+          />
         ) : null}
       </div>
     </div>

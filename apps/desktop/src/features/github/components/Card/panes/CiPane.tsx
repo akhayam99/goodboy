@@ -1,7 +1,8 @@
 import type { PrCheckRun, PullRequestState } from '@goodboy/types';
+import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { formatDuration } from '../lib';
 import { CheckConclusionIcon } from '../parts/CheckConclusionIcon';
-import { EmptyRow } from '../parts/EmptyRow';
 
 type Props = {
   readonly checks: ReadonlyArray<PrCheckRun>;
@@ -12,11 +13,19 @@ type Props = {
 export const CiPane = ({ checks, pr, onOpenUrl }: Props) => {
   if (checks.length === 0) {
     return (
-      <EmptyRow
-        text="No CI runs yet"
-        actionUrl={pr.url}
-        actionLabel="view on GitHub"
-        onOpenUrl={onOpenUrl}
+      <EmptyState
+        icon={CONCEPT_ICONS.checks}
+        title="No CI runs yet"
+        className="items-start px-0 py-0 text-left"
+        action={
+          <button
+            type="button"
+            onClick={() => onOpenUrl(pr.url)}
+            className="text-2xs text-muted-foreground hover:text-foreground"
+          >
+            View on GitHub
+          </button>
+        }
       />
     );
   }

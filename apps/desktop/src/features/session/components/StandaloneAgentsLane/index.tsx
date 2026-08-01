@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AdHocRow } from '../../../workspace/components/WorkspacesSidebar/parts/AdHocRow';
 import { AgentLane } from '../AgentLane';
-import { AgentLaneEmpty } from '../AgentLane/AgentLaneEmpty';
+import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { AgentLaneNote } from '../AgentLane/AgentLaneNote';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { AgentListSkeleton } from './AgentListSkeleton';
@@ -105,7 +106,10 @@ export const StandaloneAgentsLane = ({
         isLoadingEmpty ? (
           <AgentListSkeleton />
         ) : (
-          <AgentLaneEmpty
+          <EmptyState
+            bordered
+            tone="primary"
+            icon={CONCEPT_ICONS.agents}
             title={hasNoAgents ? 'No agents yet' : 'No active agents'}
             description={hasNoAgents ? NO_AGENTS_DESCRIPTION : ALL_DONE_DESCRIPTION}
           />

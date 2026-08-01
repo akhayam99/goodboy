@@ -3,7 +3,7 @@ import { Ban, Check } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { isWorkflowRunComplete } from '../../../../workflows/isWorkflowRunComplete';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowRailSectionToggle } from './WorkflowRailSectionToggle';
@@ -116,7 +116,7 @@ export const WorkflowsPane = ({ session }: Props) => {
                 <EmptyState
                   bordered
                   tone="success"
-                  icon={SECTION_ICONS.workflows}
+                  icon={CONCEPT_ICONS.workflows}
                   title="Nothing running"
                   description={
                     completed.length > 0

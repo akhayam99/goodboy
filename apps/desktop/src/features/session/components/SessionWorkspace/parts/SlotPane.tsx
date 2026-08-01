@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckSquare, Copy, FileText, History, Target } from 'lucide-react';
+import { Check, Copy, History } from 'lucide-react';
 import { Button, EmptyState, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -15,6 +14,7 @@ import { GoalAttachmentsStrip } from '../../../../context/components/ContextPane
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from './PaneShell';
 import { SlotHistoryPanel } from './SlotHistoryPanel';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
 
@@ -35,12 +35,6 @@ const SLOT_EMPTY_CTA: Record<SlotKey, string> = {
   goal: 'Add the session goal',
   decisions: 'Log a decision',
   last_output_summary: 'Write a manual session summary',
-};
-
-const SLOT_ICON: Record<SlotKey, LucideIcon> = {
-  goal: Target,
-  decisions: CheckSquare,
-  last_output_summary: FileText,
 };
 
 const SLOT_TONE: Record<SlotKey, Tone> = {
@@ -264,7 +258,13 @@ export const SlotPane = ({ session, slotKey }: Props) => {
             <EmptyState
               bordered
               tone={SLOT_TONE[slotKey]}
-              icon={SLOT_ICON[slotKey]}
+              icon={
+                slotKey === 'goal'
+                  ? CONCEPT_ICONS.goal
+                  : slotKey === 'decisions'
+                    ? CONCEPT_ICONS.decisions
+                    : CONCEPT_ICONS.sessionSummary
+              }
               title={SLOT_EMPTY_CTA[slotKey]}
               description={SLOT_EMPTY_DESCRIPTION[slotKey]}
               action={

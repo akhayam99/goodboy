@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
-import { Inbox, MessagesSquare, Search } from 'lucide-react';
+import { MessagesSquare, Search } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { GithubIssueGroup } from './useGithubIssues';
 
 type Props = {
@@ -82,7 +83,7 @@ export const IssueInbox = ({ groups, focusedIssueNumber, onSelect, loading, erro
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
+            icon={CONCEPT_ICONS.github}
             title={query.trim() === '' ? 'Inbox clear' : 'No matching issues'}
             description={
               query.trim() === ''

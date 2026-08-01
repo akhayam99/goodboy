@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { DogMascot } from '../../../../shared/components/DogMascot';
-import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { GuideContent } from './parts/GuideContent';
 
 type Props = {
@@ -44,7 +44,7 @@ const NAV_ITEMS: ReadonlyArray<NavItem> = [
   {
     id: 'tokens',
     label: 'Tokens & cost',
-    icon: <SECTION_ICONS.budget size={13} aria-hidden />,
+    icon: <CONCEPT_ICONS.budget size={13} aria-hidden />,
   },
   { id: 'agents', label: 'Agents', icon: <DogMascot size={13} /> },
   { id: 'tips', label: 'Tips', icon: <Lightbulb size={13} aria-hidden /> },

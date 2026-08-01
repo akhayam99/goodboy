@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Unplug } from 'lucide-react';
-import { Checkbox, Eyebrow, InlineConfirm, ScrollFade } from '@goodboy/ui';
+import { Checkbox, EmptyState, Eyebrow, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { BetaPill } from '../../../../shared/components/BetaPill';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
@@ -101,8 +102,12 @@ export const WorkspaceLauncher = () => {
           <Eyebrow label="Recent" className="px-1" />
           <ul className="flex flex-col gap-0.5">
             {filtered.length === 0 ? (
-              <li className="px-3 py-8 text-center text-sm text-muted-foreground">
-                No workspaces found
+              <li>
+                <EmptyState
+                  icon={CONCEPT_ICONS.workspace}
+                  title="No workspaces found"
+                  className="px-3 py-8"
+                />
               </li>
             ) : (
               filtered.map((w, i) =>

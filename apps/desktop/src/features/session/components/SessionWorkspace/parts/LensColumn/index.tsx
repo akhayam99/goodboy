@@ -18,7 +18,7 @@ import {
 import type { LensKind } from '../../../../../../store';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
-import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { resolveAttentionLens, selectOpenQuestions } from '../../../SessionOverviewPane/lib';
 import { LensColumnFooter } from '../LensColumnFooter';
 import { LENS_SHORTCUTS, buildLensGroups } from './groups';
@@ -162,7 +162,7 @@ export const LensColumn = ({
     {
       kind: 'pr',
       label: 'GitHub',
-      glyph: 'github',
+      icon: CONCEPT_ICONS.github,
       tone: 'accent',
       count: githubCount,
       dot: hasGithubPr ? 'running' : undefined,
@@ -171,7 +171,7 @@ export const LensColumn = ({
     {
       kind: 'gitlab_issues',
       label: 'GitLab',
-      glyph: 'gitlab',
+      icon: CONCEPT_ICONS.gitlab,
       tone: 'accent',
       count: gitlabCount,
       dot: hasGitlabMr ? 'running' : undefined,
@@ -180,7 +180,7 @@ export const LensColumn = ({
     {
       kind: 'linear',
       label: 'Linear',
-      glyph: 'linear',
+      icon: CONCEPT_ICONS.linear,
       tone: 'primary',
       count: linearCount,
       isConnected: linearConnection.isConnected,
@@ -188,7 +188,7 @@ export const LensColumn = ({
     {
       kind: 'sentry',
       label: 'Sentry',
-      glyph: 'sentry',
+      icon: CONCEPT_ICONS.sentry,
       tone: 'warning',
       count: sentryCount,
       isConnected: sentryConnection.isConnected,
@@ -297,14 +297,7 @@ export const LensColumn = ({
                         row.isConnected === false && 'opacity-40 hover:opacity-70',
                       )}
                     >
-                      {row.glyph != null ? (
-                        <span
-                          aria-hidden
-                          className="flex w-5 flex-none items-center justify-center transition-colors"
-                        >
-                          <IntegrationGlyph provider={row.glyph} size={14} />
-                        </span>
-                      ) : row.icon != null ? (
+                      {row.icon != null ? (
                         <span
                           className={cn(
                             'flex w-5 flex-none items-center justify-center transition-colors',

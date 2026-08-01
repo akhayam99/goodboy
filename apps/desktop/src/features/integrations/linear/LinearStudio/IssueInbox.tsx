@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
-import { GitPullRequest, Inbox, MessagesSquare, Search } from 'lucide-react';
+import { GitPullRequest, MessagesSquare, Search } from 'lucide-react';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearPriority } from '../LinearPriority';
 import type { LinearIssueGroup } from './useLinearIssues';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
@@ -68,7 +69,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
+            icon={CONCEPT_ICONS.linear}
             title={query.trim() ? 'No matching issues' : 'Inbox clear'}
             description={
               query.trim() ? 'Try a different search term.' : 'No open issues assigned to you.'

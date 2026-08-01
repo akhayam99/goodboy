@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { cn, EmptyState, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
-import { Inbox, MessagesSquare, Search, Users } from 'lucide-react';
+import { MessagesSquare, Search, Users } from 'lucide-react';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import type { SentryIssue } from '../client';
 import { SentryLevelBadge } from '../SentryLevelBadge';
 import type { SentryIssueRow } from './useSentryIssues';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly rows: ReadonlyArray<SentryIssueRow>;
@@ -79,7 +80,7 @@ export const IssueInbox = ({
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
+            icon={CONCEPT_ICONS.sentry}
             title={query.trim() ? 'No matching issues' : 'No issues'}
             description={
               query.trim()

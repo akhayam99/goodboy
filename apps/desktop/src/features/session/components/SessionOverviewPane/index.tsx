@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Divider, Eyebrow, ScrollFade } from '@goodboy/ui';
+import { Divider, EmptyState, Eyebrow, ScrollFade } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import {
   agentHasUnread,
@@ -32,6 +32,7 @@ import { ActivitySection } from './ActivitySection';
 import { HeaderBand } from './HeaderBand';
 import { LinkedWorkSection } from './LinkedWorkSection';
 import { NextUpCard } from './NextUpCard';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -207,9 +208,11 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
           {nextUp !== null ? (
             <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
           ) : (
-            <p className="rounded-lg bg-muted/20 px-3.5 py-2.5 text-sm text-muted-foreground">
-              Nothing needs you right now.
-            </p>
+            <EmptyState
+              icon={CONCEPT_ICONS.questions}
+              title="Nothing needs you right now."
+              className="items-start bg-muted/20 px-3.5 py-2.5 text-left"
+            />
           )}
         </section>
         <Divider />

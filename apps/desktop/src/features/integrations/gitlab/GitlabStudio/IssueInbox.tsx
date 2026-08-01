@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
-import { Inbox, MessagesSquare, Search } from 'lucide-react';
+import { MessagesSquare, Search } from 'lucide-react';
 import { issueIdentifier, type GitlabIssue } from '../client';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { GitlabIssueGroup } from './useGitlabIssues';
 
 type Props = {
@@ -82,7 +83,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
+            icon={CONCEPT_ICONS.gitlab}
             title={query.trim() ? 'No matching issues' : 'Inbox clear'}
             description={
               query.trim() ? 'Try a different search term.' : 'No open issues assigned to you.'

@@ -7,11 +7,11 @@ import {
   Clock,
   ExternalLink,
   HelpCircle,
-  ListChecks,
   MinusCircle,
   XCircle,
 } from 'lucide-react';
 import { formatDuration } from '../Card/lib';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly checks: ReadonlyArray<PrCheckRun>;
@@ -24,7 +24,7 @@ export const PrChecks = ({ checks, pr, onOpenUrl }: Props) => {
     return (
       <EmptyState
         bordered
-        icon={ListChecks}
+        icon={CONCEPT_ICONS.checks}
         title="No CI runs yet"
         description="Checks for this pull request will appear here once they start."
         action={

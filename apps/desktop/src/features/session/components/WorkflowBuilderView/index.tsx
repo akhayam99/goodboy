@@ -22,6 +22,7 @@ import {
 import {
   Button,
   Divider,
+  EmptyState,
   ScrollFade,
   SectionHeader,
   SegmentedTabs,
@@ -29,7 +30,7 @@ import {
   Textarea,
   cn,
 } from '@goodboy/ui';
-import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
   PlannerClient,
   type PlannerOutput,
@@ -900,7 +901,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                   />
                   <section className="flex flex-col gap-3">
                     <SectionHeader
-                      icon={<SECTION_ICONS.workflows size={11} aria-hidden />}
+                      icon={<CONCEPT_ICONS.workflows size={11} aria-hidden />}
                       label="Approach"
                       action={
                         <SegmentedTabs
@@ -935,18 +936,21 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     {mode === 'preset' ? (
                       <div className="flex flex-col gap-2">
                         {presets.length === 0 ? (
-                          <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed border-border-soft px-4 py-5">
-                            <p className="text-xs text-muted-foreground">
-                              No presets in this workspace yet.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setMode('custom')}
-                              className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/10"
-                            >
-                              <Sparkles size={12} aria-hidden /> Describe your own
-                            </button>
-                          </div>
+                          <EmptyState
+                            bordered
+                            icon={CONCEPT_ICONS.workflows}
+                            title="No presets in this workspace yet"
+                            className="items-start px-4 py-5 text-left"
+                            action={
+                              <button
+                                type="button"
+                                onClick={() => setMode('custom')}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/10"
+                              >
+                                <Sparkles size={12} aria-hidden /> Describe your own
+                              </button>
+                            }
+                          />
                         ) : (
                           <>
                             <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
@@ -1256,21 +1260,17 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         </ol>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-soft px-4 py-8 text-center">
-                        <SECTION_ICONS.workflows
-                          size={22}
-                          className="text-muted-foreground/30"
-                          aria-hidden
-                        />
-                        <p className="text-xs font-medium text-foreground">
-                          {mode === 'preset' ? 'No preset selected' : 'No plan yet'}
-                        </p>
-                        <p className="max-w-[18rem] text-2xs leading-relaxed text-muted-foreground">
-                          {mode === 'preset'
+                      <EmptyState
+                        bordered
+                        icon={CONCEPT_ICONS.workflows}
+                        title={mode === 'preset' ? 'No preset selected' : 'No plan yet'}
+                        description={
+                          mode === 'preset'
                             ? 'Go back and pick a preset to load its steps here.'
-                            : 'Go back and generate a plan to draft steps here.'}
-                        </p>
-                      </div>
+                            : 'Go back and generate a plan to draft steps here.'
+                        }
+                        className="px-4 py-8"
+                      />
                     )}
                   </section>
 

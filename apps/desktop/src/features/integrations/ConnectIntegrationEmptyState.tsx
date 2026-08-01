@@ -1,5 +1,5 @@
 import { Button, EmptyState } from '@goodboy/ui';
-import { Plug } from 'lucide-react';
+import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: 'linear' | 'sentry' | 'gitlab';
@@ -20,7 +20,7 @@ const STUDIO_EVENTS: Record<Props['provider'], string> = {
 
 export const ConnectIntegrationEmptyState = ({ provider, compact = false }: Props) => (
   <EmptyState
-    icon={Plug}
+    icon={CONCEPT_ICONS[provider]}
     title={`Connect ${PROVIDER_NAMES[provider]}`}
     description={`Open the ${PROVIDER_NAMES[provider]} studio to connect this integration.`}
     className={compact ? 'py-5' : undefined}

@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Divider, ScrollFade, SectionHeader, StatusDot } from '@goodboy/ui';
-import {
-  ArrowRight,
-  Download,
-  LogIn,
-  RotateCw,
-  Sparkles,
-  TriangleAlert,
-  type LucideIcon,
-} from 'lucide-react';
+import { Button, Divider, EmptyState, ScrollFade, SectionHeader, StatusDot } from '@goodboy/ui';
+import { ArrowRight, RotateCw, Sparkles, type LucideIcon } from 'lucide-react';
 import {
   PROVIDER_BETA,
   isApiProvider,
@@ -22,6 +14,7 @@ import { PROVIDER_BRAND } from '../provider-brand';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ApiProviderDetail } from './ApiProviderDetail';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly info: ProviderInfo | null;
@@ -31,8 +24,8 @@ type Props = {
 export const ProviderDetailPanel = ({ info, onConnect }: Props) => {
   if (!info) {
     return (
-      <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
-        Select a provider
+      <div className="flex h-full items-center justify-center p-8">
+        <EmptyState icon={CONCEPT_ICONS.providers} title="Select a provider" />
       </div>
     );
   }
@@ -126,20 +119,28 @@ function Detail({
                 onView={() => onConnect(lifecycle.action ?? 'install')}
               />
             ) : info.connection === 'error' ? (
-              <EmptyCard
-                icon={TriangleAlert}
+              <EmptyState
+                bordered
+                tone="danger"
+                icon={CONCEPT_ICONS.providers}
                 title="Detection failed"
-                ctaLabel="Retry"
-                onCta={() => void onRefresh()}
-                ctaDisabled={refreshing}
+                action={
+                  <Button size="sm" onClick={() => void onRefresh()} disabled={refreshing}>
+                    Retry
+                  </Button>
+                }
               />
             ) : info.connection === 'missing' ? (
-              <EmptyCard
-                icon={Download}
+              <EmptyState
+                bordered
+                icon={CONCEPT_ICONS.providers}
                 title={`${info.label} CLI not installed`}
                 description="Install the CLI to connect an account from Goodboy."
-                ctaLabel={`Install ${info.label}`}
-                onCta={() => onConnect('install')}
+                action={
+                  <Button size="sm" onClick={() => onConnect('install')}>
+                    Install {info.label}
+                  </Button>
+                }
               />
             ) : info.connection === 'connected' ? (
               <ConnectedAccount
@@ -154,12 +155,16 @@ function Detail({
                 }}
               />
             ) : (
-              <EmptyCard
-                icon={LogIn}
+              <EmptyState
+                bordered
+                icon={CONCEPT_ICONS.providers}
                 title="No account connected"
                 description="Sign in to connect an account. Every step runs in the embedded terminal."
-                ctaLabel="Connect account"
-                onCta={() => onConnect('login')}
+                action={
+                  <Button size="sm" onClick={() => onConnect('login')}>
+                    Connect account
+                  </Button>
+                }
               />
             )}
           </section>
@@ -234,44 +239,6 @@ function ConnectedAccount({
           Disconnect
         </button>
       )}
-    </div>
-  );
-}
-
-function EmptyCard({
-  icon: Icon,
-  title,
-  description,
-  ctaLabel,
-  onCta,
-  ctaDisabled = false,
-}: {
-  readonly icon: LucideIcon;
-  readonly title: string;
-  readonly description?: string;
-  readonly ctaLabel: string;
-  readonly onCta: () => void;
-  readonly ctaDisabled?: boolean;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border-soft bg-muted/10 px-6 py-10 text-center">
-      <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <Icon size={18} aria-hidden />
-      </span>
-      <div className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-foreground">{title}</span>
-        {description ? (
-          <span className="max-w-xs text-2xs text-muted-foreground">{description}</span>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        onClick={onCta}
-        disabled={ctaDisabled}
-        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {ctaLabel}
-      </button>
     </div>
   );
 }

@@ -10,6 +10,8 @@ import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
@@ -92,9 +94,11 @@ export const ShippedPanel = ({
               </button>
             ))}
             {prs !== null && prs.entries.length === 0 ? (
-              <span className="text-xs text-muted-foreground">
-                No pull requests in this window.
-              </span>
+              <EmptyState
+                icon={CONCEPT_ICONS.pr}
+                title="No pull requests in this window"
+                className="items-start px-0 py-0 text-left"
+              />
             ) : null}
           </div>
         </StudioWidget>

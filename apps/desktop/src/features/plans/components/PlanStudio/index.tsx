@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ArchiveRestore,
   CheckCircle2,
-  ClipboardList,
   Eye,
   List,
   Pencil,
@@ -29,6 +28,7 @@ import { PaneShell } from '../../../session/components/SessionWorkspace/parts/Pa
 import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanListPanel } from './PlanListPanel';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -165,7 +165,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
               <EmptyState
                 bordered
                 tone="success"
-                icon={ClipboardList}
+                icon={CONCEPT_ICONS.plans}
                 title="No plans yet"
                 description="Plans appear here once an agent drafts one. Run a planning agent to get started."
               />
@@ -403,7 +403,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
               <EmptyState
                 bordered
                 tone="neutral"
-                icon={ClipboardList}
+                icon={CONCEPT_ICONS.plans}
                 title="No plan selected"
                 description="Pick a plan from the list to preview, edit, or run it."
               />

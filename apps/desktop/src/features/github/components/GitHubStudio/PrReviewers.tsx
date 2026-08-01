@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
 import type { PrDetail, WorkspaceId } from '@goodboy/types';
 import { CircleDashed } from 'lucide-react';
+import { EmptyState } from '@goodboy/ui';
 import { RailBlock } from '../../../../shared/components/StudioDetail';
 import { latestTerminalReviewsByAuthor } from '../Card/lib';
 import { Avatar } from '../Card/parts/Avatar';
 import { ReviewStateIcon } from '../Card/parts/ReviewStateIcon';
 import { ReviewerPicker } from './ReviewerPicker';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly detail: PrDetail | null;
@@ -43,7 +45,11 @@ export const PrReviewers = ({
         onAdd={onAddReviewers}
       />
       {reviewed.length === 0 && requests.length === 0 ? (
-        <span className="basis-full text-2xs text-muted-foreground/60">No reviewers yet.</span>
+        <EmptyState
+          icon={CONCEPT_ICONS.review}
+          title="No reviewers yet"
+          className="basis-full items-start px-0 py-0 text-left"
+        />
       ) : (
         <ul className="flex basis-full flex-col gap-1">
           {reviewed.map((review) => (

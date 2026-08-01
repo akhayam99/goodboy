@@ -11,15 +11,7 @@ import {
   SegmentedTabs,
   Textarea,
 } from '@goodboy/ui';
-import {
-  AlertTriangle,
-  ArrowRight,
-  GitBranch,
-  GitMerge,
-  MousePointerClick,
-  PenLine,
-  Sparkles,
-} from 'lucide-react';
+import { AlertTriangle, ArrowRight, GitBranch, GitMerge, PenLine, Sparkles } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
@@ -41,6 +33,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
 import { gitlabMergeMr, type GitlabMergeRequest } from '../client';
 import { projectPathFromMrUrl } from './useGitlabMrs';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -134,7 +127,7 @@ export const MrDetailPanel = ({
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
-          icon={MousePointerClick}
+          icon={CONCEPT_ICONS.gitlab}
           title="No session selected"
           description="Pick a session to manage its merge request."
         />
@@ -146,7 +139,7 @@ export const MrDetailPanel = ({
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
-          icon={MousePointerClick}
+          icon={CONCEPT_ICONS.gitlab}
           title="No merge request selected"
           description="Pick a merge request to see its details."
         />

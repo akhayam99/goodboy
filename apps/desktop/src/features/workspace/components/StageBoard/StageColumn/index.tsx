@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { cn, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui';
+import { cn, EmptyState, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
 import { useMultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import { BulkActionBar } from '../../BulkActionBar';
 import { StageBoardCard, type CardSelectionEvent } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 const ZERO_STATE: Record<SessionStage | 'archived', string> = {
   attention: 'nothing needs you',
@@ -123,9 +124,11 @@ export const StageColumn = ({
         <ScrollFade orientation="vertical" className="flex-1">
           <div className="flex flex-col gap-2">
             {empty ? (
-              <p className="px-1 py-6 text-center text-2xs text-muted-foreground/50">
-                {ZERO_STATE[view.key]}
-              </p>
+              <EmptyState
+                icon={CONCEPT_ICONS.goal}
+                title={ZERO_STATE[view.key]}
+                className="px-1 py-6"
+              />
             ) : (
               sessions.map((session) => (
                 <StageBoardCard

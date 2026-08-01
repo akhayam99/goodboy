@@ -10,6 +10,7 @@ import { ExternalTaskChip } from '../../../../../integrations/components/Externa
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { MissingGithubRemoteEmptyState } from '../../../../../github/components/MissingGithubRemoteEmptyState';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { PaneShell } from '../PaneShell';
 import { LinearTaskDetail } from './LinearTaskDetail';
 import { LinkIssueForm } from './LinkIssueForm';
@@ -107,7 +108,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         ) : null}
         {connection.isConnected && !hasTasks ? (
           <EmptyState
-            icon={Link2}
+            icon={CONCEPT_ICONS.integrations}
             bordered
             className="px-6 py-8"
             title={`No ${meta.label} issues linked`}
