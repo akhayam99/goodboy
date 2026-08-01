@@ -1,5 +1,5 @@
-export type { DetailEntry, DetailFieldRegistry, ResolvedDetailFields } from './types';
-export { resolveDetailFields } from './resolveDetailFields';
+export type { DetailEntry, DetailFieldRegistry } from './types';
+export { resolveDetailFields, type ResolvedDetailFields } from './resolveDetailFields';
 export { linearIssueFields } from './linearIssueFields';
 export { sentryIssueFields, type SentryIssueProperties } from './sentryIssueFields';
 export { githubIssueFields } from './githubIssueFields';

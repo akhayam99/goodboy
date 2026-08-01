@@ -1,22 +1,35 @@
 import type { ReactNode } from 'react';
-import { Divider } from '@goodboy/ui';
-import type { DetailEntry } from '../../detail-fields';
+import { Divider, ScrollFade, cn } from '@goodboy/ui';
+import type { ResolvedDetailFields } from '../../detail-fields';
 import { DetailProperties } from './DetailProperties';
 
 type Props = {
   readonly rail: ReactNode;
-  readonly properties: ReadonlyArray<DetailEntry>;
+  readonly properties?: ResolvedDetailFields;
+  readonly isScrollable: boolean;
 };
 
-export const RailStack = ({ rail, properties }: Props) => {
-  const hasProperties = properties.length > 0;
+export const RailStack = ({ rail, properties, isScrollable }: Props) => {
+  const hasProperties = properties != null && properties.length > 0;
+  const extras = isScrollable ? (
+    <ScrollFade className="order-3 max-h-64 lg:order-1 lg:max-h-none lg:flex-1" fadeSize={24}>
+      {rail}
+    </ScrollFade>
+  ) : (
+    <div className="order-3 lg:order-1">{rail}</div>
+  );
 
   return (
-    <div className="flex flex-col gap-4">
-      {rail != null ? <div className="order-3 lg:order-1">{rail}</div> : null}
+    <div
+      className={cn(
+        'flex w-full flex-col gap-4 lg:w-80',
+        isScrollable && 'px-6 py-4 lg:h-full lg:min-h-0 lg:p-4',
+      )}
+    >
+      {rail != null ? extras : null}
       {rail != null && hasProperties ? <Divider className="order-2" /> : null}
       {hasProperties ? (
-        <div className="order-1 lg:order-3">
+        <div className="order-1 shrink-0 lg:order-3">
           <DetailProperties entries={properties} />
         </div>
       ) : null}

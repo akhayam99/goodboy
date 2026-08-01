@@ -54,7 +54,7 @@ describe('SentryIssueDetail', () => {
         .map((term) => term.textContent),
     ).toEqual(['Culprit', 'Status', 'release', 'environment']);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Breadcrumbs' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Breadcrumbs 1' }));
     expect(screen.getByText('GET /api/items')).toBeDefined();
   });
 });

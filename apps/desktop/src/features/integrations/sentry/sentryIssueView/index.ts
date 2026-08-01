@@ -36,6 +36,7 @@ export const sentryIssueView = ({
     tags: visibleSentryTags({ detail }),
     frames: detail?.frames ?? [],
     breadcrumbs,
+    breadcrumbCount: breadcrumbs.length,
     hasBreadcrumbs: breadcrumbs.length > 0 && !isLoading && error == null,
   };
 };

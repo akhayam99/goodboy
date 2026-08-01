@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { resolveDetailFields, type DetailFieldRegistry } from '../../detail-fields';
 import { DetailSection } from './DetailSection';
 import { HeaderBand } from './HeaderBand';
-import { MetaItem } from './MetaItem';
+import { RailBlock } from './RailBlock';
 import { StudioDetailLayout } from './StudioDetailLayout';
 import { StudioDetailTabs } from './StudioDetailTabs';
 
@@ -57,13 +57,49 @@ describe('StudioDetailLayout', () => {
 
   it('drops the rail and the scroll region for a full-bleed body', () => {
     render(
-      <StudioDetailLayout header={<span>Header slot</span>} fit="bleed">
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        rail={<span>Rail slot</span>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+        fit="bleed"
+      >
         <span>Main slot</span>
       </StudioDetailLayout>,
     );
 
     expect(screen.getByText('Main slot')).toBeDefined();
     expect(screen.queryByText('Rail slot')).toBeNull();
+    expect(screen.queryByTestId('detail-properties')).toBeNull();
+  });
+
+  it('bounds the rail extras below lg and keeps the properties out of the scroll region', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        rail={<span>Rail slot</span>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const extras = screen.getByText('Rail slot').closest('div.max-h-64');
+    expect(extras).not.toBeNull();
+    expect((extras as HTMLElement).className).toContain('lg:max-h-none');
+    expect(screen.getByTestId('detail-properties').closest('div.max-h-64')).toBeNull();
+  });
+
+  it('pins the header band while a flow body scrolls', () => {
+    render(
+      <StudioDetailLayout header={<span>Header slot</span>} fit="flow">
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const band = screen.getByTestId('detail-header-band');
+    expect(band.className).toContain('sticky');
+    expect(band.className).toContain('top-0');
+    expect(band.className).toContain('bg-background');
   });
 
   it('renders the properties once, as a wrapping row below lg and a column from lg', () => {
@@ -81,6 +117,7 @@ describe('StudioDetailLayout', () => {
     expect(panels).toHaveLength(1);
 
     const panel = panels[0] as HTMLElement;
+    expect(panel.tagName).toBe('DL');
     expect(panel.className).toContain('flex-row flex-wrap');
     expect(panel.className).toContain('lg:flex-col');
     expect(
@@ -161,12 +198,13 @@ describe('DetailSection', () => {
   });
 });
 
-describe('MetaItem', () => {
-  it('renders the label above its value', () => {
-    render(<MetaItem label="Assignee">Grace Hopper</MetaItem>);
+describe('RailBlock', () => {
+  it('renders the label above its value without a description list', () => {
+    const { container } = render(<RailBlock label="Reviewers">Grace Hopper</RailBlock>);
 
-    expect(screen.getByText('Assignee')).toBeDefined();
+    expect(screen.getByText('Reviewers')).toBeDefined();
     expect(screen.getByText('Grace Hopper')).toBeDefined();
+    expect(container.querySelector('dl')).toBeNull();
   });
 });
 

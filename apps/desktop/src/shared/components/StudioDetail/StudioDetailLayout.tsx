@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Divider, ScrollFade, cn } from '@goodboy/ui';
-import type { DetailEntry, ResolvedDetailFields } from '../../detail-fields';
+import type { ResolvedDetailFields } from '../../detail-fields';
 import { RailStack } from './RailStack';
 
 type Fit = 'fill' | 'bleed' | 'flow';
@@ -14,8 +14,6 @@ type Props = {
   readonly children: ReactNode;
 };
 
-const NO_PROPERTIES: ReadonlyArray<DetailEntry> = [];
-
 export const StudioDetailLayout = ({
   header,
   rail,
@@ -25,16 +23,21 @@ export const StudioDetailLayout = ({
   children,
 }: Props) => {
   const isFlow = fit === 'flow';
-  const entries = properties ?? NO_PROPERTIES;
-  const hasRail = rail != null || entries.length > 0;
+  const hasProperties = properties != null && properties.length > 0;
+  const hasRail = fit !== 'bleed' && (rail != null || hasProperties);
 
   return (
     <div className={cn('flex flex-col', isFlow ? 'gap-4' : 'h-full min-h-0')}>
-      <div className={cn('flex shrink-0 flex-col gap-3', !isFlow && 'px-6 py-4')}>
-        {header}
-        {tabs}
+      <div
+        data-testid="detail-header-band"
+        className={cn('flex shrink-0 flex-col', isFlow && 'sticky top-0 z-10 gap-4 bg-background')}
+      >
+        <div className={cn('flex flex-col gap-3', !isFlow && 'px-6 py-4')}>
+          {header}
+          {tabs}
+        </div>
+        <Divider />
       </div>
-      <Divider />
       <div className={cn('flex flex-col lg:flex-row', isFlow ? 'gap-4' : 'min-h-0 flex-1')}>
         {isFlow ? <div className="flex min-w-0 flex-1 flex-col gap-6">{children}</div> : null}
         {fit === 'bleed' ? (
@@ -53,23 +56,11 @@ export const StudioDetailLayout = ({
           <div
             className={cn(
               'order-first flex shrink-0 flex-col lg:order-none lg:flex-row',
-              isFlow ? 'gap-4' : 'min-h-0',
+              !isFlow && 'min-h-0',
             )}
           >
             <Divider orientation="vertical" className="hidden lg:block" />
-            {isFlow ? (
-              <div className="w-full lg:w-72">
-                <RailStack rail={rail} properties={entries} />
-              </div>
-            ) : (
-              <ScrollFade
-                className="w-full lg:h-full lg:w-72"
-                viewportClassName="px-6 py-4 lg:p-4"
-                fadeSize={24}
-              >
-                <RailStack rail={rail} properties={entries} />
-              </ScrollFade>
-            )}
+            <RailStack rail={rail} properties={properties} isScrollable={!isFlow} />
             <Divider className="lg:hidden" />
           </div>
         ) : null}

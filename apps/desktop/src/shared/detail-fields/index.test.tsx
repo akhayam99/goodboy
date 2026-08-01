@@ -12,8 +12,14 @@ import {
   linearIssueFields,
   resolveDetailFields,
   sentryIssueFields,
+  type DetailEntry,
+  type ResolvedDetailFields,
   type SentryIssueProperties,
 } from '.';
+
+type ForgedDetailFields = ReadonlyArray<DetailEntry> & {
+  readonly __brand: 'ResolvedDetailFields';
+};
 
 const LINEAR_ISSUE: LinearIssue = {
   id: 'issue-1',
@@ -149,7 +155,18 @@ describe('detail field registries', () => {
       resolveDetailFields({ registry: gitlabMergeRequestFields, entity: GITLAB_MR }).map(
         (entry) => entry.label,
       ),
-    ).toEqual(['Source branch', 'Target branch', 'Merge status', 'Draft', 'Updated']);
+    ).toEqual(['Source branch', 'Target branch', 'Merge status', 'Updated']);
+  });
+
+  it('only a resolver run carries the resolved brand', () => {
+    const forgedIsAssignable: ForgedDetailFields extends ResolvedDetailFields ? true : false =
+      false;
+    const resolvedIsAssignable: ReturnType<typeof resolveDetailFields> extends ResolvedDetailFields
+      ? true
+      : false = true;
+
+    expect(forgedIsAssignable).toBe(false);
+    expect(resolvedIsAssignable).toBe(true);
   });
 
   it('drops the fields a heterogeneous payload does not carry', () => {
@@ -167,14 +184,30 @@ describe('detail field registries', () => {
       entity: { ...GITLAB_MR, updatedAt: 'not-a-date', state: 'merged' },
     });
 
-    expect(sparse.map((entry) => entry.label)).toEqual(['Source branch', 'Target branch', 'Draft']);
+    expect(sparse.map((entry) => entry.label)).toEqual(['Source branch', 'Target branch']);
   });
 
-  it('truncates only from the tail', () => {
+  it('drops a blank value the registry wrapped in an element', () => {
     expect(
-      resolveDetailFields({ registry: linearIssueFields, entity: LINEAR_ISSUE, limit: 3 }).map(
-        (entry) => entry.label,
-      ),
-    ).toEqual(['Priority', 'Assignee', 'Team']);
+      resolveDetailFields({
+        registry: gitlabMergeRequestFields,
+        entity: { ...GITLAB_MR, sourceBranch: '', targetBranch: '   ' },
+      }).map((entry) => entry.label),
+    ).toEqual(['Merge status', 'Updated']);
+    expect(
+      resolveDetailFields({
+        registry: githubPullRequestFields,
+        entity: { ...GITHUB_PR, baseBranch: '' },
+      }).map((entry) => entry.label),
+    ).toEqual(['Updated']);
+  });
+
+  it('keeps a draft merge request row only while it is a draft', () => {
+    expect(
+      resolveDetailFields({
+        registry: gitlabMergeRequestFields,
+        entity: { ...GITLAB_MR, draft: true },
+      }).map((entry) => entry.label),
+    ).toContain('Draft');
   });
 });

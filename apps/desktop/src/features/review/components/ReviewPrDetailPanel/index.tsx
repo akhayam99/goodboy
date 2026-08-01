@@ -5,7 +5,6 @@ import type { ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
 import { formatError } from '../../../../shared/lib/errors';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
@@ -96,9 +95,6 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
               <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
                 <AuthorAvatar author={pr.author} avatarUrl={pr.authorAvatarUrl} />
                 <span className="font-medium text-foreground/80">{pr.author}</span>
-              </span>
-              <span className="text-2xs text-muted-foreground">
-                updated {formatRelativeDuration(pr.updatedAt)} ago
               </span>
             </>
           }

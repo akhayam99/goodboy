@@ -1,13 +1,13 @@
-import type { DetailEntry } from '../../detail-fields';
+import type { ResolvedDetailFields } from '../../detail-fields';
 import { MetaItem } from './MetaItem';
 
 type Props = {
-  readonly entries: ReadonlyArray<DetailEntry>;
+  readonly entries: ResolvedDetailFields;
 };
 
 export const DetailProperties = ({ entries }: Props) => {
   return (
-    <div
+    <dl
       data-testid="detail-properties"
       className="flex flex-row flex-wrap gap-x-5 gap-y-3 lg:flex-col lg:flex-nowrap lg:gap-4"
     >
@@ -16,6 +16,6 @@ export const DetailProperties = ({ entries }: Props) => {
           {entry.node}
         </MetaItem>
       ))}
-    </div>
+    </dl>
   );
 };

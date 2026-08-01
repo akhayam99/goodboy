@@ -101,7 +101,14 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     { value: 'overview', label: 'Overview', icon: LayoutList },
     { value: 'stack', label: 'Stack trace', icon: ListTree },
     ...(view.hasBreadcrumbs
-      ? [{ value: 'breadcrumbs' as const, label: 'Breadcrumbs', icon: Footprints }]
+      ? [
+          {
+            value: 'breadcrumbs' as const,
+            label: 'Breadcrumbs',
+            icon: Footprints,
+            badge: String(view.breadcrumbCount),
+          },
+        ]
       : []),
   ];
   const activeSection = options.some((option) => option.value === section) ? section : 'overview';
