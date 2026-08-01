@@ -48,6 +48,15 @@ export const RoutingBadge = ({
   if (variant === 'full') {
     return (
       <span className={cn('flex flex-wrap items-center gap-1.5', muted && 'opacity-60', className)}>
+        {model != null && (
+          <span className={cn(CHIP_CLASS, 'min-w-0 font-mono')} title={model}>
+            <span
+              className={cn('size-1.5 shrink-0 rounded-full', MODEL_COST_DOT[modelCostTier(model)])}
+              aria-hidden
+            />
+            <span className="truncate">{modelLabel(model)}</span>
+          </span>
+        )}
         <span className={CHIP_CLASS}>
           {Glyph != null && resolvedProvider != null && (
             <Glyph
@@ -59,15 +68,6 @@ export const RoutingBadge = ({
           )}
           {providerLabel ?? missingLabel}
         </span>
-        {model != null && (
-          <span className={cn(CHIP_CLASS, 'min-w-0 font-mono')} title={model}>
-            <span
-              className={cn('size-1.5 shrink-0 rounded-full', MODEL_COST_DOT[modelCostTier(model)])}
-              aria-hidden
-            />
-            <span className="truncate">{modelLabel(model)}</span>
-          </span>
-        )}
         {resolvedEffort != null && (
           <span className={CHIP_CLASS}>
             <span
@@ -89,14 +89,6 @@ export const RoutingBadge = ({
         className,
       )}
     >
-      {Glyph != null && resolvedProvider != null && (
-        <Glyph
-          size={glyphSize}
-          className="shrink-0"
-          style={{ color: brandColor(resolvedProvider) }}
-          aria-hidden
-        />
-      )}
       {model != null ? (
         <span
           className={cn('min-w-0 truncate font-medium', TIER_TEXT[modelTier(model)])}
@@ -106,6 +98,14 @@ export const RoutingBadge = ({
         </span>
       ) : (
         <span className="text-muted-foreground/50">{missingLabel}</span>
+      )}
+      {Glyph != null && resolvedProvider != null && (
+        <Glyph
+          size={glyphSize}
+          className="shrink-0"
+          style={{ color: brandColor(resolvedProvider) }}
+          aria-hidden
+        />
       )}
       {model != null && resolvedEffort != null && (
         <span className={cn('shrink-0', EFFORT_TEXT[resolvedEffort])} title="effort">

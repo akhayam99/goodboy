@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import type {
   Agent,
   AgentId,
@@ -43,26 +42,20 @@ export const WorkflowStepGraph = ({
       data-testid="workflow-step-graph"
     >
       {sortedRuns.map((run, index) => (
-        <Fragment key={run.id}>
-          {index > 0 ? (
-            <div className="flex pl-[11px]" aria-hidden>
-              <span className="h-1.5 w-px bg-border-soft" />
-            </div>
-          ) : null}
-          <WorkflowStepGraphBranch
-            run={run}
-            marker={`${index + 1}`}
-            depth={0}
-            step={run.stepId == null ? null : (stepById.get(run.stepId) ?? null)}
-            childrenByParentId={childrenByParentId}
-            agentKindOverride={agentKindOverride}
-            agentModelOverride={agentModelOverride}
-            agentProviderOverride={agentProviderOverride}
-            roleModels={roleModels}
-            selectedAgentId={selectedAgentId}
-            onSelect={onSelect}
-          />
-        </Fragment>
+        <WorkflowStepGraphBranch
+          key={run.id}
+          run={run}
+          marker={`${index + 1}`}
+          depth={0}
+          step={run.stepId == null ? null : (stepById.get(run.stepId) ?? null)}
+          childrenByParentId={childrenByParentId}
+          agentKindOverride={agentKindOverride}
+          agentModelOverride={agentModelOverride}
+          agentProviderOverride={agentProviderOverride}
+          roleModels={roleModels}
+          selectedAgentId={selectedAgentId}
+          onSelect={onSelect}
+        />
       ))}
     </div>
   );

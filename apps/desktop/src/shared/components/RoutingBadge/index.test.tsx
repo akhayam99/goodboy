@@ -50,4 +50,37 @@ describe('RoutingBadge', () => {
 
     expect(screen.getByText('Claude')).toBeDefined();
   });
+
+  it('pins the canonical order in the full variant: model, then provider, then effort', () => {
+    const { container } = render(
+      <RoutingBadge variant="full" provider="anthropic" model="claude-opus-4-5" effort="high" />,
+    );
+
+    const text = container.textContent ?? '';
+    const modelIndex = text.indexOf('Opus 4.5');
+    const providerIndex = text.indexOf('Claude');
+    const effortIndex = text.indexOf('High');
+
+    expect(modelIndex).toBeGreaterThanOrEqual(0);
+    expect(modelIndex).toBeLessThan(providerIndex);
+    expect(providerIndex).toBeLessThan(effortIndex);
+  });
+
+  it('pins the canonical order in the compact variant: model, then provider, then effort', () => {
+    const { container } = render(
+      <RoutingBadge provider="anthropic" model="claude-opus-4-5" effort="high" />,
+    );
+
+    const modelSpan = screen.getByTitle('model: claude-opus-4-5');
+    const glyph = container.querySelector('svg');
+    const effortSpan = screen.getByTitle('effort');
+
+    expect(glyph).not.toBeNull();
+    expect(
+      modelSpan.compareDocumentPosition(glyph as Element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      (glyph as Element).compareDocumentPosition(effortSpan) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
 });
