@@ -177,24 +177,23 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
           <Divider />
 
-          <section id="scout" ref={anchor('scout')} className="flex flex-col gap-1">
-            <SectionHeader
+          <section id="scout" ref={anchor('scout')} className="flex flex-col">
+            <FieldRow
               label="Parallel scouts"
-              hint="Scouts split broad searches across parallel sub-scouts. Much faster on large codebases."
-              action={
-                <Switch
-                  label={scoutFanout ? 'On' : 'Off'}
-                  checked={scoutFanout}
-                  disabled={busy}
-                  onChange={(next) =>
-                    void persistOverrides(
-                      { scoutFanout: next },
-                      next ? 'scout exploration on' : 'scout exploration off',
-                    )
-                  }
-                />
-              }
-            />
+              help="Scouts split broad searches across parallel sub-scouts. Much faster on large codebases."
+            >
+              <Switch
+                label={scoutFanout ? 'On' : 'Off'}
+                checked={scoutFanout}
+                disabled={busy}
+                onChange={(next) =>
+                  void persistOverrides(
+                    { scoutFanout: next },
+                    next ? 'scout exploration on' : 'scout exploration off',
+                  )
+                }
+              />
+            </FieldRow>
           </section>
 
           {WORKSPACE_FEATURES.skills ? (

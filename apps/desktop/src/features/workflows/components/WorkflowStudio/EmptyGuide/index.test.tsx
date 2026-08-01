@@ -16,6 +16,12 @@ describe('EmptyGuide', () => {
   it('points returning users to the preset list', () => {
     render(<EmptyGuide onNew={() => undefined} hasPresets />);
     expect(screen.getByText(/build a workflow/i)).toBeDefined();
+    expect(screen.getByText(/pick a preset on the left/i)).toBeDefined();
+  });
+
+  it('points to the step library as the source of steps', () => {
+    render(<EmptyGuide onNew={() => undefined} hasPresets={false} />);
+    expect(screen.getByText(/step library on the right/i)).toBeDefined();
   });
 
   it('starts a new workflow from the call to action', () => {

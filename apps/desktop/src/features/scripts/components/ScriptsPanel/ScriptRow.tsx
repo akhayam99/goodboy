@@ -120,8 +120,8 @@ export const ScriptRow = ({
         data-testid={`script-card-${script.id}`}
         data-status={status}
         className={cn(
-          'group flex flex-col gap-2 rounded-md px-2.5 py-2 motion-safe:transition-colors hover:bg-muted/50',
-          status !== 'idle' && cn('border', presentation.borderClass),
+          'group flex flex-col gap-2 rounded-md border px-2.5 py-2 motion-safe:transition-colors hover:bg-muted/50',
+          presentation.borderClass,
           presentation.pulseClass,
           expanded && 'bg-muted/20',
         )}

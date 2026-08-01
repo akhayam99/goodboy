@@ -74,7 +74,7 @@ describe('ScriptsPanel', () => {
     });
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: /new script/i })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
     fireEvent.change(screen.getByPlaceholderText(/script name/i), {
       target: { value: 'copy env' },
     });
@@ -234,6 +234,7 @@ describe('ScriptsPanel', () => {
     );
 
     const row = screen.getByTestId('script-card-s1');
+    expect(row.className).toContain('border-transparent');
     expect(row.className).not.toContain('border-info/50');
     expect(row.className).not.toContain('border-success/40');
     expect(row.className).not.toContain('border-danger/40');

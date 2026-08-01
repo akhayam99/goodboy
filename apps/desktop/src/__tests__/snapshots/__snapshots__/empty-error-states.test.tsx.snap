@@ -722,12 +722,6 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
         A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk.
       </span>
     </div>
-    <button
-      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-7 px-2.5 text-xs"
-      type="button"
-    >
-      New skill
-    </button>
   </div>
 </div>
 `;

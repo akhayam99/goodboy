@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import {
   Button,
   Divider,
@@ -213,11 +213,6 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
           icon={SECTION_ICONS.skills}
           title="No skills yet"
           description="A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk."
-          action={
-            <Button size="sm" onClick={openNew}>
-              New skill
-            </Button>
-          }
         />
       ) : (
         <ul className="flex flex-col gap-1">
@@ -245,11 +240,12 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
   const [isDeleteArmed, setIsDeleteArmed] = useState(false);
 
   return (
-    <li className="group relative">
+    <li className="relative">
       <SelectableRow
         selected={false}
         onClick={onEdit}
-        className="flex-col items-start gap-0.5 px-2.5 py-2 pr-9"
+        title={`Edit ${skill.name}`}
+        className="flex-col items-start gap-0.5 px-2.5 py-2 pr-20"
       >
         <span className="truncate text-sm font-medium text-foreground">/{skill.name}</span>
         {skill.description !== '' ? (
@@ -257,18 +253,26 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
         ) : null}
         <span className="truncate text-2xs text-muted-foreground/60">{skill.filePath}</span>
       </SelectableRow>
-      <button
-        type="button"
-        aria-label="Delete"
-        title={`Delete ${skill.name}`}
-        onClick={(event) => {
-          event.stopPropagation();
-          setIsDeleteArmed(true);
-        }}
-        className="absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground/0 motion-safe:transition-colors focus-visible:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-focus-within:text-muted-foreground group-hover:text-muted-foreground hover:!text-danger hover:bg-danger/10"
-      >
-        <Trash2 size={13} aria-hidden />
-      </button>
+      <div className="absolute right-2 top-1.5 flex items-center gap-0.5">
+        <button
+          type="button"
+          aria-label="Edit"
+          title={`Edit ${skill.name}`}
+          onClick={onEdit}
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-muted hover:text-foreground"
+        >
+          <Pencil size={13} aria-hidden />
+        </button>
+        <button
+          type="button"
+          aria-label="Delete"
+          title={`Delete ${skill.name}`}
+          onClick={() => setIsDeleteArmed(true)}
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-danger/10 hover:text-danger"
+        >
+          <Trash2 size={13} aria-hidden />
+        </button>
+      </div>
 
       {isDeleteArmed ? (
         <InlineConfirm

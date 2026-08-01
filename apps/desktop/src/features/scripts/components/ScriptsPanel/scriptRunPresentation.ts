@@ -2,7 +2,7 @@ import type { ScriptRunStatus } from '../../scripts';
 
 export const SCRIPT_RUN_PRESENTATION = {
   idle: {
-    borderClass: 'border-border-soft',
+    borderClass: 'border-transparent',
     textClass: 'text-muted-foreground',
     pulseClass: null,
   },

@@ -398,6 +398,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                       workspaceId={session.workspaceId}
                       sessionId={sessionId}
                       worktreePath={workingDir}
+                      hasHostHeading
                     />
                   </PaneShell>
                 ) : null}
