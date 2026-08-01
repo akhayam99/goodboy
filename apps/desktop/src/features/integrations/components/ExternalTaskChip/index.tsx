@@ -1,8 +1,9 @@
 import { Chip, cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';
-import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
+import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
+import { openUrl } from '../../../../shared/lib/editor';
 
 type Props = {
   task: SessionExternalTask;
@@ -11,6 +12,7 @@ type Props = {
   appearance?: 'chip' | 'row';
   ariaLabel?: string;
   repoLabel?: string;
+  navigation?: 'internal' | 'external';
 };
 
 type ProviderMeta = {
@@ -53,6 +55,7 @@ export const ExternalTaskChip = ({
   appearance = 'chip',
   ariaLabel,
   repoLabel,
+  navigation = 'external',
 }: Props) => {
   const meta = PROVIDER_META[task.provider];
   const tooltip = `${task.identifier}: ${task.title}`;
@@ -73,10 +76,17 @@ export const ExternalTaskChip = ({
 
   const handleClick =
     onClick ??
-    (() =>
+    (() => {
+      if (appearance === 'row') {
+        if (task.url !== '') {
+          void openUrl(task.url);
+        }
+        return;
+      }
       window.dispatchEvent(
         new CustomEvent(meta.studioEvent, { detail: { issueExternalId: task.externalId } }),
-      ));
+      );
+    });
 
   if (appearance === 'row') {
     return (
@@ -85,13 +95,16 @@ export const ExternalTaskChip = ({
         identifier={task.identifier}
         title={variant === 'full' ? task.title : undefined}
         onClick={handleClick}
-        ariaLabel={ariaLabel ?? `open ${task.identifier} in ${meta.label} studio`}
+        ariaLabel={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
         tooltip={tooltip}
+        navigation={navigation}
         {...(repoLabel != null
           ? { attribution: <Chip tone="neutral" label={repoLabel} size="xs" /> }
           : {})}
         actions={
-          task.url !== '' ? <CopyLinkButton url={task.url} label={task.identifier} /> : undefined
+          task.url !== '' ? (
+            <ExternalRefActions url={task.url} label={task.identifier} hostLabel={meta.label} />
+          ) : undefined
         }
       />
     );

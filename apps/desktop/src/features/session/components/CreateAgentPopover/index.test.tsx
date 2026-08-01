@@ -16,6 +16,10 @@ type Store = {
   readonly providers: ReadonlyArray<{ readonly id: ProviderId; readonly connection: string }>;
   readonly sessions: ReadonlyArray<Session>;
   readonly workspaceOverrides: Record<string, unknown>;
+  readonly providerLifecycle: Readonly<Record<string, unknown>>;
+  readonly installProvider: ReturnType<typeof vi.fn>;
+  readonly loginProvider: ReturnType<typeof vi.fn>;
+  readonly cancelProviderLifecycle: ReturnType<typeof vi.fn>;
 };
 
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
@@ -42,6 +46,21 @@ const h = vi.hoisted(() => ({
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
   workspaceKind: 'repo' as WorkspaceKind,
   sessions: [] as ReadonlyArray<unknown>,
+  providerLifecycle: {
+    codex: {
+      phase: 'idle',
+      runId: null,
+      action: null,
+      command: null,
+      exitCode: null,
+      startedAt: null,
+      errorTail: null,
+      detectedAuthUrl: null,
+    },
+  },
+  installProvider: vi.fn(async () => undefined),
+  loginProvider: vi.fn(async () => undefined),
+  cancelProviderLifecycle: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -51,6 +70,10 @@ vi.mock('../../../../store', () => ({
       providers: h.providers,
       sessions: h.sessions as ReadonlyArray<Session>,
       workspaceOverrides: {},
+      providerLifecycle: h.providerLifecycle,
+      installProvider: h.installProvider,
+      loginProvider: h.loginProvider,
+      cancelProviderLifecycle: h.cancelProviderLifecycle,
     }),
   useCurrentWorkspace: () => ({ id: 'workspace-1' as WorkspaceId, kind: h.workspaceKind }),
 }));
@@ -235,6 +258,27 @@ describe('CreateAgentPopover', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Thinking' }));
 
     expect(screen.getByText('Effort adjusted from Low to High.')).toBeTruthy();
+  });
+
+  it('connects a provider inside the popover without opening its studio', () => {
+    h.providers = [
+      { id: 'anthropic' as ProviderId, connection: 'connected' },
+      { id: 'codex' as ProviderId, connection: 'missing' },
+    ];
+    const studioListener = vi.fn();
+    window.addEventListener('goodboy:open-provider-studio', studioListener);
+
+    renderControl();
+    openPopover();
+    fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Codex' }));
+
+    expect(screen.getByRole('dialog', { name: 'create agent' })).toBeDefined();
+    expect(screen.getByText(/Connect codex/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Install' })).toBeDefined();
+    expect(studioListener).not.toHaveBeenCalled();
+
+    window.removeEventListener('goodboy:open-provider-studio', studioListener);
   });
 
   it('drops the type section entirely in a simple workspace', () => {

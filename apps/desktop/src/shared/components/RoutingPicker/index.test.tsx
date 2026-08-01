@@ -481,7 +481,7 @@ describe('RoutingPicker', () => {
     }
   });
 
-  it('offers to connect an unconnected provider without selecting it', () => {
+  it('connects an unconnected provider inside the picker without selecting it', () => {
     const onProvider = vi.fn();
     const events: CustomEvent[] = [];
     const onOpenProviderStudio = (event: Event) => {
@@ -497,9 +497,10 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
     expect(onProvider).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Connect Codex' }));
-    expect(events).toHaveLength(1);
-    expect(events[0]?.detail.providerId).toBe('codex');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('dialog')).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Connect provider' })).toBeDefined();
+    expect(screen.getByText(/Connect codex/i)).toBeDefined();
+    expect(events).toHaveLength(0);
     window.removeEventListener('goodboy:open-provider-studio', onOpenProviderStudio);
   });
 

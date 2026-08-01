@@ -47,6 +47,7 @@ const h = vi.hoisted(() => ({
     workspaces: [] as ReadonlyArray<Workspace>,
   } satisfies Store,
   remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
+  onSelectLens: vi.fn(),
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -125,6 +126,7 @@ beforeEach(() => {
     },
   ];
   h.remoteKind = 'github';
+  h.onSelectLens.mockReset();
 });
 
 afterEach(cleanup);
@@ -135,7 +137,7 @@ describe('PrPane', () => {
       [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
     };
 
-    render(<PrPane session={session} />);
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getByText('External review session')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Draft with agent' })).toBeNull();
@@ -153,7 +155,7 @@ describe('PrPane', () => {
     };
     h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
 
-    render(<PrPane session={session} />);
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(
       screen.queryByRole('button', { name: /GitHub #42 Refactor authentication In review/i }),
@@ -180,7 +182,7 @@ describe('PrPane', () => {
     };
     h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
 
-    render(<PrPane session={session} />);
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     fireEvent.click(screen.getByRole('button', { name: /#42 of 2/i }));
     fireEvent.click(screen.getByRole('option', { name: /#40/i }));
@@ -206,7 +208,7 @@ describe('PrPane', () => {
     h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST, closedPr] };
     h.store.sessionSelectedPrNumber = { [SESSION_ID]: closedPr.number };
 
-    render(<PrPane session={session} />);
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getByText(closedPr.title)).toBeDefined();
     expect(screen.queryByText(PULL_REQUEST.title)).toBeNull();
@@ -231,13 +233,13 @@ describe('PrPane', () => {
         },
       },
     };
-    const view = render(<PrPane session={session} />);
+    const view = render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     fireEvent.click(screen.getByRole('button', { name: /GitLab !7/i }));
     expect(screen.getByText('GitLab merge request detail')).toBeDefined();
 
     h.store.sessionGitlabMr = {};
-    view.rerender(<PrPane session={session} />);
+    view.rerender(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.queryByText('GitLab merge request detail')).toBeNull();
     expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
@@ -288,7 +290,9 @@ describe('PrPane', () => {
       ],
     };
 
-    render(<PrPane session={session} />);
+    const studioListener = vi.fn();
+    window.addEventListener('goodboy:open-github-studio', studioListener);
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getByText('CI passing')).toBeDefined();
     expect(screen.getByText('Review required')).toBeDefined();
@@ -296,7 +300,11 @@ describe('PrPane', () => {
     expect(screen.getByText('main')).toBeDefined();
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /open #7 in GitHub studio/i })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'open #7 integration' }));
+    expect(h.onSelectLens).toHaveBeenCalledWith('pr');
+    expect(studioListener).not.toHaveBeenCalled();
+    expect(screen.getAllByRole('link', { name: 'Open in GitHub' })).toHaveLength(2);
+    window.removeEventListener('goodboy:open-github-studio', studioListener);
   });
 
   it('shows repository attribution on composite linked rows', () => {
@@ -335,7 +343,7 @@ describe('PrPane', () => {
       ],
     };
 
-    render(<PrPane session={session} />);
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getByText('web')).toBeDefined();
   });
@@ -371,24 +379,28 @@ describe('PrPane', () => {
       ],
     };
 
-    render(<PrPane session={session} />);
+    const studioListener = vi.fn();
+    window.addEventListener('goodboy:open-github-studio', studioListener);
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /open #9 in GitHub studio/i })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /#7 Track auth rollout/i }));
+    expect(screen.getByRole('region', { name: 'issue #7 details' }).textContent).toContain(
+      'closes when the pull request merges',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'open #9 integration' }));
+    expect(h.onSelectLens).toHaveBeenCalledWith('pr');
+    expect(studioListener).not.toHaveBeenCalled();
+    window.removeEventListener('goodboy:open-github-studio', studioListener);
     expect(screen.getByText('No pull request yet')).toBeDefined();
     expect(screen.getByText('ak/refactor-auth')).toBeDefined();
     expect(screen.getByRole('button', { name: /Open a pull request/i })).toBeDefined();
 
-    const studioEvents: Array<CustomEvent> = [];
-    const studioListener = (event: Event) => studioEvents.push(event as CustomEvent);
     const prListener = vi.fn();
-    window.addEventListener('goodboy:open-github-studio', studioListener);
     window.addEventListener('goodboy:open-github-session', prListener);
     fireEvent.click(screen.getByRole('button', { name: /#7 Track auth rollout/i }));
-    window.removeEventListener('goodboy:open-github-studio', studioListener);
     window.removeEventListener('goodboy:open-github-session', prListener);
 
-    expect(studioEvents[0]?.detail).toEqual({ sessionId: SESSION_ID, issueExternalId: '7' });
     expect(prListener).not.toHaveBeenCalled();
   });
 
@@ -397,7 +409,7 @@ describe('PrPane', () => {
     const listener = (event: Event) => events.push(event as CustomEvent);
     window.addEventListener('goodboy:open-github-session', listener);
 
-    render(<PrPane session={session} />);
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
     const cta = screen.getByRole('button', { name: /Open a pull request/i });
     fireEvent.click(cta);
     window.removeEventListener('goodboy:open-github-session', listener);
@@ -416,12 +428,12 @@ describe('PrPane', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:open-github-studio', listener);
 
-    render(<PrPane session={session} />);
-    expect(screen.getByText('Connect GitHub')).toBeDefined();
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+    expect(screen.getByText('GitHub')).toBeDefined();
+    expect(screen.getByLabelText('GitHub personal access token')).toBeDefined();
     expect(screen.queryByRole('button', { name: /Open a pull request/i })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
     window.removeEventListener('goodboy:open-github-studio', listener);
 
-    expect(listener).toHaveBeenCalledOnce();
+    expect(listener).not.toHaveBeenCalled();
   });
 });

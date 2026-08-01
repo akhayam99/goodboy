@@ -22,15 +22,14 @@ describe('AuthRequiredCallout', () => {
     expect(screen.getByText(/last known identity: amin@x\.io/i)).toBeDefined();
   });
 
-  it('dispatches the provider studio event in login mode when Connect is clicked', () => {
+  it('opens the provider login step inline when Connect is clicked', () => {
     const handler = vi.fn();
     window.addEventListener('goodboy:open-provider-studio', handler);
     render(<AuthRequiredCallout providerId="codex" onRefresh={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: /connect now/i }));
     window.removeEventListener('goodboy:open-provider-studio', handler);
-    expect(handler).toHaveBeenCalledOnce();
-    const event = handler.mock.calls[0]?.[0] as CustomEvent;
-    expect(event.detail).toEqual({ providerId: 'codex', action: 'login' });
+    expect(screen.getByText(/Connect codex/i)).toBeDefined();
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it('calls onRefresh when the Refresh status button is clicked', () => {

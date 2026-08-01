@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ArrowRight, type LucideIcon } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, type LucideIcon } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import {
@@ -30,6 +30,7 @@ type Props = {
   readonly tooltip?: string;
   readonly actions?: ReactNode;
   readonly attribution?: ReactNode;
+  readonly navigation?: 'internal' | 'external';
 };
 
 export const LinkedWorkRow = ({
@@ -41,6 +42,7 @@ export const LinkedWorkRow = ({
   tooltip,
   actions,
   attribution,
+  navigation = 'internal',
 }: Props) => {
   const glyph =
     leading.kind === 'icon' ? (
@@ -75,11 +77,19 @@ export const LinkedWorkRow = ({
           <span className="min-w-0 flex-1 truncate text-sm text-foreground">{title}</span>
         ) : null}
         {attribution}
-        <ArrowRight
-          size={14}
-          aria-hidden
-          className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-        />
+        {navigation === 'internal' ? (
+          <ArrowRight
+            size={14}
+            aria-hidden
+            className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+          />
+        ) : (
+          <ArrowUpRight
+            size={14}
+            aria-hidden
+            className="shrink-0 text-muted-foreground/30 group-hover:text-muted-foreground"
+          />
+        )}
       </button>
       {actions}
     </div>

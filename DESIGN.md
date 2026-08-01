@@ -184,6 +184,10 @@ before sending, a running total after.
   thing is, why it matters, and offers one action to create it. And it teaches
   the board, not the chat: set your first goal, what needs you, where spend
   goes. Never a dead end, never a "start chatting" prompt.
+- **Empty-state hierarchy follows the surface.** A surface's main empty state
+  uses the large size and an `h2`. Inline and secondary empty states use the
+  compact default or inline size and do not add a heading to the document
+  outline.
 - **Loading is a skeleton; running is a moving border. Spinners are
   forbidden.** No `Loader2`, no hand-built dot loaders, no parked spinner
   anywhere. _Loading_ uses the Skeleton primitive, a greyed placeholder

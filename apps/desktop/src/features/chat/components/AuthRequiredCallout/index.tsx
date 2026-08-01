@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL_LOWER } from '../../../../features/providers/providers';
+import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
 import { TranscriptShell } from '../TranscriptShell';
 
 const warningTint = tintClasses('warning');
@@ -14,14 +16,7 @@ type Props = {
 
 export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) => {
   const label = PROVIDER_LABEL_LOWER[providerId];
-
-  const onConnect = () => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-provider-studio', {
-        detail: { providerId, action: 'login' },
-      }),
-    );
-  };
+  const [isConnecting, setIsConnecting] = useState(false);
 
   return (
     <TranscriptShell tone="warning" variant="boxed" emphasis className="flex flex-col gap-2">
@@ -40,14 +35,25 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
               <p className="text-xs text-muted-foreground">last known identity: {identity}</p>
             ) : null}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" onClick={onConnect}>
-              Connect now ↗
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onRefresh}>
-              Refresh status
-            </Button>
-          </div>
+          {isConnecting ? (
+            <ProviderInlineConnect
+              providerId={providerId}
+              action="login"
+              onDone={() => {
+                setIsConnecting(false);
+                onRefresh();
+              }}
+            />
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={() => setIsConnecting(true)}>
+                Connect now
+              </Button>
+              <Button size="sm" variant="ghost" onClick={onRefresh}>
+                Refresh status
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </TranscriptShell>

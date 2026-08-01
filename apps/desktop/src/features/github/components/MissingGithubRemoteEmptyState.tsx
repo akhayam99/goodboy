@@ -1,25 +1,19 @@
-import { Button, EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import type { WorkspaceId } from '@goodboy/types';
+import { IntegrationConnectPanel } from '../../integrations/components/IntegrationConnectPanel';
+import { GithubFormBody } from '../../integrations/github/GithubFormBody';
 
 type Props = {
+  readonly workspaceId: WorkspaceId;
   readonly compact?: boolean;
 };
 
-export const MissingGithubRemoteEmptyState = ({ compact = false }: Props) => (
-  <EmptyState
-    icon={CONCEPT_ICONS.github}
-    title="Connect GitHub"
-    description="This workspace does not have a GitHub remote. Add one, or set a workspace token in the GitHub studio."
-    size={compact ? 'sm' : 'lg'}
-    headingLevel={compact ? undefined : 2}
-    className={compact ? 'py-5' : undefined}
-    action={
-      <Button
-        size="sm"
-        onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-github-studio'))}
-      >
-        Connect
-      </Button>
-    }
-  />
+export const MissingGithubRemoteEmptyState = ({ workspaceId, compact = false }: Props) => (
+  <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>
+    <IntegrationConnectPanel
+      provider="github"
+      description="This workspace does not have a GitHub remote. Add one to review pull requests, or set a workspace token below."
+    >
+      <GithubFormBody workspaceId={workspaceId} />
+    </IntegrationConnectPanel>
+  </div>
 );

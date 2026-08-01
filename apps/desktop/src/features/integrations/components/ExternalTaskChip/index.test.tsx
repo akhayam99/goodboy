@@ -3,9 +3,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
+
+const mocks = vi.hoisted(() => ({
+  openUrl: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../../../shared/lib/editor', () => ({
+  openUrl: mocks.openUrl,
+}));
+
 import { ExternalTaskChip } from './index';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  mocks.openUrl.mockClear();
+});
 
 function makeTask(overrides: Partial<SessionExternalTask> = {}): SessionExternalTask {
   return {
@@ -60,40 +72,30 @@ describe('ExternalTaskChip, provider mapping', () => {
     provider: SessionExternalTaskProvider;
     mark: string;
     label: RegExp;
-    event: string;
   }> = [
-    { provider: 'linear', mark: 'Linear', label: /Linear/i, event: 'goodboy:open-linear-studio' },
-    { provider: 'sentry', mark: 'Sentry', label: /Sentry/i, event: 'goodboy:open-sentry-studio' },
-    { provider: 'gitlab', mark: 'GitLab', label: /GitLab/i, event: 'goodboy:open-gitlab-studio' },
-    { provider: 'github', mark: 'GitHub', label: /GitHub/i, event: 'goodboy:open-github-studio' },
+    { provider: 'linear', mark: 'Linear', label: /Linear/i },
+    { provider: 'sentry', mark: 'Sentry', label: /Sentry/i },
+    { provider: 'gitlab', mark: 'GitLab', label: /GitLab/i },
+    { provider: 'github', mark: 'GitHub', label: /GitHub/i },
   ];
 
-  for (const { provider, mark, label, event } of cases) {
+  for (const { provider, mark, label } of cases) {
     it(`renders the ${provider} mark and label`, () => {
       render(<ExternalTaskChip task={makeTask({ provider, identifier: 'X-1' })} />);
       expect(screen.getByRole('img', { name: mark })).toBeDefined();
       expect(screen.getByRole('button', { name: label })).toBeDefined();
     });
-
-    it(`dispatches ${event} with the externalId on click`, () => {
-      const listener = vi.fn();
-      window.addEventListener(event, listener);
-      render(<ExternalTaskChip task={makeTask({ provider, externalId: `${provider}-id` })} />);
-      fireEvent.click(screen.getByRole('button'));
-      expect(listener).toHaveBeenCalledOnce();
-      const evt = listener.mock.calls[0]?.[0] as CustomEvent;
-      expect(evt.detail).toEqual({ issueExternalId: `${provider}-id` });
-      window.removeEventListener(event, listener);
-    });
   }
 });
 
 describe('ExternalTaskChip, row appearance', () => {
-  it('renders identifier, title, and a copy-link action driven by task.url', () => {
-    render(<ExternalTaskChip task={makeTask()} appearance="row" />);
+  it('renders identifier, title, and external reference actions driven by task.url', () => {
+    const { container } = render(<ExternalTaskChip task={makeTask()} appearance="row" />);
     expect(screen.getByText('GB-123')).toBeDefined();
     expect(screen.getByText('Improve preview metadata')).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Open in Linear' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Copy GB-123 link' })).toBeDefined();
+    expect(container.querySelector('.lucide-arrow-up-right')).not.toBeNull();
   });
 
   it('omits the copy-link action when the task has no url', () => {
@@ -101,14 +103,13 @@ describe('ExternalTaskChip, row appearance', () => {
     expect(screen.queryByRole('button', { name: 'Copy GB-123 link' })).toBeNull();
   });
 
-  it('dispatches the provider studio event with the row button click', () => {
+  it('opens the provider URL without dispatching a studio event from a row click', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:open-linear-studio', listener);
     render(<ExternalTaskChip task={makeTask()} appearance="row" />);
-    fireEvent.click(screen.getByRole('button', { name: /open GB-123 in Linear studio/i }));
-    expect(listener).toHaveBeenCalledOnce();
-    const evt = listener.mock.calls[0]?.[0] as CustomEvent;
-    expect(evt.detail).toEqual({ issueExternalId: 'ext-abc' });
+    fireEvent.click(screen.getByRole('button', { name: /open GB-123 in Linear/i }));
+    expect(mocks.openUrl).toHaveBeenCalledWith('https://linear.app/goodboy/issue/GB-123');
+    expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-linear-studio', listener);
   });
 
@@ -116,10 +117,11 @@ describe('ExternalTaskChip, row appearance', () => {
     const onClick = vi.fn();
     const studioListener = vi.fn();
     window.addEventListener('goodboy:open-linear-studio', studioListener);
-    render(
+    const { container } = render(
       <ExternalTaskChip
         task={makeTask()}
         appearance="row"
+        navigation="internal"
         onClick={onClick}
         ariaLabel="open GB-123 integration"
       />,
@@ -127,6 +129,7 @@ describe('ExternalTaskChip, row appearance', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open GB-123 integration' }));
     expect(onClick).toHaveBeenCalledOnce();
     expect(studioListener).not.toHaveBeenCalled();
+    expect(container.querySelector('.lucide-arrow-right')).not.toBeNull();
     window.removeEventListener('goodboy:open-linear-studio', studioListener);
   });
 });

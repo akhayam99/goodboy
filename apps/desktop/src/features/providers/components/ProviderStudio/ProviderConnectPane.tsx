@@ -16,7 +16,7 @@ import {
   useProviderConnect,
 } from '../ProviderConnectModal/useProviderConnect';
 
-export type ProviderConnectChrome = 'studio' | 'modal';
+export type ProviderConnectChrome = 'studio' | 'modal' | 'inline';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -39,6 +39,7 @@ export const ProviderConnectPane = ({
   const brand = PROVIDER_BRAND[providerId];
   const Icon = brand.icon;
   const isModal = chrome === 'modal';
+  const isInline = chrome === 'inline';
   const actions = (
     <>
       {!connected && !inFlight && !isModal ? (
@@ -51,6 +52,44 @@ export const ProviderConnectPane = ({
       </Button>
     </>
   );
+
+  if (isInline) {
+    return (
+      <div className="flex flex-col gap-3 p-3">
+        <div className="flex items-center gap-2">
+          <Icon
+            size={16}
+            strokeWidth={2}
+            aria-hidden
+            className="shrink-0"
+            style={{ color: `var(${brand.cssVar})` }}
+          />
+          <span className="text-sm font-semibold text-foreground">
+            Connect {provider?.label ?? providerId}
+          </span>
+          <StatusPill phase={lifecycle.phase} connection={provider?.connection ?? 'missing'} />
+        </div>
+        {lifecycle.action ? <Stepper action={lifecycle.action} /> : null}
+        {command ? <CommandPreview command={command} /> : null}
+        {lifecycle.runId ? (
+          <InlineTerminal runId={lifecycle.runId} isActive heightClass="h-40" />
+        ) : (
+          <EmptyTerminalPlaceholder connected={connected} />
+        )}
+        <HelperNote inFlight={inFlight} />
+        {lifecycle.detectedAuthUrl ? (
+          <div className="flex justify-center">
+            <OpenInBrowserButton url={lifecycle.detectedAuthUrl} />
+          </div>
+        ) : null}
+        {lifecycle.phase === 'error' && lifecycle.errorTail ? (
+          <ErrorPanel tail={lifecycle.errorTail} />
+        ) : null}
+        {command ? <EscapeHatch command={command} providerId={providerId} /> : null}
+        <div className="flex items-center justify-end gap-2">{actions}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">

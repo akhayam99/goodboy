@@ -10,6 +10,8 @@ type Store = {
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
   readonly linkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly unlinkSessionExternalTask: ReturnType<typeof vi.fn>;
+  readonly connectLinear: ReturnType<typeof vi.fn>;
+  readonly disconnectLinear: ReturnType<typeof vi.fn>;
 };
 
 type Props = {
@@ -23,6 +25,8 @@ const h = vi.hoisted(() => ({
     workspaceIntegrations: {},
     linkSessionExternalTask: vi.fn(async () => undefined),
     unlinkSessionExternalTask: vi.fn(async () => undefined),
+    connectLinear: vi.fn(async () => undefined),
+    disconnectLinear: vi.fn(async () => undefined),
   },
   openUrl: vi.fn(async () => undefined),
   loadCandidates: vi.fn(),
@@ -111,6 +115,8 @@ beforeEach(() => {
   };
   h.store.linkSessionExternalTask.mockClear();
   h.store.unlinkSessionExternalTask.mockClear();
+  h.store.connectLinear.mockClear();
+  h.store.disconnectLinear.mockClear();
   h.openUrl.mockClear();
 });
 
@@ -202,7 +208,7 @@ describe('IntegrationPane', () => {
     expect(screen.queryByRole('button', { name: 'Link ticket' })).toBeNull();
   });
 
-  it('integrates the link form into the connected empty state and opens the provider studio', () => {
+  it('integrates only the link form into the connected empty state', () => {
     h.store.sessionExternalTasks = {};
     const listener = vi.fn();
     window.addEventListener('goodboy:open-sentry-studio', listener);
@@ -211,12 +217,12 @@ describe('IntegrationPane', () => {
     expect(screen.getByText('No Sentry issues linked')).toBeDefined();
     expect(screen.getByRole('textbox', { name: 'Or paste a Sentry issue URL' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Link ticket' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open Sentry studio' }));
-    expect(listener).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Open Sentry studio' })).toBeNull();
+    expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-sentry-studio', listener);
   });
 
-  it('shows a connect action instead of the link form when disconnected', () => {
+  it('shows the provider connection form inline when disconnected', async () => {
     h.store.sessionExternalTasks = {};
     h.store.workspaceIntegrations = {};
     const listener = vi.fn();
@@ -224,10 +230,16 @@ describe('IntegrationPane', () => {
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    expect(screen.getByText('Connect Linear')).toBeDefined();
+    expect(screen.getByText('Linear')).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Or paste a Linear issue URL' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('Personal access token'), {
+      target: { value: 'lin_api_test' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
-    expect(listener).toHaveBeenCalledOnce();
+    await waitFor(() =>
+      expect(h.store.connectLinear).toHaveBeenCalledWith(WORKSPACE_ID, 'lin_api_test'),
+    );
+    expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-linear-studio', listener);
   });
 

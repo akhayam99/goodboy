@@ -20,6 +20,7 @@ import { AgentRoutingSections } from './AgentRoutingSections';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
 import { SpawnRoutingSummary } from './SpawnRoutingSummary';
 import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
+import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -55,6 +56,7 @@ export const CreateAgentPopover = ({
   });
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
+  const [connectProvider, setConnectProvider] = useState<ProviderId | null>(null);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const workspaceKind = useCurrentWorkspace()?.kind;
   const agentKinds = visibleAgentKinds({ workspaceKind });
@@ -73,6 +75,9 @@ export const CreateAgentPopover = ({
   const [viewProvider, setViewProvider] = useState<ProviderId>(spawnDefault.provider);
 
   useEffect(() => {
+    if (open === false) {
+      setConnectProvider(null);
+    }
     setViewProvider(routing?.provider ?? spawnDefault.provider);
   }, [open, selectedKind, routing, spawnDefault.provider]);
 
@@ -130,35 +135,35 @@ export const CreateAgentPopover = ({
               }}
             />
             <Divider />
-            <AgentRoutingSections
-              connectedProviders={connectedProviders}
-              effective={effective}
-              viewProvider={viewProvider}
-              onViewProvider={setViewProvider}
-              onPickProvider={(provider) => {
-                const model = getDefaultTurnModel({ id: provider });
-                setRouting({
-                  provider,
-                  model,
-                  effort: clampEffort(model, effective.effort),
-                });
-              }}
-              onPickModel={(model, effort) => {
-                setRouting({
-                  provider: viewProvider,
-                  model,
-                  effort,
-                });
-              }}
-              onConnectProvider={(provider) => {
-                window.dispatchEvent(
-                  new CustomEvent('goodboy:open-provider-studio', {
-                    detail: { providerId: provider },
-                  }),
-                );
-                close();
-              }}
-            />
+            {connectProvider != null ? (
+              <ProviderInlineConnect
+                providerId={connectProvider}
+                onDone={() => setConnectProvider(null)}
+              />
+            ) : (
+              <AgentRoutingSections
+                connectedProviders={connectedProviders}
+                effective={effective}
+                viewProvider={viewProvider}
+                onViewProvider={setViewProvider}
+                onPickProvider={(provider) => {
+                  const model = getDefaultTurnModel({ id: provider });
+                  setRouting({
+                    provider,
+                    model,
+                    effort: clampEffort(model, effective.effort),
+                  });
+                }}
+                onPickModel={(model, effort) => {
+                  setRouting({
+                    provider: viewProvider,
+                    model,
+                    effort,
+                  });
+                }}
+                onConnectProvider={setConnectProvider}
+              />
+            )}
             <Divider />
             <div className="flex items-center justify-end px-2.5 py-2">
               <Button size="sm" onClick={() => void onCreate()}>

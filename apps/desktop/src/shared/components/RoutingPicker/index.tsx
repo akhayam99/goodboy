@@ -37,6 +37,7 @@ import { resolvePickerSelection } from './resolvePickerSelection';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
 import { useCursorMaxModeModels } from './useCursorMaxModeModels';
+import { ProviderInlineConnect } from '../../../features/providers/components/ProviderInlineConnect';
 
 const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-2.5';
 
@@ -136,6 +137,7 @@ export const RoutingPicker = ({
   const [isViewingAuto, setIsViewingAuto] = useState(isInheritingRecommendation);
   const [draftSelection, setDraftSelection] = useState<ModelSelection>(routing.selection);
   const [clampNotice, setClampNotice] = useState(routing.clamped);
+  const [connectProvider, setConnectProvider] = useState<ProviderId | null>(null);
   const viewedRecommendedStored =
     recommendedProvider == null && recommendedModel != null
       ? resolveStoredModelSelection({ provider: viewProvider, id: recommendedModel })
@@ -194,6 +196,7 @@ export const RoutingPicker = ({
     setIsViewingAuto(isInheritingRecommendation);
     setDraftSelection(routing.selection);
     setClampNotice(routing.clamped);
+    setConnectProvider(null);
   }, [
     open,
     isInheritingRecommendation,
@@ -386,6 +389,7 @@ export const RoutingPicker = ({
                       onClick={() => {
                         setViewProvider(id);
                         setIsViewingAuto(false);
+                        setConnectProvider(null);
                         if (!isConnected) {
                           const preview = remapModelSelection({
                             sourceProvider: viewProvider,
@@ -422,27 +426,25 @@ export const RoutingPicker = ({
               </div>
             </PickerSection>
             <Divider />
-            {!isViewProviderConnected && (
+            {connectProvider != null ? (
+              <section aria-label="Connect provider">
+                <ProviderInlineConnect
+                  providerId={connectProvider}
+                  onDone={() => setConnectProvider(null)}
+                />
+              </section>
+            ) : null}
+            {!isViewProviderConnected && connectProvider == null && (
               <section aria-label="Models" className="flex items-center gap-2 p-3">
                 <p className="flex-1 text-xs text-muted-foreground">
                   {PROVIDER_LABEL[viewProvider]} is not connected
                 </p>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    window.dispatchEvent(
-                      new CustomEvent('goodboy:open-provider-studio', {
-                        detail: { providerId: viewProvider },
-                      }),
-                    );
-                    close();
-                  }}
-                >
+                <Button size="sm" onClick={() => setConnectProvider(viewProvider)}>
                   Connect {PROVIDER_LABEL[viewProvider]}
                 </Button>
               </section>
             )}
-            {isViewProviderConnected && (
+            {isViewProviderConnected && connectProvider == null && (
               <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-[15rem]">
                 <CatalogGrid
                   catalog={viewedRouting.catalog}
@@ -453,7 +455,7 @@ export const RoutingPicker = ({
                 />
               </ScrollFade>
             )}
-            {isViewProviderConnected && (
+            {isViewProviderConnected && connectProvider == null && (
               <>
                 <Divider />
                 <AxesSection
@@ -489,24 +491,27 @@ export const RoutingPicker = ({
                 />
               </>
             )}
-            {isViewProviderConnected && verbosity != null && onVerbosity != null && (
-              <>
-                <Divider />
-                <PickerSection label="Replies" hint="How detailed the answers should be">
-                  <div className={CHIP_GROUP_CLASS_NAME}>
-                    {VERBOSITY_LEVELS.map((level) => (
-                      <PickerChip
-                        key={level}
-                        label={VERBOSITY_LABEL[level]}
-                        active={verbosity === level}
-                        tone={verbosityTone(level)}
-                        onSelect={() => onVerbosity(level)}
-                      />
-                    ))}
-                  </div>
-                </PickerSection>
-              </>
-            )}
+            {isViewProviderConnected &&
+              connectProvider == null &&
+              verbosity != null &&
+              onVerbosity != null && (
+                <>
+                  <Divider />
+                  <PickerSection label="Replies" hint="How detailed the answers should be">
+                    <div className={CHIP_GROUP_CLASS_NAME}>
+                      {VERBOSITY_LEVELS.map((level) => (
+                        <PickerChip
+                          key={level}
+                          label={VERBOSITY_LABEL[level]}
+                          active={verbosity === level}
+                          tone={verbosityTone(level)}
+                          onSelect={() => onVerbosity(level)}
+                        />
+                      ))}
+                    </div>
+                  </PickerSection>
+                </>
+              )}
             <Divider />
             <footer className="px-3 py-2 font-mono text-2xs text-muted-foreground">
               {viewedResolved.args.join(' ')}

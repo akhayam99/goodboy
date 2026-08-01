@@ -25,7 +25,6 @@ type Props = {
 
 type ProviderMeta = Readonly<{
   label: string;
-  studioEvent: string;
 }>;
 
 type UnlinkParams = {
@@ -34,10 +33,10 @@ type UnlinkParams = {
 };
 
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
-  linear: { label: 'Linear', studioEvent: 'goodboy:open-linear-studio' },
-  sentry: { label: 'Sentry', studioEvent: 'goodboy:open-sentry-studio' },
-  gitlab: { label: 'GitLab', studioEvent: 'goodboy:open-gitlab-studio' },
-  github: { label: 'GitHub', studioEvent: 'goodboy:open-github-studio' },
+  linear: { label: 'Linear' },
+  sentry: { label: 'Sentry' },
+  gitlab: { label: 'GitLab' },
+  github: { label: 'GitHub' },
 };
 
 export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
@@ -101,9 +100,9 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       <div className="flex flex-col gap-3">
         {!connection.isConnected ? (
           provider === 'github' ? (
-            <MissingGithubRemoteEmptyState compact />
+            <MissingGithubRemoteEmptyState workspaceId={workspaceId} compact />
           ) : (
-            <ConnectIntegrationEmptyState provider={provider} compact />
+            <ConnectIntegrationEmptyState provider={provider} workspaceId={workspaceId} compact />
           )
         ) : null}
         {connection.isConnected && !hasTasks ? (
@@ -121,14 +120,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
                   provider={provider}
                   providerLabel={meta.label}
                 />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="self-center"
-                  onClick={() => window.dispatchEvent(new CustomEvent(meta.studioEvent))}
-                >
-                  Open {meta.label} studio
-                </Button>
               </div>
             }
           />
@@ -144,6 +135,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
                     <ExternalTaskChip
                       task={task}
                       appearance="row"
+                      navigation="external"
                       ariaLabel={`open ${task.identifier}`}
                       onClick={() => void openUrl(task.url)}
                     />

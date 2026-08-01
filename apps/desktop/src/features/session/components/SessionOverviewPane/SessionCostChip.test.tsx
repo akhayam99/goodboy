@@ -2,18 +2,39 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { BudgetAlert, SessionId } from '@goodboy/types';
+import type {
+  BudgetAlert,
+  Session,
+  SessionBudget,
+  SessionId,
+  TelemetryRecord,
+} from '@goodboy/types';
 
 type Store = {
   budgetAlerts: ReadonlyArray<BudgetAlert>;
+  sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
+  sessions: ReadonlyArray<Session>;
+  sessionBudgets: Readonly<Record<string, SessionBudget>>;
+  loadSessionTelemetry: ReturnType<typeof vi.fn>;
+  loadSessionBudget: ReturnType<typeof vi.fn>;
+  setSessionBudget: ReturnType<typeof vi.fn>;
 };
 
 const { state, store } = vi.hoisted(() => ({
   state: { sessionCost: 0 },
-  store: { budgetAlerts: [] } as { budgetAlerts: ReadonlyArray<BudgetAlert> },
+  store: {
+    budgetAlerts: [] as ReadonlyArray<BudgetAlert>,
+    sessionTelemetry: {},
+    sessions: [],
+    sessionBudgets: {},
+    loadSessionTelemetry: vi.fn(async () => undefined),
+    loadSessionBudget: vi.fn(async () => undefined),
+    setSessionBudget: vi.fn(async () => undefined),
+  } satisfies Store,
 }));
 
 vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
   useSessionCost: () => state.sessionCost,
   useAppStore: <T,>(selector: (s: Store) => T) => selector(store),
 }));
@@ -36,6 +57,10 @@ const alert = (over: Partial<BudgetAlert> = {}): BudgetAlert =>
 beforeEach(() => {
   state.sessionCost = 0;
   store.budgetAlerts = [];
+  store.sessionTelemetry = {};
+  store.sessions = [];
+  store.sessionBudgets = {};
+  vi.clearAllMocks();
 });
 afterEach(cleanup);
 
@@ -84,14 +109,16 @@ describe('SessionCostChip', () => {
     expect(title).toContain('of a $0.0050 cap');
   });
 
-  it('dispatches the budget-studio event scoped to the session on click', () => {
+  it('expands the session budget inline without dispatching the budget studio event', () => {
     const handler = vi.fn();
     window.addEventListener('goodboy:open-budget-studio', handler);
     render(<SessionCostChip sessionId={SID} />);
     fireEvent.click(screen.getByRole('button'));
-    expect(handler).toHaveBeenCalledOnce();
-    const evt = handler.mock.calls[0]![0] as CustomEvent;
-    expect(evt.detail).toEqual({ scope: { kind: 'session', sessionId: SID } });
+    expect(screen.getByRole('dialog', { name: 'session budget details' })).toBeDefined();
+    expect(screen.getByText('session soft cap')).toBeDefined();
+    expect(store.loadSessionTelemetry).toHaveBeenCalledWith(SID);
+    expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
+    expect(handler).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-budget-studio', handler);
   });
 });
