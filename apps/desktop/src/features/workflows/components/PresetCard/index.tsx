@@ -19,7 +19,12 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
   const description = template.description?.trim();
   return (
     <li className="group relative">
-      <SelectableRow selected={active} onClick={onSelect} className="flex-col gap-1.5 px-2.5 py-2">
+      <SelectableRow
+        selected={active}
+        ariaCurrent={active}
+        onClick={onSelect}
+        className="flex-col gap-1.5 px-2.5 py-2"
+      >
         <div className="flex items-center gap-2">
           <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
           {!approved ? (
