@@ -43,6 +43,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
                 <li key={row.session.id}>
                   <SelectableRow
                     selected={active}
+                    ariaCurrent={active}
                     onClick={() => onSelect(row.session.id)}
                     title={row.session.goal}
                     className="items-center gap-1.5 px-2 py-1.5"

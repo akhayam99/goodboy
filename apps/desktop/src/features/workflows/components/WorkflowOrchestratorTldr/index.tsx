@@ -81,11 +81,11 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
                 <span className="shrink-0 tabular-nums text-muted-foreground/60">
                   {entries.length - visible.length + index + 1}
                 </span>
-                <span className="min-w-0 shrink truncate font-medium text-foreground">
+                <span className="min-w-0 max-w-[50%] truncate font-medium text-foreground">
                   {entry.name}
                 </span>
                 {!isOpen && (
-                  <span className="min-w-0 flex-1 basis-1/2 truncate text-muted-foreground">
+                  <span className="min-w-0 flex-1 truncate text-muted-foreground">
                     {entry.reason}
                   </span>
                 )}
