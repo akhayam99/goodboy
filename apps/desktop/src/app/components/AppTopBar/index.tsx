@@ -37,9 +37,9 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
 
         <div className="min-w-0 flex-1" />
 
-        <div className="pointer-events-none absolute inset-x-0 mx-auto flex w-fit [&>*]:pointer-events-auto">
-          <UpdateIndicator variant="pip" />
-        </div>
+        <UpdateIndicator variant="pip" />
+
+        <div className="min-w-0 flex-1" />
 
         <WorkspaceRollupStrip onOpenBudget={onOpenBudget} />
 

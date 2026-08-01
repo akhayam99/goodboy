@@ -5,11 +5,13 @@ import type { Workspace, WorkspaceKind } from '@goodboy/types';
 import type { WorkspaceLinkMode } from '../../../workspace/components/WorkspaceLinkForm';
 import { WorkspaceLinkForm } from '../../../workspace/components/WorkspaceLinkForm';
 
+export type WorkspaceAudience = 'developer' | 'everyone-else';
+
 type Props = {
   readonly workspace: Workspace | null;
+  readonly audience: WorkspaceAudience | null;
+  readonly onAudienceChange: (audience: WorkspaceAudience | null) => void;
 };
-
-type Audience = 'developer' | 'everyone-else';
 
 const WORKSPACE_KIND_LABELS: Record<WorkspaceKind, string> = {
   repo: 'Repository',
@@ -17,7 +19,7 @@ const WORKSPACE_KIND_LABELS: Record<WorkspaceKind, string> = {
   simple: 'Standalone',
 };
 
-const AUDIENCE_MODES: Record<Audience, ReadonlyArray<WorkspaceLinkMode>> = {
+const AUDIENCE_MODES: Record<WorkspaceAudience, ReadonlyArray<WorkspaceLinkMode>> = {
   developer: ['single', 'multi'],
   'everyone-else': ['simple'],
 };
@@ -37,9 +39,8 @@ const AUDIENCE_OPTIONS = [
   },
 ] as const;
 
-export const WorkspaceStep = ({ workspace }: Props) => {
+export const WorkspaceStep = ({ workspace, audience, onAudienceChange }: Props) => {
   const [isChanging, setIsChanging] = useState(false);
-  const [audience, setAudience] = useState<Audience | null>(null);
 
   if (workspace !== null && !isChanging) {
     return (
@@ -83,7 +84,7 @@ export const WorkspaceStep = ({ workspace }: Props) => {
             <button
               key={option.value}
               type="button"
-              onClick={() => setAudience(option.value)}
+              onClick={() => onAudienceChange(option.value)}
               className="flex items-start gap-3 rounded-lg border border-border px-3 py-3 text-left motion-safe:transition-colors hover:border-primary/50 hover:bg-primary/5"
             >
               <span className="mt-0.5 shrink-0 text-primary">
@@ -117,11 +118,8 @@ export const WorkspaceStep = ({ workspace }: Props) => {
       }
     >
       <WorkspaceLinkForm
-        onComplete={() => {
-          setIsChanging(false);
-          setAudience(null);
-        }}
-        onCancel={() => setAudience(null)}
+        onComplete={() => setIsChanging(false)}
+        onCancel={() => onAudienceChange(null)}
         cancelLabel="Back"
         showBreadcrumb={false}
         modes={AUDIENCE_MODES[audience]}

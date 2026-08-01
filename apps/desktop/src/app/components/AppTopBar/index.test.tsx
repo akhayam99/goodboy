@@ -100,15 +100,19 @@ describe('AppTopBar', () => {
     expect(btn.className).not.toContain('bg-foreground');
   });
 
-  it('centers the update indicator and keeps it clickable', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+  it('centers the update indicator in flow, between two spacers', () => {
+    const { container } = render(
+      <AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />,
+    );
     const update = screen.getByText('Update to 0.2.0');
-    const slot = update.closest('div.absolute');
-    expect(slot).not.toBeNull();
-    expect(slot?.className).toContain('inset-x-0');
-    expect(slot?.className).toContain('mx-auto');
-    expect(slot?.className).toContain('w-fit');
-    expect(slot?.className).toContain('[&>*]:pointer-events-auto');
+    const bar = container.querySelector('[data-tauri-drag-region]');
+    const children = Array.from(bar?.children ?? []);
+    const updateIndex = children.findIndex((child) => child.contains(update));
+
+    expect(updateIndex).toBeGreaterThan(0);
+    expect(children[updateIndex - 1]?.className).toContain('flex-1');
+    expect(children[updateIndex + 1]?.className).toContain('flex-1');
+    expect(children.some((child) => child.className.includes('absolute'))).toBe(false);
     expect(update.closest('button')).not.toBeNull();
   });
 

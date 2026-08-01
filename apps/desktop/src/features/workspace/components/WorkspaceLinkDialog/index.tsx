@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Dialog } from '@goodboy/ui';
+import { isWizardDone, reopenWizard } from '../../../onboarding/onboarding-store';
 import { WorkspaceLinkForm } from '../WorkspaceLinkForm';
 
 type Props = {
@@ -9,6 +10,13 @@ type Props = {
 
 export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
   const [footerContainer, setFooterContainer] = useState<HTMLElement | null>(null);
+
+  const onComplete = () => {
+    onClose();
+    if (!isWizardDone()) {
+      reopenWizard('setup');
+    }
+  };
 
   return (
     <Dialog
@@ -21,7 +29,7 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
     >
       {open ? (
         <WorkspaceLinkForm
-          onComplete={onClose}
+          onComplete={onComplete}
           onCancel={onClose}
           showBreadcrumb
           modes={['single', 'multi', 'simple']}

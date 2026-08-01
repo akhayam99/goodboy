@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 
 vi.mock('../../../workspace/components/WorkspaceLinkForm', () => ({
@@ -20,7 +21,12 @@ vi.mock('../../../workspace/components/WorkspaceLinkForm', () => ({
   ),
 }));
 
-import { WorkspaceStep } from './WorkspaceStep';
+import { WorkspaceStep, type WorkspaceAudience } from './WorkspaceStep';
+
+const Harness = ({ workspace }: { workspace: Workspace | null }) => {
+  const [audience, setAudience] = useState<WorkspaceAudience | null>(null);
+  return <WorkspaceStep workspace={workspace} audience={audience} onAudienceChange={setAudience} />;
+};
 
 const REPOSITORY_WORKSPACE = {
   id: 'workspace-1' as WorkspaceId,
@@ -36,7 +42,7 @@ describe('WorkspaceStep', () => {
   it('asks how the user works before showing any workspace form', () => {
     const onAddWorkspace = vi.fn();
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
-    render(<WorkspaceStep workspace={null} />);
+    render(<Harness workspace={null} />);
 
     expect(screen.getByRole('heading', { name: 'How do you work?' })).toBeDefined();
     expect(screen.queryByTestId('workspace-link-form')).toBeNull();
@@ -45,7 +51,7 @@ describe('WorkspaceStep', () => {
   });
 
   it('offers the repository paths to a developer', () => {
-    render(<WorkspaceStep workspace={null} />);
+    render(<Harness workspace={null} />);
 
     fireEvent.click(screen.getByRole('button', { name: /I write code/ }));
 
@@ -56,7 +62,7 @@ describe('WorkspaceStep', () => {
   });
 
   it('sends everyone else straight to the standalone path', () => {
-    render(<WorkspaceStep workspace={null} />);
+    render(<Harness workspace={null} />);
 
     fireEvent.click(screen.getByRole('button', { name: /I do not write code/ }));
 
@@ -64,7 +70,7 @@ describe('WorkspaceStep', () => {
   });
 
   it('goes back to the question from the form', () => {
-    render(<WorkspaceStep workspace={null} />);
+    render(<Harness workspace={null} />);
 
     fireEvent.click(screen.getByRole('button', { name: /I write code/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
@@ -74,7 +80,7 @@ describe('WorkspaceStep', () => {
   });
 
   it('shows the connected repository name, path, and normalized kind', () => {
-    render(<WorkspaceStep workspace={REPOSITORY_WORKSPACE} />);
+    render(<Harness workspace={REPOSITORY_WORKSPACE} />);
 
     expect(screen.getByRole('heading', { name: 'Workspace connected' })).toBeDefined();
     expect(screen.getByText('Goodboy desktop')).toBeDefined();
@@ -83,16 +89,16 @@ describe('WorkspaceStep', () => {
   });
 
   it('treats an explicit repo kind the same as an undefined kind', () => {
-    const { rerender } = render(<WorkspaceStep workspace={REPOSITORY_WORKSPACE} />);
+    const { rerender } = render(<Harness workspace={REPOSITORY_WORKSPACE} />);
     expect(screen.getByText('Repository')).toBeDefined();
 
-    rerender(<WorkspaceStep workspace={{ ...REPOSITORY_WORKSPACE, kind: 'repo' }} />);
+    rerender(<Harness workspace={{ ...REPOSITORY_WORKSPACE, kind: 'repo' }} />);
 
     expect(screen.getByText('Repository')).toBeDefined();
   });
 
   it('shows the standalone kind and lets the user change the workspace inline', () => {
-    render(<WorkspaceStep workspace={{ ...REPOSITORY_WORKSPACE, kind: 'simple' }} />);
+    render(<Harness workspace={{ ...REPOSITORY_WORKSPACE, kind: 'simple' }} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Change workspace' }));
 

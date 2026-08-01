@@ -118,9 +118,13 @@ export const WorkspaceLinkForm = ({
     setValidating(true);
     setValidPath(false);
     setValidationError(null);
+    let cancelled = false;
     const timer = window.setTimeout(() => {
       void validateGitRepo(path)
         .then((result) => {
+          if (cancelled) {
+            return;
+          }
           if (result.isRepo) {
             setValidPath(true);
             setValidationError(null);
@@ -130,13 +134,23 @@ export const WorkspaceLinkForm = ({
           setValidationError(result.error ?? 'Not a git repository.');
         })
         .catch(() => {
+          if (cancelled) {
+            return;
+          }
           setValidPath(false);
           setValidationError('Could not validate path.');
         })
-        .finally(() => setValidating(false));
+        .finally(() => {
+          if (!cancelled) {
+            setValidating(false);
+          }
+        });
     }, 400);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [path]);
 
   const selectedWorkspaces = useMemo(
@@ -178,7 +192,7 @@ export const WorkspaceLinkForm = ({
         : [...previous, workspace.id],
     );
     setMountNames((previous) =>
-      previous[workspace.id] != null
+      (previous[workspace.id] ?? '').length > 0
         ? previous
         : { ...previous, [workspace.id]: lastPathSegment({ path: workspace.rootPath }) },
     );

@@ -5,7 +5,7 @@ import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { ProvidersStep } from './steps/ProvidersStep';
-import { WorkspaceStep } from './steps/WorkspaceStep';
+import { WorkspaceStep, type WorkspaceAudience } from './steps/WorkspaceStep';
 import { PreferencesStep } from './steps/PreferencesStep';
 import { CodeHostStep } from './steps/CodeHostStep';
 import { TrackerStep } from './steps/TrackerStep';
@@ -42,6 +42,7 @@ export const OnboardingWizard = () => {
     refreshGithubStatus,
   } = useOnboardingWizard();
   const [step, setStep] = useState(0);
+  const [workspaceAudience, setWorkspaceAudience] = useState<WorkspaceAudience | null>(null);
   const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +95,13 @@ export const OnboardingWizard = () => {
       disabled: providersConnected === 0,
     };
   } else if (step === 2) {
-    body = <WorkspaceStep workspace={workspace} />;
+    body = (
+      <WorkspaceStep
+        workspace={workspace}
+        audience={workspaceAudience}
+        onAudienceChange={setWorkspaceAudience}
+      />
+    );
     cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace };
   } else if (step === 3) {
     body = <PreferencesStep workspaceId={workspaceId} workspaceKind={workspaceKind} />;

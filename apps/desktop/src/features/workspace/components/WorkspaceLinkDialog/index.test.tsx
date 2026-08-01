@@ -44,6 +44,15 @@ vi.mock('../../defaultSimpleWorkspacePath', () => ({
   defaultSimpleWorkspacePath: vi.fn(async () => '/home/test/Documents/Goodboy/my-workspace'),
 }));
 
+const { onboarding } = vi.hoisted(() => ({
+  onboarding: { wizardDone: true, reopenWizard: vi.fn() },
+}));
+
+vi.mock('../../../onboarding/onboarding-store', () => ({
+  isWizardDone: () => onboarding.wizardDone,
+  reopenWizard: onboarding.reopenWizard,
+}));
+
 import { WorkspaceLinkDialog } from './index';
 
 beforeEach(() => {
@@ -54,6 +63,8 @@ beforeEach(() => {
   state.workspaces = [];
   validateMock.mockClear();
   validateMock.mockResolvedValue({ isRepo: true });
+  onboarding.wizardDone = true;
+  onboarding.reopenWizard.mockClear();
 });
 afterEach(cleanup);
 
@@ -92,5 +103,19 @@ describe('WorkspaceLinkDialog', () => {
       expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/some/repo' }),
     );
     expect(onClose).toHaveBeenCalled();
+    expect(onboarding.reopenWizard).not.toHaveBeenCalled();
+  });
+
+  it('resumes an unfinished setup wizard once the workspace exists', async () => {
+    onboarding.wizardDone = false;
+    render(<WorkspaceLinkDialog open onClose={vi.fn()} />);
+
+    fireEvent.change(screen.getByPlaceholderText('/path/to/repo'), {
+      target: { value: '/some/repo' },
+    });
+    await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
+    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+
+    await waitFor(() => expect(onboarding.reopenWizard).toHaveBeenCalledWith('setup'));
   });
 });
