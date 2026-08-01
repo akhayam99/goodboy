@@ -1,25 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { OpenQuestion, SessionStageInfo } from '@goodboy/types';
-import { resolveAttentionLens, selectAttention, selectOpenQuestions } from './lib';
+import { resolveAttentionLens, selectOpenQuestions } from './lib';
 
 const stage = (over: Partial<SessionStageInfo>): SessionStageInfo =>
   ({ stage: 'building', reason: '', ...over }) as SessionStageInfo;
 
 const question = (over: Partial<OpenQuestion>): OpenQuestion =>
   ({ status: 'open', text: 'q', ...over }) as unknown as OpenQuestion;
-
-describe('selectAttention', () => {
-  it('flags active when the stage is attention and carries the reason', () => {
-    expect(selectAttention(stage({ stage: 'attention', reason: 'needs you' }))).toEqual({
-      active: true,
-      reason: 'needs you',
-    });
-  });
-
-  it('is inactive for any other stage', () => {
-    expect(selectAttention(stage({ stage: 'running', reason: 'x' })).active).toBe(false);
-  });
-});
 
 describe('resolveAttentionLens', () => {
   const ctx = {

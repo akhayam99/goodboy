@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { Eyebrow } from '@goodboy/ui';
 import type { Agent, Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -79,20 +78,17 @@ export const PipelineSection = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <Eyebrow label="Activity" muted className="px-0.5 font-medium" />
-      <div className="flex flex-col gap-2">
-        {lanes.map((lane) => (
-          <PipelineLane
-            key={lane.runId}
-            lane={lane}
-            onOpen={() => open(lane.runId)}
-            advance={advanceFor(lane.runId)}
-          />
-        ))}
-        {freeAgents.map((agent) => (
-          <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
-        ))}
-      </div>
+      {lanes.map((lane) => (
+        <PipelineLane
+          key={lane.runId}
+          lane={lane}
+          onOpen={() => open(lane.runId)}
+          advance={advanceFor(lane.runId)}
+        />
+      ))}
+      {freeAgents.map((agent) => (
+        <AgentRow key={agent.id} agent={agent} onClick={() => onSelectLens('agents')} />
+      ))}
     </div>
   );
 };

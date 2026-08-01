@@ -1,15 +1,5 @@
 import type { OpenQuestion, SessionStageInfo } from '@goodboy/types';
 
-export type AttentionSummary = {
-  readonly active: boolean;
-  readonly reason: string;
-};
-
-export const selectAttention = (stage: SessionStageInfo): AttentionSummary => ({
-  active: stage.stage === 'attention',
-  reason: stage.reason,
-});
-
 export type AttentionLens = 'agents' | 'workflows' | 'questions' | 'pr' | 'resolve';
 
 export const resolveAttentionLens = (

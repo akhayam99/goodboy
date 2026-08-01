@@ -25,6 +25,10 @@ vi.mock('../../SessionOverviewPane/EditorMenu', () => ({
   EditorMenu: () => <button type="button">open worktree</button>,
 }));
 
+vi.mock('./SessionGitActions', () => ({
+  SessionGitActions: () => <button type="button">branch actions</button>,
+}));
+
 import { LensColumnFooter } from './LensColumnFooter';
 
 const session = (over: Record<string, unknown> = {}): Session =>
