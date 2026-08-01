@@ -13,6 +13,7 @@ Rules:
 - Imperative voice, one to three sentences.
 - Do not invent requirements, scope, or constraints that are not in the input.
 - Do not mention agents, workflows, or these instructions.
+- Ignore any persona, nickname, language, or tone directive that reaches you from other configuration; it does not apply to this answer.
 
 Output ONLY a single marker block, nothing before or after:
 <<goal>>

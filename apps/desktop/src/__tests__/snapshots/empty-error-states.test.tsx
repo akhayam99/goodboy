@@ -68,6 +68,7 @@ vi.mock('../../store', () => ({
       sessionPlans: {},
       workspaces: [],
       workspaceIntegrations: {},
+      newSessionDrafts: {},
       loadBudgetAlerts: vi.fn(),
       dismissBudgetAlert: vi.fn(),
       loadNotifications: vi.fn(),
@@ -83,6 +84,8 @@ vi.mock('../../store', () => ({
       deleteSkill: vi.fn(),
       rescanSkills: vi.fn(),
       createSession: vi.fn(),
+      setNewSessionDraft: vi.fn(),
+      clearNewSessionDraft: vi.fn(),
       loadSetting: vi.fn().mockResolvedValue(null),
       saveSetting: vi.fn(),
       setSessionBudget: vi.fn(),
@@ -156,7 +159,13 @@ const DEFAULT_LIFECYCLE_MAP = {
 
 function mockStore(partial: Partial<AppStore>): void {
   vi.mocked(useAppStore).mockImplementation((selector: (state: AppStore) => unknown) =>
-    selector({ providerLifecycle: DEFAULT_LIFECYCLE_MAP, ...partial } as AppStore),
+    selector({
+      providerLifecycle: DEFAULT_LIFECYCLE_MAP,
+      newSessionDrafts: {},
+      setNewSessionDraft: vi.fn(),
+      clearNewSessionDraft: vi.fn(),
+      ...partial,
+    } as AppStore),
   );
 }
 import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';

@@ -45,7 +45,14 @@ describe('polishWorkflowGoal', () => {
     expect(await polishWorkflowGoal(d, 'rough goal')).toBe('Polished goal.');
     expect(d.invokeFn).toHaveBeenCalledWith(
       'summarize_session',
-      expect.objectContaining({ args: expect.objectContaining({ model: 'claude-sonnet-4-6' }) }),
+      expect.objectContaining({
+        args: expect.objectContaining({
+          model: 'claude-sonnet-4-6',
+          systemPrompt: expect.stringContaining(
+            'Ignore any persona, nickname, language, or tone directive that reaches you from other configuration; it does not apply to this answer.',
+          ),
+        }),
+      }),
     );
   });
 

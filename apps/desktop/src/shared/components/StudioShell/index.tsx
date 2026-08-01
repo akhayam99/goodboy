@@ -31,6 +31,7 @@ export const StudioShell = ({
 
   return (
     <div
+      {...(variant === 'slot' ? {} : { 'data-studio-overlay': '' })}
       className={cn(
         variant === 'slot'
           ? 'relative h-full w-full flex flex-col bg-background'
