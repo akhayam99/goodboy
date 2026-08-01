@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollFade, cn } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
+import { useDropdown } from '../../shared/hooks/useDropdown';
+import { DropdownPortal } from '../../shared/hooks/useDropdown/DropdownPortal';
 import type { LocalBranchInfo } from './worktree';
 
 type Props = {
@@ -10,7 +12,10 @@ type Props = {
   readonly disabled: boolean;
   readonly loading: boolean;
   readonly excludeNames?: ReadonlyArray<string>;
-  readonly openDirection?: 'down' | 'up';
+};
+
+type SelectParams = {
+  readonly name: string;
 };
 
 export const BranchCombobox = ({
@@ -20,14 +25,27 @@ export const BranchCombobox = ({
   disabled,
   loading,
   excludeNames,
-  openDirection = 'down',
 }: Props) => {
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const {
+    open,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupClassName,
+    popupStyle,
+    portal,
+    portalTarget,
+  } = useDropdown({
+    disabled: disabled || branches.length === 0,
+    expectedHeight: 224,
+    strategy: 'fixed',
+    width: '',
+  });
 
   const excludeSet = useMemo(() => new Set(excludeNames ?? []), [excludeNames]);
 
@@ -40,16 +58,16 @@ export const BranchCombobox = ({
   );
 
   const select = useCallback(
-    (name: string) => {
+    ({ name }: SelectParams) => {
       onChange(name);
       setQuery(name);
-      setOpen(false);
+      close();
     },
-    [onChange],
+    [close, onChange],
   );
 
   useEffect(() => {
-    if (value && !query) {
+    if (value !== '' && query === '') {
       setQuery(value);
     }
   }, [value, query]);
@@ -62,26 +80,23 @@ export const BranchCombobox = ({
     if (!open) {
       return;
     }
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    inputRef.current?.focus();
   }, [open]);
 
   useEffect(() => {
-    if (!open || !listRef.current) {
+    if (!open || listRef.current == null) {
       return;
     }
-    const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
-    el?.scrollIntoView({ block: 'nearest' });
+    const highlightedOption = listRef.current.children.item(highlightIdx);
+    if (!(highlightedOption instanceof HTMLElement)) {
+      return;
+    }
+    highlightedOption.scrollIntoView({ block: 'nearest' });
   }, [highlightIdx, open]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-      setOpen(true);
+      toggle();
       e.preventDefault();
       return;
     }
@@ -92,21 +107,21 @@ export const BranchCombobox = ({
       case 'ArrowDown':
         e.preventDefault();
         setHighlightIdx((i) => Math.min(i + 1, filtered.length - 1));
-        break;
+        return;
       case 'ArrowUp':
         e.preventDefault();
         setHighlightIdx((i) => Math.max(i - 1, 0));
-        break;
+        return;
       case 'Enter':
         e.preventDefault();
-        if (filtered[highlightIdx]) {
-          select(filtered[highlightIdx].name);
+        if (filtered[highlightIdx] != null) {
+          select({ name: filtered[highlightIdx].name });
         }
-        break;
+        return;
       case 'Escape':
         e.preventDefault();
-        setOpen(false);
-        break;
+        close();
+        return;
     }
   };
 
@@ -116,10 +131,16 @@ export const BranchCombobox = ({
       ? 'No local branches'
       : 'Search branch…';
 
-  const popupClass = cn(
-    'absolute left-0 z-50 w-full rounded-md border border-border bg-subtle shadow-lg',
-    openDirection === 'up' ? 'bottom-full mb-1 max-h-48' : 'top-full mt-1 max-h-56',
-  );
+  const isListVisible = open && filtered.length > 0;
+  const isNoMatchesVisible = open && !loading && filtered.length === 0 && query !== '';
+  const isPopupVisible = isListVisible || isNoMatchesVisible;
+  const triggerWidth = containerRef.current?.getBoundingClientRect().width;
+  const constrainedPopupStyle = {
+    ...popupStyle,
+    width: triggerWidth,
+    maxHeight:
+      popupStyle?.maxHeight == null ? '14rem' : `min(14rem, ${String(popupStyle.maxHeight)}px)`,
+  };
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -143,12 +164,18 @@ export const BranchCombobox = ({
           className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
           onChange={(e) => {
             setQuery(e.target.value);
-            setOpen(true);
-            if (!e.target.value) {
+            if (!open) {
+              toggle();
+            }
+            if (e.target.value === '') {
               onChange('');
             }
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            if (!open) {
+              toggle();
+            }
+          }}
           onKeyDown={onKeyDown}
         />
         <button
@@ -158,8 +185,10 @@ export const BranchCombobox = ({
             if (disabled || branches.length === 0) {
               return;
             }
-            setOpen((v) => !v);
-            inputRef.current?.focus();
+            toggle();
+            if (open) {
+              inputRef.current?.focus();
+            }
           }}
           aria-label={open ? 'Close branch list' : 'Open branch list'}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -171,39 +200,54 @@ export const BranchCombobox = ({
           />
         </button>
       </div>
-      {open && filtered.length > 0 ? (
-        <ScrollFade className={popupClass} viewportClassName="py-0.5" fadeFrom="subtle">
-          <ul ref={listRef} role="listbox">
-            {filtered.map((b, i) => (
-              <li
-                key={b.name}
-                role="option"
-                aria-selected={highlightIdx === i}
-                onMouseEnter={() => setHighlightIdx(i)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  select(b.name);
-                }}
-                className={cn(
-                  'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
-                  highlightIdx === i ? 'bg-primary/10 text-foreground' : 'text-muted-foreground',
-                )}
-              >
-                <span className="min-w-0 flex-1 truncate">{b.name}</span>
-                {b.inUse ? <span className="shrink-0 text-2xs text-warning">in use</span> : null}
-                {b.hasUncommitted ? (
-                  <span className="shrink-0 text-2xs text-warning">dirty</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </ScrollFade>
-      ) : null}
-      {open && !loading && filtered.length === 0 && query ? (
-        <div className={cn(popupClass, 'px-2 py-2 text-xs text-muted-foreground')}>
-          No matching branches
-        </div>
-      ) : null}
+      <DropdownPortal portal={portal} portalTarget={portalTarget}>
+        {isPopupVisible ? (
+          <div
+            ref={popupRef}
+            className={cn(
+              popupClassName,
+              'rounded-md border border-border bg-subtle shadow-lg',
+              isNoMatchesVisible && 'px-2 py-2 text-xs text-muted-foreground',
+            )}
+            style={constrainedPopupStyle}
+          >
+            {isListVisible ? (
+              <ScrollFade className="max-h-[inherit]" viewportClassName="py-0.5" fadeFrom="subtle">
+                <ul ref={listRef} role="listbox">
+                  {filtered.map((b, i) => (
+                    <li
+                      key={b.name}
+                      role="option"
+                      aria-selected={highlightIdx === i}
+                      onMouseEnter={() => setHighlightIdx(i)}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        select({ name: b.name });
+                      }}
+                      className={cn(
+                        'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
+                        highlightIdx === i
+                          ? 'bg-primary/10 text-foreground'
+                          : 'text-muted-foreground',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1 truncate">{b.name}</span>
+                      {b.inUse ? (
+                        <span className="shrink-0 text-2xs text-warning">in use</span>
+                      ) : null}
+                      {b.hasUncommitted ? (
+                        <span className="shrink-0 text-2xs text-warning">dirty</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </ScrollFade>
+            ) : (
+              'No matching branches'
+            )}
+          </div>
+        ) : null}
+      </DropdownPortal>
     </div>
   );
 };
