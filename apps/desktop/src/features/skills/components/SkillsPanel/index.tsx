@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import {
   Button,
   Divider,
+  EmptyState,
   FieldRow,
   InlineConfirm,
   Input,
   SectionHeader,
+  SelectableRow,
   Textarea,
 } from '@goodboy/ui';
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
+import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -189,24 +192,30 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold text-foreground">Skills</div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => void onRescan()} disabled={rescanning}>
-            {rescanning ? 'Rescanning…' : 'Rescan'}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={openNew}>
-            New skill
-          </Button>
-        </div>
-      </div>
+      <SectionHeader
+        label="Skills"
+        icon={<SECTION_ICONS.skills size={13} aria-hidden />}
+        hint="Reusable prompt fragments agents can opt into."
+        action={
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => void onRescan()} disabled={rescanning}>
+              {rescanning ? 'Rescanning…' : 'Rescan'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={openNew}>
+              New skill
+            </Button>
+          </div>
+        }
+      />
 
       {skills.length === 0 ? (
-        <p className="text-2xs text-muted-foreground">
-          No skills in this workspace yet. Create one, or rescan to pick up skill files on disk.
-        </p>
+        <EmptyState
+          icon={SECTION_ICONS.skills}
+          title="No skills yet"
+          description="A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk."
+        />
       ) : (
-        <ul className="flex flex-col divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft bg-subtle shadow-sm">
+        <ul className="flex flex-col gap-1">
           {skills.map((skill) => (
             <SkillRow
               key={skill.id}
@@ -231,31 +240,38 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
   const [isDeleteArmed, setIsDeleteArmed] = useState(false);
 
   return (
-    <li className="flex flex-col gap-2 px-3 py-2.5 text-xs">
-      <div className="flex items-start gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="font-medium">/{skill.name}</span>
-          {skill.description !== '' ? (
-            <span className="text-xs text-muted-foreground">{skill.description}</span>
-          ) : null}
-          <span className="truncate text-2xs text-muted-foreground/60">{skill.filePath}</span>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            className="text-xs text-muted-foreground underline hover:text-foreground"
-            onClick={onEdit}
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            className="text-xs text-muted-foreground underline hover:text-danger"
-            onClick={() => setIsDeleteArmed(true)}
-          >
-            Delete
-          </button>
-        </div>
+    <li className="relative">
+      <SelectableRow
+        selected={false}
+        onClick={onEdit}
+        title={`Edit ${skill.name}`}
+        className="flex-col items-start gap-0.5 px-2.5 py-2 pr-20"
+      >
+        <span className="truncate text-sm font-medium text-foreground">/{skill.name}</span>
+        {skill.description !== '' ? (
+          <span className="truncate text-xs text-muted-foreground">{skill.description}</span>
+        ) : null}
+        <span className="truncate text-2xs text-muted-foreground/60">{skill.filePath}</span>
+      </SelectableRow>
+      <div className="absolute right-2 top-1.5 flex items-center gap-0.5">
+        <button
+          type="button"
+          aria-label="Edit"
+          title={`Edit ${skill.name}`}
+          onClick={onEdit}
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-muted hover:text-foreground"
+        >
+          <Pencil size={13} aria-hidden />
+        </button>
+        <button
+          type="button"
+          aria-label="Delete"
+          title={`Delete ${skill.name}`}
+          onClick={() => setIsDeleteArmed(true)}
+          className="flex size-7 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] hover:bg-danger/10 hover:text-danger"
+        >
+          <Trash2 size={13} aria-hidden />
+        </button>
       </div>
 
       {isDeleteArmed ? (

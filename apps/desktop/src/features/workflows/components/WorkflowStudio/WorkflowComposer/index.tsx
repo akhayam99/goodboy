@@ -83,7 +83,7 @@ export const WorkflowComposer = ({
   const roleModels = useAppStore((s) => s.workspaceOverrides?.[workspaceId]?.roleModels ?? null);
   if (!open) {
     return (
-      <section className="flex min-w-0 flex-1 flex-col">
+      <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <EmptyGuide onNew={onNew} hasPresets={hasPresets} />
       </section>
     );
@@ -115,7 +115,7 @@ export const WorkflowComposer = ({
       : recommendedModel(def);
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1">
+    <div className="flex h-full min-h-0 min-w-0 flex-1">
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="mx-auto flex w-full max-w-2xl shrink-0 items-center gap-4 px-6 py-4">
           <div className="flex min-w-0 flex-col">

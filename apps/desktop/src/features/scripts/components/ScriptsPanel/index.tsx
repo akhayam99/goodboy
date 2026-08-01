@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, EmptyState } from '@goodboy/ui';
+import { Button, EmptyState, SectionHeader } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import { Plus, SquareTerminal } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
@@ -12,7 +12,11 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId?: SessionId;
   readonly worktreePath?: string | null;
+  readonly hasHostHeading?: boolean;
 };
+
+const SCRIPTS_HINT =
+  'Shell scripts you run by hand from inside a session. cwd is the session worktree. Scripts are shared across every session of this workspace.';
 
 type NewDraft = {
   readonly name: string;
@@ -56,7 +60,12 @@ type SaveExistingParams = {
   readonly body: string;
 };
 
-export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) => {
+export const ScriptsPanel = ({
+  workspaceId,
+  sessionId,
+  worktreePath,
+  hasHostHeading = false,
+}: Props) => {
   const scripts = useAppStore((state) => state.workspaceScripts[workspaceId]);
   const loadScripts = useAppStore((state) => state.loadScripts);
   const saveScript = useAppStore((state) => state.saveScript);
@@ -264,18 +273,28 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
     [cancelScript, sessionId],
   );
 
+  const newScriptAction = (
+    <Button variant="ghost" size="sm" onClick={onOpenNew}>
+      <Plus size={13} aria-hidden />
+      New script
+    </Button>
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          Shell scripts you run by hand from inside a session. cwd is the session worktree. Scripts
-          are shared across every session of this workspace.
-        </p>
-        <Button variant="ghost" size="sm" onClick={onOpenNew}>
-          <Plus size={13} aria-hidden />
-          New script
-        </Button>
-      </div>
+      {hasHostHeading ? (
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-2xs text-muted-foreground/70">{SCRIPTS_HINT}</p>
+          {newScriptAction}
+        </div>
+      ) : (
+        <SectionHeader
+          label="Scripts"
+          icon={<SquareTerminal size={13} aria-hidden />}
+          hint={SCRIPTS_HINT}
+          action={newScriptAction}
+        />
+      )}
 
       {error !== null && newDraft === null ? <p className="text-xs text-danger">{error}</p> : null}
 
@@ -301,7 +320,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
             tone="info"
             icon={SquareTerminal}
             title="No scripts yet"
-            description="Create one to run setup or checks from inside this session."
+            description="A script is a shell command you run by hand from a session, no agent, no tokens spent. Create one to run setup or checks from the session worktree."
           />
         ) : (
           <ul className="flex flex-col gap-2">

@@ -634,35 +634,95 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
   class="flex flex-col gap-3"
 >
   <div
-    class="flex items-center justify-between"
+    class="flex flex-col gap-1"
   >
     <div
-      class="text-xs font-semibold text-foreground"
+      class="flex items-center justify-between gap-2"
     >
-      Skills
+      <span
+        class="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground flex items-center gap-1.5"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-wrench"
+          fill="none"
+          height="13"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="13"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
+          />
+        </svg>
+        Skills
+      </span>
+      <div
+        class="flex items-center gap-2"
+      >
+        <button
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+          type="button"
+        >
+          Rescan
+        </button>
+        <button
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+          type="button"
+        >
+          New skill
+        </button>
+      </div>
     </div>
-    <div
-      class="flex items-center gap-2"
+    <p
+      class="text-2xs text-muted-foreground/70"
     >
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
-        type="button"
+      Reusable prompt fragments agents can opt into.
+    </p>
+  </div>
+  <div
+    class="flex flex-col items-center gap-3 px-6 py-10 text-center"
+  >
+    <span
+      class="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-wrench"
+        fill="none"
+        height="24"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="24"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        Rescan
-      </button>
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
-        type="button"
+        <path
+          d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"
+        />
+      </svg>
+    </span>
+    <div
+      class="flex flex-col gap-1"
+    >
+      <span
+        class="text-sm font-medium text-foreground"
       >
-        New skill
-      </button>
+        No skills yet
+      </span>
+      <span
+        class="max-w-xs text-xs leading-relaxed text-muted-foreground"
+      >
+        A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk.
+      </span>
     </div>
   </div>
-  <p
-    class="text-2xs text-muted-foreground"
-  >
-    No skills in this workspace yet. Create one, or rescan to pick up skill files on disk.
-  </p>
 </div>
 `;
 
