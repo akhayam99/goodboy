@@ -28,7 +28,7 @@ import { verbosityTone } from './chipTone';
 import { CatalogGrid } from './CatalogGrid';
 import { PickerChip } from './PickerChip';
 import { PickerSection } from './PickerSection';
-import { ProviderGlyph } from './ProviderGlyph';
+import { ProviderGrid } from './ProviderGrid';
 import { RecommendationRow } from './RecommendationRow';
 import { TriggerLabel } from './TriggerLabel';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
@@ -376,56 +376,31 @@ export const RoutingPicker = ({
               </>
             )}
             <PickerSection label="Provider" hint="Which CLI agent runs the turn">
-              <div className={ROUTING_PICKER_CONSTANTS.providerChipGroupClassName}>
-                {ROUTING_PICKER_CONSTANTS.providers.map((id) => {
+              <ProviderGrid
+                connectedProviders={connectedProviders}
+                activeProvider={isViewingAuto ? null : viewProvider}
+                secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
+                onSelect={(id) => {
                   const isConnected = connectedProviders.includes(id);
-                  const isActive = !isViewingAuto && viewProvider === id;
-                  const isRecommendedTab = isViewingAuto && recommendedProvider === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      title={PROVIDER_LABEL[id]}
-                      aria-label={PROVIDER_LABEL[id]}
-                      aria-pressed={isActive}
-                      onClick={() => {
-                        setViewProvider(id);
-                        setIsViewingAuto(false);
-                        setConnectProvider(null);
-                        if (!isConnected) {
-                          const preview = remapModelSelection({
-                            sourceProvider: viewProvider,
-                            targetProvider: id,
-                            selection: viewedRouting.selection,
-                          });
-                          setDraftSelection(
-                            id === 'gemini'
-                              ? { ...preview.selection, effort: viewedRouting.effort }
-                              : preview.selection,
-                          );
-                          return;
-                        }
-                        onPickProvider({ next: id, viewedProvider: id });
-                      }}
-                      className={cn(
-                        'relative inline-flex min-w-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground',
-                        isActive && 'bg-background text-foreground shadow-sm',
-                        isRecommendedTab && 'text-foreground ring-1 ring-inset ring-border-soft',
-                      )}
-                    >
-                      <span className={cn(!isConnected && 'opacity-35')}>
-                        <ProviderGlyph id={id} size={15} />
-                      </span>
-                      {!isConnected && (
-                        <span
-                          className="absolute right-1 top-1 size-1.5 rounded-full bg-warning ring-1 ring-subtle"
-                          aria-hidden
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                  setViewProvider(id);
+                  setIsViewingAuto(false);
+                  setConnectProvider(null);
+                  if (!isConnected) {
+                    const preview = remapModelSelection({
+                      sourceProvider: viewProvider,
+                      targetProvider: id,
+                      selection: viewedRouting.selection,
+                    });
+                    setDraftSelection(
+                      id === 'gemini'
+                        ? { ...preview.selection, effort: viewedRouting.effort }
+                        : preview.selection,
+                    );
+                    return;
+                  }
+                  onPickProvider({ next: id, viewedProvider: id });
+                }}
+              />
             </PickerSection>
             <Divider />
             {connectProvider != null ? (

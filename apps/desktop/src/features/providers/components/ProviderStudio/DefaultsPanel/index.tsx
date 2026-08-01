@@ -20,11 +20,11 @@ import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
-import { PROVIDER_ORDER } from '../providerOrder';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -168,23 +168,15 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               hint="Governs every task and role below unless it has its own override."
             />
             <FieldRow label="Default provider" help="New sessions start on it and can override it.">
-              <div className="flex max-w-64 flex-wrap justify-end gap-1">
-                {PROVIDER_ORDER.map((providerId) => (
-                  <ProviderChip
-                    key={providerId}
-                    id={providerId}
-                    selected={defaultProviderId === providerId}
-                    disabled={busy || !connectedProviderIds.includes(providerId)}
-                    onClick={() => onDefaultProvider({ providerId })}
-                    trailing={
-                      connectedProviderIds.includes(providerId) ? null : (
-                        <span className="text-2xs uppercase tracking-wide text-warning">
-                          offline
-                        </span>
-                      )
-                    }
-                  />
-                ))}
+              <div className="w-64">
+                <ProviderPicker
+                  connectedProviders={connectedProviderIds}
+                  provider={defaultProviderId}
+                  disabled={busy}
+                  onProvider={(providerId) => onDefaultProvider({ providerId })}
+                  align="end"
+                  ariaLabel="Default provider"
+                />
               </div>
             </FieldRow>
             <p className="text-2xs text-muted-foreground">
@@ -213,13 +205,6 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                         disabled={busy || isDefaultProvider}
                         onClick={() => onToggleRoutingProvider({ providerId })}
                         title={isDefaultProvider ? 'Default provider is always enabled' : undefined}
-                        trailing={
-                          isDefaultProvider ? (
-                            <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">
-                              default
-                            </span>
-                          ) : null
-                        }
                       />
                     );
                   })}
