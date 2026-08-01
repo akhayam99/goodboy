@@ -23,7 +23,7 @@ export const WorkflowRailSectionToggle = ({ label, count, isShown, icon, onChang
       aria-pressed={isShown}
       title={`${isShown ? 'hide' : 'show'} ${label.toLowerCase()} workflows`}
       className={cn(
-        'flex items-center gap-1 self-start rounded-md px-1.5 py-0.5 text-2xs font-medium transition-colors',
+        'flex h-7 items-center gap-1 self-start rounded-md px-1.5 text-2xs font-medium transition-colors',
         isShown
           ? 'bg-primary/10 text-primary'
           : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',

@@ -1,9 +1,10 @@
 import type { SessionId } from '@goodboy/types';
 import { Button, EmptyState, Eyebrow, SelectableRow } from '@goodboy/ui';
-import { GitBranch, Plus } from 'lucide-react';
+import { GitBranch, MessagesSquare, Plus } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PullRequestChip } from '../PullRequestChip';
 import type { InboxGroup } from './useGithubInbox';
+import { InboxStatusIcons } from '../../../integrations/components/InboxStatusIcons';
 
 type Props = {
   readonly groups: ReadonlyArray<InboxGroup>;
@@ -81,6 +82,24 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
                         className="size-1.5 shrink-0 rounded-full bg-danger"
                       />
                     ) : null}
+                    <InboxStatusIcons
+                      sessionIcon={
+                        <MessagesSquare
+                          size={11}
+                          aria-label="session launched"
+                          className="text-success"
+                        />
+                      }
+                      codeHostIcon={
+                        row.pr != null ? (
+                          <CONCEPT_ICONS.github
+                            size={11}
+                            aria-label="GitHub pull request"
+                            className="text-muted-foreground/70"
+                          />
+                        ) : null
+                      }
+                    />
                   </SelectableRow>
                 </li>
               );

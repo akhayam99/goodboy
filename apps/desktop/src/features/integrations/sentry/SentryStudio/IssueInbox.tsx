@@ -6,6 +6,7 @@ import type { SentryIssue } from '../client';
 import { SentryLevelBadge } from '../SentryLevelBadge';
 import type { SentryIssueRow } from './useSentryIssues';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
 type Props = {
   readonly rows: ReadonlyArray<SentryIssueRow>;
@@ -115,13 +116,17 @@ export const IssueInbox = ({
                       <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                         {row.issue.title}
                       </span>
-                      {row.sessionId ? (
-                        <MessagesSquare
-                          size={11}
-                          aria-label="session launched"
-                          className="shrink-0 text-success"
-                        />
-                      ) : null}
+                      <InboxStatusIcons
+                        sessionIcon={
+                          row.sessionId != null ? (
+                            <MessagesSquare
+                              size={11}
+                              aria-label="session launched"
+                              className="text-success"
+                            />
+                          ) : null
+                        }
+                      />
                     </div>
                     {row.issue.culprit ? (
                       <span className="truncate font-mono text-2xs text-muted-foreground/70">

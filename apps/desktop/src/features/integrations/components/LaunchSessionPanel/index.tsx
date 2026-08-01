@@ -179,7 +179,7 @@ export const LaunchSessionPanel = ({
         }
       />
 
-      <FieldRow label="Goal">
+      <FieldRow label="Goal" layout="stacked">
         <Textarea
           value={goal}
           onChange={(event) => setGoal(event.target.value)}
@@ -188,7 +188,7 @@ export const LaunchSessionPanel = ({
           maxRows={10}
           disabled={busy}
           aria-label="Session goal"
-          className="w-full sm:w-96"
+          className="w-full"
         />
       </FieldRow>
 
@@ -196,27 +196,26 @@ export const LaunchSessionPanel = ({
         <>
           <Divider />
           <section className="flex flex-col">
-            <SectionHeader
-              icon={<GitBranch size={12} aria-hidden />}
-              label="Branch"
-              action={
-                adoptable != null ? (
-                  <SegmentedTabs
-                    ariaLabel="branch source"
-                    options={[
-                      { value: 'adopt', label: adoptable.label, disabled: busy },
-                      { value: 'fresh', label: 'Start fresh', disabled: busy },
-                    ]}
-                    value={mode}
-                    onChange={setModeChoice}
-                    size="sm"
-                  />
-                ) : null
-              }
-            />
+            <div className="flex flex-col gap-2">
+              <SectionHeader icon={<GitBranch size={12} aria-hidden />} label="Branch" />
+              {adoptable != null ? (
+                <SegmentedTabs
+                  ariaLabel="branch source"
+                  options={[
+                    { value: 'adopt', label: adoptable.label, disabled: busy },
+                    { value: 'fresh', label: 'Start fresh', disabled: busy },
+                  ]}
+                  value={mode}
+                  onChange={setModeChoice}
+                  size="sm"
+                  fill
+                />
+              ) : null}
+            </div>
             <FieldRow
               label={isAdopting ? 'Adopted branch' : 'Branch name'}
               help={isAdopting ? adoptable.hint : undefined}
+              layout="stacked"
             >
               <div className="flex w-full flex-col gap-1.5">
                 {isAdopting ? (
@@ -249,7 +248,7 @@ export const LaunchSessionPanel = ({
                         )
                       }
                       placeholder="branch-slug"
-                      className="h-8 flex-1 font-mono text-sm"
+                      className="h-8 min-w-0 flex-1 font-mono text-sm"
                       disabled={busy}
                       autoCapitalize="off"
                       autoCorrect="off"
