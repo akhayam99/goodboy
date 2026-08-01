@@ -25,7 +25,16 @@ import { WorkspaceStep, type WorkspaceAudience } from './WorkspaceStep';
 
 const Harness = ({ workspace }: { workspace: Workspace | null }) => {
   const [audience, setAudience] = useState<WorkspaceAudience | null>(null);
-  return <WorkspaceStep workspace={workspace} audience={audience} onAudienceChange={setAudience} />;
+  const [isChanging, setIsChanging] = useState(false);
+  return (
+    <WorkspaceStep
+      workspace={workspace}
+      audience={audience}
+      onAudienceChange={setAudience}
+      isChanging={isChanging}
+      onIsChangingChange={setIsChanging}
+    />
+  );
 };
 
 const REPOSITORY_WORKSPACE = {

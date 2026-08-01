@@ -43,6 +43,7 @@ export const OnboardingWizard = () => {
   } = useOnboardingWizard();
   const [step, setStep] = useState(0);
   const [workspaceAudience, setWorkspaceAudience] = useState<WorkspaceAudience | null>(null);
+  const [changingWorkspace, setChangingWorkspace] = useState(false);
   const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +79,8 @@ export const OnboardingWizard = () => {
       return steps[index - 1] ?? minStep;
     });
   const canSkipSetup = hasWorkspace;
+  const stepOwnsActions =
+    step === 2 && (workspace === null ? workspaceAudience !== null : changingWorkspace);
   const dismiss = () => {
     setClosing(true);
     window.setTimeout(finishWizard, EXIT_MS);
@@ -100,6 +103,8 @@ export const OnboardingWizard = () => {
         workspace={workspace}
         audience={workspaceAudience}
         onAudienceChange={setWorkspaceAudience}
+        isChanging={changingWorkspace}
+        onIsChangingChange={setChangingWorkspace}
       />
     );
     cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace };
@@ -180,21 +185,23 @@ export const OnboardingWizard = () => {
             <div key={step} className="motion-safe:animate-fade-in">
               {body}
             </div>
-            <div
-              className={cn(
-                'flex items-center pt-2',
-                step > minStep ? 'justify-between' : 'justify-center',
-              )}
-            >
-              {step > minStep && (
-                <Button variant="ghost" size="sm" onClick={goBack}>
-                  Back
+            {!stepOwnsActions && (
+              <div
+                className={cn(
+                  'flex items-center pt-2',
+                  step > minStep ? 'justify-between' : 'justify-center',
+                )}
+              >
+                {step > minStep && (
+                  <Button variant="ghost" size="sm" onClick={goBack}>
+                    Back
+                  </Button>
+                )}
+                <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
+                  {cta.label}
                 </Button>
-              )}
-              <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
-                {cta.label}
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </ScrollFade>

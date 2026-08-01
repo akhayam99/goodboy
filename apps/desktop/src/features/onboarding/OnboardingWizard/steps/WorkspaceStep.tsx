@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Check, Code2, FolderGit2, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { Workspace, WorkspaceKind } from '@goodboy/types';
@@ -11,6 +11,8 @@ type Props = {
   readonly workspace: Workspace | null;
   readonly audience: WorkspaceAudience | null;
   readonly onAudienceChange: (audience: WorkspaceAudience | null) => void;
+  readonly isChanging: boolean;
+  readonly onIsChangingChange: (isChanging: boolean) => void;
 };
 
 const WORKSPACE_KIND_LABELS: Record<WorkspaceKind, string> = {
@@ -39,9 +41,13 @@ const AUDIENCE_OPTIONS = [
   },
 ] as const;
 
-export const WorkspaceStep = ({ workspace, audience, onAudienceChange }: Props) => {
-  const [isChanging, setIsChanging] = useState(false);
-
+export const WorkspaceStep = ({
+  workspace,
+  audience,
+  onAudienceChange,
+  isChanging,
+  onIsChangingChange,
+}: Props) => {
   if (workspace !== null && !isChanging) {
     return (
       <StepFrame
@@ -65,7 +71,7 @@ export const WorkspaceStep = ({ workspace, audience, onAudienceChange }: Props) 
               </span>
             </span>
           </div>
-          <Button variant="secondary" onClick={() => setIsChanging(true)}>
+          <Button variant="secondary" onClick={() => onIsChangingChange(true)}>
             <RefreshCw size={14} aria-hidden /> Change workspace
           </Button>
         </div>
@@ -99,7 +105,7 @@ export const WorkspaceStep = ({ workspace, audience, onAudienceChange }: Props) 
             </button>
           ))}
           {workspace !== null ? (
-            <Button variant="ghost" onClick={() => setIsChanging(false)}>
+            <Button variant="ghost" onClick={() => onIsChangingChange(false)}>
               Cancel
             </Button>
           ) : null}
@@ -118,7 +124,7 @@ export const WorkspaceStep = ({ workspace, audience, onAudienceChange }: Props) 
       }
     >
       <WorkspaceLinkForm
-        onComplete={() => setIsChanging(false)}
+        onComplete={() => onIsChangingChange(false)}
         onCancel={() => onAudienceChange(null)}
         cancelLabel="Back"
         showBreadcrumb={false}

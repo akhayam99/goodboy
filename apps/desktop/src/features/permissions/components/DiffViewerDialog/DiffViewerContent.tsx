@@ -736,7 +736,12 @@ export const DiffViewerContent = ({
       onKeyDown={handleKeyDown}
     >
       {isPane ? (
-        <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
+        <div
+          className={cn(
+            'flex shrink-0 flex-wrap items-start justify-between gap-3',
+            isEmpty && 'mx-auto w-full max-w-5xl',
+          )}
+        >
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-baseline gap-2">
               <h1 className="text-xl font-semibold leading-snug text-foreground">
