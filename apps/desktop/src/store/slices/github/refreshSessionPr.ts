@@ -30,12 +30,12 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
       return;
     }
     const repo = getSessionRepo({ get, sessionId });
-    if (repo == null && workspace.kind != null) {
+    if (repo == null) {
       return;
     }
-    const repoRoot = repo?.repoRoot ?? workspace.rootPath;
-    const repoBranch = repo?.branch ?? branch;
-    const memberWorkspaceId = repo?.workspaceId;
+    const repoRoot = repo.repoRoot;
+    const repoBranch = repo.branch;
+    const memberWorkspaceId = repo.workspaceId;
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,

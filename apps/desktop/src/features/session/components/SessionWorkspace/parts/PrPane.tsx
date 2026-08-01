@@ -33,6 +33,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
 import { PrListRow } from './PrListRow';
+import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 
 type Props = {
   readonly session: Session;
@@ -137,7 +138,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const selectedPrNumber = useAppStore((s) => s.sessionSelectedPrNumber[sessionId] ?? null);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
-  const branch = useAppStore((s) => s.sessionBranches[sessionId] ?? null);
+  const branch = useSessionRepo({ sessionId })?.branch ?? null;
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workspaceIntegrations = useAppStore(
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,

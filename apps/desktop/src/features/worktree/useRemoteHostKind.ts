@@ -1,12 +1,9 @@
-import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { GitlabWorkspaceIntegration, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { useSessionRepo } from '../../store/slices/worktrees/useSessionRepo';
-import { classifyRemoteHost, type RemoteHostKind } from '../../shared/lib/remoteHost';
-import { worktreeRemoteUrl } from './worktree';
-
-const cache = new Map<string, RemoteHostKind>();
+import type { RemoteHostKind } from '../../shared/lib/remoteHost';
+import { useRootRemoteHostKind } from './useRootRemoteHostKind';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -23,40 +20,5 @@ export const useRemoteHostKind = ({ sessionId }: Params): RemoteHostKind | null 
         .map((i) => i.config.host),
     ),
   );
-  const [kind, setKind] = useState<RemoteHostKind | null>(() =>
-    rootPath != null ? (cache.get(rootPath) ?? null) : null,
-  );
-
-  const hostsKey = gitlabHosts.join('|');
-
-  useEffect(() => {
-    if (rootPath == null) {
-      setKind(null);
-      return;
-    }
-    const cached = cache.get(rootPath);
-    if (cached != null) {
-      setKind(cached);
-      return;
-    }
-    let cancelled = false;
-    worktreeRemoteUrl(rootPath)
-      .then((url) => {
-        const next = classifyRemoteHost(url, gitlabHosts);
-        cache.set(rootPath, next);
-        if (!cancelled) {
-          setKind(next);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setKind('other');
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [gitlabHosts, hostsKey, rootPath]);
-
-  return kind;
+  return useRootRemoteHostKind({ rootPath, gitlabHosts, isEnabled: true });
 };

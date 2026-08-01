@@ -70,6 +70,8 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
       const nextGithub = { ...state.sessionGithub };
       delete nextGithub[sessionId];
       const mounts = state.sessionMounts[sessionId] ?? [];
+      const shouldUpdateSessionBranch =
+        workspace.kind !== 'composite' || mounts[0]?.worktreePath === worktreePath;
       const sessionMounts =
         workspace.kind === 'composite'
           ? {
@@ -80,7 +82,9 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
             }
           : state.sessionMounts;
       return {
-        sessionBranches: { ...state.sessionBranches, [sessionId]: target },
+        sessionBranches: shouldUpdateSessionBranch
+          ? { ...state.sessionBranches, [sessionId]: target }
+          : state.sessionBranches,
         sessionMounts,
         sessionGithub: nextGithub,
       };

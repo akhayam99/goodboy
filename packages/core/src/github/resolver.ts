@@ -1,5 +1,5 @@
 import type { LinkedIssue, PullRequestState, PullRequestStateKind } from '@goodboy/types';
-import type { GhRunner } from './gh';
+import type { GhRunner, GhRunOptions } from './gh';
 import { GhCliError, runJson } from './gh';
 
 export const PR_FIELDS = [
@@ -122,7 +122,7 @@ export const resolvePrForBranch = async (
   runner: GhRunner,
   repo: string,
   branch: string,
-  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<PullRequestState | null> => {
   const args = [
     'pr',
@@ -160,7 +160,7 @@ export const listPrsForBranch = async (
   runner: GhRunner,
   repo: string,
   branch: string,
-  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<PullRequestState>> => {
   const args = [
     'pr',
@@ -225,7 +225,7 @@ export const fetchLinkedIssues = async (
   runner: GhRunner,
   repo: string,
   pr: PullRequestState,
-  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<LinkedIssue>> => {
   const fromBody = parseLinkedIssuesFromBody(pr.body, pr.url);
   try {

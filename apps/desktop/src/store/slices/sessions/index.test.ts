@@ -111,6 +111,7 @@ vi.mock('@goodboy/db', () => ({
   updateSessionPermissionMode: vi.fn(async () => undefined),
   updateSessionAutoRun: vi.fn(async () => undefined),
   updateSessionTitleUserEdited: vi.fn(async () => undefined),
+  updateSessionActiveMount: vi.fn(async () => undefined),
   updateSessionState: vi.fn(async () => undefined),
   attachWorkflowToSession: vi.fn(async () => undefined),
   detachWorkflowFromSession: vi.fn(async () => undefined),
@@ -470,6 +471,8 @@ describe('store contract', () => {
         transcripts: {},
         messages: {},
         sessionWorktrees: {},
+        sessionMounts: {},
+        sessionActiveMount: {},
         sessionBranches: {},
         sessionTelemetry: {},
         workspaceSummary: null,
@@ -896,6 +899,100 @@ describe('store contract', () => {
         allowTurnOverride: true,
         enabledProviders: ['anthropic', 'codex'],
       });
+    });
+  });
+
+  describe('createSession composite workspace', () => {
+    it('creates ordered member worktrees and hydrates their mounts', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const apiWorkspaceId = 'workspace-api' as WorkspaceId;
+      const webWorkspaceId = 'workspace-web' as WorkspaceId;
+      vi.mocked(db.listWorkspaces).mockResolvedValueOnce([
+        buildWorkspace({
+          rootPath: '/tmp/product',
+          kind: 'composite',
+          members: [
+            { workspaceId: apiWorkspaceId, rootPath: '/tmp/api', mountName: 'api' },
+            { workspaceId: webWorkspaceId, rootPath: '/tmp/web', mountName: 'web' },
+          ],
+        }),
+      ]);
+      createWorktreeSpy
+        .mockResolvedValueOnce({
+          worktreePath: '/tmp/product/ship-scope/api',
+          branchName: 'ak/ship-scope-api',
+          slug: 'ship-scope',
+          reused: false,
+        })
+        .mockResolvedValueOnce({
+          worktreePath: '/tmp/product/ship-scope/web',
+          branchName: 'ak/ship-scope-web',
+          slug: 'ship-scope',
+          reused: false,
+        });
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      const { session, worktree } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Ship scope' });
+
+      expect(createWorktreeSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ repoPath: '/tmp/api', dirName: 'api' }),
+      );
+      expect(createWorktreeSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ repoPath: '/tmp/web', dirName: 'web' }),
+      );
+      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenNthCalledWith(
+        1,
+        expect.anything(),
+        expect.objectContaining({
+          sessionId: session.id,
+          worktreePath: worktree.worktreePath,
+          parallelIndex: 0,
+        }),
+      );
+      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenNthCalledWith(
+        2,
+        expect.anything(),
+        expect.objectContaining({
+          sessionId: session.id,
+          worktreePath: '/tmp/product/ship-scope/api',
+          parallelIndex: 1,
+          mountWorkspaceId: apiWorkspaceId,
+          mountName: 'api',
+        }),
+      );
+      expect(vi.mocked(db.insertSessionWorktree)).toHaveBeenNthCalledWith(
+        3,
+        expect.anything(),
+        expect.objectContaining({
+          sessionId: session.id,
+          worktreePath: '/tmp/product/ship-scope/web',
+          parallelIndex: 2,
+          mountWorkspaceId: webWorkspaceId,
+          mountName: 'web',
+        }),
+      );
+      expect(store.getState().sessionMounts[session.id]).toEqual([
+        {
+          workspaceId: apiWorkspaceId,
+          mountName: 'api',
+          worktreePath: '/tmp/product/ship-scope/api',
+          repoRoot: '/tmp/api',
+          branch: 'ak/ship-scope-api',
+        },
+        {
+          workspaceId: webWorkspaceId,
+          mountName: 'web',
+          worktreePath: '/tmp/product/ship-scope/web',
+          repoRoot: '/tmp/web',
+          branch: 'ak/ship-scope-web',
+        },
+      ]);
+      expect(store.getState().sessionActiveMount[session.id]).toBeUndefined();
     });
   });
 

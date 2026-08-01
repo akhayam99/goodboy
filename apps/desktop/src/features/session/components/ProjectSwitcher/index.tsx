@@ -30,7 +30,7 @@ export const ProjectSwitcher = ({ sessionId }: Props) => {
     <SegmentedTabs
       options={options}
       value={activeMount.workspaceId}
-      onChange={(workspaceId) => setSessionActiveMount({ sessionId, workspaceId })}
+      onChange={(workspaceId) => void setSessionActiveMount({ sessionId, workspaceId })}
       size="sm"
       ariaLabel="Active project"
     />

@@ -39,6 +39,7 @@ import {
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
@@ -391,12 +392,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');
+      const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invoke,
-        ...(get().sessionWorktrees?.[sessionId]?.[0] != null && {
-          workingDir: get().sessionWorktrees[sessionId]![0],
-        }),
+        ...(worktreePath != null && { workingDir: worktreePath }),
       });
       let result: Awaited<ReturnType<typeof client.decide>> | null = null;
       try {

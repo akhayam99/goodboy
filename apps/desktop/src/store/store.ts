@@ -220,7 +220,7 @@ export type AppActions = {
     sessionId: SessionId,
     args: { branch: string; createNew: boolean },
   ): Promise<void>;
-  setSessionActiveMount(input: { sessionId: SessionId; workspaceId: WorkspaceId }): void;
+  setSessionActiveMount(input: { sessionId: SessionId; workspaceId: WorkspaceId }): Promise<void>;
   reconcileSessionBranch(sessionId: SessionId, observedBranch: string): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,

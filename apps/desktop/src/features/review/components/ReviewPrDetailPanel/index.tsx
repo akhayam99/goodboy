@@ -38,7 +38,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
         (task) =>
           task.provider === pr.provider &&
           task.externalId === String(pr.number) &&
-          task.mountWorkspaceId === pr.mountWorkspaceId,
+          (task.mountWorkspaceId == null || task.mountWorkspaceId === pr.mountWorkspaceId),
       );
     });
     return (match?.id as SessionId | undefined) ?? null;

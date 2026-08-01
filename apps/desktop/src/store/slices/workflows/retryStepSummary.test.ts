@@ -49,6 +49,15 @@ const session: Session = {
 
 type State = {
   sessions: ReadonlyArray<Session>;
+  workspaces: ReadonlyArray<{
+    id: WorkspaceId;
+    rootPath: string;
+    kind: 'repo';
+  }>;
+  sessionMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveMount: Record<string, WorkspaceId>;
+  sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  sessionBranches: Record<string, string>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   transcripts: Record<string, ReadonlyArray<{ kind: string; delta?: string }>>;
   workspaceOverrides: Record<string, unknown>;
@@ -57,6 +66,11 @@ type State = {
 const buildHarness = (stateOverrides: Partial<State> = {}) => {
   const state: State = {
     sessions: [session],
+    workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+    sessionBranches: { [SESSION_ID]: 'ak/workflow' },
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     transcripts: {
       [AGENT_ID]: [
@@ -104,6 +118,11 @@ describe('retryStepSummary', () => {
     const set = vi.fn();
     const state: State = {
       sessions: [session],
+      workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+      sessionMounts: {},
+      sessionActiveMount: {},
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+      sessionBranches: { [SESSION_ID]: 'ak/workflow' },
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       transcripts: { [AGENT_ID]: [{ kind: 'assistant_text', delta: 'output' }] },
       workspaceOverrides: {},

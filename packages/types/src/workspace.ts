@@ -106,6 +106,7 @@ export type Session = Readonly<{
   workflowRuns: ReadonlyArray<WorkflowRun>;
   autoRun: boolean;
   titleUserEdited: boolean;
+  activeMountWorkspaceId?: WorkspaceId;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';

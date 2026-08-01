@@ -4,6 +4,7 @@ import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { summarizeAgentOutput } from '../../summarizeAgentOutput';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -39,7 +40,7 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
         session.providerPreference.defaultProvider,
       );
 
-    const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
+    const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
     const expectedOutput =
       stepForAgent({
         agent,

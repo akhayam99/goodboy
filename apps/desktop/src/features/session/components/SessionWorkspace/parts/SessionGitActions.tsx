@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { GitBranch, Upload } from 'lucide-react';
 import type { Session, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -19,9 +20,9 @@ const TRIGGER_BUTTON =
 
 export const SessionGitActions = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
-  const worktreePath = useAppStore(
-    (state) => resolveSessionRepo({ state, sessionId })?.worktreePath ?? null,
-  );
+  const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
+  const worktreePath = repo?.worktreePath ?? null;
+  const mountName = repo?.mountName ?? null;
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
   const lastRefreshAt = useRef(0);
@@ -77,7 +78,9 @@ export const SessionGitActions = ({ session }: Props) => {
     {
       kind: 'item',
       key: 'rebase',
-      label: rebase.isRunning ? 'Rebasing on main' : 'Rebase on main',
+      label: rebase.isRunning
+        ? `Rebasing${mountName == null ? '' : ` ${mountName}`} on main`
+        : `Rebase${mountName == null ? '' : ` ${mountName}`} on main`,
       icon: GitBranch,
       onClick: () => void rebase.run(),
       disabled: !rebase.canRebase || rebase.isRunning,
@@ -85,7 +88,9 @@ export const SessionGitActions = ({ session }: Props) => {
     {
       kind: 'item',
       key: 'push',
-      label: push.isBusy ? 'Pushing branch' : 'Push branch',
+      label: push.isBusy
+        ? `Pushing${mountName == null ? '' : ` ${mountName}`} branch`
+        : `Push${mountName == null ? '' : ` ${mountName}`} branch`,
       icon: Upload,
       onClick: () => void push.run(),
       disabled: !canPush || push.isBusy,
@@ -102,7 +107,7 @@ export const SessionGitActions = ({ session }: Props) => {
       trigger={
         <>
           <GitBranch size={13} aria-hidden />
-          <span>Branch</span>
+          <span>{mountName == null ? 'Branch' : `${mountName} branch`}</span>
         </>
       }
     />

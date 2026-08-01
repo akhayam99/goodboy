@@ -15,6 +15,7 @@ import { LocalHistorySection } from './LocalHistorySection';
 import { OriginSection } from './OriginSection';
 import { ResolverActionsSection } from './ResolverActionsSection';
 import { StateSection } from './StateSection';
+import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -40,7 +41,7 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
   );
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
   const prUrl = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.url ?? null);
-  const worktreePath = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null);
+  const worktreePath = useSessionRepo({ sessionId })?.worktreePath ?? null;
   const hasKickoff = useAppStore((s) => s.pendingResolverKickoff[agent.id] !== undefined);
   const pendingResolutions =
     useAppStore((s) => s.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;

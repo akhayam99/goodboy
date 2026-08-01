@@ -21,6 +21,7 @@ import { attributeResolverCommits } from '../../resolver-commits';
 import { resolverReportedShas } from '../../resolver-reported-shas';
 import { listBranchCommits } from '../../../worktree/worktree';
 import { resolverLaneEntries } from './resolverLaneEntries';
+import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
 type Params = {
   readonly session: Session;
@@ -44,9 +45,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   const activateNextResolver = useAppStore((state) => state.activateNextResolver);
   const transcripts = useAppStore((state) => state.transcripts);
   const agentRunHistory = useAppStore((state) => state.agentRunHistory);
-  const worktreePath = useAppStore(
-    (state) => (state.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null,
-  );
+  const worktreePath = useSessionRepo({ sessionId })?.worktreePath ?? null;
   const loading = useSessionLoading(sessionId);
   const metrics = useAgentMetrics({ sessionId });
   const [storedEvents, setStoredEvents] = useState<ReadonlyArray<TurnEvent>>(EMPTY_EVENTS);

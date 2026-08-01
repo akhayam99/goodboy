@@ -16,6 +16,7 @@ import type {
   TurnProviderOverride,
 } from '@goodboy/types';
 import { useAppStore } from '../../store/store';
+import { resolveSessionRepo } from '../../store/slices/worktrees/resolveSessionRepo';
 import { PROVIDER_LABEL_LOWER } from '../providers/providers';
 import { isMainWindow } from '../workspace/window';
 import { worktreeDiffFile } from '../worktree/worktree';
@@ -416,7 +417,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (!path) {
         throw new BridgeSafeError('queryFileDiff requires a path');
       }
-      const worktreePath = (store.sessionWorktrees[sessionId] ?? [])[0] ?? null;
+      const worktreePath = resolveSessionRepo({ state: store, sessionId })?.worktreePath ?? null;
       if (!worktreePath) {
         throw new BridgeSafeError('session worktree is not available');
       }

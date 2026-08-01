@@ -175,6 +175,7 @@ export const ghPrHeadBranch = async (
 export const ghBaseBranches = async (
   cwd: string,
   workspaceId?: string,
+  memberWorkspaceId?: string,
 ): Promise<{ defaultBranch: string | null; branches: ReadonlyArray<string> }> => {
   const [def, list] = await Promise.all([
     tauriGhRunner.run(
@@ -182,11 +183,13 @@ export const ghBaseBranches = async (
       {
         cwd,
         workspaceId,
+        memberWorkspaceId,
       },
     ),
     tauriGhRunner.run(['api', 'repos/{owner}/{repo}/branches?per_page=100', '--jq', '.[].name'], {
       cwd,
       workspaceId,
+      memberWorkspaceId,
     }),
   ]);
   const defaultBranch = def.exitCode === 0 ? def.stdout.trim() || null : null;
@@ -203,10 +206,11 @@ export const ghBaseBranches = async (
 export const ghRepoCollaborators = async (
   cwd: string,
   workspaceId?: string,
+  memberWorkspaceId?: string,
 ): Promise<ReadonlyArray<string>> => {
   const res = await tauriGhRunner.run(
     ['api', 'repos/{owner}/{repo}/collaborators?per_page=100', '--jq', '.[].login'],
-    { cwd, workspaceId },
+    { cwd, workspaceId, memberWorkspaceId },
   );
   if (res.exitCode !== 0) {
     return [];

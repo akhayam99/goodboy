@@ -16,14 +16,23 @@ const {
   removeWorktree: vi.fn(async () => undefined),
   listWorktreesForSession: vi.fn(async () => [
     {
-      worktreePath: '/repos/api/.goodboy/worktrees/composite-task',
+      worktreePath: '/projects/composite/sessions/composite-task',
       branch: 'gb/api-task',
       parallelIndex: 0,
     },
     {
+      worktreePath: '/repos/api/.goodboy/worktrees/composite-task',
+      branch: 'gb/api-task',
+      parallelIndex: 1,
+      mountWorkspaceId: 'ws-api',
+      mountName: 'api',
+    },
+    {
       worktreePath: '/repos/web/.goodboy/worktrees/composite-task',
       branch: 'gb/web-task',
-      parallelIndex: 1,
+      parallelIndex: 2,
+      mountWorkspaceId: 'ws-web',
+      mountName: 'web',
     },
   ]),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
@@ -88,7 +97,16 @@ type Store = {
     state: { kind: string };
   }>;
   archivedSessions: Record<string, ReadonlyArray<unknown>>;
-  workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: string }>;
+  workspaces: ReadonlyArray<{
+    id: string;
+    rootPath: string;
+    kind: string;
+    members: ReadonlyArray<{
+      workspaceId: string;
+      rootPath: string;
+      mountName: string;
+    }>;
+  }>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionMounts: Record<
@@ -124,7 +142,17 @@ const makeStore = ({ activeMount }: MakeStoreParams): Store => ({
     },
   ],
   archivedSessions: {},
-  workspaces: [{ id: COMPOSITE_WORKSPACE_ID, rootPath: COMPOSITE_ROOT, kind: 'composite' }],
+  workspaces: [
+    {
+      id: COMPOSITE_WORKSPACE_ID,
+      rootPath: COMPOSITE_ROOT,
+      kind: 'composite',
+      members: [
+        { workspaceId: API_WORKSPACE_ID, rootPath: API_REPO_ROOT, mountName: 'api' },
+        { workspaceId: WEB_WORKSPACE_ID, rootPath: WEB_REPO_ROOT, mountName: 'web' },
+      ],
+    },
+  ],
   sessionBranches: { [SESSION_ID]: API_BRANCH },
   sessionWorktrees: {
     [SESSION_ID]: [CONTAINER_PATH, API_WORKTREE_PATH, WEB_WORKTREE_PATH],
@@ -219,7 +247,7 @@ describe('a composite workspace session', () => {
     expect(updateSessionWorktreeBranch).toHaveBeenCalledWith(
       expect.anything(),
       SESSION_ID,
-      1,
+      2,
       'gb/web-next',
     );
   });
@@ -237,5 +265,16 @@ describe('a composite workspace session', () => {
       path: CONTAINER_PATH,
     });
     expect(deleteSession).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the container directory when a member worktree removal fails', async () => {
+    const store = makeStore({ activeMount: WEB_WORKSPACE_ID });
+    removeWorktree.mockRejectedValueOnce(new Error('member removal failed'));
+
+    await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
+
+    expect(removeWorktree).toHaveBeenCalledTimes(2);
+    expect(removeSessionDirectory).not.toHaveBeenCalled();
+    expect(store.emitNotification).toHaveBeenCalled();
   });
 });

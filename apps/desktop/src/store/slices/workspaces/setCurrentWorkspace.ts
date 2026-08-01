@@ -2,7 +2,6 @@ import type {
   Agent,
   IsoDateTime,
   ProviderRunId,
-  SessionMount,
   SessionExternalTask,
   TurnState,
   Workflow,
@@ -18,6 +17,7 @@ import {
   summarizeWorkspaceTelemetry,
   touchWorkspaceLastAccessed,
   updateAgentStatus,
+  updateSessionActiveMount,
   updateSessionState,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -38,6 +38,7 @@ import {
 import { buildProviderSpendBreakdown } from '../budget';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { relinkSimpleSessionDirectories } from './relinkSimpleSessionDirectories';
+import { buildSessionMounts } from '../worktrees/buildSessionMounts';
 import type { GetFn, SetFn } from './types';
 
 export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
@@ -143,33 +144,31 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
             })
           : loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
-      const sessionMounts: Record<string, ReadonlyArray<SessionMount>> = {};
+      const sessionMounts: Record<string, ReturnType<typeof buildSessionMounts>> = {};
+      const sessionActiveMount: Record<string, WorkspaceId> = {};
       const sessionBranches: Record<string, string> = {};
       const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
       const kindOverridesFromDb: Record<string, AgentKind> = {};
+      const invalidActiveMountSessionIds = new Set<string>();
       for (const s of sessions) {
         const rows = worktreesBySession.get(s.id) ?? [];
-        sessionMounts[s.id] = [];
-        if (workspace?.kind === 'composite') {
-          sessionMounts[s.id] = rows.flatMap((row) => {
-            if (row.mountWorkspaceId == null) {
-              return [];
-            }
-            const member = workspace.members?.find(
-              (candidate) => candidate.workspaceId === row.mountWorkspaceId,
-            );
-            if (member == null) {
-              return [];
-            }
-            return [
-              {
-                workspaceId: row.mountWorkspaceId,
-                mountName: row.mountName ?? member.mountName,
-                worktreePath: row.worktreePath,
-                repoRoot: member.rootPath,
-                branch: row.branch,
-              },
-            ];
+        const mounts = buildSessionMounts({ workspace, rows });
+        sessionMounts[s.id] = mounts;
+        if (
+          s.activeMountWorkspaceId != null &&
+          mounts.some((mount) => mount.workspaceId === s.activeMountWorkspaceId)
+        ) {
+          sessionActiveMount[s.id] = s.activeMountWorkspaceId;
+        }
+        if (
+          s.activeMountWorkspaceId != null &&
+          mounts.every((mount) => mount.workspaceId !== s.activeMountWorkspaceId)
+        ) {
+          invalidActiveMountSessionIds.add(s.id);
+          await updateSessionActiveMount({
+            db: tauriDatabase,
+            id: s.id,
+            workspaceId: null,
           });
         }
         if (rows.length > 0) {
@@ -187,14 +186,22 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           }
         }
       }
+      const sessionsWithValidActiveMounts = sessions.map((session) => {
+        if (!invalidActiveMountSessionIds.has(session.id)) {
+          return session;
+        }
+        const { activeMountWorkspaceId: _drop, ...validSession } = session;
+        return validSession;
+      });
       const externalTasksMap: Record<string, SessionExternalTask[]> = {};
       for (const task of externalTasks) {
         externalTasksMap[task.sessionId] = [...(externalTasksMap[task.sessionId] ?? []), task];
       }
       set((state) => ({
-        sessions,
+        sessions: sessionsWithValidActiveMounts,
         sessionWorktrees,
         sessionMounts,
+        sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },

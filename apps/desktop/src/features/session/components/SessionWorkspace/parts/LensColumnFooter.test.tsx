@@ -6,6 +6,9 @@ import type { Session } from '@goodboy/types';
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
+    sessionMounts: {},
+    sessionActiveMount: {},
+    setSessionActiveMount: vi.fn(async () => undefined),
     archiveTask: vi.fn(async () => undefined),
     deleteTask: vi.fn(async () => undefined),
     unarchiveTask: vi.fn(async () => undefined),

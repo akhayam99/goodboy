@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollFade, Skeleton } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../store';
+import type { WorkspaceId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
 import { Avatar } from '../Card/parts/Avatar';
 
 type Props = {
   readonly workspaceRoot: string | null;
+  readonly memberWorkspaceId?: WorkspaceId;
   readonly exclude: ReadonlySet<string>;
   readonly onAdd: (logins: ReadonlyArray<string>) => void;
 };
 
-export const ReviewerPicker = ({ workspaceRoot, exclude, onAdd }: Props) => {
+export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAdd }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [logins, setLogins] = useState<ReadonlyArray<string> | null>(null);
@@ -40,11 +42,11 @@ export const ReviewerPicker = ({ workspaceRoot, exclude, onAdd }: Props) => {
     }
 
     setIsLoading(true);
-    void ghRepoCollaborators(workspaceRoot, workspaceId)
+    void ghRepoCollaborators(workspaceRoot, workspaceId, memberWorkspaceId)
       .then(setLogins)
       .catch(() => setLogins([]))
       .finally(() => setIsLoading(false));
-  }, [isOpen, logins, workspaceRoot, workspaceId]);
+  }, [isOpen, logins, memberWorkspaceId, workspaceRoot, workspaceId]);
 
   const candidates = (logins ?? [])
     .filter((login) => exclude.has(login.toLowerCase()) === false)

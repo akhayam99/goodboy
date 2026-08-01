@@ -14,8 +14,11 @@ type Store = {
   readonly selectAgent: ReturnType<typeof vi.fn>;
   readonly setCurrentSession: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
+  readonly sessionMounts: Record<string, ReadonlyArray<never>>;
+  readonly sessionActiveMount: Record<string, string>;
+  readonly sessionWorktrees: Record<string, ReadonlyArray<string>>;
   readonly sessions: ReadonlyArray<{ id: SessionId; workspaceId: string }>;
-  readonly workspaces: ReadonlyArray<{ id: string; rootPath: string }>;
+  readonly workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: 'repo' }>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
 };
 
@@ -46,8 +49,11 @@ const h = vi.hoisted(() => ({
     selectAgent: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
     sessionBranches: { 'session-2': 'ak/card-config' },
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionWorktrees: { 'session-2': ['/repo/.goodboy/worktrees/card-config'] },
     sessions: [{ id: 'session-2' as SessionId, workspaceId: 'workspace-1' }],
-    workspaces: [{ id: 'workspace-1', rootPath: '/repo' }],
+    workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
     workspaceOverrides: {},
   } satisfies Store,
 }));
@@ -58,6 +64,16 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../github', () => ({
   ghBaseBranches: h.ghBaseBranches,
+}));
+
+vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
+  useSessionRepo: () => ({
+    repoRoot: '/repo',
+    worktreePath: '/repo/.goodboy/worktrees/card-config',
+    branch: 'ak/card-config',
+    mountName: null,
+    workspaceId: 'workspace-1',
+  }),
 }));
 
 vi.mock('../../../session/components/AgentSpawnConfig', () => ({

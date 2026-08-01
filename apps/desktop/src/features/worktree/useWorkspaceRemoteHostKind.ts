@@ -1,11 +1,8 @@
-import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { classifyRemoteHost, type RemoteHostKind } from '../../shared/lib/remoteHost';
-import { worktreeRemoteUrl } from './worktree';
-
-const cache = new Map<string, RemoteHostKind>();
+import type { RemoteHostKind } from '../../shared/lib/remoteHost';
+import { useRootRemoteHostKind } from './useRootRemoteHostKind';
 
 type Params = {
   readonly workspaceId: WorkspaceId | null;
@@ -29,39 +26,5 @@ export const useWorkspaceRemoteHostKind = ({ workspaceId }: Params): RemoteHostK
         .map((integration) => integration.config.host),
     ),
   );
-  const [kind, setKind] = useState<RemoteHostKind | null>(() =>
-    rootPath != null && !isSimple ? (cache.get(rootPath) ?? null) : null,
-  );
-  const hostsKey = gitlabHosts.join('|');
-
-  useEffect(() => {
-    if (rootPath == null || isSimple) {
-      setKind(null);
-      return;
-    }
-    const cached = cache.get(rootPath);
-    if (cached != null) {
-      setKind(cached);
-      return;
-    }
-    let cancelled = false;
-    worktreeRemoteUrl(rootPath)
-      .then((url) => {
-        const next = classifyRemoteHost(url, gitlabHosts);
-        cache.set(rootPath, next);
-        if (!cancelled) {
-          setKind(next);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setKind('other');
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [gitlabHosts, hostsKey, isSimple, rootPath]);
-
-  return kind;
+  return useRootRemoteHostKind({ rootPath, gitlabHosts, isEnabled: !isSimple });
 };

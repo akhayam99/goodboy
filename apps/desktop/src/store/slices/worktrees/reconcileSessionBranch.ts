@@ -23,11 +23,11 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
     if (!trimmed) {
       return;
     }
-    if (get().sessionBranches[sessionId] === trimmed) {
-      return;
-    }
     const repo = getSessionRepo({ get, sessionId });
     if (repo == null) {
+      return;
+    }
+    if (repo.branch === trimmed) {
       return;
     }
     const worktrees = await listWorktreesForSession(tauriDatabase, sessionId);
@@ -49,6 +49,8 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
       const nextGithub = { ...state.sessionGithub };
       delete nextGithub[sessionId];
       const mounts = state.sessionMounts[sessionId] ?? [];
+      const shouldUpdateSessionBranch =
+        workspace?.kind !== 'composite' || mounts[0]?.worktreePath === repo.worktreePath;
       const sessionMounts =
         workspace?.kind === 'composite'
           ? {
@@ -59,7 +61,9 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
             }
           : state.sessionMounts;
       return {
-        sessionBranches: { ...state.sessionBranches, [sessionId]: trimmed },
+        sessionBranches: shouldUpdateSessionBranch
+          ? { ...state.sessionBranches, [sessionId]: trimmed }
+          : state.sessionBranches,
         sessionMounts,
         sessionGithub: nextGithub,
       };

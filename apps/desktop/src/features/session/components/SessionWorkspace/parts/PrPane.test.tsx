@@ -21,6 +21,10 @@ type Store = {
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
+  sessionMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveMount: Record<string, WorkspaceId>;
+  sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<Workspace>;
 };
 
@@ -36,6 +40,10 @@ const h = vi.hoisted(() => ({
     refreshSessionPr: vi.fn(),
     selectSessionPr: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionWorktrees: { 'session-1': ['/tmp/goodboy/.goodboy/worktrees/refactor-auth'] },
+    sessions: [] as ReadonlyArray<Session>,
     workspaces: [] as ReadonlyArray<Workspace>,
   } satisfies Store,
   remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
@@ -48,6 +56,16 @@ vi.mock('../../../../../store', () => ({
 
 vi.mock('../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => h.remoteKind,
+}));
+
+vi.mock('../../../../../store/slices/worktrees/useSessionRepo', () => ({
+  useSessionRepo: () => ({
+    repoRoot: '/tmp/goodboy',
+    worktreePath: '/tmp/goodboy/.goodboy/worktrees/refactor-auth',
+    branch: 'ak/refactor-auth',
+    mountName: null,
+    workspaceId: 'workspace-1',
+  }),
 }));
 
 vi.mock('../../../../context/components/ContextPanel/strips/GitlabMrStrip', () => ({
@@ -95,6 +113,7 @@ beforeEach(() => {
   h.store.sessionExternalTasks = {};
   h.store.sessionPhaseRuns = {};
   h.store.workspaceIntegrations = {};
+  h.store.sessions = [session];
   h.store.workspaces = [
     {
       id: session.workspaceId,

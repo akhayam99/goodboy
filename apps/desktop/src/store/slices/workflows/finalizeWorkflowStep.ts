@@ -12,6 +12,7 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/work
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { composeStepBoundary } from '../../kickoff';
 import { summarizeAgentOutput } from '../../summarizeAgentOutput';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -105,7 +106,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
         get().workspaceOverrides?.[session.workspaceId]?.taskModels,
         session.providerPreference.defaultProvider,
       );
-      const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
+      const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
       const expectedOutput =
         stepForAgent({
           agent,

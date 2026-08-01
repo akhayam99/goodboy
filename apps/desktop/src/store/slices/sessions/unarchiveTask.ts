@@ -1,7 +1,12 @@
 import type { Session, SessionId } from '@goodboy/types';
-import { listWorktreesForSession, unarchiveSession as unarchiveSessionInDb } from '@goodboy/db';
+import {
+  listWorktreesForSession,
+  unarchiveSession as unarchiveSessionInDb,
+  updateSessionActiveMount,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
+import { buildSessionMounts } from '../worktrees/buildSessionMounts';
 import type { GetFn, SetFn } from './types';
 
 export const unarchiveTask = (set: SetFn, get: GetFn) => {
@@ -51,9 +56,29 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
         listWorktreesForSession(tauriDatabase, sessionId),
         invokeAgentList(sessionId),
       ]);
+      const workspace = get().workspaces.find((candidate) => candidate.id === workspaceId) ?? null;
+      const mounts = buildSessionMounts({ workspace, rows: worktreeRows });
+      const storedActiveMount = restoredSession.activeMountWorkspaceId;
+      const hasStoredActiveMount =
+        storedActiveMount != null &&
+        mounts.some((mount) => mount.workspaceId === storedActiveMount);
+      if (storedActiveMount != null && !hasStoredActiveMount) {
+        await updateSessionActiveMount({ db: tauriDatabase, id: sessionId, workspaceId: null });
+      }
+      let restoredWithValidActiveMount = restoredSession;
+      if (storedActiveMount != null && !hasStoredActiveMount) {
+        const { activeMountWorkspaceId: _drop, ...validSession } = restoredSession;
+        restoredWithValidActiveMount = validSession;
+      }
       set((state) => {
         const nextWorktrees = { ...state.sessionWorktrees };
         const nextBranches = { ...state.sessionBranches };
+        const nextActiveMount = { ...state.sessionActiveMount };
+        if (hasStoredActiveMount) {
+          nextActiveMount[sessionId] = storedActiveMount;
+        } else {
+          delete nextActiveMount[sessionId];
+        }
         if (worktreeRows.length > 0) {
           nextWorktrees[sessionId] = worktreeRows.map((r) => r.worktreePath);
           const primary = worktreeRows[0];
@@ -62,7 +87,12 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
           }
         }
         return {
+          sessions: state.sessions.map((candidate) =>
+            candidate.id === sessionId ? restoredWithValidActiveMount : candidate,
+          ),
           sessionWorktrees: nextWorktrees,
+          sessionMounts: { ...state.sessionMounts, [sessionId]: mounts },
+          sessionActiveMount: nextActiveMount,
           sessionBranches: nextBranches,
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: runs },
         };

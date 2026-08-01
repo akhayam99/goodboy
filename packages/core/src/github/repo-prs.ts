@@ -1,5 +1,5 @@
 import type { PullRequestState } from '@goodboy/types';
-import type { GhRunner } from './gh';
+import type { GhRunner, GhRunOptions } from './gh';
 import { GhCliError, runJson } from './gh';
 import { PR_FIELDS, toPullRequestState, type RawPullRequest } from './resolver';
 
@@ -18,7 +18,7 @@ export type RepoPullRequest = PullRequestState & {
 export const listOpenPrsForRepo = async (
   runner: GhRunner,
   repo: string,
-  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<RepoPullRequest>> => {
   const args = [
     'pr',

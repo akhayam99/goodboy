@@ -442,7 +442,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 {lens === 'files' ? (
                   <FilesPane
                     sessionId={sessionId}
-                    workingDir={workingDir}
+                    workingDir={projectWorktreePath}
                     worktreePath={projectWorktreePath}
                     onClose={onSelectOverview}
                   />

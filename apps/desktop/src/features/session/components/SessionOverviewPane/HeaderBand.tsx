@@ -12,7 +12,6 @@ import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';
 import { PrStatusLine } from './PrStatusLine';
 import { definitionOfDone } from './definitionOfDone';
-import { ProjectSwitcher } from '../ProjectSwitcher';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Props = {
@@ -123,7 +122,6 @@ export const HeaderBand = ({ session, stage }: Props) => {
       ) : null}
       {pullRequest != null ? <PrStatusLine pr={pullRequest} sessionId={sessionId} /> : null}
       <div className="flex flex-wrap items-center gap-2">
-        <ProjectSwitcher sessionId={sessionId} />
         {branch != null ? (
           <BranchChip
             branch={branch}

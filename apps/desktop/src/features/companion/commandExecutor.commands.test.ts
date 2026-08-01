@@ -141,7 +141,10 @@ const invokeMock = vi.mocked(invoke);
 function makeStore(over: Record<string, unknown> = {}) {
   return {
     sessions: [{ id: 's1', workspaceId: 'w1', workflowRuns: [] }],
-    workspaces: [{ id: 'w1' }, { id: 'w2' }],
+    workspaces: [
+      { id: 'w1', rootPath: '/repo/w1', kind: 'repo' },
+      { id: 'w2', rootPath: '/repo/w2', kind: 'repo' },
+    ],
     workspaceIntegrations: {
       w1: [{ provider: 'linear', config: { host: 'gitlab.com' } }],
     },
@@ -149,6 +152,10 @@ function makeStore(over: Record<string, unknown> = {}) {
     phaseTemplates: {},
     sessionPhaseRuns: {},
     sessionGithub: {},
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionWorktrees: {},
+    sessionBranches: {},
     sendTurn: h.sendTurn,
     spawnAgent: h.spawnAgent,
     activateWorkflowAgent: h.activateWorkflowAgent,

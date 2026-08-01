@@ -8,6 +8,11 @@ const { worktreeRemoteUrl } = vi.hoisted(() => ({
   worktreeRemoteUrl: vi.fn(),
 }));
 
+vi.mock('@goodboy/db', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/db')>();
+  return { ...actual, updateSessionActiveMount: vi.fn(async () => undefined) };
+});
+
 vi.mock('./worktree', () => ({ worktreeRemoteUrl }));
 
 import { useAppStore } from '../../store';

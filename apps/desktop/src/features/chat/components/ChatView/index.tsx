@@ -423,7 +423,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           sessionId={session.id}
           title="worktree diff"
           loader={diffLoader}
-          workingDir={worktreePath ?? undefined}
+          workingDir={diffWorktreePath ?? undefined}
           jumpToFile={diffJumpFile ?? undefined}
         />
       </div>
@@ -551,7 +551,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         sessionId={session.id}
         title="worktree diff"
         loader={diffLoader}
-        workingDir={worktreePath ?? undefined}
+        workingDir={diffWorktreePath ?? undefined}
         jumpToFile={diffJumpFile ?? undefined}
       />
     </div>

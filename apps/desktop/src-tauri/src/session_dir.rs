@@ -187,7 +187,16 @@ pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, Session
 pub fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError> {
     let base = absolute_path(expand_home(&args.base_path)?)?;
     let target = absolute_path(expand_home(&args.path)?)?;
-    if target.parent() != Some(base.as_path()) {
+    let is_contained = match (
+        std::fs::canonicalize(&base),
+        std::fs::canonicalize(&target),
+    ) {
+        (Ok(resolved_base), Ok(resolved_target)) => {
+            resolved_target.parent() == Some(resolved_base.as_path())
+        }
+        _ => target.parent() == Some(base.as_path()),
+    };
+    if !is_contained {
         return Err(SessionDirError::OutsideWorkspace);
     }
     match std::fs::remove_dir_all(target) {

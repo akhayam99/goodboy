@@ -131,11 +131,15 @@ const baseState = (): State => {
   const template = workflow();
   return {
     sessions: [session()],
+    workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
     phaseTemplates: { [WORKSPACE_ID]: [template] },
     sessionWorkflows: { [SESSION_ID]: [template] },
     sessionPhaseRuns: { [SESSION_ID]: [completedAgent()] },
     workspaceOverrides: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionBranches: { [SESSION_ID]: 'ak/workflow' },
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     transcripts: { [AGENT_ID]: [] },
     agentTurnState: {},

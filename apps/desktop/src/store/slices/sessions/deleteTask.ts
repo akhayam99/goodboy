@@ -5,6 +5,7 @@ import { cancelTurn } from '../../../features/chat/turn';
 import { removeSessionDirectory, removeWorktree } from '../../../features/worktree/worktree';
 import { formatError } from '../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { buildSessionMounts } from '../worktrees/buildSessionMounts';
 import type { GetFn, SetFn } from './types';
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
@@ -23,16 +24,8 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         () => undefined,
       );
     }
-    const worktreePaths = get().sessionWorktrees[sessionId] ?? [];
-    let paths = worktreePaths;
-    if (paths.length === 0) {
-      try {
-        const rows = await listWorktreesForSession(tauriDatabase, sessionId);
-        paths = rows.map((r) => r.worktreePath);
-      } catch {
-        paths = [];
-      }
-    }
+    const rows = await listWorktreesForSession(tauriDatabase, sessionId);
+    const paths = rows.map((row) => row.worktreePath);
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
     const isBranchless = isBranchlessSession({
       workspaceKind: workspace?.kind,
@@ -40,16 +33,18 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     });
     const cleanupFailures: unknown[] = [];
     if (workspace?.kind === 'composite' && !isBranchless) {
-      const mounts = get().sessionMounts[sessionId] ?? [];
+      const mounts = buildSessionMounts({ workspace, rows });
+      const memberCleanupFailures: unknown[] = [];
       for (const mount of mounts) {
         try {
           await removeWorktree(mount.repoRoot, mount.worktreePath);
         } catch (error) {
+          memberCleanupFailures.push(error);
           cleanupFailures.push(error);
         }
       }
-      const containerPath = paths[0];
-      if (containerPath != null) {
+      const containerPath = rows.find((row) => row.mountWorkspaceId == null)?.worktreePath;
+      if (containerPath != null && memberCleanupFailures.length === 0) {
         try {
           await removeSessionDirectory({ basePath: workspace.rootPath, path: containerPath });
         } catch (error) {

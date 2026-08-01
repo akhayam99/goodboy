@@ -88,7 +88,10 @@ export const startPrReviewSession = (get: GetFn) => {
       },
     });
     if (pr.mountWorkspaceId != null) {
-      get().setSessionActiveMount({ sessionId: session.id, workspaceId: pr.mountWorkspaceId });
+      await get().setSessionActiveMount({
+        sessionId: session.id,
+        workspaceId: pr.mountWorkspaceId,
+      });
     }
     return session.id;
   };

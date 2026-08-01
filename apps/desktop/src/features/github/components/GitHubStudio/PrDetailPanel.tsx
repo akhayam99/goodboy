@@ -36,6 +36,7 @@ import { PrSwitcher } from './PrSwitcher';
 import { SectionBody } from './SectionBody';
 import type { PrSection } from './prSection';
 import { prSectionOptions } from './prSectionOptions';
+import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
 type Props = {
   readonly sessionId: SessionId | null;
@@ -62,15 +63,8 @@ export const PrDetailPanel = ({
   const selectedNumber = useAppStore((state) =>
     sessionId != null ? (state.sessionSelectedPrNumber[sessionId] ?? null) : null,
   );
-  const workspaceRoot = useAppStore((s) => {
-    const sess =
-      sessionId != null ? s.sessions.find((candidate) => candidate.id === sessionId) : undefined;
-    const ws =
-      sess != null
-        ? s.workspaces.find((workspace) => workspace.id === sess.workspaceId)
-        : undefined;
-    return ws?.rootPath ?? null;
-  });
+  const repo = useSessionRepo({ sessionId: (sessionId ?? '') as SessionId });
+  const workspaceRoot = repo?.repoRoot ?? null;
   const roleModels = useSessionRoleModels({ sessionId });
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
@@ -436,6 +430,7 @@ export const PrDetailPanel = ({
         <PrReviewers
           detail={detail}
           workspaceRoot={workspaceRoot}
+          memberWorkspaceId={repo?.workspaceId}
           onAddReviewers={onAddReviewers}
         />
       }
