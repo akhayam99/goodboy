@@ -11,6 +11,7 @@ import { MessagesSquare, Search } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { GithubIssueGroup } from './useGithubIssues';
+import { InboxStatusIcons } from '../../../integrations/components/InboxStatusIcons';
 
 type Props = {
   readonly groups: ReadonlyArray<GithubIssueGroup>;
@@ -137,10 +138,6 @@ export const IssueInbox = ({
                           ariaCurrent={isActive}
                           className="items-center gap-2.5 px-2.5 py-2"
                         >
-                          <span
-                            aria-hidden
-                            className="size-1.5 shrink-0 rounded-full bg-provider-github"
-                          />
                           <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground/70">
                             #{row.issue.number}
                           </span>
@@ -148,13 +145,24 @@ export const IssueInbox = ({
                           <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">
                             {shortDate({ iso: row.issue.updatedAt })}
                           </span>
-                          {row.sessionId != null ? (
-                            <MessagesSquare
-                              size={11}
-                              aria-label="session launched"
-                              className="shrink-0 text-success"
-                            />
-                          ) : null}
+                          <InboxStatusIcons
+                            sessionIcon={
+                              row.sessionId != null ? (
+                                <MessagesSquare
+                                  size={11}
+                                  aria-label="session launched"
+                                  className="text-success"
+                                />
+                              ) : null
+                            }
+                            codeHostIcon={
+                              <CONCEPT_ICONS.github
+                                size={11}
+                                aria-label="GitHub issue"
+                                className="text-muted-foreground/70"
+                              />
+                            }
+                          />
                         </SelectableRow>
                       </li>
                     );

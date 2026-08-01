@@ -12,6 +12,7 @@ import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearPriority } from '../LinearPriority';
 import type { LinearIssueGroup } from './useLinearIssues';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
 type Props = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
@@ -114,6 +115,10 @@ export const IssueInbox = ({
                 <ul className="flex flex-col gap-0.5">
                   {group.rows.map((row) => {
                     const active = row.issue.id === focusedIssueId;
+                    const linkedPullRequest = issuePullRequests(row.issue)[0] ?? null;
+                    const CodeHostIcon = linkedPullRequest?.url.includes('/merge_requests/')
+                      ? CONCEPT_ICONS.gitlab
+                      : CONCEPT_ICONS.github;
                     return (
                       <li key={row.issue.id}>
                         <SelectableRow
@@ -132,20 +137,26 @@ export const IssueInbox = ({
                             {row.issue.identifier}
                           </span>
                           <span className="min-w-0 flex-1 truncate text-xs">{row.issue.title}</span>
-                          {issuePullRequests(row.issue).length > 0 && (
-                            <CONCEPT_ICONS.pr
-                              size={11}
-                              aria-label="has linked pull request"
-                              className="shrink-0 text-muted-foreground/70"
-                            />
-                          )}
-                          {row.sessionId ? (
-                            <MessagesSquare
-                              size={11}
-                              aria-label="session launched"
-                              className="shrink-0 text-success"
-                            />
-                          ) : null}
+                          <InboxStatusIcons
+                            sessionIcon={
+                              row.sessionId != null ? (
+                                <MessagesSquare
+                                  size={11}
+                                  aria-label="session launched"
+                                  className="text-success"
+                                />
+                              ) : null
+                            }
+                            codeHostIcon={
+                              linkedPullRequest != null ? (
+                                <CodeHostIcon
+                                  size={11}
+                                  aria-label="has linked pull request"
+                                  className="text-muted-foreground/70"
+                                />
+                              ) : null
+                            }
+                          />
                         </SelectableRow>
                       </li>
                     );

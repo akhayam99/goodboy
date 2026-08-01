@@ -11,6 +11,7 @@ import { GitMerge, Search } from 'lucide-react';
 import type { GitlabMergeRequest } from '../client';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { GitlabMrGroup } from './useGitlabMrs';
+import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
 type Props = {
   readonly groups: ReadonlyArray<GitlabMrGroup>;
@@ -139,6 +140,15 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefre
                           <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">
                             {shortDate({ iso: mr.updatedAt })}
                           </span>
+                          <InboxStatusIcons
+                            codeHostIcon={
+                              <CONCEPT_ICONS.gitlab
+                                size={11}
+                                aria-label="GitLab merge request"
+                                className="text-muted-foreground/70"
+                              />
+                            }
+                          />
                         </SelectableRow>
                       </li>
                     );
