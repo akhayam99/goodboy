@@ -3,6 +3,7 @@ import { cn, Divider, StatusDot, tintClasses, type Tone } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
+import { BetaPill } from '../../../shared/components/BetaPill';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 
 type FooterButtonProps = {
@@ -147,9 +148,7 @@ export const AppFooter = ({
           )}
         </div>
 
-        <span className="pointer-events-none absolute inset-x-0 mx-auto w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary ring-1 ring-primary/15">
-          Beta
-        </span>
+        <BetaPill className="pointer-events-none absolute inset-x-0 mx-auto w-fit" />
 
         <div className="flex items-center gap-0.5">
           <FooterButton

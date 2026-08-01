@@ -34,7 +34,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const anchorsRef = useRef<Record<string, HTMLElement | null>>({});
 
   const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
-  const scoutFanout = wsOverrides?.scoutFanout ?? false;
+  const scoutFanout = wsOverrides?.scoutFanout ?? true;
 
   useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {

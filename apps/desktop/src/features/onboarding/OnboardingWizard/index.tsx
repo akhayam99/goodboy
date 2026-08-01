@@ -5,7 +5,7 @@ import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { ProvidersStep } from './steps/ProvidersStep';
-import { WorkspaceStep } from './steps/WorkspaceStep';
+import { WorkspaceStep, type WorkspaceAudience } from './steps/WorkspaceStep';
 import { PreferencesStep } from './steps/PreferencesStep';
 import { CodeHostStep } from './steps/CodeHostStep';
 import { TrackerStep } from './steps/TrackerStep';
@@ -31,6 +31,7 @@ export const OnboardingWizard = () => {
     mode,
     providersConnected,
     hasWorkspace,
+    workspace,
     workspaceId,
     workspaceKind,
     githubConnected,
@@ -41,6 +42,8 @@ export const OnboardingWizard = () => {
     refreshGithubStatus,
   } = useOnboardingWizard();
   const [step, setStep] = useState(0);
+  const [workspaceAudience, setWorkspaceAudience] = useState<WorkspaceAudience | null>(null);
+  const [changingWorkspace, setChangingWorkspace] = useState(false);
   const [closing, setClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +79,8 @@ export const OnboardingWizard = () => {
       return steps[index - 1] ?? minStep;
     });
   const canSkipSetup = hasWorkspace;
+  const stepOwnsActions =
+    step === 2 && (workspace === null ? workspaceAudience !== null : changingWorkspace);
   const dismiss = () => {
     setClosing(true);
     window.setTimeout(finishWizard, EXIT_MS);
@@ -93,7 +98,15 @@ export const OnboardingWizard = () => {
       disabled: providersConnected === 0,
     };
   } else if (step === 2) {
-    body = <WorkspaceStep hasWorkspace={hasWorkspace} />;
+    body = (
+      <WorkspaceStep
+        workspace={workspace}
+        audience={workspaceAudience}
+        onAudienceChange={setWorkspaceAudience}
+        isChanging={changingWorkspace}
+        onIsChangingChange={setChangingWorkspace}
+      />
+    );
     cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace };
   } else if (step === 3) {
     body = <PreferencesStep workspaceId={workspaceId} workspaceKind={workspaceKind} />;
@@ -172,21 +185,23 @@ export const OnboardingWizard = () => {
             <div key={step} className="motion-safe:animate-fade-in">
               {body}
             </div>
-            <div
-              className={cn(
-                'flex items-center pt-2',
-                step > minStep ? 'justify-between' : 'justify-center',
-              )}
-            >
-              {step > minStep && (
-                <Button variant="ghost" size="sm" onClick={goBack}>
-                  Back
+            {!stepOwnsActions && (
+              <div
+                className={cn(
+                  'flex items-center pt-2',
+                  step > minStep ? 'justify-between' : 'justify-center',
+                )}
+              >
+                {step > minStep && (
+                  <Button variant="ghost" size="sm" onClick={goBack}>
+                    Back
+                  </Button>
+                )}
+                <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
+                  {cta.label}
                 </Button>
-              )}
-              <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
-                {cta.label}
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </ScrollFade>

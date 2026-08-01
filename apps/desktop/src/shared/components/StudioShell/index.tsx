@@ -44,7 +44,6 @@ export const StudioShell = ({
         glyph={glyph}
         title={title}
         subtitle={workspaceName}
-        beta
         onClose={requestClose}
         closeLabel={closeLabel}
         variant={variant === 'slot' ? 'compact' : 'fullscreen'}

@@ -82,7 +82,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
   const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
   const defaultProvider =
     wsOverrides?.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const scoutFanout = wsOverrides?.scoutFanout ?? false;
+  const scoutFanout = wsOverrides?.scoutFanout ?? true;
 
   useEffect(() => {
     if (isSimple) {

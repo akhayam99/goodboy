@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 
 const { hookState, finishWizard } = vi.hoisted(() => ({
@@ -28,7 +29,9 @@ vi.mock('./steps/ProvidersStep', () => ({
   ProvidersStep: () => <div data-testid="ProvidersStep" />,
 }));
 vi.mock('./steps/WorkspaceStep', () => ({
-  WorkspaceStep: () => <div data-testid="WorkspaceStep" />,
+  WorkspaceStep: ({ workspace }: { workspace: Workspace | null }) => (
+    <div data-testid="WorkspaceStep">{workspace?.name}</div>
+  ),
 }));
 vi.mock('./steps/PreferencesStep', () => ({
   PreferencesStep: () => <div data-testid="PreferencesStep" />,
@@ -43,6 +46,7 @@ const baseState: OnboardingWizardState = {
   mode: 'full',
   providersConnected: 0,
   hasWorkspace: false,
+  workspace: null,
   workspaceId: null,
   workspaceKind: null,
   githubConnected: false,
@@ -52,6 +56,14 @@ const baseState: OnboardingWizardState = {
   hasSentry: false,
   refreshGithubStatus: vi.fn(),
 };
+
+const WORKSPACE = {
+  id: 'workspace-1' as WorkspaceId,
+  name: 'Goodboy desktop',
+  rootPath: '/Users/dev/goodboy',
+  createdAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
+} satisfies Workspace;
 
 const setHook = (partial: Partial<OnboardingWizardState>) =>
   Object.assign(hookState, baseState, partial);
@@ -116,6 +128,15 @@ describe('OnboardingWizard', () => {
       expect(
         (screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled,
       ).toBe(true);
+    });
+
+    it('passes the resolved workspace to the workspace step', () => {
+      setHook({ providersConnected: 1, hasWorkspace: true, workspace: WORKSPACE });
+      render(<OnboardingWizard />);
+      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
+      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+      expect(screen.getByTestId('WorkspaceStep').textContent).toBe('Goodboy desktop');
     });
   });
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { WorkspaceId, WorkspaceKind } from '@goodboy/types';
+import type { Workspace, WorkspaceId, WorkspaceKind } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { ghStatus } from '../../../github/github';
 import { isWizardDone, OPEN_WIZARD_EVENT, type WizardMode } from '../../onboarding-store';
@@ -9,6 +9,7 @@ export type OnboardingWizardState = {
   readonly mode: WizardMode;
   readonly providersConnected: number;
   readonly hasWorkspace: boolean;
+  readonly workspace: Workspace | null;
   readonly workspaceId: WorkspaceId | null;
   readonly workspaceKind: WorkspaceKind | null;
   readonly githubConnected: boolean;
@@ -28,8 +29,8 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const workspace =
     workspaces.find((candidate) => candidate.id === currentWorkspaceId) ?? workspaces[0] ?? null;
   const workspaceId = workspace?.id ?? null;
-  const workspaceKind = workspace?.kind ?? null;
-  const hasWorkspace = workspaces.length > 0;
+  const workspaceKind = workspace?.kind ?? (workspace !== null ? 'repo' : null);
+  const hasWorkspace = workspace !== null;
   const hydrated = useAppStore((s) => s.hydrated);
 
   const gitlabConnected = useAppStore((s) =>
@@ -112,6 +113,7 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
     mode,
     providersConnected,
     hasWorkspace,
+    workspace,
     workspaceId,
     workspaceKind,
     githubConnected: githubScoped,

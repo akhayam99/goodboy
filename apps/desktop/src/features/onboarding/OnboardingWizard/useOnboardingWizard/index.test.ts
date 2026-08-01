@@ -180,22 +180,26 @@ describe('useOnboardingWizard', () => {
     });
   });
 
-  describe('workspaceId', () => {
+  describe('workspace', () => {
     it('is null when no workspace exists', () => {
       const { result } = renderHook(() => useOnboardingWizard());
+      expect(result.current.workspace).toBeNull();
       expect(result.current.workspaceId).toBeNull();
     });
 
-    it('resolves to the first workspace id', () => {
+    it('resolves the first workspace and normalizes its missing kind to repo', () => {
       workspaces.push({ id: 'w1' });
       const { result } = renderHook(() => useOnboardingWizard());
+      expect(result.current.workspace).toBe(workspaces[0]);
       expect(result.current.workspaceId).toBe('w1');
+      expect(result.current.workspaceKind).toBe('repo');
     });
 
     it('prefers the active workspace and exposes its kind', () => {
       workspaces.push({ id: 'w1', kind: 'repo' }, { id: 'w2', kind: 'simple' });
       currentWorkspaceId = 'w2';
       const { result } = renderHook(() => useOnboardingWizard());
+      expect(result.current.workspace).toBe(workspaces[1]);
       expect(result.current.workspaceId).toBe('w2');
       expect(result.current.workspaceKind).toBe('simple');
     });

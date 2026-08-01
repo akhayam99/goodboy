@@ -82,7 +82,7 @@ function scoutFanoutEnabled(get: GetFn, sessionId: SessionId): boolean {
   if (!session) {
     return false;
   }
-  return get().workspaceOverrides[session.workspaceId]?.scoutFanout === true;
+  return get().workspaceOverrides[session.workspaceId]?.scoutFanout !== false;
 }
 
 function emitScoutFanoutNudge(

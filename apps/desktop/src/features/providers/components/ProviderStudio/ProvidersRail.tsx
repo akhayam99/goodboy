@@ -1,4 +1,4 @@
-import { Eyebrow, SelectableRow, StatusDot, type Tone } from '@goodboy/ui';
+import { Chip, Eyebrow, SelectableRow, StatusDot, type Tone } from '@goodboy/ui';
 import { PROVIDER_BETA, type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -68,11 +68,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-sm font-medium text-foreground">{p.label}</span>
-                    {PROVIDER_BETA.has(id) ? (
-                      <span className="rounded-md bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning">
-                        beta
-                      </span>
-                    ) : null}
+                    {PROVIDER_BETA.has(id) ? <Chip tone="warning" label="Beta" /> : null}
                   </span>
                   <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
                 </span>

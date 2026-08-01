@@ -16,6 +16,7 @@ export type ChipProps = {
   readonly ariaLabel?: string;
   readonly testId?: string;
   readonly onClick?: () => void;
+  readonly disabled?: boolean;
   readonly className?: string;
 };
 
@@ -51,6 +52,7 @@ export const Chip = ({
   ariaLabel,
   testId,
   onClick,
+  disabled = false,
   className,
 }: ChipProps) => {
   const tint = tintClasses(tone);
@@ -81,7 +83,11 @@ export const Chip = ({
         aria-label={ariaLabel}
         data-testid={testId}
         onClick={onClick}
-        className={cn('motion-safe:transition-colors hover:opacity-80', classes)}
+        disabled={disabled}
+        className={cn(
+          'motion-safe:transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60',
+          classes,
+        )}
       >
         {inner}
       </button>

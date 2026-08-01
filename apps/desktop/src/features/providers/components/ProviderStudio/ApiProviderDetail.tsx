@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Divider, ScrollFade, SectionHeader } from '@goodboy/ui';
+import { Chip, Divider, ScrollFade, SectionHeader } from '@goodboy/ui';
 import { CircleCheck, RotateCw, Terminal, TriangleAlert } from 'lucide-react';
 import { PROVIDER_BETA } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
@@ -35,11 +35,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
         <div className="flex min-w-0 flex-col">
           <span className="flex items-center gap-2">
             <span className="text-base font-semibold text-foreground">{info.label}</span>
-            {PROVIDER_BETA.has(info.id) ? (
-              <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-2xs font-medium text-warning">
-                beta
-              </span>
-            ) : null}
+            {PROVIDER_BETA.has(info.id) ? <Chip tone="warning" label="Beta" /> : null}
           </span>
           <span className="truncate text-2xs text-muted-foreground">
             Runs through the OpenCode runtime

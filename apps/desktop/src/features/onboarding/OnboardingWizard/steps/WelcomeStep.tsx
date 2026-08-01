@@ -1,5 +1,4 @@
 import { FolderGit2, Plug } from 'lucide-react';
-import { BetaPill } from '../../../../shared/components/BetaPill';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SetupRow } from './SetupRow';
 
@@ -14,7 +13,6 @@ export const WelcomeStep = () => {
       </div>
 
       <div className="flex flex-col items-center gap-3">
-        <BetaPill />
         <h2 className="text-2xl font-semibold tracking-tight text-foreground">
           Welcome to Goodboy
         </h2>

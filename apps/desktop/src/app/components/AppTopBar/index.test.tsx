@@ -48,7 +48,7 @@ vi.mock('../../../features/companion/bridge', () => ({
 }));
 
 vi.mock('../../../features/updater/components/UpdateIndicator', () => ({
-  UpdateIndicator: () => null,
+  UpdateIndicator: () => <button type="button">Update to 0.2.0</button>,
 }));
 
 vi.mock('../../../features/notifications/components/NotificationCenter', () => ({
@@ -98,6 +98,22 @@ describe('AppTopBar', () => {
     render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio="workflow" />);
     const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).not.toContain('bg-foreground');
+  });
+
+  it('centers the update indicator in flow, between two spacers', () => {
+    const { container } = render(
+      <AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />,
+    );
+    const update = screen.getByText('Update to 0.2.0');
+    const bar = container.querySelector('[data-tauri-drag-region]');
+    const children = Array.from(bar?.children ?? []);
+    const updateIndex = children.findIndex((child) => child.contains(update));
+
+    expect(updateIndex).toBeGreaterThan(0);
+    expect(children[updateIndex - 1]?.className).toContain('flex-1');
+    expect(children[updateIndex + 1]?.className).toContain('flex-1');
+    expect(children.some((child) => child.className.includes('absolute'))).toBe(false);
+    expect(update.closest('button')).not.toBeNull();
   });
 
   it('opens budget only from the spend target and omits the beta chip', () => {

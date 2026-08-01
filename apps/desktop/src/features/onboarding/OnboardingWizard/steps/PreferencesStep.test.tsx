@@ -145,13 +145,18 @@ describe('PreferencesStep', () => {
   });
 
   describe('parallel scouts toggle', () => {
-    it('persists scoutFanout when switched on', async () => {
+    it('starts on when the workspace has no override', () => {
+      render(<PreferencesStep workspaceId={WS_ID} />);
+      expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true');
+    });
+
+    it('persists scoutFanout when switched off', async () => {
       render(<PreferencesStep workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('switch'));
       await waitFor(() =>
         expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
           WS_ID,
-          expect.objectContaining({ scoutFanout: true }),
+          expect.objectContaining({ scoutFanout: false }),
         ),
       );
     });

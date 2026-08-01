@@ -28,13 +28,16 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
     <>
       <div
         data-tauri-drag-region
-        className="flex h-9 shrink-0 items-center gap-2 bg-background px-3"
+        className="relative flex h-9 shrink-0 items-center gap-2 bg-background px-3"
       >
         <div className="flex shrink-0 items-center gap-1.5">
           <DogMascot size={15} className="shrink-0 text-foreground" />
           <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
-          <UpdateIndicator variant="pip" />
         </div>
+
+        <div className="min-w-0 flex-1" />
+
+        <UpdateIndicator variant="pip" />
 
         <div className="min-w-0 flex-1" />
 
