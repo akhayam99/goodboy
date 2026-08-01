@@ -12,6 +12,7 @@ import type {
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import type { WorkflowUpsertArgs, WorkflowStepUpsertArgs } from '../../workflows';
 import type { DefinitionForm, TemplateForm } from '../../form';
 import { defFromLibraryStep, emptyDefinition, emptyForm, templateToForm } from '../../form';
@@ -59,22 +60,15 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const [formatOpen, setFormatOpen] = useState(false);
   const [preview, setPreview] = useState<FormattedWorkflow | null>(null);
 
-  // Both approved presets and drafts are listed; the card carries a status pill.
-  // Autosave means every in-progress workflow is a real (often draft) record.
   const presets = templates.filter((t) => !t.deletedAt);
 
-  // autosave plumbing: latest form/state captured in refs so a debounced timer
-  // always flushes the newest snapshot without re-arming on every keystroke.
   const editingIdRef = useRef<WorkflowId | null>(null);
   const approvedRef = useRef(approved);
   approvedRef.current = approved;
   const formRef = useRef(form);
   formRef.current = form;
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // guards against overlapping saves (debounced flush + explicit flush racing
-  // before the first INSERT resolves an id) producing a duplicate workflow.
   const isSavingRef = useRef(false);
-  // skip the autosave that the open/load setForm would otherwise trigger
   const skipNextAutosave = useRef(true);
   const flushSaveRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
 
@@ -92,8 +86,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     [],
   );
 
-  // Debounced autosave: any form edit while the composer is open flushes after a
-  // short idle. The open/load setForm is skipped so it never re-saves on entry.
   useEffect(() => {
     if (editing === null) {
       return;
@@ -106,9 +98,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
     }
-    // Don't autosave a half-built form: a blank step name is a normal mid-edit
-    // state (e.g. just-added blank step), not an error to surface. The hard
-    // validation still fires on explicit approve/save. Re-arms once named.
     if (form.steps.some((d) => !d.name.trim())) {
       return;
     }
@@ -116,7 +105,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       saveTimer.current = null;
       void flushSaveRef.current();
     }, 700);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, editing]);
 
   const openNew = () => {
@@ -214,11 +202,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     setPreview(null);
   };
 
-  // Flush the current form to disk. Returns false (and surfaces an error) when
-  // the form is not yet saveable, so callers can decide whether to retry.
   const flushSave = async (): Promise<boolean> => {
-    // In-flight guard: never let a second save start before the first resolves
-    // its id, or both run with id=null and double-INSERT the same workflow.
     if (isSavingRef.current) {
       return false;
     }
@@ -261,7 +245,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     setFormError(null);
     try {
       const saved = await savePhaseTemplate(args);
-      // savePhaseTemplate may resolve undefined under test mocks; guard the id read.
       const savedId = (saved as Workflow | undefined)?.id ?? null;
       if (savedId) {
         editingIdRef.current = savedId;
@@ -279,8 +262,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   flushSaveRef.current = flushSave;
 
   const setApprovedAndSave = (next: boolean) => {
-    // Cancel any pending debounced autosave so the immediate flush is the only
-    // save, otherwise both can run with id=null and double-INSERT (mirror closeEdit).
     if (saveTimer.current) {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
@@ -390,52 +371,60 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   return (
     <div className="flex h-full min-h-0">
-      <WorkflowsRail
-        presets={presets}
-        activeId={activeId}
-        editing={editing}
-        resetting={resetting}
-        confirmReset={confirmReset}
-        setConfirmReset={setConfirmReset}
-        onSelect={openEdit}
-        onNew={openNew}
-        onDelete={(t) => void onDelete(t)}
-        onReset={() => void onReset()}
-      />
-      <WorkflowComposer
-        open={editing !== null}
-        isNew={editing === 'new'}
-        approved={approved}
-        onToggleApproved={setApprovedAndSave}
-        hasPresets={presets.length > 0}
-        form={form}
-        workspaceId={workspaceId}
-        connectedProviders={connectedProviders}
-        library={stepLibrary}
-        expandedIdx={expandedIdx}
-        saving={saving}
-        error={formError}
-        formatting={formatting}
-        canFormat={connectedProviders.length > 0}
-        onOpenFormat={() => setFormatOpen(true)}
-        dragging={drag !== null}
-        dropIndex={dropIndex}
-        onNew={openNew}
-        onChangeMeta={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
-        onAddBlank={() => {
-          insertStep(emptyDefinition(), form.steps.length);
-          setExpandedIdx(form.steps.length);
-        }}
-        onToggleExpand={(idx) => setExpandedIdx((cur) => (cur === idx ? null : idx))}
-        onUpdateStep={updateStep}
-        onRemoveStep={removeStep}
-        onMoveStep={moveStep}
-        draggingStepIdx={drag?.kind === 'step' ? drag.fromIndex : null}
-        onStartDrag={startLibraryDrag}
-        onStartStepDrag={startStepDrag}
-        onSaveDef={(args) => void saveStepDef(args, workspaceId)}
-        onDeleteDef={(id) => void deleteStepDef(id, workspaceId)}
-        onClose={closeEdit}
+      <StudioRailLayout
+        railLabel="Workflow presets"
+        railWidth="standard"
+        rail={
+          <WorkflowsRail
+            presets={presets}
+            activeId={activeId}
+            editing={editing}
+            resetting={resetting}
+            confirmReset={confirmReset}
+            setConfirmReset={setConfirmReset}
+            onSelect={openEdit}
+            onNew={openNew}
+            onDelete={(t) => void onDelete(t)}
+            onReset={() => void onReset()}
+          />
+        }
+        detail={
+          <WorkflowComposer
+            open={editing !== null}
+            isNew={editing === 'new'}
+            approved={approved}
+            onToggleApproved={setApprovedAndSave}
+            hasPresets={presets.length > 0}
+            form={form}
+            workspaceId={workspaceId}
+            connectedProviders={connectedProviders}
+            library={stepLibrary}
+            expandedIdx={expandedIdx}
+            saving={saving}
+            error={formError}
+            formatting={formatting}
+            canFormat={connectedProviders.length > 0}
+            onOpenFormat={() => setFormatOpen(true)}
+            dragging={drag !== null}
+            dropIndex={dropIndex}
+            onNew={openNew}
+            onChangeMeta={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+            onAddBlank={() => {
+              insertStep(emptyDefinition(), form.steps.length);
+              setExpandedIdx(form.steps.length);
+            }}
+            onToggleExpand={(idx) => setExpandedIdx((cur) => (cur === idx ? null : idx))}
+            onUpdateStep={updateStep}
+            onRemoveStep={removeStep}
+            onMoveStep={moveStep}
+            draggingStepIdx={drag?.kind === 'step' ? drag.fromIndex : null}
+            onStartDrag={startLibraryDrag}
+            onStartStepDrag={startStepDrag}
+            onSaveDef={(args) => void saveStepDef(args, workspaceId)}
+            onDeleteDef={(id) => void deleteStepDef(id, workspaceId)}
+            onClose={closeEdit}
+          />
+        }
       />
 
       <DragGhost ghost={ghost} />

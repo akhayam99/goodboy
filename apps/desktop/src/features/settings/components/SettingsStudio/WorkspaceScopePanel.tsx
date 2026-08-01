@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
-import { Button, FieldRow, ScrollFade, Switch, cn } from '@goodboy/ui';
+import { Button, Divider, FieldRow, ScrollFade, SectionHeader, Switch, cn } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { ScriptsPanel } from '../../../../features/scripts';
@@ -31,7 +31,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
-  const anchorsRef = useRef<Record<string, HTMLDivElement | null>>({});
+  const anchorsRef = useRef<Record<string, HTMLElement | null>>({});
 
   const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
   const scoutFanout = wsOverrides?.scoutFanout ?? false;
@@ -118,97 +118,104 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .replace(/^-+/, '')
       .slice(0, 16);
 
-  const anchor = (id: string) => (el: HTMLDivElement | null) => {
+  const anchor = (id: string) => (el: HTMLElement | null) => {
     anchorsRef.current[id] = el;
   };
 
   return (
     <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
-        <div className="flex flex-col divide-y divide-border-soft/50">
-          <FieldRow label="Branch prefix" help="Prefixes every new session branch.">
-            <div className="flex items-center gap-1.5">
-              <GitBranch size={13} aria-hidden className="shrink-0 text-muted-foreground" />
-              <input
-                type="text"
-                value={branchPrefix}
-                onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
-                onBlur={() => void commitBranchPrefix()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    void commitBranchPrefix();
-                  }
-                }}
-                placeholder={DEFAULT_BRANCH_PREFIX}
-                disabled={busy}
-                maxLength={16}
-                size={12}
-                aria-label="branch prefix"
-                className={cn(
-                  'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
-                  'placeholder:text-muted-foreground/40',
-                  'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
-                  busy && 'cursor-not-allowed opacity-50',
-                )}
-              />
-              <span className="font-mono text-sm text-muted-foreground/40">/&lt;slug&gt;</span>
-            </div>
-          </FieldRow>
+        <div className="flex flex-col gap-6">
+          <section id="general" ref={anchor('general')} className="flex flex-col gap-4">
+            <SectionHeader
+              label="Session defaults"
+              hint="Applied to every new agent you spawn in this workspace."
+            />
+            <div className="flex flex-col">
+              <FieldRow label="Branch prefix" help="Prefixes every new session branch.">
+                <div className="flex items-center gap-1.5">
+                  <GitBranch size={13} aria-hidden className="shrink-0 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={branchPrefix}
+                    onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
+                    onBlur={() => void commitBranchPrefix()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        void commitBranchPrefix();
+                      }
+                    }}
+                    placeholder={DEFAULT_BRANCH_PREFIX}
+                    disabled={busy}
+                    maxLength={16}
+                    size={12}
+                    aria-label="branch prefix"
+                    className={cn(
+                      'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
+                      'placeholder:text-muted-foreground/40',
+                      'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
+                      busy && 'cursor-not-allowed opacity-50',
+                    )}
+                  />
+                  <span className="font-mono text-sm text-muted-foreground/40">/&lt;slug&gt;</span>
+                </div>
+              </FieldRow>
 
-          <FieldRow label="Output verbosity" help="Response style for agents.">
-            <div className="w-40">
-              <VerbositySelect
-                value={verbosity}
-                onChange={(v) =>
-                  void persistOverrides({ defaultVerbosity: v }, 'verbosity updated')
-                }
-                disabled={busy}
-              />
-            </div>
-          </FieldRow>
-
-          <div ref={anchor('scout')} className="py-4 first:pt-0 last:pb-0">
-            <FieldRow
-              label="Parallel scouts"
-              help="Scouts split broad searches across parallel sub-scouts. Much faster on large codebases."
-            >
-              <Switch
-                label={scoutFanout ? 'On' : 'Off'}
-                checked={scoutFanout}
-                disabled={busy}
-                onChange={(next) =>
-                  void persistOverrides(
-                    { scoutFanout: next },
-                    next ? 'scout exploration on' : 'scout exploration off',
-                  )
-                }
-              />
-            </FieldRow>
-          </div>
-
-          {WORKSPACE_FEATURES.skills ? (
-            <div ref={anchor('skills')} className="py-4 first:pt-0 last:pb-0">
-              <FieldRow
-                label="Skills"
-                help="Reusable prompt fragments agents can opt into."
-                layout="stacked"
-              >
-                <SkillsPanel workspaceId={workspaceId} />
+              <FieldRow label="Output verbosity" help="Response style for agents.">
+                <div className="w-40">
+                  <VerbositySelect
+                    value={verbosity}
+                    onChange={(v) =>
+                      void persistOverrides({ defaultVerbosity: v }, 'verbosity updated')
+                    }
+                    disabled={busy}
+                  />
+                </div>
               </FieldRow>
             </div>
+          </section>
+
+          <Divider />
+
+          <section id="scout" ref={anchor('scout')} className="flex flex-col gap-1">
+            <SectionHeader
+              label="Parallel scouts"
+              hint="Scouts split broad searches across parallel sub-scouts. Much faster on large codebases."
+              action={
+                <Switch
+                  label={scoutFanout ? 'On' : 'Off'}
+                  checked={scoutFanout}
+                  disabled={busy}
+                  onChange={(next) =>
+                    void persistOverrides(
+                      { scoutFanout: next },
+                      next ? 'scout exploration on' : 'scout exploration off',
+                    )
+                  }
+                />
+              }
+            />
+          </section>
+
+          {WORKSPACE_FEATURES.skills ? (
+            <>
+              <Divider />
+              <div ref={anchor('skills')}>
+                <SkillsPanel workspaceId={workspaceId} />
+              </div>
+            </>
           ) : null}
 
-          <div ref={anchor('scripts')} className="py-4 first:pt-0 last:pb-0">
-            <FieldRow
-              label="Scripts"
-              help="Shell scripts you run by hand. No agent, no tokens. Scripts are shared across every session of this workspace."
-              layout="stacked"
-            >
-              <ScriptsPanel workspaceId={workspaceId} />
-            </FieldRow>
+          <Divider />
+
+          <div ref={anchor('scripts')}>
+            <ScriptsPanel workspaceId={workspaceId} />
           </div>
 
-          <div ref={anchor('danger')} className="py-4 first:pt-0 last:pb-0">
+          <Divider />
+
+          <section id="danger" ref={anchor('danger')} className="flex flex-col gap-4">
+            <SectionHeader label="Danger zone" hint="Destructive workspace controls." />
             <FieldRow
               label="Disconnect workspace"
               help="Hides it from the sidebar. Nothing on disk is deleted, re-add the path to bring it back."
@@ -252,7 +259,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                 </div>
               )}
             </FieldRow>
-          </div>
+          </section>
         </div>
       </div>
     </ScrollFade>

@@ -8,7 +8,6 @@ export const STORAGE_KEYS = {
   inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
   reviewBoardListWidth: `${PREFIX}review-board-list-width`,
   planListWidth: `${PREFIX}plan-list-width`,
-  workflowStudioRailWidth: `${PREFIX}workflow-studio-rail-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   rightSidebarWidth: `${PREFIX}right-sidebar-width`,
 } as const;

@@ -74,7 +74,7 @@ describe('ScriptsPanel', () => {
     });
     render(<ScriptsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /new script/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /new script/i })[0]!);
     fireEvent.change(screen.getByPlaceholderText(/script name/i), {
       target: { value: 'copy env' },
     });
@@ -223,25 +223,8 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('completed output')).toBeDefined();
   });
 
-  it.each([
-    ['idle', 'border-border-soft', null],
-    ['pending', 'border-info/50', 'motion-safe:animate-pulse'],
-    ['ok', 'border-success/40', null],
-    ['error', 'border-danger/40', null],
-    ['cancelled', 'border-border', null],
-  ] as const)('uses the %s run state for the card border', (status, borderClass, pulseClass) => {
+  it('renders an idle script row with no status border accent', () => {
     state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
-    if (status !== 'idle') {
-      state.scriptRuns = {
-        'session-1': {
-          s1: {
-            status,
-            result: status === 'pending' ? null : { stdout: '', stderr: '', exitCode: 0 },
-            runId: 'run-1',
-          },
-        },
-      };
-    }
     render(
       <ScriptsPanel
         workspaceId={'ws-1' as never}
@@ -250,11 +233,42 @@ describe('ScriptsPanel', () => {
       />,
     );
 
-    const card = screen.getByTestId('script-card-s1');
-    expect(card.className).toContain(borderClass);
+    const row = screen.getByTestId('script-card-s1');
+    expect(row.className).not.toContain('border-info/50');
+    expect(row.className).not.toContain('border-success/40');
+    expect(row.className).not.toContain('border-danger/40');
+    expect(row.querySelector('[role="img"]')).toBeNull();
+  });
+
+  it.each([
+    ['pending', 'border-info/50', 'motion-safe:animate-pulse'],
+    ['ok', 'border-success/40', null],
+    ['error', 'border-danger/40', null],
+    ['cancelled', 'border-border', null],
+  ] as const)('uses the %s run state for the row border', (status, borderClass, pulseClass) => {
+    state.scripts = [{ id: 's1', name: 'setup', body: 'echo hi' }];
+    state.scriptRuns = {
+      'session-1': {
+        s1: {
+          status,
+          result: status === 'pending' ? null : { stdout: '', stderr: '', exitCode: 0 },
+          runId: 'run-1',
+        },
+      },
+    };
+    render(
+      <ScriptsPanel
+        workspaceId={'ws-1' as never}
+        sessionId={'session-1' as never}
+        worktreePath="/tmp/work"
+      />,
+    );
+
+    const row = screen.getByTestId('script-card-s1');
+    expect(row.className).toContain(borderClass);
     if (pulseClass !== null) {
-      expect(card.className).toContain(pulseClass);
+      expect(row.className).toContain(pulseClass);
     }
-    expect(card.querySelector('[role="img"]')).toBeNull();
+    expect(row.querySelector('[role="img"]')).toBeNull();
   });
 });

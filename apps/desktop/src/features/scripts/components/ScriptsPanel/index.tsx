@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, EmptyState } from '@goodboy/ui';
+import { Button, EmptyState, SectionHeader } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import { Plus, SquareTerminal } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
@@ -266,16 +266,17 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          Shell scripts you run by hand from inside a session. cwd is the session worktree. Scripts
-          are shared across every session of this workspace.
-        </p>
-        <Button variant="ghost" size="sm" onClick={onOpenNew}>
-          <Plus size={13} aria-hidden />
-          New script
-        </Button>
-      </div>
+      <SectionHeader
+        label="Scripts"
+        icon={<SquareTerminal size={13} aria-hidden />}
+        hint="Shell scripts you run by hand from inside a session. cwd is the session worktree. Scripts are shared across every session of this workspace."
+        action={
+          <Button variant="ghost" size="sm" onClick={onOpenNew}>
+            <Plus size={13} aria-hidden />
+            New script
+          </Button>
+        }
+      />
 
       {error !== null && newDraft === null ? <p className="text-xs text-danger">{error}</p> : null}
 
@@ -301,7 +302,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, worktreePath }: Props) =>
             tone="info"
             icon={SquareTerminal}
             title="No scripts yet"
-            description="Create one to run setup or checks from inside this session."
+            description="A script is a shell command you run by hand from a session, no agent, no tokens spent. Create one to run setup or checks from the session worktree."
+            action={
+              <Button size="sm" onClick={onOpenNew}>
+                <Plus size={13} aria-hidden />
+                New script
+              </Button>
+            }
           />
         ) : (
           <ul className="flex flex-col gap-2">

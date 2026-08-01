@@ -39,10 +39,9 @@ afterEach(cleanup);
 import { PlanStudio } from './index';
 
 describe('PlanStudio', () => {
-  it('renders the Plans title', () => {
+  it('renders the Plans title as the pane heading', () => {
     render(<PlanStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('Plans')).toBeDefined();
-    expect(screen.getByTestId('plan-studio-header').className).toContain('max-w-5xl');
+    expect(screen.getByRole('heading', { level: 1, name: 'Plans' })).toBeDefined();
   });
 
   it('shows No plans yet when the list is empty', () => {
