@@ -2,14 +2,17 @@ import type { ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 
 type Props = {
+  readonly kind: 'navigation' | 'lifecycle';
+  readonly label: string;
   readonly className?: string;
   readonly children: ReactNode;
 };
 
-export const AgentCardActions = ({ className, children }: Props) => (
+export const CardActionSlot = ({ kind, label, className, children }: Props) => (
   <div
     role="group"
-    aria-label="agent actions"
+    aria-label={label}
+    data-card-action-slot={kind}
     className={cn('flex shrink-0 items-center justify-end gap-1', className)}
     onClick={(event) => event.stopPropagation()}
     onDoubleClick={(event) => event.stopPropagation()}

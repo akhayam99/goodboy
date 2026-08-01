@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { CardActionSlot } from '../../../../shared/components/CardActionSlot';
 import type { AgentCardTone } from './agentCardTone';
 
 const AGENT_CARD_TONE: Record<Exclude<AgentCardTone, 'default'>, Tone> = {
@@ -25,7 +26,8 @@ type Props = {
   readonly rowTitle?: string;
   readonly leading?: ReactNode;
   readonly title: ReactNode;
-  readonly actions: ReactNode;
+  readonly navigationAction: ReactNode;
+  readonly lifecycleActions?: ReactNode;
   readonly headline?: ReactNode;
   readonly footer?: ReactNode;
   readonly children?: ReactNode;
@@ -45,7 +47,8 @@ export const AgentCard = ({
   rowTitle,
   leading,
   title,
-  actions,
+  navigationAction,
+  lifecycleActions,
   headline,
   footer,
   children,
@@ -74,7 +77,7 @@ export const AgentCard = ({
       onOpen();
     }}
     className={cn(
-      'group/agent-card flex flex-col gap-1 rounded-lg border px-2 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+      'group/agent-card grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 rounded-lg border px-2 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
       isInert ? '' : 'cursor-pointer',
       isMuted && 'opacity-60',
       isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
@@ -83,13 +86,24 @@ export const AgentCard = ({
       isInspected && 'ring-1 ring-inset ring-border',
     )}
   >
-    <div className="flex items-center gap-2" title={rowTitle}>
+    <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-2" title={rowTitle}>
       {leading}
       {title}
-      {actions}
     </div>
-    {headline}
-    {children}
-    {footer}
+    <CardActionSlot
+      kind="navigation"
+      label="Agent navigation actions"
+      className="col-start-2 row-start-1 self-start"
+    >
+      {navigationAction}
+    </CardActionSlot>
+    {headline != null && <div className="col-span-2">{headline}</div>}
+    {children != null && <div className="col-span-2">{children}</div>}
+    {footer != null && <div className="col-span-2">{footer}</div>}
+    {lifecycleActions != null && (
+      <CardActionSlot kind="lifecycle" label="Agent lifecycle actions" className="col-span-2">
+        {lifecycleActions}
+      </CardActionSlot>
+    )}
   </li>
 );

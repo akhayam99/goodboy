@@ -175,26 +175,39 @@ describe('AgentRow', () => {
     renderRow(false);
     const remove = screen.getByRole('button', { name: 'delete agent' });
     const done = screen.getByRole('button', { name: 'mark agent done' });
+    const details = screen.getByRole('button', { name: 'Toggle agent details' });
+    const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
 
     expect(remove.className).toContain('opacity-0');
     expect(remove.className).toContain('group-hover/agent-card:opacity-100');
     expect(remove.className).toContain('group-focus-within/agent-card:opacity-100');
     expect(remove.className).not.toContain('hidden');
     expect(done.className).not.toContain('hidden');
-    expect(screen.getByRole('button', { name: 'Toggle agent details' })).toBeTruthy();
+    expect(details.className).not.toContain('opacity-0');
+    expect(navigationSlot.contains(details)).toBe(true);
+    expect(lifecycleSlot.contains(done)).toBe(true);
+    expect(lifecycleSlot.contains(remove)).toBe(true);
   });
 
-  it('arms the delete confirm without resizing the action slot', () => {
+  it('arms delete without moving the navigation or lifecycle slots', () => {
     renderRow(false);
-    const slot = screen.getByRole('group', { name: 'agent actions' });
-    const before = slot.className;
+    const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
+    const navigationClass = navigationSlot.className;
+    const lifecycleClass = lifecycleSlot.className;
 
     fireEvent.click(screen.getByRole('button', { name: 'delete agent' }));
 
     const panel = screen.getByRole('group', { name: 'Delete agent?' });
     expect(within(panel).getByRole('button', { name: 'Delete' })).toBeTruthy();
     expect(within(panel).getByRole('button', { name: 'Cancel' })).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'agent actions' }).className).toBe(before);
+    expect(screen.getByRole('group', { name: 'Agent navigation actions' }).className).toBe(
+      navigationClass,
+    );
+    expect(screen.getByRole('group', { name: 'Agent lifecycle actions' }).className).toBe(
+      lifecycleClass,
+    );
   });
 
   it('deletes only after the confirm step', () => {

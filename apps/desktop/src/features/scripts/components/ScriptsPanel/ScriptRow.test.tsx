@@ -78,7 +78,7 @@ describe('ScriptRow', () => {
     expect(onSave).toHaveBeenCalledWith('setup', 'echo next');
   });
 
-  it('keeps run, copy, edit, and overflow controls together in the header', () => {
+  it('places expand in navigation and run, copy, edit, and delete in lifecycle', () => {
     render(
       <ScriptRow
         script={script}
@@ -97,9 +97,44 @@ describe('ScriptRow', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Run script' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Copy script' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Edit script' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'More actions for setup' })).toBeDefined();
+    const navigationSlot = screen.getByRole('group', { name: 'Script navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Script lifecycle actions' });
+
+    expect(navigationSlot.contains(screen.getByRole('button', { name: 'Expand setup' }))).toBe(
+      true,
+    );
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Run script' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Copy script' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Edit script' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete script' }))).toBe(
+      true,
+    );
+  });
+
+  it('deletes only after inline confirmation', () => {
+    const onDelete = vi.fn();
+    render(
+      <ScriptRow
+        script={script}
+        run={null}
+        completedAt={undefined}
+        expanded={false}
+        runnable
+        canRun
+        copied={false}
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onRun={vi.fn()}
+        onCancel={vi.fn()}
+        onCopy={vi.fn()}
+        onDelete={onDelete}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete script' }));
+    expect(onDelete).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete setup' }));
+    expect(onDelete).toHaveBeenCalledOnce();
   });
 });

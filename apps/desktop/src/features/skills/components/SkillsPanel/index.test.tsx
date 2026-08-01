@@ -64,6 +64,20 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SkillsPanel', () => {
+  it('places edit in navigation and delete in lifecycle', () => {
+    render(
+      <ToastProvider>
+        <SkillsPanel workspaceId={'ws-1' as never} />
+      </ToastProvider>,
+    );
+
+    const navigationSlot = screen.getByRole('group', { name: 'Skill navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Skill lifecycle actions' });
+
+    expect(navigationSlot.contains(screen.getByRole('button', { name: 'Edit' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
+  });
+
   it('arms the delete with an inline confirmation before calling deleteSkill', async () => {
     render(
       <ToastProvider>

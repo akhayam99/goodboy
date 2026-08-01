@@ -5,10 +5,10 @@ import {
   Check,
   Code,
   MessageSquareDiff,
+  PanelRight,
   RotateCcw,
   SquareTerminal,
   Trash2,
-  type LucideIcon,
 } from 'lucide-react';
 import { Chip, cn, formatUsd, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
@@ -23,6 +23,8 @@ import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
+import { CardAction } from '../../../../../shared/components/CardAction';
+import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { useDynamicActions } from './useDynamicActions';
@@ -110,8 +112,9 @@ export const StageBoardCard = memo(function StageBoardCard({
   };
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       data-archived={archived || undefined}
       aria-pressed={selected === true}
       onClick={(event) => {
@@ -121,8 +124,18 @@ export const StageBoardCard = memo(function StageBoardCard({
         }
         nav.selectCard(session);
       }}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) {
+          return;
+        }
+        if (event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+        event.preventDefault();
+        nav.selectCard(session);
+      }}
       className={cn(
-        'group flex h-[7.25rem] min-h-[7.25rem] shrink-0 gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground',
+        'group/agent-card grid h-[7.25rem] min-h-[7.25rem] shrink-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[1fr_auto] gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
         stage === 'running'
           ? 'border-info/50'
           : stage === 'attention'
@@ -131,7 +144,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         selected === true && 'border-primary bg-primary/5 text-foreground',
       )}
     >
-      <span className="flex min-w-0 flex-1 flex-col gap-2">
+      <span className="row-span-2 flex min-w-0 flex-col justify-between gap-2">
         <span className="flex min-h-10 items-start gap-1.5">
           {hasLinkedRequest && (
             <Tooltip content={prTooltip} side="top">
@@ -158,7 +171,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           </Tooltip>
         </span>
 
-        <span className="mt-auto flex min-h-5 flex-nowrap items-center gap-1.5 overflow-hidden">
+        <span className="flex min-h-5 flex-nowrap items-center gap-1.5 overflow-hidden">
           {agentCount > 0 && (
             <Tooltip content={`${agentCount} agents`} side="top">
               <span
@@ -195,131 +208,101 @@ export const StageBoardCard = memo(function StageBoardCard({
         </span>
       </span>
 
-      <span className="-mr-1 flex shrink-0 flex-col items-end gap-1">
-        {onToggleSelect && (
-          <span
-            role="checkbox"
-            tabIndex={0}
-            aria-checked={selected === true}
-            aria-label={`select ${session.goal}`}
-            title={selected ? 'deselect session' : 'select session · shift-click to extend'}
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggleSelect(id, event);
-            }}
-            className={cn(
-              'flex size-4 shrink-0 items-center justify-center rounded border motion-safe:transition-colors',
-              selected === true
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-border-soft opacity-0 hover:border-primary/50 group-hover:opacity-100',
-            )}
-          >
-            {selected === true && <Check size={11} aria-hidden />}
-          </span>
-        )}
-        {!archived && dynamicActions.length > 0 && (
-          <span className="flex flex-wrap justify-end gap-0.5">
+      <CardActionSlot
+        kind="navigation"
+        label="Session navigation actions"
+        className="col-start-2 row-start-1 flex-col items-end self-start"
+      >
+        <span className="flex items-center justify-end gap-1">
+          {onToggleSelect != null && (
+            <Tooltip
+              content={
+                selected === true ? 'Deselect session' : 'Select session, shift-click to extend'
+              }
+              side="top"
+            >
+              <span
+                role="checkbox"
+                tabIndex={0}
+                aria-checked={selected === true}
+                aria-label={`select ${session.goal}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleSelect(id, event);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                  }
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onToggleSelect(id, event);
+                }}
+                className={cn(
+                  'flex size-4 shrink-0 items-center justify-center rounded border motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                  selected === true
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border-soft opacity-0 hover:border-primary/50 group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100',
+                )}
+              >
+                {selected === true && <Check size={11} aria-hidden />}
+              </span>
+            </Tooltip>
+          )}
+          <CardAction
+            icon={PanelRight}
+            label="Open session details"
+            onClick={() => nav.selectCard(session)}
+          />
+        </span>
+        {!archived && (
+          <span className="flex w-[5.25rem] flex-wrap justify-end gap-1">
             {dynamicActions.map((action) => (
               <CardAction
                 key={action.key}
                 icon={action.icon}
-                hoverColor={action.color}
+                tone={action.tone}
                 label={action.label}
                 onClick={action.onClick}
               />
             ))}
+            <CardAction
+              icon={Code}
+              label="open in editor"
+              onClick={() => nav.openIDE(session)}
+              disabled={worktreePath == null}
+            />
+            <CardAction
+              icon={SquareTerminal}
+              label="open terminal"
+              onClick={() => nav.openTerminal(session)}
+            />
           </span>
         )}
-        <span className="mt-auto flex flex-col items-end gap-0.5">
-          {archived ? (
-            <span className="flex gap-0.5">
-              <CardAction
-                icon={RotateCcw}
-                hoverColor="text-primary"
-                label="restore"
-                onClick={() => onRestore?.(session)}
-              />
-              <CardAction
-                icon={Trash2}
-                hoverColor="text-danger"
-                label="delete"
-                onClick={() => onDelete?.(session)}
-              />
-            </span>
-          ) : (
-            <>
-              <span className="flex gap-0.5">
-                <CardAction
-                  icon={Code}
-                  hoverColor="text-muted-foreground"
-                  label="open in editor"
-                  onClick={() => nav.openIDE(session)}
-                  disabled={!worktreePath}
-                />
-                <CardAction
-                  icon={SquareTerminal}
-                  hoverColor="text-muted-foreground"
-                  label="open terminal"
-                  onClick={() => nav.openTerminal(session)}
-                />
-              </span>
-              <span className="flex gap-0.5">
-                <CardAction
-                  icon={Archive}
-                  hoverColor="text-muted-foreground"
-                  label="archive"
-                  onClick={() => onArchive?.(session)}
-                />
-                <CardAction
-                  icon={Trash2}
-                  hoverColor="text-danger"
-                  label="delete"
-                  onClick={() => onDelete?.(session)}
-                />
-              </span>
-            </>
-          )}
-        </span>
-      </span>
-    </button>
+      </CardActionSlot>
+
+      <CardActionSlot
+        kind="lifecycle"
+        label="Session lifecycle actions"
+        className="col-start-2 row-start-2 self-end"
+      >
+        {archived ? (
+          <CardAction
+            icon={RotateCcw}
+            tone="primary"
+            label="restore"
+            onClick={() => onRestore?.(session)}
+          />
+        ) : (
+          <CardAction icon={Archive} label="archive" onClick={() => onArchive?.(session)} />
+        )}
+        <CardAction
+          icon={Trash2}
+          tone="danger"
+          label="delete"
+          onClick={() => onDelete?.(session)}
+        />
+      </CardActionSlot>
+    </div>
   );
 });
-
-const ACTION_HOVER: Record<string, string> = {
-  'text-primary': 'hover:text-primary',
-  'text-danger': 'hover:text-danger',
-  'text-warning': 'hover:text-warning',
-  'text-info': 'hover:text-info',
-  'text-success': 'hover:text-success',
-  'text-muted-foreground': 'hover:text-muted-foreground',
-};
-
-type CardActionProps = {
-  readonly icon: LucideIcon;
-  readonly hoverColor: string;
-  readonly label: string;
-  readonly onClick: () => void;
-  readonly disabled?: boolean;
-};
-
-const CardAction = ({ icon: Icon, hoverColor, label, onClick, disabled }: CardActionProps) => {
-  return (
-    <Tooltip content={label} side="top">
-      <button
-        type="button"
-        disabled={disabled}
-        aria-label={label}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        className={cn(
-          'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40',
-          ACTION_HOVER[hoverColor] ?? hoverColor,
-        )}
-      >
-        <Icon size={14} aria-hidden />
-      </button>
-    </Tooltip>
-  );
-};

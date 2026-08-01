@@ -179,6 +179,16 @@ const renderDetail = ({
 afterEach(cleanup);
 
 describe('WorkflowRow detail dashboard', () => {
+  it('declares navigation and lifecycle action slots', () => {
+    renderDetail();
+
+    const navigationSlot = screen.getByRole('group', { name: 'Workflow navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+
+    expect(navigationSlot.contains(screen.getByRole('button', { name: 'autorun off' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
+  });
+
   it('answers where the run is and what it cost', () => {
     renderDetail();
 

@@ -32,6 +32,8 @@ import { OrchestratorPanel } from '../../../../../features/workflows/components/
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
+import { CardAction } from '../../../../../shared/components/CardAction';
+import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { workflowKindName } from '../lib';
 import type { ProviderContextUsage } from './ContextWindowBar';
@@ -230,14 +232,9 @@ export const WorkflowRow = ({
             onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
             title={workflow.name || name}
             aria-expanded={expanded}
-            aria-label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+            aria-label={`${name} workflow`}
             className="flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
           >
-            {expanded ? (
-              <ChevronDown size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
-            ) : (
-              <ChevronRight size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />
-            )}
             {forceExpanded ? (
               <WorkflowIcon size={13} aria-hidden className="shrink-0 text-accent" />
             ) : null}
@@ -267,7 +264,11 @@ export const WorkflowRow = ({
           </button>
         )}
         {isDetail ? (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+          <CardActionSlot
+            kind="navigation"
+            label="Workflow navigation actions"
+            className="flex-wrap"
+          >
             {isQueuedManual ? (
               <button
                 type="button"
@@ -282,7 +283,6 @@ export const WorkflowRow = ({
               <button
                 type="button"
                 onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-                title={run.autoRun ? 'autorun on, click to pause' : 'autorun off, click to enable'}
                 aria-label={run.autoRun ? 'autorun on' : 'autorun off'}
                 aria-pressed={run.autoRun}
                 className={cn(
@@ -296,80 +296,53 @@ export const WorkflowRow = ({
                 Autorun
               </button>
             ) : null}
-            {isDiscarded ? (
-              <button
-                type="button"
-                onClick={() => void restoreWorkflow(task.id, run.id)}
-                title="restore this workflow run"
-                className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
-              >
-                <Undo2 size={14} aria-hidden />
-                Restore
-              </button>
-            ) : (
-              <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-            )}
-            <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
-          </div>
+          </CardActionSlot>
         ) : null}
-        {!isDetail && !isDiscarded && !isCompleted && (
-          <div className="flex shrink-0 items-center">
-            {isQueuedManual ? (
-              <button
-                type="button"
-                onClick={() => void startWorkflowRun(task.id, run.id)}
-                title="start this workflow now"
-                aria-label="start workflow now"
-                className="rounded p-0.5 text-success transition-colors hover:bg-success/15"
-              >
-                <Play size={11} aria-hidden />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-              title={run.autoRun ? 'autorun on, click to pause' : 'autorun off, click to enable'}
-              aria-label={run.autoRun ? 'autorun on' : 'autorun off'}
-              aria-pressed={run.autoRun}
-              className={cn(
-                'rounded p-0.5 transition-colors',
-                run.autoRun
-                  ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                  : 'text-muted-foreground/60 hover:bg-foreground/10 hover:text-foreground',
-              )}
-            >
-              {run.autoRun ? <Zap size={11} aria-hidden /> : <ZapOff size={11} aria-hidden />}
-            </button>
-            {attachedRuns.length > 1 && (
+        {!isDetail && (
+          <CardActionSlot kind="navigation" label="Workflow navigation actions">
+            <CardAction
+              icon={expanded ? ChevronDown : ChevronRight}
+              label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+              expanded={expanded}
+              onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
+            />
+            {!isDiscarded && !isCompleted ? (
               <>
-                <button
-                  type="button"
-                  disabled={!canMoveUp}
-                  onClick={() => void onReorderWorkflow(run.id, 'up')}
-                  title="move workflow up"
-                  aria-label="move workflow up"
-                  className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                >
-                  <ChevronUp size={11} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  disabled={!canMoveDown}
-                  onClick={() => void onReorderWorkflow(run.id, 'down')}
-                  title="move workflow down"
-                  aria-label="move workflow down"
-                  className="rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                >
-                  <ChevronDown size={11} aria-hidden />
-                </button>
+                {isQueuedManual ? (
+                  <CardAction
+                    icon={Play}
+                    label="start workflow now"
+                    tone="success"
+                    onClick={() => void startWorkflowRun(task.id, run.id)}
+                  />
+                ) : null}
+                <CardAction
+                  icon={run.autoRun ? Zap : ZapOff}
+                  label={run.autoRun ? 'autorun on' : 'autorun off'}
+                  tone="primary"
+                  pressed={run.autoRun}
+                  active={run.autoRun}
+                  onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                />
+                {attachedRuns.length > 1 && (
+                  <>
+                    <CardAction
+                      icon={ChevronUp}
+                      label="move workflow up"
+                      disabled={!canMoveUp}
+                      onClick={() => void onReorderWorkflow(run.id, 'up')}
+                    />
+                    <CardAction
+                      icon={ChevronDown}
+                      label="move workflow down"
+                      disabled={!canMoveDown}
+                      onClick={() => void onReorderWorkflow(run.id, 'down')}
+                    />
+                  </>
+                )}
               </>
-            )}
-          </div>
-        )}
-        {!isDetail && !isDiscarded && (
-          <div className="flex shrink-0 items-center">
-            <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-          </div>
+            ) : null}
+          </CardActionSlot>
         )}
       </div>
       {isDetail && expanded ? (
@@ -546,6 +519,21 @@ export const WorkflowRow = ({
           <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
         </div>
       ) : null}
+      <CardActionSlot kind="lifecycle" label="Workflow lifecycle actions" className="self-end">
+        {isDiscarded ? (
+          <button
+            type="button"
+            onClick={() => void restoreWorkflow(task.id, run.id)}
+            className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            <Undo2 size={14} aria-hidden />
+            Restore
+          </button>
+        ) : (
+          <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
+        )}
+        {isDetail && <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />}
+      </CardActionSlot>
     </div>
   );
 };
