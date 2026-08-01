@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import type { LinearIssue } from '../client';
@@ -46,9 +46,25 @@ describe('LinearIssueDetail', () => {
 
     expect(screen.getByLabelText('Priority: Urgent')).toBeDefined();
     expect(screen.getByText('Grace Hopper')).toBeDefined();
+    expect(screen.getByText('GB')).toBeDefined();
     expect(screen.getByText('Desktop')).toBeDefined();
     expect(screen.getByText('Full')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Conversation/ }));
+
     expect(screen.getByText('Ada Lovelace')).toBeDefined();
     expect(screen.getByText('The fix is ready for review.')).toBeDefined();
+  });
+
+  it('renders the properties in registry order, once', () => {
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+
+    const panels = screen.getAllByTestId('detail-properties');
+    expect(panels).toHaveLength(1);
+    expect(
+      within(panels[0] as HTMLElement)
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual(['Priority', 'Assignee', 'Team', 'Project', 'Labels', 'Updated']);
   });
 });

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { cn, EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
+import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
 import { GitPullRequest, Inbox, MessagesSquare, Search } from 'lucide-react';
 import { issuePullRequests, type LinearIssue } from '../client';
-import { priorityTone } from '../priorityTone';
+import { LinearPriority } from '../LinearPriority';
 import type { LinearIssueGroup } from './useLinearIssues';
 
 type Props = {
@@ -101,12 +101,10 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
                           ariaCurrent={active}
                           className="items-center gap-2.5 px-2.5 py-2"
                         >
-                          <span
-                            aria-label={`Priority: ${row.issue.priorityLabel ?? 'No priority'}`}
-                            className={cn(
-                              'size-1.5 shrink-0 rounded-full',
-                              priorityTone({ priority: row.issue.priority }),
-                            )}
+                          <LinearPriority
+                            appearance="dot"
+                            priority={row.issue.priority}
+                            priorityLabel={row.issue.priorityLabel}
                           />
                           <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground/70">
                             {row.issue.identifier}

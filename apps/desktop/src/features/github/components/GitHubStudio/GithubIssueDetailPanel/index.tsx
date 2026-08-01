@@ -1,15 +1,14 @@
-import { Divider, EmptyState, Markdown } from '@goodboy/ui';
+import { EmptyState, Markdown } from '@goodboy/ui';
 import { MousePointerClick } from 'lucide-react';
 import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
   HeaderBand,
-  MetaItem,
   StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
+import { githubIssueFields, resolveDetailFields } from '../../../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
-import { formatAbsoluteDateTime } from '../../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../../../goal-from-issue';
 import { githubBranchSlug } from '../useGithubIssues';
@@ -33,8 +32,6 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
       </div>
     );
   }
-
-  const updated = formatAbsoluteDateTime({ iso: issue.updatedAt });
 
   const launchCard = (
     <LaunchSessionPanel
@@ -70,25 +67,8 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
           actions={<ExternalRefActions url={issue.url} label="issue" hostLabel="GitHub" />}
         />
       }
-      rail={
-        <>
-          {launchCard}
-          <Divider />
-          {issue.labels.length > 0 ? (
-            <MetaItem label="Labels">
-              {issue.labels.map((label) => (
-                <span
-                  key={label}
-                  className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground"
-                >
-                  {label}
-                </span>
-              ))}
-            </MetaItem>
-          ) : null}
-          {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
-        </>
-      }
+      rail={launchCard}
+      properties={resolveDetailFields({ registry: githubIssueFields, entity: issue })}
     >
       <DetailSection label="description">
         {issue.body.trim() !== '' ? (

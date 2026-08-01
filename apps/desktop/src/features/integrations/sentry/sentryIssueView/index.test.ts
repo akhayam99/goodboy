@@ -6,6 +6,7 @@ const listValues = {
   title: 'List title',
   level: 'error',
   culprit: 'list/culprit',
+  status: 'unresolved',
   permalink: 'https://sentry.io/issues/42',
 };
 
@@ -47,7 +48,6 @@ describe('sentryIssueView', () => {
       frames: [frame],
       breadcrumbs: [breadcrumb],
       hasBreadcrumbs: true,
-      breadcrumbsLabel: 'Breadcrumbs (1)',
     });
   });
 
@@ -65,7 +65,6 @@ describe('sentryIssueView', () => {
       frames: [],
       breadcrumbs: [],
       hasBreadcrumbs: false,
-      breadcrumbsLabel: 'Breadcrumbs (0)',
     });
   });
 

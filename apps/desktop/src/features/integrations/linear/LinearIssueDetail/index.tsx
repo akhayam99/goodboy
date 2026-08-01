@@ -1,13 +1,21 @@
-import { DetailPage, Markdown, MetaGrid, cn, type MetaItem } from '@goodboy/ui';
-import { GitPullRequest } from 'lucide-react';
+import { useState } from 'react';
+import { Markdown } from '@goodboy/ui';
+import { FileText, MessageSquare } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
+import {
+  DetailSection,
+  HeaderBand,
+  StudioDetailLayout,
+  StudioDetailTabs,
+} from '../../../../shared/components/StudioDetail';
+import { linearIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
+import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
-import { issuePullRequests, type LinearIssue } from '../client';
+import type { LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
 import { useLinearIssueComments } from '../useLinearIssueComments';
-import { priorityTone } from '../priorityTone';
-import { prStatusTone } from '../prStatusTone';
+
+type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: LinearIssue;
@@ -15,111 +23,58 @@ type Props = {
 };
 
 export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
+  const [section, setSection] = useState<IssueSection>('overview');
   const { comments, isLoading, error } = useLinearIssueComments({
     workspaceId,
     issueId: issue.id,
   });
-  const linkedPrs = issuePullRequests(issue);
-  const priorityLabel = issue.priorityLabel ?? 'No priority';
-  const labels = issue.labels?.nodes ?? [];
-
-  const meta: ReadonlyArray<MetaItem> = [
-    {
-      label: 'Priority',
-      value: (
-        <span
-          aria-label={`Priority: ${priorityLabel}`}
-          className="inline-flex items-center gap-1.5"
-        >
-          <span
-            aria-hidden
-            className={cn('size-2 rounded-full', priorityTone({ priority: issue.priority }))}
-          />
-          {priorityLabel}
-        </span>
-      ),
-    },
-    { label: 'Assignee', value: issue.assignee?.name },
-    { label: 'Team', value: issue.team.key },
-    { label: 'Project', value: issue.project?.name },
-    { label: 'Updated', value: formatAbsoluteDateTime({ iso: issue.updatedAt }) },
-    {
-      label: 'Labels',
-      wide: true,
-      value:
-        labels.length > 0 ? (
-          <span className="flex flex-wrap items-center gap-2">
-            {labels.map((label) => (
-              <span
-                key={`${label.name}-${label.color}`}
-                className="inline-flex items-center gap-1.5 text-muted-foreground"
-              >
-                <span
-                  aria-hidden
-                  className="size-2 rounded-full"
-                  style={{ backgroundColor: label.color }}
-                />
-                {label.name}
-              </span>
-            ))}
-          </span>
-        ) : null,
-    },
-    {
-      label: 'Linked pull requests',
-      wide: true,
-      value:
-        linkedPrs.length > 0 ? (
-          <span className="flex flex-wrap items-center gap-1.5">
-            {linkedPrs.map((pr) => (
-              <a
-                key={pr.number}
-                href={pr.url}
-                target="_blank"
-                rel="noreferrer"
-                title={pr.url}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium transition-opacity hover:opacity-80',
-                  prStatusTone({ status: pr.status }),
-                )}
-              >
-                <GitPullRequest size={11} aria-hidden />#{pr.number}
-                {pr.status != null ? <span className="opacity-70">· {pr.status}</span> : null}
-              </a>
-            ))}
-          </span>
-        ) : null,
-    },
-  ];
 
   return (
-    <DetailPage
-      eyebrow={issue.identifier}
-      title={issue.title}
-      state={
-        <span className="rounded-md bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
-          {issue.state.name}
-        </span>
+    <StudioDetailLayout
+      fit="flow"
+      header={
+        <HeaderBand
+          meta={
+            <>
+              <span className="font-mono text-2xs tabular-nums text-muted-foreground">
+                {issue.identifier}
+              </span>
+              <IssueStateBadge>{issue.state.name}</IssueStateBadge>
+            </>
+          }
+          title={issue.title}
+          actions={<ExternalRefActions url={issue.url} label="issue" hostLabel="Linear" />}
+        />
       }
-      actions={<ExternalRefActions url={issue.url} label="issue" hostLabel="Linear" />}
-      meta={<MetaGrid items={meta} />}
-      sections={[
-        {
-          id: 'description',
-          title: 'Description',
-          children:
-            issue.description != null && issue.description !== '' ? (
-              <Markdown text={issue.description} className="text-sm leading-relaxed" />
-            ) : (
-              <p className="text-sm italic text-muted-foreground/60">No description.</p>
-            ),
-        },
-        {
-          id: 'comments',
-          title: 'Comments',
-          children: <LinearIssueComments comments={comments} isLoading={isLoading} error={error} />,
-        },
-      ]}
-    />
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Issue sections"
+          value={section}
+          onChange={setSection}
+          options={[
+            { value: 'overview', label: 'Overview', icon: FileText },
+            {
+              value: 'conversation',
+              label: 'Conversation',
+              icon: MessageSquare,
+              ...(comments.length > 0 && { badge: String(comments.length) }),
+            },
+          ]}
+        />
+      }
+      properties={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
+    >
+      {section === 'overview' ? (
+        <DetailSection label="description">
+          {issue.description != null && issue.description !== '' ? (
+            <Markdown text={issue.description} className="text-sm leading-relaxed" />
+          ) : (
+            <p className="text-sm italic text-muted-foreground/60">No description.</p>
+          )}
+        </DetailSection>
+      ) : (
+        <LinearIssueComments comments={comments} isLoading={isLoading} error={error} />
+      )}
+    </StudioDetailLayout>
   );
 };

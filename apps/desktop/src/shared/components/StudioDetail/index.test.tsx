@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { resolveDetailFields, type DetailFieldRegistry } from '../../detail-fields';
 import { DetailSection } from './DetailSection';
 import { HeaderBand } from './HeaderBand';
 import { MetaItem } from './MetaItem';
@@ -7,6 +8,25 @@ import { StudioDetailLayout } from './StudioDetailLayout';
 import { StudioDetailTabs } from './StudioDetailTabs';
 
 afterEach(cleanup);
+
+type Entity = {
+  readonly state: string;
+  readonly author: string;
+  readonly milestone: string | null;
+};
+
+const PROPERTY_ENTITY: Entity = { state: 'open', author: 'ada', milestone: null };
+
+const PROPERTY_REGISTRY: DetailFieldRegistry<Entity> = [
+  { kind: 'field', key: 'state', label: 'State', render: ({ entity }) => entity.state },
+  { kind: 'field', key: 'author', label: 'Author', render: ({ entity }) => entity.author },
+  {
+    kind: 'field',
+    key: 'milestone',
+    label: 'Milestone',
+    render: ({ entity }) => entity.milestone,
+  },
+];
 
 describe('StudioDetailLayout', () => {
   it('renders the header band, main content, and metadata rail', () => {
@@ -37,13 +57,59 @@ describe('StudioDetailLayout', () => {
 
   it('drops the rail and the scroll region for a full-bleed body', () => {
     render(
-      <StudioDetailLayout header={<span>Header slot</span>} scrolls={false}>
+      <StudioDetailLayout header={<span>Header slot</span>} fit="bleed">
         <span>Main slot</span>
       </StudioDetailLayout>,
     );
 
     expect(screen.getByText('Main slot')).toBeDefined();
     expect(screen.queryByText('Rail slot')).toBeNull();
+  });
+
+  it('renders the properties once, as a wrapping row below lg and a column from lg', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        rail={<span>Rail slot</span>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const panels = screen.getAllByTestId('detail-properties');
+    expect(panels).toHaveLength(1);
+
+    const panel = panels[0] as HTMLElement;
+    expect(panel.className).toContain('flex-row flex-wrap');
+    expect(panel.className).toContain('lg:flex-col');
+    expect(
+      within(panel)
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual(['State', 'Author']);
+  });
+
+  it('keeps the properties visible at every width', () => {
+    const { container } = render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const panel = screen.getByTestId('detail-properties');
+    const hidden: Array<string> = [];
+    let node: HTMLElement | null = panel;
+    while (node != null && node !== container) {
+      const classes = node.className.split(' ');
+      hidden.push(...classes.filter((entry) => /^(?:[a-z]+:)?hidden$/.test(entry)));
+      node = node.parentElement;
+    }
+
+    expect(hidden).toEqual([]);
   });
 });
 

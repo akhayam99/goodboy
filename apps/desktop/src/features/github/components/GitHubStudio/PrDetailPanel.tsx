@@ -14,11 +14,10 @@ import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleMod
 import { openUrl } from '../../../../shared/lib/editor';
 import {
   HeaderBand,
-  MetaItem,
   StudioDetailLayout,
   StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
+import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
@@ -348,9 +347,6 @@ export const PrDetailPanel = ({
   const num = activePr.number;
   const hasStateActions = !isTerminal || isClosed;
 
-  const updated =
-    activePr.updatedAt === '' ? '' : formatAbsoluteDateTime({ iso: activePr.updatedAt });
-
   const header = (
     <>
       <HeaderBand
@@ -416,7 +412,7 @@ export const PrDetailPanel = ({
 
   if (createOpen) {
     return (
-      <StudioDetailLayout header={header} scrolls={false}>
+      <StudioDetailLayout header={header} fit="bleed">
         <CreatePrPanel
           sessionId={sessionId}
           defaultTitle={session.goal}
@@ -444,18 +440,13 @@ export const PrDetailPanel = ({
         />
       }
       rail={
-        <>
-          <PrReviewers
-            detail={detail}
-            workspaceRoot={workspaceRoot}
-            onAddReviewers={onAddReviewers}
-          />
-          <MetaItem label="Base branch">
-            <span className="font-mono">{activePr.baseBranch}</span>
-          </MetaItem>
-          {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
-        </>
+        <PrReviewers
+          detail={detail}
+          workspaceRoot={workspaceRoot}
+          onAddReviewers={onAddReviewers}
+        />
       }
+      properties={resolveDetailFields({ registry: githubPullRequestFields, entity: activePr })}
     >
       {section === 'overview' ? (
         <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
