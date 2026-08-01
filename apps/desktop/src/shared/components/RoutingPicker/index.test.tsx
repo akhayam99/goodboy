@@ -264,7 +264,7 @@ describe('RoutingPicker', () => {
     expect(onModel).toHaveBeenCalledWith('auto');
   });
 
-  it('renders Cursor toggles once in a single Variant row', () => {
+  it('renders Cursor toggles once in a single Modes row', () => {
     render(
       <RoutingPicker
         {...baseProps}
@@ -275,13 +275,13 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const tuning = screen.getByRole('region', { name: 'Tuning' });
-    const variants = within(tuning).getByRole('group', { name: 'Variant' });
-    expect(within(tuning).getAllByText('Variant')).toHaveLength(1);
+    const modes = within(tuning).getByRole('group', { name: 'Modes' });
+    expect(within(tuning).getAllByText('Modes')).toHaveLength(1);
     expect(within(tuning).getAllByText('Fast')).toHaveLength(1);
-    expect(
-      within(variants).getByRole('button', { name: 'Fast' }).getAttribute('aria-pressed'),
-    ).toBe('true');
-    expect(variants.className).toContain('justify-center');
+    expect(within(modes).getByRole('button', { name: 'Fast' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(modes.className).toContain('justify-center');
   });
 
   it('reports the picked effort and keeps the popover open', () => {
@@ -364,7 +364,7 @@ describe('RoutingPicker', () => {
       <RoutingPicker {...baseProps} provider="openrouter" model="gpt-5.4" />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('group', { name: 'Variant' })).toBeDefined();
+    expect(screen.getByRole('group', { name: 'Effort' })).toBeDefined();
 
     routerView.unmount();
     render(<RoutingPicker {...baseProps} provider="gemini" model="gemini-3.1-pro" />);
@@ -372,6 +372,14 @@ describe('RoutingPicker', () => {
     expect(screen.getByRole('region', { name: 'Tuning' }).textContent).toContain(
       'No tuning options for this provider',
     );
+  });
+
+  it('shows the no-option message without an effort row for Haiku', () => {
+    render(<RoutingPicker {...baseProps} model="haiku-4.5" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const tuning = screen.getByRole('region', { name: 'Tuning' });
+    expect(within(tuning).queryByRole('group', { name: 'Effort' })).toBeNull();
+    expect(tuning.textContent).toContain('No tuning options for this provider');
   });
 
   it('shows a Max Mode advisory after failure and clears it after success', () => {

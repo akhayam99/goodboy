@@ -258,6 +258,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [stage, setStage] = useState<Stage>(() => initialStage(initialDraft));
   const [plannerProviderOverride, setPlannerProviderOverride] = useState<ProviderId | ''>('');
   const [plannerModelOverride, setPlannerModelOverride] = useState('');
+  const [plannerEffortOverride, setPlannerEffortOverride] = useState<EffortLevel>(PLANNER_EFFORT);
 
   const providerId =
     providers.find((p) => p.id === session.providerOverride)?.id ??
@@ -577,7 +578,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       const effectiveModel =
         plannerModelOverride !== '' ? plannerModelOverride : plannerRecommendedModel;
-      const taskModel = { providerId: plannerEffectiveProviderId, model: effectiveModel };
+      const taskModel = {
+        providerId: plannerEffectiveProviderId,
+        model: effectiveModel,
+        effort: plannerEffortOverride,
+      };
       const client = new PlannerClient({
         ...taskModel,
         invokeFn: invoke,
@@ -1074,7 +1079,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                 connectedProviders={connectedProviders}
                                 provider={plannerProviderOverride}
                                 model={plannerModelOverride}
-                                effort={{ editable: false, value: PLANNER_EFFORT }}
+                                effort={{
+                                  editable: true,
+                                  value: plannerEffortOverride,
+                                  onChange: setPlannerEffortOverride,
+                                }}
                                 recommendation={{
                                   provider: resolvedPlanTaskModel.providerId,
                                   model: plannerRecommendedModel,

@@ -15,7 +15,7 @@ import { Fragment } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction, NotificationSeverity } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
-import type { ProviderId, TaskModelPreference } from '@goodboy/types';
+import type { ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -361,13 +361,15 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
       : availableProviderIds[0];
   const [providerId, setProviderId] = useState<ProviderId | undefined>(initialProvider);
   const [model, setModel] = useState('');
+  const [effort, setEffort] = useState<ModelEffort>('medium');
   if (providerId == null) {
     return null;
   }
   const recommendedModel = resolveTaskModel('summarizer', null, providerId).model;
   const dispatch = () => {
-    const override: TaskModelPreference =
+    const taskModel =
       model === '' ? resolveTaskModel('summarizer', null, providerId) : { providerId, model };
+    const override: TaskModelPreference = { ...taskModel, effort };
     const store = useAppStore.getState();
     if (action.kind === 'retry-summarizer') {
       store.retrySummarizer(action.sessionId, override);
@@ -388,7 +390,7 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
           connectedProviders={availableProviderIds}
           provider={providerId}
           model={model}
-          effort={{ editable: false }}
+          effort={{ editable: true, value: effort, onChange: setEffort }}
           recommendation={{ model: recommendedModel }}
           disabled={false}
           onProvider={(next) => {

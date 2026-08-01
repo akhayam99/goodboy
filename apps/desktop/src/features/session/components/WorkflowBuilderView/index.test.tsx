@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Session, Workflow } from '@goodboy/types';
+import type { ModelEffort, Session, Workflow } from '@goodboy/types';
 import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 
 const {
@@ -95,12 +95,20 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     recommendation,
     onProvider,
     onModel,
+    effort,
   }: {
     provider: string;
     model: string;
     recommendation?: { provider?: string; model?: string };
     onProvider: (v: string) => void;
     onModel: (v: string) => void;
+    effort:
+      | { readonly editable: false; readonly value?: ModelEffort }
+      | {
+          readonly editable: true;
+          readonly value: ModelEffort;
+          readonly onChange: (value: ModelEffort) => void;
+        };
   }) => (
     <>
       <button type="button" onClick={() => onProvider(provider === '' ? 'cursor' : '')}>
@@ -117,6 +125,11 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
       <button type="button" onClick={() => onModel('claude-sonnet-4-6')}>
         model:sonnet
       </button>
+      {effort.editable ? (
+        <button type="button" onClick={() => effort.onChange('xhigh')}>
+          effort:{effort.value}
+        </button>
+      ) : null}
     </>
   ),
 }));
@@ -865,6 +878,23 @@ describe('WorkflowBuilderView (planner model picker)', () => {
 
     expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
       expect.objectContaining({ providerId: 'cursor', model: 'claude-opus-4-6' }),
+    );
+  });
+
+  it('picking planner effort makes PlannerClient receive it', async () => {
+    mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('button', { name: /^effort:high$/i }));
+
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'do something' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+    await waitFor(() => screen.getByText('Ready'));
+
+    expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
+      expect.objectContaining({ effort: 'xhigh' }),
     );
   });
 

@@ -142,7 +142,7 @@ describe('NotificationCenter', () => {
       fireEvent.click(screen.getByRole('button', { name: /confirm retry with selected model/i }));
     });
 
-    const expected = resolveTaskModel('summarizer', null, 'anthropic');
+    const expected = { ...resolveTaskModel('summarizer', null, 'anthropic'), effort: 'medium' };
     expect(state.retryStepSummary).toHaveBeenCalledWith({
       sessionId: 'session-1',
       agentId: 'agent-1',
@@ -188,9 +188,62 @@ describe('NotificationCenter', () => {
       fireEvent.click(screen.getByRole('button', { name: /confirm retry with selected model/i }));
     });
 
-    const expected = resolveTaskModel('summarizer', null, 'anthropic');
+    const expected = { ...resolveTaskModel('summarizer', null, 'anthropic'), effort: 'medium' };
     expect(state.retrySummarizer).toHaveBeenCalledWith('session-2', expected);
     expect(screen.queryByRole('button', { name: /confirm retry with selected model/i })).toBeNull();
+  });
+
+  it('retry with picker dispatches the selected effort', async () => {
+    state.providers = [{ id: 'anthropic', connection: 'connected' }];
+    state.sessions = [
+      {
+        id: 'session-2',
+        providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+      },
+    ];
+    state.summarizerStatus = {
+      'session-2': { status: 'error', lastAttempt: { turnInput: 'in', turnOutput: 'out' } },
+    };
+    state.notifications = [
+      {
+        id: 'n2',
+        read: true,
+        severity: 'error',
+        kind: 'error',
+        title: 'summarizer failed',
+        body: 'anthropic: boom',
+        ts: new Date().toISOString(),
+        sessionId: 'session-2',
+        workspaceId: null,
+        action: { kind: 'retry-summarizer', sessionId: 'session-2' },
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /retry with/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /retry routing/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Opus 5' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'High' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /confirm retry with selected model/i }));
+    });
+
+    expect(state.retrySummarizer).toHaveBeenCalledWith('session-2', {
+      providerId: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'high',
+    });
   });
 
   it('navigates to the session and agent of a row and closes the panel', async () => {
