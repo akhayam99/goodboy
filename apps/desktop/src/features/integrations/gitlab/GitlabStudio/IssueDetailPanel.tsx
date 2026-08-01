@@ -1,15 +1,14 @@
-import { Divider, EmptyState, Markdown } from '@goodboy/ui';
-import { Milestone, MousePointerClick } from 'lucide-react';
+import { EmptyState, Markdown } from '@goodboy/ui';
+import { MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
   HeaderBand,
-  MetaItem,
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
+import { gitlabIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
 import { issueIdentifier, type GitlabIssue } from '../client';
@@ -34,8 +33,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       </div>
     );
   }
-
-  const updated = formatAbsoluteDateTime({ iso: issue.updatedAt });
 
   const launch = (
     <LaunchSessionPanel
@@ -71,33 +68,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           actions={<ExternalRefActions url={issue.webUrl} label="issue" hostLabel="GitLab" />}
         />
       }
-      rail={
-        <>
-          {launch}
-          <Divider />
-          {issue.milestone ? (
-            <MetaItem label="Milestone">
-              <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-2xs font-medium text-primary">
-                <Milestone size={10} aria-hidden />
-                {issue.milestone.title}
-              </span>
-            </MetaItem>
-          ) : null}
-          {issue.labels.length > 0 ? (
-            <MetaItem label="Labels">
-              {issue.labels.map((label) => (
-                <span
-                  key={label}
-                  className="rounded bg-muted px-1.5 py-0.5 text-2xs font-medium text-muted-foreground"
-                >
-                  {label}
-                </span>
-              ))}
-            </MetaItem>
-          ) : null}
-          {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
-        </>
-      }
+      rail={launch}
+      properties={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
     >
       <DetailSection label="description">
         {issue.description ? (

@@ -88,6 +88,49 @@ describe('ExternalTaskChip, provider mapping', () => {
   }
 });
 
+describe('ExternalTaskChip, row appearance', () => {
+  it('renders identifier, title, and a copy-link action driven by task.url', () => {
+    render(<ExternalTaskChip task={makeTask()} appearance="row" />);
+    expect(screen.getByText('GB-123')).toBeDefined();
+    expect(screen.getByText('Improve preview metadata')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Copy GB-123 link' })).toBeDefined();
+  });
+
+  it('omits the copy-link action when the task has no url', () => {
+    render(<ExternalTaskChip task={makeTask({ url: '' })} appearance="row" />);
+    expect(screen.queryByRole('button', { name: 'Copy GB-123 link' })).toBeNull();
+  });
+
+  it('dispatches the provider studio event with the row button click', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-linear-studio', listener);
+    render(<ExternalTaskChip task={makeTask()} appearance="row" />);
+    fireEvent.click(screen.getByRole('button', { name: /open GB-123 in Linear studio/i }));
+    expect(listener).toHaveBeenCalledOnce();
+    const evt = listener.mock.calls[0]?.[0] as CustomEvent;
+    expect(evt.detail).toEqual({ issueExternalId: 'ext-abc' });
+    window.removeEventListener('goodboy:open-linear-studio', listener);
+  });
+
+  it('honors a custom onClick and ariaLabel instead of the default studio dispatch', () => {
+    const onClick = vi.fn();
+    const studioListener = vi.fn();
+    window.addEventListener('goodboy:open-linear-studio', studioListener);
+    render(
+      <ExternalTaskChip
+        task={makeTask()}
+        appearance="row"
+        onClick={onClick}
+        ariaLabel="open GB-123 integration"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'open GB-123 integration' }));
+    expect(onClick).toHaveBeenCalledOnce();
+    expect(studioListener).not.toHaveBeenCalled();
+    window.removeEventListener('goodboy:open-linear-studio', studioListener);
+  });
+});
+
 describe('ExternalTaskChip, click behavior', () => {
   it('invokes a custom onClick instead of dispatching a studio event', () => {
     const onClick = vi.fn();

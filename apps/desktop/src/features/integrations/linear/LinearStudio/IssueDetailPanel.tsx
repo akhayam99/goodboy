@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
-import { FileText, GitPullRequest, MessageSquare, MousePointerClick } from 'lucide-react';
+import { EmptyState, Markdown } from '@goodboy/ui';
+import { FileText, MessageSquare, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
@@ -10,20 +10,17 @@ import { ghPrHeadBranch } from '../../../github/github';
 import {
   DetailSection,
   HeaderBand,
-  MetaItem,
   StudioDetailLayout,
   StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
+import { linearIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
 import { useLinearIssueComments } from '../useLinearIssueComments';
-import { priorityTone } from '../priorityTone';
-import { prStatusTone } from '../prStatusTone';
 
 type IssueSection = 'overview' | 'conversation';
 
@@ -152,27 +149,12 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     />
   );
 
-  const linkedPrs = issuePullRequests(issue);
-  const labels = issue.labels?.nodes ?? [];
-  const priorityLabel = issue.priorityLabel ?? 'No priority';
-  const updated = formatAbsoluteDateTime({ iso: issue.updatedAt });
-
   return (
     <StudioDetailLayout
       header={
         <HeaderBand
           meta={
             <>
-              <span
-                aria-label={`Priority: ${priorityLabel}`}
-                className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground"
-              >
-                <span
-                  aria-hidden
-                  className={cn('size-2 rounded-full', priorityTone({ priority: issue.priority }))}
-                />
-                {priorityLabel}
-              </span>
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                 {issue.identifier}
               </span>
@@ -199,54 +181,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           ]}
         />
       }
-      rail={
-        <>
-          {launch}
-          <Divider />
-          {issue.assignee != null ? (
-            <MetaItem label="Assignee">{issue.assignee.name}</MetaItem>
-          ) : null}
-          {issue.project != null ? <MetaItem label="Project">{issue.project.name}</MetaItem> : null}
-          {labels.length > 0 ? (
-            <MetaItem label="Labels">
-              {labels.map((label) => (
-                <span
-                  key={`${label.name}-${label.color}`}
-                  className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground"
-                >
-                  <span
-                    aria-hidden
-                    className="size-2 rounded-full"
-                    style={{ backgroundColor: label.color }}
-                  />
-                  {label.name}
-                </span>
-              ))}
-            </MetaItem>
-          ) : null}
-          {linkedPrs.length > 0 ? (
-            <MetaItem label="Linked PRs">
-              {linkedPrs.map((pr) => (
-                <a
-                  key={pr.number}
-                  href={pr.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={pr.url}
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-opacity hover:opacity-80',
-                    prStatusTone({ status: pr.status }),
-                  )}
-                >
-                  <GitPullRequest size={11} aria-hidden />#{pr.number}
-                  {pr.status != null ? <span className="opacity-70">· {pr.status}</span> : null}
-                </a>
-              ))}
-            </MetaItem>
-          ) : null}
-          {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
-        </>
-      }
+      rail={launch}
+      properties={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
     >
       {section === 'overview' ? (
         <DetailSection label="description">

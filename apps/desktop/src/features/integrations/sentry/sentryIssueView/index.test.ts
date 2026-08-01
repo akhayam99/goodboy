@@ -6,6 +6,7 @@ const listValues = {
   title: 'List title',
   level: 'error',
   culprit: 'list/culprit',
+  status: 'unresolved',
   permalink: 'https://sentry.io/issues/42',
 };
 
@@ -46,8 +47,8 @@ describe('sentryIssueView', () => {
       tags: [{ key: 'release', value: 'desktop@1.2.3' }],
       frames: [frame],
       breadcrumbs: [breadcrumb],
+      breadcrumbCount: 1,
       hasBreadcrumbs: true,
-      breadcrumbsLabel: 'Breadcrumbs (1)',
     });
   });
 
@@ -64,8 +65,8 @@ describe('sentryIssueView', () => {
       tags: [],
       frames: [],
       breadcrumbs: [],
+      breadcrumbCount: 0,
       hasBreadcrumbs: false,
-      breadcrumbsLabel: 'Breadcrumbs (0)',
     });
   });
 
@@ -93,5 +94,6 @@ describe('sentryIssueView', () => {
     });
 
     expect(view.hasBreadcrumbs).toBe(false);
+    expect(view.breadcrumbCount).toBe(1);
   });
 });

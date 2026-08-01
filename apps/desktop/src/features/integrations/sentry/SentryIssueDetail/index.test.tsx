@@ -1,19 +1,20 @@
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SentryIssueDetail } from '.';
 
 afterEach(cleanup);
 
 describe('SentryIssueDetail', () => {
-  it('surfaces event tags and keeps breadcrumbs collapsed', () => {
+  it('surfaces the culprit, the status and the event tags, keeping breadcrumbs behind a tab', () => {
     render(
       <SentryIssueDetail
         identifier="GOODBOY-42"
         title="Request failed"
         culprit="list/culprit"
         level="error"
+        status="unresolved"
         permalink="https://sentry.io/issues/42"
         detail={{
           title: 'TypeError: request failed',
@@ -46,7 +47,14 @@ describe('SentryIssueDetail', () => {
     expect(screen.getByText(/production/)).toBeDefined();
     expect(screen.queryByText('GET /api/items')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Breadcrumbs (1)' }));
+    const panel = screen.getByTestId('detail-properties');
+    expect(
+      within(panel)
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual(['Culprit', 'Status', 'release', 'environment']);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Breadcrumbs 1' }));
     expect(screen.getByText('GET /api/items')).toBeDefined();
   });
 });

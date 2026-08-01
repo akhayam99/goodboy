@@ -127,6 +127,7 @@ describe('PrPane', () => {
       screen.queryByRole('button', { name: /GitHub #42 Refactor authentication In review/i }),
     ).toBeNull();
     expect(screen.getAllByText('Refactor authentication')).toHaveLength(1);
+    expect(screen.getByText('No CI')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
   });
 
@@ -259,6 +260,8 @@ describe('PrPane', () => {
 
     expect(screen.getByText('CI passing')).toBeDefined();
     expect(screen.getByText('Review required')).toBeDefined();
+    expect(screen.getByText('ak/refactor-auth')).toBeDefined();
+    expect(screen.getByText('main')).toBeDefined();
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /open #7 in GitHub studio/i })).toBeDefined();

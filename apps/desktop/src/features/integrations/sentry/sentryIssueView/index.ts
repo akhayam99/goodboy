@@ -6,6 +6,7 @@ type Params = {
   readonly title: string;
   readonly level: string | null;
   readonly culprit: string | null;
+  readonly status: string | null;
   readonly permalink: string | null;
   readonly detail: SentryIssueDetail | null;
   readonly isLoading: boolean;
@@ -17,6 +18,7 @@ export const sentryIssueView = ({
   title,
   level,
   culprit,
+  status,
   permalink,
   detail,
   isLoading,
@@ -29,11 +31,12 @@ export const sentryIssueView = ({
     title: detail?.title ?? title,
     level,
     culprit: detail?.culprit ?? culprit,
+    status,
     permalink,
     tags: visibleSentryTags({ detail }),
     frames: detail?.frames ?? [],
     breadcrumbs,
+    breadcrumbCount: breadcrumbs.length,
     hasBreadcrumbs: breadcrumbs.length > 0 && !isLoading && error == null,
-    breadcrumbsLabel: `Breadcrumbs (${breadcrumbs.length})`,
   };
 };

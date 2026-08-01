@@ -194,7 +194,7 @@ describe('IssueDetailPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Stack trace' }));
     expect(screen.getByText('› detailFrame (src/detail.ts:42)', { selector: 'pre' })).toBeDefined();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Breadcrumbs' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Breadcrumbs 1' }));
     expect(screen.getByText('GET /detail')).toBeDefined();
   });
 });

@@ -1,8 +1,8 @@
-import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';
 import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
+import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 
 type Props = {
   task: SessionExternalTask;
@@ -54,7 +54,6 @@ export const ExternalTaskChip = ({
 }: Props) => {
   const meta = PROVIDER_META[task.provider];
   const tooltip = `${task.identifier}: ${task.title}`;
-  const isRow = appearance === 'row';
 
   const glyph = <IntegrationGlyph provider={task.provider} />;
 
@@ -77,7 +76,23 @@ export const ExternalTaskChip = ({
         new CustomEvent(meta.studioEvent, { detail: { issueExternalId: task.externalId } }),
       ));
 
-  const trigger = (
+  if (appearance === 'row') {
+    return (
+      <LinkedWorkRow
+        leading={{ kind: 'glyph', provider: task.provider }}
+        identifier={task.identifier}
+        title={variant === 'full' ? task.title : undefined}
+        onClick={handleClick}
+        ariaLabel={ariaLabel ?? `open ${task.identifier} in ${meta.label} studio`}
+        tooltip={tooltip}
+        actions={
+          task.url !== '' ? <CopyLinkButton url={task.url} label={task.identifier} /> : undefined
+        }
+      />
+    );
+  }
+
+  return (
     <button
       type="button"
       onClick={(e) => {
@@ -87,37 +102,13 @@ export const ExternalTaskChip = ({
       title={tooltip}
       aria-label={ariaLabel ?? `open ${task.identifier} in ${meta.label} studio`}
       className={cn(
-        isRow
-          ? 'group flex w-full min-w-0 items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-border'
-          : 'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-colors',
-        !isRow && meta.colorClasses,
+        'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-colors',
+        meta.colorClasses,
       )}
     >
       {glyph}
-      <span className={cn('shrink-0 font-mono', isRow && 'text-xs font-semibold text-foreground')}>
-        {task.identifier}
-      </span>
-      {variant === 'full' ? (
-        <span className={cn('truncate', isRow && 'min-w-0 flex-1 text-sm text-foreground')}>
-          {task.title}
-        </span>
-      ) : null}
-      {isRow ? (
-        <ArrowRight
-          size={14}
-          aria-hidden
-          className="shrink-0 text-muted-foreground/30 motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
-        />
-      ) : null}
+      <span className="shrink-0 font-mono">{task.identifier}</span>
+      {variant === 'full' ? <span className="truncate">{task.title}</span> : null}
     </button>
-  );
-
-  if (!isRow || !task.url) return trigger;
-
-  return (
-    <span className="flex w-full min-w-0 items-center gap-1">
-      {trigger}
-      <CopyLinkButton url={task.url} label={task.identifier} />
-    </span>
   );
 };

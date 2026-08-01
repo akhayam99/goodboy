@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Divider, EmptyState, StatCard, type SegmentedTabOption } from '@goodboy/ui';
+import { EmptyState, StatCard, type SegmentedTabOption } from '@goodboy/ui';
 import { Footprints, LayoutList, ListTree, MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   HeaderBand,
-  MetaItem,
   StudioDetailLayout,
   StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
+import { resolveDetailFields, sentryIssueFields } from '../../../../shared/detail-fields';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
@@ -82,6 +82,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     title: issue.title,
     level: issue.level,
     culprit: issue.culprit,
+    status: issue.status,
     permalink: issue.permalink,
     detail: issueDetail,
     isLoading: detailLoading,
@@ -100,7 +101,14 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     { value: 'overview', label: 'Overview', icon: LayoutList },
     { value: 'stack', label: 'Stack trace', icon: ListTree },
     ...(view.hasBreadcrumbs
-      ? [{ value: 'breadcrumbs' as const, label: 'Breadcrumbs', icon: Footprints }]
+      ? [
+          {
+            value: 'breadcrumbs' as const,
+            label: 'Breadcrumbs',
+            icon: Footprints,
+            badge: String(view.breadcrumbCount),
+          },
+        ]
       : []),
   ];
   const activeSection = options.some((option) => option.value === section) ? section : 'overview';
@@ -118,13 +126,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
             </>
           }
           title={view.title}
-          subtitle={
-            view.culprit != null ? (
-              <span className="truncate font-mono text-2xs text-muted-foreground">
-                {view.culprit}
-              </span>
-            ) : undefined
-          }
           actions={
             view.permalink != null && view.permalink !== '' ? (
               <ExternalRefActions url={view.permalink} label="issue" hostLabel="Sentry" />
@@ -140,18 +141,8 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           options={options}
         />
       }
-      rail={
-        <>
-          {launch}
-          <Divider />
-          {view.tags.map((tag) => (
-            <MetaItem key={tag.key} label={tag.key}>
-              {tag.value}
-            </MetaItem>
-          ))}
-          {issue.status != null ? <MetaItem label="Status">{issue.status}</MetaItem> : null}
-        </>
-      }
+      rail={launch}
+      properties={resolveDetailFields({ registry: sentryIssueFields, entity: view })}
     >
       {activeSection === 'overview' ? (
         stats.length > 0 ? (

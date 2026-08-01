@@ -106,9 +106,38 @@ describe('ReviewPrDetailPanel', () => {
     expect(screen.queryByRole('button', { name: /edit/i })).toBeNull();
   });
 
+  it('renders the pull request properties in registry order', () => {
+    render(<ReviewPrDetailPanel pr={PR} workspaceId={WORKSPACE_ID} onClose={vi.fn()} />);
+
+    const labels = Array.from(screen.getByTestId('detail-properties').querySelectorAll('dt')).map(
+      (node) => node.textContent,
+    );
+
+    expect(labels).toEqual(['Base branch', 'Updated']);
+  });
+
+  it('keeps the header identity of a GitLab merge request', () => {
+    render(
+      <ReviewPrDetailPanel
+        pr={{ ...PR, provider: 'gitlab' }}
+        workspaceId={WORKSPACE_ID}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('!41')).toBeDefined();
+    expect(screen.getByText('Review requested')).toBeDefined();
+    expect(screen.getByText('sam')).toBeDefined();
+    expect(screen.getByLabelText('Open in GitLab')).toBeDefined();
+  });
+
   it('shows a hint instead of review actions for own PRs', () => {
     render(
-      <ReviewPrDetailPanel pr={{ ...PR, mine: true }} workspaceId={WORKSPACE_ID} onClose={vi.fn()} />,
+      <ReviewPrDetailPanel
+        pr={{ ...PR, mine: true }}
+        workspaceId={WORKSPACE_ID}
+        onClose={vi.fn()}
+      />,
     );
 
     expect(screen.getByText(/This is your pull request/)).toBeDefined();

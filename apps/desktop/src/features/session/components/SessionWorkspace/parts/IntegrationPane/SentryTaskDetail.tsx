@@ -19,6 +19,7 @@ export const SentryTaskDetail = ({ workspaceId, task }: Props) => {
       title={task.title}
       culprit={null}
       level={null}
+      status={null}
       permalink={task.url}
       detail={detail}
       isLoading={isLoading}

@@ -24,13 +24,14 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
   HeaderBand,
-  MetaItem,
+  RailBlock,
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
+import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { IssueStateBadge, type StateTone } from '../../../../shared/components/IssueStateBadge';
+import { BranchPair } from '../../../../shared/components/BranchPair';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
@@ -38,12 +39,7 @@ import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpaw
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
-import {
-  gitlabMergeMr,
-  humanizeMergeStatus,
-  type GitlabMergeRequest,
-  type GitlabMergeStatusTone,
-} from '../client';
+import { gitlabMergeMr, type GitlabMergeRequest } from '../client';
 import { projectPathFromMrUrl } from './useGitlabMrs';
 
 type CreateMode = 'manual' | 'agent';
@@ -62,12 +58,6 @@ const STATE_TONE: Record<string, StateTone> = {
   merged: 'info',
   closed: 'danger',
   locked: 'neutral',
-};
-
-const MERGE_STATUS_TONE: Record<GitlabMergeStatusTone, StateTone> = {
-  success: 'success',
-  danger: 'danger',
-  muted: 'neutral',
 };
 
 export const MrDetailPanel = ({
@@ -236,10 +226,6 @@ export const MrDetailPanel = ({
     }
   };
 
-  const updated = mr == null ? '' : formatAbsoluteDateTime({ iso: mr.updatedAt });
-  const mergeStatus =
-    mr != null && mr.state === 'opened' ? humanizeMergeStatus(mr.mergeStatus) : null;
-
   const refreshButton = (
     <RefreshIconButton
       label="refresh merge request"
@@ -270,13 +256,7 @@ export const MrDetailPanel = ({
               </>
             }
             title={mr.title}
-            subtitle={
-              <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
-                <span className="font-mono">{mr.sourceBranch}</span>
-                <ArrowRight size={11} aria-hidden />
-                <span className="font-mono">{mr.targetBranch}</span>
-              </span>
-            }
+            subtitle={<BranchPair headBranch={mr.sourceBranch} baseBranch={mr.targetBranch} />}
             actions={
               <>
                 {refreshButton}
@@ -306,25 +286,7 @@ export const MrDetailPanel = ({
             }
           />
         }
-        rail={
-          <>
-            <MetaItem label="Source branch">
-              <span className="font-mono">{mr.sourceBranch}</span>
-            </MetaItem>
-            <MetaItem label="Target branch">
-              <span className="font-mono">{mr.targetBranch}</span>
-            </MetaItem>
-            {mergeStatus != null ? (
-              <MetaItem label="Merge status">
-                <IssueStateBadge tone={MERGE_STATUS_TONE[mergeStatus.tone]}>
-                  {mergeStatus.label}
-                </IssueStateBadge>
-              </MetaItem>
-            ) : null}
-            <MetaItem label="Draft">{mr.draft ? 'yes' : 'no'}</MetaItem>
-            {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
-          </>
-        }
+        properties={resolveDetailFields({ registry: gitlabMergeRequestFields, entity: mr })}
       >
         {mr.hasConflicts ? (
           <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-2xs leading-relaxed text-foreground">
@@ -359,9 +321,9 @@ export const MrDetailPanel = ({
         />
       }
       rail={
-        <MetaItem label="Branch">
+        <RailBlock label="Branch">
           <span className="font-mono">{branch ?? 'no branch'}</span>
-        </MetaItem>
+        </RailBlock>
       }
     >
       {session != null && sessionId != null ? (

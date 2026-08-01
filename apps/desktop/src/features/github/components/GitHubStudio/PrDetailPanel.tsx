@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { ArrowRight, Inbox } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import {
   buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
@@ -14,11 +14,11 @@ import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleMod
 import { openUrl } from '../../../../shared/lib/editor';
 import {
   HeaderBand,
-  MetaItem,
   StudioDetailLayout,
   StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
+import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
+import { BranchPair } from '../../../../shared/components/BranchPair';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
@@ -348,9 +348,6 @@ export const PrDetailPanel = ({
   const num = activePr.number;
   const hasStateActions = !isTerminal || isClosed;
 
-  const updated =
-    activePr.updatedAt === '' ? '' : formatAbsoluteDateTime({ iso: activePr.updatedAt });
-
   const header = (
     <>
       <HeaderBand
@@ -371,15 +368,7 @@ export const PrDetailPanel = ({
           )
         }
         title={activePr.title}
-        subtitle={
-          activePr.headBranch !== '' && activePr.baseBranch !== '' ? (
-            <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
-              <span className="font-mono">{activePr.headBranch}</span>
-              <ArrowRight size={11} aria-hidden />
-              <span className="font-mono">{activePr.baseBranch}</span>
-            </span>
-          ) : undefined
-        }
+        subtitle={<BranchPair headBranch={activePr.headBranch} baseBranch={activePr.baseBranch} />}
         actions={
           <>
             <OpenSessionButton sessionId={sessionId} onOpened={onClose} variant="ghost" />
@@ -416,7 +405,7 @@ export const PrDetailPanel = ({
 
   if (createOpen) {
     return (
-      <StudioDetailLayout header={header} scrolls={false}>
+      <StudioDetailLayout header={header} fit="bleed">
         <CreatePrPanel
           sessionId={sessionId}
           defaultTitle={session.goal}
@@ -444,18 +433,13 @@ export const PrDetailPanel = ({
         />
       }
       rail={
-        <>
-          <PrReviewers
-            detail={detail}
-            workspaceRoot={workspaceRoot}
-            onAddReviewers={onAddReviewers}
-          />
-          <MetaItem label="Base branch">
-            <span className="font-mono">{activePr.baseBranch}</span>
-          </MetaItem>
-          {updated !== '' ? <MetaItem label="Updated">{updated}</MetaItem> : null}
-        </>
+        <PrReviewers
+          detail={detail}
+          workspaceRoot={workspaceRoot}
+          onAddReviewers={onAddReviewers}
+        />
       }
+      properties={resolveDetailFields({ registry: githubPullRequestFields, entity: activePr })}
     >
       {section === 'overview' ? (
         <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />
