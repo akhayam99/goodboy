@@ -1,4 +1,12 @@
-import { AlertTriangle, Bot, CircleHelp, GitPullRequest, MessageSquareReply } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Bot,
+  CircleHelp,
+  GitPullRequest,
+  MessageSquareReply,
+  XCircle,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Chip, cn, tintClasses } from '@goodboy/ui';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
@@ -12,24 +20,31 @@ type Props = {
 const SIGNAL_ICON: Record<NextUpSignal, LucideIcon> = {
   question: CircleHelp,
   review: GitPullRequest,
+  checks: XCircle,
   resume: Bot,
   stalled: AlertTriangle,
+  errored: AlertCircle,
   resolve: MessageSquareReply,
 };
 
 const SIGNAL_LABEL: Record<NextUpSignal, string> = {
   question: 'questions',
   review: 'review',
+  checks: 'ci failed',
   resume: 'unread',
   stalled: 'stalled',
+  errored: 'errored',
   resolve: 'resolve',
 };
 
 const ITEM_ICON: Record<NextUpItem['id'], LucideIcon> = {
   question: CircleHelp,
   review: GitPullRequest,
+  checks: XCircle,
   resume: Bot,
+  resolve: MessageSquareReply,
   stalled: SECTION_ICONS.workflows,
+  errored: AlertCircle,
   'close-out': GitPullRequest,
   start: SECTION_ICONS.workflows,
   follow: Bot,

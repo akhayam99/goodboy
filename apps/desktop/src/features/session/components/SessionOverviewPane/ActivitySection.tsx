@@ -1,8 +1,9 @@
-import { CheckCheck, MessageSquareReply } from 'lucide-react';
+import { Bot, CheckCheck, MessageSquareReply } from 'lucide-react';
 import { Button, Eyebrow } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import type { WorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { ActivityEmptyState } from './ActivityEmptyState';
@@ -16,6 +17,7 @@ type Props = {
   readonly isFresh: boolean;
   readonly resolveCount: number;
   readonly onOpenWorkflowBuilder: () => void;
+  readonly onFocusCompletedRun: (runId: string) => void;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
@@ -26,20 +28,27 @@ export const ActivitySection = ({
   isFresh,
   resolveCount,
   onOpenWorkflowBuilder,
+  onFocusCompletedRun,
   onSelectLens,
 }: Props) => {
   const sessionId = session.id as SessionId;
   const completedLanes = runs.completedLanes ?? [];
   const completedAgents = runs.completedFreeAgents ?? [];
-  const completedCount = completedLanes.length + completedAgents.length;
-  const completedLens: LensKind = completedLanes.length > 0 ? 'workflows' : 'agents';
+  const lastCompletedLane = completedLanes[completedLanes.length - 1] ?? null;
+
+  const openCompletedWorkflows = () => {
+    if (lastCompletedLane !== null) {
+      onFocusCompletedRun(lastCompletedLane.runId);
+    }
+    onSelectLens('workflows');
+  };
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2 px-0.5">
-        <Eyebrow label="Activity" muted className="font-medium" />
+      <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+        <Eyebrow label="Activity" muted className="min-w-0 truncate font-medium" />
         {!isFresh && (
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 flex-wrap items-center gap-1">
             <Button variant="ghost" size="sm" onClick={onOpenWorkflowBuilder}>
               <SECTION_ICONS.workflows size={13} aria-hidden />
               New workflow
@@ -61,6 +70,7 @@ export const ActivitySection = ({
               onSelectLens={onSelectLens}
             />
           ) : null}
+          <PendingResolutionsStrip sessionId={sessionId} />
           {resolveCount > 0 ? (
             <SummaryRow
               icon={MessageSquareReply}
@@ -69,12 +79,28 @@ export const ActivitySection = ({
               onClick={() => onSelectLens('resolve')}
             />
           ) : null}
-          {completedCount > 0 ? (
+          {completedLanes.length > 0 ? (
             <SummaryRow
               icon={CheckCheck}
               tone="neutral"
-              label={`${completedCount} completed`}
-              onClick={() => onSelectLens(completedLens)}
+              label={
+                completedLanes.length === 1
+                  ? '1 completed workflow'
+                  : `${completedLanes.length} completed workflows`
+              }
+              onClick={openCompletedWorkflows}
+            />
+          ) : null}
+          {completedAgents.length > 0 ? (
+            <SummaryRow
+              icon={Bot}
+              tone="neutral"
+              label={
+                completedAgents.length === 1
+                  ? '1 completed agent'
+                  : `${completedAgents.length} completed agents`
+              }
+              onClick={() => onSelectLens('agents')}
             />
           ) : null}
         </div>

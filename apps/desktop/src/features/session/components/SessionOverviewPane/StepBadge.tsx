@@ -16,8 +16,8 @@ const isGhostStep = (status: SpawnNodeStatus): boolean =>
 export const StepBadge = ({ step, onAdvance }: Props) => {
   const ghost = isGhostStep(step.status);
   const statusIcon = onAdvance ? (
-    <span className="flex size-3.5 items-center justify-center rounded-full bg-primary/15">
-      <Play size={8} aria-hidden className="text-primary" fill="currentColor" />
+    <span className="flex size-3.5 items-center justify-center rounded-full bg-muted">
+      <Play size={8} aria-hidden className="text-muted-foreground" />
     </span>
   ) : (
     <StatusGlyph status={step.status} />
@@ -41,7 +41,7 @@ export const StepBadge = ({ step, onAdvance }: Props) => {
           onAdvance();
         }}
         title={`start ${step.name || 'this step'}`}
-        className="-mx-1 -my-0.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 ring-1 ring-primary/40 transition-colors hover:bg-primary/10"
+        className="-mx-1 -my-0.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 ring-1 ring-border-soft transition-colors hover:bg-muted/60"
       >
         {inner}
       </button>
