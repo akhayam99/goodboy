@@ -5,9 +5,9 @@ import type { QueryResult } from '../../hooks/useImpactMetrics';
 import { formatHours } from '../../utils/formatHours';
 import { ErrorStrip } from './ErrorStrip';
 import { PanelLoading } from './PanelLoading';
-import { PanelShell } from './PanelShell';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 
 type Props = {
   readonly agentDurations: QueryResult<AgentDurations>;
@@ -27,7 +27,11 @@ export const FlowPanel = ({
   const agents = agentDurations.data;
   const health = flowHealth.data;
   return (
-    <PanelShell title="Flow" subtitle="How quickly work moves and where it waits">
+    <StudioPanel
+      title="Flow"
+      subtitle="How quickly work moves and where it waits"
+      maxWidthClass="max-w-5xl"
+    >
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
       <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
       {isLoading && agents === null && health === null ? <PanelLoading /> : null}
@@ -54,7 +58,7 @@ export const FlowPanel = ({
         />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Widget
+        <StudioWidget
           label="agent duration by kind"
           hint={`${agents?.totalAgents ?? 0} completed agents`}
         >
@@ -79,8 +83,8 @@ export const FlowPanel = ({
               </span>
             ) : null}
           </div>
-        </Widget>
-        <Widget label="where flow blocks" hint="active blockers in this workspace">
+        </StudioWidget>
+        <StudioWidget label="where flow blocks" hint="active blockers in this workspace">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-xs">Waiting on open questions</span>
@@ -97,16 +101,16 @@ export const FlowPanel = ({
               <span className="font-mono text-sm tabular-nums">{health?.budgetAlerts ?? 0}</span>
             </div>
           </div>
-        </Widget>
+        </StudioWidget>
       </div>
-      <Widget label="slowest sessions" hint="wall-clock from creation to latest activity">
+      <StudioWidget label="slowest sessions" hint="wall-clock from creation to latest activity">
         <SessionRows
           sessions={health?.sessions ?? []}
           valueLabel=""
           formatValue={(value) => formatHours({ hours: value })}
           onOpenSession={onOpenSession}
         />
-      </Widget>
-    </PanelShell>
+      </StudioWidget>
+    </StudioPanel>
   );
 };

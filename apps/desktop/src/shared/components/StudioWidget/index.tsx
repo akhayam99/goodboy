@@ -9,7 +9,7 @@ type Props = {
   readonly children: ReactNode;
 };
 
-export const Widget = ({ label, hint, action, className, children }: Props) => {
+export const StudioWidget = ({ label, hint, action, className, children }: Props) => {
   return (
     <section
       className={cn(

@@ -6,10 +6,10 @@ import type { QueryResult } from '../../hooks/useImpactMetrics';
 import { formatHours } from '../../utils/formatHours';
 import { ErrorStrip } from './ErrorStrip';
 import { PanelLoading } from './PanelLoading';
-import { PanelShell } from './PanelShell';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { TrendStatCard } from './TrendStatCard';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 
 type Props = {
   readonly overview: QueryResult<ImpactOverview>;
@@ -42,9 +42,10 @@ export const OverviewPanel = ({
       ? ((data.previousOrchestratedSessions ?? 0) / data.previousSessionCount) * 100
       : null;
   return (
-    <PanelShell
+    <StudioPanel
       title="Overview"
       subtitle="What orchestration shipped and how quickly work reached done"
+      maxWidthClass="max-w-5xl"
     >
       <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
       <ErrorStrip
@@ -119,16 +120,16 @@ export const OverviewPanel = ({
               }
             />
           </div>
-          <Widget label="longest session wall-clock" hint="open a session to inspect its run">
+          <StudioWidget label="longest session wall-clock" hint="open a session to inspect its run">
             <SessionRows
               sessions={data.sessions}
               valueLabel=""
               formatValue={(value) => formatHours({ hours: value })}
               onOpenSession={onOpenSession}
             />
-          </Widget>
+          </StudioWidget>
         </>
       ) : null}
-    </PanelShell>
+    </StudioPanel>
   );
 };

@@ -6,11 +6,11 @@ import { brandColor } from '../../../providers/components/provider-brand';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { AlertBanner } from './AlertBanner';
 import { ModelTable } from './ModelTable';
-import { PanelShell } from './PanelShell';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SpendBar } from './SpendBar';
 import { Sparkline } from './Sparkline';
 import { TurnsTable } from './TurnsTable';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import {
   buildModelBreakdown,
   chronologicalTurnCosts,
@@ -50,7 +50,7 @@ export const OverviewPanel = ({
   const totalSpend = providers.reduce((sum, p) => sum + p.spentUsd, 0);
 
   return (
-    <PanelShell
+    <StudioPanel
       title="Overview"
       subtitle={`workspace spend across ${sessionCount} sessions`}
       maxWidthClass="max-w-5xl"
@@ -63,14 +63,14 @@ export const OverviewPanel = ({
       </div>
 
       {alerts.some((a) => !a.dismissedAt) ? (
-        <Widget label="alerts">
+        <StudioWidget label="alerts">
           <AlertBanner alerts={alerts} onDismiss={onDismissAlert} />
-        </Widget>
+        </StudioWidget>
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {providers.length > 0 && (
-          <Widget label="spend by provider" hint="share of workspace total">
+          <StudioWidget label="spend by provider" hint="share of workspace total">
             <div className="flex flex-col gap-3">
               {providers.map((entry) => {
                 const id = toProviderId(entry.provider);
@@ -87,19 +87,19 @@ export const OverviewPanel = ({
                 );
               })}
             </div>
-          </Widget>
+          </StudioWidget>
         )}
 
-        <Widget label="cost per turn">
+        <StudioWidget label="cost per turn">
           <Sparkline values={turnCosts} />
-        </Widget>
+        </StudioWidget>
 
-        <Widget label="by model" className="lg:col-span-2">
+        <StudioWidget label="by model" className="lg:col-span-2">
           <ModelTable entries={models} />
-        </Widget>
+        </StudioWidget>
       </div>
 
       <TurnsTable turns={turns} showSession />
-    </PanelShell>
+    </StudioPanel>
   );
 };

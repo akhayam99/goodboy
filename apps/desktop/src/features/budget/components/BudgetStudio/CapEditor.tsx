@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, formatUsd } from '@goodboy/ui';
 import { parseCap } from '../../../../shared/lib/parse-cap';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 
 type Props = {
   readonly label: string;
@@ -56,7 +56,7 @@ export const CapEditor = ({
   };
 
   return (
-    <Widget label={label} hint={hint}>
+    <StudioWidget label={label} hint={hint}>
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">$</span>
         <Input
@@ -88,6 +88,6 @@ export const CapEditor = ({
           </span>
         ) : null}
       </div>
-    </Widget>
+    </StudioWidget>
   );
 };

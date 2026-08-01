@@ -10,7 +10,7 @@ type Props = {
   readonly children: ReactNode;
 };
 
-export const PanelShell = ({
+export const StudioPanel = ({
   icon,
   title,
   subtitle,
@@ -24,11 +24,11 @@ export const PanelShell = ({
         {icon ?? null}
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-base font-semibold text-foreground">{title}</span>
-          {subtitle ? (
+          {subtitle != null ? (
             <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
           ) : null}
         </div>
-        {action ? <div className="ml-auto shrink-0">{action}</div> : null}
+        {action != null ? <div className="ml-auto shrink-0">{action}</div> : null}
       </div>
       <Divider />
       <div className="min-h-0 flex-1">

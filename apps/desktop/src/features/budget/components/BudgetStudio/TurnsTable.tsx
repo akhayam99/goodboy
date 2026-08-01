@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { cn, formatTokens, formatUsdPrecise } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 
 type Props = {
@@ -46,7 +46,7 @@ export const TurnsTable = ({ turns, showSession }: Props) => {
   );
 
   return (
-    <Widget label="turns" action={action}>
+    <StudioWidget label="turns" action={action}>
       {sorted.length === 0 ? (
         <p className="py-4 text-center text-xs text-muted-foreground">no recorded turns yet.</p>
       ) : (
@@ -112,7 +112,7 @@ export const TurnsTable = ({ turns, showSession }: Props) => {
           )}
         </>
       )}
-    </Widget>
+    </StudioWidget>
   );
 };
 

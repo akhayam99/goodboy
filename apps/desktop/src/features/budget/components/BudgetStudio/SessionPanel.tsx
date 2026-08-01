@@ -4,10 +4,10 @@ import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { CapEditor } from './CapEditor';
 import { ModelTable } from './ModelTable';
-import { PanelShell } from './PanelShell';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { Sparkline } from './Sparkline';
 import { TurnsTable } from './TurnsTable';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { buildModelBreakdown, chronologicalTurnCosts, type WorkspaceTurn } from './lib';
 
 type Props = {
@@ -44,7 +44,7 @@ export const SessionPanel = ({
   const turnCount = records.filter((r) => r.kind === 'turn').length;
 
   return (
-    <PanelShell
+    <StudioPanel
       title={goal}
       subtitle={isCurrent ? 'current session' : 'session spend'}
       action={<OpenSessionButton sessionId={sessionId} onOpened={onOpened} variant="secondary" />}
@@ -62,15 +62,15 @@ export const SessionPanel = ({
         onSave={onSaveCap}
       />
 
-      <Widget label="by model">
+      <StudioWidget label="by model">
         <ModelTable entries={models} />
-      </Widget>
+      </StudioWidget>
 
-      <Widget label="cost per turn">
+      <StudioWidget label="cost per turn">
         <Sparkline values={turnCosts} />
-      </Widget>
+      </StudioWidget>
 
       <TurnsTable turns={turns} showSession={false} />
-    </PanelShell>
+    </StudioPanel>
   );
 };

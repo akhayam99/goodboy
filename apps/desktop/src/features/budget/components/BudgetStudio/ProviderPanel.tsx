@@ -6,9 +6,9 @@ import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { CapEditor } from './CapEditor';
 import { CostRing } from './CostRing';
 import { ModelTable } from './ModelTable';
-import { PanelShell } from './PanelShell';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { TurnsTable } from './TurnsTable';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { buildModelBreakdown, providerLabel, type WorkspaceTurn } from './lib';
 
 type Props = {
@@ -33,7 +33,7 @@ export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemov
   const models = useMemo(() => buildModelBreakdown(filtered.map((t) => t.record)), [filtered]);
 
   return (
-    <PanelShell
+    <StudioPanel
       icon={<ProviderIcon provider={provider} size={20} />}
       title={providerLabel(provider)}
       subtitle={`${formatUsdPrecise(spent)} total spend`}
@@ -63,11 +63,11 @@ export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemov
         onRemove={onRemoveCap}
       />
 
-      <Widget label="by model">
+      <StudioWidget label="by model">
         <ModelTable entries={models} />
-      </Widget>
+      </StudioWidget>
 
       <TurnsTable turns={filtered} showSession />
-    </PanelShell>
+    </StudioPanel>
   );
 };

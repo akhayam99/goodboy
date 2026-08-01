@@ -10,10 +10,10 @@ import type { QueryResult } from '../../hooks/useImpactMetrics';
 import { turnStats } from '../../utils/turnStats';
 import { ErrorStrip } from './ErrorStrip';
 import { PanelLoading } from './PanelLoading';
-import { PanelShell } from './PanelShell';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { Sparkline } from './Sparkline';
 import { TurnHistogram } from './TurnHistogram';
-import { Widget } from './Widget';
+import { StudioWidget } from '../../../../shared/components/StudioWidget';
 
 type Props = {
   readonly cacheEfficiency: QueryResult<ReadonlyArray<CacheEfficiencyEntry>>;
@@ -43,7 +43,11 @@ export const EfficiencyPanel = ({
   const accepted = nudgeData?.find((entry) => entry.outcome === 'accepted')?.count ?? 0;
   const nudgeTotal = nudgeData?.reduce((sum, entry) => sum + entry.count, 0) ?? 0;
   return (
-    <PanelShell title="Efficiency" subtitle="Token reuse, context growth, and right-sized runs">
+    <StudioPanel
+      title="Efficiency"
+      subtitle="Token reuse, context growth, and right-sized runs"
+      maxWidthClass="max-w-5xl"
+    >
       <ErrorStrip label="cache efficiency" error={cacheEfficiency.error} onRetry={onRetry} />
       <ErrorStrip label="context growth" error={contextGrowth.error} onRetry={onRetry} />
       <ErrorStrip label="turn distribution" error={turns.error} onRetry={onRetry} />
@@ -70,7 +74,7 @@ export const EfficiencyPanel = ({
         />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Widget label="cache reuse by provider" hint="cached input divided by input tokens">
+        <StudioWidget label="cache reuse by provider" hint="cached input divided by input tokens">
           <div className="flex flex-col gap-2">
             {cache?.map((entry) => (
               <div key={entry.provider} className="flex flex-col gap-1">
@@ -89,18 +93,18 @@ export const EfficiencyPanel = ({
               </div>
             ))}
           </div>
-        </Widget>
-        <Widget label="context growth per turn" hint="latest 40 measured turns">
+        </StudioWidget>
+        <StudioWidget label="context growth per turn" hint="latest 40 measured turns">
           <Sparkline values={context?.map((point) => point.contextTokens) ?? []} />
-        </Widget>
-        <Widget label="turn distribution" hint={`${stats?.agents ?? 0} agents`}>
+        </StudioWidget>
+        <StudioWidget label="turn distribution" hint={`${stats?.agents ?? 0} agents`}>
           {stats !== null && turnData !== null ? (
             <TurnHistogram buckets={turnData} median={stats.median} maxAgents={stats.maxAgents} />
           ) : (
             <span className="text-xs text-muted-foreground">No turns in this window.</span>
           )}
-        </Widget>
-        <Widget label="right-size nudges" hint="outcomes after a routing suggestion">
+        </StudioWidget>
+        <StudioWidget label="right-size nudges" hint="outcomes after a routing suggestion">
           <div className="flex flex-col gap-1">
             {nudgeData?.map((entry) => (
               <div key={entry.outcome ?? 'pending'} className="flex items-center gap-3 text-xs">
@@ -109,7 +113,7 @@ export const EfficiencyPanel = ({
               </div>
             ))}
           </div>
-        </Widget>
+        </StudioWidget>
       </div>
       <button
         type="button"
@@ -125,6 +129,6 @@ export const EfficiencyPanel = ({
         </span>
         <ArrowUpRight size={14} aria-hidden className="text-muted-foreground" />
       </button>
-    </PanelShell>
+    </StudioPanel>
   );
 };
