@@ -48,7 +48,7 @@ vi.mock('../../../features/companion/bridge', () => ({
 }));
 
 vi.mock('../../../features/updater/components/UpdateIndicator', () => ({
-  UpdateIndicator: () => null,
+  UpdateIndicator: () => <button type="button">Update to 0.2.0</button>,
 }));
 
 vi.mock('../../../features/notifications/components/NotificationCenter', () => ({
@@ -98,6 +98,18 @@ describe('AppTopBar', () => {
     render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio="workflow" />);
     const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).not.toContain('bg-foreground');
+  });
+
+  it('centers the update indicator and keeps it clickable', () => {
+    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+    const update = screen.getByText('Update to 0.2.0');
+    const slot = update.closest('div.absolute');
+    expect(slot).not.toBeNull();
+    expect(slot?.className).toContain('inset-x-0');
+    expect(slot?.className).toContain('mx-auto');
+    expect(slot?.className).toContain('w-fit');
+    expect(slot?.className).toContain('[&>*]:pointer-events-auto');
+    expect(update.closest('button')).not.toBeNull();
   });
 
   it('opens budget only from the spend target and omits the beta chip', () => {

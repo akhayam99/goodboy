@@ -57,11 +57,6 @@ describe('StudioShell header', () => {
     expect(screen.getByText('acme')).toBeDefined();
   });
 
-  it('renders the beta badge', () => {
-    render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
-    expect(screen.getByText('beta')).toBeDefined();
-  });
-
   it('renders the header icon bare', () => {
     render(<StudioShell {...defaults}>{() => <p>body</p>}</StudioShell>);
     const header = screen.getByText('Test Studio').closest('header');

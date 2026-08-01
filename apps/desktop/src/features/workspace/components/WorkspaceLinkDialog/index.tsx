@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Dialog, Input, ScrollFade, SegmentedTabs, StatusDot, cn } from '@goodboy/ui';
+import { Button, Chip, Dialog, Input, ScrollFade, SegmentedTabs, StatusDot, cn } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import { Boxes, Check, Folder, FolderGit2, FolderPlus } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -338,7 +338,12 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
           ariaLabel="Workspace type"
           options={[
             { value: 'single', label: 'Single project', icon: FolderGit2 },
-            { value: 'multi', label: 'Multi project', icon: Boxes, badge: 'beta' },
+            {
+              value: 'multi',
+              label: 'Multi project',
+              icon: Boxes,
+              badge: <Chip tone="warning" label="Beta" />,
+            },
             { value: 'simple', label: 'Simple', icon: Folder },
           ]}
           value={mode}

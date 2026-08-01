@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import type { CSSProperties, KeyboardEvent } from 'react';
+import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 
@@ -8,7 +8,7 @@ export type SegmentedTabOption<T extends string = string> = {
   readonly label: string;
   readonly icon?: LucideIcon;
   readonly hint?: string;
-  readonly badge?: string;
+  readonly badge?: ReactNode;
   readonly disabled?: boolean;
   readonly accent?: string;
 };
@@ -140,9 +140,13 @@ export const SegmentedTabs = <T extends string>({
               ) : null}
             </span>
             {option.badge != null ? (
-              <span className="rounded bg-foreground/10 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-muted-foreground">
-                {option.badge}
-              </span>
+              typeof option.badge === 'string' ? (
+                <span className="rounded-md bg-foreground/10 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {option.badge}
+                </span>
+              ) : (
+                option.badge
+              )
             ) : null}
           </button>
         );

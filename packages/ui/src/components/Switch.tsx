@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
+import { Chip } from './Chip';
 
 export type SwitchProps = {
   readonly label: ReactNode;
@@ -39,10 +40,6 @@ export const Switch = ({ label, checked, disabled, beta, onChange, className }: 
       />
     </span>
     {label}
-    {beta ? (
-      <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
-        beta
-      </span>
-    ) : null}
+    {beta ? <Chip tone="warning" label="Beta" /> : null}
   </button>
 );

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Divider, EmptyState, ScrollFade, SectionHeader, StatusDot } from '@goodboy/ui';
+import {
+  Button,
+  Chip,
+  Divider,
+  EmptyState,
+  ScrollFade,
+  SectionHeader,
+  StatusDot,
+} from '@goodboy/ui';
 import { ArrowRight, RotateCw, Sparkles, type LucideIcon } from 'lucide-react';
 import {
   PROVIDER_BETA,
@@ -93,11 +101,7 @@ function Detail({
         <div className="flex min-w-0 flex-col">
           <span className="flex items-center gap-2">
             <span className="text-base font-semibold text-foreground">{info.label}</span>
-            {PROVIDER_BETA.has(id) ? (
-              <span className="rounded-md bg-warning/15 px-1.5 py-0.5 text-2xs font-medium text-warning">
-                beta
-              </span>
-            ) : null}
+            {PROVIDER_BETA.has(id) ? <Chip tone="warning" label="Beta" /> : null}
           </span>
           <span className="truncate text-2xs text-muted-foreground">
             {info.version ? `${info.binary} ${info.version}` : info.binary}

@@ -7,7 +7,6 @@ type Props = {
   readonly glyph?: ReactNode;
   readonly title: string;
   readonly subtitle?: string;
-  readonly beta?: boolean;
   readonly onClose: () => void;
   readonly closeLabel: string;
   readonly closeDisabled?: boolean;
@@ -20,7 +19,6 @@ export const OverlayHeader = ({
   glyph,
   title,
   subtitle,
-  beta = false,
   onClose,
   closeLabel,
   closeDisabled = false,
@@ -33,14 +31,7 @@ export const OverlayHeader = ({
         {glyph ??
           (Icon != null ? <Icon size={18} className="shrink-0 text-primary" aria-hidden /> : null)}
         <div className="flex min-w-0 flex-col">
-          <div className="flex items-center gap-2">
-            <h1 className="text-sm font-semibold text-foreground">{title}</h1>
-            {beta ? (
-              <span className="rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
-                beta
-              </span>
-            ) : null}
-          </div>
+          <h1 className="text-sm font-semibold text-foreground">{title}</h1>
           {subtitle != null ? (
             <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
           ) : null}
@@ -71,11 +62,6 @@ export const OverlayHeader = ({
       {glyph ??
         (Icon != null ? <Icon size={12} className="shrink-0 text-primary" aria-hidden /> : null)}
       <h1 className="shrink-0 text-2xs font-semibold text-foreground">{title}</h1>
-      {beta ? (
-        <span className="shrink-0 rounded bg-warning/20 px-1 py-px text-[8px] font-semibold uppercase leading-none tracking-wide text-warning">
-          beta
-        </span>
-      ) : null}
       {subtitle != null && subtitle !== '' ? (
         <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
       ) : null}

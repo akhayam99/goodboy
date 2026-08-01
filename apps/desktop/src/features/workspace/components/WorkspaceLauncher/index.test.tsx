@@ -97,13 +97,13 @@ describe('WorkspaceLauncher', () => {
     state.updaterStatus = 'available';
     state.updateVersion = '0.1.99';
     render(<WorkspaceLauncher />);
-    fireEvent.click(screen.getByRole('button', { name: 'Update' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Update to 0.1.99' }));
     fireEvent.click(screen.getByRole('button', { name: 'Update and restart' }));
     expect(state.installUpdate).toHaveBeenCalled();
   });
 
   it('hides the update action when the app is current', () => {
     render(<WorkspaceLauncher />);
-    expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Update to/ })).toBeNull();
   });
 });

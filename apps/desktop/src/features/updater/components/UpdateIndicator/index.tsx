@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowUpCircle } from 'lucide-react';
-import { Button, Dialog, cn } from '@goodboy/ui';
+import { Button, Chip, Dialog, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 
 type Props = { variant: 'bar' | 'pip' };
@@ -21,44 +21,28 @@ export const UpdateIndicator = ({ variant }: Props) => {
   }
 
   const downloading = status === 'downloading';
+  const targetVersion = version ?? 'latest';
   const title = downloading
-    ? 'Downloading update. Goodboy restarts when it finishes'
-    : `Update available${version ? ` (${version})` : ''}`;
+    ? `Downloading ${targetVersion}. Goodboy restarts when it finishes`
+    : `Update to ${targetVersion}`;
   const confirm = () => {
     setConfirmOpen(false);
     void installUpdate();
   };
 
-  const trigger =
-    variant === 'pip' ? (
-      <button
-        type="button"
-        onClick={() => setConfirmOpen(true)}
-        disabled={downloading}
-        title={title}
-        className={cn(
-          'relative inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-2xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-60',
-          downloading && 'animate-border-pulse',
-        )}
-      >
-        <ArrowUpCircle size={11} aria-hidden />
-        <span>{downloading ? 'updating…' : 'update'}</span>
-      </button>
-    ) : (
-      <button
-        type="button"
-        onClick={() => setConfirmOpen(true)}
-        disabled={downloading}
-        title={title}
-        className={cn(
-          'relative inline-flex items-center gap-1 rounded-md border border-transparent px-1.5 py-0.5 text-primary transition-colors hover:bg-primary/10 disabled:opacity-60',
-          downloading && 'animate-border-pulse',
-        )}
-      >
-        <ArrowUpCircle size={11} aria-hidden />
-        <span>{downloading ? 'Updating…' : 'Update'}</span>
-      </button>
-    );
+  const trigger = (
+    <Chip
+      as="button"
+      tone="primary"
+      shape={variant === 'pip' ? 'pill' : 'badge'}
+      icon={<ArrowUpCircle size={11} aria-hidden />}
+      label={downloading ? `Updating to ${targetVersion}…` : `Update to ${targetVersion}`}
+      onClick={() => setConfirmOpen(true)}
+      disabled={downloading}
+      title={title}
+      className={cn('pointer-events-auto relative', downloading && 'animate-border-pulse')}
+    />
+  );
 
   return (
     <>

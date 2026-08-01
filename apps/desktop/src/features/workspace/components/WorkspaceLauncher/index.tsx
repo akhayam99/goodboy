@@ -3,7 +3,6 @@ import { Plus, Search, Unplug } from 'lucide-react';
 import { Checkbox, EmptyState, Eyebrow, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { BetaPill } from '../../../../shared/components/BetaPill';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
@@ -76,10 +75,7 @@ export const WorkspaceLauncher = () => {
       <div className="flex w-full max-w-xl flex-col gap-6 motion-safe:animate-fade-in">
         <div className="flex flex-col items-center gap-3 pb-2 text-center">
           <DogMascot size={56} className="text-primary" />
-          <div className="flex flex-col items-center gap-2">
-            <h1 className="text-lg font-semibold text-foreground">Open a workspace</h1>
-            <BetaPill />
-          </div>
+          <h1 className="text-lg font-semibold text-foreground">Open a workspace</h1>
         </div>
 
         <div className="relative">
