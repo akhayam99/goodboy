@@ -126,7 +126,7 @@ describe('GeminiAdapter.spawn', () => {
     await expect(collect(adapter)).rejects.toThrow('ENOENT gemini');
   });
 
-  it('passes -p <prompt> -m <model> --sandbox with system prompt prepended', async () => {
+  it('passes the model with --model and a supported --effort because agy rejects a bare model', async () => {
     let captured: ReadonlyArray<string> = [];
     let capturedBin = '';
     const child = new FakeChild(['ok']);
@@ -138,11 +138,31 @@ describe('GeminiAdapter.spawn', () => {
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn });
     await collect(adapter);
     expect(capturedBin).toBe('agy');
-    expect(captured[0]).toBe('-p');
-    expect(captured[1]).toBe('sys\n\nhi');
-    expect(captured[2]).toBe('-m');
-    expect(captured[3]).toBe(GEMINI_DEFAULT_MODEL);
-    expect(captured[4]).toBe('--sandbox');
+    expect(captured).toEqual([
+      '-p',
+      'sys\n\nhi',
+      '--model',
+      GEMINI_DEFAULT_MODEL,
+      '--effort',
+      'medium',
+      '--sandbox',
+    ]);
+  });
+
+  it('clamps an unsupported effort to one declared by the selected model', async () => {
+    let captured: ReadonlyArray<string> = [];
+    const child = new FakeChild(['ok']);
+    const spawnFn = ((_: string, args: ReadonlyArray<string>) => {
+      captured = args;
+      return child;
+    }) as never;
+    const adapter = new GeminiAdapter({ now: fakeNow, spawnFn });
+    await collect(adapter, {
+      ...makeRequest(),
+      model: 'gemini-3.1-pro',
+      selection: { key: 'gemini-3.1-pro', effort: 'medium' },
+    });
+    expect(captured.slice(2, 6)).toEqual(['--model', 'gemini-3.1-pro', '--effort', 'low']);
   });
 
   it('kills the child on early break', async () => {

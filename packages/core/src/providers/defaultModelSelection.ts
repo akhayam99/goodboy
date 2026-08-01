@@ -14,6 +14,7 @@ export const defaultModelSelection = ({ provider, tier = 'turn' }: Params): Mode
   }
   switch (model.provider) {
     case 'anthropic':
+    case 'gemini':
     case 'opencode':
     case 'openrouter':
       return { key: model.key, effort: model.defaultEffort };
@@ -34,8 +35,6 @@ export const defaultModelSelection = ({ provider, tier = 'turn' }: Params): Mode
         },
       };
     }
-    case 'gemini':
-      return { key: model.key };
     default: {
       const exhaustive: never = model;
       throw new Error(`unknown catalog model: ${String(exhaustive)}`);

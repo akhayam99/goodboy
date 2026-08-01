@@ -71,8 +71,15 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
         ...(combo.maxMode === true && { maxMode: true }),
       });
     }
-    case 'gemini':
-      return { args: ['-m', model.cliId] };
+    case 'gemini': {
+      const requested = selection.effort ?? model.defaultEffort;
+      const applied = clampEffort({ requested, available: model.efforts });
+      return withClamp({
+        args: ['--model', model.cliId, '--effort', applied],
+        requested,
+        applied,
+      });
+    }
     case 'opencode':
     case 'openrouter': {
       const requested = selection.effort ?? model.defaultEffort;

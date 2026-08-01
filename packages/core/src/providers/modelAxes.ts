@@ -153,12 +153,6 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
     case 'cursor':
       return cursorAxes({ model, selection });
     case 'gemini':
-      return {
-        effort: null,
-        variant: null,
-        toggles: [],
-        requiresMaxMode: false,
-      };
     case 'opencode':
     case 'openrouter':
       return {

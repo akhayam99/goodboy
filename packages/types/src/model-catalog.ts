@@ -56,6 +56,8 @@ export type CursorModel = BaseModel & {
 export type GeminiModel = BaseModel & {
   readonly provider: 'gemini';
   readonly cliId: string;
+  readonly efforts: ReadonlyArray<EffortLevel>;
+  readonly defaultEffort: EffortLevel;
 };
 
 export type OpencodeModel = BaseModel & {

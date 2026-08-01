@@ -49,6 +49,7 @@ const effortsFor = ({ model, selection, fallback }: EffortParams): ReadonlyArray
   switch (model.provider) {
     case 'anthropic':
     case 'codex':
+    case 'gemini':
     case 'opencode':
     case 'openrouter':
       return model.efforts;
