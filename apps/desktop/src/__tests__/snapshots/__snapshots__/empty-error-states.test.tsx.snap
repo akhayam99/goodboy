@@ -99,13 +99,13 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
 
 exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
 <div
-  class="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in"
+  class="flex h-full w-full items-center justify-center bg-background py-6 motion-safe:animate-studio-in"
 >
   <div
-    class="flex w-full max-w-2xl flex-col overflow-hidden"
+    class="flex h-full max-h-full w-full max-w-2xl flex-col overflow-hidden"
   >
     <div
-      class="relative min-h-0 max-h-[70vh]"
+      class="relative min-h-0 flex-1"
     >
       <div
         class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
@@ -1078,13 +1078,13 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
 
 exports[`snapshot, error states > NewSessionView: form error 1`] = `
 <div
-  class="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in"
+  class="flex h-full w-full items-center justify-center bg-background py-6 motion-safe:animate-studio-in"
 >
   <div
-    class="flex w-full max-w-2xl flex-col overflow-hidden"
+    class="flex h-full max-h-full w-full max-w-2xl flex-col overflow-hidden"
   >
     <div
-      class="relative min-h-0 max-h-[70vh]"
+      class="relative min-h-0 flex-1"
     >
       <div
         class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"

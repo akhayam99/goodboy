@@ -110,10 +110,17 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !busy) {
-        e.preventDefault();
-        onClose();
+      if (e.key !== 'Escape' || busy) {
+        return;
       }
+      if (document.querySelector('dialog[open]') != null) {
+        return;
+      }
+      if (document.querySelector('[data-studio-overlay]') != null) {
+        return;
+      }
+      e.preventDefault();
+      onClose();
     };
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
@@ -257,9 +264,9 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   };
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-background motion-safe:animate-studio-in">
-      <div className="flex w-full max-w-2xl flex-col overflow-hidden">
-        <ScrollFade className="max-h-[70vh]" viewportClassName="px-6 py-5" fadeSize={24}>
+    <div className="flex h-full w-full items-center justify-center bg-background py-6 motion-safe:animate-studio-in">
+      <div className="flex h-full max-h-full w-full max-w-2xl flex-col overflow-hidden">
+        <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
           <NewSessionForm
             workspaceId={workspaceId}
             isSimple={isSimple}
