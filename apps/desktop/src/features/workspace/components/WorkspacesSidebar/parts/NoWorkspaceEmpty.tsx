@@ -13,7 +13,7 @@ export const NoWorkspaceEmpty = ({ onAddWorkspace }: Props) => {
       tone="info"
       title="No workspace yet"
       description="Point at a local git repo. Each session opens its own worktree off it."
-      className="h-full px-6 py-10"
+      className="h-full justify-center px-6 py-10"
       action={
         <button
           type="button"

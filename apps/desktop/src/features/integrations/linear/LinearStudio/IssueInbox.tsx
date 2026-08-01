@@ -7,7 +7,7 @@ import {
   SelectableRow,
   Skeleton,
 } from '@goodboy/ui';
-import { GitPullRequest, MessagesSquare, Search } from 'lucide-react';
+import { MessagesSquare, Search } from 'lucide-react';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearPriority } from '../LinearPriority';
 import type { LinearIssueGroup } from './useLinearIssues';
@@ -133,7 +133,7 @@ export const IssueInbox = ({
                           </span>
                           <span className="min-w-0 flex-1 truncate text-xs">{row.issue.title}</span>
                           {issuePullRequests(row.issue).length > 0 && (
-                            <GitPullRequest
+                            <CONCEPT_ICONS.pr
                               size={11}
                               aria-label="has linked pull request"
                               className="shrink-0 text-muted-foreground/70"

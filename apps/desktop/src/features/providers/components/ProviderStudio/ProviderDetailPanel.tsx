@@ -25,7 +25,14 @@ export const ProviderDetailPanel = ({ info, onConnect }: Props) => {
   if (!info) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <EmptyState icon={CONCEPT_ICONS.providers} title="Select a provider" />
+        <EmptyState
+          bordered
+          tone="neutral"
+          icon={CONCEPT_ICONS.providers}
+          title="Select a provider"
+          size="lg"
+          headingLevel={2}
+        />
       </div>
     );
   }

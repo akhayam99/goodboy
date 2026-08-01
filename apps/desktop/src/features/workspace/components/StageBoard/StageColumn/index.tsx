@@ -125,7 +125,7 @@ export const StageColumn = ({
           <div className="flex flex-col gap-2">
             {empty ? (
               <EmptyState
-                icon={CONCEPT_ICONS.goal}
+                icon={CONCEPT_ICONS.sessions}
                 title={ZERO_STATE[view.key]}
                 className="px-1 py-6"
               />

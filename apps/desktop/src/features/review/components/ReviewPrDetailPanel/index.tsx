@@ -57,9 +57,13 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={CONCEPT_ICONS.pr}
           title="No pull request selected"
           description="Pick a pull request to see its details and review it locally."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

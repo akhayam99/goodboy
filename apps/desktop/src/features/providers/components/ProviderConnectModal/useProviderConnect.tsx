@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Info } from 'lucide-react';
+import { EmptyState } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
 import { resolveLifecycleCommand } from '../../provider-lifecycle';
 import { guideFor } from './guides';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type PrimaryButton = {
   readonly label: string;
@@ -147,10 +149,16 @@ export function HelperNote({ inFlight }: { readonly inFlight: boolean }) {
 
 export function EmptyTerminalPlaceholder({ connected }: { readonly connected: boolean }) {
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center rounded-md border border-dashed border-border-soft bg-subtle/30 text-2xs text-muted-foreground">
-      {connected
-        ? 'You are already connected. The next sign-in or reinstall will run here.'
-        : 'Terminal will appear when the command starts running.'}
-    </div>
+    <EmptyState
+      bordered
+      icon={CONCEPT_ICONS.terminal}
+      title={
+        connected
+          ? 'You are already connected. The next sign-in or reinstall will run here.'
+          : 'Terminal will appear when the command starts running.'
+      }
+      size="inline"
+      className="min-h-0 flex-1 items-center justify-center bg-subtle/30 p-3"
+    />
   );
 }

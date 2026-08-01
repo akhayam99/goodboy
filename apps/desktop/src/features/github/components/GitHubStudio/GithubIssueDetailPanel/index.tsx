@@ -25,9 +25,13 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={CONCEPT_ICONS.github}
           title="No issue selected"
           description="Pick an issue to see its details and launch a session."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

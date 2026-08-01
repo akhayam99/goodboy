@@ -17,7 +17,7 @@ export const ActivityEmptyState = ({ sessionId, onOpenWorkflowBuilder }: Props) 
     icon={CONCEPT_ICONS.workflows}
     title="Nothing has run in this session yet"
     description="Attach a workflow for a multi-step task, or spawn a single agent when one pass is enough."
-    className="bg-muted/20 px-4 py-3.5"
+    className="rounded-lg bg-muted/20 px-4 py-3.5"
     action={
       <div className="flex w-full flex-col gap-2">
         <button type="button" onClick={onOpenWorkflowBuilder} className={START_ROW}>

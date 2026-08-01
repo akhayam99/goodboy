@@ -62,7 +62,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
       <EmptyState
         icon={CONCEPT_ICONS.comments}
         title="No review comments yet"
-        className="items-start px-0 py-0 text-left"
+        size="inline"
         action={generalFooter}
       />
     );
@@ -73,7 +73,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
       <EmptyState
         icon={CONCEPT_ICONS.resolve}
         title="All review comments resolved"
-        className="items-start px-0 py-0 text-left"
+        size="inline"
         action={
           <div className="flex flex-col items-start gap-1">
             {resolvedCount > 0 ? (

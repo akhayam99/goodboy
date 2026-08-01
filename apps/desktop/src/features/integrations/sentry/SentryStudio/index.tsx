@@ -58,6 +58,16 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     () => (focused ? (rows.find((r) => r.issue.id === focused.id) ?? null) : null),
     [focused, rows],
   );
+  const headerAccessory =
+    !isConnected || rows.length === 0 ? null : (
+      <IconButton
+        icon={RefreshCw}
+        label="Refresh issues"
+        onClick={refetch}
+        disabled={loading}
+        busy={loading}
+      />
+    );
 
   return (
     <StudioShell
@@ -65,19 +75,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       title="Sentry"
       workspaceName={workspaceName}
       closeLabel="close sentry studio"
-      headerAccessory={
-        isConnected ? (
-          rows.length > 0 ? (
-            <IconButton
-              icon={RefreshCw}
-              label="Refresh issues"
-              onClick={refetch}
-              disabled={loading}
-              busy={loading}
-            />
-          ) : null
-        ) : null
-      }
+      headerAccessory={headerAccessory}
       onClose={onClose}
     >
       {(requestClose) =>

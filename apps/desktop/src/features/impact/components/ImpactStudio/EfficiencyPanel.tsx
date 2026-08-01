@@ -102,11 +102,7 @@ export const EfficiencyPanel = ({
           {stats !== null && turnData !== null ? (
             <TurnHistogram buckets={turnData} median={stats.median} maxAgents={stats.maxAgents} />
           ) : (
-            <EmptyState
-              icon={CONCEPT_ICONS.impact}
-              title="No turns in this window"
-              className="items-start px-0 py-0 text-left"
-            />
+            <EmptyState icon={CONCEPT_ICONS.impact} title="No turns in this window" size="inline" />
           )}
         </StudioWidget>
         <StudioWidget label="right-size nudges" hint="outcomes after a routing suggestion">

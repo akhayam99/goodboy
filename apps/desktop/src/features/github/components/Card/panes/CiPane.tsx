@@ -14,16 +14,19 @@ export const CiPane = ({ checks, pr, onOpenUrl }: Props) => {
   if (checks.length === 0) {
     return (
       <EmptyState
+        bordered
         icon={CONCEPT_ICONS.checks}
         title="No CI runs yet"
-        className="items-start px-0 py-0 text-left"
+        description="Checks for this pull request will appear here once they start."
+        size="inline"
+        className="p-3"
         action={
           <button
             type="button"
             onClick={() => onOpenUrl(pr.url)}
             className="text-2xs text-muted-foreground hover:text-foreground"
           >
-            View on GitHub
+            View checks on GitHub
           </button>
         }
       />

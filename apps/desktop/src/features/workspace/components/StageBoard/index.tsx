@@ -4,7 +4,7 @@ import { Button, Divider, EmptyState, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { Session, SessionStage, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useStageGroupedSessions } from '../../../../store';
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { DogMascot } from '../../../../shared/components/DogMascot';
 import { ArchiveSessionConfirm } from '../../../session/components/ArchiveSessionConfirm';
 import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionConfirm';
 import { StageColumn } from './StageColumn';
@@ -72,7 +72,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
 
   return (
     <div className="flex h-full w-full flex-col gap-4 p-6">
-      {!empty ? (
+      {!boardReady || !empty ? (
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
             <span className="flex items-baseline gap-2">
@@ -95,7 +95,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
       ) : empty ? (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
-            icon={CONCEPT_ICONS.goal}
+            illustration={<DogMascot size={72} className="text-primary" />}
             title="Start your first session"
             description="Describe an outcome. An agent picks it up in its own worktree and branch; your main checkout stays untouched."
             action={

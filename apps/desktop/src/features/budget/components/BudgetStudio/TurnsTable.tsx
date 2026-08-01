@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { cn, formatTokens, formatUsdPrecise } from '@goodboy/ui';
+import { EmptyState, cn, formatTokens, formatUsdPrecise } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
@@ -48,7 +49,12 @@ export const TurnsTable = ({ turns, showSession }: Props) => {
   return (
     <StudioWidget label="turns" action={action}>
       {sorted.length === 0 ? (
-        <p className="py-4 text-center text-xs text-muted-foreground">no recorded turns yet.</p>
+        <EmptyState
+          icon={CONCEPT_ICONS.budget}
+          title="No recorded turns yet"
+          size="inline"
+          className="justify-center py-4"
+        />
       ) : (
         <>
           <table className="w-full text-left text-xs">

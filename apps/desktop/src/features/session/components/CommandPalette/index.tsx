@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
+import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
 import type { Agent, AgentId, WorkspaceScript } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -17,6 +17,7 @@ import {
 } from '../../agent-kind';
 import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
 import { useToast } from '../../../../app/components/Toast';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'recents';
 
@@ -330,7 +331,14 @@ export const CommandPalette = ({
         <ScrollFade className="max-h-80">
           <ul ref={listRef}>
             {filtered.length === 0 ? (
-              <li className="px-4 py-6 text-center text-sm text-muted-foreground">no results</li>
+              <li>
+                <EmptyState
+                  icon={CONCEPT_ICONS.search}
+                  title="No results"
+                  size="inline"
+                  className="justify-center px-4 py-6"
+                />
+              </li>
             ) : (
               GROUP_ORDER.flatMap((group) => {
                 const itemsInGroup = filtered.filter((it) => it.group === group);

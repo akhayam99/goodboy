@@ -25,21 +25,22 @@ export const StepLibraryPalette = ({
   onDeleteDef,
 }: Props) => {
   const [editing, setEditing] = useState<StepDefId | 'new' | null>(null);
+  const newStepAction = (
+    <button
+      type="button"
+      onClick={() => setEditing('new')}
+      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+    >
+      <Plus size={11} aria-hidden /> New step
+    </button>
+  );
 
   return (
     <div className="flex flex-col gap-3">
       <SectionHeader
         label="Step library"
         hint="Reusable steps. Drag one into the workflow."
-        action={
-          <button
-            type="button"
-            onClick={() => setEditing('new')}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
-          >
-            <Plus size={11} aria-hidden /> new step
-          </button>
-        }
+        action={library.length > 0 ? newStepAction : null}
       />
 
       {editing === 'new' && (
@@ -63,6 +64,7 @@ export const StepLibraryPalette = ({
           title="No library steps yet"
           description="Create one to reuse it across workflows."
           bordered
+          action={newStepAction}
         />
       )}
 

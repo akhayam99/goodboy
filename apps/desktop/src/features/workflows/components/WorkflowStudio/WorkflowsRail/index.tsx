@@ -35,7 +35,7 @@ export const WorkflowsRail = ({
         <SectionHeader
           label={`Presets (${presets.length})`}
           action={
-            presets.length > 0 ? (
+            presets.length > 0 && editing != null ? (
               <button
                 type="button"
                 onClick={onNew}

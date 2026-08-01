@@ -13,9 +13,9 @@ export const IntegrationConnectPanel = ({ provider, description, children }: Pro
   <EmptyState
     bordered
     icon={CONCEPT_ICONS[provider]}
-    title={`Connect ${integrationLabel({ provider })}`}
+    title={integrationLabel({ provider })}
     description={description}
-    className="w-full max-w-md bg-background p-5 shadow-sm"
-    action={children}
+    className="w-full max-w-md border-solid bg-background p-5 shadow-sm"
+    action={<div className="w-full">{children}</div>}
   />
 );

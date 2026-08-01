@@ -29,11 +29,7 @@ export const SentryStackTrace = ({ frames, isLoading, error }: Props) => {
 
   if (frames.length === 0) {
     return (
-      <EmptyState
-        icon={CONCEPT_ICONS.sentry}
-        title="No stack trace available"
-        className="items-start px-0 py-0 text-left"
-      />
+      <EmptyState icon={CONCEPT_ICONS.sentry} title="No stack trace available" size="inline" />
     );
   }
 

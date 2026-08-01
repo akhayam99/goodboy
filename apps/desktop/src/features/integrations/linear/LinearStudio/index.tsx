@@ -65,6 +65,16 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     }
     return null;
   }, [focused, groups]);
+  const headerAccessory =
+    !isConnected || groups.length === 0 ? null : (
+      <IconButton
+        icon={RefreshCw}
+        label="Refresh issues"
+        onClick={refetch}
+        disabled={loading}
+        busy={loading}
+      />
+    );
 
   return (
     <StudioShell
@@ -72,19 +82,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
       title="Linear"
       workspaceName={workspaceName}
       closeLabel="close linear studio"
-      headerAccessory={
-        isConnected ? (
-          groups.length > 0 ? (
-            <IconButton
-              icon={RefreshCw}
-              label="Refresh issues"
-              onClick={refetch}
-              disabled={loading}
-              busy={loading}
-            />
-          ) : null
-        ) : null
-      }
+      headerAccessory={headerAccessory}
       onClose={onClose}
     >
       {(requestClose) =>

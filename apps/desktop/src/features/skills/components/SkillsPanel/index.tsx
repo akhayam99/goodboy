@@ -201,9 +201,11 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
             <Button variant="ghost" size="sm" onClick={() => void onRescan()} disabled={rescanning}>
               {rescanning ? 'Rescanning…' : 'Rescan'}
             </Button>
-            <Button variant="ghost" size="sm" onClick={openNew}>
-              New skill
-            </Button>
+            {skills.length > 0 ? (
+              <Button variant="ghost" size="sm" onClick={openNew}>
+                New skill
+              </Button>
+            ) : null}
           </div>
         }
       />
@@ -213,6 +215,11 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
           icon={CONCEPT_ICONS.skills}
           title="No skills yet"
           description="A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk."
+          action={
+            <Button size="sm" onClick={openNew}>
+              New skill
+            </Button>
+          }
         />
       ) : (
         <ul className="flex flex-col gap-1">

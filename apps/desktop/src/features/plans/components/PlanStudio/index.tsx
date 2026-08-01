@@ -406,6 +406,8 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                 icon={CONCEPT_ICONS.plans}
                 title="No plan selected"
                 description="Pick a plan from the list to preview, edit, or run it."
+                size="lg"
+                headingLevel={2}
               />
             )}
           </PaneShell>

@@ -751,7 +751,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   return (
     <StudioShell
-      icon={Sparkles}
+      icon={CONCEPT_ICONS.workflows}
       title="Start a workflow"
       workspaceName={workspaceName}
       closeLabel="cancel workflow builder"

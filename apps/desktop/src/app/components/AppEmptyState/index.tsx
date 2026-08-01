@@ -1,5 +1,5 @@
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { DogMascot } from '../../../shared/components/DogMascot';
 
 type Props = {
   readonly onAddWorkspace: () => void;
@@ -18,7 +18,7 @@ export const NoWorkspaceScreen = ({ onAddWorkspace }: Props) => {
       />
 
       <EmptyState
-        icon={CONCEPT_ICONS.workspace}
+        illustration={<DogMascot size={96} className="text-primary" />}
         title="Welcome to Goodboy"
         description="Point at a git repo to create your first workspace. Every session spins up its own worktree and branch, your main checkout stays untouched."
         action={

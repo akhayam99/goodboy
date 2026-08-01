@@ -237,7 +237,7 @@ export const SessionActivityBar = ({
 
           {totalVisible === 0 ? (
             <EmptyState
-              icon={CONCEPT_ICONS.goal}
+              icon={CONCEPT_ICONS.sessions}
               title={isArchivedView ? 'No archived sessions' : 'No sessions yet'}
               className="px-1 py-3"
             />

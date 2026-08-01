@@ -163,6 +163,8 @@ export const PrDetailPanel = ({
           icon={CONCEPT_ICONS.pr}
           title="No session selected"
           description="Pick a session from the inbox to see its pull request."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

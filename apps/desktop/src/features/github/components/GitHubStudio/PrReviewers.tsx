@@ -48,7 +48,8 @@ export const PrReviewers = ({
         <EmptyState
           icon={CONCEPT_ICONS.review}
           title="No reviewers yet"
-          className="basis-full items-start px-0 py-0 text-left"
+          size="inline"
+          className="basis-full"
         />
       ) : (
         <ul className="flex basis-full flex-col gap-1">

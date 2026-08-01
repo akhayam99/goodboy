@@ -124,7 +124,8 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
           <EmptyState
             icon={CONCEPT_ICONS.integrations}
             title="No linked issues or tasks yet."
-            className="items-start bg-muted/20 px-3.5 py-2.5 text-left"
+            size="inline"
+            className="rounded-lg bg-muted/20 px-3.5 py-2.5"
           />
         ) : null}
       </div>

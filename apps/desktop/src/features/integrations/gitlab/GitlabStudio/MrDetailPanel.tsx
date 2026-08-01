@@ -127,9 +127,13 @@ export const MrDetailPanel = ({
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={CONCEPT_ICONS.gitlab}
           title="No session selected"
           description="Pick a session to manage its merge request."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );
@@ -139,9 +143,13 @@ export const MrDetailPanel = ({
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={CONCEPT_ICONS.gitlab}
           title="No merge request selected"
           description="Pick a merge request to see its details."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

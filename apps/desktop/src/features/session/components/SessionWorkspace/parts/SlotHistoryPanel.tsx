@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Copy, RotateCcw } from 'lucide-react';
-import { Markdown, ScrollFade, cn } from '@goodboy/ui';
+import { EmptyState, Markdown, ScrollFade, cn } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { InspectorHeader } from './InspectorSplit/InspectorHeader';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type HistoryEntryProps = {
   readonly entry: ContextSlotHistoryEntry;
@@ -55,7 +56,7 @@ const HistoryEntry = ({
             entry.author === 'user' ? 'bg-accent/10 text-accent' : 'bg-info/10 text-info',
           )}
         >
-          {entry.author}
+          {entry.author === 'user' ? 'you' : 'agent'}
         </span>
         <span className="text-2xs text-muted-foreground">
           {formatRelativeAge({ fromIso: entry.createdAt })}
@@ -137,7 +138,7 @@ export const SlotHistoryPanel = ({
       />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
         {entries.length === 0 ? (
-          <p className="text-xs italic text-muted-foreground">no history yet</p>
+          <EmptyState icon={CONCEPT_ICONS.sessionSummary} title="No history yet" size="inline" />
         ) : (
           <ul className="flex flex-col gap-3">
             {entries.map((entry) => (

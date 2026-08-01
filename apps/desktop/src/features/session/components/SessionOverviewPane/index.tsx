@@ -209,9 +209,10 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
             <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
           ) : (
             <EmptyState
-              icon={CONCEPT_ICONS.questions}
+              icon={CONCEPT_ICONS.nextUp}
               title="Nothing needs you right now."
-              className="items-start bg-muted/20 px-3.5 py-2.5 text-left"
+              size="inline"
+              className="rounded-lg bg-muted/20 px-3.5 py-2.5"
             />
           )}
         </section>

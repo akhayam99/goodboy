@@ -1,4 +1,3 @@
-import { Bot, CheckCheck, MessageSquareReply } from 'lucide-react';
 import { Button, Eyebrow } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
@@ -73,7 +72,7 @@ export const ActivitySection = ({
           <PendingResolutionsStrip sessionId={sessionId} />
           {resolveCount > 0 ? (
             <SummaryRow
-              icon={MessageSquareReply}
+              icon={CONCEPT_ICONS.resolve}
               tone="neutral"
               label={`${resolveCount} to resolve`}
               onClick={() => onSelectLens('resolve')}
@@ -81,7 +80,7 @@ export const ActivitySection = ({
           ) : null}
           {completedLanes.length > 0 ? (
             <SummaryRow
-              icon={CheckCheck}
+              icon={CONCEPT_ICONS.decisions}
               tone="neutral"
               label={
                 completedLanes.length === 1
@@ -93,7 +92,7 @@ export const ActivitySection = ({
           ) : null}
           {completedAgents.length > 0 ? (
             <SummaryRow
-              icon={Bot}
+              icon={CONCEPT_ICONS.agents}
               tone="neutral"
               label={
                 completedAgents.length === 1

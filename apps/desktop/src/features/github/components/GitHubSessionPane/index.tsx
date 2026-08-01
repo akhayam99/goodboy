@@ -1,7 +1,7 @@
-import { GitPullRequest } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { PrDetailPanel } from '../GitHubStudio/PrDetailPanel';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -19,7 +19,7 @@ export const GitHubSessionPane = ({
   onClose,
 }: Props) => (
   <StudioShell
-    icon={GitPullRequest}
+    icon={CONCEPT_ICONS.pr}
     title="Pull request"
     workspaceName={workspaceName}
     closeLabel="close pull request"

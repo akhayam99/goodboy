@@ -18,7 +18,7 @@ import {
 import type { LensKind } from '../../../../../../store';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { resolveAttentionLens, selectOpenQuestions } from '../../../SessionOverviewPane/lib';
 import { LensColumnFooter } from '../LensColumnFooter';
 import { LENS_SHORTCUTS, buildLensGroups } from './groups';
@@ -162,7 +162,7 @@ export const LensColumn = ({
     {
       kind: 'pr',
       label: 'GitHub',
-      icon: CONCEPT_ICONS.github,
+      glyph: 'github',
       tone: 'accent',
       count: githubCount,
       dot: hasGithubPr ? 'running' : undefined,
@@ -171,7 +171,7 @@ export const LensColumn = ({
     {
       kind: 'gitlab_issues',
       label: 'GitLab',
-      icon: CONCEPT_ICONS.gitlab,
+      glyph: 'gitlab',
       tone: 'accent',
       count: gitlabCount,
       dot: hasGitlabMr ? 'running' : undefined,
@@ -180,7 +180,7 @@ export const LensColumn = ({
     {
       kind: 'linear',
       label: 'Linear',
-      icon: CONCEPT_ICONS.linear,
+      glyph: 'linear',
       tone: 'primary',
       count: linearCount,
       isConnected: linearConnection.isConnected,
@@ -188,7 +188,7 @@ export const LensColumn = ({
     {
       kind: 'sentry',
       label: 'Sentry',
-      icon: CONCEPT_ICONS.sentry,
+      glyph: 'sentry',
       tone: 'warning',
       count: sentryCount,
       isConnected: sentryConnection.isConnected,
@@ -282,11 +282,14 @@ export const LensColumn = ({
                     row.dot != null ||
                     row.secondaryDot === true ||
                     row.isConnected === false;
+                  const glyphRowLabel =
+                    row.count != null && row.count > 0 ? `${row.label} ${row.count}` : row.label;
                   return (
                     <button
                       key={row.kind}
                       type="button"
                       onClick={() => onSelect(row.kind)}
+                      aria-label={row.glyph != null ? glyphRowLabel : undefined}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
                         'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
@@ -297,7 +300,12 @@ export const LensColumn = ({
                         row.isConnected === false && 'opacity-40 hover:opacity-70',
                       )}
                     >
-                      {row.icon != null ? (
+                      {row.glyph != null ? (
+                        <span className="flex w-5 flex-none items-center justify-center transition-colors">
+                          <IntegrationGlyph provider={row.glyph} size={14} />
+                        </span>
+                      ) : null}
+                      {row.glyph == null && row.icon != null ? (
                         <span
                           className={cn(
                             'flex w-5 flex-none items-center justify-center transition-colors',

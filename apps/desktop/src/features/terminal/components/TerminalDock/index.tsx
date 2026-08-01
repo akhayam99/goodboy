@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { SquareTerminal } from 'lucide-react';
 import { Button, Divider, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

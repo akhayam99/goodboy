@@ -206,6 +206,32 @@ describe('WorkflowsPane', () => {
     expect(screen.getByText('First workflow')).toBeDefined();
   });
 
+  it('keeps the attach action when a revealed bucket is empty', () => {
+    const { rerender } = render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1'],
+          runOverrides: {
+            'run-1': { executionMode: 'dynamic', orchestrationOutcome: 'done' },
+          },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+    rerender(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1'],
+          runOverrides: { 'run-1': { discardedAt: '2026-07-21T10:00:00.000Z' } },
+        })}
+      />,
+    );
+
+    expect(screen.getByTestId('workflow-empty')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
+  });
+
   it('restores a discarded run from its list card', () => {
     render(
       <WorkflowsPane

@@ -14,11 +14,7 @@ type Props = {
 export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }: Props) => {
   if (sessions.length === 0) {
     return (
-      <EmptyState
-        icon={CONCEPT_ICONS.impact}
-        title="No sessions in this window"
-        className="items-start px-0 py-0 text-left"
-      />
+      <EmptyState icon={CONCEPT_ICONS.impact} title="No sessions in this window" size="inline" />
     );
   }
   return (

@@ -195,7 +195,7 @@ describe('SlotPane', () => {
 
     render(<SlotPane session={SESSION} slotKey={slotKey} />);
 
-    expect(screen.getByRole('heading', { name: title })).toBeDefined();
+    expect(screen.getByText(title)).toBeDefined();
     expect(
       screen.getByText(
         'The summarizer fills this at the end of a turn. Create an agent or a workflow to begin.',
@@ -222,8 +222,8 @@ describe('SlotPane', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /view history for goal/i }));
 
-      expect(screen.getByText('user')).toBeDefined();
-      expect(screen.getByText('summarizer')).toBeDefined();
+      expect(screen.getByText('you')).toBeDefined();
+      expect(screen.getByText('agent')).toBeDefined();
       expect(screen.getByText('5m ago')).toBeDefined();
       expect(screen.getByText('1h ago')).toBeDefined();
     });

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link2, Unlink } from 'lucide-react';
+import { Unlink } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { Button, Divider, EmptyState, InlineConfirm } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';

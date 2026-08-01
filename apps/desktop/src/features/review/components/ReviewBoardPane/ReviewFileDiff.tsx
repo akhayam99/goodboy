@@ -148,7 +148,8 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
             <EmptyState
               icon={CONCEPT_ICONS.diff}
               title={file.binary ? 'Binary file, no diff' : 'No changes'}
-              className="py-4"
+              size="inline"
+              className="justify-center py-4"
             />
           ) : (
             <>

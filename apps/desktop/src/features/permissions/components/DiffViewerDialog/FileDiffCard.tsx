@@ -394,7 +394,8 @@ export const FileDiffCard = ({
             <EmptyState
               icon={CONCEPT_ICONS.diff}
               title={file.binary ? 'Binary file, no diff' : 'No changes'}
-              className="py-4"
+              size="inline"
+              className="justify-center py-4"
             />
           ) : (
             <div ref={diffScrollRef} className="min-w-0 max-w-full overflow-x-auto">

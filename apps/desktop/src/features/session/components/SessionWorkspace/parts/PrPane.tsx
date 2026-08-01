@@ -165,7 +165,11 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
 
   if (!pr && !isGithubConnected) {
-    return <MissingGithubRemoteEmptyState />;
+    return (
+      <div className="animate-fade-in rounded-lg border border-dashed border-border-soft bg-elevated/40">
+        <MissingGithubRemoteEmptyState />
+      </div>
+    );
   }
 
   if (!pr && isPrReview) {
@@ -176,6 +180,8 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
         icon={CONCEPT_ICONS.pr}
         title="External review session"
         description="This session reviews someone else’s pull request, so there is no PR to open from here. Draft and publish comments from the review board."
+        size="lg"
+        headingLevel={2}
         className="animate-fade-in py-8"
       />
     );
@@ -191,6 +197,8 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
           icon={CONCEPT_ICONS.pr}
           title="Open a pull request"
           description="Turn this session’s work into a PR. Fill in the title and description, or hand it to an agent that writes them from your commits."
+          size="lg"
+          headingLevel={2}
           className="animate-fade-in relative py-8"
           action={
             <>

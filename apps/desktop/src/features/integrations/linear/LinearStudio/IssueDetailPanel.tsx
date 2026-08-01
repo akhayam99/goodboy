@@ -113,9 +113,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={CONCEPT_ICONS.linear}
           title="No issue selected"
           description="Pick an issue to see its details and launch a session."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

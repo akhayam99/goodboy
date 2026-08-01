@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Copy, History } from 'lucide-react';
+import { Check, Copy, History, type LucideIcon } from 'lucide-react';
 import { Button, EmptyState, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
@@ -42,6 +42,12 @@ const SLOT_TONE: Record<SlotKey, Tone> = {
   decisions: 'success',
   last_output_summary: 'info',
 };
+
+const SLOT_ICON = {
+  goal: CONCEPT_ICONS.goal,
+  decisions: CONCEPT_ICONS.decisions,
+  last_output_summary: CONCEPT_ICONS.sessionSummary,
+} satisfies Record<SlotKey, LucideIcon>;
 
 const SLOT_EMPTY_DESCRIPTION =
   'The summarizer fills this at the end of a turn. Create an agent or a workflow to begin.';
@@ -254,13 +260,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
             <EmptyState
               bordered
               tone={SLOT_TONE[slotKey]}
-              icon={
-                slotKey === 'goal'
-                  ? CONCEPT_ICONS.goal
-                  : slotKey === 'decisions'
-                    ? CONCEPT_ICONS.decisions
-                    : CONCEPT_ICONS.sessionSummary
-              }
+              icon={SLOT_ICON[slotKey]}
               title={SLOT_EMPTY_CTA[slotKey]}
               description={SLOT_EMPTY_DESCRIPTION}
               action={

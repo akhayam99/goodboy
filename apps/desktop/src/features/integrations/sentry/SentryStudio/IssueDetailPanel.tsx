@@ -52,9 +52,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
+          bordered
+          tone="neutral"
           icon={CONCEPT_ICONS.sentry}
           title="No issue selected"
           description="Pick an issue to see its stack trace and launch a session."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );
@@ -153,11 +157,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
             ))}
           </div>
         ) : (
-          <EmptyState
-            icon={CONCEPT_ICONS.sentry}
-            title="No event stats yet"
-            className="items-start px-0 py-0 text-left"
-          />
+          <EmptyState icon={CONCEPT_ICONS.sentry} title="No event stats yet" size="inline" />
         )
       ) : null}
 

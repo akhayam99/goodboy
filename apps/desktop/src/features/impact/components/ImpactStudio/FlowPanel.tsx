@@ -82,7 +82,7 @@ export const FlowPanel = ({
               <EmptyState
                 icon={CONCEPT_ICONS.agents}
                 title="No completed agents in this window"
-                className="items-start px-0 py-0 text-left"
+                size="inline"
               />
             ) : null}
           </div>

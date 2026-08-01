@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { LensKind } from '../../../../../../store';
+import type { IntegrationGlyphProvider } from '../../../../../integrations/components/IntegrationGlyph';
 
 export type LensDot = 'attention' | 'running';
 
@@ -9,6 +10,7 @@ export type LensRow = {
   readonly kind: LensKind;
   readonly label: string;
   readonly icon?: LucideIcon;
+  readonly glyph?: IntegrationGlyphProvider;
   readonly tone: Tone;
   readonly count?: number;
   readonly diffstat?: {

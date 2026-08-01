@@ -8,7 +8,14 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ROLE_DEFAULTS, isAgentRole } from '@goodboy/core';
-import { Divider, FieldRow, ScrollFade, SectionHeader, SegmentedTabs } from '@goodboy/ui';
+import {
+  Divider,
+  EmptyState,
+  FieldRow,
+  ScrollFade,
+  SectionHeader,
+  SegmentedTabs,
+} from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
@@ -17,6 +24,7 @@ import { PROVIDER_ORDER } from '../providerOrder';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -188,7 +196,11 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               help="Providers Goodboy can pick on its own. New sessions start with this pool."
             >
               {connectedProviderIds.length === 0 ? (
-                <span className="text-2xs text-muted-foreground">No providers connected</span>
+                <EmptyState
+                  icon={CONCEPT_ICONS.providers}
+                  title="No providers connected"
+                  size="inline"
+                />
               ) : (
                 <div className="flex max-w-64 flex-wrap justify-end gap-1">
                   {connectedProviderIds.map((providerId) => {
