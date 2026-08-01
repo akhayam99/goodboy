@@ -1,12 +1,6 @@
 import { useState } from 'react';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
-import type {
-  AgentRole,
-  AuxTaskId,
-  OverrideSettings,
-  ProviderId,
-  WorkspaceId,
-} from '@goodboy/types';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE, TASKS } from '@goodboy/types';
+import type { AgentRole, OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
 import { ROLE_DEFAULTS, isAgentRole } from '@goodboy/core';
 import {
   Divider,
@@ -35,48 +29,6 @@ type ProviderParams = {
 };
 
 type DefaultsGroup = 'task' | 'role';
-
-const TASKS: ReadonlyArray<{
-  readonly id: AuxTaskId;
-  readonly label: string;
-  readonly help: string;
-}> = [
-  {
-    id: 'summarizer',
-    label: 'Step summaries',
-    help: 'Condenses each finished step into the summary the next step starts from',
-  },
-  {
-    id: 'branch_naming',
-    label: 'Branch naming',
-    help: 'Turns the session goal into a git branch name when the session is created',
-  },
-  {
-    id: 'plan_generation',
-    label: 'Plan drafting',
-    help: 'Writes step plans in the workflow builder and Plan Studio',
-  },
-  {
-    id: 'agent_naming',
-    label: 'Agent naming',
-    help: 'Titles new agents, and the session itself, from your first message',
-  },
-  {
-    id: 'workflow_orchestrator',
-    label: 'Workflow orchestrator',
-    help: 'Reads each finished step of a dynamic workflow and picks the next one, or ends the run',
-  },
-  {
-    id: 'pr_draft',
-    label: 'PR and MR drafts',
-    help: 'Preselected model for the agent that drafts a pull or merge request',
-  },
-  {
-    id: 'rebase',
-    label: 'Rebase',
-    help: 'Preselected model for the agent that rebases the session branch onto main',
-  },
-];
 
 const ROLES: ReadonlyArray<AgentRole> = Object.keys(ROLE_DEFAULTS).filter(isAgentRole);
 
@@ -231,7 +183,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                     <TaskModelRow
                       task={task.id}
                       label={task.label}
-                      help={task.help}
+                      help={task.description}
                       preference={overrides.taskModels?.[task.id] ?? null}
                       defaultProviderId={defaultProviderId}
                       connectedProviderIds={connectedProviderIds}

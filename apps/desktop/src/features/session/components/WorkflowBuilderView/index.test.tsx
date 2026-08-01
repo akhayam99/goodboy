@@ -194,6 +194,7 @@ afterEach(() => {
   vi.clearAllMocks();
   storeState.phaseTemplates = {};
   storeState.sessionPhaseRuns = {};
+  storeState.workspaceOverrides = {};
   storeState.workflowDrafts = {};
 });
 
@@ -575,6 +576,31 @@ describe('WorkflowBuilderView (goal affordances)', () => {
     expect(goalField().value).toBe('rough goal');
   });
 
+  it('uses the prose polish task model override', async () => {
+    storeState.workspaceOverrides = {
+      'ws-1': {
+        taskModels: {
+          prose_polish: {
+            providerId: 'anthropic',
+            model: 'claude-sonnet-4-6',
+            effort: 'high',
+          },
+        },
+      },
+    };
+    mockPolish.mockResolvedValue('Polished goal.');
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.change(goalField(), { target: { value: 'rough goal' } });
+    fireEvent.click(screen.getByRole('button', { name: /polish goal/i }));
+
+    await waitFor(() =>
+      expect(mockPolish).toHaveBeenCalledWith(
+        expect.objectContaining({ providerId: 'anthropic', model: 'sonnet-4.6', effort: 'high' }),
+        'rough goal',
+      ),
+    );
+  });
+
   it('keeps the wording and toasts when polish returns nothing', async () => {
     mockPolish.mockResolvedValue(null);
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
@@ -786,7 +812,7 @@ describe('WorkflowBuilderView (per-step polish)', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /polish step instruction/i })[0]!);
     await waitFor(() =>
       expect(mockPolishStep).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'anthropic' }),
+        expect.objectContaining({ providerId: 'anthropic', model: 'haiku-4.5' }),
         expect.objectContaining({ role: 'scout', instruction: 'scout prefix' }),
       ),
     );

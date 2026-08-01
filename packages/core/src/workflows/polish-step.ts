@@ -1,7 +1,7 @@
-import type { ProviderId } from '@goodboy/types';
+import type { TaskModelPreference } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
-import { getCheapModel, getDefaultBinary } from '../providers/cli-defaults';
+import { getDefaultBinary } from '../providers/cli-defaults';
 
 const STEP_POLISH_SYSTEM_PROMPT = `You polish step instructions for AI coding workflows.
 
@@ -22,8 +22,7 @@ the polished instruction text
 
 Plain text inside the block. No markdown, no quotes, no trailing prose.`;
 
-export type StepPolishDeps = {
-  readonly providerId: ProviderId;
+export type StepPolishDeps = TaskModelPreference & {
   readonly binary?: string;
   readonly workingDir?: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
@@ -55,7 +54,8 @@ export const polishStepInstruction = async (
 
   const result = await runAuxOneShot({
     providerId: deps.providerId,
-    model: getCheapModel(deps.providerId),
+    model: deps.model,
+    ...(deps.effort != null && { effort: deps.effort }),
     binary: deps.binary ?? getDefaultBinary(deps.providerId),
     userMessage,
     systemPrompt: STEP_POLISH_SYSTEM_PROMPT,

@@ -136,6 +136,7 @@ const TASK_LABELS = [
   'Step summaries',
   'Branch naming',
   'Plan drafting',
+  'Prose polish',
   'Agent naming',
   'Workflow orchestrator',
   'PR and MR drafts',

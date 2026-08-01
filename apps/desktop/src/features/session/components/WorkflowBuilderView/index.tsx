@@ -274,6 +274,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     [workspaceOverrides, providerId],
   );
 
+  const resolvedProsePolishTaskModel = useMemo(
+    () => resolveTaskModel('prose_polish', workspaceOverrides?.taskModels, providerId),
+    [workspaceOverrides, providerId],
+  );
+
   const plannerEffectiveProviderId: ProviderId =
     plannerProviderOverride !== '' ? plannerProviderOverride : resolvedPlanTaskModel.providerId;
 
@@ -472,7 +477,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       const polished = await polishStepInstruction(
         {
-          providerId,
+          ...resolvedProsePolishTaskModel,
           invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
@@ -527,7 +532,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       const polished = await polishWorkflowGoal(
         {
-          providerId,
+          ...resolvedProsePolishTaskModel,
           invokeFn: invoke,
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
