@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { cn, Divider } from '@goodboy/ui';
+import { Divider, SelectableRow } from '@goodboy/ui';
 import {
   BookOpen,
   GitBranch,
@@ -83,21 +83,16 @@ export const GuideStudio = ({ onClose }: Props) => {
             className="flex w-52 shrink-0 flex-col gap-1 bg-subtle/40 p-3"
           >
             {NAV_ITEMS.map((item) => (
-              <button
+              <SelectableRow
                 key={item.id}
-                type="button"
+                selected={active === item.id}
                 onClick={() => jump(item.id)}
-                aria-current={active === item.id ? 'true' : undefined}
-                className={cn(
-                  'relative flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-left text-sm motion-safe:transition-colors',
-                  active === item.id
-                    ? 'bg-background font-medium text-foreground shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-primary'
-                    : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
-                )}
+                ariaCurrent={active === item.id ? 'true' : undefined}
+                className="items-center gap-2 py-2 pl-3 pr-2 text-sm"
               >
                 {item.icon}
                 <span>{item.label}</span>
-              </button>
+              </SelectableRow>
             ))}
           </nav>
           <Divider orientation="vertical" />

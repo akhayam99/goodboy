@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { SelectableRow } from '@goodboy/ui';
 import { Check, Trash2, X } from 'lucide-react';
 import type { Workflow } from '@goodboy/types';
 import { inferAgentKindFromName, ROLE_TO_KIND } from '../../../session/agent-kind';
@@ -19,14 +19,7 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
   const description = template.description?.trim();
   return (
     <li className="group relative">
-      <button
-        type="button"
-        onClick={onSelect}
-        className={cn(
-          'flex w-full flex-col gap-1.5 rounded-md py-2 pl-2.5 pr-2.5 text-left motion-safe:transition-colors',
-          active ? 'border-l-2 border-primary bg-primary/10 pl-2' : 'hover:bg-muted/40',
-        )}
-      >
+      <SelectableRow selected={active} onClick={onSelect} className="flex-col gap-1.5 px-2.5 py-2">
         <div className="flex items-center gap-2">
           <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
           {!approved ? (
@@ -49,7 +42,7 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
             })}
           </span>
         ) : null}
-      </button>
+      </SelectableRow>
       {confirming ? (
         <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm backdrop-blur-sm">
           <span className="px-1 text-2xs text-muted-foreground">Delete?</span>

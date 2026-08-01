@@ -1,4 +1,4 @@
-import { cn, Eyebrow, StatusDot, type Tone } from '@goodboy/ui';
+import { Eyebrow, SelectableRow, StatusDot, type Tone } from '@goodboy/ui';
 import { PROVIDER_BETA, type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -30,20 +30,15 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
     <div className="flex flex-col gap-4 p-2">
       <section className="flex flex-col gap-1">
         <Eyebrow label="Configuration" className="px-2.5" />
-        <button
-          type="button"
+        <SelectableRow
+          selected={focusedId === 'defaults'}
           onClick={onSelectDefaults}
-          aria-current={focusedId === 'defaults'}
-          className={cn(
-            'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors',
-            focusedId === 'defaults'
-              ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-              : 'text-muted-foreground hover:bg-muted/50',
-          )}
+          ariaCurrent={focusedId === 'defaults'}
+          className="items-center gap-2.5 px-2.5 py-2"
         >
           <SlidersHorizontal size={16} aria-hidden className="shrink-0 text-primary" />
           <span className="text-sm font-medium text-foreground">Defaults</span>
-        </button>
+        </SelectableRow>
       </section>
       <section className="flex flex-col gap-1">
         <Eyebrow label="Providers" className="px-2.5" />
@@ -57,17 +52,12 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                 ? (p.identity ?? STATUS_LABEL.connected)
                 : STATUS_LABEL[p.connection];
             return (
-              <button
+              <SelectableRow
                 key={id}
-                type="button"
+                selected={active}
                 onClick={() => onSelect(id)}
-                aria-current={active}
-                className={cn(
-                  'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors',
-                  active
-                    ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-                    : 'text-muted-foreground hover:bg-muted/50',
-                )}
+                ariaCurrent={active}
+                className="items-center gap-2.5 px-2.5 py-2"
               >
                 <Icon
                   size={16}
@@ -87,7 +77,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                   <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
                 </span>
                 <StatusDot tone={STATUS_TONE[p.connection]} size="md" />
-              </button>
+              </SelectableRow>
             );
           })}
         </div>
