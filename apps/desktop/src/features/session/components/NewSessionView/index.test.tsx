@@ -10,6 +10,8 @@ import type {
 const h = vi.hoisted(() => ({
   remoteKind: 'github' as string | null,
   listLocalBranches: vi.fn(async () => []),
+  invoke: vi.fn(),
+  showToast: vi.fn(),
   store: {
     providers: [{ id: 'anthropic', connection: 'connected' }],
     workspaces: [
@@ -31,13 +33,15 @@ const h = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('@tauri-apps/api/core', () => ({ invoke: h.invoke }));
+
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof h.store) => T) => selector(h.store),
   useSessions: () => [],
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast: vi.fn() }),
+  useToast: () => ({ showToast: h.showToast }),
 }));
 
 vi.mock('../../../../features/worktree/useWorkspaceRemoteHostKind', () => ({
@@ -103,11 +107,102 @@ beforeEach(() => {
     delete h.store.newSessionDrafts[workspaceId];
   });
   h.listLocalBranches.mockClear();
+  h.invoke.mockReset();
+  h.invoke.mockResolvedValue({
+    stdout: JSON.stringify({ result: '<<goal>>Polished goal.<</goal>>' }),
+    stderr: '',
+    exitCode: 0,
+  });
+  h.showToast.mockReset();
 });
 
 afterEach(cleanup);
 
 describe('NewSessionView issue sources', () => {
+  it('isolates expanded edits until Save and supports both keyboard actions', () => {
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: 'Original goal',
+        branchSlug: 'original-goal',
+        slugTouched: true,
+        branchMode: 'new',
+        existingBranch: '',
+        issue: null,
+      },
+    };
+    const onClose = vi.fn();
+    render(
+      <NewSessionView onClose={onClose} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    fireEvent.change(screen.getByLabelText('Goal editor'), {
+      target: { value: 'Discarded edit' },
+    });
+    fireEvent.keyDown(screen.getByLabelText('Goal editor'), { key: 'Escape' });
+
+    expect(h.store.newSessionDrafts[WORKSPACE_ID]?.goal).toBe('Original goal');
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    fireEvent.change(screen.getByLabelText('Goal editor'), {
+      target: { value: 'Saved edit' },
+    });
+    fireEvent.keyDown(screen.getByLabelText('Goal editor'), {
+      key: 'Enter',
+      ctrlKey: true,
+    });
+
+    expect(h.store.newSessionDrafts[WORKSPACE_ID]?.goal).toBe('Saved edit');
+    expect(screen.queryByLabelText('Goal editor')).toBeNull();
+  });
+
+  it('polishes the expanded draft and warns without changing it on failure', async () => {
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: 'Rough goal',
+        branchSlug: 'rough-goal',
+        slugTouched: true,
+        branchMode: 'new',
+        existingBranch: '',
+        issue: null,
+      },
+    };
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Polish with AI' }));
+
+    await waitFor(() => {
+      const editor = screen.getByLabelText('Goal editor');
+      if (!(editor instanceof HTMLTextAreaElement)) {
+        throw new Error('Expected the expanded goal editor to be a textarea');
+      }
+      expect(editor.value).toBe('Polished goal.');
+    });
+
+    fireEvent.change(screen.getByLabelText('Goal editor'), {
+      target: { value: 'Keep this wording' },
+    });
+    h.invoke.mockRejectedValueOnce(new Error('provider unavailable'));
+    fireEvent.click(screen.getByRole('button', { name: 'Polish with AI' }));
+
+    await waitFor(() =>
+      expect(h.showToast).toHaveBeenCalledWith(
+        'warning',
+        'Could not polish the goal, kept your wording',
+        { context: 'provider unavailable' },
+      ),
+    );
+    const editor = screen.getByLabelText('Goal editor');
+    if (!(editor instanceof HTMLTextAreaElement)) {
+      throw new Error('Expected the expanded goal editor to be a textarea');
+    }
+    expect(editor.value).toBe('Keep this wording');
+  });
+
   it('keeps the draft when the view unmounts and restores it when remounted', () => {
     const view = render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,

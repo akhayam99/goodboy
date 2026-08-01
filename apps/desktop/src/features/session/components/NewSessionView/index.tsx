@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ScrollFade } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
@@ -28,8 +28,10 @@ import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/pro
 import { useSetupWorkflowPreference } from '../../hooks/useSetupWorkflowPreference';
 import { EMPTY_NEW_SESSION_DRAFT } from '../../../../store/slices/newSessionDrafts/emptyNewSessionDraft';
 import { generateBranchSlug } from './generateBranchSlug';
+import { GoalEditor } from './GoalEditor';
 import { NewSessionFooter } from './NewSessionFooter';
 import { NewSessionForm } from './NewSessionForm';
+import { polishGoal } from './polishGoal';
 
 type Props = {
   onClose: () => void;
@@ -65,6 +67,10 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const [branchesLoaded, setBranchesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [goalEditorOpen, setGoalEditorOpen] = useState(false);
+  const [goalEditorDraft, setGoalEditorDraft] = useState('');
+  const [goalPolishing, setGoalPolishing] = useState(false);
+  const goalPolishRequestId = useRef(0);
   const [setupWorkflow, setSetupWorkflow] = useSetupWorkflowPreference();
 
   const {
@@ -206,6 +212,65 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       });
   };
 
+  const openGoalEditor = () => {
+    goalPolishRequestId.current += 1;
+    setGoalPolishing(false);
+    setGoalEditorDraft(goal);
+    setGoalEditorOpen(true);
+  };
+
+  const cancelGoalEditor = () => {
+    goalPolishRequestId.current += 1;
+    setGoalPolishing(false);
+    setGoalEditorOpen(false);
+    setGoalEditorDraft('');
+  };
+
+  const saveGoalEditor = () => {
+    goalPolishRequestId.current += 1;
+    setNewSessionDraft({ workspaceId, draft: { goal: goalEditorDraft } });
+    setGoalEditorOpen(false);
+    setGoalEditorDraft('');
+  };
+
+  const handlePolishGoal = () => {
+    if (goalEditorDraft.trim().length === 0 || goalPolishing) {
+      return;
+    }
+    const requestId = goalPolishRequestId.current + 1;
+    goalPolishRequestId.current = requestId;
+    setGoalPolishing(true);
+    const taskModel = resolveTaskModel(
+      'prose_polish',
+      workspaceOverrides?.taskModels,
+      defaultProvider,
+    );
+    polishGoal({
+      goal: goalEditorDraft,
+      ...taskModel,
+      invokeFn: invoke,
+      ...(workspace?.rootPath != null && { workingDir: workspace.rootPath }),
+    })
+      .then((result) => {
+        if (goalPolishRequestId.current !== requestId) {
+          return;
+        }
+        if (result.accepted) {
+          setGoalEditorDraft(result.goal);
+          return;
+        }
+        showToast('warning', 'Could not polish the goal, kept your wording', {
+          context: result.error ?? 'unknown error',
+        });
+      })
+      .finally(() => {
+        if (goalPolishRequestId.current !== requestId) {
+          return;
+        }
+        setGoalPolishing(false);
+      });
+  };
+
   const conflict = useBranchConflict(
     !isSimple && branchMode === 'existing' ? existingBranch.trim() || null : null,
     workspace?.rootPath ?? null,
@@ -283,69 +348,85 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   return (
     <div className="flex h-full w-full items-center justify-center bg-background py-6 motion-safe:animate-studio-in">
       <div className="flex h-full max-h-full w-full max-w-2xl flex-col overflow-hidden">
-        <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
-          <NewSessionForm
-            workspaceId={workspaceId}
-            isSimple={isSimple}
-            noProviderConnected={noProviderConnected}
-            onOpenSettings={onOpenSettings}
-            issueSources={issueSources}
-            issue={issue}
-            onPickIssue={onPickIssue}
-            onClearIssue={() => setNewSessionDraft({ workspaceId, draft: { issue: null } })}
-            goal={goal}
-            onGoalChange={(value) => setNewSessionDraft({ workspaceId, draft: { goal: value } })}
-            attachments={attachments}
-            isDragging={isDragging}
-            composerRef={composerRef}
-            fileInputRef={fileInputRef}
-            onFileInputChange={onFileInputChange}
-            onRemoveAttachment={removeAttachment}
-            branchMode={branchMode}
-            onBranchModeChange={(mode) =>
-              setNewSessionDraft({ workspaceId, draft: { branchMode: mode } })
-            }
-            branchPrefix={sanitizeBranchPrefix({ input: branchPrefix })}
-            branchSlug={branchSlug}
-            onBranchSlugChange={(value) => {
-              setNewSessionDraft({
-                workspaceId,
-                draft: {
-                  branchSlug: sanitizeBranchSlugValue({
-                    input: value,
-                    maxLength: SLUG_MAX_LEN,
-                  }),
-                  slugTouched: true,
-                },
-              });
-            }}
-            slugGenerating={slugGenerating}
-            onGenerateSlug={handleGenerateSlug}
-            existingBranches={existingBranches}
-            existingBranch={existingBranch}
-            onExistingBranchChange={(value) =>
-              setNewSessionDraft({ workspaceId, draft: { existingBranch: value } })
-            }
-            branchesLoading={branchesLoading}
-            conflictSessionId={conflictSessionId}
-            conflictWorktreePath={conflictWorktreePath}
-            busy={busy}
+        {goalEditorOpen ? (
+          <GoalEditor
+            draft={goalEditorDraft}
+            polishing={goalPolishing}
+            onDraftChange={setGoalEditorDraft}
+            onCancel={cancelGoalEditor}
+            onPolish={handlePolishGoal}
+            onSave={saveGoalEditor}
           />
-        </ScrollFade>
-        <NewSessionFooter
-          isSimple={isSimple}
-          error={error}
-          setupWorkflow={setupWorkflow}
-          onSetupWorkflowChange={setSetupWorkflow}
-          busy={busy}
-          onClose={onCancel}
-          conflictSessionId={conflictSessionId}
-          conflictWorktreePath={conflictWorktreePath}
-          goalReady={goalReady}
-          canCreate={canCreate}
-          onOpenConflictSession={onOpenConflictSession}
-          onCreate={onCreate}
-        />
+        ) : (
+          <>
+            <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+              <NewSessionForm
+                workspaceId={workspaceId}
+                isSimple={isSimple}
+                noProviderConnected={noProviderConnected}
+                onOpenSettings={onOpenSettings}
+                issueSources={issueSources}
+                issue={issue}
+                onPickIssue={onPickIssue}
+                onClearIssue={() => setNewSessionDraft({ workspaceId, draft: { issue: null } })}
+                goal={goal}
+                onGoalChange={(value) =>
+                  setNewSessionDraft({ workspaceId, draft: { goal: value } })
+                }
+                onOpenGoalEditor={openGoalEditor}
+                attachments={attachments}
+                isDragging={isDragging}
+                composerRef={composerRef}
+                fileInputRef={fileInputRef}
+                onFileInputChange={onFileInputChange}
+                onRemoveAttachment={removeAttachment}
+                branchMode={branchMode}
+                onBranchModeChange={(mode) =>
+                  setNewSessionDraft({ workspaceId, draft: { branchMode: mode } })
+                }
+                branchPrefix={sanitizeBranchPrefix({ input: branchPrefix })}
+                branchSlug={branchSlug}
+                onBranchSlugChange={(value) => {
+                  setNewSessionDraft({
+                    workspaceId,
+                    draft: {
+                      branchSlug: sanitizeBranchSlugValue({
+                        input: value,
+                        maxLength: SLUG_MAX_LEN,
+                      }),
+                      slugTouched: true,
+                    },
+                  });
+                }}
+                slugGenerating={slugGenerating}
+                onGenerateSlug={handleGenerateSlug}
+                existingBranches={existingBranches}
+                existingBranch={existingBranch}
+                onExistingBranchChange={(value) =>
+                  setNewSessionDraft({ workspaceId, draft: { existingBranch: value } })
+                }
+                branchesLoading={branchesLoading}
+                conflictSessionId={conflictSessionId}
+                conflictWorktreePath={conflictWorktreePath}
+                busy={busy}
+              />
+            </ScrollFade>
+            <NewSessionFooter
+              isSimple={isSimple}
+              error={error}
+              setupWorkflow={setupWorkflow}
+              onSetupWorkflowChange={setSetupWorkflow}
+              busy={busy}
+              onClose={onCancel}
+              conflictSessionId={conflictSessionId}
+              conflictWorktreePath={conflictWorktreePath}
+              goalReady={goalReady}
+              canCreate={canCreate}
+              onOpenConflictSession={onOpenConflictSession}
+              onCreate={onCreate}
+            />
+          </>
+        )}
       </div>
     </div>
   );

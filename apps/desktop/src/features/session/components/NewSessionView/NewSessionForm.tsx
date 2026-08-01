@@ -1,6 +1,6 @@
 import type { ChangeEventHandler, RefObject } from 'react';
 import { Divider, FieldRow, Input, SectionHeader, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
+import { AlertTriangle, Expand, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
@@ -28,6 +28,7 @@ type Props = {
   readonly onClearIssue: () => void;
   readonly goal: string;
   readonly onGoalChange: (value: string) => void;
+  readonly onOpenGoalEditor: () => void;
   readonly attachments: ReadonlyArray<PendingAttachment>;
   readonly isDragging: boolean;
   readonly composerRef: RefObject<HTMLDivElement | null>;
@@ -61,6 +62,7 @@ export const NewSessionForm = ({
   onClearIssue,
   goal,
   onGoalChange,
+  onOpenGoalEditor,
   attachments,
   isDragging,
   composerRef,
@@ -141,21 +143,37 @@ export const NewSessionForm = ({
           label="Goal"
           help="What this session should accomplish. This becomes the agents' primary context."
         >
-          <Textarea
-            value={goal}
-            placeholder={
-              isSimple
-                ? 'Prepare a study plan for next week’s exam…'
-                : 'Refactor auth domain to extract token validation into a shared module…'
-            }
-            onChange={(event) => onGoalChange(event.target.value)}
-            autoGrow
-            minRows={4}
-            maxRows={12}
-            autoFocus
-            disabled={busy}
-            className="w-full sm:w-96"
-          />
+          <div className="flex w-full items-start gap-1.5 sm:w-96">
+            <Textarea
+              value={goal}
+              placeholder={
+                isSimple
+                  ? 'Prepare a study plan for next week’s exam…'
+                  : 'Refactor auth domain to extract token validation into a shared module…'
+              }
+              onChange={(event) => onGoalChange(event.target.value)}
+              autoGrow
+              minRows={4}
+              maxRows={12}
+              autoFocus
+              disabled={busy}
+              aria-label="Goal"
+              className="min-w-0 flex-1"
+            />
+            <button
+              type="button"
+              onClick={onOpenGoalEditor}
+              disabled={busy}
+              title="Open goal editor"
+              aria-label="Open goal editor"
+              className={cn(
+                'shrink-0 rounded-md border border-border p-2 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground',
+                busy && 'cursor-not-allowed text-muted-foreground/30',
+              )}
+            >
+              <Expand size={13} aria-hidden />
+            </button>
+          </div>
         </FieldRow>
         <Divider />
         <FieldRow

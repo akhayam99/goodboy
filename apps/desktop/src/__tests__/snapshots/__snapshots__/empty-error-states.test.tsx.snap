@@ -169,12 +169,11 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
               <div
                 class="flex min-w-40 shrink flex-col gap-0.5"
               >
-                <label
+                <span
                   class="text-xs font-medium text-foreground"
-                  for="_r_0_"
                 >
                   Goal
-                </label>
+                </span>
                 <p
                   class="text-2xs leading-relaxed text-muted-foreground"
                 >
@@ -184,12 +183,61 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
               <div
                 class="shrink-0"
               >
-                <textarea
-                  class="rounded-md border border-border bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md w-full sm:w-96"
-                  id="_r_0_"
-                  placeholder="Refactor auth domain to extract token validation into a shared module…"
-                  style="overflow-y: hidden;"
-                />
+                <div
+                  class="flex w-full items-start gap-1.5 sm:w-96"
+                >
+                  <textarea
+                    aria-label="Goal"
+                    class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md min-w-0 flex-1"
+                    placeholder="Refactor auth domain to extract token validation into a shared module…"
+                    style="overflow-y: hidden;"
+                  />
+                  <button
+                    aria-label="Open goal editor"
+                    class="shrink-0 rounded-md border border-border p-2 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                    title="Open goal editor"
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-expand"
+                      fill="none"
+                      height="13"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="13"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="m15 15 6 6"
+                      />
+                      <path
+                        d="m15 9 6-6"
+                      />
+                      <path
+                        d="M21 16v5h-5"
+                      />
+                      <path
+                        d="M21 8V3h-5"
+                      />
+                      <path
+                        d="M3 16v5h5"
+                      />
+                      <path
+                        d="m3 21 6-6"
+                      />
+                      <path
+                        d="M3 8V3h5"
+                      />
+                      <path
+                        d="M9 9 3 3"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
             <div
@@ -1148,12 +1196,11 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
               <div
                 class="flex min-w-40 shrink flex-col gap-0.5"
               >
-                <label
+                <span
                   class="text-xs font-medium text-foreground"
-                  for="_r_4_"
                 >
                   Goal
-                </label>
+                </span>
                 <p
                   class="text-2xs leading-relaxed text-muted-foreground"
                 >
@@ -1163,12 +1210,61 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
               <div
                 class="shrink-0"
               >
-                <textarea
-                  class="rounded-md border border-border bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md w-full sm:w-96"
-                  id="_r_4_"
-                  placeholder="Refactor auth domain to extract token validation into a shared module…"
-                  style="overflow-y: hidden;"
-                />
+                <div
+                  class="flex w-full items-start gap-1.5 sm:w-96"
+                >
+                  <textarea
+                    aria-label="Goal"
+                    class="w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm leading-5 text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md min-w-0 flex-1"
+                    placeholder="Refactor auth domain to extract token validation into a shared module…"
+                    style="overflow-y: hidden;"
+                  />
+                  <button
+                    aria-label="Open goal editor"
+                    class="shrink-0 rounded-md border border-border p-2 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                    title="Open goal editor"
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="lucide lucide-expand"
+                      fill="none"
+                      height="13"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="13"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="m15 15 6 6"
+                      />
+                      <path
+                        d="m15 9 6-6"
+                      />
+                      <path
+                        d="M21 16v5h-5"
+                      />
+                      <path
+                        d="M21 8V3h-5"
+                      />
+                      <path
+                        d="M3 16v5h5"
+                      />
+                      <path
+                        d="m3 21 6-6"
+                      />
+                      <path
+                        d="M3 8V3h5"
+                      />
+                      <path
+                        d="M9 9 3 3"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
             <div
