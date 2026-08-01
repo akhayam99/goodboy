@@ -58,46 +58,39 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('WorkspaceLinkDialog', () => {
-  it('renders the dialog title and the repository helper hint', () => {
-    render(<WorkspaceLinkDialog open onClose={vi.fn()} />);
-    expect(
-      screen.getByText(/add a project, link projects, or create a simple workspace/i),
-    ).toBeDefined();
+  it('mounts the shared form only while open', () => {
+    const { rerender } = render(<WorkspaceLinkDialog open={false} onClose={vi.fn()} />);
+    expect(screen.queryByRole('tab', { name: 'Single project' })).toBeNull();
+
+    rerender(<WorkspaceLinkDialog open onClose={vi.fn()} />);
+    expect(screen.getByRole('tab', { name: 'Single project' })).toBeDefined();
   });
 
-  it('renders a Cancel button that closes the dialog', () => {
+  it('pins the form actions in the dialog footer instead of the scrolling body', () => {
+    render(<WorkspaceLinkDialog open onClose={vi.fn()} />);
+
+    const submit = screen.getByRole('button', { name: 'Add workspace' });
+    const form = screen.getByRole('tab', { name: 'Single project' }).closest('form');
+
+    expect(submit.closest('footer')).not.toBeNull();
+    expect(form).not.toBeNull();
+    expect(form?.contains(submit)).toBe(false);
+    expect(submit.getAttribute('form')).toBe(form?.getAttribute('id'));
+  });
+
+  it('submits the form from the footer action and closes on success', async () => {
     const onClose = vi.fn();
     render(<WorkspaceLinkDialog open onClose={onClose} />);
-    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(onClose).toHaveBeenCalledOnce();
-  });
 
-  it('validates the typed path and surfaces a valid-repo confirmation', async () => {
-    render(<WorkspaceLinkDialog open onClose={vi.fn()} />);
     fireEvent.change(screen.getByPlaceholderText('/path/to/repo'), {
       target: { value: '/some/repo' },
     });
     await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
-    expect(validateMock).toHaveBeenCalledWith('/some/repo');
-  });
-
-  it('creates a simple workspace from a prefilled editable directory', async () => {
-    render(<WorkspaceLinkDialog open onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Simple' }));
-    const directory = await screen.findByDisplayValue('/home/test/Documents/Goodboy/my-workspace');
-    fireEvent.change(screen.getByDisplayValue('My workspace'), {
-      target: { value: 'History notes' },
-    });
-    fireEvent.change(directory, { target: { value: '/tmp/history-notes' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
 
     await waitFor(() =>
-      expect(state.addSimpleWorkspace).toHaveBeenCalledWith({
-        name: 'History notes',
-        path: '/tmp/history-notes',
-      }),
+      expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/some/repo' }),
     );
-    expect(validateMock).not.toHaveBeenCalled();
-    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-simple');
+    expect(onClose).toHaveBeenCalled();
   });
 });
