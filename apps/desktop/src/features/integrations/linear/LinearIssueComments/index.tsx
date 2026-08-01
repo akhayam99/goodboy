@@ -1,6 +1,6 @@
 import { EmptyState, Markdown, Skeleton } from '@goodboy/ui';
-import { MessageSquare } from 'lucide-react';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { LinearIssueComment } from '../client';
 
 type Props = {
@@ -31,7 +31,7 @@ export const LinearIssueComments = ({ comments, isLoading, error }: Props) => {
   if (comments.length === 0) {
     return (
       <EmptyState
-        icon={MessageSquare}
+        icon={CONCEPT_ICONS.comments}
         title="No comments"
         description="This issue has no comments yet."
         className="py-5"

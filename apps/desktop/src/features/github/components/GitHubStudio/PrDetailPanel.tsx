@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { Inbox } from 'lucide-react';
 import {
   buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
@@ -21,6 +20,7 @@ import { githubPullRequestFields, resolveDetailFields } from '../../../../shared
 import { BranchPair } from '../../../../shared/components/BranchPair';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import { groupThreads, type CommentThread } from '../../comment-threads';
@@ -160,9 +160,11 @@ export const PrDetailPanel = ({
         <EmptyState
           bordered
           tone="neutral"
-          icon={Inbox}
+          icon={CONCEPT_ICONS.pr}
           title="No session selected"
           description="Pick a session from the inbox to see its pull request."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

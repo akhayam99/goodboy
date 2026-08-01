@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
-import { EmptyState, Eyebrow, SelectableRow } from '@goodboy/ui';
-import { GitBranch, Inbox } from 'lucide-react';
+import { Button, EmptyState, Eyebrow, SelectableRow } from '@goodboy/ui';
+import { GitBranch, Plus } from 'lucide-react';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PullRequestChip } from '../PullRequestChip';
 import type { InboxGroup } from './useGithubInbox';
 
@@ -17,9 +18,19 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
         <EmptyState
           bordered
           tone="neutral"
-          icon={Inbox}
+          icon={CONCEPT_ICONS.github}
           title="No sessions yet"
           description="Sessions in this workspace will show up here."
+          action={
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
+            >
+              <Plus size={13} aria-hidden />
+              New session
+            </Button>
+          }
         />
       </div>
     );

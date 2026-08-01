@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Bot, ChevronRight, MessageSquarePlus } from 'lucide-react';
-import { Divider, cn } from '@goodboy/ui';
+import { Divider, EmptyState, cn } from '@goodboy/ui';
 import type { DiffHunkLine, FileDiff, PrReviewDraft, ReviewDraftSide } from '@goodboy/types';
 import {
   INITIAL_VISIBLE_LINES,
@@ -16,6 +16,7 @@ import {
   languageForPath,
 } from '../../../permissions/components/DiffViewerDialog/highlight';
 import { LineComposer } from './LineComposer';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type ReviewLineTarget = {
   readonly path: string;
@@ -143,10 +144,13 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
       </div>
       {collapsed ? null : (
         <div className="p-3">
-          {file.binary ? (
-            <p className="py-4 text-center text-xs text-muted-foreground">binary file, no diff</p>
-          ) : file.hunks.length === 0 ? (
-            <p className="py-4 text-center text-xs text-muted-foreground">no changes</p>
+          {file.binary || file.hunks.length === 0 ? (
+            <EmptyState
+              icon={CONCEPT_ICONS.diff}
+              title={file.binary ? 'Binary file, no diff' : 'No changes'}
+              size="inline"
+              className="justify-center py-4"
+            />
           ) : (
             <>
               <table className="w-full border-collapse font-mono text-xs leading-5">
@@ -169,7 +173,12 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
                     const target: ReviewLineTarget | null =
                       anchor == null
                         ? null
-                        : { path: file.path, line: anchor.line, side: anchor.side, text: line.text };
+                        : {
+                            path: file.path,
+                            line: anchor.line,
+                            side: anchor.side,
+                            text: line.text,
+                          };
                     const isActive =
                       anchor != null &&
                       activeAnchor != null &&

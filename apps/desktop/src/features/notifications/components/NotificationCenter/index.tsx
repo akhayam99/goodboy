@@ -19,6 +19,7 @@ import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 
 function severityIcon(severity: NotificationSeverity, size = 13) {
@@ -196,7 +197,7 @@ export const NotificationCenter = () => {
                   </div>
                 ) : notifications.length === 0 ? (
                   <EmptyState
-                    icon={Bell}
+                    icon={CONCEPT_ICONS.notifications}
                     title="Nothing to catch up on"
                     description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
                     action={

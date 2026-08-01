@@ -1,19 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
-import {
-  Activity,
-  Bot,
-  CheckCheck,
-  CircleHelp,
-  FileDiff,
-  MessageSquareDiff,
-  FileText,
-  MessageSquareReply,
-  SquareTerminal,
-  Target,
-  Terminal,
-} from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
-import { SECTION_ICONS } from '../../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { LensKind } from '../../../../../../store';
 import type { IntegrationGlyphProvider } from '../../../../../integrations/components/IntegrationGlyph';
 
@@ -120,18 +107,24 @@ export const buildLensGroups = ({
     {
       label: 'Context',
       rows: [
-        { kind: 'goal', label: 'Goal', icon: Target, tone: 'primary', dot: summarizerDot },
+        {
+          kind: 'goal',
+          label: 'Goal',
+          icon: CONCEPT_ICONS.goal,
+          tone: 'primary',
+          dot: summarizerDot,
+        },
         {
           kind: 'decisions',
           label: 'Decisions',
-          icon: CheckCheck,
+          icon: CONCEPT_ICONS.decisions,
           tone: 'success',
           dot: summarizerDot,
         },
         {
           kind: 'last_output_summary',
           label: 'Session summary',
-          icon: Activity,
+          icon: CONCEPT_ICONS.sessionSummary,
           tone: 'info',
           dot: summarizerDot,
         },
@@ -145,7 +138,7 @@ export const buildLensGroups = ({
               {
                 kind: 'review',
                 label: 'Review board',
-                icon: MessageSquareDiff,
+                icon: CONCEPT_ICONS.review,
                 tone: 'primary',
                 count: reviewDraftCount,
                 repoOnly: true,
@@ -155,7 +148,7 @@ export const buildLensGroups = ({
         {
           kind: 'workflows',
           label: 'Workflows',
-          icon: SECTION_ICONS.workflows,
+          icon: CONCEPT_ICONS.workflows,
           tone: 'accent',
           count: activeWorkflows,
           ...flags('workflows'),
@@ -163,7 +156,7 @@ export const buildLensGroups = ({
         {
           kind: 'agents',
           label: 'Agents',
-          icon: Bot,
+          icon: CONCEPT_ICONS.agents,
           tone: 'primary',
           count: agentCount,
           isCountLoading: areAgentsLoading,
@@ -172,7 +165,7 @@ export const buildLensGroups = ({
         {
           kind: 'resolve',
           label: 'Resolve',
-          icon: MessageSquareReply,
+          icon: CONCEPT_ICONS.resolve,
           tone: 'success',
           count: openResolvers,
           isCountLoading: areAgentsLoading,
@@ -183,7 +176,7 @@ export const buildLensGroups = ({
         {
           kind: 'questions',
           label: 'Questions',
-          icon: CircleHelp,
+          icon: CONCEPT_ICONS.questions,
           tone: 'warning',
           count: openCount,
           isCountLoading: areQuestionsLoading,
@@ -191,7 +184,7 @@ export const buildLensGroups = ({
         {
           kind: 'files',
           label: 'Diff',
-          icon: FileDiff,
+          icon: CONCEPT_ICONS.diff,
           tone: 'info',
           count: filesCount,
           diffstat,
@@ -200,7 +193,7 @@ export const buildLensGroups = ({
         {
           kind: 'plans',
           label: 'Plans',
-          icon: FileText,
+          icon: CONCEPT_ICONS.plans,
           tone: 'success',
           count: activePlans,
           isCountLoading: arePlansLoading,
@@ -213,7 +206,7 @@ export const buildLensGroups = ({
         {
           kind: 'scripts',
           label: 'Scripts',
-          icon: Terminal,
+          icon: CONCEPT_ICONS.scripts,
           tone: 'info',
           count: runningScripts,
           dot: runningScripts > 0 ? 'running' : undefined,
@@ -222,7 +215,7 @@ export const buildLensGroups = ({
         {
           kind: 'terminal',
           label: 'Terminal',
-          icon: SquareTerminal,
+          icon: CONCEPT_ICONS.terminal,
           tone: 'neutral',
           count: liveTerminals,
           dot: liveTerminals > 0 ? 'running' : undefined,

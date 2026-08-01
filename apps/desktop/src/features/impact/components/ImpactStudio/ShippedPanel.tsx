@@ -1,6 +1,6 @@
 import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { ArrowUpRight, GitPullRequest } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import type { QueryResult } from '../../hooks/useImpactMetrics';
 import { formatHours } from '../../utils/formatHours';
 import { ErrorStrip } from './ErrorStrip';
@@ -10,6 +10,8 @@ import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
@@ -83,7 +85,7 @@ export const ShippedPanel = ({
                 onClick={() => onOpenSession(entry.sessionId)}
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60"
               >
-                <GitPullRequest size={13} aria-hidden className="shrink-0 text-success" />
+                <CONCEPT_ICONS.pr size={13} aria-hidden className="shrink-0 text-success" />
                 <span className="min-w-0 flex-1 truncate">
                   #{entry.number} {entry.title}
                 </span>
@@ -92,9 +94,11 @@ export const ShippedPanel = ({
               </button>
             ))}
             {prs !== null && prs.entries.length === 0 ? (
-              <span className="text-xs text-muted-foreground">
-                No pull requests in this window.
-              </span>
+              <EmptyState
+                icon={CONCEPT_ICONS.pr}
+                title="No pull requests in this window"
+                size="inline"
+              />
             ) : null}
           </div>
         </StudioWidget>

@@ -1,6 +1,7 @@
-import { formatTokens, formatUsdPrecise } from '@goodboy/ui';
+import { EmptyState, formatTokens, formatUsdPrecise } from '@goodboy/ui';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { ModelBreakdownEntry } from './lib';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly entries: ReadonlyArray<ModelBreakdownEntry>;
@@ -9,9 +10,13 @@ type Props = {
 export const ModelTable = ({ entries }: Props) => {
   if (entries.length === 0) {
     return (
-      <p className="rounded-lg border border-border-soft bg-muted/10 px-3 py-4 text-center text-xs text-muted-foreground">
-        no model usage recorded yet.
-      </p>
+      <EmptyState
+        bordered
+        icon={CONCEPT_ICONS.budget}
+        title="No model usage recorded yet"
+        size="inline"
+        className="justify-center border-solid bg-muted/10 px-3 py-4"
+      />
     );
   }
 

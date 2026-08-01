@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Input, SectionHeader } from '@goodboy/ui';
+import { Button, EmptyState, Input, SectionHeader } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -80,12 +81,14 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         }
       />
 
-      {mine.length === 0 && !adding && (
-        <div className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-border-soft bg-muted/10 px-6 py-8 text-center">
-          <KeyRound size={18} className="text-muted-foreground/70" aria-hidden />
-          <span className="text-2xs text-muted-foreground">No API keys yet</span>
-        </div>
-      )}
+      {mine.length === 0 && !adding ? (
+        <EmptyState
+          bordered
+          icon={CONCEPT_ICONS.providers}
+          title="No API keys yet"
+          className="bg-muted/10 py-8"
+        />
+      ) : null}
 
       {mine.length > 0 && (
         <ul className="flex flex-col gap-2">

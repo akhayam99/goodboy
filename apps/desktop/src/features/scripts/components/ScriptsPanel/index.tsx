@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, EmptyState, SectionHeader } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
-import { Plus, SquareTerminal } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { NewScriptCard } from './NewScriptCard';
@@ -285,14 +286,14 @@ export const ScriptsPanel = ({
       {hasHostHeading ? (
         <div className="flex items-start justify-between gap-2">
           <p className="text-2xs text-muted-foreground/70">{SCRIPTS_HINT}</p>
-          {newScriptAction}
+          {list.length > 0 ? newScriptAction : null}
         </div>
       ) : (
         <SectionHeader
           label="Scripts"
-          icon={<SquareTerminal size={13} aria-hidden />}
+          icon={<CONCEPT_ICONS.scripts size={13} aria-hidden />}
           hint={SCRIPTS_HINT}
-          action={newScriptAction}
+          action={list.length > 0 ? newScriptAction : null}
         />
       )}
 
@@ -318,9 +319,10 @@ export const ScriptsPanel = ({
           <EmptyState
             bordered
             tone="info"
-            icon={SquareTerminal}
+            icon={CONCEPT_ICONS.scripts}
             title="No scripts yet"
             description="A script is a shell command you run by hand from a session, no agent, no tokens spent. Create one to run setup or checks from the session worktree."
+            action={newScriptAction}
           />
         ) : (
           <ul className="flex flex-col gap-2">

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Divider, ScrollFade } from '@goodboy/ui';
+import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   onClose: () => void;
@@ -76,7 +77,13 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         <ScrollFade className="max-h-80" viewportClassName="p-1.5">
           <ul>
             {filtered.length === 0 ? (
-              <li className="px-4 py-6 text-center text-sm text-muted-foreground">No workspaces</li>
+              <li>
+                <EmptyState
+                  icon={CONCEPT_ICONS.workspace}
+                  title="No workspaces"
+                  className="px-4 py-6"
+                />
+              </li>
             ) : (
               filtered.map((w, i) => (
                 <li key={w.id}>

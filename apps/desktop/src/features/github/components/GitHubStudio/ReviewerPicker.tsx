@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollFade, Skeleton } from '@goodboy/ui';
+import { EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../store';
 import type { WorkspaceId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
 import { Avatar } from '../Card/parts/Avatar';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceRoot: string | null;
@@ -87,7 +88,12 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
               ))}
             </div>
           ) : candidates.length === 0 ? (
-            <span className="px-1.5 py-1 text-2xs text-muted-foreground/60">No matches.</span>
+            <EmptyState
+              icon={CONCEPT_ICONS.search}
+              title="No matches"
+              size="inline"
+              className="px-1.5 py-1"
+            />
           ) : (
             <ScrollFade className="max-h-44" fadeSize={16}>
               <ul>

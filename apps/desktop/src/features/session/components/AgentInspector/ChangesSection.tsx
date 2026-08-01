@@ -1,8 +1,9 @@
 import { FileText } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { EmptyState, cn } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
 import { CommitRow } from './CommitRow';
 import { InspectorSection } from '../InspectorSection';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly files: ReadonlyArray<string>;
@@ -59,9 +60,11 @@ export const ChangesSection = ({
         })}
       </ul>
     ) : (
-      <p className="text-2xs italic text-muted-foreground/70">
-        {isLoading ? 'reading its turn history...' : 'no file edits recorded'}
-      </p>
+      <EmptyState
+        icon={CONCEPT_ICONS.diff}
+        title={isLoading ? 'Reading its turn history...' : 'No file edits recorded'}
+        size="inline"
+      />
     )}
     {reported.length > 0 ? (
       <div className="flex flex-col gap-1">

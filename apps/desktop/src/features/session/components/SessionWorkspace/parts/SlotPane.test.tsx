@@ -167,6 +167,11 @@ const SESSION = {
 } as unknown as Session;
 
 beforeEach(() => {
+  store.sessionSlots['session-1'] = [
+    { key: 'goal', value: 'ship the feature', enabled: true },
+    { key: 'decisions', value: 'use tailwind', enabled: true },
+    { key: 'last_output_summary', value: '**Status**: done', enabled: true },
+  ];
   store.upsertSessionSlot = vi.fn();
   store.loadSlotHistory = vi.fn().mockResolvedValue(undefined);
   store.loadSessionOpenQuestions = vi.fn().mockResolvedValue(undefined);
@@ -181,6 +186,24 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SlotPane', () => {
+  it.each([
+    ['goal', 'Add the session goal'],
+    ['decisions', 'Log a decision'],
+    ['last_output_summary', 'Write a session summary'],
+  ] as const)('explains how an empty %s is populated', (slotKey, title) => {
+    store.sessionSlots['session-1'] = [];
+
+    render(<SlotPane session={SESSION} slotKey={slotKey} />);
+
+    expect(screen.getByText(title)).toBeDefined();
+    expect(
+      screen.getByText(
+        'The summarizer fills this at the end of a turn. Create an agent or a workflow to begin.',
+      ),
+    ).toBeDefined();
+    expect(screen.queryByText(/manual/i)).toBeNull();
+  });
+
   describe('history panel', () => {
     it('opens history panel (not a dialog) when history button clicked', () => {
       render(<SlotPane session={SESSION} slotKey="goal" />);

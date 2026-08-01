@@ -1,5 +1,4 @@
 import { EmptyState, Markdown } from '@goodboy/ui';
-import { MousePointerClick } from 'lucide-react';
 import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
@@ -12,6 +11,7 @@ import { ExternalRefActions } from '../../../../../shared/components/ExternalRef
 import { LaunchSessionPanel } from '../../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../../../goal-from-issue';
 import { githubBranchSlug } from '../useGithubIssues';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly issue: GithubIssue | null;
@@ -25,9 +25,13 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
-          icon={MousePointerClick}
+          bordered
+          tone="neutral"
+          icon={CONCEPT_ICONS.github}
           title="No issue selected"
           description="Pick an issue to see its details and launch a session."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

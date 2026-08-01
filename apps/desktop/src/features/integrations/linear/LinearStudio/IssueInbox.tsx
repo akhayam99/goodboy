@@ -1,9 +1,17 @@
 import { useMemo, useState } from 'react';
-import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
-import { GitPullRequest, Inbox, MessagesSquare, Search } from 'lucide-react';
+import {
+  Button,
+  EmptyState,
+  ScrollFade,
+  SectionHeader,
+  SelectableRow,
+  Skeleton,
+} from '@goodboy/ui';
+import { MessagesSquare, Search } from 'lucide-react';
 import { issuePullRequests, type LinearIssue } from '../client';
 import { LinearPriority } from '../LinearPriority';
 import type { LinearIssueGroup } from './useLinearIssues';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly groups: ReadonlyArray<LinearIssueGroup>;
@@ -11,10 +19,19 @@ type Props = {
   readonly onSelect: (issue: LinearIssue) => void;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly onRefresh: () => void;
 };
 
-export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }: Props) => {
+export const IssueInbox = ({
+  groups,
+  focusedIssueId,
+  onSelect,
+  loading,
+  error,
+  onRefresh,
+}: Props) => {
   const [query, setQuery] = useState('');
+  const hasQuery = query.trim() !== '';
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -68,10 +85,15 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
-            title={query.trim() ? 'No matching issues' : 'Inbox clear'}
+            icon={CONCEPT_ICONS.linear}
+            title={hasQuery ? 'No matching issues' : 'Inbox clear'}
             description={
-              query.trim() ? 'Try a different search term.' : 'No open issues assigned to you.'
+              hasQuery ? 'Try a different search term.' : 'No open issues assigned to you.'
+            }
+            action={
+              <Button variant="ghost" size="sm" onClick={hasQuery ? () => setQuery('') : onRefresh}>
+                {hasQuery ? 'Clear search' : 'Refresh'}
+              </Button>
             }
           />
         </div>
@@ -111,7 +133,7 @@ export const IssueInbox = ({ groups, focusedIssueId, onSelect, loading, error }:
                           </span>
                           <span className="min-w-0 flex-1 truncate text-xs">{row.issue.title}</span>
                           {issuePullRequests(row.issue).length > 0 && (
-                            <GitPullRequest
+                            <CONCEPT_ICONS.pr
                               size={11}
                               aria-label="has linked pull request"
                               className="shrink-0 text-muted-foreground/70"

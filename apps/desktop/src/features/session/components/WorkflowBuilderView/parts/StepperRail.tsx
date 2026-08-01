@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
-import { Check, ChevronRight, ListChecks, Target, type LucideIcon } from 'lucide-react';
+import { Check, ChevronRight, type LucideIcon } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Stage = 0 | 1 | 2;
 
@@ -13,9 +13,9 @@ type Props = {
 };
 
 const STAGE_META: ReadonlyArray<{ readonly label: string; readonly icon: LucideIcon }> = [
-  { label: 'Goal', icon: Target },
-  { label: 'Approach', icon: SECTION_ICONS.workflows },
-  { label: 'Steps', icon: ListChecks },
+  { label: 'Goal', icon: CONCEPT_ICONS.goal },
+  { label: 'Approach', icon: CONCEPT_ICONS.workflows },
+  { label: 'Steps', icon: CONCEPT_ICONS.checks },
 ];
 
 export const StepperRail = ({ current, canReach, disabled, onJump }: Props) => (

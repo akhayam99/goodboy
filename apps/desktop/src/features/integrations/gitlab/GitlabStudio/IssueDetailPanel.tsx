@@ -1,5 +1,4 @@
 import { EmptyState, Markdown } from '@goodboy/ui';
-import { MousePointerClick } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
@@ -13,6 +12,7 @@ import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessi
 import { goalFromIssue } from '../goal-from-issue';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { gitlabBranchSlug } from './useGitlabIssues';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly issue: GitlabIssue | null;
@@ -26,9 +26,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
-          icon={MousePointerClick}
+          bordered
+          tone="neutral"
+          icon={CONCEPT_ICONS.gitlab}
           title="No issue selected"
           description="Pick an issue to see its details and launch a session."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

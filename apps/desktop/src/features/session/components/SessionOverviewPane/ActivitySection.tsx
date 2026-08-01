@@ -1,8 +1,7 @@
-import { Bot, CheckCheck, MessageSquareReply } from 'lucide-react';
 import { Button, Eyebrow } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
-import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PendingResolutionsStrip } from '../../../context/components/ContextPanel/strips/PendingResolutionsStrip';
 import type { WorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { CreateAgentPopover } from '../CreateAgentPopover';
@@ -50,7 +49,7 @@ export const ActivitySection = ({
         {!isFresh && (
           <div className="flex shrink-0 flex-wrap items-center gap-1">
             <Button variant="ghost" size="sm" onClick={onOpenWorkflowBuilder}>
-              <SECTION_ICONS.workflows size={13} aria-hidden />
+              <CONCEPT_ICONS.workflows size={13} aria-hidden />
               New workflow
             </Button>
             <CreateAgentPopover sessionId={sessionId} variant="compact" />
@@ -73,7 +72,7 @@ export const ActivitySection = ({
           <PendingResolutionsStrip sessionId={sessionId} />
           {resolveCount > 0 ? (
             <SummaryRow
-              icon={MessageSquareReply}
+              icon={CONCEPT_ICONS.resolve}
               tone="neutral"
               label={`${resolveCount} to resolve`}
               onClick={() => onSelectLens('resolve')}
@@ -81,7 +80,7 @@ export const ActivitySection = ({
           ) : null}
           {completedLanes.length > 0 ? (
             <SummaryRow
-              icon={CheckCheck}
+              icon={CONCEPT_ICONS.decisions}
               tone="neutral"
               label={
                 completedLanes.length === 1
@@ -93,7 +92,7 @@ export const ActivitySection = ({
           ) : null}
           {completedAgents.length > 0 ? (
             <SummaryRow
-              icon={Bot}
+              icon={CONCEPT_ICONS.agents}
               tone="neutral"
               label={
                 completedAgents.length === 1

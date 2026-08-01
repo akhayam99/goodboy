@@ -1,5 +1,5 @@
 import { SectionHeader } from '@goodboy/ui';
-import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { Block } from './Block';
 import { DefinitionList } from './DefinitionList';
 import { Tile } from './Tile';
@@ -10,7 +10,7 @@ export const TokensSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
       size="page"
-      icon={<SECTION_ICONS.budget size={14} aria-hidden className="text-warning" />}
+      icon={<CONCEPT_ICONS.budget size={14} aria-hidden className="text-warning" />}
       label="Tokens & cost"
       hint="Every message, yours and the assistant's, is converted into tokens before billing. Roughly 1 token is about three quarters of an English word."
     />

@@ -20,7 +20,9 @@ describe('EmptyState', () => {
     const largeState = screen.getByText('Large state').parentElement?.parentElement;
 
     expect(smallState?.className).toContain('gap-3 px-6 py-10');
-    expect(largeState?.className).toContain('gap-6');
+    expect(smallState?.className).not.toContain('border-dashed');
+    expect(smallState?.querySelector('.bg-muted')).toBeTruthy();
+    expect(largeState?.className).toContain('gap-6 px-8 py-10');
   });
 
   it('renders a requested heading while keeping the default title unheaded', () => {
@@ -33,5 +35,16 @@ describe('EmptyState', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: 'Semantic title' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Default title' })).toBeNull();
+  });
+
+  it('renders inline states without an icon pill or implicit heading', () => {
+    render(<EmptyState icon={Inbox} title="Inline state" size="inline" />);
+
+    const state = screen.getByText('Inline state').parentElement?.parentElement;
+
+    expect(state?.className).toContain('items-start gap-2 text-left');
+    expect(state?.querySelector('svg')).toBeTruthy();
+    expect(state?.querySelector('.size-12')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Inline state' })).toBeNull();
   });
 });

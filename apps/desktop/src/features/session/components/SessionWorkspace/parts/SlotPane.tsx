@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckSquare, Copy, FileText, History, Target } from 'lucide-react';
+import { Check, Copy, History, type LucideIcon } from 'lucide-react';
 import { Button, EmptyState, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -15,6 +14,7 @@ import { GoalAttachmentsStrip } from '../../../../context/components/ContextPane
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from './PaneShell';
 import { SlotHistoryPanel } from './SlotHistoryPanel';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
 
@@ -34,13 +34,7 @@ const SLOT_DESCRIPTION: Record<SlotKey, string> = {
 const SLOT_EMPTY_CTA: Record<SlotKey, string> = {
   goal: 'Add the session goal',
   decisions: 'Log a decision',
-  last_output_summary: 'Write a manual session summary',
-};
-
-const SLOT_ICON: Record<SlotKey, LucideIcon> = {
-  goal: Target,
-  decisions: CheckSquare,
-  last_output_summary: FileText,
+  last_output_summary: 'Write a session summary',
 };
 
 const SLOT_TONE: Record<SlotKey, Tone> = {
@@ -49,12 +43,14 @@ const SLOT_TONE: Record<SlotKey, Tone> = {
   last_output_summary: 'info',
 };
 
-const SLOT_EMPTY_DESCRIPTION: Record<SlotKey, string> = {
-  goal: 'What this session is meant to achieve.',
-  decisions: 'Choices already locked in for this session.',
-  last_output_summary:
-    'What this session has accomplished, its current state, and what is in flight.',
-};
+const SLOT_ICON = {
+  goal: CONCEPT_ICONS.goal,
+  decisions: CONCEPT_ICONS.decisions,
+  last_output_summary: CONCEPT_ICONS.sessionSummary,
+} satisfies Record<SlotKey, LucideIcon>;
+
+const SLOT_EMPTY_DESCRIPTION =
+  'The summarizer fills this at the end of a turn. Create an agent or a workflow to begin.';
 
 const MARKDOWN_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>(['decisions', 'last_output_summary']);
 
@@ -266,7 +262,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
               tone={SLOT_TONE[slotKey]}
               icon={SLOT_ICON[slotKey]}
               title={SLOT_EMPTY_CTA[slotKey]}
-              description={SLOT_EMPTY_DESCRIPTION[slotKey]}
+              description={SLOT_EMPTY_DESCRIPTION}
               action={
                 <Button size="sm" variant="ghost" onClick={startEditing} disabled={isSummarizing}>
                   Add

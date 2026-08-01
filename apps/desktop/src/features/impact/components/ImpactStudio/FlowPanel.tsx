@@ -1,6 +1,6 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { StatCard } from '@goodboy/ui';
+import { EmptyState, StatCard } from '@goodboy/ui';
 import type { QueryResult } from '../../hooks/useImpactMetrics';
 import { formatHours } from '../../utils/formatHours';
 import { ErrorStrip } from './ErrorStrip';
@@ -8,6 +8,7 @@ import { PanelLoading } from './PanelLoading';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly agentDurations: QueryResult<AgentDurations>;
@@ -78,9 +79,11 @@ export const FlowPanel = ({
               </div>
             ))}
             {agents !== null && agents.byKind.length === 0 ? (
-              <span className="text-xs text-muted-foreground">
-                No completed agents in this window.
-              </span>
+              <EmptyState
+                icon={CONCEPT_ICONS.agents}
+                title="No completed agents in this window"
+                size="inline"
+              />
             ) : null}
           </div>
         </StudioWidget>

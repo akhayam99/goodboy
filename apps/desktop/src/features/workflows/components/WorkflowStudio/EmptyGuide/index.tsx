@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
 import { Button, EmptyState } from '@goodboy/ui';
-import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly onNew: () => void;
@@ -17,7 +17,7 @@ export const EmptyGuide = ({ onNew, hasPresets }: Props) => {
   return (
     <div className="flex h-full items-center justify-center p-8">
       <EmptyState
-        icon={SECTION_ICONS.workflows}
+        icon={CONCEPT_ICONS.workflows}
         title={hasPresets ? 'Build a workflow' : 'Design your first workflow'}
         description={hasPresets ? RETURNING_DESCRIPTION : FIRST_RUN_DESCRIPTION}
         action={

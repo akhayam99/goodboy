@@ -139,12 +139,14 @@ export const GitHubStudio = ({
               onChange={setTab}
               size="sm"
             />
-            <IconButton
-              icon={RefreshCw}
-              label="Refresh issues"
-              onClick={issues.refetch}
-              disabled={issues.loading}
-            />
+            {issues.groups.length > 0 ? (
+              <IconButton
+                icon={RefreshCw}
+                label="Refresh issues"
+                onClick={issues.refetch}
+                disabled={issues.loading}
+              />
+            ) : null}
           </div>
         ) : null
       }
@@ -219,6 +221,7 @@ export const GitHubStudio = ({
                 onSelect={setFocusedIssue}
                 loading={issues.loading}
                 error={issues.error}
+                onRefresh={issues.refetch}
               />
             }
             detail={

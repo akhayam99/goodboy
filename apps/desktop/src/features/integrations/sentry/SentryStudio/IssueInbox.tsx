@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { cn, EmptyState, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
-import { Inbox, MessagesSquare, Search, Users } from 'lucide-react';
+import { Button, cn, EmptyState, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
+import { MessagesSquare, Search, Users } from 'lucide-react';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import type { SentryIssue } from '../client';
 import { SentryLevelBadge } from '../SentryLevelBadge';
 import type { SentryIssueRow } from './useSentryIssues';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly rows: ReadonlyArray<SentryIssueRow>;
@@ -14,6 +15,7 @@ type Props = {
   readonly hasMore: boolean;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly onRefresh: () => void;
 };
 
 export const IssueInbox = ({
@@ -24,8 +26,10 @@ export const IssueInbox = ({
   hasMore,
   loading,
   error,
+  onRefresh,
 }: Props) => {
   const [query, setQuery] = useState('');
+  const hasQuery = query.trim() !== '';
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -79,12 +83,15 @@ export const IssueInbox = ({
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
-            title={query.trim() ? 'No matching issues' : 'No issues'}
+            icon={CONCEPT_ICONS.sentry}
+            title={hasQuery ? 'No matching issues' : 'No issues'}
             description={
-              query.trim()
-                ? 'Try a different search term.'
-                : 'No unresolved issues in this project.'
+              hasQuery ? 'Try a different search term.' : 'No unresolved issues in this project.'
+            }
+            action={
+              <Button variant="ghost" size="sm" onClick={hasQuery ? () => setQuery('') : onRefresh}>
+                {hasQuery ? 'Clear search' : 'Refresh'}
+              </Button>
             }
           />
         </div>

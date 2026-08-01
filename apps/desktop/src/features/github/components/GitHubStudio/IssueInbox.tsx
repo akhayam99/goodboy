@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react';
-import { EmptyState, ScrollFade, SectionHeader, SelectableRow, Skeleton } from '@goodboy/ui';
-import { Inbox, MessagesSquare, Search } from 'lucide-react';
+import {
+  Button,
+  EmptyState,
+  ScrollFade,
+  SectionHeader,
+  SelectableRow,
+  Skeleton,
+} from '@goodboy/ui';
+import { MessagesSquare, Search } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { GithubIssueGroup } from './useGithubIssues';
 
 type Props = {
@@ -10,6 +18,7 @@ type Props = {
   readonly onSelect: (issue: GithubIssue) => void;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly onRefresh: () => void;
 };
 
 type DateParams = {
@@ -24,8 +33,16 @@ const shortDate = ({ iso }: DateParams): string => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
-export const IssueInbox = ({ groups, focusedIssueNumber, onSelect, loading, error }: Props) => {
+export const IssueInbox = ({
+  groups,
+  focusedIssueNumber,
+  onSelect,
+  loading,
+  error,
+  onRefresh,
+}: Props) => {
   const [query, setQuery] = useState('');
+  const hasQuery = query.trim() !== '';
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (normalized === '') {
@@ -82,12 +99,15 @@ export const IssueInbox = ({ groups, focusedIssueNumber, onSelect, loading, erro
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
-            title={query.trim() === '' ? 'Inbox clear' : 'No matching issues'}
+            icon={CONCEPT_ICONS.github}
+            title={!hasQuery ? 'Inbox clear' : 'No matching issues'}
             description={
-              query.trim() === ''
-                ? 'No open issues assigned to you.'
-                : 'Try a different search term.'
+              !hasQuery ? 'No open issues assigned to you.' : 'Try a different search term.'
+            }
+            action={
+              <Button variant="ghost" size="sm" onClick={hasQuery ? () => setQuery('') : onRefresh}>
+                {hasQuery ? 'Clear search' : 'Refresh'}
+              </Button>
             }
           />
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { EmptyState, StatCard, type SegmentedTabOption } from '@goodboy/ui';
-import { Footprints, LayoutList, ListTree, MousePointerClick } from 'lucide-react';
+import { Footprints, LayoutList, ListTree } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import {
   HeaderBand,
@@ -19,6 +19,7 @@ import { SentryLevelBadge } from '../SentryLevelBadge';
 import { SentryStackTrace } from '../SentryStackTrace';
 import { sentryIssueView } from '../sentryIssueView';
 import { useSentryIssueDetail } from '../useSentryIssueDetail';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly issue: SentryIssue | null;
@@ -51,9 +52,13 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
-          icon={MousePointerClick}
+          bordered
+          tone="neutral"
+          icon={CONCEPT_ICONS.sentry}
           title="No issue selected"
           description="Pick an issue to see its stack trace and launch a session."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );
@@ -152,7 +157,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
             ))}
           </div>
         ) : (
-          <p className="text-sm italic text-muted-foreground/60">No event stats yet.</p>
+          <EmptyState icon={CONCEPT_ICONS.sentry} title="No event stats yet" size="inline" />
         )
       ) : null}
 

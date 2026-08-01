@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
+import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { AgentLane } from '../AgentLane';
-import { AgentLaneEmpty } from '../AgentLane/AgentLaneEmpty';
 import { ResolveCommentsAction } from './ResolveCommentsAction';
 import { ResolverLaneToolbar } from './ResolverLaneToolbar';
 import { ResolverRows } from './ResolverRows';
@@ -51,7 +52,10 @@ export const ResolverAgentsLane = ({
       }
       isEmpty={!hasVisibleEntries}
       empty={
-        <AgentLaneEmpty
+        <EmptyState
+          bordered
+          tone="success"
+          icon={CONCEPT_ICONS.resolve}
           title={hasNoResolvers ? 'Nothing to resolve' : 'No active resolvers'}
           description={hasNoResolvers ? NOTHING_TO_RESOLVE_DESCRIPTION : ALL_RESOLVED_DESCRIPTION}
           action={<ResolveCommentsAction variant="tile" onOpen={lane.onOpenResolveBoard} />}

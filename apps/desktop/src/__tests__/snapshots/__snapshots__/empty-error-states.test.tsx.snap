@@ -547,17 +547,13 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
     style="background: radial-gradient(ellipse at center, transparent 0%, transparent 40%, var(--color-background) 100%);"
   />
   <div
-    class="flex flex-col items-center gap-10 text-center relative max-w-2xl"
+    class="flex flex-col items-center gap-10 px-10 py-14 text-center relative max-w-2xl"
   >
-    <div
-      class="flex h-24 w-24 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 shadow-lg"
-    >
-      <span
-        aria-hidden="true"
-        class="inline-block shrink-0 text-foreground"
-        style="width: 56px; height: 56px; background-color: currentcolor;"
-      />
-    </div>
+    <span
+      aria-hidden="true"
+      class="inline-block shrink-0 text-primary"
+      style="width: 96px; height: 96px; background-color: currentcolor;"
+    />
     <div
       class="flex flex-col gap-3"
     >
@@ -670,12 +666,6 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
         >
           Rescan
         </button>
-        <button
-          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
-          type="button"
-        >
-          New skill
-        </button>
       </div>
     </div>
     <p
@@ -722,6 +712,12 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
         A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk.
       </span>
     </div>
+    <button
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-7 px-2.5 text-xs"
+      type="button"
+    >
+      New skill
+    </button>
   </div>
 </div>
 `;
@@ -734,22 +730,22 @@ exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] =
     class="flex min-h-0 flex-1"
   >
     <div
-      class="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center"
+      class="flex flex-col items-center gap-3 text-center h-full justify-center px-6 py-10"
     >
-      <div
-        class="flex h-16 w-16 items-center justify-center rounded-full bg-info/10"
+      <span
+        class="flex size-12 items-center justify-center rounded-full bg-info/10 text-info"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-folder-plus text-info"
+          class="lucide lucide-folder-plus"
           fill="none"
-          height="26"
+          height="24"
           stroke="currentColor"
           stroke-linecap="round"
           stroke-linejoin="round"
           stroke-width="2"
           viewBox="0 0 24 24"
-          width="26"
+          width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
@@ -762,20 +758,20 @@ exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] =
             d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
           />
         </svg>
-      </div>
+      </span>
       <div
         class="flex flex-col gap-1"
       >
-        <h3
-          class="text-sm font-semibold text-foreground"
+        <span
+          class="text-sm font-medium text-foreground"
         >
           No workspace yet
-        </h3>
-        <p
-          class="max-w-[220px] text-2xs leading-relaxed text-muted-foreground"
+        </span>
+        <span
+          class="max-w-xs text-xs leading-relaxed text-muted-foreground"
         >
           Point at a local git repo. Each session opens its own worktree off it.
-        </p>
+        </span>
       </div>
       <button
         class="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"

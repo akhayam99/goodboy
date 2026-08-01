@@ -1,7 +1,7 @@
 import { EmptyState, ScrollFade, SectionHeader, Tooltip, cn } from '@goodboy/ui';
 import { Check, Plus, RotateCcw, X } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
-import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { PresetCard } from '../../PresetCard';
 
 type Props = {
@@ -35,18 +35,20 @@ export const WorkflowsRail = ({
         <SectionHeader
           label={`Presets (${presets.length})`}
           action={
-            <button
-              type="button"
-              onClick={onNew}
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-medium transition-colors',
-                editing === 'new'
-                  ? 'border-primary/30 bg-primary/10 text-foreground'
-                  : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
-              )}
-            >
-              <Plus size={11} aria-hidden /> New
-            </button>
+            presets.length > 0 && editing != null ? (
+              <button
+                type="button"
+                onClick={onNew}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-medium transition-colors',
+                  editing === 'new'
+                    ? 'border-primary/30 bg-primary/10 text-foreground'
+                    : 'border-border-soft text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground',
+                )}
+              >
+                <Plus size={11} aria-hidden /> New
+              </button>
+            ) : null
           }
         />
       </div>
@@ -54,7 +56,7 @@ export const WorkflowsRail = ({
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 pb-3" fadeSize={24}>
         {presets.length === 0 ? (
           <EmptyState
-            icon={SECTION_ICONS.workflows}
+            icon={CONCEPT_ICONS.workflows}
             title="No presets yet"
             description="Create one to chain several agents in a single session."
             bordered

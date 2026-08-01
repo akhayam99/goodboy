@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { Divider, EmptyState, SectionHeader } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
-import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { StepDefUpsertArgs } from '../../../workflows';
 import { LibraryCard } from '../../LibraryCard';
 import { LibraryStepForm } from '../../LibraryStepForm';
@@ -25,21 +25,22 @@ export const StepLibraryPalette = ({
   onDeleteDef,
 }: Props) => {
   const [editing, setEditing] = useState<StepDefId | 'new' | null>(null);
+  const newStepAction = (
+    <button
+      type="button"
+      onClick={() => setEditing('new')}
+      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+    >
+      <Plus size={11} aria-hidden /> New step
+    </button>
+  );
 
   return (
     <div className="flex flex-col gap-3">
       <SectionHeader
         label="Step library"
         hint="Reusable steps. Drag one into the workflow."
-        action={
-          <button
-            type="button"
-            onClick={() => setEditing('new')}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border-soft px-2 py-1 text-2xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
-          >
-            <Plus size={11} aria-hidden /> new step
-          </button>
-        }
+        action={library.length > 0 ? newStepAction : null}
       />
 
       {editing === 'new' && (
@@ -59,10 +60,11 @@ export const StepLibraryPalette = ({
 
       {library.length === 0 && editing !== 'new' && (
         <EmptyState
-          icon={SECTION_ICONS.workflows}
+          icon={CONCEPT_ICONS.workflows}
           title="No library steps yet"
           description="Create one to reuse it across workflows."
           bordered
+          action={newStepAction}
         />
       )}
 

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { cn, Divider, StatusDot, tintClasses, type Tone } from '@goodboy/ui';
-import { FolderGit2, TrendingUp } from 'lucide-react';
+import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
-import { SECTION_ICONS } from '../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 
 type FooterButtonProps = {
   icon: ReactNode;
@@ -153,7 +153,7 @@ export const AppFooter = ({
 
         <div className="flex items-center gap-0.5">
           <FooterButton
-            icon={<SECTION_ICONS.workflows size={12} aria-hidden />}
+            icon={<CONCEPT_ICONS.workflows size={12} aria-hidden />}
             label="Workflows"
             title="open the workflow library for this workspace"
             onClick={onOpenWorkflows}
@@ -161,7 +161,7 @@ export const AppFooter = ({
             tone="primary"
           />
           <FooterButton
-            icon={<SECTION_ICONS.providers size={12} aria-hidden />}
+            icon={<CONCEPT_ICONS.providers size={12} aria-hidden />}
             label="Providers"
             title="connect and manage your provider accounts"
             onClick={onOpenProviders}
@@ -170,7 +170,7 @@ export const AppFooter = ({
             tone="info"
           />
           <FooterButton
-            icon={<SECTION_ICONS.budget size={12} aria-hidden />}
+            icon={<CONCEPT_ICONS.budget size={12} aria-hidden />}
             label="Budget"
             title="open budget studio"
             onClick={onOpenBudget}
@@ -178,7 +178,7 @@ export const AppFooter = ({
             tone="warning"
           />
           <FooterButton
-            icon={<TrendingUp size={12} aria-hidden />}
+            icon={<CONCEPT_ICONS.impact size={12} aria-hidden />}
             label="Impact"
             title="see how orchestration changed the way this workspace works"
             onClick={onOpenImpact}

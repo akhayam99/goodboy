@@ -1,4 +1,6 @@
-import { FolderPlus, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   onAddWorkspace: () => void;
@@ -6,24 +8,22 @@ type Props = {
 
 export const NoWorkspaceEmpty = ({ onAddWorkspace }: Props) => {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-info/10">
-        <FolderPlus size={26} className="text-info" aria-hidden />
-      </div>
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold text-foreground">No workspace yet</h3>
-        <p className="max-w-[220px] text-2xs leading-relaxed text-muted-foreground">
-          Point at a local git repo. Each session opens its own worktree off it.
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onAddWorkspace}
-        className="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
-      >
-        <Plus size={12} aria-hidden />
-        <span>Add workspace</span>
-      </button>
-    </div>
+    <EmptyState
+      icon={CONCEPT_ICONS.workspace}
+      tone="info"
+      title="No workspace yet"
+      description="Point at a local git repo. Each session opens its own worktree off it."
+      className="h-full justify-center px-6 py-10"
+      action={
+        <button
+          type="button"
+          onClick={onAddWorkspace}
+          className="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
+        >
+          <Plus size={12} aria-hidden />
+          <span>Add workspace</span>
+        </button>
+      }
+    />
   );
 };

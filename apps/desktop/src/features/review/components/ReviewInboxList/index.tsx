@@ -1,6 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { Chip, EmptyState, Eyebrow, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
-import { Inbox } from 'lucide-react';
+import {
+  Button,
+  Chip,
+  EmptyState,
+  Eyebrow,
+  ScrollFade,
+  SelectableRow,
+  Skeleton,
+} from '@goodboy/ui';
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
@@ -8,6 +15,7 @@ import { RefreshIconButton } from '../../../../shared/components/RefreshIconButt
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { AuthorAvatar } from '../AuthorAvatar';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
 
 type Props = {
@@ -46,13 +54,15 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
         <Eyebrow label={scope === 'others' ? 'From teammates' : 'All open'} />
         <span className="text-2xs tabular-nums text-muted-foreground/50">{rows.length}</span>
         <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
-        <RefreshIconButton
-          label="Refresh pull requests"
-          isLoading={isLoading}
-          onClick={() => void refreshReviewPrs(workspaceId)}
-          iconSize={12}
-          className="size-6 border-transparent p-0"
-        />
+        {rows.length > 0 ? (
+          <RefreshIconButton
+            label="Refresh pull requests"
+            isLoading={isLoading}
+            onClick={() => void refreshReviewPrs(workspaceId)}
+            iconSize={12}
+            className="size-6 border-transparent p-0"
+          />
+        ) : null}
       </div>
       {isInitialLoading ? (
         <div
@@ -89,12 +99,17 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
       ) : rows.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
-            icon={Inbox}
+            icon={CONCEPT_ICONS.review}
             title={scope === 'others' ? 'No open PRs from teammates' : 'No open pull requests'}
             description={
               scope === 'others'
                 ? 'Pull requests by other authors will show up here.'
                 : 'Open pull requests on this repository will show up here.'
+            }
+            action={
+              <Button variant="ghost" size="sm" onClick={() => void refreshReviewPrs(workspaceId)}>
+                Refresh
+              </Button>
             }
           />
         </div>

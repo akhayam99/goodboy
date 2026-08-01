@@ -72,29 +72,30 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
 
   return (
     <div className="flex h-full w-full flex-col gap-4 p-6">
-      <div className="flex shrink-0 items-center justify-between gap-4">
-        <span className="flex items-baseline gap-2">
-          <Eyebrow label="Stage board" />
-          <span className="text-2xs tabular-nums text-muted-foreground/60">{sessions.length}</span>
-        </span>
-        <Button size="sm" onClick={onCreateSession}>
-          <Plus size={14} aria-hidden />
-          New session
-        </Button>
-      </div>
-
-      <Divider />
+      {!boardReady || !empty ? (
+        <>
+          <div className="flex shrink-0 items-center justify-between gap-4">
+            <span className="flex items-baseline gap-2">
+              <Eyebrow label="Stage board" />
+              <span className="text-2xs tabular-nums text-muted-foreground/60">
+                {sessions.length}
+              </span>
+            </span>
+            <Button size="sm" onClick={onCreateSession}>
+              <Plus size={14} aria-hidden />
+              New session
+            </Button>
+          </div>
+          <Divider />
+        </>
+      ) : null}
 
       {!boardReady ? (
         <BoardSkeleton />
       ) : empty ? (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
-            illustration={
-              <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40">
-                <DogMascot size={48} className="text-foreground" />
-              </div>
-            }
+            illustration={<DogMascot size={72} className="text-primary" />}
             title="Start your first session"
             description="Describe an outcome. An agent picks it up in its own worktree and branch; your main checkout stays untouched."
             action={

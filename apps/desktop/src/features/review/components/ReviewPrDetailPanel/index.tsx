@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Chip, EmptyState, cn, tintClasses } from '@goodboy/ui';
-import { ArrowRight, MessagesSquare, MousePointerClick } from 'lucide-react';
+import { ArrowRight, MessagesSquare } from 'lucide-react';
 import type { ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
@@ -16,6 +16,7 @@ import {
 } from '../../../../shared/components/StudioDetail';
 import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { AuthorAvatar } from '../AuthorAvatar';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pr: ReviewablePr | null;
@@ -56,9 +57,13 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
-          icon={MousePointerClick}
+          bordered
+          tone="neutral"
+          icon={CONCEPT_ICONS.pr}
           title="No pull request selected"
           description="Pick a pull request to see its details and review it locally."
+          size="lg"
+          headingLevel={2}
         />
       </div>
     );

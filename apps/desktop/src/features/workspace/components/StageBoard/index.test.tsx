@@ -62,11 +62,15 @@ describe('StageBoard loading gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[]} onCreateSession={onCreate} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();
+    expect(screen.queryByText('Stage board')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 
   it('renders stage columns once ready with sessions', () => {
     render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
+    expect(screen.getByText('Stage board')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 });

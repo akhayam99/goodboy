@@ -1,4 +1,4 @@
-import { Divider, Markdown, ScrollFade } from '@goodboy/ui';
+import { Divider, EmptyState, Markdown, ScrollFade } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { stripControlMarkers } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -15,6 +15,7 @@ import { useAttachedWorkflowRuns } from '../../useAttachedWorkflowRuns';
 import { isWorkflowStepAgent } from '../../isWorkflowStepAgent';
 import { resolveStepRouting } from '../../resolveStepRouting';
 import { roleModelsForSession } from '../../../../store/slices/overrides/roleModelsForSession';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -100,7 +101,11 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
           <Divider />
           <InspectorSection question="Instructions">
             {instructions === '' ? (
-              <p className="text-xs italic text-muted-foreground/60">No instructions provided.</p>
+              <EmptyState
+                icon={CONCEPT_ICONS.workflows}
+                title="No instructions provided"
+                size="inline"
+              />
             ) : (
               <Markdown text={instructions} className="text-xs text-foreground/90" />
             )}
@@ -108,9 +113,11 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
           <Divider />
           <InspectorSection question="Expected output">
             {expectedOutput === '' ? (
-              <p className="text-xs italic text-muted-foreground/60">
-                No expected output provided.
-              </p>
+              <EmptyState
+                icon={CONCEPT_ICONS.workflows}
+                title="No expected output provided"
+                size="inline"
+              />
             ) : (
               <Markdown text={expectedOutput} className="text-xs text-foreground/90" />
             )}
@@ -133,7 +140,11 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
           <Divider />
           <InspectorSection question="What it produced">
             {outputSummary === '' ? (
-              <p className="text-xs italic text-muted-foreground/60">No output summary yet.</p>
+              <EmptyState
+                icon={CONCEPT_ICONS.sessionSummary}
+                title="No output summary yet"
+                size="inline"
+              />
             ) : (
               <Markdown
                 text={stripControlMarkers(outputSummary)}

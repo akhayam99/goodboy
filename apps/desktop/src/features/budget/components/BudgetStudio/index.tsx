@@ -3,7 +3,7 @@ import { ScrollFade } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
-import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { OverviewPanel } from './OverviewPanel';
@@ -139,7 +139,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
 
   return (
     <StudioShell
-      icon={SECTION_ICONS.budget}
+      icon={CONCEPT_ICONS.budget}
       title="Budget studio"
       workspaceName={workspaceName}
       closeLabel="close budget studio"

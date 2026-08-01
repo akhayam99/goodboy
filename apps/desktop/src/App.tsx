@@ -434,6 +434,7 @@ export const App = () => {
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
       clearSessionStudio();
+      setGithubStudioOpen(false);
       setNewSessionOpen(true);
     };
     window.addEventListener('goodboy:new-session', handler);

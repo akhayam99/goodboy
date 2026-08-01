@@ -14,11 +14,27 @@ type IllustrationProps =
       readonly illustration: ReactNode;
     };
 
-type Size = 'sm' | 'lg' | 'xl';
+type Size = 'inline' | 'sm' | 'lg' | 'xl';
 
 const HEADING_TAG = { 2: 'h2', 3: 'h3' } as const;
 
+const DEFAULT_PRESENTATION = {
+  bordered: false,
+  tone: 'neutral',
+  size: 'sm',
+} satisfies {
+  readonly bordered: boolean;
+  readonly tone: Tone;
+  readonly size: Size;
+};
+
 const SIZE_CLASSES = {
+  inline: {
+    root: 'flex items-start gap-2 text-left',
+    content: 'flex min-w-0 flex-col gap-1',
+    title: 'text-xs font-medium text-foreground',
+    description: 'text-xs leading-relaxed text-muted-foreground',
+  },
   sm: {
     root: 'flex flex-col items-center gap-3 px-6 py-10 text-center',
     content: 'flex flex-col gap-1',
@@ -26,13 +42,13 @@ const SIZE_CLASSES = {
     description: 'max-w-xs text-xs leading-relaxed text-muted-foreground',
   },
   lg: {
-    root: 'flex flex-col items-center gap-6 text-center',
+    root: 'flex flex-col items-center gap-6 px-8 py-10 text-center',
     content: 'flex flex-col gap-2.5',
     title: 'text-lg font-semibold tracking-tight text-foreground',
     description: 'max-w-sm text-sm leading-relaxed text-muted-foreground',
   },
   xl: {
-    root: 'flex flex-col items-center gap-10 text-center',
+    root: 'flex flex-col items-center gap-10 px-10 py-14 text-center',
     content: 'flex flex-col gap-3',
     title: 'text-2xl font-semibold tracking-tight text-foreground',
     description: 'max-w-md text-sm leading-relaxed text-muted-foreground',
@@ -64,18 +80,17 @@ export const EmptyState = ({
   title,
   description,
   action,
-  bordered = false,
-  tone,
+  bordered = DEFAULT_PRESENTATION.bordered,
+  tone = DEFAULT_PRESENTATION.tone,
   className,
-  size = 'sm',
+  size = DEFAULT_PRESENTATION.size,
   headingLevel,
 }: EmptyStateProps) => {
-  const tint = tone != null ? tintClasses(tone) : null;
-  const iconBg = tint != null ? tint.bg : 'bg-muted';
-  const iconColor = tint != null ? tint.icon : 'text-muted-foreground';
+  const tint = tintClasses(tone);
   const classes = SIZE_CLASSES[size];
-  const Title = headingLevel != null ? HEADING_TAG[headingLevel] : 'span';
-  const Description = headingLevel != null ? 'p' : 'span';
+  const Title = headingLevel == null ? 'span' : HEADING_TAG[headingLevel];
+  const Description = headingLevel == null ? 'span' : 'p';
+  const isInline = size === 'inline';
 
   return (
     <div
@@ -85,15 +100,21 @@ export const EmptyState = ({
         className,
       )}
     >
-      {Icon != null ? (
+      {Icon != null && isInline ? (
+        <Icon size={14} aria-hidden className={cn('mt-0.5 shrink-0', tint.icon)} />
+      ) : null}
+      {Icon != null && !isInline ? (
         <span
-          className={cn('flex size-12 items-center justify-center rounded-full', iconBg, iconColor)}
+          className={cn(
+            'flex size-12 items-center justify-center rounded-full',
+            tint.bg,
+            tint.icon,
+          )}
         >
           <Icon size={24} aria-hidden />
         </span>
-      ) : (
-        illustration
-      )}
+      ) : null}
+      {Icon == null ? illustration : null}
       <div className={classes.content}>
         <Title className={classes.title}>{title}</Title>
         {description != null && description !== '' ? (

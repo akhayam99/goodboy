@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Moon, Smartphone, Sun } from 'lucide-react';
 import { cn, Divider, StatusDot, Tooltip } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
-import { SECTION_ICONS } from '../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { bridgeStatus } from '../../../features/companion/bridge';
 import { useThemeStore } from '../../../shared/lib/theme';
@@ -63,7 +63,7 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
               aria-label="open getting started guide"
               className={TOPBAR_ICON_BTN}
             >
-              <SECTION_ICONS.guide size={14} aria-hidden />
+              <CONCEPT_ICONS.guide size={14} aria-hidden />
             </button>
           </Tooltip>
           <OnboardingChip />
@@ -79,7 +79,7 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
               )}
             >
-              <SECTION_ICONS.settings size={14} aria-hidden />
+              <CONCEPT_ICONS.settings size={14} aria-hidden />
             </button>
           </Tooltip>
         </div>

@@ -1,6 +1,6 @@
-import { FileDiff } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
 import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
 import { PaneShell } from './PaneShell';
@@ -22,7 +22,7 @@ export const FilesPane = ({ sessionId, workingDir, worktreePath, onClose }: File
         <EmptyState
           bordered
           tone="info"
-          icon={FileDiff}
+          icon={CONCEPT_ICONS.diff}
           title="No worktree for this session"
           description="This session has no checked-out worktree, so there is no diff to show."
         />

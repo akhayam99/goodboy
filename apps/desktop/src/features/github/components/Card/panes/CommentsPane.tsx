@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
+import { EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { groupThreads, threadPriority } from '../../../comment-threads';
 import { COMMENT_DISPLAY_LIMIT } from '../lib';
 import { CommentThreadRow } from './CommentThreadRow';
@@ -57,30 +59,36 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
 
   if (reviewThreads.length === 0) {
     return (
-      <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
-        <span>No review comments yet</span>
-        {generalFooter}
-      </div>
+      <EmptyState
+        icon={CONCEPT_ICONS.comments}
+        title="No review comments yet"
+        size="inline"
+        action={generalFooter}
+      />
     );
   }
 
   if (threads.length === 0) {
     return (
-      <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <span>All review comments resolved</span>
-          {resolvedCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowResolved(true)}
-              className="text-[10px] underline-offset-2 hover:text-foreground hover:underline"
-            >
-              show {resolvedCount}
-            </button>
-          )}
-        </div>
-        {generalFooter}
-      </div>
+      <EmptyState
+        icon={CONCEPT_ICONS.resolve}
+        title="All review comments resolved"
+        size="inline"
+        action={
+          <div className="flex flex-col items-start gap-1">
+            {resolvedCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setShowResolved(true)}
+                className="text-[10px] underline-offset-2 hover:text-foreground hover:underline"
+              >
+                show {resolvedCount}
+              </button>
+            ) : null}
+            {generalFooter}
+          </div>
+        }
+      />
     );
   }
 

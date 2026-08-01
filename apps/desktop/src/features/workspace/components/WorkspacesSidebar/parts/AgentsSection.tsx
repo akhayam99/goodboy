@@ -2,7 +2,7 @@ import { SectionHeader, cn } from '@goodboy/ui';
 import type { Session, WorkflowRunId } from '@goodboy/types';
 import { ScriptsSection } from '../../../../scripts/components/ScriptsSection';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
-import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { StandaloneAgentsLane } from '../../../../../features/session/components/StandaloneAgentsLane';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
 import { SectionToggle } from './SectionToggle';
@@ -42,7 +42,7 @@ export const AgentsSection = ({
       {!forceExpanded && (
         <SectionHeader
           className={FIRST_HEADER_CLASS}
-          icon={<SECTION_ICONS.workflows size={11} aria-hidden className="text-primary" />}
+          icon={<CONCEPT_ICONS.workflows size={11} aria-hidden className="text-primary" />}
           label="Workflow"
           action={
             <SectionToggle

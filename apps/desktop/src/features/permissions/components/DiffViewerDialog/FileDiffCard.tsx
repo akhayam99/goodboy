@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, Copy, ExternalLink, MessageSquarePlus } from 'lucide-react';
-import { Divider, Tooltip, cn } from '@goodboy/ui';
+import { Divider, EmptyState, Tooltip, cn } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type {
   AgentId,
   DiffComment,
@@ -389,10 +390,13 @@ export const FileDiffCard = ({
               ) : null}
             </div>
           ) : null}
-          {file.binary ? (
-            <p className="py-4 text-center text-xs text-muted-foreground">binary file, no diff</p>
-          ) : file.hunks.length === 0 ? (
-            <p className="py-4 text-center text-xs text-muted-foreground">no changes</p>
+          {file.binary || file.hunks.length === 0 ? (
+            <EmptyState
+              icon={CONCEPT_ICONS.diff}
+              title={file.binary ? 'Binary file, no diff' : 'No changes'}
+              size="inline"
+              className="justify-center py-4"
+            />
           ) : (
             <div ref={diffScrollRef} className="min-w-0 max-w-full overflow-x-auto">
               <table

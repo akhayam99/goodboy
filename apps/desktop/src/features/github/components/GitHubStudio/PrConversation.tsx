@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import { Button, Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
-import { CheckCheck, ExternalLink, MessageSquare } from 'lucide-react';
+import { CheckCheck, ExternalLink } from 'lucide-react';
 import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
 import {
   ResolverStateBadge,
@@ -9,6 +9,7 @@ import {
 } from '../../../session/components/ResolverStateBadge';
 import type { ResolverLink } from '../../../session/resolver-linkage';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly comments: ReadonlyArray<PrComment>;
@@ -56,7 +57,7 @@ export const PrConversation = ({
     return (
       <EmptyState
         bordered
-        icon={MessageSquare}
+        icon={CONCEPT_ICONS.comments}
         title="No comments yet"
         description="Review comments and replies on this pull request will show up here."
         action={

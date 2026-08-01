@@ -1,6 +1,15 @@
 import { Fragment, memo, useEffect, useMemo, useState } from 'react';
 import { Archive, Check, ChevronRight, Plus } from 'lucide-react';
-import { Button, Eyebrow, formatUsd, KbdPill, cn, ScrollArea, StatusDot } from '@goodboy/ui';
+import {
+  Button,
+  EmptyState,
+  Eyebrow,
+  formatUsd,
+  KbdPill,
+  cn,
+  ScrollArea,
+  StatusDot,
+} from '@goodboy/ui';
 import type {
   Session,
   SessionGroupKey,
@@ -24,6 +33,7 @@ import {
 } from '../../../../features/github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../features/integrations/components/ExternalTaskChip';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { BulkActionBar } from '../BulkActionBar';
 import { SessionViewMenu } from './SessionViewMenu';
 
@@ -225,16 +235,13 @@ export const SessionActivityBar = ({
             );
           })}
 
-          {!isArchivedView && totalVisible === 0 && (
-            <p className="px-1 py-3 text-center text-[10px] leading-snug text-muted-foreground/50">
-              No sessions yet.
-            </p>
-          )}
-          {isArchivedView && totalVisible === 0 && (
-            <p className="px-1 py-3 text-center text-[10px] leading-snug text-muted-foreground/50">
-              No archived sessions.
-            </p>
-          )}
+          {totalVisible === 0 ? (
+            <EmptyState
+              icon={CONCEPT_ICONS.sessions}
+              title={isArchivedView ? 'No archived sessions' : 'No sessions yet'}
+              className="px-1 py-3"
+            />
+          ) : null}
         </div>
       </ScrollArea>
 

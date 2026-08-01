@@ -120,12 +120,14 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
               onChange={setTab}
               size="sm"
             />
-            <IconButton
-              icon={RefreshCw}
-              label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
-              onClick={tab === 'issues' ? refetch : mergeRequests.refetch}
-              disabled={tab === 'issues' ? loading : mergeRequests.loading}
-            />
+            {(tab === 'issues' ? groups.length : mergeRequests.groups.length) > 0 ? (
+              <IconButton
+                icon={RefreshCw}
+                label={tab === 'issues' ? 'Refresh issues' : 'Refresh merge requests'}
+                onClick={tab === 'issues' ? refetch : mergeRequests.refetch}
+                disabled={tab === 'issues' ? loading : mergeRequests.loading}
+              />
+            ) : null}
           </div>
         ) : null
       }
@@ -152,6 +154,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                 onSelect={setFocused}
                 loading={loading}
                 error={error}
+                onRefresh={refetch}
               />
             }
             detail={
@@ -187,6 +190,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                       onSelect={setFocusedMr}
                       loading={mergeRequests.loading}
                       error={mergeRequests.error}
+                      onRefresh={mergeRequests.refetch}
                     />
                   </div>
                 ) : (

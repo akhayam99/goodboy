@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { GitCommit } from 'lucide-react';
-import { InlineConfirm, Input, cn } from '@goodboy/ui';
+import { EmptyState, InlineConfirm, Input, cn } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
 import { INSPECTOR_ACTION_CLASS, InspectorSection } from '../InspectorSection';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Mode = 'amend' | 'squash';
 
@@ -48,7 +49,11 @@ export const LocalHistorySection = ({ commits, headSha, onAmend, onSquash }: Pro
   return (
     <InspectorSection question="What you can still rewrite">
       {commits.length === 0 ? (
-        <p className="text-2xs italic text-muted-foreground/70">no commit from this resolver yet</p>
+        <EmptyState
+          icon={CONCEPT_ICONS.commits}
+          title="No commit from this resolver yet"
+          size="inline"
+        />
       ) : (
         <ul className="flex flex-col gap-1.5">
           {commits.map((commit, index) => (

@@ -3,7 +3,7 @@ import { Ban, Check } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { isWorkflowRunComplete } from '../../../../workflows/isWorkflowRunComplete';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowRailSectionToggle } from './WorkflowRailSectionToggle';
@@ -50,6 +50,12 @@ export const WorkflowsPane = ({ session }: Props) => {
   const active = live.filter((entry) => !completed.includes(entry));
   const focusedRun = attachedRuns.find(({ run }) => run.id === focusedWorkflowRunId) ?? null;
   const hasRuns = attachedRuns.length > 0;
+  const hasVisibleRuns =
+    active.length > 0 ||
+    (showCompleted && completed.length > 0) ||
+    (showDiscarded && discarded.length > 0);
+  const shouldShowHeaderAttach = hasRuns && (focusedRun != null || hasVisibleRuns);
+  const shouldShowEmptyCard = hasRuns && focusedRun == null && !hasVisibleRuns;
 
   const renderCard = ({ run, workflow }: { run: WorkflowRun; workflow: Workflow }) => {
     const predecessorName = run.chainAfterId
@@ -101,7 +107,9 @@ export const WorkflowsPane = ({ session }: Props) => {
               />
             </>
           ) : null}
-          {hasRuns ? <WorkflowAttachButton sessionId={sessionId} placement="header" /> : null}
+          {shouldShowHeaderAttach ? (
+            <WorkflowAttachButton sessionId={sessionId} placement="header" />
+          ) : null}
         </div>
       </div>
       <Divider />
@@ -112,11 +120,11 @@ export const WorkflowsPane = ({ session }: Props) => {
           <ScrollFade className="min-w-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 motion-safe:animate-studio-in">
               {!hasRuns ? <WorkflowStartButton sessionId={sessionId} /> : null}
-              {hasRuns && active.length === 0 && !showCompleted && !showDiscarded ? (
+              {shouldShowEmptyCard ? (
                 <EmptyState
                   bordered
                   tone="success"
-                  icon={SECTION_ICONS.workflows}
+                  icon={CONCEPT_ICONS.workflows}
                   title="Nothing running"
                   description={
                     completed.length > 0

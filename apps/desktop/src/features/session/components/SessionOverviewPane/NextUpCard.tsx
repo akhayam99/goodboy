@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Chip, cn, tintClasses } from '@goodboy/ui';
-import { SECTION_ICONS } from '../../../../shared/components/section-icons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { NextUpItem, NextUpSignal } from './selectNextUp';
 
 type Props = {
@@ -43,10 +43,10 @@ const ITEM_ICON: Record<NextUpItem['id'], LucideIcon> = {
   checks: XCircle,
   resume: Bot,
   resolve: MessageSquareReply,
-  stalled: SECTION_ICONS.workflows,
+  stalled: CONCEPT_ICONS.workflows,
   errored: AlertCircle,
   'close-out': GitPullRequest,
-  start: SECTION_ICONS.workflows,
+  start: CONCEPT_ICONS.workflows,
   follow: Bot,
 };
 

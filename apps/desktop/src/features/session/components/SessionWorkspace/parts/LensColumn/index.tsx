@@ -282,11 +282,14 @@ export const LensColumn = ({
                     row.dot != null ||
                     row.secondaryDot === true ||
                     row.isConnected === false;
+                  const glyphRowLabel =
+                    row.count != null && row.count > 0 ? `${row.label} ${row.count}` : row.label;
                   return (
                     <button
                       key={row.kind}
                       type="button"
                       onClick={() => onSelect(row.kind)}
+                      aria-label={row.glyph != null ? glyphRowLabel : undefined}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
                         'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
@@ -298,13 +301,11 @@ export const LensColumn = ({
                       )}
                     >
                       {row.glyph != null ? (
-                        <span
-                          aria-hidden
-                          className="flex w-5 flex-none items-center justify-center transition-colors"
-                        >
+                        <span className="flex w-5 flex-none items-center justify-center transition-colors">
                           <IntegrationGlyph provider={row.glyph} size={14} />
                         </span>
-                      ) : row.icon != null ? (
+                      ) : null}
+                      {row.glyph == null && row.icon != null ? (
                         <span
                           className={cn(
                             'flex w-5 flex-none items-center justify-center transition-colors',
