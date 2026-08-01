@@ -9,7 +9,6 @@ type Props = {
   readonly tone: Tone;
   readonly identifier: string;
   readonly title: string;
-  readonly state?: string;
   readonly onClick: () => void;
   readonly actions?: ReactNode;
 };
@@ -20,7 +19,6 @@ export const LinkedWorkRow = ({
   tone,
   identifier,
   title,
-  state,
   onClick,
   actions,
 }: Props) => (
@@ -35,9 +33,6 @@ export const LinkedWorkRow = ({
       </span>
       <span className="shrink-0 font-mono text-xs font-semibold text-foreground">{identifier}</span>
       <span className="min-w-0 flex-1 truncate text-sm text-foreground">{title}</span>
-      {state != null ? (
-        <span className="shrink-0 text-2xs text-muted-foreground">{state}</span>
-      ) : null}
       <ArrowRight
         size={14}
         aria-hidden
