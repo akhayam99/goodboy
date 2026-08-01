@@ -54,7 +54,8 @@ export const useReviewDiff = ({ session }: Params): Result => {
     }
     const fetchDiff =
       target.provider === 'github'
-        ? () => ghPrDiff(target.repo, target.prNumber, repo.repoRoot, repo.workspaceId)
+        ? () =>
+            ghPrDiff(target.repo, target.prNumber, repo.repoRoot, workspace.id, repo.workspaceId)
         : gitlabHost == null
           ? null
           : () => gitlabMrDiff(workspace.id, gitlabHost, target.repo, target.prNumber);

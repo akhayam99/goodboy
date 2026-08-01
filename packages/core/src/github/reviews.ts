@@ -1,4 +1,4 @@
-import type { GhRunner } from './gh';
+import type { GhRunner, GhRunOptions } from './gh';
 import { GhCliError, runJson } from './gh';
 
 export type ReviewEvent = 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES';
@@ -25,7 +25,7 @@ export const fetchPrNodeId = async (
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<string> => {
   const raw = await runJson<RawPrIdResponse>(
     runner,
@@ -64,7 +64,7 @@ export const addPullRequestReview = async (
     body: string;
     threads: ReadonlyArray<ReviewThreadDraft>;
   },
-  opts: { cwd?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<PostedPullRequestReview> => {
   const threads = input.threads.map(threadLiteral).join(',');
   const mutation = `mutation($pullRequestId:ID!,$body:String!){

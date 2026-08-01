@@ -37,6 +37,7 @@ export const editPr = (_set: SetFn, get: GetFn) => {
     const res = await tauriGhRunner.run(args, {
       cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
+      memberWorkspaceId: repo.workspaceId,
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr edit exited with ${res.exitCode}`;

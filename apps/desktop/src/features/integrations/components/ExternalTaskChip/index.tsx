@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { Chip, cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';
 import { CopyLinkButton } from '../../../../shared/components/CopyLinkButton';
@@ -10,6 +10,7 @@ type Props = {
   onClick?: () => void;
   appearance?: 'chip' | 'row';
   ariaLabel?: string;
+  repoLabel?: string;
 };
 
 type ProviderMeta = {
@@ -51,6 +52,7 @@ export const ExternalTaskChip = ({
   onClick,
   appearance = 'chip',
   ariaLabel,
+  repoLabel,
 }: Props) => {
   const meta = PROVIDER_META[task.provider];
   const tooltip = `${task.identifier}: ${task.title}`;
@@ -85,6 +87,9 @@ export const ExternalTaskChip = ({
         onClick={handleClick}
         ariaLabel={ariaLabel ?? `open ${task.identifier} in ${meta.label} studio`}
         tooltip={tooltip}
+        {...(repoLabel != null
+          ? { attribution: <Chip tone="neutral" label={repoLabel} size="xs" /> }
+          : {})}
         actions={
           task.url !== '' ? <CopyLinkButton url={task.url} label={task.identifier} /> : undefined
         }

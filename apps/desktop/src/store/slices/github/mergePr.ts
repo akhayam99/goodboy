@@ -29,6 +29,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
     const res = await tauriGhRunner.run(['pr', 'merge', String(num), MERGE_FLAG[method]], {
       cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
+      memberWorkspaceId: repo.workspaceId,
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr merge exited with ${res.exitCode}`;

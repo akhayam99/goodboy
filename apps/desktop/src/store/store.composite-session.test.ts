@@ -167,7 +167,12 @@ describe('a composite workspace session', () => {
     await pushSessionBranch((() => store) as never, SESSION_ID);
 
     expect(gitPush).toHaveBeenCalledOnce();
-    expect(gitPush).toHaveBeenCalledWith(API_WORKTREE_PATH, API_BRANCH, COMPOSITE_WORKSPACE_ID);
+    expect(gitPush).toHaveBeenCalledWith(
+      API_WORKTREE_PATH,
+      API_BRANCH,
+      COMPOSITE_WORKSPACE_ID,
+      API_WORKSPACE_ID,
+    );
   });
 
   it('pushes from the second member worktree when it is the explicit active mount', async () => {
@@ -176,7 +181,12 @@ describe('a composite workspace session', () => {
     await pushSessionBranch((() => store) as never, SESSION_ID);
 
     expect(gitPush).toHaveBeenCalledOnce();
-    expect(gitPush).toHaveBeenCalledWith(WEB_WORKTREE_PATH, WEB_BRANCH, COMPOSITE_WORKSPACE_ID);
+    expect(gitPush).toHaveBeenCalledWith(
+      WEB_WORKTREE_PATH,
+      WEB_BRANCH,
+      COMPOSITE_WORKSPACE_ID,
+      WEB_WORKSPACE_ID,
+    );
   });
 
   it('resolves the pull request repo slug against the active member repo root', async () => {
@@ -188,6 +198,7 @@ describe('a composite workspace session', () => {
       tauriGhRunner,
       WEB_REPO_ROOT,
       COMPOSITE_WORKSPACE_ID,
+      WEB_WORKSPACE_ID,
     );
   });
 

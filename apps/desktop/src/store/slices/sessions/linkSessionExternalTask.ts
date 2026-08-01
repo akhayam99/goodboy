@@ -1,25 +1,37 @@
 import { upsertSessionExternalTask } from '@goodboy/db';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { SetFn } from './types';
+import { resolveSessionRepo } from '../worktrees/resolveSessionRepo';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
   readonly set: SetFn;
+  readonly get: GetFn;
 };
 
-export const linkSessionExternalTask = ({ set }: Params) => {
+export const linkSessionExternalTask = ({ set, get }: Params) => {
   return async (
     sessionId: SessionId,
     task: Omit<SessionExternalTask, 'sessionId'>,
   ): Promise<void> => {
-    const linkedTask: SessionExternalTask = { ...task, sessionId };
+    const state = get();
+    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const workspace = state.workspaces.find((candidate) => candidate.id === session?.workspaceId);
+    const repo = workspace?.kind === 'composite' ? resolveSessionRepo({ state, sessionId }) : null;
+    const mountWorkspaceId = task.mountWorkspaceId ?? repo?.workspaceId;
+    const linkedTask: SessionExternalTask = {
+      ...task,
+      sessionId,
+      ...(mountWorkspaceId != null ? { mountWorkspaceId } : {}),
+    };
     await upsertSessionExternalTask({ db: tauriDatabase, task: linkedTask });
     set((state) => {
       const current = state.sessionExternalTasks[sessionId] ?? [];
       const matchingIndex = current.findIndex(
         (candidate) =>
           candidate.provider === linkedTask.provider &&
-          candidate.externalId === linkedTask.externalId,
+          candidate.externalId === linkedTask.externalId &&
+          candidate.mountWorkspaceId === linkedTask.mountWorkspaceId,
       );
       const next =
         matchingIndex < 0

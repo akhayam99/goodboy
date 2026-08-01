@@ -14,11 +14,11 @@ export const pushSessionBranch = async (get: GetFn, sessionId: SessionId): Promi
   if (repo == null) {
     return { ok: false, error: 'no worktree resolved for this session to push from' };
   }
-  const push = await gitPush(
-    repo.worktreePath,
-    repo.branch.length > 0 ? repo.branch : null,
-    session.workspaceId,
-  );
+  const branch = repo.branch.length > 0 ? repo.branch : null;
+  const push =
+    repo.workspaceId === session.workspaceId
+      ? await gitPush(repo.worktreePath, branch, session.workspaceId)
+      : await gitPush(repo.worktreePath, branch, session.workspaceId, repo.workspaceId);
   if (push.exitCode !== 0) {
     return { ok: false, error: push.stderr.trim() || `git push exited with ${push.exitCode}` };
   }

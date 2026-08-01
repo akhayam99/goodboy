@@ -22,6 +22,8 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { computeStaleDrafts } from './computeStaleDrafts';
 import { resolveReviewTarget, type ReviewTarget } from './resolveReviewTarget';
+import { getSessionRepo } from '../worktrees/getSessionRepo';
+import type { SessionRepo } from '../worktrees/resolveSessionRepo';
 import type { GetFn, PublishPrReviewResult, PublishPrReviewVerdict, SetFn } from './types';
 
 const VERDICT_EVENT = {
@@ -54,12 +56,18 @@ const gitlabHost = ({ get, workspace }: GitlabHostParams): string => {
 type FetchDiffParams = {
   readonly get: GetFn;
   readonly workspace: Workspace;
+  readonly repo: SessionRepo;
   readonly target: ReviewTarget;
 };
 
-const fetchCurrentDiff = async ({ get, workspace, target }: FetchDiffParams): Promise<string> => {
+const fetchCurrentDiff = async ({
+  get,
+  workspace,
+  repo,
+  target,
+}: FetchDiffParams): Promise<string> => {
   if (target.provider === 'github') {
-    return ghPrDiff(target.repo, target.prNumber, workspace.rootPath, workspace.id);
+    return ghPrDiff(target.repo, target.prNumber, repo.repoRoot, workspace.id, repo.workspaceId);
   }
   return gitlabMrDiff(workspace.id, gitlabHost({ get, workspace }), target.repo, target.prNumber);
 };
@@ -71,6 +79,7 @@ type ProviderPublishOutcome = {
 
 type PublishGithubParams = {
   readonly workspace: Workspace;
+  readonly repo: SessionRepo;
   readonly target: ReviewTarget;
   readonly verdict: PublishPrReviewVerdict;
   readonly body: string;
@@ -79,6 +88,7 @@ type PublishGithubParams = {
 
 const publishGithub = async ({
   workspace,
+  repo,
   target,
   verdict,
   body,
@@ -87,7 +97,11 @@ const publishGithub = async ({
   if (fresh.length === 0 && body.trim().length === 0 && verdict === 'comment') {
     return { publishedIds: [], failed: [] };
   }
-  const ghOpts = { cwd: workspace.rootPath, workspaceId: workspace.id };
+  const ghOpts = {
+    cwd: repo.repoRoot,
+    workspaceId: workspace.id,
+    memberWorkspaceId: repo.workspaceId,
+  };
   try {
     const pullRequestId = await fetchPrNodeId(tauriGhRunner, target.repo, target.prNumber, ghOpts);
     await addPullRequestReview(
@@ -101,8 +115,7 @@ const publishGithub = async ({
           line: draft.line,
           side: draft.side === 'old' ? ('LEFT' as const) : ('RIGHT' as const),
           startLine: draft.startLine,
-          startSide:
-            draft.startLine != null ? (draft.side === 'old' ? 'LEFT' : 'RIGHT') : null,
+          startSide: draft.startLine != null ? (draft.side === 'old' ? 'LEFT' : 'RIGHT') : null,
           body: draft.body,
         })),
       },
@@ -205,17 +218,28 @@ export const publishPrReview = (set: SetFn, get: GetFn) => {
     if (workspace == null) {
       throw new Error(`session not found: ${sessionId}`);
     }
+    const repo = getSessionRepo({ get, sessionId });
+    if (repo == null) {
+      throw new Error(`session repository not found: ${sessionId}`);
+    }
     const drafts = (get().reviewDrafts[sessionId] ?? []).filter(
       (draft) => draft.status === 'draft',
     );
 
-    const diff = await fetchCurrentDiff({ get, workspace, target });
+    const diff = await fetchCurrentDiff({ get, workspace, repo, target });
     const files = parseUnifiedDiff(diff);
     const { fresh, stale } = computeStaleDrafts({ drafts, files });
 
     const outcome =
       target.provider === 'github'
-        ? await publishGithub({ workspace, target, verdict: opts.verdict, body: opts.body, fresh })
+        ? await publishGithub({
+            workspace,
+            repo,
+            target,
+            verdict: opts.verdict,
+            body: opts.body,
+            fresh,
+          })
         : await publishGitlab({
             get,
             sessionId,

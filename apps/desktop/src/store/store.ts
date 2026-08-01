@@ -197,6 +197,7 @@ export type AppActions = {
     kickoffPrompt?: string;
     externalTask?: {
       provider: SessionExternalTaskProvider;
+      mountWorkspaceId?: WorkspaceId;
       externalId: string;
       identifier: string;
       url: string;
@@ -213,6 +214,7 @@ export type AppActions = {
     sessionId: SessionId,
     provider: SessionExternalTaskProvider,
     externalId: string,
+    mountWorkspaceId?: WorkspaceId,
   ): Promise<void>;
   changeSessionBranch(
     sessionId: SessionId,

@@ -74,9 +74,16 @@ export const ghPrDiff = async (
   pr: number,
   cwd?: string,
   workspaceId?: string,
+  memberWorkspaceId?: string,
 ): Promise<string> => {
   try {
-    return await invoke<string>('gh_pr_diff', { repo, pr, cwd, workspaceId });
+    return await invoke<string>('gh_pr_diff', {
+      repo,
+      pr,
+      cwd,
+      workspaceId,
+      ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
+    });
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`PR diff fetch for ${repo}#${pr} failed: ${msg}`, { cause: err });
@@ -87,12 +94,14 @@ export const gitPush = async (
   cwd: string,
   branch: string | null,
   workspaceId?: string,
+  memberWorkspaceId?: string,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   try {
     const raw = await invoke<RawGhRunResult>('git_push', {
       cwd,
       branch: branch ?? undefined,
       workspaceId,
+      ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
     });
     return { stdout: raw.stdout, stderr: raw.stderr, exitCode: raw.exitCode };
   } catch (err) {
@@ -228,6 +237,7 @@ export const tauriGhRunner: GhRunner = {
         args: [...args],
         cwd: opts.cwd,
         workspaceId: opts.workspaceId,
+        ...(opts.memberWorkspaceId != null ? { memberWorkspaceId: opts.memberWorkspaceId } : {}),
       });
       return {
         stdout: raw.stdout,

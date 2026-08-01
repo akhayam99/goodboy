@@ -66,6 +66,7 @@ type Input = {
   kickoffPrompt?: string;
   externalTask?: {
     provider: SessionExternalTaskProvider;
+    mountWorkspaceId?: WorkspaceId;
     externalId: string;
     identifier: string;
     url: string;
@@ -214,6 +215,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
     if (externalTask) {
       externalTaskRow = {
         sessionId: session.id,
+        ...(externalTask.mountWorkspaceId != null
+          ? { mountWorkspaceId: externalTask.mountWorkspaceId }
+          : {}),
         provider: externalTask.provider,
         externalId: externalTask.externalId,
         identifier: externalTask.identifier,

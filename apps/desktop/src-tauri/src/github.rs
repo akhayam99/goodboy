@@ -125,20 +125,40 @@ fn token_key(workspace_id: Option<&str>) -> String {
     }
 }
 
-fn read_token(workspace_id: Option<&str>) -> Option<String> {
-    if let Some(id) = workspace_id.filter(|s| !s.is_empty()) {
-        if let Ok(Some(tok)) = secrets::read(&token_key(Some(id))) {
-            return Some(tok);
+fn read_token_from<F>(
+    workspace_id: Option<&str>,
+    member_workspace_id: Option<&str>,
+    mut reader: F,
+) -> Option<String>
+where
+    F: FnMut(&str) -> Option<String>,
+{
+    let mut keys = Vec::new();
+    for id in [workspace_id, member_workspace_id]
+        .into_iter()
+        .flatten()
+        .filter(|id| !id.is_empty())
+    {
+        let key = token_key(Some(id));
+        if !keys.contains(&key) {
+            keys.push(key);
         }
     }
-    secrets::read(TOKEN_KEY).ok().flatten()
+    keys.push(TOKEN_KEY.to_string());
+    keys.into_iter().find_map(|key| reader(&key))
+}
+
+fn read_token(workspace_id: Option<&str>, member_workspace_id: Option<&str>) -> Option<String> {
+    read_token_from(workspace_id, member_workspace_id, |key| {
+        secrets::read(key).ok().flatten()
+    })
 }
 
 pub(crate) fn token_for_workspace(workspace_id: Option<&str>) -> Option<String> {
-    read_token(workspace_id).filter(|t| !t.is_empty())
+    read_token(workspace_id, None).filter(|t| !t.is_empty())
 }
 
-fn status_blocking(workspace_id: Option<String>) -> GhStatus {
+fn status_blocking(workspace_id: Option<String>, member_workspace_id: Option<String>) -> GhStatus {
     let ws = workspace_id.as_deref();
     if !gh_available() {
         return GhStatus {
@@ -154,7 +174,7 @@ fn status_blocking(workspace_id: Option<String>) -> GhStatus {
         .ok()
         .and_then(|r| parse_version(&r.stdout));
 
-    let pat = read_token(ws);
+    let pat = read_token(ws, member_workspace_id.as_deref());
     let token_ref = pat.as_deref();
     let scoped = ws
         .filter(|s| !s.is_empty())
@@ -184,8 +204,11 @@ fn status_blocking(workspace_id: Option<String>) -> GhStatus {
 }
 
 #[tauri::command]
-pub async fn gh_status(workspace_id: Option<String>) -> GhStatus {
-    tauri::async_runtime::spawn_blocking(move || status_blocking(workspace_id))
+pub async fn gh_status(
+    workspace_id: Option<String>,
+    member_workspace_id: Option<String>,
+) -> GhStatus {
+    tauri::async_runtime::spawn_blocking(move || status_blocking(workspace_id, member_workspace_id))
         .await
         .unwrap_or_else(|_| GhStatus {
             available: false,
@@ -215,7 +238,7 @@ pub async fn gh_set_token(
             }));
         }
         secrets::set(&token_key(workspace_id.as_deref()), &token)?;
-        Ok(status_blocking(workspace_id))
+        Ok(status_blocking(workspace_id, None))
     })
     .await
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
@@ -232,9 +255,10 @@ pub async fn gh_run(
     args: Vec<String>,
     cwd: Option<String>,
     workspace_id: Option<String>,
+    member_workspace_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), member_workspace_id.as_deref());
         let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         run_gh(&arg_refs, cwd.as_deref(), token.as_deref())
     })
@@ -247,9 +271,10 @@ pub async fn git_push(
     cwd: String,
     branch: Option<String>,
     workspace_id: Option<String>,
+    member_workspace_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), member_workspace_id.as_deref());
         let mut args: Vec<&str> = vec!["push"];
         if let Some(b) = branch.as_deref().filter(|b| !b.is_empty()) {
             args.push("origin");
@@ -267,9 +292,10 @@ pub async fn gh_pr_diff(
     pr: u32,
     cwd: Option<String>,
     workspace_id: Option<String>,
+    member_workspace_id: Option<String>,
 ) -> Result<String, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let token = read_token(workspace_id.as_deref());
+        let token = read_token(workspace_id.as_deref(), member_workspace_id.as_deref());
         let pr_str = pr.to_string();
         let res = run_gh(
             &["pr", "diff", &pr_str, "--repo", &repo],
@@ -283,4 +309,52 @@ pub async fn gh_pr_diff(
     })
     .await
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{read_token_from, token_key, TOKEN_KEY};
+
+    #[test]
+    fn token_fallback_prefers_workspace_then_member_then_global() {
+        let workspace_key = token_key(Some("composite"));
+        let member_key = token_key(Some("member"));
+        let mut reads = Vec::new();
+        let token = read_token_from(Some("composite"), Some("member"), |key| {
+            reads.push(key.to_string());
+            (key == member_key).then(|| "member-token".to_string())
+        });
+
+        assert_eq!(token.as_deref(), Some("member-token"));
+        assert_eq!(reads, vec![workspace_key, member_key]);
+
+        let mut global_reads = Vec::new();
+        let global = read_token_from(Some("composite"), Some("member"), |key| {
+            global_reads.push(key.to_string());
+            (key == TOKEN_KEY).then(|| "global-token".to_string())
+        });
+
+        assert_eq!(global.as_deref(), Some("global-token"));
+        assert_eq!(
+            global_reads,
+            vec![
+                token_key(Some("composite")),
+                token_key(Some("member")),
+                TOKEN_KEY.to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn explicit_workspace_token_wins_before_member() {
+        let workspace_key = token_key(Some("composite"));
+        let mut reads = Vec::new();
+        let token = read_token_from(Some("composite"), Some("member"), |key| {
+            reads.push(key.to_string());
+            (key == workspace_key).then(|| "workspace-token".to_string())
+        });
+
+        assert_eq!(token.as_deref(), Some("workspace-token"));
+        assert_eq!(reads, vec![workspace_key]);
+    }
 }

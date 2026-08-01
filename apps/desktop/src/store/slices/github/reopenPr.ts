@@ -21,6 +21,7 @@ export const reopenPr = (_set: SetFn, get: GetFn) => {
     const res = await tauriGhRunner.run(['pr', 'reopen', String(num)], {
       cwd: repo.repoRoot,
       workspaceId: session.workspaceId,
+      memberWorkspaceId: repo.workspaceId,
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr reopen exited with ${res.exitCode}`;

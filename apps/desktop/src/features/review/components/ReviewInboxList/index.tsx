@@ -1,10 +1,11 @@
 import { useEffect, useMemo } from 'react';
-import { EmptyState, Eyebrow, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
+import { Chip, EmptyState, Eyebrow, ScrollFade, SelectableRow, Skeleton } from '@goodboy/ui';
 import { Inbox } from 'lucide-react';
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
+import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { AuthorAvatar } from '../AuthorAvatar';
 import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
@@ -20,6 +21,9 @@ type Props = {
 export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onSelect }: Props) => {
   const reviewPrs = useAppStore((s) => s.reviewPrs[workspaceId]);
   const refreshReviewPrs = useAppStore((s) => s.refreshReviewPrs);
+  const workspace = useAppStore(
+    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
+  );
   const items = reviewPrs?.items;
   const isLoading = reviewPrs?.loading === true;
   const error = reviewPrs?.error ?? null;
@@ -99,6 +103,10 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
           <ul className="flex flex-col gap-0.5 px-3 pb-3 pt-1">
             {rows.map((pr) => {
               const isActive = pr.id === focusedPrId;
+              const mountName = workspaceMountName({
+                workspace,
+                mountWorkspaceId: pr.mountWorkspaceId,
+              });
               return (
                 <li key={pr.id}>
                   <SelectableRow
@@ -118,6 +126,7 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
                         {identifierPrefix}
                         {pr.number}
                       </span>
+                      {mountName != null ? <Chip tone="neutral" label={mountName} /> : null}
                       <span className="min-w-0 flex-1 truncate text-xs">{pr.title}</span>
                     </span>
                     <span className="flex items-center gap-1.5">

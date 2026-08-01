@@ -35,6 +35,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     }
     const repoRoot = repo?.repoRoot ?? workspace.rootPath;
     const repoBranch = repo?.branch ?? branch;
+    const memberWorkspaceId = repo?.workspaceId;
     set((state) => ({
       sessionGithub: {
         ...state.sessionGithub,
@@ -55,7 +56,12 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const slug = await detectRepoSlug(tauriGhRunner, repoRoot, session.workspaceId);
+        const slug = await detectRepoSlug(
+          tauriGhRunner,
+          repoRoot,
+          session.workspaceId,
+          memberWorkspaceId,
+        );
         if (!slug) {
           set((state) => ({
             sessionGithubPrs: { ...state.sessionGithubPrs, [sessionId]: [] },
@@ -83,6 +89,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
         const prs = await listPrsForBranch(tauriGhRunner, slug, repoBranch, {
           cwd: repoRoot,
           workspaceId: session.workspaceId,
+          ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
         });
         const canonicalPr = prs[0] ?? null;
         const selectedNumber = get().sessionSelectedPrNumber[sessionId] ?? null;
@@ -95,6 +102,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           ? await fetchLinkedIssues(tauriGhRunner, slug, displayedPr, {
               cwd: repoRoot,
               workspaceId: session.workspaceId,
+              ...(memberWorkspaceId != null ? { memberWorkspaceId } : {}),
             })
           : [];
         set((state) => {

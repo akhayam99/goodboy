@@ -7,6 +7,7 @@ import type {
   SessionExternalTask,
   SessionId,
   WorkspaceId,
+  Workspace,
 } from '@goodboy/types';
 
 type Store = {
@@ -20,6 +21,7 @@ type Store = {
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
+  workspaces: ReadonlyArray<Workspace>;
 };
 
 const h = vi.hoisted(() => ({
@@ -34,6 +36,7 @@ const h = vi.hoisted(() => ({
     refreshSessionPr: vi.fn(),
     selectSessionPr: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
+    workspaces: [] as ReadonlyArray<Workspace>,
   } satisfies Store,
   remoteKind: 'github' as 'github' | 'gitlab' | 'other' | null,
 }));
@@ -92,6 +95,16 @@ beforeEach(() => {
   h.store.sessionExternalTasks = {};
   h.store.sessionPhaseRuns = {};
   h.store.workspaceIntegrations = {};
+  h.store.workspaces = [
+    {
+      id: session.workspaceId,
+      name: 'Goodboy',
+      rootPath: '/tmp/goodboy',
+      kind: 'repo',
+      createdAt: DATE,
+      updatedAt: DATE,
+    },
+  ];
   h.remoteKind = 'github';
 });
 
@@ -265,6 +278,47 @@ describe('PrPane', () => {
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /open #7 in GitHub studio/i })).toBeDefined();
+  });
+
+  it('shows repository attribution on composite linked rows', () => {
+    const memberId = 'workspace-web' as WorkspaceId;
+    h.store.workspaces = [
+      {
+        id: session.workspaceId,
+        name: 'Product',
+        rootPath: '/tmp/product',
+        kind: 'composite',
+        members: [{ workspaceId: memberId, rootPath: '/tmp/web', mountName: 'web' }],
+        createdAt: DATE,
+        updatedAt: DATE,
+      },
+    ];
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionExternalTasks = {
+      [SESSION_ID]: [
+        {
+          sessionId: SESSION_ID,
+          mountWorkspaceId: memberId,
+          provider: 'github',
+          externalId: '42',
+          identifier: '#42',
+          url: PULL_REQUEST.url,
+          title: PULL_REQUEST.title,
+          createdAt: DATE,
+        },
+      ],
+    };
+
+    render(<PrPane session={session} />);
+
+    expect(screen.getByText('web')).toBeDefined();
   });
 
   it('keeps linked issues and external tasks visible without a pull request', () => {

@@ -24,7 +24,11 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
 
     const res = await tauriGhRunner.run(
       ['pr', 'edit', String(prNumber), '--add-reviewer', logins.join(',')],
-      { cwd: repo.repoRoot, workspaceId: session.workspaceId },
+      {
+        cwd: repo.repoRoot,
+        workspaceId: session.workspaceId,
+        memberWorkspaceId: repo.workspaceId,
+      },
     );
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr edit --add-reviewer exited with ${res.exitCode}`;

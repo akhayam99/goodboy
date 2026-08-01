@@ -1,5 +1,10 @@
 import { detectRepoSlug, listOpenPrsForRepo } from '@goodboy/core';
-import type { GitlabWorkspaceIntegration, ReviewablePr, WorkspaceId } from '@goodboy/types';
+import type {
+  GitlabWorkspaceIntegration,
+  ReviewablePr,
+  Workspace,
+  WorkspaceId,
+} from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { gitlabFetchProjectMrs } from '../../../features/integrations/gitlab/client';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
@@ -8,6 +13,41 @@ import { projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
 import { mapGithubPr } from './mapGithubPr';
 import { mapGitlabMr } from './mapGitlabMr';
 import type { GetFn, SetFn } from './types';
+
+type ReviewTarget = Readonly<{
+  rootPath: string;
+  mountWorkspaceId?: WorkspaceId;
+}>;
+
+type ReviewTargetsParams = {
+  readonly workspace: Workspace;
+};
+
+const reviewTargets = ({ workspace }: ReviewTargetsParams): ReadonlyArray<ReviewTarget> => {
+  if (workspace.kind === 'composite') {
+    return (workspace.members ?? []).map((member) => ({
+      rootPath: member.rootPath,
+      mountWorkspaceId: member.workspaceId,
+    }));
+  }
+  return [{ rootPath: workspace.rootPath }];
+};
+
+type AttributeParams = {
+  readonly pr: ReviewablePr;
+  readonly target: ReviewTarget;
+};
+
+const attributePr = ({ pr, target }: AttributeParams): ReviewablePr => {
+  if (target.mountWorkspaceId == null) {
+    return pr;
+  }
+  return {
+    ...pr,
+    id: `${pr.id}:${target.mountWorkspaceId}`,
+    mountWorkspaceId: target.mountWorkspaceId,
+  };
+};
 
 export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
   return async (workspaceId: WorkspaceId) => {
@@ -34,40 +74,64 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
     }));
     const items: ReviewablePr[] = [];
     const errors: string[] = [];
-    try {
-      const slug = await detectRepoSlug(tauriGhRunner, workspace.rootPath, workspaceId);
-      if (slug != null) {
-        const prs = await listOpenPrsForRepo(tauriGhRunner, slug, {
-          cwd: workspace.rootPath,
-          workspaceId,
-        });
-        const currentUser = get().githubStatus?.user ?? null;
-        items.push(...prs.map((pr) => mapGithubPr({ pr, currentUser, repo: slug })));
-      }
-    } catch (err) {
-      errors.push(formatError(err));
-    }
-    const integration = (get().workspaceIntegrations[workspaceId] ?? []).find(
-      (i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab',
-    );
-    if (integration != null) {
+    const targets = reviewTargets({ workspace });
+    const currentUser = get().githubStatus?.user ?? null;
+    for (const target of targets) {
       try {
-        const remoteUrl = await worktreeRemoteUrl(workspace.rootPath);
-        const projectPath = projectPathFromRemoteUrl(remoteUrl);
-        if (projectPath != null) {
-          const mrs = await gitlabFetchProjectMrs(
+        const slug = await detectRepoSlug(
+          tauriGhRunner,
+          target.rootPath,
+          workspaceId,
+          target.mountWorkspaceId,
+        );
+        if (slug != null) {
+          const prs = await listOpenPrsForRepo(tauriGhRunner, slug, {
+            cwd: target.rootPath,
             workspaceId,
-            integration.config.host,
-            projectPath,
-          );
+            ...(target.mountWorkspaceId != null
+              ? { memberWorkspaceId: target.mountWorkspaceId }
+              : {}),
+          });
           items.push(
-            ...mrs.map((mr) =>
-              mapGitlabMr({ mr, currentUserName: integration.config.userName, projectPath }),
+            ...prs.map((pr) =>
+              attributePr({ pr: mapGithubPr({ pr, currentUser, repo: slug }), target }),
             ),
           );
         }
       } catch (err) {
         errors.push(formatError(err));
+      }
+    }
+    const integration = (get().workspaceIntegrations[workspaceId] ?? []).find(
+      (i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab',
+    );
+    if (integration != null) {
+      for (const target of targets) {
+        try {
+          const remoteUrl = await worktreeRemoteUrl(target.rootPath);
+          const projectPath = projectPathFromRemoteUrl(remoteUrl);
+          if (projectPath != null) {
+            const mrs = await gitlabFetchProjectMrs(
+              workspaceId,
+              integration.config.host,
+              projectPath,
+            );
+            items.push(
+              ...mrs.map((mr) =>
+                attributePr({
+                  pr: mapGitlabMr({
+                    mr,
+                    currentUserName: integration.config.userName,
+                    projectPath,
+                  }),
+                  target,
+                }),
+              ),
+            );
+          }
+        } catch (err) {
+          errors.push(formatError(err));
+        }
       }
     }
     items.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));

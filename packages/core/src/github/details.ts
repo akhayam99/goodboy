@@ -7,7 +7,7 @@ import type {
   PrReviewRequest,
   PrReviewState,
 } from '@goodboy/types';
-import type { GhRunner } from './gh';
+import type { GhRunner, GhRunOptions } from './gh';
 import { GhCliError, runJson } from './gh';
 
 type RawIssueComment = {
@@ -166,7 +166,7 @@ async function fetchIssueComments(
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<PrComment>> {
   try {
     const raw = await runJson<ReadonlyArray<RawIssueComment>>(
@@ -222,7 +222,7 @@ async function fetchReviewThreads(
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<PrComment>> {
   const [owner, name] = repo.split('/');
   if (!owner || !name) {
@@ -287,7 +287,7 @@ async function fetchPrViewDetail(
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<RawPrViewForDetail> {
   try {
     return await runJson<RawPrViewForDetail>(
@@ -315,7 +315,7 @@ export const fetchPrDetail = async (
   runner: GhRunner,
   repo: string,
   prNumber: number,
-  opts: { cwd?: string; workspaceId?: string } = {},
+  opts: GhRunOptions = {},
 ): Promise<PrDetail> => {
   const [issueComments, reviewComments, prView] = await Promise.all([
     fetchIssueComments(runner, repo, prNumber, opts),

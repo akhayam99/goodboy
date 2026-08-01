@@ -1034,6 +1034,53 @@ describe('store contract', () => {
       ]);
     });
 
+    it('attributes a linked task to the active composite mount', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      const memberWorkspaceId = WS_ID_2;
+      store.setState({
+        sessions: [buildSession()],
+        workspaces: [
+          buildWorkspace({
+            kind: 'composite',
+            members: [
+              { workspaceId: memberWorkspaceId, rootPath: '/tmp/member', mountName: 'member' },
+              {
+                workspaceId: 'workspace-3' as WorkspaceId,
+                rootPath: '/tmp/other',
+                mountName: 'other',
+              },
+            ],
+          }),
+        ],
+        sessionMounts: {
+          [SESSION_ID]: [
+            {
+              workspaceId: memberWorkspaceId,
+              mountName: 'member',
+              worktreePath: '/tmp/member-worktree',
+              repoRoot: '/tmp/member',
+              branch: 'ak/member',
+            },
+          ],
+        },
+        sessionActiveMount: { [SESSION_ID]: memberWorkspaceId },
+      });
+
+      await store.getState().linkSessionExternalTask(SESSION_ID, LINEAR_TASK);
+
+      const linkedTask = {
+        ...LINEAR_TASK,
+        sessionId: SESSION_ID,
+        mountWorkspaceId: memberWorkspaceId,
+      };
+      expect(vi.mocked(db.upsertSessionExternalTask)).toHaveBeenCalledWith({
+        db: expect.anything(),
+        task: linkedTask,
+      });
+      expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([linkedTask]);
+    });
+
     it('persists a composite-key unlink and keeps the other tasks', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');

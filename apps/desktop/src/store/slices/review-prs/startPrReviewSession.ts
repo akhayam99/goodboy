@@ -14,10 +14,20 @@ type FetchDiffParams = {
   workspaceId: WorkspaceId;
   pr: ReviewablePr;
   rootPath: string;
+  memberWorkspaceId?: WorkspaceId;
 };
 
-const fetchDiff = async ({ get, workspaceId, pr, rootPath }: FetchDiffParams): Promise<string> => {
+const fetchDiff = async ({
+  get,
+  workspaceId,
+  pr,
+  rootPath,
+  memberWorkspaceId,
+}: FetchDiffParams): Promise<string> => {
   if (pr.provider === 'github') {
+    if (memberWorkspaceId != null) {
+      return ghPrDiff(pr.repo, pr.number, rootPath, workspaceId, memberWorkspaceId);
+    }
     return ghPrDiff(pr.repo, pr.number, rootPath, workspaceId);
   }
   const integration = (get().workspaceIntegrations[workspaceId] ?? []).find(
@@ -38,9 +48,20 @@ export const startPrReviewSession = (get: GetFn) => {
     if (workspace == null) {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
+    const member =
+      workspace.kind === 'composite'
+        ? ((workspace.members ?? []).find(
+            (candidate) => candidate.workspaceId === pr.mountWorkspaceId,
+          ) ?? null)
+        : null;
+    if (workspace.kind === 'composite' && member == null) {
+      throw new Error(`review repository not found for pull request: ${pr.id}`);
+    }
+    const rootPath = member?.rootPath ?? workspace.rootPath;
+    const memberWorkspaceId = member?.workspaceId;
     let diff: string | null = null;
     try {
-      diff = await fetchDiff({ get, workspaceId, pr, rootPath: workspace.rootPath });
+      diff = await fetchDiff({ get, workspaceId, pr, rootPath, memberWorkspaceId });
     } catch {
       diff = null;
     }
@@ -59,12 +80,16 @@ export const startPrReviewSession = (get: GetFn) => {
       kickoffPrompt,
       externalTask: {
         provider: pr.provider,
+        ...(pr.mountWorkspaceId != null ? { mountWorkspaceId: pr.mountWorkspaceId } : {}),
         externalId: String(pr.number),
         identifier: isGitlab ? `!${pr.number}` : `#${pr.number}`,
         url: pr.url,
         title: pr.title,
       },
     });
+    if (pr.mountWorkspaceId != null) {
+      get().setSessionActiveMount({ sessionId: session.id, workspaceId: pr.mountWorkspaceId });
+    }
     return session.id;
   };
 };

@@ -267,6 +267,7 @@ export const detectRepoSlug = async (
   runner: GhRunner,
   cwd: string,
   workspaceId?: string,
+  memberWorkspaceId?: string,
 ): Promise<string | null> => {
   try {
     const res = await runner.run(
@@ -274,6 +275,7 @@ export const detectRepoSlug = async (
       {
         cwd,
         workspaceId,
+        memberWorkspaceId,
       },
     );
     if (res.exitCode !== 0) {

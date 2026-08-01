@@ -32,7 +32,11 @@ export const markThreadResolvedNoPush = async (
     reply === null ? closure : { ...closure, reply },
     pr?.url ?? null,
   );
-  const ghOpts = { cwd: repo?.repoRoot, workspaceId: session?.workspaceId };
+  const ghOpts = {
+    cwd: repo?.repoRoot,
+    workspaceId: session?.workspaceId,
+    memberWorkspaceId: repo?.workspaceId,
+  };
   if (replyBody) {
     await addReviewThreadReply(tauriGhRunner, threadId, replyBody, ghOpts);
   }

@@ -37,6 +37,7 @@ type CreateSessionInput = {
   kickoffPrompt?: string;
   externalTask?: {
     provider: string;
+    mountWorkspaceId?: WorkspaceId;
     externalId: string;
     identifier: string;
     url: string;
@@ -102,6 +103,7 @@ const buildHarness = (initial: Record<string, unknown> = {}) => {
     workspaces: [buildWorkspace()],
     workspaceIntegrations: {},
     createSession: createSessionSpy,
+    setSessionActiveMount: vi.fn(),
     ...initial,
   } as unknown as AppStore;
   return { action: startPrReviewSession(() => state), createSessionSpy };
@@ -167,6 +169,36 @@ describe('startPrReviewSession', () => {
     const input = createSessionSpy.mock.calls[0]![0];
     expect(input.kickoffPrompt).toContain('The diff could not be fetched');
     expect(input.kickoffPrompt).not.toContain('```diff');
+  });
+
+  it('uses and activates the attributed member for a composite review', async () => {
+    const memberWorkspaceId = 'workspace-api' as WorkspaceId;
+    const setSessionActiveMountSpy = vi.fn();
+    const { action, createSessionSpy } = buildHarness({
+      workspaces: [
+        {
+          ...buildWorkspace(),
+          kind: 'composite',
+          rootPath: '/tmp/product',
+          members: [
+            { workspaceId: 'workspace-web', rootPath: '/tmp/web', mountName: 'web' },
+            { workspaceId: memberWorkspaceId, rootPath: '/tmp/api', mountName: 'api' },
+          ],
+        },
+      ],
+      setSessionActiveMount: setSessionActiveMountSpy,
+    });
+
+    await action(WS_ID, buildPr({ mountWorkspaceId: memberWorkspaceId }));
+
+    expect(ghPrDiffSpy).toHaveBeenCalledWith('org/repo', 7, '/tmp/api', WS_ID, memberWorkspaceId);
+    expect(createSessionSpy.mock.calls[0]![0].externalTask).toMatchObject({
+      mountWorkspaceId: memberWorkspaceId,
+    });
+    expect(setSessionActiveMountSpy).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      workspaceId: memberWorkspaceId,
+    });
   });
 
   it('refuses to start a review session on an own PR', async () => {

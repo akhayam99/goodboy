@@ -29,6 +29,7 @@ type ProviderMeta = Readonly<{
 
 type UnlinkParams = {
   readonly externalId: string;
+  readonly mountWorkspaceId?: WorkspaceId;
 };
 
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
@@ -63,11 +64,16 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   });
   const hasTasks = tasks.length > 0;
 
-  const handleUnlink = async ({ externalId }: UnlinkParams) => {
+  const handleUnlink = async ({ externalId, mountWorkspaceId }: UnlinkParams) => {
+    const taskKey = `${externalId}:${mountWorkspaceId ?? ''}`;
     setUnlinkError(null);
-    setUnlinkingExternalId(externalId);
+    setUnlinkingExternalId(taskKey);
     try {
-      await unlinkSessionExternalTask(sessionId, provider, externalId);
+      const unlink =
+        mountWorkspaceId == null
+          ? () => unlinkSessionExternalTask(sessionId, provider, externalId)
+          : () => unlinkSessionExternalTask(sessionId, provider, externalId, mountWorkspaceId);
+      await unlink();
       setArmedExternalId(null);
     } catch (error) {
       setUnlinkError(formatError(error));
@@ -128,48 +134,58 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         ) : null}
         {hasTasks ? (
           <div className="flex flex-col gap-5">
-            {tasks.map((task, index) => (
-              <div key={task.externalId} className="flex flex-col gap-5">
-                {index > 0 ? <Divider /> : null}
-                <div className="flex items-center gap-2">
-                  <ExternalTaskChip
-                    task={task}
-                    appearance="row"
-                    ariaLabel={`open ${task.identifier}`}
-                    onClick={() => void openUrl(task.url)}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={unlinkingExternalId === task.externalId}
-                    aria-label={`unlink ${task.identifier}`}
-                    onClick={() => setArmedExternalId(task.externalId)}
-                  >
-                    <Unlink size={13} aria-hidden />
-                    Unlink
-                  </Button>
+            {tasks.map((task, index) => {
+              const taskKey = `${task.externalId}:${task.mountWorkspaceId ?? ''}`;
+              return (
+                <div key={taskKey} className="flex flex-col gap-5">
+                  {index > 0 ? <Divider /> : null}
+                  <div className="flex items-center gap-2">
+                    <ExternalTaskChip
+                      task={task}
+                      appearance="row"
+                      ariaLabel={`open ${task.identifier}`}
+                      onClick={() => void openUrl(task.url)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={unlinkingExternalId === taskKey}
+                      aria-label={`unlink ${task.identifier}`}
+                      onClick={() => setArmedExternalId(taskKey)}
+                    >
+                      <Unlink size={13} aria-hidden />
+                      Unlink
+                    </Button>
+                  </div>
+                  {armedExternalId === taskKey ? (
+                    <InlineConfirm
+                      role="danger"
+                      icon={<Unlink size={12} aria-hidden />}
+                      title={`Unlink ${task.identifier}?`}
+                      description={`Removes the ${meta.label} issue from this session without changing the issue.`}
+                      confirmLabel={`Unlink ${task.identifier}`}
+                      autoDisarmMs={4000}
+                      isBusy={unlinkingExternalId === taskKey}
+                      onConfirm={() =>
+                        handleUnlink({
+                          externalId: task.externalId,
+                          ...(task.mountWorkspaceId != null
+                            ? { mountWorkspaceId: task.mountWorkspaceId }
+                            : {}),
+                        })
+                      }
+                      onCancel={() => setArmedExternalId(null)}
+                    />
+                  ) : null}
+                  {connection.isConnected && provider === 'linear' ? (
+                    <LinearTaskDetail workspaceId={workspaceId} issueId={task.externalId} />
+                  ) : null}
+                  {connection.isConnected && provider === 'sentry' ? (
+                    <SentryTaskDetail workspaceId={workspaceId} task={task} />
+                  ) : null}
                 </div>
-                {armedExternalId === task.externalId ? (
-                  <InlineConfirm
-                    role="danger"
-                    icon={<Unlink size={12} aria-hidden />}
-                    title={`Unlink ${task.identifier}?`}
-                    description={`Removes the ${meta.label} issue from this session without changing the issue.`}
-                    confirmLabel={`Unlink ${task.identifier}`}
-                    autoDisarmMs={4000}
-                    isBusy={unlinkingExternalId === task.externalId}
-                    onConfirm={() => handleUnlink({ externalId: task.externalId })}
-                    onCancel={() => setArmedExternalId(null)}
-                  />
-                ) : null}
-                {connection.isConnected && provider === 'linear' ? (
-                  <LinearTaskDetail workspaceId={workspaceId} issueId={task.externalId} />
-                ) : null}
-                {connection.isConnected && provider === 'sentry' ? (
-                  <SentryTaskDetail workspaceId={workspaceId} task={task} />
-                ) : null}
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : null}
         {unlinkError != null ? <p className="text-xs text-danger">{unlinkError}</p> : null}

@@ -2,7 +2,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { SessionExternalTask, SessionId } from '@goodboy/types';
+import type {
+  Session,
+  SessionExternalTask,
+  SessionId,
+  Workspace,
+  WorkspaceId,
+  IsoDateTime,
+} from '@goodboy/types';
 
 type Store = {
   sessionGithub: Record<
@@ -20,12 +27,16 @@ type Store = {
     }
   >;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
+  sessions: ReadonlyArray<Session>;
+  workspaces: ReadonlyArray<Workspace>;
 };
 
 const { store, mocks } = vi.hoisted(() => ({
   store: {
     sessionGithub: {},
     sessionExternalTasks: {},
+    sessions: [],
+    workspaces: [],
   } as Store,
   mocks: {
     openUrl: vi.fn(async () => undefined),
@@ -46,6 +57,8 @@ import { LinkedWorkSection } from './LinkedWorkSection';
 beforeEach(() => {
   store.sessionGithub = {};
   store.sessionExternalTasks = {};
+  store.sessions = [];
+  store.workspaces = [];
   mocks.openUrl.mockClear();
 });
 
@@ -157,6 +170,42 @@ describe('LinkedWorkSection', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'GitLab issues' }));
 
     expect(onSelectLens.mock.calls).toEqual([['linear'], ['sentry'], ['gitlab_issues']]);
+  });
+
+  it('shows a task repository only in a composite workspace', () => {
+    const sessionId = 'sess-1' as SessionId;
+    const compositeId = 'workspace-product' as WorkspaceId;
+    const memberId = 'workspace-web' as WorkspaceId;
+    store.sessions = [{ id: sessionId, workspaceId: compositeId } as Session];
+    store.workspaces = [
+      {
+        id: compositeId,
+        name: 'Product',
+        rootPath: '/tmp/product',
+        kind: 'composite',
+        members: [{ workspaceId: memberId, rootPath: '/tmp/web', mountName: 'web' }],
+        createdAt: '2026-07-21T10:00:00.000Z' as IsoDateTime,
+        updatedAt: '2026-07-21T10:00:00.000Z' as IsoDateTime,
+      },
+    ];
+    store.sessionExternalTasks = {
+      [sessionId]: [
+        {
+          sessionId,
+          mountWorkspaceId: memberId,
+          provider: 'github',
+          externalId: '42',
+          identifier: '#42',
+          url: 'https://github.com/acme/web/pull/42',
+          title: 'Review web',
+          createdAt: '2026-07-21T10:00:00.000Z',
+        } as SessionExternalTask,
+      ],
+    };
+
+    render(<LinkedWorkSection sessionId={sessionId} onSelectLens={vi.fn()} />);
+
+    expect(screen.getByText('web')).toBeDefined();
   });
 
   it('keeps the link hub visible when no linked work exists', () => {

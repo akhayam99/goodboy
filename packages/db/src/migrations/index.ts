@@ -93,6 +93,7 @@ import { m092WorkflowNameUniqueLive } from './m092-workflow-name-unique-live';
 import { m093StepOrchestratorReason } from './m093-step-orchestrator-reason';
 import { m094WorkflowOrchestrationState } from './m094-workflow-orchestration-state';
 import { m095WorkflowOrchestratorRouting } from './m095-workflow-orchestrator-routing';
+import { m096SessionExternalTaskMount } from './m096-session-external-task-mount';
 
 export type Migration = {
   readonly version: number;
@@ -195,4 +196,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 93, sql: m093StepOrchestratorReason },
   { version: 94, sql: m094WorkflowOrchestrationState },
   { version: 95, sql: m095WorkflowOrchestratorRouting },
+  { version: 96, sql: m096SessionExternalTaskMount },
 ];

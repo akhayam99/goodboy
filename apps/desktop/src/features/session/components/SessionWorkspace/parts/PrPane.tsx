@@ -14,6 +14,7 @@ import type {
   Session,
   SessionExternalTask,
   SessionId,
+  Workspace,
 } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { PrChecksChip } from '../../../../github/components/PrChecksChip';
@@ -27,6 +28,7 @@ import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { BranchPair } from '../../../../../shared/components/BranchPair';
+import { workspaceMountName } from '../../../../../shared/utils/workspaceMountName';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
@@ -140,6 +142,9 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const workspaceIntegrations = useAppStore(
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
   );
+  const workspace = useAppStore(
+    (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
+  );
   const remoteKind = useRemoteHostKind({ sessionId });
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
@@ -241,7 +246,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
     return (
       <div className="animate-fade-in flex flex-col gap-3">
         <LinkedIssuesSection issues={linkedIssues} sessionId={sessionId} />
-        <ExternalTasksSection tasks={codeHostTasks} />
+        <ExternalTasksSection tasks={codeHostTasks} workspace={workspace} />
         <div className="relative flex flex-col items-start gap-3 rounded-lg border border-dashed border-border-soft bg-elevated/40 px-4 py-4">
           <div className="absolute right-3 top-3">
             <RefreshIconButton
@@ -317,7 +322,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
       </div>
 
       <LinkedIssuesSection issues={linkedIssues} sessionId={sessionId} />
-      <ExternalTasksSection tasks={codeHostTasks} />
+      <ExternalTasksSection tasks={codeHostTasks} workspace={workspace} />
 
       <button
         type="button"
@@ -384,9 +389,10 @@ const LinkedIssuesSection = ({ issues, sessionId }: LinkedIssuesSectionProps) =>
 
 type ExternalTasksSectionProps = {
   readonly tasks: ReadonlyArray<SessionExternalTask>;
+  readonly workspace: Workspace | null;
 };
 
-const ExternalTasksSection = ({ tasks }: ExternalTasksSectionProps) => {
+const ExternalTasksSection = ({ tasks, workspace }: ExternalTasksSectionProps) => {
   if (tasks.length === 0) {
     return null;
   }
@@ -396,9 +402,15 @@ const ExternalTasksSection = ({ tasks }: ExternalTasksSectionProps) => {
       <div className="flex flex-col gap-1">
         {tasks.map((task) => (
           <ExternalTaskChip
-            key={`${task.provider}:${task.externalId}`}
+            key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
             task={task}
             appearance="row"
+            repoLabel={
+              workspaceMountName({
+                workspace,
+                mountWorkspaceId: task.mountWorkspaceId,
+              }) ?? undefined
+            }
           />
         ))}
       </div>
