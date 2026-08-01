@@ -65,6 +65,10 @@ export const SessionGitActions = ({ session }: Props) => {
     };
   }, [worktreePath]);
 
+  if (worktreePath == null) {
+    return null;
+  }
+
   const canPush = status != null && status.ahead > 0;
   const items: ReadonlyArray<OverflowMenuItem> = [
     {

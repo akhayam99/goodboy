@@ -9,14 +9,25 @@ import {
   useNonResolverStandaloneAgents,
   useSessionOpenQuestions,
   useSessionStageInfo,
-  useSessionUnreadLens,
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { classifyAgent, selectStandaloneAgents } from '../../agent-kind';
+import {
+  agentHomeLens,
+  classifyAgent,
+  resolveRootAgent,
+  selectStandaloneAgents,
+  type AgentHomeLens,
+} from '../../agent-kind';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
 import { selectOpenQuestions } from './lib';
-import { selectNextUp, type NextUpItem, type StalledStep, type WaitingAgent } from './selectNextUp';
+import {
+  selectNextUp,
+  type NextUpItem,
+  type RunningAgent,
+  type StalledStep,
+  type WaitingAgent,
+} from './selectNextUp';
 import { ActivitySection } from './ActivitySection';
 import { HeaderBand } from './HeaderBand';
 import { LinkedWorkSection } from './LinkedWorkSection';
@@ -39,7 +50,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const rawStandalone = selectStandaloneAgents(sessionAgents);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const nonResolverAgents = useNonResolverStandaloneAgents(sessionId);
-  const unreadLens = useSessionUnreadLens(sessionId);
   const resolvable = useResolvableCount(sessionId);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
@@ -74,7 +84,27 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     return (needsAttention ?? candidates[0])?.id ?? null;
   };
 
-  const waitingItemId = ({ lens }: { readonly lens: LensKind }): string | null => {
+  const unreadRoot = useMemo((): Agent | null => {
+    let newest: Agent | null = null;
+    for (const agent of sessionAgents) {
+      if (agent.status === 'failed') {
+        continue;
+      }
+      if (!agentHasUnread(agent, false)) {
+        continue;
+      }
+      if (newest != null && (agent.lastFinishedAt ?? '') <= (newest.lastFinishedAt ?? '')) {
+        continue;
+      }
+      newest = agent;
+    }
+    if (newest == null) {
+      return null;
+    }
+    return resolveRootAgent({ agents: sessionAgents, agentId: newest.id as AgentId });
+  }, [sessionAgents]);
+
+  const waitingItemId = ({ lens }: { readonly lens: AgentHomeLens }): string | null => {
     if (lens === 'agents') {
       return pickAgentId({ candidates: nonResolverAgents });
     }
@@ -85,11 +115,16 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         ),
       });
     }
-    if (lens === 'workflows') {
-      return activeRuns[activeRuns.length - 1]?.id ?? null;
-    }
-    return null;
+    return unreadRoot?.workflowRunId ?? null;
   };
+
+  const unreadLens: AgentHomeLens | null =
+    unreadRoot === null
+      ? null
+      : agentHomeLens(
+          unreadRoot,
+          classifyAgent(unreadRoot, agentKindOverride[unreadRoot.id] ?? null),
+        );
 
   const waiting: WaitingAgent | null =
     unreadLens === null
@@ -101,7 +136,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         };
 
   const stalledStep = useMemo((): StalledStep | null => {
-    for (const lane of runs.lanes) {
+    for (const lane of [...runs.lanes, ...(runs.completedLanes ?? [])]) {
       const step = lane.steps.find((candidate) => candidate.status === 'stalled');
       if (step == null) {
         continue;
@@ -109,15 +144,22 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       return { runId: lane.runId, name: step.name };
     }
     return null;
-  }, [runs.lanes]);
+  }, [runs.lanes, runs.completedLanes]);
 
-  const runningAgentId = useMemo((): string | null => {
+  const runningAgent = useMemo((): RunningAgent | null => {
     const running = sessionAgents.filter((agent) => agent.status === 'running');
     if (running.length === 0) {
       return null;
     }
-    return running.reduce((latest, agent) => (agent.ordinal > latest.ordinal ? agent : latest)).id;
-  }, [sessionAgents]);
+    const latest = running.reduce((best, agent) => (agent.ordinal > best.ordinal ? agent : best));
+    const root =
+      resolveRootAgent({ agents: sessionAgents, agentId: latest.id as AgentId }) ?? latest;
+    const lens = agentHomeLens(root, classifyAgent(root, agentKindOverride[root.id] ?? null));
+    if (lens === 'workflows') {
+      return { lens, itemId: root.workflowRunId ?? null };
+    }
+    return { lens, itemId: root.id };
+  }, [sessionAgents, agentKindOverride]);
 
   const nextUp = selectNextUp({
     openQuestions,
@@ -127,7 +169,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     stalledStep,
     sessionStateKind: session.state.kind,
     isFresh,
-    runningAgentId,
+    runningAgent,
     resolveCount,
   });
 
@@ -180,6 +222,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
           isFresh={isFresh}
           resolveCount={resolveCount}
           onOpenWorkflowBuilder={openWorkflowBuilder}
+          onFocusCompletedRun={(runId) => setFocusedWorkflowRun(sessionId, runId)}
           onSelectLens={onSelectLens}
         />
       </div>

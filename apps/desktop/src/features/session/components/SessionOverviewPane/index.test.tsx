@@ -30,6 +30,7 @@ type Store = {
   selectAgent: ReturnType<typeof vi.fn>;
   markAllAgentsSeen: ReturnType<typeof vi.fn>;
   loadPendingResolutions: ReturnType<typeof vi.fn>;
+  pushAllResolutions: ReturnType<typeof vi.fn>;
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
   diffComments: Record<string, ReadonlyArray<unknown>>;
@@ -62,6 +63,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     selectAgent: vi.fn(async () => undefined),
     markAllAgentsSeen: vi.fn(async () => undefined),
     loadPendingResolutions: vi.fn(async () => undefined),
+    pushAllResolutions: vi.fn(async () => undefined),
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     diffComments: {} as Record<string, ReadonlyArray<unknown>>,
@@ -140,7 +142,7 @@ vi.mock('./SessionCostChip', () => ({
 
 import { SessionOverviewPane } from './index';
 
-const standaloneAgent = (status = 'running') => ({
+const standaloneAgent = (status = 'running', over: Record<string, unknown> = {}) => ({
   id: 'standalone-agent',
   name: 'explore the repo',
   parentAgentId: null,
@@ -148,6 +150,7 @@ const standaloneAgent = (status = 'running') => ({
   stepId: null,
   ordinal: 0,
   status,
+  ...over,
 });
 
 const spawnNode = (over: Record<string, unknown> = {}) => ({
@@ -217,6 +220,8 @@ beforeEach(() => {
   store.markAllAgentsSeen.mockResolvedValue(undefined);
   store.loadPendingResolutions.mockReset();
   store.loadPendingResolutions.mockResolvedValue(undefined);
+  store.pushAllResolutions.mockReset();
+  store.pushAllResolutions.mockResolvedValue(undefined);
   store.phaseTemplates = {};
   store.sessionWorkflows = {};
   store.diffComments = {};
@@ -273,6 +278,12 @@ describe('SessionOverviewPane header band', () => {
     expect(screen.getByText(/ago$/)).toBeDefined();
   });
 
+  it('omits the branch chip when no branch is known', () => {
+    renderPane();
+    expect(screen.queryByTestId('branch-chip')).toBeNull();
+    expect(screen.getByTestId('cost-chip')).toBeDefined();
+  });
+
   it('derives the definition of done from the linked work', () => {
     store.sessionGithub = {
       'sess-1': { pr: { number: 123, title: 'ship it', state: 'open', isDraft: false } },
@@ -311,7 +322,9 @@ describe('SessionOverviewPane next up', () => {
     runs.freeAgents = [spawnNode({ name: 'active agent' })];
     runs.completedFreeAgents = [spawnNode({ id: 'done-node', status: 'done' })];
     const { container } = renderPane();
-    expect(container.querySelectorAll('[data-weight="primary"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-weight="primary"], button.bg-primary')).toHaveLength(
+      1,
+    );
   });
 
   it('routes the winning question to the questions lens', () => {
@@ -334,7 +347,9 @@ describe('SessionOverviewPane next up', () => {
   });
 
   it('focuses the stalled run before opening the workflow lens', () => {
-    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('failed')] };
+    store.sessionPhaseRuns = {
+      'sess-1': [standaloneAgent('failed', { hasUnread: true, lastFinishedAt: '2026-06-22' })],
+    };
     runs.lanes = [
       {
         runId: 'run-7',
@@ -350,6 +365,92 @@ describe('SessionOverviewPane next up', () => {
     expect(onSelectLens).toHaveBeenCalledWith('workflows');
   });
 
+  it('scans the completed lanes so a workflow whose last step failed still surfaces', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('failed')] };
+    runs.completedLanes = [
+      completedLane({
+        runId: 'run-9',
+        steps: [
+          { stepId: 's1', name: 'Review', kind: 'reviewer', status: 'stalled', children: [] },
+        ],
+      }),
+    ];
+    const { onSelectLens } = renderPane();
+    fireEvent.click(screen.getByRole('button', { name: 'Restart the step' }));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', 'run-9');
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+  });
+
+  it('resumes the unread agent by selecting it in the agents lens', () => {
+    store.sessionPhaseRuns = {
+      'sess-1': [standaloneAgent('completed', { hasUnread: true, lastFinishedAt: '2026-06-22' })],
+    };
+    const { onSelectLens } = renderPane();
+    fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    expect(onSelectLens).toHaveBeenCalledWith('agents');
+    expect(store.selectAgent).toHaveBeenCalledWith('sess-1', 'standalone-agent');
+  });
+
+  it('resumes an unread resolver in the resolve lens instead', () => {
+    store.sessionPhaseRuns = {
+      'sess-1': [
+        standaloneAgent('completed', {
+          id: 'resolver-agent',
+          name: 'resolve the review comment',
+          hasUnread: true,
+          lastFinishedAt: '2026-06-22',
+        }),
+      ],
+    };
+    const { onSelectLens } = renderPane();
+    expect(screen.getByText('A resolver is waiting on you')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    expect(onSelectLens).toHaveBeenCalledWith('resolve');
+    expect(store.selectAgent).toHaveBeenCalledWith('sess-1', 'resolver-agent');
+  });
+
+  it('focuses the run that owns the unread step agent, not the newest run', () => {
+    store.sessionPhaseRuns = {
+      'sess-1': [
+        standaloneAgent('completed', {
+          id: 'step-agent',
+          name: 'implement it',
+          workflowRunId: 'run-1',
+          stepId: 'step-1',
+          hasUnread: true,
+          lastFinishedAt: '2026-06-22',
+        }),
+      ],
+    };
+    const session = baseSession({
+      workflowRuns: [
+        { id: 'run-1', workflowId: 'wf-1', ordinal: 0, currentStep: 0, autoRun: false },
+        { id: 'run-2', workflowId: 'wf-1', ordinal: 1, currentStep: 0, autoRun: false },
+      ],
+    } as unknown as Partial<Session>);
+    const { onSelectLens } = renderPane(session);
+    fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', 'run-1');
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+  });
+
+  it('offers the first workflow when every run was discarded', () => {
+    const session = baseSession({
+      workflowRuns: [
+        {
+          id: 'run-1',
+          workflowId: 'wf-1',
+          ordinal: 0,
+          currentStep: 0,
+          autoRun: false,
+          discardedAt: '2026-06-22T10:00:00.000Z',
+        },
+      ],
+    } as unknown as Partial<Session>);
+    renderPane(session);
+    expect(screen.getByRole('button', { name: 'Start a workflow' })).toBeDefined();
+  });
+
   it('opens the workflow builder for a fresh session', () => {
     const handler = vi.fn();
     window.addEventListener('goodboy:open-workflow-builder', handler);
@@ -363,8 +464,9 @@ describe('SessionOverviewPane next up', () => {
     hooks.openQuestions = [
       { status: 'open', text: 'why?' },
     ] as unknown as ReadonlyArray<OpenQuestion>;
-    hooks.unreadLens = 'agents';
-    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
+    store.sessionPhaseRuns = {
+      'sess-1': [standaloneAgent('running', { hasUnread: true, lastFinishedAt: '2026-06-22' })],
+    };
     renderPane();
     const nextUp = screen.getByRole('region', { name: 'Next up' });
     expect(nextUp.textContent).toContain('unread');
@@ -418,15 +520,33 @@ describe('SessionOverviewPane activity', () => {
     expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
 
-  it('collapses finished work into a single count row', () => {
+  it('opens a completed workflow in one click, focusing the run first', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
     runs.completedLanes = [completedLane()];
     runs.completedFreeAgents = [spawnNode({ id: 'done-node', status: 'done' })];
     const { onSelectLens } = renderPane();
-    expect(screen.getByText('2 completed')).toBeDefined();
     expect(screen.queryByText('Completed workflow')).toBeNull();
-    fireEvent.click(screen.getByText('2 completed'));
+    fireEvent.click(screen.getByText('1 completed workflow'));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', 'completed-run');
     expect(onSelectLens).toHaveBeenCalledWith('workflows');
+  });
+
+  it('keeps completed standalone agents reachable alongside completed workflows', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
+    runs.completedLanes = [completedLane()];
+    runs.completedFreeAgents = [spawnNode({ id: 'done-node', status: 'done' })];
+    const { onSelectLens } = renderPane();
+    fireEvent.click(screen.getByText('1 completed agent'));
+    expect(onSelectLens).toHaveBeenCalledWith('agents');
+    expect(store.setFocusedWorkflowRun).not.toHaveBeenCalled();
+  });
+
+  it('offers the batched push once resolutions are queued', async () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
+    store.sessionPendingResolutions = { 'sess-1': [{}, {}] };
+    renderPane();
+    fireEvent.click(screen.getByRole('button', { name: /Push & resolve 2 comments/ }));
+    await vi.waitFor(() => expect(store.pushAllResolutions).toHaveBeenCalledWith('sess-1'));
   });
 });
 

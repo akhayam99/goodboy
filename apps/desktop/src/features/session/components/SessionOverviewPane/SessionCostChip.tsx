@@ -21,7 +21,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   const label = capUsd != null ? `${spent} / ${formatUsd(capUsd)}` : spent;
   const title =
     capUsd != null
-      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsd(capUsd)} cap (excluding summarizer), click for budget studio`
+      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(capUsd)} cap (excluding summarizer), click for budget studio`
       : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summarizer), click for budget studio`;
 
   const [pulse, setPulse] = useState(false);

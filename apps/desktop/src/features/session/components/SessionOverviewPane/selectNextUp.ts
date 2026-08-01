@@ -2,9 +2,26 @@ import type { OpenQuestion, PullRequestState, TurnState } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { LensKind } from '../../../../store';
 
-type NextUpId = 'question' | 'review' | 'resume' | 'stalled' | 'close-out' | 'start' | 'follow';
+type NextUpId =
+  | 'question'
+  | 'review'
+  | 'checks'
+  | 'resume'
+  | 'resolve'
+  | 'stalled'
+  | 'errored'
+  | 'close-out'
+  | 'start'
+  | 'follow';
 
-export type NextUpSignal = 'question' | 'review' | 'resume' | 'stalled' | 'resolve';
+export type NextUpSignal =
+  | 'question'
+  | 'review'
+  | 'checks'
+  | 'resume'
+  | 'stalled'
+  | 'errored'
+  | 'resolve';
 
 export type NextUpItem = {
   readonly id: NextUpId;
@@ -23,6 +40,11 @@ export type WaitingAgent = {
   readonly isResolver: boolean;
 };
 
+export type RunningAgent = {
+  readonly lens: LensKind;
+  readonly itemId: string | null;
+};
+
 export type StalledStep = {
   readonly runId: string;
   readonly name: string;
@@ -36,15 +58,26 @@ type Params = {
   readonly stalledStep: StalledStep | null;
   readonly sessionStateKind: TurnState['kind'];
   readonly isFresh: boolean;
-  readonly runningAgentId: string | null;
+  readonly runningAgent: RunningAgent | null;
   readonly resolveCount: number;
 };
 
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
   pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
 
-const isRunningState = ({ kind }: { readonly kind: TurnState['kind'] }): boolean =>
-  kind === 'running' || kind === 'starting';
+const isPrReadyToClose = (pr: PullRequestState): boolean =>
+  pr.checks !== 'failure' &&
+  pr.reviewDecision !== 'changes_requested' &&
+  pr.reviewDecision !== 'review_required';
+
+const isWorkRunning = ({
+  sessionStateKind,
+  runningAgent,
+}: {
+  readonly sessionStateKind: TurnState['kind'];
+  readonly runningAgent: RunningAgent | null;
+}): boolean =>
+  sessionStateKind === 'running' || sessionStateKind === 'starting' || runningAgent !== null;
 
 const firstLine = ({ text }: { readonly text: string }): string => text.trim().split('\n')[0] ?? '';
 
@@ -53,6 +86,7 @@ const liveSignals = ({
   pr,
   waiting,
   stalledStep,
+  sessionStateKind,
   resolveCount,
 }: Params): ReadonlyArray<NextUpSignal> => {
   const signals: NextUpSignal[] = [];
@@ -62,11 +96,17 @@ const liveSignals = ({
   if (isPrLive(pr) && pr.reviewDecision === 'changes_requested') {
     signals.push('review');
   }
+  if (isPrLive(pr) && pr.checks === 'failure') {
+    signals.push('checks');
+  }
   if (waiting !== null) {
     signals.push('resume');
   }
   if (stalledStep !== null) {
     signals.push('stalled');
+  }
+  if (sessionStateKind === 'error') {
+    signals.push('errored');
   }
   if (resolveCount > 0) {
     signals.push('resolve');
@@ -83,7 +123,8 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
     stalledStep,
     sessionStateKind,
     isFresh,
-    runningAgentId,
+    runningAgent,
+    resolveCount,
   } = params;
   const signals = liveSignals(params);
   const tail = ({ chosen }: { readonly chosen: NextUpSignal }): ReadonlyArray<NextUpSignal> =>
@@ -116,6 +157,19 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
     };
   }
 
+  if (isPrLive(pr) && pr.checks === 'failure') {
+    return {
+      id: 'checks',
+      title: `CI failed on PR #${pr.number}`,
+      detail: pr.title,
+      action: 'Open the PR',
+      tone: 'danger',
+      lens: 'pr',
+      itemId: null,
+      signals: tail({ chosen: 'checks' }),
+    };
+  }
+
   if (waiting !== null) {
     return {
       id: 'resume',
@@ -126,6 +180,19 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
       lens: waiting.lens,
       itemId: waiting.agentId,
       signals: tail({ chosen: 'resume' }),
+    };
+  }
+
+  if (resolveCount > 0) {
+    return {
+      id: 'resolve',
+      title: resolveCount === 1 ? '1 comment to resolve' : `${resolveCount} comments to resolve`,
+      detail: 'Review comments and resolvers are still open.',
+      action: 'Resolve',
+      tone: 'neutral',
+      lens: 'resolve',
+      itemId: null,
+      signals: tail({ chosen: 'resolve' }),
     };
   }
 
@@ -142,7 +209,25 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
     };
   }
 
-  if (isPrLive(pr) && !pr.isDraft && !isRunningState({ kind: sessionStateKind })) {
+  if (sessionStateKind === 'error') {
+    return {
+      id: 'errored',
+      title: 'The session errored',
+      detail: 'The last turn failed before it finished.',
+      action: 'Open the agents',
+      tone: 'danger',
+      lens: 'agents',
+      itemId: null,
+      signals: tail({ chosen: 'errored' }),
+    };
+  }
+
+  if (
+    isPrLive(pr) &&
+    !pr.isDraft &&
+    isPrReadyToClose(pr) &&
+    !isWorkRunning({ sessionStateKind, runningAgent })
+  ) {
     return {
       id: 'close-out',
       title: `PR #${pr.number} is done but not merged`,
@@ -168,15 +253,15 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
     };
   }
 
-  if (isRunningState({ kind: sessionStateKind }) || runningAgentId !== null) {
+  if (isWorkRunning({ sessionStateKind, runningAgent })) {
     return {
       id: 'follow',
       title: 'Work is running',
       detail: 'Nothing needs you while it does.',
       action: 'Follow the run',
       tone: 'info',
-      lens: 'agents',
-      itemId: runningAgentId,
+      lens: runningAgent?.lens ?? 'agents',
+      itemId: runningAgent?.itemId ?? null,
       signals,
     };
   }

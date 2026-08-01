@@ -11,7 +11,8 @@ const pr = (over: Partial<PullRequestState> = {}): PullRequestState =>
     title: 'ship the thing',
     state: 'open',
     isDraft: false,
-    reviewDecision: null,
+    checks: 'success',
+    reviewDecision: 'approved',
     ...over,
   }) as PullRequestState;
 
@@ -23,7 +24,7 @@ const everySignal = {
   stalledStep: { runId: 'run-7', name: 'Implement' },
   sessionStateKind: 'idle',
   isFresh: false,
-  runningAgentId: 'agent-9',
+  runningAgent: { lens: 'agents', itemId: 'agent-9' },
   resolveCount: 2,
 } as const;
 
@@ -39,17 +40,39 @@ describe('selectNextUp precedence', () => {
     expect(item).toMatchObject({ id: 'review', action: 'Review', tone: 'info', lens: 'pr' });
   });
 
+  it('2b. a pull request whose CI failed names the failure instead of the review', () => {
+    const item = selectNextUp({
+      ...everySignal,
+      openQuestions: [],
+      pr: pr({ checks: 'failure', reviewDecision: null }),
+    });
+    expect(item).toMatchObject({ id: 'checks', lens: 'pr', tone: 'danger' });
+    expect(item?.title).toBe('CI failed on PR #123');
+  });
+
   it('3. an agent waiting on you wins once the pull request is quiet', () => {
     const item = selectNextUp({ ...everySignal, openQuestions: [], pr: pr() });
     expect(item).toMatchObject({ id: 'resume', action: 'Resume', itemId: 'agent-9' });
   });
 
-  it('4. a stalled step wins once nothing is waiting on a reply', () => {
+  it('3b. an unresolved comment backlog wins once nothing is waiting on a reply', () => {
     const item = selectNextUp({
       ...everySignal,
       openQuestions: [],
       pr: pr(),
       waiting: null,
+    });
+    expect(item).toMatchObject({ id: 'resolve', action: 'Resolve', lens: 'resolve' });
+    expect(item?.title).toBe('2 comments to resolve');
+  });
+
+  it('4. a stalled step wins once the resolve backlog is empty', () => {
+    const item = selectNextUp({
+      ...everySignal,
+      openQuestions: [],
+      pr: pr(),
+      waiting: null,
+      resolveCount: 0,
     });
     expect(item).toMatchObject({
       id: 'stalled',
@@ -60,6 +83,21 @@ describe('selectNextUp precedence', () => {
     });
   });
 
+  it('4b. an errored session is caught by the same rule when no step stalled', () => {
+    const item = selectNextUp({
+      ...everySignal,
+      openQuestions: [],
+      pr: pr(),
+      waiting: null,
+      resolveCount: 0,
+      stalledStep: null,
+      sessionStateKind: 'error',
+      runningAgent: null,
+    });
+    expect(item).toMatchObject({ id: 'errored', tone: 'danger', lens: 'agents' });
+    expect(item?.title).toBe('The session errored');
+  });
+
   it('5. an unmerged pull request wins once the pipeline is clean', () => {
     const item = selectNextUp({
       ...everySignal,
@@ -67,6 +105,8 @@ describe('selectNextUp precedence', () => {
       pr: pr(),
       waiting: null,
       stalledStep: null,
+      resolveCount: 0,
+      runningAgent: null,
     });
     expect(item).toMatchObject({ id: 'close-out', action: 'Close it out', tone: 'success' });
   });
@@ -79,13 +119,13 @@ describe('selectNextUp precedence', () => {
       waiting: null,
       stalledStep: null,
       isFresh: true,
-      runningAgentId: null,
+      runningAgent: null,
       resolveCount: 0,
     });
     expect(item).toMatchObject({ id: 'start', action: 'Start a workflow', lens: null });
   });
 
-  it('7. a running session with nothing pending opens the most recent agent', () => {
+  it('7. a running session with nothing pending opens the running agent where it lives', () => {
     const item = selectNextUp({
       ...everySignal,
       openQuestions: [],
@@ -93,12 +133,13 @@ describe('selectNextUp precedence', () => {
       waiting: null,
       stalledStep: null,
       resolveCount: 0,
+      runningAgent: { lens: 'workflows', itemId: 'run-7' },
     });
     expect(item).toMatchObject({
       id: 'follow',
       action: 'Follow the run',
-      lens: 'agents',
-      itemId: 'agent-9',
+      lens: 'workflows',
+      itemId: 'run-7',
     });
   });
 
@@ -110,10 +151,40 @@ describe('selectNextUp precedence', () => {
         pr: null,
         waiting: null,
         stalledStep: null,
-        runningAgentId: null,
+        runningAgent: null,
         resolveCount: 0,
       }),
     ).toBeNull();
+  });
+});
+
+describe('selectNextUp close-out honesty', () => {
+  const closeable = {
+    ...everySignal,
+    openQuestions: [],
+    pr: pr(),
+    waiting: null,
+    stalledStep: null,
+    resolveCount: 0,
+    runningAgent: null,
+  } as const;
+
+  it('never calls a pull request done while its CI is failing', () => {
+    const item = selectNextUp({ ...closeable, pr: pr({ checks: 'failure' }) });
+    expect(item?.id).toBe('checks');
+  });
+
+  it('never calls a pull request done while a required review is missing', () => {
+    const item = selectNextUp({ ...closeable, pr: pr({ reviewDecision: 'review_required' }) });
+    expect(item).toBeNull();
+  });
+
+  it('never calls a pull request done while a workflow agent is still running', () => {
+    const item = selectNextUp({
+      ...closeable,
+      runningAgent: { lens: 'workflows', itemId: 'run-7' },
+    });
+    expect(item).toMatchObject({ id: 'follow', lens: 'workflows' });
   });
 });
 
@@ -137,5 +208,17 @@ describe('selectNextUp tone and signals', () => {
       'resume',
       'resolve',
     ]);
+  });
+
+  it('carries a failing CI and an errored session in the tail', () => {
+    expect(
+      selectNextUp({
+        ...everySignal,
+        pr: pr({ checks: 'failure', reviewDecision: null }),
+        waiting: null,
+        stalledStep: null,
+        sessionStateKind: 'error',
+      })?.signals,
+    ).toEqual(['checks', 'errored', 'resolve']);
   });
 });

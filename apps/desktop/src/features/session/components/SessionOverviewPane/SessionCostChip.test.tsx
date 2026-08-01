@@ -74,6 +74,16 @@ describe('SessionCostChip', () => {
     expect(screen.getByRole('button').getAttribute('title')).toContain('$1.7562');
   });
 
+  it('keeps a sub-cent cap exact in the tooltip too', () => {
+    state.sessionCost = 0.0012;
+    store.budgetAlerts = [alert({ capUsd: 0.005 })];
+    const title = render(<SessionCostChip sessionId={SID} />)
+      .container.querySelector('button')
+      ?.getAttribute('title');
+    expect(title).toContain('$0.0012');
+    expect(title).toContain('of a $0.0050 cap');
+  });
+
   it('dispatches the budget-studio event scoped to the session on click', () => {
     const handler = vi.fn();
     window.addEventListener('goodboy:open-budget-studio', handler);
