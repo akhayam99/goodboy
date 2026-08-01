@@ -1,9 +1,9 @@
 import { FolderGit2, GitBranch, MessagesSquare } from 'lucide-react';
+import { SectionHeader } from '@goodboy/ui';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { Block } from './Block';
 import { DefinitionList } from './DefinitionList';
-import { SectionHeader } from './SectionHeader';
 import { Tile } from './Tile';
 
 type Props = Record<never, never>;
@@ -11,10 +11,10 @@ type Props = Record<never, never>;
 export const SessionsSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
+      size="page"
       icon={<GitBranch size={14} aria-hidden className="text-success" />}
-      title="Sessions"
-      description="One focused unit of work. Owns a git worktree, a branch, transcripts, and a goal. It is a card on the board until you open it."
-      tone="success"
+      label="Sessions"
+      hint="One focused unit of work. Owns a git worktree, a branch, transcripts, and a goal. It is a card on the board until you open it."
     />
 
     <Block title="What gets created">

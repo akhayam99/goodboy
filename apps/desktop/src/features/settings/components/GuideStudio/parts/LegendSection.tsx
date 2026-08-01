@@ -1,17 +1,17 @@
 import { Palette } from 'lucide-react';
+import { SectionHeader } from '@goodboy/ui';
 import { LegendaGrid } from './LegendaGrid';
 import { LegendBlock } from './LegendBlock';
-import { SectionHeader } from './SectionHeader';
 
 type Props = Record<never, never>;
 
 export const LegendSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
+      size="page"
       icon={<Palette size={14} aria-hidden className="text-primary" />}
-      title="Legend"
-      description="Color meanings used throughout the interface."
-      tone="primary"
+      label="Legend"
+      hint="Color meanings used throughout the interface."
     />
 
     <LegendBlock title="Agent status, workflow steps">

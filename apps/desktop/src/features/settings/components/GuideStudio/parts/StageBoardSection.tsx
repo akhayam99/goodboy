@@ -1,18 +1,18 @@
 import { ArrowRight, FolderGit2, LayoutDashboard, Lightbulb, Sparkles, Wrench } from 'lucide-react';
+import { SectionHeader } from '@goodboy/ui';
 import { Block } from './Block';
 import { Callout } from './Callout';
 import { DefinitionList } from './DefinitionList';
-import { SectionHeader } from './SectionHeader';
 
 type Props = Record<never, never>;
 
 export const StageBoardSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
+      size="page"
       icon={<LayoutDashboard size={14} aria-hidden className="text-primary" />}
-      title="Stage board"
-      description="The home screen. One glance at every session in the workspace, grouped by what it needs from you right now."
-      tone="primary"
+      label="Stage board"
+      hint="The home screen. One glance at every session in the workspace, grouped by what it needs from you right now."
     />
 
     <Block title="How sessions are grouped">

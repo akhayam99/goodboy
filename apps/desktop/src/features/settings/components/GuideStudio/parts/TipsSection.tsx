@@ -1,5 +1,5 @@
 import { Lightbulb } from 'lucide-react';
-import { SectionHeader } from './SectionHeader';
+import { SectionHeader } from '@goodboy/ui';
 
 type Props = Record<never, never>;
 
@@ -33,10 +33,10 @@ export const TipsSection = ({}: Props) => {
   return (
     <div className="flex flex-col gap-7">
       <SectionHeader
+        size="page"
         icon={<Lightbulb size={14} aria-hidden className="text-warning" />}
-        title="Tips"
-        description="Patterns that compound across sessions."
-        tone="warning"
+        label="Tips"
+        hint="Patterns that compound across sessions."
       />
       <div className="grid grid-cols-2 gap-3">
         {tips.map((t, i) => (

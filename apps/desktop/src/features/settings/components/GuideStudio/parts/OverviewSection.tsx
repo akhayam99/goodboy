@@ -1,10 +1,9 @@
 import { BookOpen, GitBranch, LayoutDashboard, MessageSquare, Sparkles } from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
+import { Eyebrow, SectionHeader } from '@goodboy/ui';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { Callout } from './Callout';
 import { ConceptCard } from './ConceptCard';
-import { SectionHeader } from './SectionHeader';
 
 type Section =
   | 'overview'
@@ -24,14 +23,14 @@ type Props = {
 export const OverviewSection = ({ onJump }: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
+      size="page"
       icon={<BookOpen size={14} aria-hidden className="text-primary" />}
-      title="What is Goodboy?"
-      description={
+      label="What is Goodboy?"
+      hint={
         SESSION_FEATURES.budget
           ? 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the studios are destinations you navigate to from there, with budget caps and audit logs along the way.'
           : 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the studios are destinations you navigate to from there, with audit logs along the way.'
       }
-      tone="primary"
     />
 
     <Callout tone="info" icon={<Sparkles size={13} />}>

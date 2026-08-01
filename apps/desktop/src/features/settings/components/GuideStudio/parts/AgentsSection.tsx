@@ -1,20 +1,20 @@
 import { ArrowRight, Network } from 'lucide-react';
+import { SectionHeader } from '@goodboy/ui';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../../shared/components/section-icons';
 import { Block } from './Block';
 import { Chip } from './Chip';
 import { DefinitionList } from './DefinitionList';
-import { SectionHeader } from './SectionHeader';
 
 type Props = Record<never, never>;
 
 export const AgentsSection = ({}: Props) => (
   <div className="flex flex-col gap-7">
     <SectionHeader
+      size="page"
       icon={<DogMascot size={14} className="text-warning" />}
-      title="Agents"
-      description="One provider invocation inside a session. A session can host multiple agents, same provider or different ones, and they nest as a tree."
-      tone="warning"
+      label="Agents"
+      hint="One provider invocation inside a session. A session can host multiple agents, same provider or different ones, and they nest as a tree."
     />
 
     <Block title="Why multiple agents per session">
