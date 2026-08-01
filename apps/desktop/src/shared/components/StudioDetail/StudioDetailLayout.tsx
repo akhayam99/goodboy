@@ -59,7 +59,6 @@ export const StudioDetailLayout = ({
               !isFlow && 'min-h-0',
             )}
           >
-            <Divider orientation="vertical" className="hidden lg:block" />
             <RailStack rail={rail} properties={properties} isScrollable={!isFlow} />
             <Divider className="lg:hidden" />
           </div>

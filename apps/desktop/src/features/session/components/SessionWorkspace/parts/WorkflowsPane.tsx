@@ -12,6 +12,7 @@ import { WorkflowStartButton } from '../../../../workspace/components/Workspaces
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRailCard } from './WorkflowRailCard';
 import { WorkflowRunDetail } from './WorkflowRunDetail';
+import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 
 type Props = {
   readonly session: Session;
@@ -23,6 +24,7 @@ export const WorkflowsPane = ({ session }: Props) => {
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
+  const { aggregatesByAgentId } = useAgentMetrics({ sessionId });
   const focusedWorkflowRunId = useAppStore(
     (state) => state.focusedWorkflowRunId[sessionId] ?? null,
   );
@@ -58,6 +60,12 @@ export const WorkflowsPane = ({ session }: Props) => {
   const shouldShowEmptyCard = hasRuns && focusedRun == null && !hasVisibleRuns;
 
   const renderCard = ({ run, workflow }: { run: WorkflowRun; workflow: Workflow }) => {
+    const agents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
+    const aggregates = agents.map((agent) => aggregatesByAgentId.get(agent.id));
+    const isCostTracked = aggregates.some((aggregate) => (aggregate?.turns ?? 0) > 0);
+    const costUsd = isCostTracked
+      ? aggregates.reduce((total, aggregate) => total + (aggregate?.estimatedCostUsd ?? 0), 0)
+      : null;
     const predecessorName = run.chainAfterId
       ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
       : 'previous';
@@ -66,7 +74,8 @@ export const WorkflowsPane = ({ session }: Props) => {
         <WorkflowRailCard
           run={run}
           workflow={workflow}
-          agents={agentsByRunId.get(run.id) ?? EMPTY_ARRAY}
+          agents={agents}
+          costUsd={costUsd}
           predecessorName={predecessorName}
           onSelect={() => setFocusedWorkflowRun(sessionId, run.id)}
           onRestore={() => void restoreWorkflow(sessionId, run.id)}

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { resolveDetailFields, type DetailFieldRegistry } from '../../detail-fields';
 import { DetailSection } from './DetailSection';
@@ -6,8 +6,16 @@ import { HeaderBand } from './HeaderBand';
 import { RailBlock } from './RailBlock';
 import { StudioDetailLayout } from './StudioDetailLayout';
 import { StudioDetailTabs } from './StudioDetailTabs';
+import { STORAGE_KEYS } from '../../lib/storage-keys';
 
-afterEach(cleanup);
+beforeEach(() => {
+  localStorage.clear();
+});
+
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 type Entity = {
   readonly state: string;
@@ -147,6 +155,24 @@ describe('StudioDetailLayout', () => {
     }
 
     expect(hidden).toEqual([]);
+  });
+
+  it('restores, resizes, and resets the studio detail rail width', () => {
+    localStorage.setItem(STORAGE_KEYS.studioDetailRailWidth, '420');
+    render(
+      <StudioDetailLayout header={<span>Header slot</span>} rail={<span>Rail slot</span>}>
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const handle = screen.getByRole('separator', { name: 'resize studio detail rail' });
+    expect(handle.getAttribute('aria-valuenow')).toBe('420');
+
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(localStorage.getItem(STORAGE_KEYS.studioDetailRailWidth)).toBe('428');
+
+    fireEvent.doubleClick(handle);
+    expect(localStorage.getItem(STORAGE_KEYS.studioDetailRailWidth)).toBe('320');
   });
 });
 

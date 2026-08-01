@@ -14,6 +14,9 @@ type Store = {
   sessionActiveMount: Record<string, string>;
   sessionStudio: Record<string, null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
+  sessionTelemetry: Record<string, ReadonlyArray<never>>;
+  messages: Record<string, ReadonlyArray<never>>;
+  agentRunHistory: Record<string, ReadonlyArray<never>>;
   focusedWorkflowRunId: Record<string, string | null>;
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
@@ -50,6 +53,9 @@ const { store, hooks } = vi.hoisted(() => ({
     sessionActiveMount: {},
     sessionStudio: {},
     sessionPhaseRuns: {},
+    sessionTelemetry: {},
+    messages: {},
+    agentRunHistory: {},
     focusedWorkflowRunId: {},
     phaseTemplates: {},
     sessionWorkflows: {},

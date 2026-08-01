@@ -2,12 +2,15 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Agent, Session, Workflow } from '@goodboy/types';
+import type { Agent, Session, TelemetryRecord, Workflow } from '@goodboy/types';
 
 type Store = {
   phaseTemplates: Record<string, ReadonlyArray<Workflow>>;
   sessionWorkflows: Record<string, ReadonlyArray<Workflow>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
+  sessionTelemetry: Record<string, ReadonlyArray<TelemetryRecord>>;
+  messages: Record<string, ReadonlyArray<never>>;
+  agentRunHistory: Record<string, ReadonlyArray<never>>;
   focusedWorkflowRunId: Record<string, string | null>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   restoreWorkflow: ReturnType<typeof vi.fn>;
@@ -28,6 +31,9 @@ const store: Store = {
   phaseTemplates: {},
   sessionWorkflows: {},
   sessionPhaseRuns: {},
+  sessionTelemetry: {},
+  messages: {},
+  agentRunHistory: {},
   focusedWorkflowRunId: {},
   setFocusedWorkflowRun: vi.fn(),
   restoreWorkflow: vi.fn(),
@@ -65,6 +71,8 @@ vi.mock('@goodboy/ui', () => ({
   ScrollFade: ({ children }: ChildrenMockProps) => <div>{children}</div>,
   StatusDot: () => <span data-testid="status-dot" />,
   cn: (...values: ReadonlyArray<unknown>) => values.filter(Boolean).join(' '),
+  formatUsd: (value: number) => `$${value.toFixed(2)}`,
+  formatUsdPrecise: (value: number) => `$${value.toFixed(2)}`,
 }));
 
 vi.mock('./WorkflowRunDetail', () => ({
@@ -114,6 +122,9 @@ beforeEach(() => {
   store.phaseTemplates = { [WORKSPACE_ID]: [firstWorkflow, secondWorkflow] };
   store.sessionWorkflows = {};
   store.sessionPhaseRuns = {};
+  store.sessionTelemetry = {};
+  store.messages = {};
+  store.agentRunHistory = {};
   store.focusedWorkflowRunId = {};
   store.setFocusedWorkflowRun.mockReset();
   store.restoreWorkflow.mockReset();
@@ -139,6 +150,113 @@ describe('WorkflowsPane', () => {
     expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
     expect(screen.queryByTestId('workflow-detail')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Workflows' })).toBeDefined();
+  });
+
+  it('shows static run progress, duration, last step, and tracked cost', () => {
+    store.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          id: 'agent-1',
+          sessionId: SESSION_ID,
+          stepId: 'workflow-1-step-1',
+          workflowRunId: 'run-1',
+          ordinal: 0,
+          name: 'First',
+          status: 'completed',
+          runId: 'provider-run-1',
+          startedAt: '2026-07-21T10:00:00.000Z',
+          completedAt: '2026-07-21T10:01:00.000Z',
+        },
+        {
+          id: 'agent-2',
+          sessionId: SESSION_ID,
+          stepId: 'workflow-1-step-2',
+          workflowRunId: 'run-1',
+          ordinal: 1,
+          name: 'Second',
+          status: 'completed',
+          runId: 'provider-run-2',
+          startedAt: '2026-07-21T10:01:00.000Z',
+          completedAt: '2026-07-21T10:03:00.000Z',
+        },
+      ] as unknown as ReadonlyArray<Agent>,
+    };
+    store.sessionTelemetry = {
+      [SESSION_ID]: [
+        {
+          id: 'telemetry-1',
+          runId: 'provider-run-1',
+          sessionId: SESSION_ID,
+          kind: 'turn',
+          provider: 'anthropic',
+          model: 'claude-sonnet-4-6',
+          inputTokens: 100,
+          outputTokens: 20,
+          estimatedCostUsd: 0.1,
+          recordedAt: '2026-07-21T10:01:00.000Z',
+        },
+        {
+          id: 'telemetry-2',
+          runId: 'provider-run-2',
+          sessionId: SESSION_ID,
+          kind: 'turn',
+          provider: 'anthropic',
+          model: 'claude-sonnet-4-6',
+          inputTokens: 200,
+          outputTokens: 40,
+          estimatedCostUsd: 0.2,
+          recordedAt: '2026-07-21T10:03:00.000Z',
+        },
+      ] as unknown as ReadonlyArray<TelemetryRecord>,
+    };
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1'],
+          runOverrides: { 'run-1': { executionMode: 'static' } },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+
+    expect(screen.getByText('2 of 2 steps run')).toBeDefined();
+    expect(screen.getByText('3m')).toBeDefined();
+    expect(screen.getByText('Last: Second')).toBeDefined();
+    expect(screen.getByTitle('$0.30 for this run')).toBeDefined();
+  });
+
+  it('shows dynamic run progress without a fixed total', () => {
+    store.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          id: 'agent-1',
+          sessionId: SESSION_ID,
+          stepId: 'workflow-1-step-1',
+          workflowRunId: 'run-1',
+          ordinal: 0,
+          name: 'First',
+          status: 'completed',
+          startedAt: '2026-07-21T10:00:00.000Z',
+          completedAt: '2026-07-21T10:01:00.000Z',
+        },
+      ] as unknown as ReadonlyArray<Agent>,
+    };
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1'],
+          runOverrides: {
+            'run-1': { executionMode: 'dynamic', orchestrationOutcome: 'done' },
+          },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+
+    expect(screen.getByText('1 step run')).toBeDefined();
+    expect(screen.queryByText('1 of 2 steps run')).toBeNull();
   });
 
   it('opens the detail of the focused run', () => {
