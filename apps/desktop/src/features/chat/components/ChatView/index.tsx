@@ -44,6 +44,7 @@ import { TranscriptRows } from './TranscriptRows';
 import { useTranscriptErrorToasts } from '../../hooks/useTranscriptErrorToasts';
 import { useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
+import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Props = {
   readonly session: Session;
@@ -113,6 +114,9 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   ]);
 
   const worktreePath = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
+  const diffWorktreePath = useAppStore(
+    (state) => resolveSessionRepo({ state, sessionId: session.id })?.worktreePath ?? null,
+  );
   const isBranchless = useAppStore((s) =>
     isBranchlessSession({
       workspaceKind: s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind,
@@ -204,8 +208,9 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null);
   const diffLoader = useMemo(
-    () => (worktreePath && !isBranchless ? () => worktreeDiff(worktreePath) : undefined),
-    [isBranchless, worktreePath],
+    () =>
+      diffWorktreePath != null && !isBranchless ? () => worktreeDiff(diffWorktreePath) : undefined,
+    [diffWorktreePath, isBranchless],
   );
 
   const handleOpenDiff = useCallback((filePath: string) => {

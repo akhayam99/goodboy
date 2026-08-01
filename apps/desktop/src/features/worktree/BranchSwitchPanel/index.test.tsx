@@ -6,11 +6,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { state, listLocalBranches, getCachedLocalBranches, showToast } = vi.hoisted(() => ({
   state: {
     session: { id: 'sess-1', workspaceId: 'ws-1' },
+    sessions: [{ id: 'sess-1', workspaceId: 'ws-1' }],
     sessionBranches: {
       'sess-1': 'feat/current',
       'sess-2': 'main',
     } as Record<string, string>,
     workspaces: [{ id: 'ws-1', rootPath: '/repo', kind: 'repo' }],
+    sessionMounts: {},
+    sessionActiveMount: {},
+    sessionWorktrees: { 'sess-1': ['/repo/.goodboy/worktrees/sess-1'] },
     changeSessionBranch: vi.fn(async () => undefined),
   },
   listLocalBranches: vi.fn(),

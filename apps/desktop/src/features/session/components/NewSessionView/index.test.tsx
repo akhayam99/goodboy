@@ -32,8 +32,8 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
-vi.mock('../../../../features/worktree/useRemoteHostKind', () => ({
-  useRemoteHostKind: () => h.remoteKind,
+vi.mock('../../../../features/worktree/useWorkspaceRemoteHostKind', () => ({
+  useWorkspaceRemoteHostKind: () => h.remoteKind,
 }));
 
 vi.mock('../../../../features/worktree/useBranchConflict', () => ({

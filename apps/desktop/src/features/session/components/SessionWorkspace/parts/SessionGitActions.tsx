@@ -4,6 +4,7 @@ import type { Session, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../../shared/components/OverflowMenu';
 import { worktreeStatus } from '../../../../worktree/worktree';
+import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
 import { usePushBranch } from '../../../hooks/usePushBranch';
 
@@ -18,7 +19,9 @@ const TRIGGER_BUTTON =
 
 export const SessionGitActions = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
-  const worktreePath = useAppStore((state) => state.sessionWorktrees[sessionId]?.[0] ?? null);
+  const worktreePath = useAppStore(
+    (state) => resolveSessionRepo({ state, sessionId })?.worktreePath ?? null,
+  );
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
   const lastRefreshAt = useRef(0);

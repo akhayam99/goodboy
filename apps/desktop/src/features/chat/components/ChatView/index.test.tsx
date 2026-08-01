@@ -12,6 +12,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
   answeredQuestions: { current: [] as ReadonlyArray<unknown> },
   transcriptItems: { current: [] as ReadonlyArray<unknown> },
   state: {
+    sessions: [] as ReadonlyArray<Session>,
     selectedAgentId: {} as Record<string, string | null>,
     transcripts: {} as Record<string, unknown>,
     selectAgent: vi.fn(async () => undefined),
@@ -20,6 +21,8 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionBranches: {} as Record<string, string>,
+    sessionMounts: {} as Record<string, ReadonlyArray<never>>,
+    sessionActiveMount: {} as Record<string, string>,
     workspaces: [] as ReadonlyArray<{ id: string; rootPath: string; kind: string }>,
     authResults: {} as Record<string, unknown>,
     refreshProviders: vi.fn(async () => undefined),
@@ -117,11 +120,14 @@ const session: Session = {
 } as unknown as Session;
 
 beforeEach(() => {
+  state.sessions = [session];
   state.selectedAgentId = {};
   state.transcripts = {};
   state.sessionPhaseRuns = {};
   state.sessionWorktrees = {};
   state.sessionBranches = {};
+  state.sessionMounts = {};
+  state.sessionActiveMount = {};
   state.workspaces = [{ id: 'ws-1', rootPath: '/repo', kind: 'repo' }];
   state.authResults = {};
   state.settings = {};

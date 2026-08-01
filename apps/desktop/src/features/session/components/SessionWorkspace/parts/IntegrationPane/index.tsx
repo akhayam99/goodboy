@@ -49,7 +49,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const integrations = useAppStore(
     (state) => state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY,
   );
-  const remoteKind = useRemoteHostKind(workspaceId);
+  const remoteKind = useRemoteHostKind({ sessionId });
   const tasks = useMemo(
     () => externalTasks.filter((task) => task.provider === provider),
     [externalTasks, provider],

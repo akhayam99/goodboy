@@ -8,6 +8,7 @@ import { useAppStore, useSessionById } from '../../../store';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { BranchCombobox } from '../BranchCombobox';
 import { getCachedLocalBranches, listLocalBranches, type LocalBranchInfo } from '../worktree';
+import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -24,22 +25,25 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
       ? (state.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null)
       : null,
   );
+  const repoRoot = useAppStore(
+    (state) => resolveSessionRepo({ state, sessionId })?.repoRoot ?? null,
+  );
   const { showToast } = useToast();
   const [branchMode, setBranchMode] = useState<'existing' | 'new'>('new');
   const [branchTarget, setBranchTarget] = useState('');
   const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>(() =>
-    workspace?.rootPath != null ? (getCachedLocalBranches(workspace.rootPath) ?? []) : [],
+    repoRoot != null ? (getCachedLocalBranches(repoRoot) ?? []) : [],
   );
-  const [isBranchesLoading, setIsBranchesLoading] = useState(() => workspace?.rootPath != null);
+  const [isBranchesLoading, setIsBranchesLoading] = useState(() => repoRoot != null);
   const [isBusy, setIsBusy] = useState(false);
   const [isReuseConfirmed, setIsReuseConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (workspace?.rootPath == null) {
+    if (repoRoot == null) {
       return;
     }
-    const rootPath = workspace.rootPath;
+    const rootPath = repoRoot;
     const cached = getCachedLocalBranches(rootPath);
     setBranches(cached ?? []);
     setIsBranchesLoading(true);
@@ -63,7 +67,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [workspace?.rootPath]);
+  }, [repoRoot]);
 
   if (
     session == null ||

@@ -5,11 +5,12 @@ import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { useAppStore } from '../../../../../store';
 
-export function GitlabMrStrip({ sessionId }: { sessionId: SessionId }) {
-  const workspaceId = useAppStore(
-    (s) => s.sessions.find((x) => x.id === sessionId)?.workspaceId ?? null,
-  );
-  const remoteKind = useRemoteHostKind(workspaceId);
+type Props = {
+  readonly sessionId: SessionId;
+};
+
+export const GitlabMrStrip = ({ sessionId }: Props) => {
+  const remoteKind = useRemoteHostKind({ sessionId });
   const mrState = useAppStore((s) => s.sessionGitlabMr[sessionId]);
   const refreshSessionMr = useAppStore((s) => s.refreshSessionMr);
   const mr = mrState?.mr ?? null;
@@ -72,4 +73,4 @@ export function GitlabMrStrip({ sessionId }: { sessionId: SessionId }) {
       ) : null}
     </div>
   );
-}
+};

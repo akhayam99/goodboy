@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { FileDiff, GitlabWorkspaceIntegration, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -9,6 +10,7 @@ import {
 import { ghPrDiff } from '../../../github/github';
 import { gitlabMrDiff } from '../../../integrations/gitlab/client';
 import { formatError } from '../../../../shared/lib/errors';
+import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Params = {
   readonly session: Session;
@@ -28,6 +30,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
   );
+  const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const gitlabHost = useAppStore(
     (s) =>
       (s.workspaceIntegrations[session.workspaceId] ?? []).find(
@@ -43,7 +46,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
   const target = useMemo(() => reviewTargetFromTasks({ tasks: externalTasks }), [externalTasks]);
 
   useEffect(() => {
-    if (target == null || workspace == null) {
+    if (target == null || workspace == null || repo == null) {
       setFiles([]);
       setLoading(false);
       setError('No linked pull request or merge request for this session.');
@@ -51,7 +54,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
     }
     const fetchDiff =
       target.provider === 'github'
-        ? () => ghPrDiff(target.repo, target.prNumber, workspace.rootPath, workspace.id)
+        ? () => ghPrDiff(target.repo, target.prNumber, repo.repoRoot, repo.workspaceId)
         : gitlabHost == null
           ? null
           : () => gitlabMrDiff(workspace.id, gitlabHost, target.repo, target.prNumber);
@@ -82,7 +85,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
     return () => {
       cancelled = true;
     };
-  }, [target, workspace, gitlabHost, tick]);
+  }, [gitlabHost, repo, target, tick, workspace]);
 
   const refresh = useCallback(() => setTick((value) => value + 1), []);
 

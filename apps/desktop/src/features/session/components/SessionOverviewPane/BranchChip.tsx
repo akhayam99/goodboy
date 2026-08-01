@@ -9,11 +9,12 @@ import { BranchSwitchPanel } from '../../../worktree/BranchSwitchPanel';
 
 type Props = {
   readonly branch: string;
+  readonly mountName?: string | null;
   readonly sessionId: SessionId;
   readonly canEdit: boolean;
 };
 
-export const BranchChip = ({ branch, sessionId, canEdit }: Props) => {
+export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Props) => {
   const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
   const { open, close, toggle, containerRef, popupClassName } = useDropdown({
@@ -59,6 +60,7 @@ export const BranchChip = ({ branch, sessionId, canEdit }: Props) => {
             className="shrink-0 text-muted-foreground group-hover/branch:text-foreground"
           />
         )}
+        {mountName != null ? <span className="text-muted-foreground">{mountName}:</span> : null}
         <span className="truncate">{branch}</span>
       </button>
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { Divider, ResizeHandle, cn } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
@@ -43,6 +44,7 @@ import { ReviewBoardPane } from '../../../review/components/ReviewBoardPane';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
+import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -104,6 +106,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   ) as AgentId | null;
   const agentHome = useSelectedAgentHome(sessionId);
   const workingDir = useAppStore((s) => (s.sessionWorktrees[sessionId] ?? [])[0] ?? null);
+  const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
+  const projectWorktreePath = sessionRepo?.worktreePath ?? null;
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
@@ -126,9 +130,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   }, [activeLens, sessionId, setActiveLens]);
 
   useEffect(() => {
-    if (!isActive || !workingDir || isBranchless) return;
+    if (!isActive || projectWorktreePath == null || isBranchless) return;
     let cancelled = false;
-    worktreeStatus(workingDir)
+    worktreeStatus(projectWorktreePath)
       .then((status) => {
         if (!cancelled && status.branch) {
           void reconcileSessionBranch(sessionId, status.branch);
@@ -138,7 +142,14 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     return () => {
       cancelled = true;
     };
-  }, [isActive, workingDir, sessionId, filesTouched.count, isBranchless, reconcileSessionBranch]);
+  }, [
+    filesTouched.count,
+    isActive,
+    isBranchless,
+    projectWorktreePath,
+    reconcileSessionBranch,
+    sessionId,
+  ]);
 
   const lens: LensKind | null = activeLens ?? null;
   const isOverviewLoading = sessionLoading?.agents === true || sessionLoading?.plans === true;
@@ -432,6 +443,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   <FilesPane
                     sessionId={sessionId}
                     workingDir={workingDir}
+                    worktreePath={projectWorktreePath}
                     onClose={onSelectOverview}
                   />
                 ) : null}

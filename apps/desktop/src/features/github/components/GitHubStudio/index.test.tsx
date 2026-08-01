@@ -37,8 +37,8 @@ vi.mock('../../../integrations/github/GithubFormBody', () => ({
     </label>
   ),
 }));
-vi.mock('../../../worktree/useRemoteHostKind', () => ({
-  useRemoteHostKind: () => h.remoteKind,
+vi.mock('../../../worktree/useWorkspaceRemoteHostKind', () => ({
+  useWorkspaceRemoteHostKind: () => h.remoteKind,
 }));
 vi.mock('./GithubIssueDetailPanel', () => ({
   GithubIssueDetailPanel: ({ issue }: IssueDetailProps) => (

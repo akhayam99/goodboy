@@ -1,36 +1,41 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { GitlabWorkspaceIntegration, SessionId } from '@goodboy/types';
+import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { useSessionRepo } from '../../store/slices/worktrees/useSessionRepo';
 import { classifyRemoteHost, type RemoteHostKind } from '../../shared/lib/remoteHost';
 import { worktreeRemoteUrl } from './worktree';
 
 const cache = new Map<string, RemoteHostKind>();
 
 type Params = {
-  readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId | null;
 };
 
-export const useRemoteHostKind = ({ sessionId }: Params): RemoteHostKind | null => {
-  const repo = useSessionRepo({ sessionId });
-  const rootPath = repo?.repoRoot ?? null;
-  const workspaceId = repo?.workspaceId ?? null;
+export const useWorkspaceRemoteHostKind = ({ workspaceId }: Params): RemoteHostKind | null => {
+  const rootPath = useAppStore(
+    (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.rootPath ?? null,
+  );
+  const isSimple = useAppStore(
+    (state) =>
+      state.workspaces.find((workspace) => workspace.id === workspaceId)?.kind === 'simple',
+  );
   const gitlabHosts = useAppStore(
-    useShallow((s) =>
-      (workspaceId == null ? [] : (s.workspaceIntegrations[workspaceId] ?? []))
-        .filter((i): i is GitlabWorkspaceIntegration => i.provider === 'gitlab')
-        .map((i) => i.config.host),
+    useShallow((state) =>
+      (workspaceId == null ? [] : (state.workspaceIntegrations[workspaceId] ?? []))
+        .filter(
+          (integration): integration is GitlabWorkspaceIntegration =>
+            integration.provider === 'gitlab',
+        )
+        .map((integration) => integration.config.host),
     ),
   );
   const [kind, setKind] = useState<RemoteHostKind | null>(() =>
-    rootPath != null ? (cache.get(rootPath) ?? null) : null,
+    rootPath != null && !isSimple ? (cache.get(rootPath) ?? null) : null,
   );
-
   const hostsKey = gitlabHosts.join('|');
 
   useEffect(() => {
-    if (rootPath == null) {
+    if (rootPath == null || isSimple) {
       setKind(null);
       return;
     }
@@ -56,7 +61,7 @@ export const useRemoteHostKind = ({ sessionId }: Params): RemoteHostKind | null 
     return () => {
       cancelled = true;
     };
-  }, [gitlabHosts, hostsKey, rootPath]);
+  }, [gitlabHosts, hostsKey, isSimple, rootPath]);
 
   return kind;
 };

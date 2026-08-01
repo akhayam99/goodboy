@@ -40,7 +40,7 @@ type PullRequestProvider = 'github' | 'gitlab';
 
 export const PrPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
-  const remoteKind = useRemoteHostKind(session.workspaceId);
+  const remoteKind = useRemoteHostKind({ sessionId });
   const canonicalPullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const branchPrs = useAppStore((state) => state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
   const selectedPrNumber = useAppStore((state) => state.sessionSelectedPrNumber[sessionId] ?? null);
@@ -140,7 +140,7 @@ const GithubPrCard = ({ session, isPrReview }: { session: Session; isPrReview: b
   const workspaceIntegrations = useAppStore(
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
   );
-  const remoteKind = useRemoteHostKind(session.workspaceId);
+  const remoteKind = useRemoteHostKind({ sessionId });
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
     integrations: workspaceIntegrations,
