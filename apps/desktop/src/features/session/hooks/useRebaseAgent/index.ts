@@ -7,6 +7,7 @@ import { taskModelAgentSpawnConfig } from '../../components/AgentSpawnConfig/tas
 type Params = {
   readonly sessionId: SessionId | null;
   readonly status: WorktreeStatus | null;
+  readonly onError?: (message: string) => void;
 };
 
 type Result = {
@@ -28,7 +29,7 @@ const REBASE_PROMPT = [
   '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
 ].join('\n');
 
-export const useRebaseAgent = ({ sessionId, status }: Params): Result => {
+export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result => {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const session = useAppStore((state) =>
@@ -78,7 +79,9 @@ export const useRebaseAgent = ({ sessionId, status }: Params): Result => {
       });
       await selectAgent(sessionId, agentId);
     } catch (failure) {
-      setError(formatError(failure));
+      const message = formatError(failure);
+      setError(message);
+      onError?.(message);
     } finally {
       setIsStarting(false);
     }

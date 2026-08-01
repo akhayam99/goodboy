@@ -90,6 +90,10 @@ vi.mock('../../../SessionOverviewPane/EditorMenu', () => ({
   EditorMenu: () => <button type="button">open worktree</button>,
 }));
 
+vi.mock('../SessionGitActions', () => ({
+  SessionGitActions: () => <button type="button">branch actions</button>,
+}));
+
 import { LensColumn } from './index';
 
 const SESSION = {

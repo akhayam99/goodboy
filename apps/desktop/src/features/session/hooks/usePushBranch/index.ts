@@ -5,6 +5,7 @@ import { formatError } from '../../../../shared/lib/errors';
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly onError?: (message: string) => void;
 };
 
 type Result = {
@@ -13,10 +14,15 @@ type Result = {
   readonly run: () => Promise<void>;
 };
 
-export const usePushBranch = ({ sessionId }: Params): Result => {
+export const usePushBranch = ({ sessionId, onError }: Params): Result => {
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fail = (message: string) => {
+    setError(message);
+    onError?.(message);
+  };
 
   const run = async (): Promise<void> => {
     if (isBusy) {
@@ -27,10 +33,10 @@ export const usePushBranch = ({ sessionId }: Params): Result => {
     try {
       const result = await pushSessionBranch(sessionId);
       if (!result.ok) {
-        setError(result.error);
+        fail(result.error);
       }
     } catch (failure) {
-      setError(formatError(failure));
+      fail(formatError(failure));
     } finally {
       setIsBusy(false);
     }
