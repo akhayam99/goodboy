@@ -31,6 +31,7 @@ export const OnboardingWizard = () => {
     mode,
     providersConnected,
     hasWorkspace,
+    workspace,
     workspaceId,
     workspaceKind,
     githubConnected,
@@ -93,7 +94,7 @@ export const OnboardingWizard = () => {
       disabled: providersConnected === 0,
     };
   } else if (step === 2) {
-    body = <WorkspaceStep hasWorkspace={hasWorkspace} />;
+    body = <WorkspaceStep workspace={workspace} />;
     cta = { label: 'Continue', onClick: goNext, variant: 'primary', disabled: !hasWorkspace };
   } else if (step === 3) {
     body = <PreferencesStep workspaceId={workspaceId} workspaceKind={workspaceKind} />;

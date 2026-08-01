@@ -8,7 +8,6 @@ import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
 import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { buildBreadcrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
-import { isWizardDone, reopenWizard } from '../../../onboarding/onboarding-store';
 import { defaultSimpleWorkspacePath } from '../../defaultSimpleWorkspacePath';
 
 type Props = {
@@ -208,9 +207,6 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       const ws = await addWorkspace({ rootPath: path });
       await setCurrentWorkspace(ws.id);
       onClose();
-      if (!isWizardDone()) {
-        reopenWizard('setup');
-      }
     } catch (err) {
       setSubmitError(formatError(err));
     } finally {
@@ -233,9 +229,6 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       });
       await setCurrentWorkspace(ws.id);
       onClose();
-      if (!isWizardDone()) {
-        reopenWizard('setup');
-      }
     } catch (err) {
       setSubmitError(formatError(err));
     } finally {
@@ -261,9 +254,6 @@ export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
       });
       await setCurrentWorkspace(ws.id);
       onClose();
-      if (!isWizardDone()) {
-        reopenWizard('setup');
-      }
     } catch (err) {
       setSubmitError(formatError(err));
     } finally {
