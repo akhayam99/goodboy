@@ -1,8 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 
+import type { ToastKind } from '../../../../../app/components/Toast';
+
 type DragHandler = (event: { payload: unknown }) => void;
+type ShowToast = (kind: ToastKind, message: string) => void;
 
 const { hooks } = vi.hoisted(() => ({
   hooks: {
@@ -40,7 +44,7 @@ import { usePendingAttachments } from './usePendingAttachments';
 const COMPOSER_RECT = { left: 100, right: 300, top: 400, bottom: 500 };
 
 const mountComposer = async (
-  showToast: ReturnType<typeof vi.fn>,
+  showToast: Mock<ShowToast>,
   rect: { left: number; right: number; top: number; bottom: number },
   enabled = true,
 ) => {
@@ -63,7 +67,7 @@ const mountComposer = async (
   return rendered;
 };
 
-const mountWithComposer = async (showToast: ReturnType<typeof vi.fn>, enabled = true) =>
+const mountWithComposer = async (showToast: Mock<ShowToast>, enabled = true) =>
   mountComposer(showToast, COMPOSER_RECT, enabled);
 
 const dispatch = async (payload: unknown) => {
@@ -93,7 +97,7 @@ afterEach(() => {
 
 describe('usePendingAttachments drop target', () => {
   it('accepts a drop landing anywhere when it is the sole visible composer', async () => {
-    const showToast = vi.fn();
+    const showToast = vi.fn<ShowToast>();
     const { result } = await mountWithComposer(showToast);
     await drop(10, 10, ['/tmp/a.png']);
     expect(result.current.attachments).toHaveLength(1);
@@ -101,7 +105,7 @@ describe('usePendingAttachments drop target', () => {
   });
 
   it('reports unsupported files instead of dropping them silently', async () => {
-    const showToast = vi.fn();
+    const showToast = vi.fn<ShowToast>();
     const { result } = await mountWithComposer(showToast);
     await drop(200, 450, ['/tmp/archive.zip']);
     expect(result.current.attachments).toHaveLength(0);
@@ -109,7 +113,7 @@ describe('usePendingAttachments drop target', () => {
   });
 
   it('explains why a drop is refused while the provider is disconnected', async () => {
-    const showToast = vi.fn();
+    const showToast = vi.fn<ShowToast>();
     const { result } = await mountWithComposer(showToast, false);
     await drop(200, 450, ['/tmp/a.png']);
     expect(result.current.attachments).toHaveLength(0);
@@ -120,7 +124,7 @@ describe('usePendingAttachments drop target', () => {
   });
 
   it('highlights the sole visible composer no matter where the pointer sits', async () => {
-    const showToast = vi.fn();
+    const showToast = vi.fn<ShowToast>();
     const { result } = await mountWithComposer(showToast);
     await dispatch({ type: 'over', position: { x: 10, y: 10 } });
     expect(result.current.isDragging).toBe(true);
@@ -129,8 +133,8 @@ describe('usePendingAttachments drop target', () => {
   it('accepts a drop at devicePixelRatio 2 using the logical-point candidate', async () => {
     window.devicePixelRatio = 2;
     const decoyRect = { left: 600, right: 700, top: 10, bottom: 60 };
-    const showToastA = vi.fn();
-    const showToastB = vi.fn();
+    const showToastA = vi.fn<ShowToast>();
+    const showToastB = vi.fn<ShowToast>();
     const target = await mountComposer(showToastA, COMPOSER_RECT);
     const decoy = await mountComposer(showToastB, decoyRect);
     await drop(200, 450, ['/tmp/a.png']);
@@ -142,8 +146,8 @@ describe('usePendingAttachments drop target', () => {
     window.devicePixelRatio = 2;
     hooks.zoom = 1.5;
     const decoyRect = { left: 500, right: 700, top: 50, bottom: 150 };
-    const showToastA = vi.fn();
-    const showToastB = vi.fn();
+    const showToastA = vi.fn<ShowToast>();
+    const showToastB = vi.fn<ShowToast>();
     const target = await mountComposer(showToastA, COMPOSER_RECT);
     const decoy = await mountComposer(showToastB, decoyRect);
     await drop(375, 720, ['/tmp/a.png']);
@@ -153,8 +157,8 @@ describe('usePendingAttachments drop target', () => {
 
   it('routes a multi-composer drop to the composer under the pointer', async () => {
     const decoyRect = { left: 600, right: 700, top: 10, bottom: 60 };
-    const showToastA = vi.fn();
-    const showToastB = vi.fn();
+    const showToastA = vi.fn<ShowToast>();
+    const showToastB = vi.fn<ShowToast>();
     const first = await mountComposer(showToastA, COMPOSER_RECT);
     const second = await mountComposer(showToastB, decoyRect);
     await drop(650, 30, ['/tmp/b.png']);
@@ -165,8 +169,8 @@ describe('usePendingAttachments drop target', () => {
 
   it('warns on an ambiguous miss when several composers are visible but neither candidate hits', async () => {
     const decoyRect = { left: 600, right: 700, top: 10, bottom: 60 };
-    const showToastA = vi.fn();
-    const showToastB = vi.fn();
+    const showToastA = vi.fn<ShowToast>();
+    const showToastB = vi.fn<ShowToast>();
     await mountComposer(showToastA, COMPOSER_RECT);
     await mountComposer(showToastB, decoyRect);
     await drop(0, 0, ['/tmp/a.png']);

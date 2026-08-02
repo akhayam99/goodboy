@@ -82,7 +82,9 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   const original = await importOriginal<typeof import('@goodboy/core')>();
   return {
     ...original,
-    PlannerClient: vi.fn().mockImplementation(() => ({ plan: mockPlan })),
+    PlannerClient: vi.fn(function () {
+      return { plan: mockPlan };
+    }),
     polishWorkflowGoal: mockPolish,
     polishStepInstruction: mockPolishStep,
   };
