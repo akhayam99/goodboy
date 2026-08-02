@@ -30,6 +30,8 @@ describe('newSessionDrafts slice', () => {
         goal: 'Fix the checkout flow',
         branchSlug: 'fix-checkout-flow',
         slugTouched: true,
+        folderName: 'Checkout repair',
+        folderNameTouched: true,
         branchMode: 'existing',
         existingBranch: 'checkout-work',
         issue: {
@@ -56,6 +58,8 @@ describe('newSessionDrafts slice', () => {
       goal: 'Fix checkout and payment',
       branchSlug: 'fix-checkout-flow',
       slugTouched: true,
+      folderName: 'Checkout repair',
+      folderNameTouched: true,
       branchMode: 'existing',
       existingBranch: 'checkout-work',
       issue: { identifier: '#42' },

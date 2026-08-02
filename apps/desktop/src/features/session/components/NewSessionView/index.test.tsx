@@ -10,6 +10,7 @@ import type {
 const h = vi.hoisted(() => ({
   remoteKind: 'github' as string | null,
   listLocalBranches: vi.fn(async () => []),
+  simpleSessionDirExists: vi.fn(async () => false),
   invoke: vi.fn(),
   showToast: vi.fn(),
   store: {
@@ -62,6 +63,7 @@ vi.mock('../../../../features/worktree/useBranchConflict', () => ({
 
 vi.mock('../../../../features/worktree/worktree', () => ({
   listLocalBranches: h.listLocalBranches,
+  simpleSessionDirExists: h.simpleSessionDirExists,
   removeWorktree: vi.fn(),
 }));
 
@@ -95,6 +97,8 @@ beforeEach(() => {
       goal: '',
       branchSlug: '',
       slugTouched: false,
+      folderName: '',
+      folderNameTouched: false,
       branchMode: 'new',
       existingBranch: '',
       issue: null,
@@ -107,6 +111,7 @@ beforeEach(() => {
     delete h.store.newSessionDrafts[workspaceId];
   });
   h.listLocalBranches.mockClear();
+  h.simpleSessionDirExists.mockClear();
   h.invoke.mockReset();
   h.invoke.mockResolvedValue({
     stdout: JSON.stringify({ result: '<<goal>>Polished goal.<</goal>>' }),
@@ -125,6 +130,8 @@ describe('NewSessionView issue sources', () => {
         goal: 'Original goal',
         branchSlug: 'original-goal',
         slugTouched: true,
+        folderName: 'Original goal',
+        folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
         issue: null,
@@ -163,6 +170,8 @@ describe('NewSessionView issue sources', () => {
         goal: 'Rough goal',
         branchSlug: 'rough-goal',
         slugTouched: true,
+        folderName: 'Rough goal',
+        folderNameTouched: false,
         branchMode: 'new',
         existingBranch: '',
         issue: null,
@@ -254,7 +263,107 @@ describe('NewSessionView issue sources', () => {
     expect(screen.queryByText('Start from an issue')).toBeNull();
   });
 
-  it('hides issue and branch controls and creates without branch fields for simple workspaces', async () => {
+  it('derives the folder name from the goal and stops following after manual edits', () => {
+    h.store.workspaces[0]!.kind = 'simple';
+    const view = render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    const initialFolderInput = screen.getByLabelText('Folder name');
+    if (!(initialFolderInput instanceof HTMLInputElement)) {
+      throw new Error('Expected the folder name field to be an input');
+    }
+    expect(initialFolderInput.value).toBe('session');
+
+    fireEvent.change(screen.getByLabelText('Goal'), {
+      target: { value: 'Prepare for the exam' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    const derivedFolderInput = screen.getByLabelText('Folder name');
+    if (!(derivedFolderInput instanceof HTMLInputElement)) {
+      throw new Error('Expected the folder name field to be an input');
+    }
+    expect(derivedFolderInput.value).toBe('Prepare for the exam');
+
+    fireEvent.change(derivedFolderInput, {
+      target: { value: 'Exam prep notes' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Goal'), {
+      target: { value: 'Another goal for tomorrow' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    const customFolderInput = screen.getByLabelText('Folder name');
+    if (!(customFolderInput instanceof HTMLInputElement)) {
+      throw new Error('Expected the folder name field to be an input');
+    }
+    expect(customFolderInput.value).toBe('Exam prep notes');
+  });
+
+  it('blocks creation when the folder name is invalid and explains why', () => {
+    h.store.workspaces[0]!.kind = 'simple';
+    const view = render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Folder name'), {
+      target: { value: 'bad/name' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.getByText('Use one folder name. Slashes are not allowed')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create session' }).getAttribute('disabled')).toBe(
+      '',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create session' }));
+    expect(h.store.createSession).not.toHaveBeenCalled();
+  });
+
+  it('blocks creation when the folder already exists', async () => {
+    h.store.workspaces[0]!.kind = 'simple';
+    h.simpleSessionDirExists.mockResolvedValueOnce(true);
+    const view = render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Folder name'), {
+      target: { value: 'Existing folder' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    await waitFor(() =>
+      expect(h.simpleSessionDirExists).toHaveBeenCalledWith({
+        path: '/repo/sessions/Existing folder',
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByText('A folder with this name already exists in this workspace'),
+      ).toBeDefined(),
+    );
+    expect(screen.getByRole('button', { name: 'Create session' }).getAttribute('disabled')).toBe(
+      '',
+    );
+  });
+
+  it('hides issue and branch controls and creates with the typed folder name for simple workspaces', async () => {
     h.store.workspaces[0]!.kind = 'simple';
     h.store.workspaceIntegrations = {
       [WORKSPACE_ID]: [integration('linear'), integration('sentry')],
@@ -266,6 +375,7 @@ describe('NewSessionView issue sources', () => {
     expect(screen.queryByText('Start from an issue')).toBeNull();
     expect(screen.queryByText('Branch')).toBeNull();
     expect(screen.queryByLabelText('Branch slug')).toBeNull();
+    expect(screen.getByText('Folder')).toBeDefined();
     expect(h.listLocalBranches).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Goal'), {
@@ -274,12 +384,31 @@ describe('NewSessionView issue sources', () => {
     view.rerender(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
     );
+    fireEvent.change(screen.getByLabelText('Folder name'), {
+      target: { value: 'Exam prep 2026' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    await waitFor(() =>
+      expect(h.simpleSessionDirExists).toHaveBeenCalledWith({
+        path: '/repo/sessions/Exam prep 2026',
+      }),
+    );
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole('button', { name: 'Create session' }).getAttribute('disabled'),
+        ).toBeNull(),
+      { timeout: 2000 },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Create session' }));
     await waitFor(() => expect(h.store.createSession).toHaveBeenCalledOnce());
     const input = h.store.createSession.mock.calls[0]?.[0];
     expect(input).not.toHaveProperty('branchPrefix');
     expect(input).not.toHaveProperty('branchSlug');
     expect(input).not.toHaveProperty('existingBranch');
+    expect(input.folderName).toBe('Exam prep 2026');
     expect(h.store.newSessionDrafts[WORKSPACE_ID]).toBeUndefined();
   });
 });

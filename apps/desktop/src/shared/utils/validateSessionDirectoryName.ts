@@ -2,11 +2,11 @@ type Params = {
   readonly name: string;
 };
 
-type SessionDirectoryNameValidationResult =
+export type SessionDirectoryNameValidationResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly kind: SessionDirectoryNameValidationErrorKind };
 
-type SessionDirectoryNameValidationErrorKind =
+export type SessionDirectoryNameValidationErrorKind =
   | 'empty'
   | 'too_long'
   | 'path_separator'

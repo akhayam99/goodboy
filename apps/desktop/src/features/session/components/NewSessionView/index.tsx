@@ -15,6 +15,7 @@ import {
   type LocalBranchInfo,
 } from '../../../../features/worktree/worktree';
 import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
+import { useSimpleSessionDirectoryConflict } from '../../../../features/worktree/useSimpleSessionDirectoryConflict';
 import { useWorkspaceRemoteHostKind } from '../../../../features/worktree/useWorkspaceRemoteHostKind';
 import type { IssueCandidate } from '../../../../features/integrations/fetchIssueCandidates';
 import { resolveIssueSources } from '../../../../features/integrations/issueSources';
@@ -24,6 +25,10 @@ import { isValidBranchSlug as validateBranchSlug } from '../../../../shared/util
 import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
 import { sanitizeBranchSlug as sanitizeBranchSlugValue } from '../../../../shared/utils/sanitizeBranchSlug';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
+import { validateSessionDirectoryName } from '../../../../shared/utils/validateSessionDirectoryName';
+import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../../shared/utils/deriveDefaultSessionDirectoryNameFromGoal';
+import { buildSimpleSessionDirectoryPath } from '../../../../shared/utils/buildSimpleSessionDirectoryPath';
+import { sessionDirectoryNameValidationMessage } from '../../../../shared/utils/sessionDirectoryNameValidationMessage';
 import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/providerOrder';
 import { useSetupWorkflowPreference } from '../../hooks/useSetupWorkflowPreference';
 import { EMPTY_NEW_SESSION_DRAFT } from '../../../../store/slices/newSessionDrafts/emptyNewSessionDraft';
@@ -59,7 +64,16 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const isSimple = workspace?.kind === 'simple';
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
 
-  const { goal, branchSlug, slugTouched, branchMode, existingBranch, issue } = draft;
+  const {
+    goal,
+    branchSlug,
+    slugTouched,
+    folderName,
+    folderNameTouched,
+    branchMode,
+    existingBranch,
+    issue,
+  } = draft;
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [slugGenerating, setSlugGenerating] = useState(false);
   const [existingBranches, setExistingBranches] = useState<ReadonlyArray<LocalBranchInfo>>([]);
@@ -174,6 +188,17 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     setNewSessionDraft({ workspaceId, draft: { branchSlug: nextBranchSlug } });
   }, [branchSlug, goal, setNewSessionDraft, slugTouched, workspaceId]);
 
+  useEffect(() => {
+    if (!isSimple || folderNameTouched) {
+      return;
+    }
+    const nextFolderName = deriveDefaultSessionDirectoryNameFromGoal({ goal });
+    if (nextFolderName === folderName) {
+      return;
+    }
+    setNewSessionDraft({ workspaceId, draft: { folderName: nextFolderName } });
+  }, [folderName, folderNameTouched, goal, isSimple, setNewSessionDraft, workspaceId]);
+
   const handleGenerateSlug = () => {
     const trimmed = goal.trim();
     if (trimmed === '' || slugGenerating) {
@@ -277,6 +302,18 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   );
   const conflictSessionId = conflict?.kind === 'session' ? conflict.sessionId : null;
   const conflictWorktreePath = conflict?.kind === 'worktree' ? conflict.path : null;
+  const folderValidation = validateSessionDirectoryName({ name: folderName });
+  const folderNameError = sessionDirectoryNameValidationMessage({ validation: folderValidation });
+  const folderPathPreview =
+    isSimple && workspace?.rootPath != null
+      ? buildSimpleSessionDirectoryPath({
+          workspaceRoot: workspace.rootPath,
+          folderName,
+        })
+      : null;
+  const folderConflictPath =
+    isSimple && folderValidation.ok && folderPathPreview != null ? folderPathPreview : null;
+  const folderConflict = useSimpleSessionDirectoryConflict({ path: folderConflictPath });
 
   const branchReady =
     isSimple ||
@@ -284,9 +321,12 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       ? validateBranchSlug({ slug: branchSlug })
       : existingBranch.trim().length > 0);
   const goalReady = goal.trim().length > 0;
+  const folderReady =
+    !isSimple || (folderValidation.ok && !folderConflict.exists && !folderConflict.checking);
   const canCreate =
     goalReady &&
     branchReady &&
+    folderReady &&
     !busy &&
     !noProviderConnected &&
     conflictSessionId === null &&
@@ -314,13 +354,13 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       await createSession({
         workspaceId,
         goal,
-        ...(!isSimple
-          ? {
+        ...(isSimple
+          ? { folderName }
+          : {
               branchPrefix:
                 sanitizeBranchPrefix({ input: branchPrefix }).trim() || DEFAULT_BRANCH_PREFIX,
               branchSlug: branchSlug.trim() || undefined,
-            }
-          : {}),
+            }),
         ...(useExisting ? { existingBranch: existingBranch.trim() } : {}),
         ...(issue
           ? {
@@ -398,6 +438,20 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                     },
                   });
                 }}
+                folderName={folderName}
+                onFolderNameChange={(value) => {
+                  setNewSessionDraft({
+                    workspaceId,
+                    draft: {
+                      folderName: value,
+                      folderNameTouched: true,
+                    },
+                  });
+                }}
+                folderPathPreview={folderPathPreview}
+                folderNameError={folderNameError}
+                folderConflict={folderConflict.exists}
+                folderConflictChecking={folderConflict.checking}
                 slugGenerating={slugGenerating}
                 onGenerateSlug={handleGenerateSlug}
                 existingBranches={existingBranches}
