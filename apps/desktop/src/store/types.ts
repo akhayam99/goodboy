@@ -8,6 +8,7 @@ import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
+  FileVersion,
   GhTokenStatus,
   GoalAttachment,
   IsoDateTime,
@@ -243,6 +244,9 @@ export type AppState = UpdaterState & {
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
   readonly agentQueue: Readonly<Record<AgentId, ReadonlyArray<AgentQueuedTurn>>>;
   readonly diffComments: Readonly<Record<string, ReadonlyArray<DiffComment>>>;
+  readonly sessionFileVersions: Readonly<Record<SessionId, ReadonlyArray<FileVersion> | undefined>>;
+  readonly sessionFileVersionsLoading: Readonly<Record<SessionId, boolean>>;
+  readonly sessionFileVersionSelectedPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionAttachments: Readonly<Record<SessionId, ReadonlyArray<GoalAttachment>>>;
   readonly workflowRunAttachments: Readonly<Record<WorkflowRunId, ReadonlyArray<GoalAttachment>>>;
   readonly notifications: ReadonlyArray<Notification>;

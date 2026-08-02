@@ -18,6 +18,7 @@ vi.mock('../../store', () => ({
       phaseTemplates: {},
       sessionBudgets: {},
       sessionWorktrees: {},
+      sessionBranches: {},
       sessionTelemetry: {},
       sessionSummary: null,
       workspaces: [],

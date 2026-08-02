@@ -67,6 +67,10 @@ import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } fro
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import {
+  beginTurnFileVersionCapture,
+  finalizeTurnFileVersionCapture,
+} from '../file-versions/captureTurnFileVersions';
+import {
   buildAttachmentPromptBlock,
   buildGoalAttachmentsBlock,
   capturePlanFromTurn,
@@ -747,6 +751,29 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       branch: get().sessionBranches[sessionId],
     });
     const scopeMembers = scopeWorkspace?.kind === 'composite' ? (scopeWorkspace.members ?? []) : [];
+    const notifySnapshotFailure = async ({
+      stage,
+      message,
+    }: {
+      stage: 'begin' | 'finalize' | 'persist';
+      message: string;
+    }) => {
+      await get().emitNotification(
+        'error',
+        'warning',
+        'Could not capture a recoverable file version for this turn',
+        `stage: ${stage}. details: ${message}`,
+        { sessionId, workspaceId: session.workspaceId },
+      );
+    };
+    const turnFileVersionCapture = isSessionDirScope
+      ? await beginTurnFileVersionCapture({
+          sessionId,
+          sessionDir: workingDir,
+          runId,
+          onFailure: notifySnapshotFailure,
+        })
+      : null;
     const scopeGuard = (
       isSessionDirScope
         ? [
@@ -1130,6 +1157,20 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         void get().refreshUnreadWorkspaces();
       }
       lastError = createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
+    } finally {
+      if (turnFileVersionCapture != null) {
+        await finalizeTurnFileVersionCapture({
+          sessionId,
+          sessionDir: workingDir,
+          runId,
+          manifest: turnFileVersionCapture.manifest,
+          providerRunId: runId,
+          onFailure: notifySnapshotFailure,
+        });
+        if (get().sessionFileVersions[sessionId] !== undefined) {
+          await get().loadSessionFileVersions({ sessionId, force: true });
+        }
+      }
     }
 
     if (assistantText.length > 0) {

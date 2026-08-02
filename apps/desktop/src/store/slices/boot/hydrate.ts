@@ -24,6 +24,7 @@ import {
   SETTING_REOPEN_LAST,
 } from '../../../features/settings/settings';
 import { formatError } from '../../../shared/lib/errors';
+import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVersions';
 import { drainAuditRetryQueue } from './auditRetryQueue';
 import type { GetFn, SetFn } from './types';
 
@@ -135,6 +136,26 @@ export const hydrate = (set: SetFn, get: GetFn) => {
               .catch(() => {}),
           ),
         );
+        try {
+          await recoverStagedFileVersions({
+            onFailure: async ({ sessionId, runId, message }) => {
+              await get().emitNotification(
+                'error',
+                'warning',
+                'Some staged file versions could not be recovered',
+                `session: ${sessionId}. run: ${runId}. details: ${message}`,
+                { sessionId },
+              );
+            },
+          });
+        } catch (error) {
+          await get().emitNotification(
+            'error',
+            'warning',
+            'File version recovery could not run at startup',
+            formatError(error),
+          );
+        }
 
         set({ bootPhase: 'restoring-session' });
         const reloadIntent = consumeReloadIntent();

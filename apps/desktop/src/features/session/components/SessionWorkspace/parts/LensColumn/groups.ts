@@ -190,6 +190,13 @@ export const buildLensGroups = ({
                 icon: CONCEPT_ICONS.explore,
                 tone: 'info',
               } satisfies LensRow,
+              {
+                kind: 'files',
+                label: 'File versions',
+                icon: CONCEPT_ICONS.diff,
+                tone: 'info',
+                count: filesCount,
+              } satisfies LensRow,
             ]
           : [
               {

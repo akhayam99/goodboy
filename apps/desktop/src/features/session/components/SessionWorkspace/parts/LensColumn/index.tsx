@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { LayoutDashboard, Unplug } from 'lucide-react';
 import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
@@ -49,6 +49,8 @@ export const LensColumn = ({
 }: Props) => {
   const sessionId = session.id as SessionId;
   const loading = useAppStore((s) => s.sessionLoading[sessionId]);
+  const fileVersions = useAppStore((s) => s.sessionFileVersions[sessionId] ?? EMPTY_ARRAY);
+  const loadSessionFileVersions = useAppStore((s) => s.loadSessionFileVersions);
   const areAgentsLoading = loading?.agents === true;
   const arePlansLoading = loading?.plans === true;
   const areQuestionsLoading = useAppStore((s) => s.sessionOpenQuestions[sessionId] === undefined);
@@ -107,6 +109,17 @@ export const LensColumn = ({
       : summarizerStatus === 'error'
         ? 'attention'
         : undefined;
+  const branchlessVersionFileCount = useMemo(
+    () => new Set(fileVersions.map((version) => version.relativePath)).size,
+    [fileVersions],
+  );
+
+  useEffect(() => {
+    if (!isBranchless) {
+      return;
+    }
+    void loadSessionFileVersions({ sessionId });
+  }, [isBranchless, loadSessionFileVersions, sessionId]);
   const hasGithubPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr != null);
   const hasGitlabMr = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr != null);
   const openResolvers = useMemo(
@@ -225,8 +238,8 @@ export const LensColumn = ({
     hasPendingBatch,
     openCount,
     areQuestionsLoading,
-    filesCount,
-    diffstat,
+    filesCount: isBranchless ? branchlessVersionFileCount : filesCount,
+    diffstat: isBranchless ? undefined : diffstat,
     activePlans,
     arePlansLoading,
     runningScripts,

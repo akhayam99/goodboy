@@ -38,7 +38,7 @@ impl serde::Serialize for AttachmentError {
 /// Reduces an arbitrary file name to a flat, separator-free token. Drops any
 /// directory component and replaces anything outside `[A-Za-z0-9._-]` — both a
 /// path-traversal guard and a defense against shell-hostile names.
-fn sanitize_segment(name: &str) -> String {
+pub(crate) fn sanitize_segment(name: &str) -> String {
     let base = Path::new(name)
         .file_name()
         .and_then(|s| s.to_str())

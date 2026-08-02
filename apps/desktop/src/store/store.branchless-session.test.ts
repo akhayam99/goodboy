@@ -6,6 +6,8 @@ const {
   listWorktreesForSession,
   updateSessionWorktreeBranch,
   deleteSession,
+  deleteFileVersionsForSession,
+  fileVersionsPurgeSession,
   detectRepoSlug,
 } = vi.hoisted(() => ({
   changeWorktreeBranch: vi.fn(async () => undefined),
@@ -15,6 +17,8 @@ const {
   ]),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
+  deleteFileVersionsForSession: vi.fn(async () => undefined),
+  fileVersionsPurgeSession: vi.fn(async () => undefined),
   detectRepoSlug: vi.fn(async () => 'acme/widgets'),
 }));
 
@@ -22,6 +26,7 @@ vi.mock('@goodboy/db', () => ({
   listWorktreesForSession,
   updateSessionWorktreeBranch,
   deleteSession,
+  deleteFileVersionsForSession,
 }));
 
 vi.mock('@goodboy/core', () => ({
@@ -36,6 +41,11 @@ vi.mock('../features/worktree/worktree', () => ({
   changeWorktreeBranch,
   removeWorktree,
   invalidateLocalBranchesCache: vi.fn(),
+}));
+
+vi.mock('../features/file-versions/fileVersions', () => ({
+  fileVersionsPurgeSession,
+  fileVersionsDelete: vi.fn(async () => undefined),
 }));
 
 vi.mock('../features/chat/turn', () => ({ cancelTurn: vi.fn(async () => undefined) }));
@@ -101,6 +111,7 @@ describe('a branchless session in a workspace converted to repo', () => {
     await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
 
     expect(removeWorktree).not.toHaveBeenCalled();
+    expect(fileVersionsPurgeSession).toHaveBeenCalledWith({ sessionId: SESSION_ID });
     expect(deleteSession).toHaveBeenCalledOnce();
   });
 
@@ -141,6 +152,7 @@ describe('a repo-backed session in the same workspace', () => {
     await deleteTask(vi.fn(), (() => store) as never)(SESSION_ID);
 
     expect(removeWorktree).toHaveBeenCalledWith('/root', '/root/sessions/study-plan');
+    expect(fileVersionsPurgeSession).not.toHaveBeenCalled();
   });
 
   it('still refreshes its pull request', async () => {

@@ -4,6 +4,7 @@ import { InlineConfirm } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
+import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 
 type Props = {
   readonly session: Session;
@@ -14,8 +15,19 @@ type Props = {
 export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => {
   const deleteTask = useAppStore((s) => s.deleteTask);
   const archiveTask = useAppStore((s) => s.archiveTask);
+  const workspaceKind = useAppStore(
+    (s) => s.workspaces.find((workspace) => workspace.id === session.workspaceId)?.kind,
+  );
+  const sessionBranch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isBranchless = isBranchlessSession({ workspaceKind, branch: sessionBranch });
+  const description = isBranchless
+    ? 'Permanently removes this session, its transcripts, and every saved file version from this device.'
+    : 'Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge.';
+  const warning = isBranchless
+    ? 'This cannot be undone. Saved file versions are deleted with this session.'
+    : 'This cannot be undone. To keep the history, archive instead.';
 
   const onConfirm = async () => {
     setBusy(true);
@@ -48,7 +60,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => 
       role="danger"
       icon={<Trash2 size={12} aria-hidden />}
       title="Delete session?"
-      description="Permanently removes the worktree and transcripts for this session from this device. The branch is preserved for manual merge."
+      description={description}
       confirmLabel="Delete"
       onConfirm={onConfirm}
       onCancel={onClose}
@@ -71,9 +83,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => 
       <p className="truncate rounded-md border border-border-soft bg-subtle px-2 py-1 font-mono text-foreground">
         {session.goal}
       </p>
-      <p className="font-medium text-danger">
-        This cannot be undone. To keep the history, archive instead.
-      </p>
+      <p className="font-medium text-danger">{warning}</p>
       {error != null && <p className="font-medium text-danger">{error}</p>}
     </InlineConfirm>
   );

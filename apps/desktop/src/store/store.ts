@@ -37,6 +37,7 @@ import type {
   ProviderId,
   ProviderCredential,
   CredentialId,
+  FileVersionId,
   ProviderRunId,
   ResolvedSettings,
   VerbosityLevel,
@@ -77,6 +78,7 @@ import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createDiffCommentsSlice } from './slices/diff-comments';
+import { createFileVersionsSlice } from './slices/file-versions';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import { createGitlabMrSlice } from './slices/gitlab-mr';
@@ -565,6 +567,18 @@ export type AppActions = {
   ): Promise<void>;
   reopenDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   deleteDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
+  loadSessionFileVersions(params: { sessionId: SessionId; force?: boolean }): Promise<void>;
+  selectSessionFileVersionPath(params: { sessionId: SessionId; relativePath: string | null }): void;
+  restoreSessionFileVersion(params: {
+    sessionId: SessionId;
+    versionId: FileVersionId;
+    sessionDir: string;
+  }): Promise<void>;
+  deleteSessionFileVersion(params: {
+    sessionId: SessionId;
+    versionId: FileVersionId;
+  }): Promise<void>;
+  deleteAllSessionFileVersions(params: { sessionId: SessionId }): Promise<void>;
   loadGoalAttachments(owner: GoalAttachmentOwner): Promise<void>;
   addGoalAttachments(
     owner: GoalAttachmentOwner,
@@ -722,6 +736,9 @@ export const initialState: AppState = {
   agentAttachments: {},
   agentQueue: {},
   diffComments: {},
+  sessionFileVersions: {},
+  sessionFileVersionsLoading: {},
+  sessionFileVersionSelectedPath: {},
   sessionAttachments: {},
   workflowRunAttachments: {},
   notifications: [],
@@ -750,6 +767,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBudgetSlice(set, get),
   ...createSkillsSlice(set, get),
   ...createDiffCommentsSlice(set, get),
+  ...createFileVersionsSlice(set, get),
   ...createAttachmentsSlice(set, get),
   ...createGithubSlice(set, get),
   ...createGitlabMrSlice(set, get),

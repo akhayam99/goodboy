@@ -62,6 +62,7 @@ const deleteWorkspaceIntegrationSpy = vi.fn(async () => undefined);
 const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceScript>);
 const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
 const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
+const deleteFileVersionsForSessionSpy = vi.fn(async () => undefined);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -100,6 +101,7 @@ vi.mock('@goodboy/db', () => ({
   listAllSessionWorktrees: vi.fn(async () => []),
   renameSession: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
+  deleteFileVersionsForSession: deleteFileVersionsForSessionSpy,
   archiveSession: vi.fn(async () => undefined),
   unarchiveSession: vi.fn(async () => undefined),
   updateSessionConfig: vi.fn(async () => undefined),
@@ -513,6 +515,9 @@ describe('store contract', () => {
         agentKindOverride: {},
         agentDraft: {},
         diffComments: {},
+        sessionFileVersions: {},
+        sessionFileVersionsLoading: {},
+        sessionFileVersionSelectedPath: {},
         notifications: [],
         sessionPlans: {},
         sessionNudges: {},
@@ -644,6 +649,23 @@ describe('store contract', () => {
       expect(s.currentSessionId).toBeNull();
       expect(s.sessionGithubPrs[SESSION_ID]).toBeUndefined();
       expect(s.sessionSelectedPrNumber[SESSION_ID]).toBeUndefined();
+    });
+
+    it('deleteTask purges file versions for a branchless session', async () => {
+      const store = await getStore();
+      store.setState({
+        sessions: [buildSession()],
+        workspaces: [buildWorkspace({ kind: 'simple', rootPath: '/tmp/simple-space' })],
+        sessionBranches: { [SESSION_ID]: '' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/simple-space/sessions/test'] },
+      });
+
+      await store.getState().deleteTask(SESSION_ID);
+
+      expect(deleteFileVersionsForSessionSpy).toHaveBeenCalledWith({
+        db: expect.anything(),
+        sessionId: SESSION_ID,
+      });
     });
 
     describe('bulk archived ops', () => {

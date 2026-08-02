@@ -301,6 +301,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     () => plans.find((p) => p.id === focusedPlanId)?.title ?? null,
     [plans, focusedPlanId],
   );
+  const lensLabel = (kind: LensKind): string =>
+    kind === 'files' && isBranchless ? 'File versions' : LENS_LABEL[kind];
 
   const crumbs = useMemo(
     () =>
@@ -309,7 +311,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
         studio,
         focusedWorkflowName,
         focusedPlanTitle,
-        lensLabel: (l) => LENS_LABEL[l],
+        lensLabel,
         handlers: {
           toOverview: () => setActiveLens(sessionId, null),
           toLens: (l) => setActiveLens(sessionId, l),
@@ -328,6 +330,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       studio,
       focusedWorkflowName,
       focusedPlanTitle,
+      isBranchless,
       sessionId,
       setActiveLens,
       setFocusedWorkflowRun,
@@ -445,8 +448,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 {lens === 'files' ? (
                   <FilesPane
                     sessionId={sessionId}
-                    workingDir={projectWorktreePath}
+                    sessionDir={workingDir}
                     worktreePath={projectWorktreePath}
+                    isBranchless={isBranchless}
                     onClose={onSelectOverview}
                   />
                 ) : null}
