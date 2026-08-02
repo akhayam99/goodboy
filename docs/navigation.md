@@ -15,16 +15,18 @@ from the existing store (`currentWorkspaceId`, `currentSessionId`,
 `workspaces`, `sessions`) plus the studio open-state flags forwarded from
 `App.tsx`.
 
-`AppBreadcrumb` is NOT rendered in `AppTopBar`. The top bar holds only the
-logo (left) and global controls (right). Navigation context is surfaced
+`AppBreadcrumb` is NOT rendered in `AppTopBar`. Navigation context is surfaced
 differently depending on where the user is:
 
-- Inside a session: `WorkspacesSidebar` shows a "Back to board" action
-  directly under the workspace header, above the sessions list.
+- Inside a session: `WorkspacesSidebar` shows a "Back to board" action above
+  the sessions list.
 - Inside a session lens: `buildSessionBreadcrumb`
-  (`features/session/components/SessionWorkspace/sessionBreadcrumb.ts`) renders
-  an in-content trail, at most three crumbs deep, always rooted at a clickable
-  `Overview`. Shapes: `Overview > {LensName}`,
+  (`features/session/components/SessionWorkspace/sessionBreadcrumb.ts`) is read
+  by `useSessionCrumbs` and rendered by `SessionStripCrumbs` in the top bar,
+  rooted at the session goal rather than at a separate `Overview` crumb. The
+  trail below is what `buildSessionBreadcrumb` returns; the strip drops its
+  first crumb and uses the session title in its place. At most three crumbs
+  deep. Shapes: `Overview > {LensName}`,
   `Overview > Workflows > {WorkflowName}`, `Overview > Plans > {PlanTitle}`,
   and for the session studios `Overview > Workflows > Create`,
   `Overview > Pull request > PR #{n}`, `Overview > Pull request > Merge request`.
@@ -150,9 +152,12 @@ hidden.
 - Overview (no session active): board-only, sidebar hidden.
 - Session entered: sidebar follows the persisted sessions-column preference.
 
-The sidebar has no collapse rail. In a session, users can hide or show the
-sessions column from the workspace header or with `cmd+b`. The toggle writes a
-persisted preference, while Overview still forces `leftHidden`.
+The sidebar has no collapse rail. In a session, users hide or show the sessions
+column from the single control in the top bar or with `cmd+b`. The toggle writes
+a persisted preference, while Overview still forces `leftHidden`. Collapsed, the
+column still comes back on hover as a temporary overlay
+(`features/workspace/components/SidebarPeekOverlay`); the peek never touches the
+persisted preference.
 
 ## Studios
 
@@ -218,8 +223,9 @@ than adding a rail.
 
 `ScriptsPanel` is the one consumer that nests the split _inside_ its
 `PaneShell` rather than wrapping it, because the same component also mounts in
-Workspace settings where there is no `PaneShell`. Its lens therefore runs at
-`width="5xl"` so the list and the editor each keep a usable column.
+Workspace settings where there is no `PaneShell`. Its lens therefore inherits
+`PaneShell`'s `max-w-5xl` reading column so the list and the editor each keep a
+usable width.
 
 ## New session form
 
