@@ -9,6 +9,7 @@ use thiserror::Error;
 
 const FILE_VERSIONS_DIR: &str = "file-versions";
 const STAGING_DIR: &str = "staging";
+const MANIFEST_FILE: &str = "manifest.json";
 const DEFAULT_SIZE_CAP_BYTES: u64 = 15 * 1024 * 1024;
 
 #[derive(Debug, Error)]
@@ -92,6 +93,15 @@ pub struct SnapshotManifestEntry {
     content_hash: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SnapshotManifestDocument {
+    session_dir: String,
+    session_id: String,
+    run_id: String,
+    manifest: Vec<SnapshotManifestEntry>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapshotSkippedEntry {
@@ -131,6 +141,30 @@ pub struct FinalizedVersion {
 #[serde(rename_all = "camelCase")]
 pub struct FinalizeSnapshotResult {
     kept: Vec<FinalizedVersion>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StagedSnapshotRun {
+    session_id: String,
+    run_id: String,
+    session_dir: String,
+    manifest: Vec<SnapshotManifestEntry>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkippedStagedSnapshotRun {
+    session_id: String,
+    run_id: String,
+    reason: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListStagedSnapshotsResult {
+    runs: Vec<StagedSnapshotRun>,
+    skipped: Vec<SkippedStagedSnapshotRun>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -181,6 +215,12 @@ pub fn file_versions_finalize_snapshot(
 }
 
 #[tauri::command]
+pub fn file_versions_list_staged_snapshots() -> Result<ListStagedSnapshotsResult, FileVersionsError> {
+    let root = file_versions_root()?;
+    list_staged_snapshots_with_root(&root)
+}
+
+#[tauri::command]
 pub fn file_versions_restore(args: RestoreVersionArgs) -> Result<(), FileVersionsError> {
     let root = file_versions_root()?;
     restore_version_with_root(&root, args)
@@ -222,6 +262,16 @@ fn begin_snapshot_with_root(
         let staged = staged_path(&run_dir, &entry.relative_path);
         fs::copy(source, staged)?;
     }
+    let metadata = SnapshotManifestDocument {
+        session_dir: session_root.to_string_lossy().to_string(),
+        session_id: args.session_id,
+        run_id: args.run_id,
+        manifest: manifest.clone(),
+    };
+    fs::write(
+        run_dir.join(MANIFEST_FILE),
+        serde_json::to_vec(&metadata)?,
+    )?;
     Ok(BeginSnapshotResult { manifest, skipped })
 }
 
@@ -318,6 +368,93 @@ fn purge_session_with_root(root: &Path, args: PurgeSessionArgs) -> Result<(), Fi
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(err) => Err(FileVersionsError::Io(err)),
     }
+}
+
+fn list_staged_snapshots_with_root(root: &Path) -> Result<ListStagedSnapshotsResult, FileVersionsError> {
+    if !root.is_dir() {
+        return Ok(ListStagedSnapshotsResult {
+            runs: Vec::new(),
+            skipped: Vec::new(),
+        });
+    }
+    let mut runs = Vec::new();
+    let mut skipped = Vec::new();
+    for session_entry in fs::read_dir(root)? {
+        let session_entry = session_entry?;
+        let session_path = session_entry.path();
+        if !session_path.is_dir() {
+            continue;
+        }
+        let session_id = session_entry.file_name().to_string_lossy().to_string();
+        let staging_dir = session_path.join(STAGING_DIR);
+        if !staging_dir.is_dir() {
+            continue;
+        }
+        for run_entry in fs::read_dir(staging_dir)? {
+            let run_entry = run_entry?;
+            let run_path = run_entry.path();
+            if !run_path.is_dir() {
+                continue;
+            }
+            let run_id = run_entry.file_name().to_string_lossy().to_string();
+            let manifest_path = run_path.join(MANIFEST_FILE);
+            if !manifest_path.is_file() {
+                skipped.push(SkippedStagedSnapshotRun {
+                    session_id: session_id.clone(),
+                    run_id: run_id.clone(),
+                    reason: "manifest_missing".to_string(),
+                });
+                continue;
+            }
+            let raw = match fs::read(&manifest_path) {
+                Ok(raw) => raw,
+                Err(_) => {
+                    skipped.push(SkippedStagedSnapshotRun {
+                        session_id: session_id.clone(),
+                        run_id: run_id.clone(),
+                        reason: "manifest_unreadable".to_string(),
+                    });
+                    continue;
+                }
+            };
+            let parsed = match serde_json::from_slice::<SnapshotManifestDocument>(&raw) {
+                Ok(parsed) => parsed,
+                Err(_) => {
+                    skipped.push(SkippedStagedSnapshotRun {
+                        session_id: session_id.clone(),
+                        run_id: run_id.clone(),
+                        reason: "manifest_invalid".to_string(),
+                    });
+                    continue;
+                }
+            };
+            if parsed.session_id != session_id || parsed.run_id != run_id {
+                skipped.push(SkippedStagedSnapshotRun {
+                    session_id: session_id.clone(),
+                    run_id: run_id.clone(),
+                    reason: "manifest_mismatch".to_string(),
+                });
+                continue;
+            }
+            runs.push(StagedSnapshotRun {
+                session_id: session_id.clone(),
+                run_id: run_id.clone(),
+                session_dir: parsed.session_dir,
+                manifest: parsed.manifest,
+            });
+        }
+    }
+    runs.sort_by(|left, right| {
+        left.session_id
+            .cmp(&right.session_id)
+            .then(left.run_id.cmp(&right.run_id))
+    });
+    skipped.sort_by(|left, right| {
+        left.session_id
+            .cmp(&right.session_id)
+            .then(left.run_id.cmp(&right.run_id))
+    });
+    Ok(ListStagedSnapshotsResult { runs, skipped })
 }
 
 fn file_versions_root() -> Result<PathBuf, FileVersionsError> {
@@ -757,6 +894,58 @@ mod tests {
 
         let run_dir = run_staging_dir(&store_root, SESSION_ID, RUN_ID);
         assert!(!run_dir.exists());
+
+        let _ = fs::remove_dir_all(store_root);
+        let _ = fs::remove_dir_all(session_root);
+    }
+
+    #[test]
+    fn list_staged_snapshots_reads_manifest_back_for_recovery() {
+        let store_root = temp_dir("list-staged-store");
+        let session_root = temp_dir("list-staged-session");
+        write_marker(&session_root, SESSION_ID);
+        fs::write(session_root.join("tracked.txt"), b"before").unwrap();
+
+        let begin = begin_snapshot_with_root(
+            &store_root,
+            BeginSnapshotArgs {
+                session_dir: session_root.to_string_lossy().to_string(),
+                session_id: SESSION_ID.to_string(),
+                run_id: RUN_ID.to_string(),
+                size_cap_bytes: Some(1024),
+            },
+        )
+        .unwrap();
+
+        let listed = list_staged_snapshots_with_root(&store_root).unwrap();
+        assert_eq!(listed.runs.len(), 1);
+        let first = listed.runs.first().unwrap();
+        assert_eq!(first.session_id, SESSION_ID);
+        assert_eq!(first.run_id, RUN_ID);
+        assert_eq!(
+            first.session_dir,
+            session_root
+                .canonicalize()
+                .unwrap()
+                .to_string_lossy()
+                .to_string()
+        );
+        assert_eq!(first.manifest.len(), begin.manifest.len());
+
+        fs::write(session_root.join("tracked.txt"), b"after").unwrap();
+        let _ = finalize_snapshot_with_root(
+            &store_root,
+            FinalizeSnapshotArgs {
+                session_dir: session_root.to_string_lossy().to_string(),
+                session_id: SESSION_ID.to_string(),
+                run_id: RUN_ID.to_string(),
+                manifest: begin.manifest,
+            },
+        )
+        .unwrap();
+
+        let after_finalize = list_staged_snapshots_with_root(&store_root).unwrap();
+        assert_eq!(after_finalize.runs.len(), 0);
 
         let _ = fs::remove_dir_all(store_root);
         let _ = fs::remove_dir_all(session_root);

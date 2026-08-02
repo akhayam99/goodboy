@@ -93,6 +93,7 @@ export {
   listFileVersionsForPath,
   pruneFileVersionsForPath,
   deleteFileVersion,
+  deleteFileVersionsForSession,
 } from './queries/file-version';
 export {
   insertProviderRun,

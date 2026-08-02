@@ -61,6 +61,7 @@ vi.mock('../../store', () => ({
       phaseTemplates: {},
       sessionBudgets: {},
       sessionWorktrees: {},
+      sessionBranches: {},
       sessionTelemetry: {},
       sessionSummary: null,
       sessions: [],
@@ -162,6 +163,8 @@ function mockStore(partial: Partial<AppStore>): void {
     selector({
       providerLifecycle: DEFAULT_LIFECYCLE_MAP,
       newSessionDrafts: {},
+      workspaces: [],
+      sessionBranches: {},
       setNewSessionDraft: vi.fn(),
       clearNewSessionDraft: vi.fn(),
       ...partial,

@@ -18,10 +18,15 @@ import type {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { runParallelBranch, type ParallelBranchEffects } from '../../parallel-turn';
 import { applySessionUpdate } from '../../session-mutators';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
+import {
+  beginTurnFileVersionCapture,
+  finalizeTurnFileVersionCapture,
+} from '../file-versions/captureTurnFileVersions';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -71,6 +76,7 @@ export const dispatchParallelTurn = async (
     now,
   }: Params,
 ): Promise<void> => {
+  const groupSessionRunId = crypto.randomUUID() as ProviderRunId;
   const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
   if (!workspace) {
     get().appendTurnEvent(activeAgentId, sessionId, {
@@ -100,6 +106,33 @@ export const dispatchParallelTurn = async (
       return;
     }
   }
+  const isSessionDirScope = isBranchlessSession({
+    workspaceKind: workspace.kind,
+    branch: get().sessionBranches[sessionId],
+  });
+  const notifySnapshotFailure = async ({
+    stage,
+    message,
+  }: {
+    stage: 'begin' | 'finalize' | 'persist';
+    message: string;
+  }) => {
+    await get().emitNotification(
+      'error',
+      'warning',
+      'Could not capture a recoverable file version for this turn',
+      `stage: ${stage}. details: ${message}`,
+      { sessionId, workspaceId: session.workspaceId },
+    );
+  };
+  const turnFileVersionCapture = isSessionDirScope
+    ? await beginTurnFileVersionCapture({
+        sessionId,
+        sessionDir: workingDir,
+        runId: groupSessionRunId,
+        onFailure: notifySnapshotFailure,
+      })
+    : null;
 
   const userMessage: Message = {
     id: crypto.randomUUID() as MessageId,
@@ -111,7 +144,6 @@ export const dispatchParallelTurn = async (
   };
   await insertMessage(tauriDatabase, userMessage);
 
-  const groupSessionRunId = crypto.randomUUID() as ProviderRunId;
   get().appendTurnEvent(activeAgentId, sessionId, {
     kind: 'user_text',
     runId: groupSessionRunId,
@@ -224,5 +256,19 @@ export const dispatchParallelTurn = async (
     await updateSessionState(tauriDatabase, sessionId, errorState, now());
     applySessionUpdate(set, sessionId, errorState, activeAgentId);
     throw err;
+  } finally {
+    if (turnFileVersionCapture != null) {
+      await finalizeTurnFileVersionCapture({
+        sessionId,
+        sessionDir: workingDir,
+        runId: groupSessionRunId,
+        manifest: turnFileVersionCapture.manifest,
+        providerRunId: groupSessionRunId,
+        onFailure: notifySnapshotFailure,
+      });
+      if (get().sessionFileVersions[sessionId] !== undefined) {
+        await get().loadSessionFileVersions({ sessionId, force: true });
+      }
+    }
   }
 };

@@ -36,6 +36,9 @@ const { hooks, remote, store } = vi.hoisted(() => {
         'session-1': { agents: false, plans: false },
       },
       sessionOpenQuestions,
+      sessionFileVersions: {},
+      sessionFileVersionsLoading: {},
+      loadSessionFileVersions: vi.fn(async () => undefined),
       archiveTask: vi.fn(async () => undefined),
       deleteTask: vi.fn(async () => undefined),
       unarchiveTask: vi.fn(async () => undefined),
@@ -130,6 +133,9 @@ beforeEach(() => {
   };
   store.sessionLoading['session-1'] = { agents: false, plans: false };
   store.sessionOpenQuestions = { 'session-1': [] };
+  store.sessionFileVersions = {};
+  store.sessionFileVersionsLoading = {};
+  store.loadSessionFileVersions.mockClear();
   store.archiveTask.mockClear();
   store.deleteTask.mockClear();
   store.unarchiveTask.mockClear();
@@ -249,10 +255,11 @@ describe('LensColumn', () => {
       'Workflows',
       'Agents',
       'Questions',
+      'File versions',
       'Plans',
     ]);
     expect(screen.queryByText('Integrations')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Diff 3' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'File versions' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Terminal' })).toBeNull();
   });
 

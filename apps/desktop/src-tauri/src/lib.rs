@@ -170,6 +170,7 @@ pub fn run() {
       attachment::attachment_read_dropped,
       file_versions::file_versions_begin_snapshot,
       file_versions::file_versions_finalize_snapshot,
+      file_versions::file_versions_list_staged_snapshots,
       file_versions::file_versions_restore,
       file_versions::file_versions_delete,
       file_versions::file_versions_purge_session,

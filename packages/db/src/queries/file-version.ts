@@ -147,3 +147,15 @@ type DeleteParams = {
 export const deleteFileVersion = async ({ db, id }: DeleteParams): Promise<void> => {
   await db.execute(`DELETE FROM file_versions WHERE id = ?`, [id]);
 };
+
+type DeleteForSessionParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+};
+
+export const deleteFileVersionsForSession = async ({
+  db,
+  sessionId,
+}: DeleteForSessionParams): Promise<void> => {
+  await db.execute(`DELETE FROM file_versions WHERE session_id = ?`, [sessionId]);
+};

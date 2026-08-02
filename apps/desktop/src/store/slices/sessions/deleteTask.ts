@@ -6,6 +6,7 @@ import { removeSessionDirectory, removeWorktree } from '../../../features/worktr
 import { formatError } from '../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildSessionMounts } from '../worktrees/buildSessionMounts';
+import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';
 import type { GetFn, SetFn } from './types';
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
@@ -71,6 +72,9 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         { sessionId, workspaceId: session.workspaceId },
       );
     }
+    if (isBranchless) {
+      await purgeSessionFileVersions({ sessionId });
+    }
     const sessionGoal = session.goal;
     const sessionWorkspaceId = session.workspaceId;
     await deleteSessionFromDb(tauriDatabase, sessionId);
@@ -110,6 +114,12 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       delete nextWorkflows[sessionId];
       const nextWorkflowDrafts = { ...state.workflowDrafts };
       delete nextWorkflowDrafts[sessionId];
+      const nextFileVersions = { ...state.sessionFileVersions };
+      delete nextFileVersions[sessionId];
+      const nextFileVersionsLoading = { ...state.sessionFileVersionsLoading };
+      delete nextFileVersionsLoading[sessionId];
+      const nextFileVersionsPath = { ...state.sessionFileVersionSelectedPath };
+      delete nextFileVersionsPath[sessionId];
       const cachedArchived = state.archivedSessions[sessionWorkspaceId];
       const nextArchived = cachedArchived
         ? {
@@ -137,6 +147,9 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
         sessionOpenQuestions: nextOpenQs,
         sessionWorkflows: nextWorkflows,
         workflowDrafts: nextWorkflowDrafts,
+        sessionFileVersions: nextFileVersions,
+        sessionFileVersionsLoading: nextFileVersionsLoading,
+        sessionFileVersionSelectedPath: nextFileVersionsPath,
       };
     });
     void get().emitNotification(

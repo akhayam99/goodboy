@@ -11,6 +11,7 @@ import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from '../migrations/runner';
 import {
   deleteFileVersion,
+  deleteFileVersionsForSession,
   insertFileVersion,
   listFileVersionsForPath,
   listFileVersionsForSession,
@@ -187,6 +188,30 @@ describe('file_versions queries', () => {
 
     const versions = await listFileVersionsForSession({ db, sessionId });
     expect(versions.map((version) => version.id)).toEqual(['fv-2' as FileVersionId]);
+  });
+
+  it('deletes every version for one session', async () => {
+    const db = await seed();
+    await insertFileVersion({
+      db,
+      fileVersion: makeFileVersion({
+        id: 'fv-1' as FileVersionId,
+        relativePath: 'docs/spec.md',
+        capturedAt: '2026-08-02T01:00:00Z',
+      }),
+    });
+    await insertFileVersion({
+      db,
+      fileVersion: makeFileVersion({
+        id: 'fv-2' as FileVersionId,
+        relativePath: 'notes/todo.md',
+        capturedAt: '2026-08-02T02:00:00Z',
+      }),
+    });
+
+    await deleteFileVersionsForSession({ db, sessionId });
+
+    expect(await listFileVersionsForSession({ db, sessionId })).toEqual([]);
   });
 
   it('cascade deletes rows with their session', async () => {

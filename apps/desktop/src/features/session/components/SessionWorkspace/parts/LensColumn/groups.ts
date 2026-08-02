@@ -183,12 +183,11 @@ export const buildLensGroups = ({
         },
         {
           kind: 'files',
-          label: 'Diff',
+          label: isBranchless ? 'File versions' : 'Diff',
           icon: CONCEPT_ICONS.diff,
           tone: 'info',
           count: filesCount,
-          diffstat,
-          repoOnly: true,
+          ...(isBranchless ? {} : { diffstat, repoOnly: true }),
         },
         {
           kind: 'plans',

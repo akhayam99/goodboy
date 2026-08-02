@@ -29,12 +29,63 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   };
 });
 
-const runTurnSpy = vi.fn();
-const cancelTurnSpy = vi.fn();
-const invokeSpy = vi.fn();
-const invokeAgentUpdateStatusSpy = vi.fn();
-const invokeAgentListSpy = vi.fn(async () => [] as ReadonlyArray<Agent>);
-const invokeAgentSetDoneSpy = vi.fn(async () => undefined);
+const {
+  runTurnSpy,
+  cancelTurnSpy,
+  invokeSpy,
+  insertFileVersionSpy,
+  pruneFileVersionsForPathSpy,
+  fileVersionsBeginSnapshotSpy,
+  fileVersionsFinalizeSnapshotSpy,
+  fileVersionsDeleteSpy,
+  invokeAgentUpdateStatusSpy,
+  invokeAgentListSpy,
+  invokeAgentSetDoneSpy,
+} = vi.hoisted(() => ({
+  runTurnSpy: vi.fn(),
+  cancelTurnSpy: vi.fn(),
+  invokeSpy: vi.fn(),
+  insertFileVersionSpy: vi.fn(async () => undefined),
+  pruneFileVersionsForPathSpy: vi.fn(
+    async () => [] as ReadonlyArray<{ id: string; storedName: string }>,
+  ),
+  fileVersionsBeginSnapshotSpy: vi.fn(
+    async () =>
+      ({
+        manifest: [] as ReadonlyArray<{
+          relativePath: string;
+          sizeBytes: number;
+          contentHash: string;
+        }>,
+        skipped: [] as ReadonlyArray<{ relativePath: string; reason: string }>,
+      }) satisfies Awaited<
+        ReturnType<
+          (typeof import('../features/file-versions/fileVersions'))['fileVersionsBeginSnapshot']
+        >
+      >,
+  ),
+  fileVersionsFinalizeSnapshotSpy: vi.fn(
+    async () =>
+      ({
+        kept: [] as ReadonlyArray<{
+          id: string;
+          relativePath: string;
+          storedName: string;
+          sizeBytes: number;
+          contentHash: string;
+          changeKind: 'modified' | 'deleted';
+        }>,
+      }) satisfies Awaited<
+        ReturnType<
+          (typeof import('../features/file-versions/fileVersions'))['fileVersionsFinalizeSnapshot']
+        >
+      >,
+  ),
+  fileVersionsDeleteSpy: vi.fn(async () => undefined),
+  invokeAgentUpdateStatusSpy: vi.fn(),
+  invokeAgentListSpy: vi.fn(async () => [] as ReadonlyArray<Agent>),
+  invokeAgentSetDoneSpy: vi.fn(async () => undefined),
+}));
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: (args: unknown) => runTurnSpy(args),
@@ -88,6 +139,8 @@ vi.mock('@goodboy/db', () => ({
   updateProviderRunStatus: vi.fn(),
   updateSessionState: vi.fn(),
   upsertContextSlot: vi.fn(),
+  insertFileVersion: insertFileVersionSpy,
+  pruneFileVersionsForPath: pruneFileVersionsForPathSpy,
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
@@ -106,6 +159,15 @@ vi.mock('@goodboy/db', () => ({
   attachWorkflowToSession: vi.fn(),
   detachWorkflowFromSession: vi.fn(),
   updateWorkflowOrder: vi.fn(),
+}));
+
+vi.mock('../features/file-versions/fileVersions', () => ({
+  fileVersionsBeginSnapshot: fileVersionsBeginSnapshotSpy,
+  fileVersionsFinalizeSnapshot: fileVersionsFinalizeSnapshotSpy,
+  fileVersionsDelete: fileVersionsDeleteSpy,
+  fileVersionsRestore: vi.fn(async () => undefined),
+  fileVersionsPurgeSession: vi.fn(async () => undefined),
+  fileVersionsListStagedSnapshots: vi.fn(async () => ({ runs: [], skipped: [] })),
 }));
 
 vi.mock('../features/providers/providers', () => ({
@@ -159,6 +221,7 @@ vi.mock('../features/worktree/worktree', () => ({
   createWorktree: vi.fn(),
   removeWorktree: vi.fn(),
   worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
+  simpleSessionDirExists: vi.fn(async () => true),
 }));
 
 vi.mock('../shared/lib/repo', () => ({
@@ -220,6 +283,11 @@ describe('sendTurn, agent routing', () => {
     runTurnSpy.mockReset();
     cancelTurnSpy.mockReset();
     invokeSpy.mockReset();
+    insertFileVersionSpy.mockReset();
+    pruneFileVersionsForPathSpy.mockReset();
+    fileVersionsBeginSnapshotSpy.mockReset();
+    fileVersionsFinalizeSnapshotSpy.mockReset();
+    fileVersionsDeleteSpy.mockReset();
     invokeAgentUpdateStatusSpy.mockReset();
     invokeAgentListSpy.mockReset();
     invokeAgentListSpy.mockResolvedValue([]);
@@ -229,6 +297,14 @@ describe('sendTurn, agent routing', () => {
       stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
       stderr: '',
       exitCode: 0,
+    });
+    pruneFileVersionsForPathSpy.mockResolvedValue([]);
+    fileVersionsBeginSnapshotSpy.mockResolvedValue({
+      manifest: [],
+      skipped: [],
+    });
+    fileVersionsFinalizeSnapshotSpy.mockResolvedValue({
+      kept: [],
     });
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -334,6 +410,93 @@ describe('sendTurn, agent routing', () => {
     expect(userEvent && 'text' in userEvent ? userEvent.text : '').toBe('pinned to A');
 
     expect(runTurnSpy).toHaveBeenCalledOnce();
+  });
+
+  it('captures file versions for changed files in a simple session turn', async () => {
+    const useAppStore = await importStore();
+    setupTwoAgents(useAppStore, AGENT_A);
+    useAppStore.setState({
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/simple-session'] },
+      workspaces: [
+        {
+          id: WORKSPACE_ID,
+          name: 'ws',
+          rootPath: '/tmp',
+          kind: 'simple',
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
+      ] as never,
+    });
+    fileVersionsBeginSnapshotSpy.mockResolvedValue({
+      manifest: [
+        {
+          relativePath: 'changed.txt',
+          sizeBytes: 8,
+          contentHash: 'hash-changed',
+        },
+        {
+          relativePath: 'untouched.txt',
+          sizeBytes: 10,
+          contentHash: 'hash-untouched',
+        },
+      ],
+      skipped: [],
+    });
+    fileVersionsFinalizeSnapshotSpy.mockResolvedValue({
+      kept: [
+        {
+          id: 'fv-1',
+          relativePath: 'changed.txt',
+          storedName: 'fv-1-changed.txt',
+          sizeBytes: 8,
+          contentHash: 'hash-changed',
+          changeKind: 'modified',
+        },
+      ],
+    });
+    runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
+      yield {
+        kind: 'file_edit',
+        runId: args.runId,
+        path: '/tmp/simple-session/changed.txt',
+        at: NOW,
+      } as TurnEvent;
+      yield {
+        kind: 'done',
+        runId: args.runId,
+        at: NOW,
+      } as TurnEvent;
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'edit file' });
+
+    expect(fileVersionsBeginSnapshotSpy).toHaveBeenCalledWith({
+      sessionDir: '/tmp/simple-session',
+      sessionId: SESSION_ID,
+      runId: expect.any(String),
+    });
+    expect(fileVersionsFinalizeSnapshotSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionDir: '/tmp/simple-session',
+        sessionId: SESSION_ID,
+      }),
+    );
+    expect(insertFileVersionSpy).toHaveBeenCalledTimes(1);
+    expect(insertFileVersionSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileVersion: expect.objectContaining({
+          relativePath: 'changed.txt',
+        }),
+      }),
+    );
+    expect(pruneFileVersionsForPathSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        relativePath: 'changed.txt',
+      }),
+    );
   });
 
   it('only resumes a provider session on the provider that created it', async () => {
