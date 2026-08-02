@@ -1,7 +1,7 @@
-import { FileText } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { useAppStore, useSessionPlans } from '../../../../../store';
 import { kindConsumesPlan, type AgentKind } from '../../../../session/agent-kind';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: Agent;
@@ -61,7 +61,7 @@ export const WorkflowStepPlanBadge = ({ run, kind }: Props) => {
       aria-label={`open ${label.toLowerCase()}: ${plan.title}`}
       className="flex max-w-full shrink-0 items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
-      <FileText size={12} aria-hidden className="shrink-0" />
+      <CONCEPT_ICONS.plans size={12} aria-hidden className="shrink-0" />
       <span className="shrink-0 font-medium">{label}</span>
       <span className="max-w-[24ch] truncate">{plan.title}</span>
     </button>

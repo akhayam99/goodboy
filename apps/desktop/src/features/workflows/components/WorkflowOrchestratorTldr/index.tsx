@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Waypoints } from 'lucide-react';
 import { cn, Divider, Markdown } from '@goodboy/ui';
 import type { Step, WorkflowRun } from '@goodboy/types';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const COLLAPSED_COUNT = 3;
 
@@ -52,7 +52,7 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
       className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle p-3"
     >
       <div className="flex items-center gap-1.5">
-        <Waypoints size={11} aria-hidden className="shrink-0 text-accent" />
+        <CONCEPT_ICONS.workflows size={11} aria-hidden className="shrink-0 text-accent" />
         <h3 className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           Orchestrator decisions
         </h3>

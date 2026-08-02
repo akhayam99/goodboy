@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Check, ChevronRight, Copy } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import { useToast } from '../../../../../app/components/Toast';
+import { CopyButton } from '../../../../../shared/components/CopyButton';
 import { STATUS_COLOR, STATUS_GLYPH, type ReviewState } from '../lib';
 import type { TreeNode } from './tree';
 
@@ -25,23 +25,7 @@ export const TreeNodeView = ({
   commentCounts,
 }: Props) => {
   const [expanded, setExpanded] = useState(true);
-  const [pathCopied, setPathCopied] = useState(false);
-  const { showToast } = useToast();
   const indent = depth * 10;
-
-  const copyPath = (path: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(path).then(
-      () => {
-        setPathCopied(true);
-        showToast('success', 'path copied');
-        window.setTimeout(() => setPathCopied(false), 1500);
-      },
-      () => {
-        showToast('error', 'failed to copy path');
-      },
-    );
-  };
 
   if (node.kind === 'file') {
     const { file } = node;
@@ -98,15 +82,12 @@ export const TreeNodeView = ({
             {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
           </span>
         </button>
-        <button
-          type="button"
-          onClick={(e) => copyPath(file.path, e)}
-          title="copy path"
-          aria-label="copy file path"
-          className="shrink-0 rounded-sm p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-        >
-          {pathCopied ? <Check size={10} aria-hidden /> : <Copy size={10} aria-hidden />}
-        </button>
+        <CopyButton
+          value={file.path}
+          label="copy file path"
+          size={10}
+          className="shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+        />
       </div>
     );
   }

@@ -1,15 +1,6 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
 import { cn, formatUsd, formatUsdPrecise, StatusDot } from '@goodboy/ui';
-import {
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Play,
-  Undo2,
-  Workflow as WorkflowIcon,
-  Zap,
-  ZapOff,
-} from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronUp, Play, Undo2, Zap, ZapOff } from 'lucide-react';
 import type {
   Agent,
   AgentId,
@@ -34,6 +25,7 @@ import { GoalAttachmentsStrip } from '../../../../../features/context/components
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { CardAction } from '../../../../../shared/components/CardAction';
 import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { workflowKindName } from '../lib';
 import type { ProviderContextUsage } from './ContextWindowBar';
@@ -189,7 +181,7 @@ export const WorkflowRow = ({
         {isDetail ? (
           <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-              <WorkflowIcon size={17} aria-hidden className="text-accent" />
+              <CONCEPT_ICONS.workflows size={17} aria-hidden className="text-accent" />
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -239,7 +231,7 @@ export const WorkflowRow = ({
             className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
           >
             {forceExpanded ? (
-              <WorkflowIcon size={13} aria-hidden className="shrink-0 text-accent" />
+              <CONCEPT_ICONS.workflows size={13} aria-hidden className="shrink-0 text-accent" />
             ) : null}
             <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
               {name}
