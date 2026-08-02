@@ -88,10 +88,30 @@ const placementOnPrimaryMonitor = async ({
   };
 };
 
+const SPACE_SWITCH_SETTLE_MS = 260;
+
+const settleAfterSpaceSwitch = (): Promise<void> => {
+  return new Promise((resolve) => {
+    globalThis.setTimeout(resolve, SPACE_SWITCH_SETTLE_MS);
+  });
+};
+
+const returnToMainWindowSpace = async (): Promise<void> => {
+  if (isMainWindow()) {
+    return;
+  }
+  const switched = await focusWindow(MAIN_WINDOW_LABEL);
+  if (!switched) {
+    return;
+  }
+  await settleAfterSpaceSwitch();
+};
+
 export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Promise<void> => {
   if (!inTauri()) {
     return;
   }
+  await returnToMainWindowSpace();
   const openWindows = await getAllWebviewWindows().catch(() => []);
   const placement = await placementOnPrimaryMonitor({ openWindowCount: openWindows.length });
   const win = new WebviewWindow(freshWindowLabel(), {
