@@ -156,6 +156,25 @@ use the `<Divider>` component from `@goodboy/ui` (a faded hairline), rendered as
 sibling. Never a `border-t/-r/-b/-l` on a container to act as a divider. Borders that
 define a control's own shape (buttons, inputs, popovers, chips) are fine.
 
+## A dialog is the last resort, not the default
+
+Anything that belongs to a control opens anchored to that control, as a `Popover`
+from `@goodboy/ui` portaled to `document.body` and positioned off the trigger's
+`getBoundingClientRect()`. `AppTopBar/NeedsYouPopover` and
+`workspace/components/WorkspaceSwitcher` are the reference implementations: fixed
+coordinates, a `z-30` click-catcher behind, Escape to close, and a flip above the
+trigger when the space below runs out. A centred overlay for a menu that has an
+obvious on-screen owner is a bug, not a style choice.
+
+Confirmations never open a dialog. A destructive action swaps its own row or button
+for `InlineConfirm`, so the thing being destroyed stays visible while the user
+decides. `WorkspaceLauncher`'s disconnect and `DeleteSessionConfirm` are the pattern.
+
+`Dialog` survives for the three cases an anchor cannot serve: a full-screen viewer
+(`DiffViewerDialog`, the chat lightbox), a multi-step flow that owns the whole
+screen (`OnboardingWizard`, `WorkspaceLinkDialog`), and a blocking system prompt
+(`UpdateIndicator`). Everything else is a popover or inline.
+
 ## An expanded row is one group, not two
 
 A disclosure (header plus the body it reveals) is a single surface. The container

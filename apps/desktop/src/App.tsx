@@ -27,7 +27,6 @@ import { useWindowPresence } from './features/workspace/hooks/useWindowPresence'
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
 import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
-import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher';
 import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { NewSessionView } from './features/session/components/NewSessionView';
@@ -113,7 +112,6 @@ export const App = () => {
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
   const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
@@ -174,7 +172,6 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setAppSettingsFocus(detail?.section);
       setAppSettingsOpen(true);
     };
@@ -188,7 +185,6 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setAppSettingsOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setGuideStudioOpen(true);
     };
     const onOpenGithubStudio = (event: Event) => {
@@ -209,7 +205,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setGithubStudioSession(detail?.sessionId ?? null);
       setGithubStudioPrNumber(detail?.prNumber ?? null);
       setGithubStudioThreadId(detail?.threadId ?? null);
@@ -251,7 +246,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setProviderStudioFocus(detail?.providerId ?? null);
       setProviderStudioAction(detail?.action ?? null);
       setProviderStudioOpen(true);
@@ -268,7 +262,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setBudgetStudioScope(detail?.scope);
       setBudgetStudioOpen(true);
     };
@@ -283,7 +276,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setLinearStudioFocus(detail?.issueExternalId ?? null);
       setLinearStudioOpen(true);
     };
@@ -298,7 +290,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setSentryStudioFocus(detail?.issueExternalId ?? null);
       setSentryStudioOpen(true);
     };
@@ -313,7 +304,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setGitlabStudioFocus(detail?.issueExternalId ?? null);
       setGitlabStudioOpen(true);
     };
@@ -328,7 +318,6 @@ export const App = () => {
       }
     };
     const onAddWorkspace = () => setAddWorkspaceOpen(true);
-    const onOpenSwitcher = () => setSwitcherOpen(true);
     const onPairDevice = () => setCompanionOpen(true);
 
     window.addEventListener('goodboy:open-settings', onOpenSettings);
@@ -343,7 +332,6 @@ export const App = () => {
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
-    window.addEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
     window.addEventListener('goodboy:open-pair-device', onPairDevice);
     return () => {
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
@@ -358,7 +346,6 @@ export const App = () => {
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
-      window.removeEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
       window.removeEventListener('goodboy:open-pair-device', onPairDevice);
     };
   }, []);
@@ -497,7 +484,6 @@ export const App = () => {
     setAppSettingsOpen(false);
     setGuideStudioOpen(false);
     setAddWorkspaceOpen(false);
-    setSwitcherOpen(false);
   }, []);
 
   const activeStudio: string | null = workflowStudioOpen
@@ -708,7 +694,9 @@ export const App = () => {
   useKeyboardShortcut('cmd+.', openDeleteSession);
   useKeyboardShortcut('cmd+shift+a', openArchiveSession);
   useKeyboardShortcut('cmd+k', () => openPalette());
-  useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
+  useKeyboardShortcut('cmd+o', () =>
+    window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),
+  );
   useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+b', sessionSidebar.toggle, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false });
@@ -782,7 +770,6 @@ export const App = () => {
       <ToastProvider>
         <NotificationToastBridge />
         <WorkspaceLauncher />
-        {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
       </ToastProvider>
     );
   }
@@ -799,7 +786,7 @@ export const App = () => {
             hasWorkspace={currentWorkspace != null}
             hasActiveSession={hasActiveSession}
             isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
-            isSessionSidebarHidden={sessionSidebar.leftHidden}
+            isSessionSidebarPeeking={sessionSidebar.isPeeking}
             onToggleSessionSidebar={
               sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
             }
@@ -1051,7 +1038,6 @@ export const App = () => {
           <ArchiveSessionConfirm session={currentSession} onClose={() => setArchiveOpen(false)} />
         </div>
       ) : null}
-      {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
 
       {companionOpen ? <CompanionStudio onClose={() => setCompanionOpen(false)} /> : null}
 

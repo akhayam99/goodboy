@@ -89,7 +89,7 @@ type BarOverrides = {
   readonly hasWorkspace?: boolean;
   readonly hasActiveSession?: boolean;
   readonly isSessionSidebarCollapsed?: boolean;
-  readonly isSessionSidebarHidden?: boolean;
+  readonly isSessionSidebarPeeking?: boolean;
   readonly onToggleSessionSidebar?: () => void;
   readonly onSessionSidebarAnchorEnter?: () => void;
   readonly onSessionSidebarAnchorLeave?: () => void;
@@ -104,7 +104,7 @@ const renderBar = (overrides: BarOverrides = {}) =>
       hasWorkspace={overrides.hasWorkspace ?? true}
       hasActiveSession={overrides.hasActiveSession ?? false}
       isSessionSidebarCollapsed={overrides.isSessionSidebarCollapsed ?? false}
-      isSessionSidebarHidden={overrides.isSessionSidebarHidden ?? true}
+      isSessionSidebarPeeking={overrides.isSessionSidebarPeeking ?? false}
       onToggleSessionSidebar={overrides.onToggleSessionSidebar ?? vi.fn()}
       onSessionSidebarAnchorEnter={overrides.onSessionSidebarAnchorEnter ?? vi.fn()}
       onSessionSidebarAnchorLeave={overrides.onSessionSidebarAnchorLeave ?? vi.fn()}
@@ -125,8 +125,8 @@ describe('AppTopBar', () => {
     expect(screen.queryByRole('button', { name: /getting started/i })).toBeNull();
   });
 
-  it('carries workspace identity only when the sidebar is not showing it', () => {
-    const { rerender } = renderBar({ isSessionSidebarHidden: true });
+  it('carries workspace identity whatever the column is doing', () => {
+    const { rerender } = renderBar({ hasActiveSession: false });
     expect(screen.getByLabelText('Switch or open a workspace')).toBeDefined();
 
     rerender(
@@ -137,13 +137,45 @@ describe('AppTopBar', () => {
         hasWorkspace
         hasActiveSession
         isSessionSidebarCollapsed={false}
-        isSessionSidebarHidden={false}
+        isSessionSidebarPeeking={false}
         onToggleSessionSidebar={vi.fn()}
         onSessionSidebarAnchorEnter={vi.fn()}
         onSessionSidebarAnchorLeave={vi.fn()}
       />,
     );
+    expect(screen.getByLabelText('Switch or open a workspace')).toBeDefined();
+  });
+
+  it('falls back to the wordmark before any workspace exists', () => {
+    renderBar({ hasWorkspace: false });
+
+    expect(screen.getByText('Goodboy')).toBeDefined();
     expect(screen.queryByLabelText('Switch or open a workspace')).toBeNull();
+  });
+
+  it('holds the column control pressed while the peek is open', () => {
+    const { rerender } = renderBar({ hasActiveSession: true, isSessionSidebarCollapsed: true });
+    expect(
+      screen.getByRole('button', { name: /show sessions column/i }).getAttribute('aria-pressed'),
+    ).toBe('false');
+
+    rerender(
+      <AppTopBar
+        onOpenSettings={vi.fn()}
+        onOpenBudget={vi.fn()}
+        activeStudio={null}
+        hasWorkspace
+        hasActiveSession
+        isSessionSidebarCollapsed
+        isSessionSidebarPeeking
+        onToggleSessionSidebar={vi.fn()}
+        onSessionSidebarAnchorEnter={vi.fn()}
+        onSessionSidebarAnchorLeave={vi.fn()}
+      />,
+    );
+    const toggle = screen.getByRole('button', { name: /show sessions column/i });
+    expect(toggle.className).toContain('bg-muted text-foreground');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('shows the column control only inside a session', () => {
@@ -159,7 +191,7 @@ describe('AppTopBar', () => {
         hasWorkspace
         hasActiveSession
         isSessionSidebarCollapsed
-        isSessionSidebarHidden
+        isSessionSidebarPeeking={false}
         onToggleSessionSidebar={onToggleSessionSidebar}
         onSessionSidebarAnchorEnter={vi.fn()}
         onSessionSidebarAnchorLeave={vi.fn()}

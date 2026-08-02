@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
@@ -17,6 +18,10 @@ const { workspaceRef } = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   useCurrentWorkspace: () => workspaceRef.value,
   useHasUnreadElsewhere: () => false,
+  useWorkspaces: () => (workspaceRef.value ? [workspaceRef.value] : []),
+  useWorkspaceHasUnread: () => false,
+  useAppStore: (selector: (s: { openWorkspace: () => Promise<void> }) => unknown) =>
+    selector({ openWorkspace: async () => undefined }),
 }));
 
 import { WorkspaceIdentityRow } from './index';
@@ -24,33 +29,45 @@ import { WorkspaceIdentityRow } from './index';
 afterEach(cleanup);
 
 describe('WorkspaceIdentityRow', () => {
-  it('carries the repo subtitle in the sidebar', () => {
-    render(<WorkspaceIdentityRow variant="sidebar" />);
-
-    expect(screen.getByText('Acme')).toBeDefined();
-    expect(screen.getByText('monorepo')).toBeDefined();
-  });
-
-  it('drops the subtitle when it rides in the strip', () => {
-    render(<WorkspaceIdentityRow variant="compact" />);
+  it('names the workspace and keeps the repo out of the strip', () => {
+    render(<WorkspaceIdentityRow />);
 
     expect(screen.getByText('Acme')).toBeDefined();
     expect(screen.queryByText('monorepo')).toBeNull();
   });
 
-  it('keeps settings next to the identity it configures', () => {
-    const spy = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', spy);
-    render(<WorkspaceIdentityRow variant="compact" />);
+  it('carries the repo in the switcher title', () => {
+    render(<WorkspaceIdentityRow />);
 
-    fireEvent.click(screen.getByLabelText(/open workspace settings for acme/i));
-    expect(spy).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-workspace-settings', spy);
+    expect(screen.getByLabelText('Switch or open a workspace').getAttribute('title')).toBe(
+      'Acme, monorepo',
+    );
+  });
+
+  it('opens the selector as a popover, not a full-screen layer', () => {
+    render(<WorkspaceIdentityRow />);
+    const trigger = screen.getByLabelText('Switch or open a workspace');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(trigger);
+
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Workspace settings')).toBeDefined();
+  });
+
+  it('answers the global switcher shortcut', () => {
+    render(<WorkspaceIdentityRow />);
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
+    });
+
+    expect(screen.getByText('Workspace settings')).toBeDefined();
   });
 
   it('renders nothing without a workspace', () => {
     workspaceRef.value = null;
-    const { container } = render(<WorkspaceIdentityRow variant="sidebar" />);
+    const { container } = render(<WorkspaceIdentityRow />);
 
     expect(container.firstChild).toBeNull();
     workspaceRef.value = {

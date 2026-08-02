@@ -1,95 +1,67 @@
-import { ChevronsUpDown, Settings } from 'lucide-react';
-import { StatusDot, cn } from '@goodboy/ui';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronsUpDown } from 'lucide-react';
+import { StatusDot } from '@goodboy/ui';
 import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
+import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 
 const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
 
 const basenameOf = (path: string): string => path.replace(/\/+$/, '').split('/').pop() || path;
 
-export type WorkspaceIdentityVariant = 'sidebar' | 'compact';
-
-type Props = {
-  readonly variant: WorkspaceIdentityVariant;
-};
-
-export const WorkspaceIdentityRow = ({ variant }: Props) => {
+export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener('goodboy:open-workspace-switcher', open);
+    return () => window.removeEventListener('goodboy:open-workspace-switcher', open);
+  }, []);
 
   if (!currentWorkspace) {
     return null;
   }
-  const isSidebar = variant === 'sidebar';
   const accent = workspaceAccent(currentWorkspace.id);
   const memberCount = currentWorkspace.members?.length ?? 0;
   const subtitle = memberCount > 1 ? `${memberCount} repos` : basenameOf(currentWorkspace.rootPath);
 
   return (
-    <div
-      className={cn('flex min-w-0 items-center', isSidebar ? 'gap-1' : 'gap-0.5')}
-      data-tauri-drag-region="false"
-    >
+    <>
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'))}
+        onClick={() => setIsOpen((current) => !current)}
         data-tauri-drag-region="false"
-        className={cn(
-          'group flex min-w-0 items-center rounded-md text-left transition-colors hover:bg-muted/50',
-          isSidebar ? 'flex-1 gap-2.5 px-1.5 py-1.5' : 'max-w-56 gap-1.5 px-1.5 py-1',
-        )}
-        title="Switch or open a workspace"
         aria-label="Switch or open a workspace"
+        aria-expanded={isOpen}
+        className="group flex min-w-0 max-w-56 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-muted/50"
+        title={`${currentWorkspace.name}, ${subtitle}`}
       >
         <span
           aria-hidden
-          className={cn(
-            'flex shrink-0 items-center justify-center rounded-md font-bold text-primary-foreground shadow-sm',
-            isSidebar ? 'size-7 text-xs' : 'size-5 text-[10px]',
-          )}
+          className="flex size-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold text-primary-foreground shadow-sm"
           style={{ backgroundColor: accent }}
         >
           {initialOf(currentWorkspace.name)}
         </span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span
-              className={cn(
-                'truncate font-semibold leading-tight text-foreground',
-                isSidebar ? 'text-sm' : 'text-xs',
-              )}
-            >
-              {currentWorkspace.name}
-            </span>
-            {hasUnreadElsewhere ? (
-              <StatusDot tone="warning" size="sm" title="activity in another workspace" />
-            ) : null}
-          </span>
-          {isSidebar ? (
-            <span className="truncate text-2xs leading-tight text-muted-foreground/70">
-              {subtitle}
-            </span>
-          ) : null}
+        <span className="truncate text-xs font-semibold leading-tight text-foreground">
+          {currentWorkspace.name}
         </span>
+        {hasUnreadElsewhere ? (
+          <StatusDot tone="warning" size="sm" title="activity in another workspace" />
+        ) : null}
         <ChevronsUpDown
-          size={isSidebar ? 14 : 12}
+          size={12}
           aria-hidden
           className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground"
         />
       </button>
-      <button
-        type="button"
-        onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-workspace-settings'))}
-        data-tauri-drag-region="false"
-        className={cn(
-          'flex shrink-0 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground',
-          isSidebar ? 'size-7' : 'size-6',
-        )}
-        title={`workspace settings, ${currentWorkspace.name}`}
-        aria-label={`open workspace settings for ${currentWorkspace.name}`}
-      >
-        <Settings size={isSidebar ? 14 : 12} aria-hidden />
-      </button>
-    </div>
+      {isOpen ? (
+        <WorkspaceSwitcher anchorRef={triggerRef} onClose={() => setIsOpen(false)} />
+      ) : null}
+    </>
   );
 };

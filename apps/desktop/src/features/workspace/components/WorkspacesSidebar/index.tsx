@@ -10,7 +10,6 @@ import {
   useSessions,
 } from '../../../../store';
 import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
-import { WorkspaceIdentityRow } from '../WorkspaceIdentityRow';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
 
@@ -46,11 +45,6 @@ export const WorkspacesSidebar = ({ onNavigate }: Props) => {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {currentWorkspace ? (
-        <div className="shrink-0 px-2 pt-2">
-          <WorkspaceIdentityRow variant="sidebar" />
-        </div>
-      ) : null}
       {currentWorkspace && currentSession ? (
         <div className="shrink-0 px-2 pt-2 pb-1">
           <button

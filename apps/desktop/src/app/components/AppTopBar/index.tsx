@@ -20,7 +20,7 @@ export type AppTopBarProps = {
   hasWorkspace: boolean;
   hasActiveSession: boolean;
   isSessionSidebarCollapsed: boolean;
-  isSessionSidebarHidden: boolean;
+  isSessionSidebarPeeking: boolean;
   onToggleSessionSidebar: () => void;
   onSessionSidebarAnchorEnter: () => void;
   onSessionSidebarAnchorLeave: () => void;
@@ -33,7 +33,7 @@ export const AppTopBar = ({
   hasWorkspace,
   hasActiveSession,
   isSessionSidebarCollapsed,
-  isSessionSidebarHidden,
+  isSessionSidebarPeeking,
   onToggleSessionSidebar,
   onSessionSidebarAnchorEnter,
   onSessionSidebarAnchorLeave,
@@ -46,6 +46,8 @@ export const AppTopBar = ({
         data-tauri-drag-region
         className="relative flex h-9 shrink-0 items-center gap-2 bg-background px-3"
       >
+        <DogMascot size={15} className="shrink-0 text-foreground" />
+
         {hasActiveSession ? (
           <Tooltip content={columnActionLabel}>
             <button
@@ -55,7 +57,13 @@ export const AppTopBar = ({
               onPointerLeave={onSessionSidebarAnchorLeave}
               data-tauri-drag-region="false"
               aria-label={columnActionLabel}
-              className="flex shrink-0 items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              aria-pressed={isSessionSidebarPeeking}
+              className={cn(
+                'flex shrink-0 items-center justify-center rounded p-1.5 transition-colors',
+                isSessionSidebarPeeking
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+              )}
             >
               {isSessionSidebarCollapsed ? (
                 <PanelLeft size={14} aria-hidden />
@@ -66,13 +74,12 @@ export const AppTopBar = ({
           </Tooltip>
         ) : null}
 
-        {hasWorkspace && isSessionSidebarHidden ? (
-          <WorkspaceIdentityRow variant="compact" />
+        {hasWorkspace ? (
+          <WorkspaceIdentityRow />
         ) : (
-          <div className="flex shrink-0 items-center gap-1.5">
-            <DogMascot size={15} className="shrink-0 text-foreground" />
-            <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
-          </div>
+          <span className="shrink-0 text-xs font-semibold tracking-tight text-foreground">
+            Goodboy
+          </span>
         )}
 
         <div className="flex min-w-0 flex-1 items-center overflow-hidden pl-1">
