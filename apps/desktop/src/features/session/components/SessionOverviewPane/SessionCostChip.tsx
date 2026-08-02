@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Button,
   Divider,
   Popover,
   ScrollFade,
@@ -9,11 +10,11 @@ import {
   tintClasses,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { openBudgetStudio as openBudgetStudioEvent } from '../../../budget/openBudgetStudio';
 import { SessionBudgetContent } from '../../../budget/components/BudgetStudio/SessionBudgetContent';
 import type { WorkspaceTurn } from '../../../budget/components/BudgetStudio/lib';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
-import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
 
@@ -51,7 +52,6 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
   const setSessionBudget = useAppStore((state) => state.setSessionBudget);
-  const openSession = useOpenSession();
   const { open, toggle, containerRef, popupRef, popupClassName, popupStyle, portal, portalTarget } =
     useDropdown({
       align: 'end',
@@ -117,6 +117,11 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     });
   }, [open, popupRef]);
 
+  const openBudgetStudio = () => {
+    openBudgetStudioEvent({ scope: { kind: 'session', sessionId } });
+    toggle();
+  };
+
   return (
     <div ref={containerRef} className="relative">
       <button
@@ -159,9 +164,15 @@ export const SessionCostChip = ({ sessionId }: Props) => {
                 turns={turns}
                 softCapUsd={sessionBudget}
                 onSaveCap={(nextCapUsd) => setSessionBudget(sessionId, nextCapUsd)}
-                onOpenSession={(nextSessionId) => openSession(nextSessionId, toggle)}
+                density="glance"
               />
             </ScrollFade>
+            <Divider />
+            <div className="p-3">
+              <Button variant="ghost" size="sm" onClick={openBudgetStudio}>
+                Open full budget details
+              </Button>
+            </div>
           </Popover>
         ) : null}
       </DropdownPortal>
