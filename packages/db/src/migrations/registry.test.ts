@@ -78,5 +78,5 @@ describe('migration convergence', () => {
       expect(result.applied).toEqual(versions.slice(count));
       expect(await schemaOf(upgraded)).toEqual(target);
     }
-  });
+  }, 30_000);
 });

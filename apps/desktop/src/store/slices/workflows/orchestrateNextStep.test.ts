@@ -35,7 +35,9 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   const original = await importOriginal<typeof import('@goodboy/core')>();
   return {
     ...original,
-    OrchestratorClient: vi.fn().mockImplementation(() => ({ decide: decideSpy })),
+    OrchestratorClient: vi.fn(function () {
+      return { decide: decideSpy };
+    }),
   };
 });
 
