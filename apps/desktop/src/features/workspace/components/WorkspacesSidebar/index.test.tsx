@@ -40,11 +40,13 @@ afterEach(cleanup);
 import { WorkspacesSidebar } from './index';
 
 describe('WorkspacesSidebar', () => {
-  it('keeps the back-to-board button on the primary tone', () => {
+  it('carries the primary tone without going solid', () => {
     currentSessionRef.value = { id: 'session-1' } as Session;
     render(<WorkspacesSidebar />);
     const back = screen.getByRole('button', { name: 'back to board' });
-    expect(back.className).toContain('bg-primary text-primary-foreground');
+    expect(back.className).toContain('bg-primary/10');
+    expect(back.className).toContain('text-primary');
+    expect(back.className).not.toContain('text-primary-foreground');
     expect(back.className).not.toContain('text-accent');
     currentSessionRef.value = null;
   });

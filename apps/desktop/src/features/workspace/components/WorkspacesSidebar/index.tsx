@@ -55,10 +55,12 @@ export const WorkspacesSidebar = ({ onNavigate }: Props) => {
             }}
             aria-label="back to board"
             className={cn(
-              'group relative flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
-              'bg-primary text-primary-foreground ring-1',
+              'group relative flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium',
+              'ring-1 motion-safe:transition-colors',
+              primaryTint.bg,
+              primaryTint.text,
               primaryTint.ring,
-              'motion-safe:transition-opacity hover:opacity-90',
+              primaryTint.hoverBg,
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             )}
           >
