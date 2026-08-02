@@ -329,6 +329,11 @@ export const LensColumn = ({
                     row.isConnected === false;
                   const glyphRowLabel =
                     row.count != null && row.count > 0 ? `${row.label} ${row.count}` : row.label;
+                  const iconEmphasis = cn(
+                    active && 'opacity-100',
+                    !active && rowWantsAttention ? 'opacity-90' : null,
+                    !active && !rowWantsAttention ? 'opacity-55 group-hover:opacity-80' : null,
+                  );
                   return (
                     <button
                       key={row.kind}
@@ -346,8 +351,17 @@ export const LensColumn = ({
                       )}
                     >
                       {row.glyph != null ? (
-                        <span className="flex w-5 flex-none items-center justify-center transition-colors">
-                          <IntegrationGlyph provider={row.glyph} size={14} useBrandColor={false} />
+                        <span
+                          className={cn(
+                            'flex w-5 flex-none items-center justify-center transition-[color,opacity]',
+                            iconEmphasis,
+                          )}
+                        >
+                          <IntegrationGlyph
+                            provider={row.glyph}
+                            size={14}
+                            useBrandColor={row.isConnected !== false}
+                          />
                         </span>
                       ) : null}
                       {row.glyph == null && row.icon != null ? (
@@ -355,11 +369,7 @@ export const LensColumn = ({
                           className={cn(
                             'flex w-5 flex-none items-center justify-center transition-[color,opacity]',
                             tintClasses(row.tone ?? 'neutral').icon,
-                            active && 'opacity-100',
-                            !active && rowWantsAttention ? 'opacity-90' : null,
-                            !active && !rowWantsAttention
-                              ? 'opacity-55 group-hover:opacity-80'
-                              : null,
+                            iconEmphasis,
                           )}
                         >
                           <row.icon size={14} aria-hidden />

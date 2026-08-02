@@ -43,6 +43,24 @@ type Props = {
 
 type PullRequestProvider = 'github' | 'gitlab';
 
+type HostTitleParams = {
+  readonly remoteKind: RemoteHostKind | null;
+  readonly hasBothProviders: boolean;
+};
+
+const hostTitle = ({ remoteKind, hasBothProviders }: HostTitleParams): string => {
+  if (hasBothProviders) {
+    return 'Code host work';
+  }
+  if (remoteKind === 'gitlab') {
+    return 'GitLab';
+  }
+  if (remoteKind === 'github') {
+    return 'GitHub';
+  }
+  return 'Code host work';
+};
+
 const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
   branch == null ? null : (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
@@ -122,7 +140,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
 
   return (
     <PaneShell
-      title="Code host work"
+      title={hostTitle({ remoteKind, hasBothProviders })}
       description="Linked issues and pull or merge request for this session."
     >
       <div className="flex flex-col gap-3">
