@@ -8,17 +8,22 @@ import { worktreeStatus } from '../../../../worktree/worktree';
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
 import { usePushBranch } from '../../../hooks/usePushBranch';
+import type { Density } from '../../../density';
 
 type Props = {
   readonly session: Session;
+  readonly density?: Density;
 };
 
 const STATUS_REFRESH_INTERVAL_MS = 10_000;
 
-const TRIGGER_BUTTON =
+const FULL_TRIGGER_BUTTON =
   'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
 
-export const SessionGitActions = ({ session }: Props) => {
+const COMPACT_TRIGGER_BUTTON =
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+
+export const SessionGitActions = ({ session, density = 'full' }: Props) => {
   const sessionId = session.id as SessionId;
   const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const worktreePath = repo?.worktreePath ?? null;
@@ -74,6 +79,8 @@ export const SessionGitActions = ({ session }: Props) => {
   }
 
   const canPush = status != null && status.ahead > 0;
+  const triggerClassName = density === 'compact' ? COMPACT_TRIGGER_BUTTON : FULL_TRIGGER_BUTTON;
+  const triggerLabel = mountName == null ? 'Branch' : `${mountName} branch`;
   const items: ReadonlyArray<OverflowMenuItem> = [
     {
       kind: 'item',
@@ -103,11 +110,13 @@ export const SessionGitActions = ({ session }: Props) => {
       label="branch actions"
       align="left"
       side="top"
-      triggerClassName={TRIGGER_BUTTON}
+      triggerClassName={triggerClassName}
       trigger={
         <>
           <GitBranch size={13} aria-hidden />
-          <span>{mountName == null ? 'Branch' : `${mountName} branch`}</span>
+          <span className="density-trigger-label" data-density={density}>
+            {triggerLabel}
+          </span>
         </>
       }
     />

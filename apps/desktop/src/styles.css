@@ -449,6 +449,27 @@ dialog[open]::backdrop {
   animation: border-pulse 2.8s ease-in-out infinite;
 }
 
+.density-trigger-label {
+  display: inline-block;
+  max-width: 10rem;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 1;
+}
+
+.density-trigger-label[data-density='compact'] {
+  max-width: 0;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .density-trigger-label {
+    transition:
+      max-width 160ms cubic-bezier(0.2, 0, 0, 1),
+      opacity 120ms cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
 /* Slot-machine cost chip, outer success-tinted halo + a brief inner lift that
    sells the "the meter just ticked" moment. Paired in JS with a per-digit roll
    so the glow peaks while the numbers are still settling, then fades as they
