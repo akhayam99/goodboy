@@ -251,6 +251,10 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
   const selectAgent = useAppStore((s) => s.selectAgent);
   const store = useAppStore.getState();
   const action = n.action != null ? mapNotificationAction(n.action, store) : undefined;
+  const retryAction =
+    n.action?.kind === 'retry-summarizer' || n.action?.kind === 'retry-step-summary'
+      ? n.action
+      : null;
   const [pickerOpen, setPickerOpen] = useState(false);
   const sessionId = n.sessionId;
   const agentId = n.action?.kind === 'retry-step-summary' ? n.action.agentId : null;
@@ -322,26 +326,33 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
           >
             {action.label}
           </button>
-          <button
-            type="button"
-            className="rounded px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
-            onClick={() => setPickerOpen((v) => !v)}
-          >
-            Retry with…
-          </button>
+          {retryAction != null && (
+            <button
+              type="button"
+              className="rounded px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={() => setPickerOpen((v) => !v)}
+            >
+              Retry with…
+            </button>
+          )}
         </div>
       ) : null}
-      {action != null && pickerOpen && n.action != null ? (
+      {action != null && pickerOpen && retryAction != null ? (
         <div className="pl-5">
-          <RetryWithPicker action={n.action} onDone={() => setPickerOpen(false)} />
+          <RetryWithPicker action={retryAction} onDone={() => setPickerOpen(false)} />
         </div>
       ) : null}
     </li>
   );
 };
 
+type RetryAction = Extract<
+  NotificationAction,
+  { kind: 'retry-summarizer' } | { kind: 'retry-step-summary' }
+>;
+
 type RetryWithPickerProps = {
-  readonly action: NotificationAction;
+  readonly action: RetryAction;
   readonly onDone: () => void;
 };
 
@@ -371,14 +382,21 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
       model === '' ? resolveTaskModel('summarizer', null, providerId) : { providerId, model };
     const override: TaskModelPreference = { ...taskModel, effort };
     const store = useAppStore.getState();
-    if (action.kind === 'retry-summarizer') {
-      store.retrySummarizer(action.sessionId, override);
-    } else {
-      void store.retryStepSummary({
-        sessionId: action.sessionId,
-        agentId: action.agentId,
-        taskModelOverride: override,
-      });
+    switch (action.kind) {
+      case 'retry-summarizer':
+        store.retrySummarizer(action.sessionId, override);
+        break;
+      case 'retry-step-summary':
+        void store.retryStepSummary({
+          sessionId: action.sessionId,
+          agentId: action.agentId,
+          taskModelOverride: override,
+        });
+        break;
+      default: {
+        const _exhaustive: never = action;
+        return _exhaustive;
+      }
     }
     onDone();
   };

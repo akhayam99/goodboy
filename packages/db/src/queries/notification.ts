@@ -11,6 +11,7 @@ export type NotificationKind =
   | 'pr-created'
   | 'workspace-deleted'
   | 'boundary-drift'
+  | 'budget-cap'
   | 'title-generation'
   | 'error';
 
@@ -20,7 +21,8 @@ export type NotificationAction =
       readonly kind: 'retry-step-summary';
       readonly sessionId: SessionId;
       readonly agentId: AgentId;
-    };
+    }
+  | { readonly kind: 'open-budget'; readonly sessionId: SessionId | null };
 
 export type Notification = {
   readonly id: string;

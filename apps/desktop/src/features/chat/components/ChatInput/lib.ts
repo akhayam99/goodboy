@@ -1,13 +1,5 @@
-import type {
-  AgentId,
-  AttachmentInput,
-  BudgetAlert,
-  BudgetAlertKind,
-  ProviderId,
-  TurnProviderOverride,
-} from '@goodboy/types';
+import type { AgentId, AttachmentInput, ProviderId, TurnProviderOverride } from '@goodboy/types';
 import { EFFORT_LEVELS, type EffortLevel } from '../../utils/chat-constants';
-import type { ToastKind } from '../../../../app/components/Toast';
 
 export const RUNNING_KINDS = new Set(['starting', 'running']);
 
@@ -84,22 +76,4 @@ export function asEffortLevel(v: string | undefined | null): EffortLevel | null 
 
 export function asProvider(v: string | undefined | null): ProviderId | null {
   return v && VALID_PROVIDERS.includes(v as ProviderId) ? (v as ProviderId) : null;
-}
-
-export function toastKindForAlert(kind: BudgetAlertKind): ToastKind {
-  return kind === 'provider-exceeded' || kind === 'session-exceeded' ? 'error' : 'warning';
-}
-
-export function toastMessageForAlert(alert: BudgetAlert): string {
-  const pct = alert.capUsd > 0 ? Math.round((alert.currentUsd / alert.capUsd) * 100) : 0;
-  if (alert.kind === 'provider-threshold') {
-    return `provider ${alert.provider ?? '?'} budget at ${pct}%`;
-  }
-  if (alert.kind === 'provider-exceeded') {
-    return `provider ${alert.provider ?? '?'} budget exceeded`;
-  }
-  if (alert.kind === 'session-threshold') {
-    return `session budget at ${pct}%`;
-  }
-  return 'session budget exceeded';
 }

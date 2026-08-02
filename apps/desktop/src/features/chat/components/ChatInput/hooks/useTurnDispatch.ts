@@ -2,9 +2,7 @@ import { useCallback, useState } from 'react';
 import type { AgentId, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { formatError } from '../../../../../shared/lib/errors';
-import { SESSION_FEATURES } from '../../../../../shared/lib/features';
-import { useToast } from '../../../../../app/components/Toast';
-import { toAttachmentInput, toastKindForAlert, toastMessageForAlert } from '../lib';
+import { toAttachmentInput } from '../lib';
 import type { PendingAttachment, QueuedTurn } from '../lib';
 
 type UseTurnDispatchArgs = {
@@ -14,7 +12,6 @@ type UseTurnDispatchArgs = {
 
 export function useTurnDispatch({ sessionId, cleanupSentAttachments }: UseTurnDispatchArgs) {
   const sendTurn = useAppStore((s) => s.sendTurn);
-  const { showToast } = useToast();
 
   const [error, setError] = useState<string | null>(null);
   const [lastFailedTurn, setLastFailedTurn] = useState<Omit<QueuedTurn, 'id'> | null>(null);
@@ -33,12 +30,6 @@ export function useTurnDispatch({ sessionId, cleanupSentAttachments }: UseTurnDi
           content,
           ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
           override,
-          onNewAlerts: (alerts) => {
-            if (!SESSION_FEATURES.budget) return;
-            for (const alert of alerts) {
-              showToast(toastKindForAlert(alert.kind), toastMessageForAlert(alert));
-            }
-          },
         });
         setLastFailedTurn(null);
         cleanupSentAttachments(atts);
@@ -47,7 +38,7 @@ export function useTurnDispatch({ sessionId, cleanupSentAttachments }: UseTurnDi
         setLastFailedTurn({ agentId, content, attachments: atts, override });
       }
     },
-    [sendTurn, sessionId, showToast, cleanupSentAttachments],
+    [sendTurn, sessionId, cleanupSentAttachments],
   );
 
   return { dispatchTurn, error, setError, lastFailedTurn, setLastFailedTurn };
