@@ -200,6 +200,7 @@ export const NotificationCenter = () => {
                     icon={CONCEPT_ICONS.notifications}
                     title="Nothing to catch up on"
                     description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
+                    size="inline"
                     action={
                       <Button
                         size="sm"

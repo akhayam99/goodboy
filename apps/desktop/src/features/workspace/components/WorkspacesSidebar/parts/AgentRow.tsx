@@ -139,7 +139,7 @@ export const AgentRow = ({
             icon={PanelRight}
             label="Toggle agent details"
             pressed={isInspected}
-            active={isInspected}
+            highlighted={isInspected}
             onClick={onInspect}
           />
         ) : (
@@ -164,7 +164,7 @@ export const AgentRow = ({
               icon={Trash2}
               label="delete agent"
               tone="danger"
-              active={isConfirmingDelete}
+              highlighted={isConfirmingDelete}
               reveal={!isConfirmingDelete}
               onClick={() => setIsConfirmingDelete(true)}
             />

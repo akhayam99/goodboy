@@ -7,7 +7,7 @@ type Props = {
   readonly tone?: Tone;
   readonly size?: 'compact' | 'default';
   readonly reveal?: boolean;
-  readonly active?: boolean;
+  readonly highlighted?: boolean;
   readonly pressed?: boolean;
   readonly expanded?: boolean;
   readonly disabled?: boolean;
@@ -20,7 +20,7 @@ export const CardAction = ({
   tone = 'neutral',
   size = 'compact',
   reveal = false,
-  active = false,
+  highlighted = false,
   pressed,
   expanded,
   disabled = false,
@@ -44,7 +44,7 @@ export const CardAction = ({
         tintClasses(tone).hoverText,
         reveal &&
           'opacity-0 group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100',
-        active && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
+        highlighted && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
       )}
     >
       <Icon size={size === 'compact' ? 12 : 14} aria-hidden />

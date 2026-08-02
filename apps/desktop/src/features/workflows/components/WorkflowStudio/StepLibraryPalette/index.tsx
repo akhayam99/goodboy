@@ -63,6 +63,7 @@ export const StepLibraryPalette = ({
           icon={CONCEPT_ICONS.workflows}
           title="No library steps yet"
           description="Create one to reuse it across workflows."
+          size="inline"
           bordered
           action={newStepAction}
         />

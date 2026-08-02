@@ -70,6 +70,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('StageColumn selection', () => {
+  it('uses the quiet empty state for an empty column', () => {
+    const { container } = renderColumn([]);
+    expect(screen.getByText('nothing building')).toBeDefined();
+    expect(container.querySelector('.size-12')).toBeNull();
+    expect(container.querySelector('.mt-0\\.5')).not.toBeNull();
+  });
+
   it('shows no bulk bar until a card is selected', () => {
     renderColumn([makeSession('s-1', 'one')]);
     expect(screen.queryByText(/selected/)).toBeNull();

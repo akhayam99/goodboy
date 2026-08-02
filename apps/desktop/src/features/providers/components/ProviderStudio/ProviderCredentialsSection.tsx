@@ -86,6 +86,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
           bordered
           icon={CONCEPT_ICONS.providers}
           title="No API keys yet"
+          size="inline"
           className="bg-muted/10 py-8"
         />
       ) : null}

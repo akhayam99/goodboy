@@ -106,6 +106,7 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
                 ? 'Pull requests by other authors will show up here.'
                 : 'Open pull requests on this repository will show up here.'
             }
+            size="inline"
             action={
               <Button variant="ghost" size="sm" onClick={() => void refreshReviewPrs(workspaceId)}>
                 Refresh
