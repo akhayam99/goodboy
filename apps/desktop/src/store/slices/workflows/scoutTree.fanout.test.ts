@@ -21,7 +21,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
 }));
 
-import { SCOUT_MAX_CHILDREN, advanceScoutTree, fanOutScouts } from './scoutTree';
+import { FAN_OUT_MAX_CHILDREN, advanceScoutTree, fanOutScouts } from './scoutTree';
 
 const SID = 'sess-1' as SessionId;
 
@@ -135,13 +135,13 @@ describe('fanOutScouts workflowRunId propagation', () => {
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
   });
 
-  it('caps fan-out at SCOUT_MAX_CHILDREN, still propagating workflowRunId, and notifies on drop', async () => {
+  it('caps fan-out at FAN_OUT_MAX_CHILDREN, still propagating workflowRunId, and notifies on drop', async () => {
     const c = container({ workflowRunId: 'wf-9' as WorkflowRunId });
     const { get, set, emitNotification } = makeStore(c);
 
-    await fanOutScouts(set, get, SID, c, areas(SCOUT_MAX_CHILDREN + 2));
+    await fanOutScouts(set, get, SID, c, areas(FAN_OUT_MAX_CHILDREN + 2));
 
-    expect(hoisted.insertArgs).toHaveLength(SCOUT_MAX_CHILDREN);
+    expect(hoisted.insertArgs).toHaveLength(FAN_OUT_MAX_CHILDREN);
     for (const args of hoisted.insertArgs) {
       expect(args.workflowRunId).toBe('wf-9');
     }

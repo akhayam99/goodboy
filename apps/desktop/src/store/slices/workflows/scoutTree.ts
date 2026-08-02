@@ -23,7 +23,6 @@ import type { GetFn, SetFn } from './types';
 export const SCOUT_DEPTH_CAP = 2;
 export const FAN_OUT_DEPTH_CAP = 1;
 export const FAN_OUT_MAX_CHILDREN = 4;
-export const SCOUT_MAX_CHILDREN = FAN_OUT_MAX_CHILDREN;
 
 const resolveContainerModel = (get: GetFn, container: Agent): string => {
   const override = get().agentModelOverride[container.id];
