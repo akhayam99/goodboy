@@ -16,9 +16,9 @@ export type AppShellProps = {
   className?: string;
 };
 
-const LEFT_SIDEBAR_MIN = 260;
-const LEFT_SIDEBAR_MAX = 640;
-const LEFT_SIDEBAR_DEFAULT = 340;
+export const LEFT_SIDEBAR_MIN = 260;
+export const LEFT_SIDEBAR_MAX = 640;
+export const LEFT_SIDEBAR_DEFAULT = 340;
 export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
 
 const RIGHT_SIDEBAR_MIN = 260;

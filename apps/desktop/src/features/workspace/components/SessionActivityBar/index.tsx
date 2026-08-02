@@ -35,6 +35,7 @@ import { ExternalTaskChip } from '../../../../features/integrations/components/E
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { BulkActionBar } from '../BulkActionBar';
+import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionViewMenu } from './SessionViewMenu';
 
 type ActivityTab = 'active' | 'archived';
@@ -118,6 +119,16 @@ export const SessionActivityBar = ({
   useEffect(() => {
     clearSelection();
   }, [tab, clearSelection]);
+
+  const { hold, release } = useSidebarPeekHold();
+  const hasSelection = selectedSessions.length > 0;
+  useEffect(() => {
+    if (!hasSelection) {
+      return;
+    }
+    hold();
+    return () => release();
+  }, [hasSelection, hold, release]);
 
   const isCollapsed = (key: string): boolean =>
     expandedOverrides.get(key) ?? COLLAPSED_BY_DEFAULT.includes(key);
