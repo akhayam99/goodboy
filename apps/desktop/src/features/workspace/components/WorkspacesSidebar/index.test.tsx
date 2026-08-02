@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, Workspace, WorkspaceId } from '@goodboy/types';
 
 const { state, currentWorkspace, currentSessionRef } = vi.hoisted(() => ({
@@ -48,5 +48,40 @@ describe('WorkspacesSidebar', () => {
     currentSessionRef.value = null;
     render(<WorkspacesSidebar />);
     expect(screen.queryByRole('button', { name: /collapse sidebar/i })).toBeNull();
+  });
+
+  it('puts the collapse control beside Board, sharing its row', () => {
+    currentSessionRef.value = { id: 'session-1' } as Session;
+    const onCollapse = vi.fn();
+    render(<WorkspacesSidebar onCollapse={onCollapse} />);
+    const collapse = screen.getByRole('button', { name: /hide sessions column \(⌘B\)/i });
+    const back = screen.getByRole('button', { name: 'back to board' });
+
+    expect(collapse.parentElement).toBe(back.parentElement);
+
+    fireEvent.click(collapse);
+    expect(onCollapse).toHaveBeenCalledOnce();
+    currentSessionRef.value = null;
+  });
+
+  it('offers to pin instead of collapse while peeking', () => {
+    currentSessionRef.value = { id: 'session-1' } as Session;
+    const onPin = vi.fn();
+    render(<WorkspacesSidebar isPeeking onPin={onPin} />);
+
+    expect(screen.queryByRole('button', { name: /hide sessions column/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /keep open \(⌘B\)/i }));
+    expect(onPin).toHaveBeenCalledOnce();
+    currentSessionRef.value = null;
+  });
+
+  it('tells the peek to close once the board takes over', () => {
+    currentSessionRef.value = { id: 'session-1' } as Session;
+    const onNavigate = vi.fn();
+    render(<WorkspacesSidebar isPeeking onNavigate={onNavigate} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'back to board' }));
+    expect(onNavigate).toHaveBeenCalledOnce();
+    currentSessionRef.value = null;
   });
 });

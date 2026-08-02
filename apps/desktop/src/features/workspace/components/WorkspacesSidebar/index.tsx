@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Kanban } from 'lucide-react';
-import { KbdPill, cn, tintClasses } from '@goodboy/ui';
+import { Kanban, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { KbdPill, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -13,7 +13,14 @@ import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
 
-export const WorkspacesSidebar = () => {
+type Props = {
+  readonly isPeeking?: boolean;
+  readonly onCollapse?: () => void;
+  readonly onPin?: () => void;
+  readonly onNavigate?: () => void;
+};
+
+export const WorkspacesSidebar = ({ isPeeking = false, onCollapse, onPin, onNavigate }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
@@ -21,11 +28,13 @@ export const WorkspacesSidebar = () => {
   const onSelectSession = useCallback(
     (id: SessionId) => {
       void setCurrentSession(id);
+      onNavigate?.();
     },
-    [setCurrentSession],
+    [onNavigate, setCurrentSession],
   );
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const primaryTint = tintClasses('primary');
+  const columnActionLabel = isPeeking ? 'Keep open (⌘B)' : 'Hide sessions column (⌘B)';
 
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
@@ -41,13 +50,30 @@ export const WorkspacesSidebar = () => {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {currentWorkspace && currentSession ? (
-        <div className="shrink-0 px-2 pt-2 pb-1">
+        <div className="flex shrink-0 items-center gap-1.5 px-2 pt-2 pb-1">
+          <Tooltip content={columnActionLabel} side="bottom">
+            <button
+              type="button"
+              onClick={isPeeking ? onPin : onCollapse}
+              aria-label={columnActionLabel}
+              className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            >
+              {isPeeking ? (
+                <PanelLeft size={14} aria-hidden />
+              ) : (
+                <PanelLeftClose size={14} aria-hidden />
+              )}
+            </button>
+          </Tooltip>
           <button
             type="button"
-            onClick={() => void setCurrentSession(null)}
+            onClick={() => {
+              void setCurrentSession(null);
+              onNavigate?.();
+            }}
             aria-label="back to board"
             className={cn(
-              'group relative w-full flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
+              'group relative flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
               'bg-primary text-primary-foreground ring-1',
               primaryTint.ring,
               'motion-safe:transition-opacity hover:opacity-90',
