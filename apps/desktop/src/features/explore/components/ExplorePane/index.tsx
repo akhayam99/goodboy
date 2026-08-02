@@ -1,14 +1,36 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
-import { Button, CopyButton, EmptyState, Skeleton } from '@goodboy/ui';
+import { Button, CopyButton, EmptyState, Skeleton, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { exploreList, exploreOpen, type ExploreEntry } from '../../explore';
+import {
+  exploreList,
+  exploreOpen,
+  exploreRead,
+  type ExploreContent,
+  type ExploreEntry,
+} from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
+import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
+import { ExplorePreviewPanel } from './ExplorePreviewPanel';
+import { ExploreSpawnPopover } from './ExploreSpawnPopover';
 
 const ROOT_PATH = '';
 const EMPTY_ENTRIES: ReadonlyArray<ExploreEntry> = Object.freeze([]);
+const KNOWN_UNSUPPORTED_PREVIEW_EXTENSIONS = new Set([
+  'doc',
+  'docx',
+  'key',
+  'numbers',
+  'ods',
+  'odt',
+  'pages',
+  'ppt',
+  'pptx',
+  'xls',
+  'xlsx',
+]);
 
 type Props = {
   readonly sessionId: SessionId;
@@ -18,6 +40,22 @@ type Props = {
 type RenderEntriesParams = {
   readonly entries: ReadonlyArray<ExploreEntry>;
 };
+
+type PreviewState =
+  | {
+      readonly status: 'loading';
+    }
+  | {
+      readonly status: 'unsupported';
+    }
+  | {
+      readonly status: 'error';
+      readonly message: string;
+    }
+  | {
+      readonly status: 'ready';
+      readonly content: ExploreContent;
+    };
 
 const formatByteSize = ({ bytes }: { readonly bytes: number }): string => {
   if (bytes < 1024) {
@@ -57,6 +95,22 @@ const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
   return 'Unknown error';
 };
 
+const extensionOf = ({ fileName }: { readonly fileName: string }): string => {
+  const dot = fileName.lastIndexOf('.');
+  if (dot < 0) {
+    return '';
+  }
+  return fileName.slice(dot + 1).toLowerCase();
+};
+
+const isKnownUnsupportedPreviewExtension = ({
+  fileName,
+}: {
+  readonly fileName: string;
+}): boolean => {
+  return KNOWN_UNSUPPORTED_PREVIEW_EXTENSIONS.has(extensionOf({ fileName }));
+};
+
 export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
   const [entriesByPath, setEntriesByPath] = useState<
     Readonly<Record<string, ReadonlyArray<ExploreEntry>>>
@@ -67,6 +121,8 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
   const [actionErrorByPath, setActionErrorByPath] = useState<
     Readonly<Record<string, string | null>>
   >({});
+  const [previewByPath, setPreviewByPath] = useState<Readonly<Record<string, PreviewState>>>({});
+  const [selectedFile, setSelectedFile] = useState<ExploreEntry | null>(null);
 
   const loadDirectory = useCallback(
     async ({ relPath }: { readonly relPath: string }) => {
@@ -89,12 +145,46 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
     [sessionDir],
   );
 
+  const loadPreview = useCallback(
+    async ({ entry }: { readonly entry: ExploreEntry }) => {
+      if (sessionDir == null || sessionDir.trim() === '') {
+        return;
+      }
+      if (isKnownUnsupportedPreviewExtension({ fileName: entry.name })) {
+        setPreviewByPath((previous) => ({
+          ...previous,
+          [entry.relPath]: { status: 'unsupported' },
+        }));
+        return;
+      }
+      setPreviewByPath((previous) => ({ ...previous, [entry.relPath]: { status: 'loading' } }));
+      try {
+        const content = await exploreRead({ sessionDir, relPath: entry.relPath });
+        setPreviewByPath((previous) => ({
+          ...previous,
+          [entry.relPath]: { status: 'ready', content },
+        }));
+      } catch (error) {
+        setPreviewByPath((previous) => ({
+          ...previous,
+          [entry.relPath]: {
+            status: 'error',
+            message: toErrorMessage({ error }),
+          },
+        }));
+      }
+    },
+    [sessionDir],
+  );
+
   useEffect(() => {
     setEntriesByPath({});
     setExpandedByPath({});
     setLoadingByPath({});
     setErrorByPath({});
     setActionErrorByPath({});
+    setPreviewByPath({});
+    setSelectedFile(null);
     if (sessionDir == null || sessionDir.trim() === '') {
       setErrorByPath({ [ROOT_PATH]: 'Session folder is not available yet.' });
       return;
@@ -119,6 +209,21 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
       }
     },
     [sessionDir],
+  );
+
+  const selectFile = useCallback(
+    ({ entry }: { readonly entry: ExploreEntry }) => {
+      if (entry.isDir) {
+        return;
+      }
+      setSelectedFile(entry);
+      const cached = previewByPath[entry.relPath];
+      if (cached != null && cached.status !== 'error') {
+        return;
+      }
+      void loadPreview({ entry });
+    },
+    [loadPreview, previewByPath],
   );
 
   const toggleDirectory = useCallback(
@@ -150,6 +255,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
         const isLoadingChildren = loadingByPath[entry.relPath] === true;
         const childError = errorByPath[entry.relPath] ?? null;
         const actionError = actionErrorByPath[entry.relPath] ?? null;
+        const isSelectedFile = selectedFile?.relPath === entry.relPath;
         const age =
           entry.modifiedAt == null ? '' : formatRelativeAge({ fromIso: entry.modifiedAt });
         const ageLabel = age === '' ? 'unknown age' : age;
@@ -162,7 +268,10 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
         return (
           <div
             key={entry.relPath}
-            className="flex flex-col gap-2 rounded-md border border-border-soft p-2"
+            className={cn(
+              'flex flex-col gap-2 rounded-md border border-border-soft p-2',
+              isSelectedFile && 'border-primary/50 bg-primary/5',
+            )}
           >
             <div className="flex items-start gap-2">
               {entry.isDir ? (
@@ -188,7 +297,18 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                   {entry.isDir ? (
                     <Folder size={14} aria-hidden className="shrink-0 text-muted-foreground" />
                   ) : null}
-                  <p className="truncate text-sm font-medium text-foreground">{entry.name}</p>
+                  {entry.isDir ? (
+                    <p className="truncate text-sm font-medium text-foreground">{entry.name}</p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => selectFile({ entry })}
+                      aria-label={`Preview ${entry.name}`}
+                      className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline"
+                    >
+                      {entry.name}
+                    </button>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-2xs text-muted-foreground">
                   <span>{sizeLabel}</span>
@@ -196,6 +316,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {entry.isDir ? null : <ExploreSpawnPopover sessionId={sessionId} entry={entry} />}
                 <button
                   type="button"
                   onClick={() => void runOpenAction({ entry, reveal: false })}
@@ -242,7 +363,10 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
       errorByPath,
       expandedByPath,
       loadingByPath,
+      selectedFile,
       runOpenAction,
+      selectFile,
+      sessionId,
       sessionDir,
       toggleDirectory,
     ],
@@ -251,45 +375,65 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
   const rootEntries = useMemo(() => entriesByPath[ROOT_PATH] ?? EMPTY_ENTRIES, [entriesByPath]);
   const rootLoading = loadingByPath[ROOT_PATH] === true;
   const rootError = errorByPath[ROOT_PATH] ?? null;
+  const selectedPreview = useMemo<PreviewState | null>(() => {
+    if (selectedFile == null) {
+      return null;
+    }
+    return previewByPath[selectedFile.relPath] ?? { status: 'loading' };
+  }, [previewByPath, selectedFile]);
 
   return (
-    <PaneShell title="Explore" description="Browse the files for this session.">
-      <div className="flex flex-col gap-3">
-        {rootLoading ? (
-          <>
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-10 w-11/12 rounded-md" />
-            <Skeleton className="h-10 w-10/12 rounded-md" />
-          </>
-        ) : rootError != null ? (
-          <EmptyState
-            bordered
-            tone="danger"
-            icon={CONCEPT_ICONS.explore}
-            title="Could not read this session folder"
-            description={rootError}
-            action={
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => void loadDirectory({ relPath: ROOT_PATH })}
-              >
-                Retry
-              </Button>
-            }
+    <InspectorSplit
+      open={selectedFile != null}
+      panel={
+        selectedFile != null && selectedPreview != null ? (
+          <ExplorePreviewPanel
+            entry={selectedFile}
+            previewState={selectedPreview}
+            onClose={() => setSelectedFile(null)}
+            onOpenOutside={() => void runOpenAction({ entry: selectedFile, reveal: false })}
           />
-        ) : rootEntries.length === 0 ? (
-          <EmptyState
-            bordered
-            tone="info"
-            icon={CONCEPT_ICONS.explore}
-            title="This session folder is empty"
-            description="Files created while you work on this session appear here. Add one from your editor or terminal and refresh."
-          />
-        ) : (
-          <div className="flex flex-col gap-2">{renderEntries({ entries: rootEntries })}</div>
-        )}
-      </div>
-    </PaneShell>
+        ) : null
+      }
+    >
+      <PaneShell title="Explore" description="Browse the files for this session.">
+        <div className="flex flex-col gap-3">
+          {rootLoading ? (
+            <>
+              <Skeleton className="h-10 w-full rounded-md" />
+              <Skeleton className="h-10 w-11/12 rounded-md" />
+              <Skeleton className="h-10 w-10/12 rounded-md" />
+            </>
+          ) : rootError != null ? (
+            <EmptyState
+              bordered
+              tone="danger"
+              icon={CONCEPT_ICONS.explore}
+              title="Could not read this session folder"
+              description={rootError}
+              action={
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => void loadDirectory({ relPath: ROOT_PATH })}
+                >
+                  Retry
+                </Button>
+              }
+            />
+          ) : rootEntries.length === 0 ? (
+            <EmptyState
+              bordered
+              tone="info"
+              icon={CONCEPT_ICONS.explore}
+              title="This session folder is empty"
+              description="Files created while you work on this session appear here. Add one from your editor or terminal and refresh."
+            />
+          ) : (
+            <div className="flex flex-col gap-2">{renderEntries({ entries: rootEntries })}</div>
+          )}
+        </div>
+      </PaneShell>
+    </InspectorSplit>
   );
 };
