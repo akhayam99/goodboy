@@ -65,6 +65,7 @@ export const Dialog = ({
   panelClassName,
 }: DialogProps) => {
   const ref = useRef<HTMLDialogElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const uid = useId();
   const titleId = title ? `${uid}-title` : undefined;
   const descId = description ? `${uid}-desc` : undefined;
@@ -98,8 +99,8 @@ export const Dialog = ({
         if (target) {
           target.focus();
         } else {
-          const first = dialog.querySelector<HTMLElement>(
-            'input:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          const first = (bodyRef.current ?? dialog).querySelector<HTMLElement>(
+            'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
           );
           first?.focus();
         }
@@ -197,20 +198,24 @@ export const Dialog = ({
               {panel}
             </div>
             <Divider orientation="vertical" />
+            <div ref={bodyRef} className="min-w-0 flex-1">
+              <ScrollFade
+                className="min-w-0 flex-1 text-sm"
+                viewportClassName={cn('flex flex-col', bodyClassName ?? 'gap-4 px-6 py-5')}
+              >
+                {children}
+              </ScrollFade>
+            </div>
+          </div>
+        ) : (
+          <div ref={bodyRef} className="min-h-0 flex-1">
             <ScrollFade
-              className="min-w-0 flex-1 text-sm"
+              className="min-h-0 flex-1 text-sm"
               viewportClassName={cn('flex flex-col', bodyClassName ?? 'gap-4 px-6 py-5')}
             >
               {children}
             </ScrollFade>
           </div>
-        ) : (
-          <ScrollFade
-            className="min-h-0 flex-1 text-sm"
-            viewportClassName={cn('flex flex-col', bodyClassName ?? 'gap-4 px-6 py-5')}
-          >
-            {children}
-          </ScrollFade>
         )}
         {footer ? (
           <>

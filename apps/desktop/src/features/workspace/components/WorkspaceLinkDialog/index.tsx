@@ -11,7 +11,7 @@ type Props = {
 export const WorkspaceLinkDialog = ({ open, onClose }: Props) => {
   const [footerContainer, setFooterContainer] = useState<HTMLElement | null>(null);
 
-  const onComplete = () => {
+  const onComplete = ({ mode: _mode }: { readonly mode: 'single' | 'multi' | 'simple' }) => {
     onClose();
     if (!isWizardDone()) {
       reopenWizard('setup');

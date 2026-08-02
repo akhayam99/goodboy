@@ -158,6 +158,30 @@ describe('OnboardingWizard', () => {
       expect(screen.getByTestId('CodeHostStep')).toBeDefined();
       expect(screen.getByRole('button', { name: /continue/i })).toBeDefined();
     });
+
+    it('announces when changing workspace removes setup steps and moves to the next valid step', () => {
+      setHook({
+        providersConnected: 1,
+        hasWorkspace: true,
+        workspaceKind: 'repo',
+      });
+      const { rerender } = render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 3);
+      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
+
+      setHook({
+        providersConnected: 1,
+        hasWorkspace: true,
+        workspaceKind: 'simple',
+      });
+      rerender(<OnboardingWizard />);
+
+      expect(screen.getByTestId('TrackerStep')).toBeDefined();
+      expect(
+        screen.getByText('Code host and Sentry are skipped for standalone workspaces.'),
+      ).toBeDefined();
+    });
   });
 
   describe('setup mode', () => {
