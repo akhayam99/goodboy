@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Ban, Check } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
-import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
+import { Divider } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
@@ -14,6 +14,7 @@ import { workflowKindName } from '../../../../workspace/components/WorkspacesSid
 import { WorkflowRailCard } from './WorkflowRailCard';
 import { WorkflowRunDetail } from './WorkflowRunDetail';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
+import { PaneShell } from './PaneShell';
 
 type Props = {
   readonly session: Session;
@@ -85,77 +86,78 @@ export const WorkflowsPane = ({ session }: Props) => {
     );
   };
 
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-3">
-        <div className="flex items-baseline gap-2">
-          <h1 className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
-            Workflows
-          </h1>
-          {hasRuns ? (
+  if (focusedRun != null) {
+    return (
+      <div className="flex h-full min-h-0 flex-col bg-background">
+        <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-3">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
+              Workflows
+            </h1>
             <span className="text-2xs tabular-nums text-muted-foreground/70">
               {attachedRuns.length}
             </span>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {focusedRun == null ? (
-            <>
-              <WorkflowRailSectionToggle
-                label="Completed"
-                count={completed.length}
-                isShown={showCompleted}
-                icon={Check}
-                onChange={setShowCompleted}
-              />
-              <WorkflowRailSectionToggle
-                label="Discarded"
-                count={discarded.length}
-                isShown={showDiscarded}
-                icon={Ban}
-                onChange={setShowDiscarded}
-              />
-            </>
-          ) : null}
+          </div>
           {shouldShowHeaderAttach ? (
             <WorkflowAttachButton sessionId={sessionId} placement="header" />
           ) : null}
         </div>
-      </div>
-      <Divider />
-      <div className="flex min-h-0 flex-1">
-        {focusedRun != null ? (
+        <Divider />
+        <div className="flex min-h-0 flex-1">
           <WorkflowRunDetail session={session} workflowRunId={focusedRun.run.id} />
-        ) : (
-          <ScrollFade className="min-w-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 motion-safe:animate-studio-in">
-              {!hasRuns ? <WorkflowStartButton sessionId={sessionId} /> : null}
-              {shouldShowEmptyCard ? (
-                <LensEmptyState
-                  tone={CONCEPT_TONE.workflows}
-                  icon={CONCEPT_ICONS.workflows}
-                  title="Nothing running"
-                  description={
-                    completed.length > 0
-                      ? 'Every attached workflow is done. Reveal the completed ones to reread them, or attach another.'
-                      : 'No live workflow on this session. Attach one to start.'
-                  }
-                  action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
-                />
-              ) : null}
-              {active.length > 0 ? (
-                <ul className="flex flex-col gap-2">{active.map(renderCard)}</ul>
-              ) : null}
-              {showCompleted && completed.length > 0 ? (
-                <ul className="flex flex-col gap-2">{completed.map(renderCard)}</ul>
-              ) : null}
-              {showDiscarded && discarded.length > 0 ? (
-                <ul className="flex flex-col gap-2">{discarded.map(renderCard)}</ul>
-              ) : null}
-            </div>
-          </ScrollFade>
-        )}
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <PaneShell
+      title="Workflows"
+      description="Sequences of agents this session runs toward its goal."
+      meta={hasRuns ? attachedRuns.length : undefined}
+      actions={
+        <>
+          <WorkflowRailSectionToggle
+            label="Completed"
+            count={completed.length}
+            isShown={showCompleted}
+            icon={Check}
+            onChange={setShowCompleted}
+          />
+          <WorkflowRailSectionToggle
+            label="Discarded"
+            count={discarded.length}
+            isShown={showDiscarded}
+            icon={Ban}
+            onChange={setShowDiscarded}
+          />
+          {shouldShowHeaderAttach ? (
+            <WorkflowAttachButton sessionId={sessionId} placement="header" />
+          ) : null}
+        </>
+      }
+    >
+      {!hasRuns ? <WorkflowStartButton sessionId={sessionId} /> : null}
+      {shouldShowEmptyCard ? (
+        <LensEmptyState
+          tone={CONCEPT_TONE.workflows}
+          icon={CONCEPT_ICONS.workflows}
+          title="Nothing running"
+          description={
+            completed.length > 0
+              ? 'Every attached workflow is done. Reveal the completed ones to reread them, or attach another.'
+              : 'No live workflow on this session. Attach one to start.'
+          }
+          action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
+        />
+      ) : null}
+      {active.length > 0 ? <ul className="flex flex-col gap-2">{active.map(renderCard)}</ul> : null}
+      {showCompleted && completed.length > 0 ? (
+        <ul className="flex flex-col gap-2">{completed.map(renderCard)}</ul>
+      ) : null}
+      {showDiscarded && discarded.length > 0 ? (
+        <ul className="flex flex-col gap-2">{discarded.map(renderCard)}</ul>
+      ) : null}
+    </PaneShell>
   );
 };

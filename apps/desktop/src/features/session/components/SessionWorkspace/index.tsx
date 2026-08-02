@@ -331,7 +331,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   />
                 ) : null}
                 {lens === 'scripts' ? (
-                  <PaneShell title="Scripts">
+                  <PaneShell
+                    title="Scripts"
+                    description="Shell commands you run by hand from this session, no agent involved."
+                  >
                     <ScriptsPanel
                       workspaceId={session.workspaceId}
                       sessionId={sessionId}
