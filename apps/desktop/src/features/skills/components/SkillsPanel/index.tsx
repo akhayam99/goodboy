@@ -14,7 +14,7 @@ import {
 import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { CardAction } from '../../../../shared/components/CardAction';
 import { CardActionSlot } from '../../../../shared/components/CardActionSlot';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -214,6 +214,7 @@ export const SkillsPanel = ({ workspaceId }: Props) => {
       {skills.length === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.skills}
+          tone={CONCEPT_TONE.skills}
           title="No skills yet"
           description="A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk."
           action={

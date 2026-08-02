@@ -13,7 +13,11 @@ import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
 
-export const WorkspacesSidebar = () => {
+type Props = {
+  readonly onNavigate?: () => void;
+};
+
+export const WorkspacesSidebar = ({ onNavigate }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
@@ -21,11 +25,12 @@ export const WorkspacesSidebar = () => {
   const onSelectSession = useCallback(
     (id: SessionId) => {
       void setCurrentSession(id);
+      onNavigate?.();
     },
-    [setCurrentSession],
+    [onNavigate, setCurrentSession],
   );
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
-  const neutralTint = tintClasses('neutral');
+  const primaryTint = tintClasses('primary');
 
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
@@ -44,12 +49,15 @@ export const WorkspacesSidebar = () => {
         <div className="shrink-0 px-2 pt-2 pb-1">
           <button
             type="button"
-            onClick={() => void setCurrentSession(null)}
+            onClick={() => {
+              void setCurrentSession(null);
+              onNavigate?.();
+            }}
             aria-label="back to board"
             className={cn(
-              'group relative w-full flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
-              'bg-foreground text-background ring-1',
-              neutralTint.ring,
+              'group relative flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
+              'bg-primary text-primary-foreground ring-1',
+              primaryTint.ring,
               'motion-safe:transition-opacity hover:opacity-90',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             )}

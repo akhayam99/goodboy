@@ -30,7 +30,7 @@ import {
   Textarea,
   cn,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import {
   PlannerClient,
   type PlannerOutput,
@@ -953,6 +953,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         {presets.length === 0 ? (
                           <EmptyState
                             bordered
+                            tone={CONCEPT_TONE.workflows}
                             icon={CONCEPT_ICONS.workflows}
                             title="No presets in this workspace yet"
                             size="inline"
@@ -1292,6 +1293,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     ) : (
                       <EmptyState
                         bordered
+                        tone={CONCEPT_TONE.workflows}
                         icon={CONCEPT_ICONS.workflows}
                         title={mode === 'preset' ? 'No preset selected' : 'No plan yet'}
                         description={

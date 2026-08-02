@@ -4,6 +4,7 @@ import { Check, SlidersHorizontal } from 'lucide-react';
 import { Divider, Eyebrow, Popover, Tooltip, cn } from '@goodboy/ui';
 import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useSessionViewPrefs } from '../../../../../store';
+import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
 
 type SortOption = {
   readonly key: SessionSortKey;
@@ -41,6 +42,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
   const setSessionSort = useAppStore((s) => s.setSessionSort);
   const setSessionGroup = useAppStore((s) => s.setSessionGroup);
 
+  const { hold, release } = useSidebarPeekHold();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
@@ -84,6 +86,14 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    hold();
+    return () => release();
+  }, [hold, open, release]);
 
   return (
     <>

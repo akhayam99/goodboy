@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { Button, EmptyState, Eyebrow, SelectableRow } from '@goodboy/ui';
 import { GitBranch, MessagesSquare, Plus } from 'lucide-react';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PullRequestChip } from '../PullRequestChip';
 import type { InboxGroup } from './useGithubInbox';
 import { InboxStatusIcons } from '../../../integrations/components/InboxStatusIcons';
@@ -18,7 +18,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
       <div className="flex h-full items-center justify-center p-3">
         <EmptyState
           bordered
-          tone="neutral"
+          tone={CONCEPT_TONE.github}
           icon={CONCEPT_ICONS.github}
           title="No sessions yet"
           description="Sessions in this workspace will show up here."

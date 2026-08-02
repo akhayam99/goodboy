@@ -9,7 +9,7 @@ import {
 } from '@goodboy/ui';
 import { MessagesSquare, Search } from 'lucide-react';
 import { issueIdentifier, type GitlabIssue } from '../client';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { GitlabIssueGroup } from './useGitlabIssues';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
@@ -101,6 +101,7 @@ export const IssueInbox = ({
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
             icon={CONCEPT_ICONS.gitlab}
+            tone={CONCEPT_TONE.gitlab}
             title={hasQuery ? 'No matching issues' : 'Inbox clear'}
             description={
               hasQuery ? 'Try a different search term.' : 'No open issues assigned to you.'

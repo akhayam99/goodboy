@@ -20,7 +20,7 @@ import { githubPullRequestFields, resolveDetailFields } from '../../../../shared
 import { BranchPair } from '../../../../shared/components/BranchPair';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import { groupThreads, type CommentThread } from '../../comment-threads';
@@ -159,7 +159,7 @@ export const PrDetailPanel = ({
       <div className="flex h-full items-center justify-center px-6">
         <EmptyState
           bordered
-          tone="neutral"
+          tone={CONCEPT_TONE.pr}
           icon={CONCEPT_ICONS.pr}
           title="No session selected"
           description="Pick a session from the inbox to see its pull request."

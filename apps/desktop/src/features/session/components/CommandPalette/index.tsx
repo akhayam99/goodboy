@@ -17,7 +17,7 @@ import {
 } from '../../agent-kind';
 import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
 import { useToast } from '../../../../app/components/Toast';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'recents';
 
@@ -334,6 +334,7 @@ export const CommandPalette = ({
               <li>
                 <EmptyState
                   icon={CONCEPT_ICONS.search}
+                  tone={CONCEPT_TONE.search}
                   title="No results"
                   size="inline"
                   className="justify-center px-4 py-6"

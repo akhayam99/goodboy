@@ -9,7 +9,7 @@ import {
 } from '@goodboy/ui';
 import { MessagesSquare, Search } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { GithubIssueGroup } from './useGithubIssues';
 import { InboxStatusIcons } from '../../../integrations/components/InboxStatusIcons';
 
@@ -101,6 +101,7 @@ export const IssueInbox = ({
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
             icon={CONCEPT_ICONS.github}
+            tone={CONCEPT_TONE.github}
             title={!hasQuery ? 'Inbox clear' : 'No matching issues'}
             description={
               !hasQuery ? 'No open issues assigned to you.' : 'Try a different search term.'

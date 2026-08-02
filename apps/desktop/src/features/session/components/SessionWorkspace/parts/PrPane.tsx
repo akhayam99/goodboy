@@ -30,7 +30,7 @@ import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { PaneShell } from './PaneShell';
 import { PrListRow } from './PrListRow';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
 import { openUrl } from '../../../../../shared/lib/editor';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
@@ -235,7 +235,7 @@ const GithubPrCard = ({
     return (
       <EmptyState
         bordered
-        tone="info"
+        tone={CONCEPT_TONE.pr}
         icon={CONCEPT_ICONS.pr}
         title="External review session"
         description="This session reviews someone else’s pull request, so there is no PR to open from here. Draft and publish comments from the review board."
@@ -252,7 +252,7 @@ const GithubPrCard = ({
       return (
         <EmptyState
           bordered
-          tone="primary"
+          tone={CONCEPT_TONE.pr}
           icon={CONCEPT_ICONS.pr}
           title="Open a pull or merge request"
           description="Turn this session's work into a pull or merge request. Fill in the title and description, or hand it to an agent that writes them from your commits."
@@ -298,7 +298,7 @@ const GithubPrCard = ({
         />
         <EmptyState
           bordered
-          tone="primary"
+          tone={CONCEPT_TONE.pr}
           icon={CONCEPT_ICONS.pr}
           title="No pull or merge request yet"
           description="Turn this session's work into a pull or merge request when it is ready."

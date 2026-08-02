@@ -33,8 +33,9 @@ import {
 } from '../../../../features/github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../features/integrations/components/ExternalTaskChip';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { BulkActionBar } from '../BulkActionBar';
+import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionViewMenu } from './SessionViewMenu';
 
 type ActivityTab = 'active' | 'archived';
@@ -119,6 +120,16 @@ export const SessionActivityBar = ({
     clearSelection();
   }, [tab, clearSelection]);
 
+  const { hold, release } = useSidebarPeekHold();
+  const hasSelection = selectedSessions.length > 0;
+  useEffect(() => {
+    if (!hasSelection) {
+      return;
+    }
+    hold();
+    return () => release();
+  }, [hasSelection, hold, release]);
+
   const isCollapsed = (key: string): boolean =>
     expandedOverrides.get(key) ?? COLLAPSED_BY_DEFAULT.includes(key);
 
@@ -169,13 +180,13 @@ export const SessionActivityBar = ({
               onClick={onNewSession}
               aria-label="create new session"
               title="new session"
-              className="group mb-1 w-full justify-center gap-1.5 px-2 text-xs"
+              className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"
             >
               <Plus size={13} aria-hidden />
               New
               <KbdPill
                 aria-hidden
-                className="h-4 min-w-4 px-1 text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
+                className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
               >
                 ⌘N
               </KbdPill>
@@ -238,6 +249,7 @@ export const SessionActivityBar = ({
           {totalVisible === 0 ? (
             <EmptyState
               icon={CONCEPT_ICONS.sessions}
+              tone={CONCEPT_TONE.sessions}
               title={isArchivedView ? 'No archived sessions' : 'No sessions yet'}
               size="inline"
               className="px-1 py-3"

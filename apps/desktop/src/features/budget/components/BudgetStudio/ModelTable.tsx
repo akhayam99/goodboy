@@ -1,7 +1,7 @@
 import { EmptyState, formatTokens, formatUsdPrecise } from '@goodboy/ui';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { ModelBreakdownEntry } from './lib';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly entries: ReadonlyArray<ModelBreakdownEntry>;
@@ -19,6 +19,7 @@ export const ModelTable = ({
       <EmptyState
         bordered={borderedEmptyState}
         icon={CONCEPT_ICONS.budget}
+        tone={CONCEPT_TONE.budget}
         title="No model usage recorded yet"
         size="inline"
         className="justify-center bg-muted/10 px-3 py-4"

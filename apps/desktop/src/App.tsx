@@ -23,6 +23,7 @@ import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { WorkspaceHeader } from './features/workspace/components/WorkspaceHeader';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
+import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
 import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
@@ -803,7 +804,14 @@ export const App = () => {
             <WorkspaceHeader
               hasActiveSession={hasActiveSession}
               isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
-              onToggleSessionSidebar={sessionSidebar.toggle}
+              onToggleSessionSidebar={
+                sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
+              }
+              onSessionSidebarAnchorEnter={() => sessionSidebar.requestPeek({ source: 'anchor' })}
+              onSessionSidebarAnchorLeave={() => {
+                sessionSidebar.cancelPeek();
+                sessionSidebar.scheduleClose();
+              }}
             />
           ) : undefined
         }
@@ -855,6 +863,24 @@ export const App = () => {
         }
         leftHidden={sessionSidebar.leftHidden}
         leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
+        leftOverlay={
+          hasWorkspaces && hasActiveSession && sessionSidebar.isCollapsed ? (
+            <SidebarPeekOverlay
+              isPeeking={sessionSidebar.isPeeking}
+              onEdgeEnter={() => sessionSidebar.requestPeek({ source: 'edge' })}
+              onEdgeLeave={() => {
+                sessionSidebar.cancelPeek();
+                sessionSidebar.scheduleClose();
+              }}
+              onPanelEnter={sessionSidebar.cancelClose}
+              onPanelLeave={sessionSidebar.scheduleClose}
+              onHold={sessionSidebar.holdPeek}
+              onRelease={sessionSidebar.releasePeek}
+            >
+              <WorkspacesSidebar onNavigate={sessionSidebar.closePeek} />
+            </SidebarPeekOverlay>
+          ) : undefined
+        }
         main={
           <div className="relative h-full w-full">
             {error ? (

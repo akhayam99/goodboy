@@ -33,7 +33,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
 import { gitlabMergeMr, type GitlabMergeRequest } from '../client';
 import { projectPathFromMrUrl } from './useGitlabMrs';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -128,7 +128,7 @@ export const MrDetailPanel = ({
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
           bordered
-          tone="neutral"
+          tone={CONCEPT_TONE.gitlab}
           icon={CONCEPT_ICONS.gitlab}
           title="No session selected"
           description="Pick a session to manage its merge request."
@@ -144,7 +144,7 @@ export const MrDetailPanel = ({
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
           bordered
-          tone="neutral"
+          tone={CONCEPT_TONE.gitlab}
           icon={CONCEPT_ICONS.gitlab}
           title="No merge request selected"
           description="Pick a merge request to see its details."

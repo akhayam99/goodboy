@@ -6,7 +6,7 @@ import { useAppStore } from '../../../../store';
 import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
 import { resolveLifecycleCommand } from '../../provider-lifecycle';
 import { guideFor } from './guides';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 export type PrimaryButton = {
   readonly label: string;
@@ -152,6 +152,7 @@ export function EmptyTerminalPlaceholder({ connected }: { readonly connected: bo
     <EmptyState
       bordered
       icon={CONCEPT_ICONS.terminal}
+      tone={CONCEPT_TONE.terminal}
       title={
         connected
           ? 'You are already connected. The next sign-in or reinstall will run here.'

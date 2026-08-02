@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollFade } from '@goodboy/ui';
+import { EmptyState, ScrollFade } from '@goodboy/ui';
 import { AgentAvatar } from '../../../shared/components/AgentAvatar';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { QuickActionItem } from '../types';
 
 type Props = {
@@ -49,7 +50,13 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
   return (
     <div className="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md">
       {items.length === 0 ? (
-        <p className="px-3 py-2 text-xs text-muted-foreground">{emptyHint}</p>
+        <EmptyState
+          icon={CONCEPT_ICONS.search}
+          tone={CONCEPT_TONE.search}
+          title={emptyHint}
+          size="inline"
+          className="px-3 py-2"
+        />
       ) : (
         <ScrollFade className="max-h-48" viewportClassName="py-1">
           <ul ref={listRef}>

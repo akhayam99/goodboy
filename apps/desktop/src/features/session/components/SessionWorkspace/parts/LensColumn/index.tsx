@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { LayoutDashboard, Unplug } from 'lucide-react';
-import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn } from '@goodboy/ui';
+import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { classifyAgent, isStandaloneAgent } from '../../../../agent-kind';
 import { isPrReviewSession } from '../../../../../../store/slices/session-view';
@@ -24,6 +24,7 @@ import { resolveAttentionLens, selectOpenQuestions } from '../../../SessionOverv
 import { LensColumnFooter } from '../LensColumnFooter';
 import { LENS_SHORTCUTS, buildLensGroups } from './groups';
 import type { LensDot, LensRow } from './groups';
+import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -36,6 +37,22 @@ type Props = {
     readonly deletions: number;
   };
   readonly isBranchless?: boolean;
+};
+
+type AttentionParams = {
+  readonly rows: ReadonlyArray<LensRow>;
+};
+
+const groupWantsAttention = ({ rows }: AttentionParams): boolean => {
+  return rows.some((row) => {
+    if (row.dot != null || row.secondaryDot === true) {
+      return true;
+    }
+    if (row.count == null || row.count === 0) {
+      return false;
+    }
+    return row.tone === 'warning' || row.tone === 'danger';
+  });
 };
 
 export const LensColumn = ({
@@ -183,7 +200,7 @@ export const LensColumn = ({
       kind: 'pr',
       label: 'GitHub',
       glyph: 'github',
-      tone: 'accent',
+      tone: CONCEPT_TONE.pr,
       count: githubCount,
       dot: hasGithubPr ? 'running' : undefined,
       isConnected: githubConnection.isConnected,
@@ -192,7 +209,7 @@ export const LensColumn = ({
       kind: 'gitlab_issues',
       label: 'GitLab',
       glyph: 'gitlab',
-      tone: 'accent',
+      tone: CONCEPT_TONE.gitlab,
       count: gitlabCount,
       dot: hasGitlabMr ? 'running' : undefined,
       isConnected: gitlabConnection.isConnected,
@@ -201,7 +218,7 @@ export const LensColumn = ({
       kind: 'linear',
       label: 'Linear',
       glyph: 'linear',
-      tone: 'primary',
+      tone: CONCEPT_TONE.linear,
       count: linearCount,
       isConnected: linearConnection.isConnected,
     },
@@ -209,7 +226,7 @@ export const LensColumn = ({
       kind: 'sentry',
       label: 'Sentry',
       glyph: 'sentry',
-      tone: 'warning',
+      tone: CONCEPT_TONE.sentry,
       count: sentryCount,
       isConnected: sentryConnection.isConnected,
     },
@@ -260,7 +277,7 @@ export const LensColumn = ({
               'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
               activeLens === null
-                ? 'bg-foreground text-background'
+                ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
@@ -284,7 +301,14 @@ export const LensColumn = ({
           </button>
           {visibleGroups.map((group) => (
             <div key={group.label} className="flex flex-col gap-0.5">
-              <span className="px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
+              <span
+                className={cn(
+                  'px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] transition-colors',
+                  groupWantsAttention({ rows: group.rows })
+                    ? 'text-foreground/80'
+                    : 'text-muted-foreground/60',
+                )}
+              >
                 {group.label}
               </span>
               {group.rows.length === 0 ? (
@@ -292,6 +316,7 @@ export const LensColumn = ({
               ) : (
                 group.rows.map((row) => {
                   const active = activeLens === row.kind;
+                  const rowWantsAttention = groupWantsAttention({ rows: [row] });
                   const shortcut = LENS_SHORTCUTS[row.kind];
                   const hasDiffstat =
                     row.diffstat != null && row.diffstat.additions + row.diffstat.deletions > 0;
@@ -315,7 +340,7 @@ export const LensColumn = ({
                         'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                         active
-                          ? 'bg-foreground text-background'
+                          ? 'bg-muted text-foreground'
                           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                         row.isConnected === false && 'opacity-40 hover:opacity-70',
                       )}
@@ -326,7 +351,17 @@ export const LensColumn = ({
                         </span>
                       ) : null}
                       {row.glyph == null && row.icon != null ? (
-                        <span className="flex w-5 flex-none items-center justify-center transition-colors">
+                        <span
+                          className={cn(
+                            'flex w-5 flex-none items-center justify-center transition-[color,opacity]',
+                            tintClasses(row.tone ?? 'neutral').icon,
+                            active && 'opacity-100',
+                            !active && rowWantsAttention ? 'opacity-90' : null,
+                            !active && !rowWantsAttention
+                              ? 'opacity-55 group-hover:opacity-80'
+                              : null,
+                          )}
+                        >
                           <row.icon size={14} aria-hidden />
                         </span>
                       ) : null}

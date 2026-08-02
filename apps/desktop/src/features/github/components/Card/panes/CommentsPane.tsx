@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { groupThreads, threadPriority } from '../../../comment-threads';
 import { COMMENT_DISPLAY_LIMIT } from '../lib';
 import { CommentThreadRow } from './CommentThreadRow';
@@ -61,6 +61,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
     return (
       <EmptyState
         icon={CONCEPT_ICONS.comments}
+        tone={CONCEPT_TONE.comments}
         title="No review comments yet"
         size="inline"
         action={generalFooter}
@@ -72,6 +73,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
     return (
       <EmptyState
         icon={CONCEPT_ICONS.resolve}
+        tone={CONCEPT_TONE.resolve}
         title="All review comments resolved"
         size="inline"
         action={

@@ -1,6 +1,6 @@
 import type { PrCheckRun, PullRequestState } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { formatDuration } from '../lib';
 import { CheckConclusionIcon } from '../parts/CheckConclusionIcon';
 
@@ -16,6 +16,7 @@ export const CiPane = ({ checks, pr, onOpenUrl }: Props) => {
       <EmptyState
         bordered
         icon={CONCEPT_ICONS.checks}
+        tone={CONCEPT_TONE.checks}
         title="No CI runs yet"
         description="Checks for this pull request will appear here once they start."
         size="inline"

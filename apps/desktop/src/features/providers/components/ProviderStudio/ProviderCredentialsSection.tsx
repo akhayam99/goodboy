@@ -5,7 +5,7 @@ import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodb
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -85,6 +85,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         <EmptyState
           bordered
           icon={CONCEPT_ICONS.providers}
+          tone={CONCEPT_TONE.providers}
           title="No API keys yet"
           size="inline"
           className="bg-muted/10 py-8"

@@ -162,7 +162,7 @@ describe('LensColumn', () => {
     expect(onSelectOverview).toHaveBeenCalledOnce();
   });
 
-  it('uses one active style and keeps inactive rows muted', () => {
+  it('uses a subtle active style and softens the tone of inactive rows', () => {
     render(
       <LensColumn
         session={SESSION}
@@ -178,11 +178,14 @@ describe('LensColumn', () => {
     const decisions = screen.getByRole('button', { name: 'Decisions' });
 
     expect(agents.getAttribute('aria-current')).toBe('page');
-    expect(agents.className).toContain('bg-foreground text-background');
+    expect(agents.className).toContain('bg-muted text-foreground');
     expect(workflows.getAttribute('aria-current')).toBeNull();
     expect(workflows.className).toContain('text-muted-foreground');
-    expect(workflows.className).not.toContain('bg-foreground text-background');
-    expect(decisions.querySelector('span')?.className).not.toContain('text-success');
+    expect(workflows.className).not.toContain('bg-muted text-foreground');
+    const activeIcon = agents.querySelector('span');
+    const inactiveIcon = decisions.querySelector('span');
+    expect(activeIcon?.className).toContain('opacity-100');
+    expect(inactiveIcon?.className).toContain('opacity-55');
   });
 
   it('marks a disconnected integration and leaves connected ones unmarked', () => {

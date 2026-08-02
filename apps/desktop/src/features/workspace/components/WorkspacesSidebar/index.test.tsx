@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, Workspace, WorkspaceId } from '@goodboy/types';
 
 const { state, currentWorkspace, currentSessionRef } = vi.hoisted(() => ({
@@ -35,11 +35,11 @@ afterEach(cleanup);
 import { WorkspacesSidebar } from './index';
 
 describe('WorkspacesSidebar', () => {
-  it('uses the shared active navigation style for back to board', () => {
+  it('keeps the back-to-board button on the primary tone', () => {
     currentSessionRef.value = { id: 'session-1' } as Session;
     render(<WorkspacesSidebar />);
     const back = screen.getByRole('button', { name: 'back to board' });
-    expect(back.className).toContain('bg-foreground text-background');
+    expect(back.className).toContain('bg-primary text-primary-foreground');
     expect(back.className).not.toContain('text-accent');
     currentSessionRef.value = null;
   });
@@ -48,5 +48,23 @@ describe('WorkspacesSidebar', () => {
     currentSessionRef.value = null;
     render(<WorkspacesSidebar />);
     expect(screen.queryByRole('button', { name: /collapse sidebar/i })).toBeNull();
+  });
+
+  it('leaves the column control to the workspace header', () => {
+    currentSessionRef.value = { id: 'session-1' } as Session;
+    render(<WorkspacesSidebar />);
+
+    expect(screen.queryByRole('button', { name: /sessions column/i })).toBeNull();
+    currentSessionRef.value = null;
+  });
+
+  it('tells the peek to close once the board takes over', () => {
+    currentSessionRef.value = { id: 'session-1' } as Session;
+    const onNavigate = vi.fn();
+    render(<WorkspacesSidebar onNavigate={onNavigate} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'back to board' }));
+    expect(onNavigate).toHaveBeenCalledOnce();
+    currentSessionRef.value = null;
   });
 });

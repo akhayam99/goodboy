@@ -7,7 +7,7 @@ import { useMultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import { BulkActionBar } from '../../BulkActionBar';
 import { StageBoardCard, type CardSelectionEvent } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
 const ZERO_STATE: Record<SessionStage | 'archived', string> = {
   attention: 'nothing needs you',
@@ -126,6 +126,7 @@ export const StageColumn = ({
             {empty ? (
               <EmptyState
                 icon={CONCEPT_ICONS.sessions}
+                tone={CONCEPT_TONE.sessions}
                 title={ZERO_STATE[view.key]}
                 size="inline"
                 className="px-1 py-6"

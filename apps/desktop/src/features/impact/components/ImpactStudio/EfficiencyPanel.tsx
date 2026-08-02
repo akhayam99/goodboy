@@ -13,7 +13,7 @@ import { turnStats } from '../../utils/turnStats';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { Sparkline } from '../../../../shared/components/Sparkline';
 
 type Props = {
@@ -105,7 +105,12 @@ export const EfficiencyPanel = ({
           {stats !== null && turnData !== null ? (
             <TurnHistogram buckets={turnData} median={stats.median} maxAgents={stats.maxAgents} />
           ) : (
-            <EmptyState icon={CONCEPT_ICONS.impact} title="No turns in this window" size="inline" />
+            <EmptyState
+              icon={CONCEPT_ICONS.impact}
+              tone={CONCEPT_TONE.impact}
+              title="No turns in this window"
+              size="inline"
+            />
           )}
         </StudioWidget>
         <StudioWidget label="right-size nudges" hint="outcomes after a routing suggestion">

@@ -1,5 +1,5 @@
 import { WebviewWindow, getAllWebviewWindows } from '@tauri-apps/api/webviewWindow';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWindow, primaryMonitor } from '@tauri-apps/api/window';
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { WorkspaceId } from '@goodboy/types';
 
@@ -57,17 +57,71 @@ function freshWindowLabel(): string {
   return `win-${raw.replace(/[^a-z0-9]/gi, '').slice(0, 16)}`;
 }
 
+const WINDOW_WIDTH = 1280;
+const WINDOW_HEIGHT = 860;
+const CASCADE_STEP = 32;
+
+type PlacementParams = {
+  readonly openWindowCount: number;
+};
+
+const placementOnPrimaryMonitor = async ({
+  openWindowCount,
+}: PlacementParams): Promise<{ readonly x: number; readonly y: number } | null> => {
+  const monitor = await primaryMonitor().catch(() => null);
+  if (monitor == null) {
+    return null;
+  }
+  const scale = monitor.scaleFactor > 0 ? monitor.scaleFactor : 1;
+  const logicalWidth = monitor.size.width / scale;
+  const logicalHeight = monitor.size.height / scale;
+  const originX = monitor.position.x / scale;
+  const originY = monitor.position.y / scale;
+  const offset = CASCADE_STEP * openWindowCount;
+  const maxX = originX + Math.max(logicalWidth - WINDOW_WIDTH, 0);
+  const maxY = originY + Math.max(logicalHeight - WINDOW_HEIGHT, 0);
+  const centeredX = originX + Math.max((logicalWidth - WINDOW_WIDTH) / 2, 0);
+  const centeredY = originY + Math.max((logicalHeight - WINDOW_HEIGHT) / 2, 0);
+  return {
+    x: Math.round(Math.min(centeredX + offset, maxX)),
+    y: Math.round(Math.min(centeredY + offset, maxY)),
+  };
+};
+
+const SPACE_SWITCH_SETTLE_MS = 260;
+
+const settleAfterSpaceSwitch = (): Promise<void> => {
+  return new Promise((resolve) => {
+    globalThis.setTimeout(resolve, SPACE_SWITCH_SETTLE_MS);
+  });
+};
+
+const returnToMainWindowSpace = async (): Promise<void> => {
+  if (isMainWindow()) {
+    return;
+  }
+  const switched = await focusWindow(MAIN_WINDOW_LABEL);
+  if (!switched) {
+    return;
+  }
+  await settleAfterSpaceSwitch();
+};
+
 export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Promise<void> => {
   if (!inTauri()) {
     return;
   }
+  await returnToMainWindowSpace();
+  const openWindows = await getAllWebviewWindows().catch(() => []);
+  const placement = await placementOnPrimaryMonitor({ openWindowCount: openWindows.length });
   const win = new WebviewWindow(freshWindowLabel(), {
     url: `index.html#${WORKSPACE_HASH_KEY}=${id}`,
     title: brandTitle(title),
-    width: 1280,
-    height: 860,
+    width: WINDOW_WIDTH,
+    height: WINDOW_HEIGHT,
     minWidth: 1024,
     minHeight: 700,
+    ...(placement != null && { x: placement.x, y: placement.y }),
   });
   await new Promise<void>((resolve, reject) => {
     void win.once('tauri://created', () => resolve());

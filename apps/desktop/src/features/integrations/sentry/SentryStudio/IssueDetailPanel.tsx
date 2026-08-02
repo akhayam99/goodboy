@@ -19,7 +19,7 @@ import { SentryLevelBadge } from '../SentryLevelBadge';
 import { SentryStackTrace } from '../SentryStackTrace';
 import { sentryIssueView } from '../sentryIssueView';
 import { useSentryIssueDetail } from '../useSentryIssueDetail';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly issue: SentryIssue | null;
@@ -53,7 +53,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
           bordered
-          tone="neutral"
+          tone={CONCEPT_TONE.sentry}
           icon={CONCEPT_ICONS.sentry}
           title="No issue selected"
           description="Pick an issue to see its stack trace and launch a session."
@@ -157,7 +157,12 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
             ))}
           </div>
         ) : (
-          <EmptyState icon={CONCEPT_ICONS.sentry} title="No event stats yet" size="inline" />
+          <EmptyState
+            icon={CONCEPT_ICONS.sentry}
+            tone={CONCEPT_TONE.sentry}
+            title="No event stats yet"
+            size="inline"
+          />
         )
       ) : null}
 

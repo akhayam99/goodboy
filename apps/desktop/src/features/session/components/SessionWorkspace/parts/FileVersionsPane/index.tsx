@@ -4,7 +4,7 @@ import { Divider, EmptyState } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileVersion, FileVersionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { PaneShell } from '../PaneShell';
 import { fileVersionGroups } from './fileVersionGroups';
@@ -155,7 +155,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
       ) : (
         <EmptyState
           bordered
-          tone="info"
+          tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No versions yet"
           description="When an agent edits a file, Goodboy stores the file as it was before the edit. The first change will appear here."

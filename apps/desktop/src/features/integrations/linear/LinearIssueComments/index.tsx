@@ -1,6 +1,6 @@
 import { EmptyState, Markdown, Skeleton } from '@goodboy/ui';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { LinearIssueComment } from '../client';
 
 type Props = {
@@ -32,6 +32,7 @@ export const LinearIssueComments = ({ comments, isLoading, error }: Props) => {
     return (
       <EmptyState
         icon={CONCEPT_ICONS.comments}
+        tone={CONCEPT_TONE.comments}
         title="No comments"
         description="This issue has no comments yet."
         size="inline"

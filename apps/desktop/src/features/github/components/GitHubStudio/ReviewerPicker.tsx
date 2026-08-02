@@ -5,7 +5,7 @@ import { useCurrentWorkspace } from '../../../../store';
 import type { WorkspaceId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
 import { Avatar } from '../Card/parts/Avatar';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceRoot: string | null;
@@ -90,6 +90,7 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
           ) : candidates.length === 0 ? (
             <EmptyState
               icon={CONCEPT_ICONS.search}
+              tone={CONCEPT_TONE.search}
               title="No matches"
               size="inline"
               className="px-1.5 py-1"

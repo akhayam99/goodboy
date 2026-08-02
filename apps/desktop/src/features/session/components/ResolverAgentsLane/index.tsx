@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { AgentLane } from '../AgentLane';
 import { ResolveCommentsAction } from './ResolveCommentsAction';
 import { ResolverLaneToolbar } from './ResolverLaneToolbar';
@@ -54,7 +54,7 @@ export const ResolverAgentsLane = ({
       empty={
         <EmptyState
           bordered
-          tone="success"
+          tone={CONCEPT_TONE.resolve}
           icon={CONCEPT_ICONS.resolve}
           title={hasNoResolvers ? 'Nothing to resolve' : 'No active resolvers'}
           description={hasNoResolvers ? NOTHING_TO_RESOLVE_DESCRIPTION : ALL_RESOLVED_DESCRIPTION}

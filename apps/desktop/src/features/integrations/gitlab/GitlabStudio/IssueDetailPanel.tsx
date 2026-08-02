@@ -12,7 +12,7 @@ import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessi
 import { goalFromIssue } from '../goal-from-issue';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { gitlabBranchSlug } from './useGitlabIssues';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly issue: GitlabIssue | null;
@@ -27,7 +27,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
           bordered
-          tone="neutral"
+          tone={CONCEPT_TONE.gitlab}
           icon={CONCEPT_ICONS.gitlab}
           title="No issue selected"
           description="Pick an issue to see its details and launch a session."

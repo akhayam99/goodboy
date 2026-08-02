@@ -30,8 +30,8 @@ const DEFAULT_PRESENTATION = {
 
 const SIZE_CLASSES = {
   inline: {
-    root: 'flex items-start gap-2 text-left',
-    content: 'flex min-w-0 flex-col gap-1',
+    root: 'flex items-start gap-2.5 px-3 py-2.5 text-left',
+    content: 'flex min-w-0 flex-1 flex-col gap-1',
     title: 'text-xs font-medium text-foreground',
     description: 'text-xs leading-relaxed text-muted-foreground',
   },
@@ -121,7 +121,9 @@ export const EmptyState = ({
           <Description className={classes.description}>{description}</Description>
         ) : null}
       </div>
-      {action ?? null}
+      {action != null ? (
+        <div className={cn(isInline && 'shrink-0 self-center')}>{action}</div>
+      ) : null}
     </div>
   );
 };

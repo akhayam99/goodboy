@@ -8,7 +8,7 @@ import { formatHours } from '../../utils/formatHours';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly agentDurations: QueryResult<AgentDurations>;
@@ -83,6 +83,7 @@ export const FlowPanel = ({
             {agents !== null && agents.byKind.length === 0 ? (
               <EmptyState
                 icon={CONCEPT_ICONS.agents}
+                tone={CONCEPT_TONE.agents}
                 title="No completed agents in this window"
                 size="inline"
               />

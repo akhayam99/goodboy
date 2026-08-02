@@ -2,6 +2,9 @@ export { cn } from './cn';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export {
   AppShell,
+  LEFT_SIDEBAR_DEFAULT,
+  LEFT_SIDEBAR_MAX,
+  LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
   RIGHT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';

@@ -11,7 +11,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { formatDuration } from '../Card/lib';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly checks: ReadonlyArray<PrCheckRun>;
@@ -25,6 +25,7 @@ export const PrChecks = ({ checks, pr, onOpenUrl }: Props) => {
       <EmptyState
         bordered
         icon={CONCEPT_ICONS.checks}
+        tone={CONCEPT_TONE.checks}
         title="No CI runs yet"
         description="Checks for this pull request will appear here once they start."
         action={

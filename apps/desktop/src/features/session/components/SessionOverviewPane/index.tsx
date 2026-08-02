@@ -32,7 +32,7 @@ import { ActivitySection } from './ActivitySection';
 import { HeaderBand } from './HeaderBand';
 import { LinkedWorkSection } from './LinkedWorkSection';
 import { NextUpCard } from './NextUpCard';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -210,6 +210,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
           ) : (
             <EmptyState
               icon={CONCEPT_ICONS.nextUp}
+              tone={CONCEPT_TONE.nextUp}
               title="Nothing needs you right now."
               size="inline"
               className="rounded-lg bg-muted/20 px-3.5 py-2.5"

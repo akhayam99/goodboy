@@ -8,7 +8,7 @@ import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../shared/components/RoutingPicker/ProviderPicker';
 
 type Props = {
@@ -42,6 +42,7 @@ export const PreferencesStep = ({ workspaceId, workspaceKind = 'repo' }: Props) 
         <EmptyState
           bordered
           icon={CONCEPT_ICONS.workspace}
+          tone={CONCEPT_TONE.workspace}
           title="Add a workspace first to set its defaults."
           action={
             <Button

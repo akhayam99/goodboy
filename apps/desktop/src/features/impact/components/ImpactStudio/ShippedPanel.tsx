@@ -11,7 +11,7 @@ import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
@@ -98,6 +98,7 @@ export const ShippedPanel = ({
             {prs !== null && prs.entries.length === 0 ? (
               <EmptyState
                 icon={CONCEPT_ICONS.pr}
+                tone={CONCEPT_TONE.pr}
                 title="No pull requests in this window"
                 size="inline"
               />

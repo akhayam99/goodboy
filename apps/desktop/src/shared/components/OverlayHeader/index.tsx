@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
 
 type Props = {
   readonly icon?: LucideIcon;
+  readonly tone?: Tone;
   readonly glyph?: ReactNode;
   readonly title: string;
   readonly subtitle?: string;
@@ -16,6 +17,7 @@ type Props = {
 
 export const OverlayHeader = ({
   icon: Icon,
+  tone = 'primary',
   glyph,
   title,
   subtitle,
@@ -29,7 +31,9 @@ export const OverlayHeader = ({
     return (
       <header className="flex shrink-0 items-center gap-3 px-6 py-3">
         {glyph ??
-          (Icon != null ? <Icon size={18} className="shrink-0 text-primary" aria-hidden /> : null)}
+          (Icon != null ? (
+            <Icon size={18} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
+          ) : null)}
         <div className="flex min-w-0 flex-col">
           <h1 className="text-sm font-semibold text-foreground">{title}</h1>
           {subtitle != null ? (
@@ -60,7 +64,9 @@ export const OverlayHeader = ({
   return (
     <header className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-1.5 px-3">
       {glyph ??
-        (Icon != null ? <Icon size={12} className="shrink-0 text-primary" aria-hidden /> : null)}
+        (Icon != null ? (
+          <Icon size={12} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
+        ) : null)}
       <h1 className="shrink-0 text-2xs font-semibold text-foreground">{title}</h1>
       {subtitle != null && subtitle !== '' ? (
         <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>

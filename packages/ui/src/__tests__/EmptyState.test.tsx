@@ -42,7 +42,7 @@ describe('EmptyState', () => {
 
     const state = screen.getByText('Inline state').parentElement?.parentElement;
 
-    expect(state?.className).toContain('items-start gap-2 text-left');
+    expect(state?.className).toContain('items-start gap-2.5 px-3 py-2.5 text-left');
     expect(state?.querySelector('svg')).toBeTruthy();
     expect(state?.querySelector('.size-12')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Inline state' })).toBeNull();

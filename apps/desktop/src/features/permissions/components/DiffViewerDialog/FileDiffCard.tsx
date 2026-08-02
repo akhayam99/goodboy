@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, ExternalLink, MessageSquarePlus } from 'lucide-react';
 import { Divider, EmptyState, Tooltip, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { CopyButton } from '../../../../shared/components/CopyButton';
 import type {
   AgentId,
@@ -378,6 +378,7 @@ export const FileDiffCard = ({
           {file.binary || file.hunks.length === 0 ? (
             <EmptyState
               icon={CONCEPT_ICONS.diff}
+              tone={CONCEPT_TONE.diff}
               title={file.binary ? 'Binary file, no diff' : 'No changes'}
               size="inline"
               className="justify-center py-4"
