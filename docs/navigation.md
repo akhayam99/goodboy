@@ -143,13 +143,14 @@ animates to zero width via `grid-template-columns` transition; the cell fades
 and slides (`opacity` + `transform`). The resize handle is suppressed while
 hidden.
 
-`App.tsx` sets `leftHidden={!currentSession}`:
+`App.tsx` keeps Overview board-only and applies the user preference in session:
 
 - Overview (no session active): board-only, sidebar hidden.
-- Session entered: sidebar reveals with a ~200ms animation.
+- Session entered: sidebar follows the persisted sessions-column preference.
 
-The sidebar has no collapse toggle, rail, or `cmd+b` shortcut. The left column
-is either `leftHidden` (at Overview) or at its persisted width.
+The sidebar has no collapse rail. In a session, users can hide or show the
+sessions column from the workspace header or with `cmd+b`. The toggle writes a
+persisted preference, while Overview still forces `leftHidden`.
 
 ## Studios
 
