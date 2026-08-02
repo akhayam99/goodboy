@@ -214,7 +214,7 @@ export const NewSessionForm = ({
               className={cn(
                 'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs motion-safe:transition-colors',
                 busy
-                  ? 'cursor-not-allowed text-muted-foreground/40'
+                  ? 'cursor-not-allowed text-muted-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >

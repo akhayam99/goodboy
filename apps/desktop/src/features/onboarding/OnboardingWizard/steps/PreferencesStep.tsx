@@ -173,7 +173,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
                   busy && 'cursor-not-allowed opacity-50',
                 )}
               />
-              <span className="font-mono text-sm text-muted-foreground/40">/&lt;slug&gt;</span>
+              <span className="font-mono text-sm text-muted-foreground">/&lt;slug&gt;</span>
             </div>
           </FieldRow>
         ) : null}

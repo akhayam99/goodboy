@@ -142,7 +142,7 @@ export const WorkflowStepCard = ({
 
   const headerRow = (trailing?: ReactNode) => (
     <span className="flex min-w-0 items-center gap-2.5">
-      <span className="w-4 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground/40">
+      <span className="w-4 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground">
         {String(ordinal + 1).padStart(2, '0')}
       </span>
       <AgentAvatar kind={kind} size="sm" />
@@ -206,7 +206,7 @@ export const WorkflowStepCard = ({
             <span
               className={cn(
                 'line-clamp-1 pl-[1.625rem] text-[11px] leading-relaxed',
-                promptPrefix.trim() ? 'text-muted-foreground' : 'italic text-muted-foreground/40',
+                promptPrefix.trim() ? 'text-muted-foreground' : 'italic text-muted-foreground',
               )}
             >
               {promptPrefix.trim() || 'Click to add instructions'}

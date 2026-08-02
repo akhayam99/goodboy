@@ -44,7 +44,7 @@ export const StepperRail = ({ current, canReach, disabled, onJump }: Props) => (
               active && 'bg-primary/10 text-primary ring-1 ring-primary/20',
               done && !active && 'text-foreground hover:bg-muted/50',
               !active && !done && reachable && 'text-muted-foreground hover:bg-muted/40',
-              !active && !done && !reachable && 'cursor-not-allowed text-muted-foreground/40',
+              !active && !done && !reachable && 'cursor-not-allowed text-muted-foreground',
             )}
           >
             <span
