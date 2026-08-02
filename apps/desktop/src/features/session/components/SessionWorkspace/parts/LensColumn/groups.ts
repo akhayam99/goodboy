@@ -71,6 +71,7 @@ export const LENS_SHORTCUTS = {
   last_output_summary: '⌘⇧U',
   pr: '⌘⇧H',
   files: '⌘⇧D',
+  explore: '⌘⇧D',
   linear: null,
   sentry: null,
   gitlab_issues: null,
@@ -181,15 +182,26 @@ export const buildLensGroups = ({
           count: openCount,
           isCountLoading: areQuestionsLoading,
         },
-        {
-          kind: 'files',
-          label: 'Diff',
-          icon: CONCEPT_ICONS.diff,
-          tone: 'info',
-          count: filesCount,
-          diffstat,
-          repoOnly: true,
-        },
+        ...(isBranchless
+          ? [
+              {
+                kind: 'explore',
+                label: 'Explore',
+                icon: CONCEPT_ICONS.explore,
+                tone: 'info',
+              } satisfies LensRow,
+            ]
+          : [
+              {
+                kind: 'files',
+                label: 'Diff',
+                icon: CONCEPT_ICONS.diff,
+                tone: 'info',
+                count: filesCount,
+                diffstat,
+                repoOnly: true,
+              } satisfies LensRow,
+            ]),
         {
           kind: 'plans',
           label: 'Plans',

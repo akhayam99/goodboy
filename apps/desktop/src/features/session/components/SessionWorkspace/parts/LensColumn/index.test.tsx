@@ -214,6 +214,7 @@ describe('LensColumn', () => {
       'Sentry',
       'GitLab',
     ]);
+    expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull();
   });
 
   it('renders only shared-context lenses for a branchless session', () => {
@@ -249,10 +250,12 @@ describe('LensColumn', () => {
       'Workflows',
       'Agents',
       'Questions',
+      'Explore',
       'Plans',
     ]);
     expect(screen.queryByText('Integrations')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Diff 3' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Explore' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Terminal' })).toBeNull();
   });
 

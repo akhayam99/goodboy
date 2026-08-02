@@ -45,6 +45,7 @@ import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import { ExplorePane } from '../../../explore/components/ExplorePane';
 
 const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -60,6 +61,7 @@ const LENS_LABEL: Record<LensKind, string> = {
   last_output_summary: 'Session summary',
   pr: 'Pull request',
   files: 'Diff',
+  explore: 'Explore',
   linear: 'Linear',
   sentry: 'Sentry',
   gitlab_issues: 'GitLab issues',
@@ -73,6 +75,7 @@ const SIMPLE_LENSES = new Set<LensKind>([
   'goal',
   'decisions',
   'last_output_summary',
+  'explore',
 ]);
 
 type SessionWorkspaceProps = {
@@ -446,6 +449,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                     worktreePath={projectWorktreePath}
                     onClose={onSelectOverview}
                   />
+                ) : null}
+                {lens === 'explore' ? (
+                  <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
                 ) : null}
                 <Pane visible={lens === 'agents'}>
                   <AgentsPane

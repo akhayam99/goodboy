@@ -26,6 +26,7 @@ export type LensKind =
   | 'last_output_summary'
   | 'pr'
   | 'files'
+  | 'explore'
   | 'linear'
   | 'sentry'
   | 'gitlab_issues';
@@ -44,6 +45,7 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'last_output_summary',
   'pr',
   'files',
+  'explore',
   'linear',
   'sentry',
   'gitlab_issues',
