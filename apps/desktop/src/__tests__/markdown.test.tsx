@@ -52,9 +52,28 @@ describe('Markdown', () => {
     expect(container.textContent).toBe('this is *unmatched and ok');
   });
 
-  it('preserves whitespace inside paragraphs', () => {
+  it('reflows a soft line break inside a paragraph into a space', () => {
     const { container } = render(<Markdown text={'line1\nline2'} />);
-    expect(container.querySelector('p')?.textContent).toBe('line1\nline2');
+    expect(container.querySelector('p')?.textContent).toBe('line1 line2');
+  });
+
+  it('renders two trailing spaces as a hard break element', () => {
+    const { container } = render(<Markdown text={'line1  \nline2'} />);
+    const paragraph = container.querySelector('p');
+    expect(paragraph?.textContent).toBe('line1line2');
+    expect(paragraph?.querySelector('br')).not.toBeNull();
+  });
+
+  it('preserves newlines in a box-drawing tree paragraph', () => {
+    const { container } = render(<Markdown text={'root\n├── child\n└── child'} />);
+    const paragraph = container.querySelector('p');
+    expect(paragraph?.textContent).toBe('root\n├── child\n└── child');
+    expect(paragraph?.className).toContain('whitespace-pre-wrap');
+  });
+
+  it('allows a very long unbroken paragraph token to wrap via its class', () => {
+    const { container } = render(<Markdown text={'a'.repeat(200)} />);
+    expect(container.querySelector('p')?.className).toContain('wrap-anywhere');
   });
 
   it('renders a pipe table as a real table with header and aligned cells', () => {
