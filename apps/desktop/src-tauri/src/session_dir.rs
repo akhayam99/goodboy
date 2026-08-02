@@ -11,6 +11,10 @@ pub enum SessionDirError {
     EmptyPath,
     #[error("refusing to remove a path outside the workspace")]
     OutsideWorkspace,
+    #[error("session directory already belongs to another session")]
+    SessionDirectoryConflict,
+    #[error("invalid session directory name")]
+    InvalidDirectoryName,
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("json error: {0}")]
@@ -25,6 +29,8 @@ impl SessionDirError {
             SessionDirError::HomeUnavailable => "home_unavailable",
             SessionDirError::EmptyPath => "empty_path",
             SessionDirError::OutsideWorkspace => "outside_workspace",
+            SessionDirError::SessionDirectoryConflict => "session_directory_conflict",
+            SessionDirError::InvalidDirectoryName => "invalid_directory_name",
             SessionDirError::Io(_) => "io",
             SessionDirError::Json(_) => "json",
         }
@@ -36,6 +42,8 @@ pub struct CreateArgs {
     #[serde(rename = "basePath")]
     pub base_path: String,
     pub slug: String,
+    #[serde(rename = "directoryName")]
+    pub directory_name: Option<String>,
     #[serde(rename = "sessionId")]
     pub session_id: String,
     #[serde(rename = "workspaceId")]
@@ -121,6 +129,50 @@ fn marker_write(
     Ok(())
 }
 
+fn marker_read(path: &Path) -> Result<SessionMarker, SessionDirError> {
+    let marker = std::fs::read(path.join(".goodboy"))?;
+    Ok(serde_json::from_slice::<SessionMarker>(&marker)?)
+}
+
+fn validate_directory_name(name: &str) -> Result<(), SessionDirError> {
+    if name.is_empty() {
+        return Err(SessionDirError::InvalidDirectoryName);
+    }
+    if name.chars().count() > 60 {
+        return Err(SessionDirError::InvalidDirectoryName);
+    }
+    if name.contains('/') || name.contains('\\') {
+        return Err(SessionDirError::InvalidDirectoryName);
+    }
+    if name.contains("..") {
+        return Err(SessionDirError::InvalidDirectoryName);
+    }
+    if name.starts_with('.') {
+        return Err(SessionDirError::InvalidDirectoryName);
+    }
+    if name.ends_with('.') || name.ends_with(' ') {
+        return Err(SessionDirError::InvalidDirectoryName);
+    }
+    if name.chars().any(|ch| ch.is_control()) {
+        return Err(SessionDirError::InvalidDirectoryName);
+    }
+    if name
+        .chars()
+        .any(|ch| matches!(ch, ':' | '*' | '?' | '"' | '<' | '>' | '|'))
+    {
+        return Err(SessionDirError::InvalidDirectoryName);
+    }
+    Ok(())
+}
+
+fn resolve_directory_name(args: &CreateArgs) -> Result<String, SessionDirError> {
+    let Some(name) = args.directory_name.as_deref() else {
+        return Ok(crate::worktree::sanitize_slug(&args.slug));
+    };
+    validate_directory_name(name)?;
+    Ok(name.to_string())
+}
+
 fn scan_directory(path: &Path, root: &Path) -> Option<SimpleSessionScanEntry> {
     let metadata = std::fs::symlink_metadata(path).ok()?;
     if !metadata.file_type().is_dir() {
@@ -170,16 +222,39 @@ pub fn simple_workspace_prepare(path: String) -> Result<String, SessionDirError>
 #[tauri::command]
 pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, SessionDirError> {
     let base = expand_home(&args.base_path)?;
-    let slug = crate::worktree::sanitize_slug(&args.slug);
+    let slug = resolve_directory_name(&args)?;
     let target = absolute_path(base)?.join("sessions").join(&slug);
-    let reused = target.exists();
+    if target.exists() {
+        let metadata = std::fs::symlink_metadata(&target)?;
+        if !metadata.is_dir() {
+            return Err(SessionDirError::SessionDirectoryConflict);
+        }
+        let marker = match marker_read(&target) {
+            Ok(marker) => marker,
+            Err(SessionDirError::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Err(SessionDirError::SessionDirectoryConflict);
+            }
+            Err(SessionDirError::Json(_)) => return Err(SessionDirError::SessionDirectoryConflict),
+            Err(error) => return Err(error),
+        };
+        if marker.session_id != args.session_id {
+            return Err(SessionDirError::SessionDirectoryConflict);
+        }
+        let resolved = std::fs::canonicalize(target)?;
+        return Ok(CreatedSessionDir {
+            worktree_path: resolved.to_string_lossy().into_owned(),
+            branch_name: String::new(),
+            slug,
+            reused: true,
+        });
+    }
     let resolved = create_absolute_dir(target)?;
     marker_write(&resolved, args.session_id, args.workspace_id)?;
     Ok(CreatedSessionDir {
         worktree_path: resolved.to_string_lossy().into_owned(),
         branch_name: String::new(),
         slug,
-        reused,
+        reused: false,
     })
 }
 
@@ -241,7 +316,9 @@ pub fn simple_session_dir_exists(path: String) -> Result<bool, SessionDirError> 
 mod tests {
     use std::path::Path;
 
-    use super::{session_dir_create, simple_sessions_scan, CreateArgs, SessionMarker};
+    use super::{
+        session_dir_create, simple_sessions_scan, CreateArgs, SessionDirError, SessionMarker,
+    };
 
     fn test_root(name: &str) -> std::path::PathBuf {
         std::env::temp_dir().join(format!(
@@ -260,6 +337,7 @@ mod tests {
         let args = || CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
+            directory_name: None,
             session_id: "session-1".to_string(),
             workspace_id: "workspace-1".to_string(),
         };
@@ -273,9 +351,122 @@ mod tests {
         assert_eq!(marker.session_id, "session-1");
         assert_eq!(marker.workspace_id, "workspace-1");
         assert!(!marker.created_at.is_empty());
+        let first_created_at = marker.created_at.clone();
         let reused = session_dir_create(args()).unwrap();
         assert!(reused.reused);
+        let marker_after_reuse = std::fs::read(Path::new(&created.worktree_path).join(".goodboy")).unwrap();
+        let marker_after_reuse = serde_json::from_slice::<SessionMarker>(&marker_after_reuse).unwrap();
+        assert_eq!(marker_after_reuse.created_at, first_created_at);
+        assert_eq!(marker_after_reuse.workspace_id, "workspace-1");
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn rejects_reusing_a_directory_without_marker() {
+        let root = test_root("simple-session-missing-marker");
+        let sessions = root.join("sessions");
+        std::fs::create_dir_all(sessions.join("study-plan")).unwrap();
+
+        let result = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "Study Plan".to_string(),
+            directory_name: None,
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        });
+
+        assert!(matches!(
+            result,
+            Err(SessionDirError::SessionDirectoryConflict)
+        ));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn rejects_reusing_a_directory_owned_by_another_session() {
+        let root = test_root("simple-session-session-conflict");
+        let created = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "Study Plan".to_string(),
+            directory_name: None,
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        })
+        .unwrap();
+
+        let result = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "Study Plan".to_string(),
+            directory_name: None,
+            session_id: "session-2".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        });
+
+        assert!(matches!(
+            result,
+            Err(SessionDirError::SessionDirectoryConflict)
+        ));
+        assert!(Path::new(&created.worktree_path).is_dir());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn creates_a_directory_from_an_explicit_name() {
+        let root = test_root("simple-session-explicit-name");
+        let created = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "ignored".to_string(),
+            directory_name: Some("MatchAnalysis_20260514".to_string()),
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        })
+        .unwrap();
+
+        assert_eq!(created.slug, "MatchAnalysis_20260514");
+        assert!(created.worktree_path.ends_with("/sessions/MatchAnalysis_20260514"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn rejects_invalid_explicit_directory_names() {
+        let root = test_root("simple-session-invalid-explicit-name");
+        let too_long = "a".repeat(61);
+        let invalid_names = [
+            ".hidden",
+            "name/part",
+            "name\\part",
+            "name..part",
+            "name.",
+            "name ",
+            "name|part",
+            &too_long,
+        ];
+
+        for name in invalid_names {
+            let result = session_dir_create(CreateArgs {
+                base_path: root.to_string_lossy().into_owned(),
+                slug: "ignored".to_string(),
+                directory_name: Some(name.to_string()),
+                session_id: "session-1".to_string(),
+                workspace_id: "workspace-1".to_string(),
+            });
+            assert!(matches!(
+                result,
+                Err(SessionDirError::InvalidDirectoryName)
+            ));
+        }
+
+        let control_result = session_dir_create(CreateArgs {
+            base_path: root.to_string_lossy().into_owned(),
+            slug: "ignored".to_string(),
+            directory_name: Some("name\u{0007}part".to_string()),
+            session_id: "session-1".to_string(),
+            workspace_id: "workspace-1".to_string(),
+        });
+        assert!(matches!(
+            control_result,
+            Err(SessionDirError::InvalidDirectoryName)
+        ));
     }
 
     #[test]
@@ -284,6 +475,7 @@ mod tests {
         let created = session_dir_create(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
+            directory_name: None,
             session_id: "session-1".to_string(),
             workspace_id: "workspace-1".to_string(),
         })
@@ -294,6 +486,7 @@ mod tests {
         let second = session_dir_create(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Second Plan".to_string(),
+            directory_name: None,
             session_id: "session-2".to_string(),
             workspace_id: "workspace-1".to_string(),
         })
@@ -319,6 +512,7 @@ mod tests {
         let created = session_dir_create(CreateArgs {
             base_path: outside.to_string_lossy().into_owned(),
             slug: "Outside Plan".to_string(),
+            directory_name: None,
             session_id: "session-outside".to_string(),
             workspace_id: "workspace-1".to_string(),
         })
@@ -340,6 +534,7 @@ mod tests {
         session_dir_create(CreateArgs {
             base_path: root.to_string_lossy().into_owned(),
             slug: "Study Plan".to_string(),
+            directory_name: None,
             session_id: "session-1".to_string(),
             workspace_id: "workspace-marker".to_string(),
         })

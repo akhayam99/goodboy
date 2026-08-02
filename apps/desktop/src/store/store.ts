@@ -194,6 +194,7 @@ export type AppActions = {
     branchSlug?: string;
     existingBranch?: string;
     fallbackRef?: string;
+    folderName?: string;
     providerPreference?: SessionProviderPreference;
     workflowId?: WorkflowId;
     autoRun?: boolean;
