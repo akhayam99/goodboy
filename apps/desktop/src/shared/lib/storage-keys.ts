@@ -12,6 +12,7 @@ export const STORAGE_KEYS = {
   planListWidth: `${PREFIX}plan-list-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   rightSidebarWidth: `${PREFIX}right-sidebar-width`,
+  onboardingWorkspaceDraft: `${PREFIX}onboarding-workspace-draft:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {

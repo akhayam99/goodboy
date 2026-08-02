@@ -17,6 +17,57 @@ const SETUP_START_STEP = 3;
 const EXIT_MS = 200;
 const ALL_STEPS = Array.from({ length: STEP_COUNT }, (_, index) => index);
 const SIMPLE_STEPS = [0, 1, 2, 3, 5, 7];
+const STEP_LABELS = {
+  4: 'Code host',
+  6: 'Sentry',
+} as const;
+
+const joinStepLabels = ({ labels }: { readonly labels: ReadonlyArray<string> }): string => {
+  if (labels.length === 0) {
+    return '';
+  }
+  if (labels.length === 1) {
+    const first = labels[0];
+    if (first === undefined) {
+      return '';
+    }
+    return first;
+  }
+  if (labels.length === 2) {
+    const first = labels[0];
+    const second = labels[1];
+    if (first === undefined || second === undefined) {
+      return '';
+    }
+    return `${first} and ${second}`;
+  }
+  const head = labels.slice(0, -1).join(', ');
+  const tail = labels[labels.length - 1];
+  if (tail === undefined) {
+    return head;
+  }
+  return `${head}, and ${tail}`;
+};
+
+const buildStepRemovalNotice = ({
+  removed,
+}: {
+  readonly removed: ReadonlyArray<number>;
+}): string | null => {
+  const labels: string[] = [];
+  for (const candidate of removed) {
+    if (candidate === 4) {
+      labels.push(STEP_LABELS[4]);
+    }
+    if (candidate === 6) {
+      labels.push(STEP_LABELS[6]);
+    }
+  }
+  if (labels.length === 0) {
+    return null;
+  }
+  return `${joinStepLabels({ labels })} ${labels.length === 1 ? 'is' : 'are'} skipped for standalone workspaces.`;
+};
 
 type Cta = {
   readonly label: string;
@@ -45,6 +96,7 @@ export const OnboardingWizard = () => {
   const [workspaceAudience, setWorkspaceAudience] = useState<WorkspaceAudience | null>(null);
   const [changingWorkspace, setChangingWorkspace] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [stepRemovalNotice, setStepRemovalNotice] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isSimple = workspaceKind === 'simple';
@@ -54,6 +106,7 @@ export const OnboardingWizard = () => {
   );
   const minStep = steps[0] ?? 0;
   const last = STEP_COUNT - 1;
+  const previousStepsRef = useRef<ReadonlyArray<number>>(steps);
 
   useEffect(() => {
     if (!open) {
@@ -61,8 +114,34 @@ export const OnboardingWizard = () => {
     }
     setStep(minStep);
     setClosing(false);
+    setStepRemovalNotice(null);
+    previousStepsRef.current = steps;
     containerRef.current?.focus();
   }, [open, minStep]);
+
+  useEffect(() => {
+    if (!open) {
+      previousStepsRef.current = steps;
+      return;
+    }
+    const previousSteps = previousStepsRef.current;
+    previousStepsRef.current = steps;
+    const removed = previousSteps.filter((candidate) => !steps.includes(candidate));
+    const notice = buildStepRemovalNotice({ removed });
+    if (notice !== null) {
+      setStepRemovalNotice(notice);
+    }
+    if (steps.includes(step)) {
+      return;
+    }
+    const nextStep = steps.find((candidate) => candidate > step);
+    if (nextStep !== undefined) {
+      setStep(nextStep);
+      return;
+    }
+    const fallbackStep = [...steps].reverse().find((candidate) => candidate < step);
+    setStep(fallbackStep ?? minStep);
+  }, [open, steps, step, minStep]);
 
   if (!open) {
     return null;
@@ -182,6 +261,11 @@ export const OnboardingWizard = () => {
       <ScrollFade className="min-h-0 flex-1">
         <div className="flex min-h-full items-center justify-center px-6 py-10">
           <div className="flex w-full max-w-xl flex-col gap-8">
+            {stepRemovalNotice !== null ? (
+              <p role="status" className="text-center text-xs text-muted-foreground">
+                {stepRemovalNotice}
+              </p>
+            ) : null}
             <div key={step} className="motion-safe:animate-fade-in">
               {body}
             </div>
