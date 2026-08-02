@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
-import { cn, Divider } from '@goodboy/ui';
+import { cn, Divider, type Tone } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 import { OverlayHeader } from '../OverlayHeader';
 
 type Props = {
   readonly icon?: LucideIcon;
+  readonly tone?: Tone;
   readonly glyph?: ReactNode;
   readonly title: string;
   readonly workspaceName: string;
@@ -18,6 +19,7 @@ type Props = {
 
 export const StudioShell = ({
   icon: Icon,
+  tone,
   glyph,
   title,
   workspaceName,
@@ -41,6 +43,7 @@ export const StudioShell = ({
     >
       <OverlayHeader
         icon={Icon}
+        {...(tone != null && { tone })}
         glyph={glyph}
         title={title}
         subtitle={workspaceName}

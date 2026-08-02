@@ -3,7 +3,7 @@ import { ScrollFade } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { ProvidersRail } from './ProvidersRail';
@@ -62,6 +62,7 @@ export const ProviderStudio = ({
   return (
     <StudioShell
       icon={CONCEPT_ICONS.providers}
+      tone={CONCEPT_TONE.providers}
       title="Provider studio"
       workspaceName={workspaceName}
       closeLabel="close provider studio"

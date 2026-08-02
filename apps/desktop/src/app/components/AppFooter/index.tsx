@@ -4,7 +4,7 @@ import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
 import { BetaPill } from '../../../shared/components/BetaPill';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 
 type FooterButtonProps = {
   icon: ReactNode;
@@ -104,7 +104,7 @@ export const AppFooter = ({
           ) : (
             <>
               <FooterButton
-                icon={<IntegrationGlyph provider="github" size="xs" useBrandColor={false} />}
+                icon={<IntegrationGlyph provider="github" size="xs" useBrandColor />}
                 label="GitHub"
                 title={
                   githubEnabled
@@ -116,7 +116,7 @@ export const AppFooter = ({
                 connected={githubEnabled}
               />
               <FooterButton
-                icon={<IntegrationGlyph provider="gitlab" size="xs" useBrandColor={false} />}
+                icon={<IntegrationGlyph provider="gitlab" size="xs" useBrandColor />}
                 label="GitLab"
                 title={gitlabEnabled ? 'launch a session from a GitLab issue' : 'Connect GitLab'}
                 onClick={onOpenGitlab}
@@ -126,7 +126,7 @@ export const AppFooter = ({
             </>
           )}
           <FooterButton
-            icon={<IntegrationGlyph provider="linear" size="xs" useBrandColor={false} />}
+            icon={<IntegrationGlyph provider="linear" size="xs" useBrandColor />}
             label="Linear"
             title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
             onClick={onOpenLinear}
@@ -135,7 +135,7 @@ export const AppFooter = ({
           />
           {isSimpleWorkspace ? null : (
             <FooterButton
-              icon={<IntegrationGlyph provider="sentry" size="xs" useBrandColor={false} />}
+              icon={<IntegrationGlyph provider="sentry" size="xs" useBrandColor />}
               label="Sentry"
               title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
               onClick={onOpenSentry}
@@ -151,7 +151,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.workflows size={12} aria-hidden />}
             label="Workflows"
-            tone="primary"
+            tone={CONCEPT_TONE.workflows}
             title="open the workflow library for this workspace"
             onClick={onOpenWorkflows}
             active={activeStudio === 'workflow'}
@@ -159,7 +159,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.providers size={12} aria-hidden />}
             label="Providers"
-            tone="info"
+            tone={CONCEPT_TONE.providers}
             title="connect and manage your provider accounts"
             onClick={onOpenProviders}
             pulse={noProviderConnected && activeStudio !== 'provider'}
@@ -168,7 +168,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.budget size={12} aria-hidden />}
             label="Budget"
-            tone="warning"
+            tone={CONCEPT_TONE.budget}
             title="open budget studio"
             onClick={onOpenBudget}
             active={activeStudio === 'budget'}
@@ -176,7 +176,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.impact size={12} aria-hidden />}
             label="Impact"
-            tone="success"
+            tone={CONCEPT_TONE.impact}
             title="see how orchestration changed the way this workspace works"
             onClick={onOpenImpact}
             active={activeStudio === 'impact'}

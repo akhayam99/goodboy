@@ -329,8 +329,9 @@ export const LensColumn = ({
                       {row.glyph == null && row.icon != null ? (
                         <span
                           className={cn(
-                            'flex w-5 flex-none items-center justify-center transition-colors',
-                            active && tintClasses(row.tone ?? 'neutral').icon,
+                            'flex w-5 flex-none items-center justify-center transition-[color,opacity]',
+                            tintClasses(row.tone ?? 'neutral').icon,
+                            active ? 'opacity-100' : 'opacity-55 group-hover:opacity-80',
                           )}
                         >
                           <row.icon size={14} aria-hidden />

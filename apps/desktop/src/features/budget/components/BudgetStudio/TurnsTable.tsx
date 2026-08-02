@@ -83,15 +83,9 @@ export const TurnsTable = ({ turns, showSession, onOpenSession }: Props) => {
               </thead>
               <tbody className="divide-y divide-border-soft">
                 {shown.map(({ record, sessionId, sessionGoal }) => (
-                  <tr key={record.id} className="group relative">
+                  <tr key={record.id} className="group transition-colors hover:bg-muted/40">
                     <td className="px-2 py-2">
-                      <button
-                        type="button"
-                        aria-label={`Open session ${sessionGoal}`}
-                        onClick={() => onOpenSession(sessionId)}
-                        className="absolute inset-0 rounded-md transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      />
-                      <span className="relative z-10 pointer-events-none">
+                      <span>
                         <Chip
                           tone={record.kind === 'summarizer' ? 'neutral' : 'primary'}
                           size="xs"
@@ -101,28 +95,35 @@ export const TurnsTable = ({ turns, showSession, onOpenSession }: Props) => {
                         />
                       </span>
                     </td>
-                    <td className="relative z-10 px-2 py-2 pointer-events-none">
+                    <td className="px-2 py-2">
                       <RoutingBadge provider={record.provider} model={record.model} />
                     </td>
                     {showSession ? (
                       <td
-                        className="relative z-10 max-w-[12rem] truncate px-2 py-2 text-muted-foreground pointer-events-none"
+                        className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground"
                         title={sessionGoal}
                       >
                         {sessionGoal}
                       </td>
                     ) : null}
-                    <td className="relative z-10 px-2 py-2 text-right font-mono tabular-nums text-muted-foreground pointer-events-none">
+                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
                       {formatTokens(record.inputTokens)}
                     </td>
-                    <td className="relative z-10 px-2 py-2 text-right font-mono tabular-nums text-muted-foreground pointer-events-none">
+                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
                       {formatTokens(record.outputTokens)}
                     </td>
-                    <td className="relative z-10 px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground pointer-events-none">
+                    <td className="px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground">
                       {formatUsdPrecise(record.estimatedCostUsd)}
                     </td>
-                    <td className="relative z-10 px-2 py-2 pointer-events-none">
-                      <ArrowUpRight size={12} aria-hidden className="text-muted-foreground" />
+                    <td className="px-2 py-2">
+                      <button
+                        type="button"
+                        aria-label={`Open session ${sessionGoal}`}
+                        onClick={() => onOpenSession(sessionId)}
+                        className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
+                      >
+                        <ArrowUpRight size={12} aria-hidden />
+                      </button>
                     </td>
                   </tr>
                 ))}
