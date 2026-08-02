@@ -47,6 +47,6 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5.6.3",
     "vite": "^6.0.3",
-    "vitest": "^2.1.8"
+    "vitest": "^4.1.10"
   }
 }
