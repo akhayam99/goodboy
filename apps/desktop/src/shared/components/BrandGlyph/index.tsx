@@ -14,9 +14,17 @@ type Props = {
   readonly size?: Size;
   readonly className?: string;
   readonly label?: string;
+  readonly useBrandColor?: boolean;
 };
 
-export const BrandGlyph = ({ icon: Icon, cssVar, size = 'sm', className, label }: Props) => {
+export const BrandGlyph = ({
+  icon: Icon,
+  cssVar,
+  size = 'sm',
+  className,
+  label,
+  useBrandColor = true,
+}: Props) => {
   const color = `var(${cssVar})`;
   const glyphSize = typeof size === 'string' ? MARK_SIZE[size] : size;
 
@@ -27,7 +35,7 @@ export const BrandGlyph = ({ icon: Icon, cssVar, size = 'sm', className, label }
       aria-label={label}
       aria-hidden={label == null ? true : undefined}
       className={cn('shrink-0', className)}
-      style={{ color }}
+      style={useBrandColor ? { color } : undefined}
     />
   );
 };

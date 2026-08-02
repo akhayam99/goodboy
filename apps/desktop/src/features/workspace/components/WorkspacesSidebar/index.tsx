@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Kanban } from 'lucide-react';
-import { KbdPill } from '@goodboy/ui';
+import { KbdPill, cn, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -25,6 +25,7 @@ export const WorkspacesSidebar = () => {
     [setCurrentSession],
   );
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
+  const neutralTint = tintClasses('neutral');
 
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
@@ -45,7 +46,13 @@ export const WorkspacesSidebar = () => {
             type="button"
             onClick={() => void setCurrentSession(null)}
             aria-label="back to board"
-            className="group relative w-full flex items-center justify-center gap-1.5 rounded-md bg-accent/10 px-2 py-1.5 text-xs font-semibold text-accent ring-1 ring-accent/20 motion-safe:transition-colors hover:bg-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+            className={cn(
+              'group relative w-full flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
+              'bg-foreground text-background ring-1',
+              neutralTint.ring,
+              'motion-safe:transition-opacity hover:opacity-90',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            )}
           >
             <Kanban size={14} aria-hidden />
             Board

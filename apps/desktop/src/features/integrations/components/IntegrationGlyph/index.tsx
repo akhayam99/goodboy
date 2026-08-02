@@ -24,9 +24,15 @@ type Props = {
   readonly provider: IntegrationGlyphProvider;
   readonly size?: number | 'xs' | 'sm';
   readonly className?: string;
+  readonly useBrandColor?: boolean;
 };
 
-export const IntegrationGlyph = ({ provider, size = 'sm', className }: Props) => {
+export const IntegrationGlyph = ({
+  provider,
+  size = 'sm',
+  className,
+  useBrandColor = true,
+}: Props) => {
   const brand = INTEGRATION_BRAND[provider];
   return (
     <BrandGlyph
@@ -35,6 +41,7 @@ export const IntegrationGlyph = ({ provider, size = 'sm', className }: Props) =>
       size={size}
       className={className}
       label={brand.label}
+      useBrandColor={useBrandColor}
     />
   );
 };

@@ -84,7 +84,7 @@ describe('AppFooter', () => {
     expect(onOpenImpact).toHaveBeenCalledOnce();
   });
 
-  it('tints each studio button and keeps the active one inverted', () => {
+  it('keeps studio buttons muted at rest and keeps the active one inverted', () => {
     render(
       <AppFooter
         activeStudio="impact"
@@ -110,7 +110,8 @@ describe('AppFooter', () => {
       name: 'see how orchestration changed the way this workspace works',
     });
 
-    expect(budget.className).toContain('text-warning');
+    expect(budget.className).toContain('text-muted-foreground');
+    expect(budget.className).not.toContain('text-warning');
     expect(impact.className).toContain('bg-foreground text-background');
     expect(impact.className).not.toContain('text-success');
   });
