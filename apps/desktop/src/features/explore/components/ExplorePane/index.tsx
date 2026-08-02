@@ -11,6 +11,7 @@ import {
 } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
 import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
 import { ExplorePreviewPanel } from './ExplorePreviewPanel';
@@ -405,8 +406,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
               <Skeleton className="h-10 w-10/12 rounded-md" />
             </>
           ) : rootError != null ? (
-            <EmptyState
-              bordered
+            <LensEmptyState
               tone={CONCEPT_TONE.explore}
               icon={CONCEPT_ICONS.explore}
               title="Could not read this session folder"
@@ -422,8 +422,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
               }
             />
           ) : rootEntries.length === 0 ? (
-            <EmptyState
-              bordered
+            <LensEmptyState
               tone={CONCEPT_TONE.explore}
               icon={CONCEPT_ICONS.explore}
               title="This session folder is empty"

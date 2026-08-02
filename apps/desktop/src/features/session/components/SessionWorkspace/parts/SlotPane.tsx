@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { History, type LucideIcon } from 'lucide-react';
-import { Button, EmptyState, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
+import { Button, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
+import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -218,8 +219,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
               maxRows={24}
             />
           ) : !hasValue ? (
-            <EmptyState
-              bordered
+            <LensEmptyState
               tone={SLOT_TONE[slotKey]}
               icon={SLOT_ICON[slotKey]}
               title={SLOT_EMPTY_CTA[slotKey]}

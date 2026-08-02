@@ -31,6 +31,7 @@ import { PaneShell } from './PaneShell';
 import { PrListRow } from './PrListRow';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
 import { openUrl } from '../../../../../shared/lib/editor';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
@@ -41,6 +42,14 @@ type Props = {
 };
 
 type PullRequestProvider = 'github' | 'gitlab';
+
+const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
+  branch == null ? null : (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
+      <GitBranch size={11} aria-hidden className="shrink-0" />
+      <span className="truncate text-foreground/80">{branch}</span>
+    </span>
+  );
 
 type SessionStudioOpenEvent = 'goodboy:open-github-session' | 'goodboy:open-gitlab-mr';
 
@@ -233,15 +242,12 @@ const GithubPrCard = ({
 
   if (!pr && isPrReview) {
     return (
-      <EmptyState
-        bordered
+      <LensEmptyState
         tone={CONCEPT_TONE.pr}
         icon={CONCEPT_ICONS.pr}
         title="External review session"
         description="This session reviews someone else’s pull request, so there is no PR to open from here. Draft and publish comments from the review board."
-        size="lg"
-        headingLevel={2}
-        className="animate-fade-in py-8"
+        className="animate-fade-in"
       />
     );
   }
@@ -250,40 +256,20 @@ const GithubPrCard = ({
     const hasLinkedWork = linkedIssues.length > 0 || codeHostTasks.length > 0;
     if (!hasLinkedWork) {
       return (
-        <EmptyState
-          bordered
+        <LensEmptyState
           tone={CONCEPT_TONE.pr}
           icon={CONCEPT_ICONS.pr}
           title="Open a pull or merge request"
-          description="Turn this session's work into a pull or merge request. Fill in the title and description, or hand it to an agent that writes them from your commits."
-          size="lg"
-          headingLevel={2}
-          className="animate-fade-in relative py-8"
+          description="No issues or external tasks are linked to this session yet. Turn its work into a pull or merge request, or hand it to an agent that writes one from your commits."
+          className="animate-fade-in"
           action={
-            <>
-              <p className="text-xs text-muted-foreground/70">
-                No issues or external tasks are linked to this session yet.
-              </p>
-              <div className="absolute right-3 top-3">
-                <RefreshIconButton
-                  label="refresh PR status"
-                  iconSize={12}
-                  onClick={refresh}
-                  isLoading={loading}
-                  error={error}
-                />
-              </div>
-              {branch != null ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
-                  <GitBranch size={11} aria-hidden className="shrink-0" />
-                  <span className="truncate text-foreground/80">{branch}</span>
-                </span>
-              ) : null}
-              <Button onClick={onOpenStudio}>
+            <div className="flex items-center gap-2">
+              <SessionBranchTag branch={branch} />
+              <Button size="sm" onClick={onOpenStudio}>
                 Open in code host
                 <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
               </Button>
-            </>
+            </div>
           }
         />
       );
@@ -296,35 +282,19 @@ const GithubPrCard = ({
           workspace={workspace}
           onSelectLens={onSelectLens}
         />
-        <EmptyState
-          bordered
+        <LensEmptyState
           tone={CONCEPT_TONE.pr}
           icon={CONCEPT_ICONS.pr}
           title="No pull or merge request yet"
           description="Turn this session's work into a pull or merge request when it is ready."
-          className="relative items-start px-4 py-4 text-left"
           action={
-            <>
-              <div className="absolute right-3 top-3">
-                <RefreshIconButton
-                  label="refresh PR status"
-                  iconSize={12}
-                  onClick={refresh}
-                  isLoading={loading}
-                  error={error}
-                />
-              </div>
-              {branch != null ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground/[0.04] px-2.5 py-1 font-mono text-2xs text-muted-foreground ring-1 ring-border-soft/60">
-                  <GitBranch size={11} aria-hidden className="shrink-0" />
-                  <span className="truncate text-foreground/80">{branch}</span>
-                </span>
-              ) : null}
+            <div className="flex items-center gap-2">
+              <SessionBranchTag branch={branch} />
               <Button size="sm" onClick={onOpenStudio}>
                 Open in code host
                 <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
               </Button>
-            </>
+            </div>
           }
         />
       </div>

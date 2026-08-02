@@ -4,6 +4,7 @@ import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/
 import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import { isWorkflowRunComplete } from '../../../../workflows/isWorkflowRunComplete';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowRailSectionToggle } from './WorkflowRailSectionToggle';
@@ -130,8 +131,7 @@ export const WorkflowsPane = ({ session }: Props) => {
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 motion-safe:animate-studio-in">
               {!hasRuns ? <WorkflowStartButton sessionId={sessionId} /> : null}
               {shouldShowEmptyCard ? (
-                <EmptyState
-                  bordered
+                <LensEmptyState
                   tone={CONCEPT_TONE.workflows}
                   icon={CONCEPT_ICONS.workflows}
                   title="Nothing running"
@@ -140,7 +140,6 @@ export const WorkflowsPane = ({ session }: Props) => {
                       ? 'Every attached workflow is done. Reveal the completed ones to reread them, or attach another.'
                       : 'No live workflow on this session. Attach one to start.'
                   }
-                  size="inline"
                   action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
                 />
               ) : null}

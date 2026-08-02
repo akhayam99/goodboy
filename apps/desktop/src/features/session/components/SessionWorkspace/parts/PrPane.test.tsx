@@ -465,7 +465,7 @@ describe('PrPane', () => {
     expect(githubEvents[0]?.detail).toEqual({ sessionId: SESSION_ID });
     expect(gitlabEvents).toHaveLength(0);
     expect(
-      screen.getByText('No issues or external tasks are linked to this session yet.'),
+      screen.getByText(/No issues or external tasks are linked to this session yet/),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Draft with agent' })).toBeNull();

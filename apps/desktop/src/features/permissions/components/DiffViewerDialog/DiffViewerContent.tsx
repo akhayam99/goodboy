@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, GitBranch, RefreshCw, X } from 'lucide-react';
-import { Divider, EmptyState, ScrollFade, Skeleton, cn } from '@goodboy/ui';
+import { Divider, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
@@ -29,6 +29,7 @@ import { clampEffort } from '../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
 import {
   listBranchCommits,
   worktreeDiff,
@@ -949,14 +950,11 @@ export const DiffViewerContent = ({
         ) : files.length === 0 ? (
           <ScrollFade className="min-h-0 min-w-0 flex-1">
             <div className={cn('mx-auto w-full max-w-5xl', !isPane && 'px-6 py-5')}>
-              <EmptyState
-                bordered
+              <LensEmptyState
                 tone={CONCEPT_TONE.diff}
                 icon={CONCEPT_ICONS.diff}
                 title={emptyStateLabel(view, isGitAware)}
-                description={emptyStateBlurb(view, isGitAware) ?? undefined}
-                size="lg"
-                headingLevel={2}
+                description={emptyStateBlurb(view, isGitAware) ?? ''}
               />
             </div>
           </ScrollFade>

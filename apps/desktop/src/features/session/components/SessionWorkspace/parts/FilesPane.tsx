@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
-import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
 import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
 import { FileVersionsPane } from './FileVersionsPane';
@@ -28,8 +28,7 @@ export const FilesPane = ({
           title="File versions"
           description="View and restore saved file copies for this session."
         >
-          <EmptyState
-            bordered
+          <LensEmptyState
             tone={CONCEPT_TONE.diff}
             icon={CONCEPT_ICONS.diff}
             title="Session directory missing"
@@ -46,8 +45,7 @@ export const FilesPane = ({
         title={DIFF_VIEWER_PANE_COPY.title}
         description={DIFF_VIEWER_PANE_COPY.description}
       >
-        <EmptyState
-          bordered
+        <LensEmptyState
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No worktree for this session"

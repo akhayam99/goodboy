@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Divider, EmptyState } from '@goodboy/ui';
+import { Divider } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileVersion, FileVersionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { formatError } from '../../../../../../shared/lib/errors';
+import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
 import { PaneShell } from '../PaneShell';
 import { fileVersionGroups } from './fileVersionGroups';
 import { PathSummaryList } from './pathSummaryList';
@@ -89,6 +90,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
     <PaneShell
       title="File versions"
       description="Before an agent changes a file in this session, Goodboy stores the previous copy here so you can bring it back."
+      wide={loading || groups.length > 0}
       actions={
         deleteAllArmed ? (
           <>
@@ -153,8 +155,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
           </div>
         </div>
       ) : (
-        <EmptyState
-          bordered
+        <LensEmptyState
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No versions yet"
