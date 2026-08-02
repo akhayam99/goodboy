@@ -36,7 +36,14 @@ const container = (over: Partial<Agent> = {}): Agent => ({
 });
 
 const areas = (n: number) =>
-  Array.from({ length: n }, (_, i) => ({ area: `area-${i}`, query: `q-${i}` }));
+  Array.from({ length: n }, (_, i) => ({
+    area: `area-${i}`,
+    query: `q-${i}`,
+    module: null,
+    fixtures: [],
+    topFrame: null,
+    sharedFrames: [],
+  }));
 
 function makeStore(c: Agent) {
   const sendTurn = vi.fn(async (_args: { content: string }) => undefined);
@@ -155,7 +162,7 @@ function makeAdvanceStore(runs: ReadonlyArray<Agent>, fanout: boolean) {
     transcripts: {},
     agentTurnState: {},
     sessionNudges: {},
-    workspaceOverrides: { [WS]: { scoutFanout: fanout } },
+    workspaceOverrides: { [WS]: { parallelAgents: fanout } },
     sessions: [{ id: SID, workspaceId: WS }],
     sendTurn,
     emitNotification,
@@ -184,9 +191,9 @@ const scoutAgent = (over: Partial<Agent> = {}): Agent => ({
 
 const splitText = (n: number) =>
   [
-    '<<scout-split>>',
+    '<<fan-out>>',
     JSON.stringify(Array.from({ length: n }, (_, i) => ({ area: `area-${i}`, query: `q-${i}` }))),
-    '<</scout-split>>',
+    '<</fan-out>>',
   ].join('\n');
 
 describe('advanceScoutTree split decision', () => {
@@ -212,7 +219,7 @@ describe('advanceScoutTree split decision', () => {
     expect(hoisted.insertArgs).toHaveLength(0);
     expect(sendTurn).toHaveBeenCalledTimes(1);
     const [payload] = sendTurn.mock.calls[0]!;
-    expect(payload.content).toContain('do not split');
+    expect(payload.content).toMatch(/do not split/i);
   });
 
   it('does not fan out past the depth cap even with a split marker', async () => {

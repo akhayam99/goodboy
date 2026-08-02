@@ -25,6 +25,8 @@ const PLAN_OPEN = '<<plan>>';
 const PLAN_CLOSE = '<</plan>>';
 const CLUSTERS_OPEN = '<<clusters>>';
 const CLUSTERS_CLOSE = '<</clusters>>';
+const FAN_OUT_OPEN = '<<fan-out>>';
+const FAN_OUT_CLOSE = '<</fan-out>>';
 const SCOUT_SPLIT_OPEN = '<<scout-split>>';
 const SCOUT_SPLIT_CLOSE = '<</scout-split>>';
 const QUESTION_OPEN_RE = /<<ctx-question((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
@@ -634,20 +636,18 @@ export const extractStepDone = (assistantText: string): { readonly id: string } 
   return last;
 };
 
-export type ExtractedScoutArea = {
+export type ExtractedFanOutArea = {
   readonly area: string;
   readonly query: string;
+  readonly module: string | null;
+  readonly fixtures: ReadonlyArray<string>;
+  readonly topFrame: string | null;
+  readonly sharedFrames: ReadonlyArray<string>;
 };
 
-export const extractScoutSplit = (
-  assistantText: string,
-): ReadonlyArray<ExtractedScoutArea> | null => {
-  const blocks = extractBlockContents(assistantText, SCOUT_SPLIT_OPEN, SCOUT_SPLIT_CLOSE);
-  if (blocks.length === 0) {
-    return null;
-  }
-  const raw = blocks[blocks.length - 1]!;
+export type ExtractedScoutArea = ExtractedFanOutArea;
 
+const parseFanOutAreas = (raw: string): ReadonlyArray<ExtractedFanOutArea> | null => {
   const json = stripJsonFences(raw);
   let parsed: unknown;
   try {
@@ -667,7 +667,7 @@ export const extractScoutSplit = (
     return null;
   }
 
-  const out: ExtractedScoutArea[] = [];
+  const out: ExtractedFanOutArea[] = [];
   for (const entry of parsed) {
     if (typeof entry !== 'object' || entry === null) {
       continue;
@@ -678,9 +678,63 @@ export const extractScoutSplit = (
     if (area.length === 0 || query.length === 0) {
       continue;
     }
-    out.push({ area, query });
+    const module = typeof e.module === 'string' ? e.module.trim() : '';
+    const topFrame = typeof e.topFrame === 'string' ? e.topFrame.trim() : '';
+    const fixtures = Array.isArray(e.fixtures)
+      ? e.fixtures
+          .filter((v): v is string => typeof v === 'string')
+          .map((v) => v.trim())
+          .filter((v) => v.length > 0)
+      : [];
+    const sharedFrames = Array.isArray(e.sharedFrames)
+      ? e.sharedFrames
+          .filter((v): v is string => typeof v === 'string')
+          .map((v) => v.trim())
+          .filter((v) => v.length > 0)
+      : [];
+    out.push({
+      area,
+      query,
+      module: module.length > 0 ? module : null,
+      fixtures,
+      topFrame: topFrame.length > 0 ? topFrame : null,
+      sharedFrames,
+    });
   }
   return out.length > 0 ? out : null;
+};
+
+const extractLatestFanOutBlock = (assistantText: string): string | null => {
+  const fanOutIdx = assistantText.lastIndexOf(FAN_OUT_OPEN);
+  const scoutIdx = assistantText.lastIndexOf(SCOUT_SPLIT_OPEN);
+  if (fanOutIdx === -1 && scoutIdx === -1) {
+    return null;
+  }
+  if (fanOutIdx >= scoutIdx) {
+    const blocks = extractBlockContents(assistantText, FAN_OUT_OPEN, FAN_OUT_CLOSE);
+    return blocks.length > 0 ? blocks[blocks.length - 1]! : null;
+  }
+  const blocks = extractBlockContents(assistantText, SCOUT_SPLIT_OPEN, SCOUT_SPLIT_CLOSE);
+  return blocks.length > 0 ? blocks[blocks.length - 1]! : null;
+};
+
+export const extractFanOut = (assistantText: string): ReadonlyArray<ExtractedFanOutArea> | null => {
+  const latest = extractLatestFanOutBlock(assistantText);
+  if (latest === null) {
+    return null;
+  }
+  return parseFanOutAreas(latest);
+};
+
+export const extractScoutSplit = (
+  assistantText: string,
+): ReadonlyArray<ExtractedScoutArea> | null => {
+  const blocks = extractBlockContents(assistantText, SCOUT_SPLIT_OPEN, SCOUT_SPLIT_CLOSE);
+  if (blocks.length === 0) {
+    return extractFanOut(assistantText);
+  }
+  const raw = blocks[blocks.length - 1]!;
+  return parseFanOutAreas(raw);
 };
 
 const FENCE_OPEN_RE = /^```(?:json)?/i;
@@ -734,7 +788,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains';
 

@@ -48,6 +48,6 @@ describe('scout caps', () => {
   });
 
   it('bounds fan-out width so one split cannot fork-bomb', () => {
-    expect(SCOUT_MAX_CHILDREN).toBe(6);
+    expect(SCOUT_MAX_CHILDREN).toBe(4);
   });
 });

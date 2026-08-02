@@ -126,7 +126,7 @@ function workspaceRowToOverride(row: WorkspaceOverrideRow): OverrideSettings {
     providerBindings: parseBindings(row.provider_bindings),
     taskModels: parseTaskModels(row.task_models),
     roleModels: parseRoleModels(row.role_models),
-    scoutFanout: row.scout_fanout === null ? null : row.scout_fanout !== 0,
+    parallelAgents: row.scout_fanout === null ? null : row.scout_fanout !== 0,
     enabledProviders: parseProviderPool({ raw: row.provider_pool }),
   };
 }
@@ -141,7 +141,7 @@ function sessionRowToOverride(row: SessionOverrideRow): OverrideSettings {
     providerBindings: parseBindings(row.provider_bindings),
     taskModels: null,
     roleModels: null,
-    scoutFanout: null,
+    parallelAgents: null,
     enabledProviders: undefined,
   };
 }
@@ -187,7 +187,7 @@ export const setWorkspaceOverrides = async (
       serializeBindings(overrides.providerBindings),
       serializeTaskModels(overrides.taskModels),
       serializeRoleModels(overrides.roleModels),
-      overrides.scoutFanout === null ? null : overrides.scoutFanout ? 1 : 0,
+      overrides.parallelAgents === null ? null : overrides.parallelAgents ? 1 : 0,
       serializeProviderPool({ enabledProviders: overrides.enabledProviders }),
       Date.now(),
       workspaceId,

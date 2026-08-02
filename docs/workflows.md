@@ -81,19 +81,18 @@ result is flagged `degraded`, and a `summarizer-degraded` notification carries a
 `retry-step-summary` action. Either way the summary becomes the next step's carry-forward
 context.
 
-## Parallel execution is not reachable
+## Parallel execution is still effectively unreachable
 
-The plumbing exists and nothing can get to it. Treat it as unshipped. Wired today:
+Most plumbing exists, but normal authoring still cannot route into it. Treat it as unshipped. Wired today:
 `steps.parallel_group`, the `parallel_groups` table (`merge_strategy` of `last_write_wins`,
 `manual` or `synthesizer_driven`) with its queries, the commands in
 `apps/desktop/src-tauri/src/parallel_groups.rs`, and `store/parallel-turn.ts`.
 
-Two independent reasons it is dead. First, `AGENT_FEATURES.parallelAgents` is `false` in
-`apps/desktop/src/shared/lib/features.ts` and `sendTurn.ts` reads that constant directly;
-`maxParallelism` is a constant 4, not a slider. No settings toggle exists: `parallelEnabled`
-resolves through `packages/core/src/settings/resolver.ts` and persists as an override, but
-nothing reads it. Second, nothing writes `parallelGroup`, so `detectParallelGroup` returns
-`null`.
+The runtime gate is now enabled (`AGENT_FEATURES.parallelAgents` in
+`apps/desktop/src/shared/lib/features.ts`, with `maxParallelism` fixed at 4), but nothing
+writes `parallelGroup`, so `detectParallelGroup` still returns `null`. A settings toggle still
+does not wire this path: `parallelEnabled` resolves through
+`packages/core/src/settings/resolver.ts` and persists as an override, but nothing reads it.
 
 Caveats that are real in the code that exists: each branch runs on its own worktree, the
 merge strategy is hardcoded to `last_write_wins` in `dispatchParallelTurn.ts`, conflicts

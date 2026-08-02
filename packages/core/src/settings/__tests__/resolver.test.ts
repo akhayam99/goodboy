@@ -21,7 +21,7 @@ const NULL_OVERRIDE: OverrideSettings = {
   providerBindings: null,
   taskModels: null,
   roleModels: null,
-  scoutFanout: null,
+  parallelAgents: null,
 };
 
 describe('resolveSettings', () => {
@@ -43,7 +43,7 @@ describe('resolveSettings', () => {
       providerBindings: null,
       taskModels: null,
       roleModels: null,
-      scoutFanout: null,
+      parallelAgents: null,
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
     expect(result.defaultProviderId).toBe('cursor');
@@ -63,7 +63,7 @@ describe('resolveSettings', () => {
       providerBindings: null,
       taskModels: null,
       roleModels: null,
-      scoutFanout: null,
+      parallelAgents: null,
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
     expect(result.defaultProviderId).toBe('codex');
@@ -83,7 +83,7 @@ describe('resolveSettings', () => {
       providerBindings: null,
       taskModels: null,
       roleModels: null,
-      scoutFanout: null,
+      parallelAgents: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
@@ -94,7 +94,7 @@ describe('resolveSettings', () => {
       providerBindings: null,
       taskModels: null,
       roleModels: null,
-      scoutFanout: null,
+      parallelAgents: null,
     };
     const result = resolveSettings({
       global: GLOBAL,
@@ -118,7 +118,7 @@ describe('resolveSettings', () => {
       providerBindings: null,
       taskModels: null,
       roleModels: null,
-      scoutFanout: null,
+      parallelAgents: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: null,
@@ -129,7 +129,7 @@ describe('resolveSettings', () => {
       providerBindings: null,
       taskModels: null,
       roleModels: null,
-      scoutFanout: null,
+      parallelAgents: null,
     };
     const result = resolveSettings({
       global: GLOBAL,

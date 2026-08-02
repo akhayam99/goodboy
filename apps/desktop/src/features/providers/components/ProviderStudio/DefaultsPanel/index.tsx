@@ -41,7 +41,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   providerBindings: null,
   taskModels: null,
   roleModels: null,
-  scoutFanout: null,
+  parallelAgents: null,
 };
 
 export const DefaultsPanel = ({ workspaceId }: Props) => {

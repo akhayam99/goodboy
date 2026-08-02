@@ -115,7 +115,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   providerBindings: null,
   taskModels: null,
   roleModels: null,
-  scoutFanout: null,
+  parallelAgents: null,
   enabledProviders: undefined,
 };
 

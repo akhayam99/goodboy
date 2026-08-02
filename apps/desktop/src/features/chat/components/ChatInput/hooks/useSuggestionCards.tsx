@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ClipboardCheck, Telescope } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { SessionNudge } from '../../../../../store/types';
 import { AGENT_KIND_META, type AgentKind } from '../../../../session/agent-kind';
@@ -72,45 +72,6 @@ export function useSuggestionCards({
             label: 'Not now',
             onClick: () => void dismissSessionNudge(session.id, 'dismissed'),
             testId: 'plan-ready-dismiss',
-          }}
-          onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
-        />
-      ),
-    });
-  }
-
-  if (sessionNudge?.kind === 'scout-fanout-suggested') {
-    suggestions.push({
-      key: 'scout-fanout',
-      node: (
-        <NudgeCard
-          severity="info"
-          ariaLabel="multi-scout exploration available"
-          testId="scout-fanout-nudge"
-          icon={<Telescope size={12} aria-hidden />}
-          title={
-            <>
-              Broad search across <strong>{sessionNudge.areaCount} areas</strong>. Multi-scout can
-              explore them in parallel.
-            </>
-          }
-          body={<>Enable it for this workspace to scan large codebases faster.</>}
-          primary={{
-            label: 'Enable multi-scout',
-            onClick: () => {
-              window.dispatchEvent(
-                new CustomEvent('goodboy:open-workspace-settings', {
-                  detail: { section: 'scout' },
-                }),
-              );
-              void dismissSessionNudge(session.id, 'accepted');
-            },
-            testId: 'scout-fanout-enable',
-          }}
-          secondary={{
-            label: 'Not now',
-            onClick: () => void dismissSessionNudge(session.id, 'dismissed'),
-            testId: 'scout-fanout-dismiss',
           }}
           onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
         />

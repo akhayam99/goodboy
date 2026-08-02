@@ -106,13 +106,6 @@ export type SessionNudge =
       readonly targetKind: AgentKind;
       readonly reason: string;
       readonly planId: PlanId | null;
-    }
-  | {
-      readonly kind: 'scout-fanout-suggested';
-      readonly id: string;
-      readonly agentId: AgentId;
-      readonly workspaceId: WorkspaceId;
-      readonly areaCount: number;
     };
 
 export type SessionLoadingFlags = {
