@@ -35,8 +35,8 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   },
   review: {
     label: 'in review',
-    dotClassName: 'bg-muted-foreground/70',
-    textClassName: 'text-muted-foreground',
+    dotClassName: 'bg-success',
+    textClassName: 'text-success',
   },
   building: {
     label: 'building',
@@ -45,15 +45,15 @@ export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   },
   done: {
     label: 'done',
-    dotClassName: 'bg-success',
-    textClassName: 'text-success',
+    dotClassName: 'bg-merged',
+    textClassName: 'text-merged',
   },
 };
 
 export const STAGE_TONE: Record<SessionStage, Tone> = {
   attention: 'warning',
   running: 'info',
-  review: 'neutral',
+  review: 'success',
   building: 'neutral',
-  done: 'success',
+  done: 'merged',
 };

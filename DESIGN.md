@@ -160,6 +160,11 @@ top of the window.
   shared `tintClasses(tone)`; stage colors resolve through a single
   `STAGE_TONE` map. No per-file tone maps: a kind of tone reads the same
   everywhere because it has exactly one source.
+- **The stage palette tracks the life of the work**, not its mood: attention is
+  `warning`, running is `info`, in review is `success`, done is `merged`,
+  building is neutral because nothing is asked of anyone yet. Done borrows the
+  merged purple on purpose: a finished session is almost always a merged pull
+  request, and the two should not be two different colors for one outcome.
 - Elevation is a four-step ramp: canvas < panel < rail/chip < floating. Lift a
   surface by stepping the ramp, not by inventing a shade.
 
