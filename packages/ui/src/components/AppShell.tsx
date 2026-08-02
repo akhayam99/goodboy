@@ -8,6 +8,7 @@ export type AppShellProps = {
   footer?: ReactNode;
   leftSidebar?: ReactNode;
   leftHidden?: boolean;
+  leftOverlay?: ReactNode;
   main: ReactNode;
   rightSidebar: ReactNode;
   rightSidebarCollapsed?: boolean;
@@ -113,6 +114,7 @@ export const AppShell = ({
   footer,
   leftSidebar,
   leftHidden = false,
+  leftOverlay,
   main,
   rightSidebar,
   rightSidebarCollapsed = false,
@@ -188,6 +190,7 @@ export const AppShell = ({
                 : 'translate-x-0 opacity-100',
             )}
             style={{ gridArea: 'left' }}
+            inert={leftHidden}
           >
             {leftSidebar}
           </aside>
@@ -234,6 +237,14 @@ export const AppShell = ({
           >
             {rightSidebar}
           </aside>
+        ) : null}
+        {leftOverlay != null ? (
+          <div
+            className="pointer-events-none relative z-20 flex min-h-0 min-w-0"
+            style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}
+          >
+            {leftOverlay}
+          </div>
         ) : null}
         {overlay != null ? (
           <div
