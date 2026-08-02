@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  AlertTriangle,
-  GitBranch,
-  PanelLeftClose,
-  PanelLeftOpen,
-  RefreshCw,
-  X,
-} from 'lucide-react';
+import { AlertTriangle, GitBranch, RefreshCw, X } from 'lucide-react';
 import { Divider, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
 import type {
@@ -963,27 +956,15 @@ export const DiffViewerContent = ({
           </ScrollFade>
         ) : (
           <>
-            <div className="flex shrink-0 flex-col px-1.5 pt-1.5">
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className={TOOLBAR_ICON_BTN}
-                title={sidebarCollapsed ? 'show file list' : 'hide file list'}
-                aria-label={sidebarCollapsed ? 'show file list' : 'hide file list'}
-                aria-expanded={!sidebarCollapsed}
-              >
-                {sidebarCollapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
-              </button>
-            </div>
-            {!sidebarCollapsed && (
-              <FileRail
-                files={files}
-                activePath={activePath}
-                onSelect={scrollToFile}
-                reviewStateByPath={reviewStateByPath}
-                commentCounts={openCommentsByFile}
-              />
-            )}
+            <FileRail
+              files={files}
+              activePath={activePath}
+              onSelect={scrollToFile}
+              reviewStateByPath={reviewStateByPath}
+              commentCounts={openCommentsByFile}
+              collapsed={sidebarCollapsed}
+              onToggle={toggleSidebar}
+            />
             <div ref={scrollRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
               <ScrollFade className="min-h-0 min-w-0 flex-1">
                 {files.slice(0, mountedCount).map((file) => (
