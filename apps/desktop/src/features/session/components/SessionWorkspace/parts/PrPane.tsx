@@ -33,6 +33,7 @@ import { useSessionRepo } from '../../../../../store/slices/worktrees/useSession
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
 import { openUrl } from '../../../../../shared/lib/editor';
+import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
 
 type Props = {
   readonly session: Session;
@@ -40,6 +41,28 @@ type Props = {
 };
 
 type PullRequestProvider = 'github' | 'gitlab';
+
+type SessionStudioOpenEvent = 'goodboy:open-github-session' | 'goodboy:open-gitlab-mr';
+
+const resolveSessionStudioOpenEvent = ({
+  remoteKind,
+}: {
+  readonly remoteKind: RemoteHostKind | null;
+}): SessionStudioOpenEvent => {
+  switch (remoteKind) {
+    case 'gitlab':
+      return 'goodboy:open-gitlab-mr';
+    case 'github':
+    case 'other':
+    case 'none':
+    case null:
+      return 'goodboy:open-github-session';
+    default: {
+      const unexpectedKind: never = remoteKind;
+      return unexpectedKind;
+    }
+  }
+};
 
 export const PrPane = ({ session, onSelectLens }: Props) => {
   const sessionId = session.id as SessionId;
@@ -83,18 +106,20 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
             ? 'closed'
             : 'open';
   const hasBothProviders = pullRequest != null && mergeRequest != null;
-
-  const description =
-    activeProvider === 'gitlab'
-      ? 'Merge request and linked issues for this session.'
-      : 'Pull request and linked issues for this session.';
+  const openStudio = () =>
+    window.dispatchEvent(
+      new CustomEvent(resolveSessionStudioOpenEvent({ remoteKind }), { detail: { sessionId } }),
+    );
 
   return (
-    <PaneShell title="Pull requests" description={description}>
+    <PaneShell
+      title="Code host work"
+      description="Linked issues and pull or merge request for this session."
+    >
       <div className="flex flex-col gap-3">
         {hasBothProviders ? (
           <div className="flex flex-col gap-1.5">
-            <Eyebrow label="Pull requests" muted className="px-0.5 font-medium" />
+            <Eyebrow label="Code host requests" muted className="px-0.5 font-medium" />
             <div className="flex flex-col gap-1">
               {pullRequest != null ? (
                 <PrListRow
@@ -122,9 +147,15 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
           </div>
         ) : null}
         {activeProvider === 'gitlab' ? (
-          <GitlabMrStrip sessionId={sessionId} />
+          <GitlabMrStrip sessionId={sessionId} onOpenStudio={openStudio} />
         ) : (
-          <GithubPrCard session={session} isPrReview={isPrReview} onSelectLens={onSelectLens} />
+          <GithubPrCard
+            session={session}
+            isPrReview={isPrReview}
+            onSelectLens={onSelectLens}
+            remoteKind={remoteKind}
+            onOpenStudio={openStudio}
+          />
         )}
       </div>
     </PaneShell>
@@ -135,10 +166,14 @@ const GithubPrCard = ({
   session,
   isPrReview,
   onSelectLens,
+  remoteKind,
+  onOpenStudio,
 }: {
   session: Session;
   isPrReview: boolean;
   onSelectLens: (lens: LensKind) => void;
+  remoteKind: RemoteHostKind | null;
+  onOpenStudio: () => void;
 }) => {
   const sessionId = session.id as SessionId;
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
@@ -154,7 +189,6 @@ const GithubPrCard = ({
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
   );
-  const remoteKind = useRemoteHostKind({ sessionId });
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
@@ -176,9 +210,6 @@ const GithubPrCard = ({
   );
   const loading = github?.loading ?? false;
   const error = github?.error ?? null;
-
-  const openStudio = () =>
-    window.dispatchEvent(new CustomEvent('goodboy:open-github-session', { detail: { sessionId } }));
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
 
   if (!pr && remoteKind !== 'github') {
@@ -223,8 +254,8 @@ const GithubPrCard = ({
           bordered
           tone="primary"
           icon={CONCEPT_ICONS.pr}
-          title="Open a pull request"
-          description="Turn this session’s work into a PR. Fill in the title and description, or hand it to an agent that writes them from your commits."
+          title="Open a pull or merge request"
+          description="Turn this session's work into a pull or merge request. Fill in the title and description, or hand it to an agent that writes them from your commits."
           size="lg"
           headingLevel={2}
           className="animate-fade-in relative py-8"
@@ -248,8 +279,8 @@ const GithubPrCard = ({
                   <span className="truncate text-foreground/80">{branch}</span>
                 </span>
               ) : null}
-              <Button onClick={openStudio}>
-                Open a pull request
+              <Button onClick={onOpenStudio}>
+                Open in code host
                 <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
               </Button>
             </>
@@ -269,8 +300,8 @@ const GithubPrCard = ({
           bordered
           tone="primary"
           icon={CONCEPT_ICONS.pr}
-          title="No pull request yet"
-          description="Turn this session’s work into a PR when it is ready."
+          title="No pull or merge request yet"
+          description="Turn this session's work into a pull or merge request when it is ready."
           className="relative items-start px-4 py-4 text-left"
           action={
             <>
@@ -289,8 +320,8 @@ const GithubPrCard = ({
                   <span className="truncate text-foreground/80">{branch}</span>
                 </span>
               ) : null}
-              <Button size="sm" onClick={openStudio}>
-                Open a pull request
+              <Button size="sm" onClick={onOpenStudio}>
+                Open in code host
                 <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
               </Button>
             </>
@@ -352,10 +383,10 @@ const GithubPrCard = ({
 
       <button
         type="button"
-        onClick={openStudio}
+        onClick={onOpenStudio}
         className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground/[0.04] px-3 py-2 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08]"
       >
-        Open PR
+        Open in code host
         <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
       </button>
 
