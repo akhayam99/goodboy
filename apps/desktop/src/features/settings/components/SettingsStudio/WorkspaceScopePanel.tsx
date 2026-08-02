@@ -3,7 +3,6 @@ import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import { Button, Divider, FieldRow, ScrollFade, SectionHeader, Switch, cn } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
-import { ScriptsPanel } from '../../../../features/scripts';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
@@ -204,12 +203,6 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
               </div>
             </>
           ) : null}
-
-          <Divider />
-
-          <div ref={anchor('scripts')}>
-            <ScriptsPanel workspaceId={workspaceId} />
-          </div>
 
           <Divider />
 
