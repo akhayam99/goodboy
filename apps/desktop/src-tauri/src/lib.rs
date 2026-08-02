@@ -6,6 +6,7 @@ mod config_export;
 mod cursor_config;
 mod db;
 mod editor;
+mod explore;
 mod external_terminal;
 mod github;
 mod gitlab;
@@ -109,6 +110,9 @@ pub fn run() {
       editor::open_in_editor,
       editor::open_file_in_workspace,
       editor::open_url,
+      explore::explore_list,
+      explore::explore_read,
+      explore::explore_open,
       db::db_exec,
       db::db_execute,
       db::db_select,
