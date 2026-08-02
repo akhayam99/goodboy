@@ -74,7 +74,7 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
       rail={launchCard}
       properties={resolveDetailFields({ registry: githubIssueFields, entity: issue })}
     >
-      <DetailSection label="description">
+      <DetailSection label="description" variant="frameless">
         {issue.body.trim() !== '' ? (
           <Markdown text={issue.body} className="text-sm leading-relaxed" />
         ) : (

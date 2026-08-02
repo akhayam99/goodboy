@@ -147,6 +147,12 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
                       task={task}
                       appearance="row"
                       navigation="external"
+                      hasReferenceActions={
+                        !(
+                          connection.isConnected &&
+                          (provider === 'linear' || provider === 'sentry')
+                        )
+                      }
                       ariaLabel={`open ${task.identifier}`}
                       onClick={() => void openUrl(task.url)}
                     />

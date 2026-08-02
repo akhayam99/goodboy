@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Markdown } from '@goodboy/ui';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
@@ -16,13 +16,16 @@ import { LinearIssueComments } from '../LinearIssueComments';
 import { useLinearIssueComments } from '../useLinearIssueComments';
 
 type IssueSection = 'overview' | 'conversation';
+type Fit = 'fill' | 'bleed' | 'flow';
 
 type Props = {
   readonly issue: LinearIssue;
   readonly workspaceId: WorkspaceId;
+  readonly rail?: ReactNode;
+  readonly fit?: Fit;
 };
 
-export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
+export const LinearIssueDetail = ({ issue, workspaceId, rail, fit = 'flow' }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const { comments, isLoading, error } = useLinearIssueComments({
     workspaceId,
@@ -31,7 +34,7 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
 
   return (
     <StudioDetailLayout
-      fit="flow"
+      fit={fit}
       header={
         <HeaderBand
           meta={
@@ -62,10 +65,11 @@ export const LinearIssueDetail = ({ issue, workspaceId }: Props) => {
           ]}
         />
       }
+      rail={rail}
       properties={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
     >
       {section === 'overview' ? (
-        <DetailSection label="description">
+        <DetailSection label="description" variant="frameless">
           {issue.description != null && issue.description !== '' ? (
             <Markdown text={issue.description} className="text-sm leading-relaxed" />
           ) : (
