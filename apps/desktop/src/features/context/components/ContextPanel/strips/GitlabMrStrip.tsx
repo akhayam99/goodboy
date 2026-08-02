@@ -7,17 +7,20 @@ import { useAppStore } from '../../../../../store';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly onOpenStudio?: () => void;
 };
 
-export const GitlabMrStrip = ({ sessionId }: Props) => {
+export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
   const remoteKind = useRemoteHostKind({ sessionId });
   const mrState = useAppStore((s) => s.sessionGitlabMr[sessionId]);
   const refreshSessionMr = useAppStore((s) => s.refreshSessionMr);
   const mr = mrState?.mr ?? null;
   const loading = mrState?.loading ?? false;
   const error = mrState?.error ?? null;
-  const openPane = () =>
-    window.dispatchEvent(new CustomEvent('goodboy:open-gitlab-mr', { detail: { sessionId } }));
+  const openPane =
+    onOpenStudio ??
+    (() =>
+      window.dispatchEvent(new CustomEvent('goodboy:open-gitlab-mr', { detail: { sessionId } })));
 
   if (remoteKind !== 'gitlab') {
     return null;
