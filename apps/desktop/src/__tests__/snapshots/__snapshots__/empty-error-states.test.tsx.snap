@@ -63,7 +63,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
   >
     <svg
       aria-hidden="true"
-      class="lucide lucide-workflow"
+      class="lucide lucide-waypoints"
       fill="none"
       height="13"
       stroke="currentColor"
@@ -74,22 +74,34 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
       width="13"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect
-        height="8"
-        rx="2"
-        width="8"
-        x="3"
-        y="3"
+      <path
+        d="m10.586 5.414-5.172 5.172"
       />
       <path
-        d="M7 11v4a2 2 0 0 0 2 2h4"
+        d="m18.586 13.414-5.172 5.172"
       />
-      <rect
-        height="8"
-        rx="2"
-        width="8"
-        x="13"
-        y="13"
+      <path
+        d="M6 12h12"
+      />
+      <circle
+        cx="12"
+        cy="20"
+        r="2"
+      />
+      <circle
+        cx="12"
+        cy="4"
+        r="2"
+      />
+      <circle
+        cx="20"
+        cy="12"
+        r="2"
+      />
+      <circle
+        cx="4"
+        cy="12"
+        r="2"
       />
     </svg>
     Set up a workflow

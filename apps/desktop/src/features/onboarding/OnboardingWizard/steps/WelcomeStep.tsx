@@ -1,5 +1,6 @@
-import { FolderGit2, Plug } from 'lucide-react';
+import { FolderGit2 } from 'lucide-react';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { SetupRow } from './SetupRow';
 
 export const WelcomeStep = () => {
@@ -23,7 +24,7 @@ export const WelcomeStep = () => {
 
       <div className="flex w-full max-w-sm flex-col gap-2">
         <SetupRow
-          icon={<Plug size={15} className="text-info" aria-hidden />}
+          icon={<CONCEPT_ICONS.providers size={15} className="text-info" aria-hidden />}
           title="Connect a provider"
           detail="The CLI that runs your agents (claude, codex, and more)."
         />
