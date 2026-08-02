@@ -53,6 +53,7 @@ import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFo
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
 import { useEscapeToCloseDialog } from './shared/hooks/useEscapeToCloseDialog';
 import { useCommitLinkInterceptor } from './shared/hooks/useCommitLinkInterceptor';
+import { isBranchlessSession } from './shared/utils/isBranchlessSession';
 import {
   useAppStore,
   useCurrentSession,
@@ -613,6 +614,25 @@ export const App = () => {
     s.setActiveLens(s.currentSessionId, kind);
   }, []);
 
+  const goToDiffOrExploreLens = useCallback(() => {
+    const store = useAppStore.getState();
+    const sessionId = store.currentSessionId;
+    if (sessionId == null) {
+      return;
+    }
+    const session = store.sessions.find((candidate) => candidate.id === sessionId);
+    if (session == null) {
+      store.setActiveLens(sessionId, 'files');
+      return;
+    }
+    const workspace = store.workspaces.find((candidate) => candidate.id === session.workspaceId);
+    const isBranchless = isBranchlessSession({
+      workspaceKind: workspace?.kind,
+      branch: store.sessionBranches[sessionId],
+    });
+    store.setActiveLens(sessionId, isBranchless ? 'explore' : 'files');
+  }, []);
+
   const toggleTerminalLens = useCallback(() => {
     const s = useAppStore.getState();
     const id = s.currentSessionId;
@@ -704,7 +724,7 @@ export const App = () => {
   useKeyboardShortcut('cmd+shift+w', () => goToLens('workflows'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+b', () => goToLens('agents'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+r', () => goToLens('resolve'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+d', () => goToLens('files'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+d', goToDiffOrExploreLens, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+l', () => goToLens('plans'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+s', () => goToLens('scripts'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+q', () => goToLens('questions'), { ignoreInInputs: false });
