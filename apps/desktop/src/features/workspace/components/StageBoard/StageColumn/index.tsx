@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { cn, EmptyState, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui';
+import { cn, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
 import { useMultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import { BulkActionBar } from '../../BulkActionBar';
 import { StageBoardCard, type CardSelectionEvent } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 const ZERO_STATE: Record<SessionStage | 'archived', string> = {
   attention: 'nothing needs you',
@@ -67,7 +67,7 @@ export const StageColumn = ({
   onRestore,
 }: StageColumnProps) => {
   const view = viewFor(spec);
-  const [collapsed, setCollapsed] = useState(view.collapsible);
+  const [collapsed, setCollapsed] = useState(false);
   const empty = sessions.length === 0;
 
   const order = useMemo(() => sessions.map((s) => s.id as SessionId), [sessions]);
@@ -124,13 +124,14 @@ export const StageColumn = ({
         <ScrollFade orientation="vertical" className="flex-1">
           <div className="flex flex-col gap-2">
             {empty ? (
-              <EmptyState
-                icon={CONCEPT_ICONS.sessions}
-                tone={CONCEPT_TONE.sessions}
-                title={ZERO_STATE[view.key]}
-                size="inline"
-                className="px-1 py-2"
-              />
+              <p className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground/70">
+                <CONCEPT_ICONS.sessions
+                  size={13}
+                  aria-hidden
+                  className="shrink-0 text-muted-foreground/40"
+                />
+                {ZERO_STATE[view.key]}
+              </p>
             ) : (
               sessions.map((session) => (
                 <StageBoardCard
