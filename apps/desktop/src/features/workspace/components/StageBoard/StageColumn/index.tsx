@@ -129,7 +129,7 @@ export const StageColumn = ({
                 tone={CONCEPT_TONE.sessions}
                 title={ZERO_STATE[view.key]}
                 size="inline"
-                className="px-1 py-6"
+                className="px-1 py-2"
               />
             ) : (
               sessions.map((session) => (
