@@ -41,7 +41,7 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^6.0.4",
     "axe-core": "^4.12.1",
     "happy-dom": "^20.11.1",
     "tailwindcss": "^4.3.3",
