@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { AgentId, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { formatError } from '../../../../../shared/lib/errors';
+import { isTranscriptOwnedTurnError } from '../../../turn-errors';
 import { toAttachmentInput } from '../lib';
 import type { PendingAttachment, QueuedTurn } from '../lib';
 
@@ -10,7 +11,7 @@ type UseTurnDispatchArgs = {
   readonly cleanupSentAttachments: (atts: ReadonlyArray<PendingAttachment>) => void;
 };
 
-export function useTurnDispatch({ sessionId, cleanupSentAttachments }: UseTurnDispatchArgs) {
+export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDispatchArgs) => {
   const sendTurn = useAppStore((s) => s.sendTurn);
 
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,11 @@ export function useTurnDispatch({ sessionId, cleanupSentAttachments }: UseTurnDi
         setLastFailedTurn(null);
         cleanupSentAttachments(atts);
       } catch (err) {
+        if (isTranscriptOwnedTurnError({ error: err })) {
+          setError(null);
+          setLastFailedTurn(null);
+          return;
+        }
         setError(formatError(err));
         setLastFailedTurn({ agentId, content, attachments: atts, override });
       }
@@ -42,4 +48,4 @@ export function useTurnDispatch({ sessionId, cleanupSentAttachments }: UseTurnDi
   );
 
   return { dispatchTurn, error, setError, lastFailedTurn, setLastFailedTurn };
-}
+};

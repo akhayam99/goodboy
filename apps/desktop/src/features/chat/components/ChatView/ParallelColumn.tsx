@@ -4,6 +4,7 @@ import type { Agent, ProviderRunId } from '@goodboy/types';
 import { Divider, ScrollFade, StatusDot } from '@goodboy/ui';
 import { useAppStore, useTranscript } from '../../../../store';
 import { filterEventsByRunId, reduceTranscript } from '../../utils/transcript-items';
+import type { TranscriptItem } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { inferAgentKindFromName } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
@@ -18,6 +19,8 @@ type Props = {
   readonly workingDir: string | null;
   readonly onRefreshAuth: () => void;
   readonly onOpenDiff: (filePath: string) => void;
+  readonly onRetryError?: (item: Extract<TranscriptItem, { kind: 'error' }>) => void;
+  readonly retryingErrorRunId?: ProviderRunId | null;
 };
 
 export const ParallelColumn = ({
@@ -27,6 +30,8 @@ export const ParallelColumn = ({
   workingDir,
   onRefreshAuth,
   onOpenDiff,
+  onRetryError,
+  retryingErrorRunId = null,
 }: Props) => {
   const columnEvents = useMemo(() => filterEventsByRunId(events, runId), [events, runId]);
   const items = useMemo(() => reduceTranscript(columnEvents), [columnEvents]);
@@ -85,6 +90,8 @@ export const ParallelColumn = ({
                       workingDir={workingDir}
                       onRefreshAuth={onRefreshAuth}
                       onOpenDiff={onOpenDiff}
+                      onRetryError={onRetryError}
+                      retryingErrorRunId={retryingErrorRunId}
                     />
                   ) : (
                     <TranscriptCard
@@ -94,6 +101,8 @@ export const ParallelColumn = ({
                       workingDir={workingDir}
                       onRefreshAuth={onRefreshAuth}
                       onOpenDiff={onOpenDiff}
+                      onRetryError={onRetryError}
+                      retryingErrorRunId={retryingErrorRunId}
                     />
                   )}
                 </li>

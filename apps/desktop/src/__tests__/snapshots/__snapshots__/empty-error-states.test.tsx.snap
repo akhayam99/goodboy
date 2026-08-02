@@ -1626,11 +1626,11 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
 
 exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
 <div
-  class="flex w-full items-start gap-2 text-xs"
+  class="flex w-full items-start gap-2 rounded-md border px-2.5 py-2 text-xs border-danger/20 bg-danger/5"
 >
   <svg
     aria-hidden="true"
-    class="lucide lucide-circle-alert shrink-0 translate-y-0.5 text-danger"
+    class="lucide lucide-circle-alert mt-0.5 shrink-0 text-danger"
     data-testid="transcript-error-icon"
     fill="none"
     height="12"
@@ -1660,10 +1660,14 @@ exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
       y2="16"
     />
   </svg>
-  <span
-    class="min-w-0 break-words text-danger"
+  <div
+    class="flex min-w-0 flex-1 flex-col gap-1"
   >
-    provider failed to respond
-  </span>
+    <p
+      class="min-w-0 break-words leading-relaxed text-danger"
+    >
+      provider failed to respond
+    </p>
+  </div>
 </div>
 `;

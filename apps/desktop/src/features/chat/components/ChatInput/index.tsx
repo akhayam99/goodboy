@@ -27,6 +27,7 @@ import { useSuggestionCards } from './hooks/useSuggestionCards';
 import { AttachmentChip } from './parts/AttachmentChip';
 import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
+import { TurnErrorCallout } from '../TurnErrorCallout';
 
 type Props = {
   readonly session: Session;
@@ -522,28 +523,28 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           </div>
         </div>
         {dispatch.error ? (
-          <div role="alert" className="flex items-center gap-2">
-            <p className="flex-1 text-xs text-danger">{dispatch.error}</p>
-            {dispatch.lastFailedTurn !== null && (
-              <button
-                type="button"
-                onClick={() => {
-                  const failed = dispatch.lastFailedTurn;
-                  if (!failed) return;
-                  dispatch.setError(null);
-                  void dispatch.dispatchTurn(
-                    failed.content,
-                    failed.attachments,
-                    failed.override,
-                    failed.agentId,
-                  );
-                }}
-                className="shrink-0 rounded border border-danger/30 bg-danger/5 px-2 py-0.5 text-xs font-medium text-danger hover:bg-danger/15"
-              >
-                retry
-              </button>
-            )}
-          </div>
+          <TurnErrorCallout
+            role="alert"
+            message={dispatch.error}
+            retryAction={
+              dispatch.lastFailedTurn != null
+                ? {
+                    label: 'retry',
+                    onClick: () => {
+                      const failed = dispatch.lastFailedTurn;
+                      if (!failed) return;
+                      dispatch.setError(null);
+                      void dispatch.dispatchTurn(
+                        failed.content,
+                        failed.attachments,
+                        failed.override,
+                        failed.agentId,
+                      );
+                    },
+                  }
+                : undefined
+            }
+          />
         ) : null}
       </div>
     </div>
