@@ -32,6 +32,7 @@ export const createWorktree = async (args: CreateWorktreeArgs): Promise<CreatedW
 export type CreateSessionDirArgs = {
   readonly basePath: string;
   readonly slug: string;
+  readonly directoryName?: string;
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
 };
@@ -39,11 +40,18 @@ export type CreateSessionDirArgs = {
 export const createSessionDir = async ({
   basePath,
   slug,
+  directoryName,
   sessionId,
   workspaceId,
 }: CreateSessionDirArgs): Promise<CreatedWorktree> => {
   return invoke<CreatedWorktree>('session_dir_create', {
-    args: { basePath, slug, sessionId, workspaceId },
+    args: {
+      basePath,
+      slug,
+      ...(directoryName != null ? { directoryName } : {}),
+      sessionId,
+      workspaceId,
+    },
   });
 };
 

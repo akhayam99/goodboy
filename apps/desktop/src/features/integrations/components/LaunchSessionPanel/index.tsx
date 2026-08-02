@@ -9,7 +9,7 @@ import {
   StatusDot,
   Textarea,
 } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, GitBranch, MessagesSquare } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Folder, GitBranch, MessagesSquare } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -19,11 +19,16 @@ import { formatError, isMissingBaseRefError } from '../../../../shared/lib/error
 import { isValidBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
 import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
 import { sanitizeBranchSlug } from '../../../../shared/utils/sanitizeBranchSlug';
+import { validateSessionDirectoryName } from '../../../../shared/utils/validateSessionDirectoryName';
+import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../../shared/utils/deriveDefaultSessionDirectoryNameFromGoal';
+import { buildSimpleSessionDirectoryPath } from '../../../../shared/utils/buildSimpleSessionDirectoryPath';
+import { sessionDirectoryNameValidationMessage } from '../../../../shared/utils/sessionDirectoryNameValidationMessage';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
 import { SetupWorkflowToggle } from '../../../session/components/SetupWorkflowToggle';
 import { useSetupWorkflowPreference } from '../../../session/hooks/useSetupWorkflowPreference';
 import { removeWorktree } from '../../../worktree/worktree';
 import { useBranchConflict } from '../../../worktree/useBranchConflict';
+import { useSimpleSessionDirectoryConflict } from '../../../worktree/useSimpleSessionDirectoryConflict';
 
 type AdoptableBranch = {
   readonly label: string;
@@ -76,6 +81,10 @@ export const LaunchSessionPanel = ({
   const [setupWorkflow, setSetupWorkflow] = useSetupWorkflowPreference();
   const [goal, setGoal] = useState(goalSeed);
   const [branchSlug, setBranchSlug] = useState(branchSlugSeed);
+  const [folderName, setFolderName] = useState(() =>
+    deriveDefaultSessionDirectoryNameFromGoal({ goal: goalSeed }),
+  );
+  const [folderNameTouched, setFolderNameTouched] = useState(false);
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [modeChoice, setModeChoice] = useState<'adopt' | 'fresh' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -89,6 +98,17 @@ export const LaunchSessionPanel = ({
   }, [goalSeed]);
 
   useEffect(() => {
+    if (!isBranchless || folderNameTouched) {
+      return;
+    }
+    const nextFolderName = deriveDefaultSessionDirectoryNameFromGoal({ goal });
+    if (nextFolderName === folderName) {
+      return;
+    }
+    setFolderName(nextFolderName);
+  }, [folderName, folderNameTouched, goal, isBranchless]);
+
+  useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((value) => {
       setBranchPrefix(value ?? DEFAULT_BRANCH_PREFIX);
     });
@@ -97,6 +117,18 @@ export const LaunchSessionPanel = ({
   const mode = modeChoice ?? (adoptable == null ? 'fresh' : 'adopt');
   const prefix = sanitizeBranchPrefix({ input: branchPrefix }) || DEFAULT_BRANCH_PREFIX;
   const isSlugValid = isValidBranchSlug({ slug: branchSlug });
+  const folderValidation = validateSessionDirectoryName({ name: folderName });
+  const folderNameError = sessionDirectoryNameValidationMessage({ validation: folderValidation });
+  const folderPathPreview =
+    isBranchless && rootPath != null
+      ? buildSimpleSessionDirectoryPath({
+          workspaceRoot: rootPath,
+          folderName,
+        })
+      : null;
+  const folderConflictPath =
+    isBranchless && folderValidation.ok && folderPathPreview != null ? folderPathPreview : null;
+  const folderConflict = useSimpleSessionDirectoryConflict({ path: folderConflictPath });
   const isAdopting = mode === 'adopt' && adoptable != null;
   const adoptedBranch = isAdopting ? adoptable.branch : null;
   const effectiveBranch = isBranchless
@@ -116,7 +148,10 @@ export const LaunchSessionPanel = ({
     : isAdopting
       ? adoptedBranch != null && !adoptable.isResolving
       : isSlugValid;
-  const canLaunch = goal.trim() !== '' && isBranchReady && !busy && conflictPath == null;
+  const isFolderReady =
+    !isBranchless || (folderValidation.ok && !folderConflict.exists && !folderConflict.checking);
+  const canLaunch =
+    goal.trim() !== '' && isBranchReady && isFolderReady && !busy && conflictPath == null;
 
   const launch = async (eraseWorktreePath?: string) => {
     setError(null);
@@ -129,7 +164,7 @@ export const LaunchSessionPanel = ({
         workspaceId,
         goal,
         ...(isBranchless
-          ? {}
+          ? { folderName }
           : { branchPrefix: prefix, branchSlug: branchSlug.trim() || undefined }),
         ...(adoptedBranch != null ? { existingBranch: adoptedBranch } : {}),
         externalTask,
@@ -192,7 +227,65 @@ export const LaunchSessionPanel = ({
         />
       </FieldRow>
 
-      {isBranchless ? null : (
+      {isBranchless ? (
+        <>
+          <Divider />
+          <section className="flex flex-col">
+            <SectionHeader
+              icon={<Folder size={12} aria-hidden />}
+              label="Folder"
+              hint="This is the folder name you will find on disk inside your workspace folder."
+            />
+            <FieldRow
+              label="Folder name"
+              help="The app creates this folder in your workspace under sessions"
+              layout="stacked"
+            >
+              <div className="flex w-full flex-col gap-1.5">
+                <div className="flex w-full items-center gap-1.5">
+                  <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                    sessions/
+                  </span>
+                  <Input
+                    value={folderName}
+                    onChange={(event) => {
+                      setFolderName(event.target.value);
+                      setFolderNameTouched(true);
+                    }}
+                    placeholder="session"
+                    className="h-8 min-w-0 flex-1 text-sm"
+                    disabled={busy}
+                    aria-label="Folder name"
+                  />
+                </div>
+                {folderPathPreview != null ? (
+                  <p className="text-2xs leading-relaxed text-muted-foreground">
+                    Folder on disk:{' '}
+                    <span className="break-all font-mono text-muted-foreground">
+                      {folderPathPreview}
+                    </span>
+                  </p>
+                ) : null}
+                {folderNameError != null ? (
+                  <p role="alert" className="text-2xs leading-relaxed text-danger">
+                    {folderNameError}
+                  </p>
+                ) : null}
+                {folderNameError == null && folderConflict.exists ? (
+                  <p role="alert" className="text-2xs leading-relaxed text-danger">
+                    A folder with this name already exists in this workspace
+                  </p>
+                ) : null}
+                {folderNameError == null && !folderConflict.exists && folderConflict.checking ? (
+                  <p className="text-2xs leading-relaxed text-muted-foreground">
+                    Checking if this folder already exists
+                  </p>
+                ) : null}
+              </div>
+            </FieldRow>
+          </section>
+        </>
+      ) : (
         <>
           <Divider />
           <section className="flex flex-col">

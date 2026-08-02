@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
     session: { id: 'session-9', goal: 'Fix the flake' },
   })),
   loadSetting: vi.fn(async () => null),
+  simpleSessionDirExists: vi.fn(async () => false),
   showToast: vi.fn(),
   store: {
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }] as ReadonlyArray<
@@ -35,7 +36,10 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 vi.mock('../../../worktree/useBranchConflict', () => ({ useBranchConflict: () => null }));
-vi.mock('../../../worktree/worktree', () => ({ removeWorktree: vi.fn() }));
+vi.mock('../../../worktree/worktree', () => ({
+  removeWorktree: vi.fn(),
+  simpleSessionDirExists: h.simpleSessionDirExists,
+}));
 
 import { LaunchSessionPanel } from './index';
 
@@ -64,6 +68,7 @@ const renderPanel = () =>
 beforeEach(() => {
   localStorage.clear();
   h.createSession.mockClear();
+  h.simpleSessionDirExists.mockClear();
   h.showToast.mockClear();
   h.store.workspaces = [{ id: 'workspace-1', rootPath: '/repo', kind: 'dev' }];
 });
@@ -123,7 +128,44 @@ describe('LaunchSessionPanel', () => {
     expect(screen.getByText('ak/fix-the-flake')).toBeDefined();
   });
 
-  it('drops the branch field and the branch payload in a repo-less workspace', async () => {
+  it('blocks launch for invalid folder names in a repo-less workspace', () => {
+    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
+
+    renderPanel();
+    fireEvent.change(screen.getByLabelText('Folder name'), { target: { value: 'bad/name' } });
+
+    expect(screen.queryByLabelText('Branch slug')).toBeNull();
+    expect(screen.getByText('Use one folder name. Slashes are not allowed')).toBeDefined();
+    expect(screen.getByRole('button', { name: /Launch session/i }).getAttribute('disabled')).toBe(
+      '',
+    );
+  });
+
+  it('blocks launch when the folder already exists in a repo-less workspace', async () => {
+    h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
+    h.simpleSessionDirExists.mockResolvedValueOnce(true);
+
+    renderPanel();
+    fireEvent.change(screen.getByLabelText('Folder name'), {
+      target: { value: 'Existing folder' },
+    });
+
+    await waitFor(() =>
+      expect(h.simpleSessionDirExists).toHaveBeenCalledWith({
+        path: '/notes/sessions/Existing folder',
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByText('A folder with this name already exists in this workspace'),
+      ).toBeDefined(),
+    );
+    expect(screen.getByRole('button', { name: /Launch session/i }).getAttribute('disabled')).toBe(
+      '',
+    );
+  });
+
+  it('drops the branch field and passes the typed folder name in a repo-less workspace', async () => {
     h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
 
     render(
@@ -146,6 +188,22 @@ describe('LaunchSessionPanel', () => {
 
     expect(screen.queryByLabelText('Branch slug')).toBeNull();
     expect(screen.queryByRole('tab', { name: /Continue on PR #12/ })).toBeNull();
+    expect(screen.getByText('Folder')).toBeDefined();
+    fireEvent.change(screen.getByLabelText('Folder name'), {
+      target: { value: 'Issue 7 follow-up' },
+    });
+    await waitFor(() =>
+      expect(h.simpleSessionDirExists).toHaveBeenCalledWith({
+        path: '/notes/sessions/Issue 7 follow-up',
+      }),
+    );
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole('button', { name: /Launch session/i }).getAttribute('disabled'),
+        ).toBeNull(),
+      { timeout: 2000 },
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
 
@@ -154,5 +212,6 @@ describe('LaunchSessionPanel', () => {
     expect(payload.branchPrefix).toBeUndefined();
     expect(payload.branchSlug).toBeUndefined();
     expect(payload.existingBranch).toBeUndefined();
+    expect(payload.folderName).toBe('Issue 7 follow-up');
   });
 });
