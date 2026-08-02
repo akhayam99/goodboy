@@ -89,6 +89,7 @@ export const IssueInbox = ({
             description={
               hasQuery ? 'Try a different search term.' : 'No unresolved issues in this project.'
             }
+            size="inline"
             action={
               <Button variant="ghost" size="sm" onClick={hasQuery ? () => setQuery('') : onRefresh}>
                 {hasQuery ? 'Clear search' : 'Refresh'}

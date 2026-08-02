@@ -102,6 +102,7 @@ export const WorkspaceLauncher = () => {
                 <EmptyState
                   icon={CONCEPT_ICONS.workspace}
                   title="No workspaces found"
+                  size="inline"
                   className="px-3 py-8"
                 />
               </li>

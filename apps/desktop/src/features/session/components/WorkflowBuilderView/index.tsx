@@ -955,6 +955,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             bordered
                             icon={CONCEPT_ICONS.workflows}
                             title="No presets in this workspace yet"
+                            size="inline"
                             className="items-start px-4 py-5 text-left"
                             action={
                               <button

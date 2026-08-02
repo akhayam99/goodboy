@@ -22,6 +22,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
           icon={CONCEPT_ICONS.github}
           title="No sessions yet"
           description="Sessions in this workspace will show up here."
+          size="inline"
           action={
             <Button
               variant="ghost"

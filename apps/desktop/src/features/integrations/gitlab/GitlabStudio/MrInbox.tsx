@@ -95,6 +95,7 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefre
             description={
               !hasQuery ? 'No open merge requests assigned to you.' : 'Try a different search term.'
             }
+            size="inline"
             action={
               <Button variant="ghost" size="sm" onClick={hasQuery ? () => setQuery('') : onRefresh}>
                 {hasQuery ? 'Clear search' : 'Refresh'}

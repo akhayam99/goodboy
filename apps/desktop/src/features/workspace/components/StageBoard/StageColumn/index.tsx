@@ -127,6 +127,7 @@ export const StageColumn = ({
               <EmptyState
                 icon={CONCEPT_ICONS.sessions}
                 title={ZERO_STATE[view.key]}
+                size="inline"
                 className="px-1 py-6"
               />
             ) : (

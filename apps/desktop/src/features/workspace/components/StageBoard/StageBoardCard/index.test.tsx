@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
 import type {
   PullRequestState,
   Session,
@@ -11,7 +12,15 @@ import type {
 import type { GitlabMergeRequest } from '../../../../integrations/gitlab/client';
 import type { BoardNavigation } from '../useBoardNavigation';
 
-const { state, hooks } = vi.hoisted(() => ({
+type MockDynamicAction = {
+  readonly key: string;
+  readonly icon: LucideIcon;
+  readonly tone: 'primary' | 'warning';
+  readonly label: string;
+  readonly onClick: () => void;
+};
+
+const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
   state: {
     sessionGithub: {} as Record<string, { pr: PullRequestState | null }>,
     sessionGitlabMr: {} as Record<string, { mr: GitlabMergeRequest | null }>,
@@ -27,6 +36,7 @@ const { state, hooks } = vi.hoisted(() => ({
     agents: [] as ReadonlyArray<unknown>,
     cost: 0,
   },
+  useDynamicActionsMock: vi.fn((): ReadonlyArray<MockDynamicAction> => []),
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -38,7 +48,7 @@ vi.mock('../../../../../store', () => ({
 }));
 
 vi.mock('./useDynamicActions', () => ({
-  useDynamicActions: () => [],
+  useDynamicActions: () => useDynamicActionsMock(),
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -109,6 +119,8 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.reviewDrafts = {};
   state.loadReviewDrafts.mockClear();
+  useDynamicActionsMock.mockReset();
+  useDynamicActionsMock.mockReturnValue([]);
   nav.selectCard.mockClear();
   hooks.reason = 'no PR yet';
   hooks.agents = [];
@@ -230,23 +242,39 @@ describe('StageBoardCard linked request', () => {
 });
 
 describe('StageBoardCard actions visibility', () => {
-  it('keeps navigation and lifecycle actions in stable declared slots', () => {
+  it('keeps session details navigation only on the card body and keyboard', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const archiveBtn = screen.getByLabelText('archive');
-    const detailsBtn = screen.getByLabelText('Open session details');
-    const navigationSlot = screen.getByRole('group', { name: 'Session navigation actions' });
-    const lifecycleSlot = screen.getByRole('group', { name: 'Session lifecycle actions' });
-
-    expect(navigationSlot.contains(detailsBtn)).toBe(true);
-    expect(lifecycleSlot.contains(archiveBtn)).toBe(true);
-    expect(detailsBtn.className).not.toContain('opacity-0');
-    expect(archiveBtn.className).not.toContain('opacity-0');
+    const card = screen.getAllByRole('button')[0] as HTMLElement;
+    expect(screen.queryByLabelText('Open session details')).toBeNull();
+    fireEvent.click(card);
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(nav.selectCard).toHaveBeenCalledTimes(2);
   });
 
-  it('renders action buttons with hover color classes', () => {
+  it('shows attention action tint at rest and keeps non-attention neutral', () => {
+    useDynamicActionsMock.mockReturnValue([
+      {
+        key: 'questions',
+        icon: HelpCircle,
+        tone: 'warning',
+        label: '1 open question',
+        onClick: vi.fn(),
+      },
+      {
+        key: 'run',
+        icon: Play,
+        tone: 'primary',
+        label: 'run next step',
+        onClick: vi.fn(),
+      },
+    ]);
     render(<StageBoardCard session={session} nav={nav} />);
-    const deleteBtn = screen.getByLabelText('delete');
-    expect(deleteBtn.className).toContain('hover:text-danger');
+    const attention = screen.getByLabelText('1 open question');
+    const nonAttention = screen.getByLabelText('run next step');
+    expect(attention.className.includes(' bg-warning/5')).toBe(true);
+    expect(attention.className).toContain('text-warning');
+    expect(nonAttention.className).not.toContain('bg-warning/5');
+    expect(nonAttention.className.includes(' bg-primary/5')).toBe(false);
   });
 });
 

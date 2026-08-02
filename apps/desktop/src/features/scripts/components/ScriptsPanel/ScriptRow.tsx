@@ -206,7 +206,7 @@ export const ScriptRow = ({
               label="Copy script"
               tone={copied ? 'success' : 'neutral'}
               size="default"
-              active={copied}
+              highlighted={copied}
               onClick={onCopy}
             />
             <CardAction
@@ -220,7 +220,7 @@ export const ScriptRow = ({
               label="Delete script"
               tone="danger"
               size="default"
-              active={isDeleteArmed}
+              highlighted={isDeleteArmed}
               expanded={isDeleteArmed}
               onClick={() => setIsDeleteArmed(true)}
             />

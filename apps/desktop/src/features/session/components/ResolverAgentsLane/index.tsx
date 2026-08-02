@@ -58,6 +58,7 @@ export const ResolverAgentsLane = ({
           icon={CONCEPT_ICONS.resolve}
           title={hasNoResolvers ? 'Nothing to resolve' : 'No active resolvers'}
           description={hasNoResolvers ? NOTHING_TO_RESOLVE_DESCRIPTION : ALL_RESOLVED_DESCRIPTION}
+          size="inline"
           action={<ResolveCommentsAction variant="tile" onOpen={lane.onOpenResolveBoard} />}
         />
       }

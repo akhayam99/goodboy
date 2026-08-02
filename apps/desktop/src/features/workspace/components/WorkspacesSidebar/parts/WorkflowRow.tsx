@@ -288,7 +288,7 @@ export const WorkflowRow = ({
                     label={run.autoRun ? 'autorun on' : 'autorun off'}
                     tone="primary"
                     pressed={run.autoRun}
-                    active={run.autoRun}
+                    highlighted={run.autoRun}
                     onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
                   />
                 ) : null}

@@ -112,7 +112,7 @@ export const ResolverCard = ({
             icon={PanelRight}
             label="Toggle resolver details"
             pressed={isInspected}
-            active={isInspected}
+            highlighted={isInspected}
             onClick={onInspect}
           />
         </>
