@@ -33,7 +33,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const anchorsRef = useRef<Record<string, HTMLElement | null>>({});
 
   const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
-  const scoutFanout = wsOverrides?.scoutFanout ?? true;
+  const parallelAgents = wsOverrides?.parallelAgents ?? false;
 
   useEffect(() => {
     void loadSetting(settingBranchPrefix(workspaceId)).then((v) => {
@@ -53,7 +53,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const persistOverrides = async (
     partial: Partial<{
       defaultVerbosity: VerbosityLevel;
-      scoutFanout: boolean;
+      parallelAgents: boolean;
     }>,
     successMessage: string,
   ) => {
@@ -68,7 +68,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         providerBindings: wsOverrides?.providerBindings ?? null,
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
-        scoutFanout,
+        parallelAgents,
         enabledProviders: wsOverrides?.enabledProviders,
         ...partial,
       });
@@ -176,19 +176,19 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
           <Divider />
 
-          <section id="scout" ref={anchor('scout')} className="flex flex-col">
+          <section id="agents" ref={anchor('agents')} className="flex flex-col">
             <FieldRow
-              label="Parallel scouts"
-              help="Scouts split broad searches across parallel sub-scouts. Much faster on large codebases."
+              label="Parallel agents"
+              help="Allow role-eligible agents to split independent work and reconcile it in one output."
             >
               <Switch
-                label={scoutFanout ? 'On' : 'Off'}
-                checked={scoutFanout}
+                label={parallelAgents ? 'On' : 'Off'}
+                checked={parallelAgents}
                 disabled={busy}
                 onChange={(next) =>
                   void persistOverrides(
-                    { scoutFanout: next },
-                    next ? 'scout exploration on' : 'scout exploration off',
+                    { parallelAgents: next },
+                    next ? 'parallel agents on' : 'parallel agents off',
                   )
                 }
               />

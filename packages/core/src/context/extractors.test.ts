@@ -11,6 +11,7 @@ import {
   extractCommentAnalysis,
   extractCommentResolved,
   extractCommentWontfix,
+  extractFanOut,
   extractFilesTouched,
   extractHandoff,
   extractMarkers,
@@ -630,20 +631,52 @@ describe('extractScoutSplit', () => {
       {"area":"billing domain","query":"how invoicing is wired"}
     ]<</scout-split>>`;
     expect(extractScoutSplit(text)).toEqual([
-      { area: 'auth domain', query: 'how login and session work' },
-      { area: 'billing domain', query: 'how invoicing is wired' },
+      {
+        area: 'auth domain',
+        query: 'how login and session work',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
+      {
+        area: 'billing domain',
+        query: 'how invoicing is wired',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
     ]);
   });
 
   it('tolerates a json code fence', () => {
     const text = '<<scout-split>>```json\n[{"area":"a","query":"b"}]\n```<</scout-split>>';
-    expect(extractScoutSplit(text)).toEqual([{ area: 'a', query: 'b' }]);
+    expect(extractScoutSplit(text)).toEqual([
+      {
+        area: 'a',
+        query: 'b',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
+    ]);
   });
 
   it('drops entries missing area or query', () => {
     const text =
       '<<scout-split>>[{"area":"keep","query":"x"},{"area":"","query":"y"},{"area":"z"}]<</scout-split>>';
-    expect(extractScoutSplit(text)).toEqual([{ area: 'keep', query: 'x' }]);
+    expect(extractScoutSplit(text)).toEqual([
+      {
+        area: 'keep',
+        query: 'x',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
+    ]);
   });
 
   it('returns null on malformed json', () => {
@@ -653,7 +686,84 @@ describe('extractScoutSplit', () => {
   it('takes the last block when several appear', () => {
     const text =
       '<<scout-split>>[{"area":"old","query":"x"}]<</scout-split>> later <<scout-split>>[{"area":"new","query":"y"}]<</scout-split>>';
-    expect(extractScoutSplit(text)).toEqual([{ area: 'new', query: 'y' }]);
+    expect(extractScoutSplit(text)).toEqual([
+      {
+        area: 'new',
+        query: 'y',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
+    ]);
+  });
+});
+
+describe('extractFanOut', () => {
+  it('returns null when no marker is present', () => {
+    expect(extractFanOut('plain text')).toBeNull();
+  });
+
+  it('parses the role-agnostic marker', () => {
+    const text = `<<fan-out>>[
+      {"area":"correctness lens","query":"scan full diff for behavior regressions"},
+      {"area":"security lens","query":"scan full diff for security issues"}
+    ]<</fan-out>>`;
+    expect(extractFanOut(text)).toEqual([
+      {
+        area: 'correctness lens',
+        query: 'scan full diff for behavior regressions',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
+      {
+        area: 'security lens',
+        query: 'scan full diff for security issues',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
+    ]);
+  });
+
+  it('accepts scout-split as an alias', () => {
+    const text = '<<scout-split>>[{"area":"a","query":"b"}]<</scout-split>>';
+    expect(extractFanOut(text)).toEqual([
+      {
+        area: 'a',
+        query: 'b',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
+    ]);
+  });
+
+  it('reads optional module, fixtures, topFrame and sharedFrames metadata', () => {
+    const text = `<<fan-out>>[
+      {
+        "area":"auth tests",
+        "query":"write tests for auth module",
+        "module":"auth",
+        "fixtures":["authFactory"],
+        "topFrame":"src/auth/login.ts",
+        "sharedFrames":[]
+      }
+    ]<</fan-out>>`;
+    expect(extractFanOut(text)).toEqual([
+      {
+        area: 'auth tests',
+        query: 'write tests for auth module',
+        module: 'auth',
+        fixtures: ['authFactory'],
+        topFrame: 'src/auth/login.ts',
+        sharedFrames: [],
+      },
+    ]);
   });
 });
 
@@ -680,7 +790,7 @@ describe('extractScoutDomains', () => {
 });
 
 describe('stripControlMarkers', () => {
-  it('strips block markers (plan, clusters, scout-split, ctx-*)', () => {
+  it('strips block markers (plan, clusters, fan-out, scout-split, ctx-*)', () => {
     const text = 'before <<plan>>some plan<</plan>> middle <<clusters>>json<</clusters>> after';
     expect(stripControlMarkers(text)).toBe('before  middle  after');
   });
@@ -754,6 +864,11 @@ world`;
   it('strips goal and workflow block markers', () => {
     const text = 'before <<goal>>ship it<</goal>> mid <<workflow>>[{"step":1}]<</workflow>> after';
     expect(stripControlMarkers(text)).toBe('before  mid  after');
+  });
+
+  it('strips fan-out markers', () => {
+    const text = 'before <<fan-out>>[{"area":"x","query":"y"}]<</fan-out>> after';
+    expect(stripControlMarkers(text)).toBe('before  after');
   });
 
   it('strips an unclosed block still streaming (no close tag yet)', () => {
@@ -845,7 +960,16 @@ describe('marker parsing, ReDoS hardening', () => {
 
   it('strips fenced json inside scout-split content', () => {
     const text = '<<scout-split>>```json\n[{"area":"x<y","query":"q"}]\n```<</scout-split>>';
-    expect(extractScoutSplit(text)).toEqual([{ area: 'x<y', query: 'q' }]);
+    expect(extractScoutSplit(text)).toEqual([
+      {
+        area: 'x<y',
+        query: 'q',
+        module: null,
+        fixtures: [],
+        topFrame: null,
+        sharedFrames: [],
+      },
+    ]);
   });
 
   it('parses questions with dashed attribute names and body angle brackets', () => {

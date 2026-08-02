@@ -82,7 +82,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
   const verbosity = wsOverrides?.defaultVerbosity ?? 'normal';
   const defaultProvider =
     wsOverrides?.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const scoutFanout = wsOverrides?.scoutFanout ?? true;
+  const parallelAgents = wsOverrides?.parallelAgents ?? false;
 
   useEffect(() => {
     if (isSimple) {
@@ -97,7 +97,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
 
   const persistOverrides = async (
     partial: Partial<
-      Pick<OverrideSettings, 'defaultProviderId' | 'defaultVerbosity' | 'scoutFanout'>
+      Pick<OverrideSettings, 'defaultProviderId' | 'defaultVerbosity' | 'parallelAgents'>
     >,
   ) => {
     setBusy(true);
@@ -112,7 +112,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
         providerBindings: wsOverrides?.providerBindings ?? null,
         taskModels: wsOverrides?.taskModels ?? null,
         roleModels: wsOverrides?.roleModels ?? null,
-        scoutFanout,
+        parallelAgents,
         enabledProviders: wsOverrides?.enabledProviders,
         ...partial,
       });
@@ -210,14 +210,14 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
 
         {!isSimple ? (
           <FieldRow
-            label="Parallel scouts"
-            help="Split broad searches across parallel sub-scouts. Much faster on large codebases."
+            label="Parallel agents"
+            help="Allow role-eligible agents to split independent work and merge it coherently."
           >
             <Switch
-              label={scoutFanout ? 'On' : 'Off'}
-              checked={scoutFanout}
+              label={parallelAgents ? 'On' : 'Off'}
+              checked={parallelAgents}
               disabled={busy}
-              onChange={(next) => void persistOverrides({ scoutFanout: next })}
+              onChange={(next) => void persistOverrides({ parallelAgents: next })}
             />
           </FieldRow>
         ) : null}
