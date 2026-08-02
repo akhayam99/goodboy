@@ -434,7 +434,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 disabled={!canSend}
                 title={sendDisabledTitle ?? (isRunning ? 'queue message (enter)' : 'send (enter)')}
                 aria-label={isRunning ? 'queue message' : 'send message'}
-                className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/40 disabled:shadow-none"
+                className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
               >
                 <Send size={14} aria-hidden className="-translate-x-px" />
               </button>

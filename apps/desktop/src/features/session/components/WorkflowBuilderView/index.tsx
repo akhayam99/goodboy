@@ -882,7 +882,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         className={cn(
                           'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
                           blocked
-                            ? 'cursor-not-allowed text-muted-foreground/40'
+                            ? 'cursor-not-allowed text-muted-foreground'
                             : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                         )}
                       >
@@ -1021,7 +1021,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                         <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
                                       ))}
                                       {kinds.length > shown.length ? (
-                                        <span className="text-[10px] text-muted-foreground/40">
+                                        <span className="text-[10px] text-muted-foreground">
                                           +{kinds.length - shown.length}
                                         </span>
                                       ) : null}

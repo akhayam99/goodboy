@@ -212,7 +212,7 @@ export const SessionActivityBar = ({
                     >
                       {groupLabel(group.key, prefs.group)}
                     </span>
-                    <span aria-hidden className="text-2xs text-muted-foreground/40 tabular-nums">
+                    <span aria-hidden className="text-2xs text-muted-foreground tabular-nums">
                       {group.sessions.length}
                     </span>
                     <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />

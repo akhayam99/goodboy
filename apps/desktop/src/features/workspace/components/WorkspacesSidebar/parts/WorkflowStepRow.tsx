@@ -192,7 +192,7 @@ export const WorkflowStepRow = ({
             aria-hidden
             className={cn(
               'w-4 shrink-0 text-right text-2xs tabular-nums',
-              isPendingFuture ? 'text-muted-foreground/40' : 'text-muted-foreground/60',
+              isPendingFuture ? 'text-muted-foreground' : 'text-muted-foreground/60',
             )}
           >
             {index + 1}.

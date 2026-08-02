@@ -136,7 +136,7 @@ export const OverflowMenu = ({
                 className={cn(
                   'flex w-full items-center gap-2 px-2.5 py-1.5 text-left transition-colors',
                   item.disabled
-                    ? 'cursor-not-allowed text-muted-foreground/40'
+                    ? 'cursor-not-allowed text-muted-foreground'
                     : item.destructive
                       ? 'text-danger/90 hover:bg-danger/10 hover:text-danger'
                       : 'text-foreground/80 hover:bg-muted hover:text-foreground',
