@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, ProviderRunId, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  BudgetAlert,
+  IsoDateTime,
+  ProviderRunId,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const cancelTurnSpy = vi.fn();
+const invokeBudgetAlertsListSpy = vi.fn(async () => [] as ReadonlyArray<BudgetAlert>);
 
 vi.mock('../features/chat/turn', () => ({
   runTurn: vi.fn(),
@@ -92,7 +100,7 @@ vi.mock('../features/budget/budget', () => ({
   invokeBudgetRuleList: vi.fn(async () => []),
   invokeBudgetRuleUpsert: vi.fn(),
   invokeBudgetRuleDelete: vi.fn(),
-  invokeBudgetAlertsList: vi.fn(async () => []),
+  invokeBudgetAlertsList: invokeBudgetAlertsListSpy,
   invokeBudgetAlertDismiss: vi.fn(),
   invokeSessionBudgetGet: vi.fn(),
   invokeSessionBudgetSet: vi.fn(),
@@ -174,6 +182,8 @@ describe('setCurrentWorkspace, session-scoped state cleanup', () => {
   beforeEach(() => {
     cancelTurnSpy.mockReset();
     cancelTurnSpy.mockResolvedValue(undefined);
+    invokeBudgetAlertsListSpy.mockReset();
+    invokeBudgetAlertsListSpy.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -280,5 +290,25 @@ describe('setCurrentWorkspace, session-scoped state cleanup', () => {
     await useAppStore.getState().setCurrentWorkspace(WS_B);
 
     expect(cancelTurnSpy).not.toHaveBeenCalled();
+  });
+
+  it('loads budget alerts when a workspace becomes current', async () => {
+    const useAppStore = await importStore();
+    const alert = {
+      id: 'alert-loaded',
+      kind: 'provider-threshold',
+      provider: 'anthropic',
+      currentUsd: 8,
+      capUsd: 10,
+      createdAt: NOW,
+    } satisfies BudgetAlert;
+    invokeBudgetAlertsListSpy.mockResolvedValue([alert]);
+
+    await useAppStore.getState().setCurrentWorkspace(WS_B);
+
+    await vi.waitFor(() => {
+      expect(useAppStore.getState().budgetAlerts).toEqual([alert]);
+    });
+    expect(invokeBudgetAlertsListSpy).toHaveBeenCalledOnce();
   });
 });

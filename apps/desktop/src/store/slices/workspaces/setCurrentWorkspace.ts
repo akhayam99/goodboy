@@ -23,7 +23,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { isMainWindow } from '../../../features/workspace/window';
-import { invokeBudgetRuleList } from '../../../features/budget/budget';
+import { invokeBudgetAlertsList, invokeBudgetRuleList } from '../../../features/budget/budget';
 import { invokeSkillList } from '../../../features/skills/skills';
 import {
   invokeWorkflowList,
@@ -82,7 +82,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       sessionLoading: {},
       boardReady: false,
     });
-    if (id) {
+    if (id != null) {
       const workspace = get().workspaces.find((candidate) => candidate.id === id) ?? null;
       const touchNow = new Date().toISOString() as IsoDateTime;
       set((state) => ({
@@ -219,6 +219,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           workspaceSummary,
           providerSummaries,
           budgetRules,
+          budgetAlerts,
           skills,
           phaseTemplates,
           stepLibrary,
@@ -226,6 +227,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           summarizeWorkspaceTelemetry(tauriDatabase, id).catch(() => null),
           summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
           invokeBudgetRuleList().catch(() => []),
+          invokeBudgetAlertsList().catch(() => []),
           invokeSkillList(id).catch(() => []),
           invokeWorkflowList(id).catch(() => []),
           invokeStepDefList(id).catch(() => []),
@@ -262,6 +264,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           sessionWorkflows,
           workspaceSummary,
           providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+          budgetAlerts,
           skills: { ...state.skills, [id]: skills },
           phaseTemplates: { ...state.phaseTemplates, [id]: mergedTemplates },
           stepLibrary: { ...state.stepLibrary, [id]: stepLibrary },

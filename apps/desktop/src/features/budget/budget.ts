@@ -5,8 +5,14 @@ import type {
   BudgetPeriod,
   BudgetRule,
   ProviderName,
+  SessionId,
   SessionBudget,
 } from '@goodboy/types';
+
+type Params = {
+  provider: ProviderName;
+  sessionId: SessionId;
+};
 
 export const invokeBudgetRuleUpsert = async (rule: BudgetRule): Promise<void> => {
   return invoke<void>('budget_rule_upsert', { rule });
@@ -33,6 +39,13 @@ export const invokeSessionBudgetGet = async (sessionId: string): Promise<Session
 
 export const invokeBudgetAlertsList = async (): Promise<BudgetAlert[]> => {
   return invoke<BudgetAlert[]>('budget_alerts_list');
+};
+
+export const invokeBudgetEmitAlerts = async ({
+  provider,
+  sessionId,
+}: Params): Promise<BudgetAlert[]> => {
+  return invoke<BudgetAlert[]>('budget_emit_alerts', { input: { provider, sessionId } });
 };
 
 export const invokeBudgetAlertDismiss = async (id: string): Promise<void> => {

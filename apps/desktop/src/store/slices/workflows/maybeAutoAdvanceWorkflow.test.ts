@@ -17,12 +17,14 @@ import type {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
-const { listOpenQuestionsSpy } = vi.hoisted(() => ({
+const { listOpenQuestionsSpy, updateOrchestrationErrorSpy } = vi.hoisted(() => ({
   listOpenQuestionsSpy: vi.fn(async () => []),
+  updateOrchestrationErrorSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
+  updateWorkflowRunOrchestrationError: updateOrchestrationErrorSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -335,6 +337,11 @@ describe('maybeAutoAdvanceWorkflow', () => {
     state['summarizerStatus'] = {};
     state['budgetAlerts'] = [{ kind: 'provider-exceeded' }];
     await advance(SESSION_ID);
+    expect(updateOrchestrationErrorSpy).toHaveBeenCalledWith(
+      {},
+      RUN_ID,
+      'the budget cap is reached, raise it in Budget to keep this run going',
+    );
     state['budgetAlerts'] = [];
     listOpenQuestionsSpy.mockResolvedValue([
       {

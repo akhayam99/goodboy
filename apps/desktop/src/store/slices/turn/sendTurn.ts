@@ -26,7 +26,6 @@ import {
 import type {
   AgentId,
   AttachmentInput,
-  BudgetAlert,
   IsoDateTime,
   Message,
   MessageAttachment,
@@ -96,7 +95,6 @@ type Input = {
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
-  onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -118,7 +116,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     content,
     attachments,
     override,
-    onNewAlerts,
     retry,
   }: Input): Promise<void> => {
     const before = get();
@@ -869,7 +866,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             runId,
             sessionId,
             now,
-            ...(onNewAlerts !== undefined && { onNewAlerts }),
           });
         }
 
@@ -1092,7 +1088,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           content,
           ...(attachments !== undefined && { attachments }),
           ...(override !== undefined && { override }),
-          ...(onNewAlerts !== undefined && { onNewAlerts }),
           retry: {
             attempt: (retry?.attempt ?? 0) + 1,
             provider: fallbackPlan.provider,
