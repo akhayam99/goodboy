@@ -5,7 +5,6 @@ import {
   Check,
   Code,
   MessageSquareDiff,
-  PanelRight,
   RotateCcw,
   SquareTerminal,
   Trash2,
@@ -24,6 +23,7 @@ import { CostBadge } from '../../../../providers/components/CostBadge';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { CardAction } from '../../../../../shared/components/CardAction';
+import { STAGE_TONE } from '../../../../session/session-stage';
 import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
@@ -248,11 +248,6 @@ export const StageBoardCard = memo(function StageBoardCard({
               </span>
             </Tooltip>
           )}
-          <CardAction
-            icon={PanelRight}
-            label="Open session details"
-            onClick={() => nav.selectCard(session)}
-          />
         </span>
         {!archived && (
           <span className="flex flex-nowrap justify-end gap-1">
@@ -261,6 +256,7 @@ export const StageBoardCard = memo(function StageBoardCard({
                 key={action.key}
                 icon={action.icon}
                 tone={action.tone}
+                highlighted={action.tone === STAGE_TONE.attention}
                 label={action.label}
                 onClick={action.onClick}
               />

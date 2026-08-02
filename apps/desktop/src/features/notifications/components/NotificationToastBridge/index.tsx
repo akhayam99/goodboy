@@ -3,6 +3,7 @@ import type { Notification, NotificationAction } from '@goodboy/db';
 import type { Session, Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast, type ToastAction } from '../../../../app/components/Toast';
+import type { BudgetScope } from '../../../budget/components/BudgetStudio/lib';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -66,6 +67,18 @@ export const mapNotificationAction = (
       label: 'Retry',
       onClick: () => {
         void store.retryStepSummary({ sessionId, agentId });
+      },
+    };
+  }
+  if (action.kind === 'open-budget') {
+    const scope: BudgetScope =
+      action.sessionId != null
+        ? { kind: 'session', sessionId: action.sessionId }
+        : { kind: 'overview' };
+    return {
+      label: 'Open budget',
+      onClick: () => {
+        window.dispatchEvent(new CustomEvent('goodboy:open-budget-studio', { detail: { scope } }));
       },
     };
   }

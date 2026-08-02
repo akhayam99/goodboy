@@ -1,8 +1,8 @@
-import { cn, Eyebrow, formatUsd, SelectableRow } from '@goodboy/ui';
+import { cn, Divider, Eyebrow, formatUsd, SelectableRow, tintClasses } from '@goodboy/ui';
 import { LayoutDashboard } from 'lucide-react';
 import type { ProviderSpendEntry } from '../../../../store';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
-import { providerLabel, spendBarColor, type BudgetScope, type SessionSpend } from './lib';
+import { providerLabel, spendTone, type BudgetScope, type SessionSpend } from './lib';
 
 type Props = {
   readonly scope: BudgetScope;
@@ -36,6 +36,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
               const active = scope.kind === 'provider' && scope.provider === entry.provider;
               const hasCap = entry.capUsd !== null;
               const pctClamped = Math.min(entry.pct, 1);
+              const tone = spendTone({ pct: entry.pct });
               return (
                 <li key={entry.provider}>
                   <SelectableRow
@@ -56,7 +57,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                     {hasCap ? (
                       <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
                         <div
-                          className={cn('h-full rounded-full', spendBarColor(entry.pct))}
+                          className={cn('h-full rounded-full', tintClasses(tone).dot)}
                           style={{ width: `${pctClamped * 100}%` }}
                         />
                       </div>
@@ -114,7 +115,7 @@ function GroupLabel({ label, count }: { label: string; count?: number }) {
       {count !== undefined && (
         <span className="text-2xs tabular-nums text-muted-foreground/50">{count}</span>
       )}
-      <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
+      <Divider className="w-auto min-w-0 flex-1" />
     </div>
   );
 }

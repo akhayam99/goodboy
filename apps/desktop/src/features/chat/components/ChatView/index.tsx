@@ -11,7 +11,17 @@ import {
 import type { ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowDown } from 'lucide-react';
-import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
+import type {
+  AgentId,
+  AttachmentInput,
+  MessageAttachment,
+  OpenQuestion,
+  ProviderId,
+  ProviderRunId,
+  Session,
+  TurnEvent,
+  TurnProviderOverride,
+} from '@goodboy/types';
 import { Divider, ScrollFade } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
@@ -22,6 +32,7 @@ import {
   useTranscript,
 } from '../../../../store';
 import { detectParallelRunIds, reduceTranscript } from '../../utils/transcript-items';
+import type { TranscriptItem } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { classifyThinkingContext } from '../../utils/thinking-context';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -41,10 +52,11 @@ import { ClusterProgressDashboard } from './ClusterProgressDashboard';
 import { selectClusterDashboard } from './clusterDashboard';
 import { ParallelColumn } from './ParallelColumn';
 import { TranscriptRows } from './TranscriptRows';
-import { useTranscriptErrorToasts } from '../../hooks/useTranscriptErrorToasts';
 import { useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import { readAttachment } from '../../turn';
+import { dataUrlToBase64 } from '../ChatInput/lib';
 
 type Props = {
   readonly session: Session;
@@ -54,13 +66,90 @@ type Props = {
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled']);
 
+type RetrySource = {
+  readonly content: string;
+  readonly attachments: ReadonlyArray<MessageAttachment>;
+  readonly provider?: ProviderId;
+  readonly model?: string;
+};
+
+type RetrySourceParams = {
+  readonly events: ReadonlyArray<TurnEvent>;
+  readonly runId: ProviderRunId;
+};
+
+type RetryAttachmentsParams = {
+  readonly worktreePath: string | null;
+  readonly attachments: ReadonlyArray<MessageAttachment>;
+};
+
+type RetryOverrideParams = {
+  readonly provider?: ProviderId;
+  readonly model?: string;
+};
+
+const findRetrySource = ({ events, runId }: RetrySourceParams): RetrySource | null => {
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i];
+    if (event?.kind !== 'user_text') {
+      continue;
+    }
+    if (event.runId !== runId) {
+      continue;
+    }
+    return {
+      content: event.text,
+      attachments: event.attachments ?? [],
+      provider: event.provider,
+      model: event.model,
+    };
+  }
+  return null;
+};
+
+const readRetryAttachments = async ({
+  worktreePath,
+  attachments,
+}: RetryAttachmentsParams): Promise<ReadonlyArray<AttachmentInput>> => {
+  if (worktreePath == null || attachments.length === 0) {
+    return [];
+  }
+  const out: AttachmentInput[] = [];
+  for (const attachment of attachments) {
+    try {
+      const dataUrl = await readAttachment(worktreePath, attachment.relPath);
+      out.push({
+        id: attachment.id,
+        fileName: attachment.fileName,
+        mimeType: attachment.mimeType,
+        dataBase64: dataUrlToBase64(dataUrl),
+      });
+    } catch {}
+  }
+  return out;
+};
+
+const buildRetryOverride = ({
+  provider,
+  model,
+}: RetryOverrideParams): TurnProviderOverride | undefined => {
+  if (provider == null) {
+    return undefined;
+  }
+  return {
+    providerId: provider,
+    ...(model != null ? { model } : {}),
+  };
+};
+
 export const ChatView = ({ session, isActive = true, header }: Props) => {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
+  const sendTurn = useAppStore((s) => s.sendTurn);
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
-  useTranscriptErrorToasts({ items, sessionId: session.id, agentId: selectedAgentId });
+  const [retryingErrorRunId, setRetryingErrorRunId] = useState<ProviderRunId | null>(null);
   const taggedItems = useMemo(
     () => ({ agentId: selectedAgentId, items }),
     [selectedAgentId, items],
@@ -219,6 +308,38 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   const handleRefreshAuth = useCallback(() => {
     void refreshProviders();
   }, [refreshProviders]);
+  const handleRetryError = useCallback(
+    async ({ item }: { item: Extract<TranscriptItem, { kind: 'error' }> }) => {
+      if (item.retryable !== true) {
+        return;
+      }
+      if (item.runId == null || selectedAgentId == null) {
+        return;
+      }
+      const source = findRetrySource({ events, runId: item.runId });
+      if (source == null) {
+        return;
+      }
+      setRetryingErrorRunId(item.runId);
+      try {
+        const attachments = await readRetryAttachments({
+          worktreePath,
+          attachments: source.attachments,
+        });
+        const override = buildRetryOverride({ provider: source.provider, model: source.model });
+        await sendTurn({
+          sessionId: session.id,
+          agentId: selectedAgentId,
+          content: source.content,
+          ...(attachments.length > 0 ? { attachments } : {}),
+          ...(override !== undefined ? { override } : {}),
+        });
+      } finally {
+        setRetryingErrorRunId(null);
+      }
+    },
+    [events, selectedAgentId, sendTurn, session.id, worktreePath],
+  );
 
   const openQuestions = useSessionOpenQuestions(session.id);
   const answeredQuestions = useSessionAnsweredQuestions(session.id);
@@ -376,6 +497,8 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
                 workingDir={worktreePath}
                 onRefreshAuth={() => void refreshProviders()}
                 onOpenDiff={handleOpenDiff}
+                onRetryError={(item) => void handleRetryError({ item })}
+                retryingErrorRunId={retryingErrorRunId}
               />
             </Fragment>
           ))}
@@ -490,6 +613,8 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
                 onOpenDiff={handleOpenDiff}
                 isThinking={isThinking}
                 thinkingContext={thinkingContext}
+                onRetryError={(item) => void handleRetryError({ item })}
+                retryingErrorRunId={retryingErrorRunId}
               />
             </ul>
           )}

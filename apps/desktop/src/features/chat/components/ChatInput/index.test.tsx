@@ -334,6 +334,39 @@ describe('ChatInput, input wiring', () => {
     expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'hi there' }));
   });
 
+  it('shows a composer alert with retry when sendTurn fails before transcript append', async () => {
+    sendTurnMock.mockRejectedValueOnce(new Error('session not found: session-1'));
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'hello');
+    await user.keyboard('{Enter}');
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('session not found: session-1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'retry' })).toBeTruthy();
+  });
+
+  it('suppresses the composer alert for transcript-owned stream failures', async () => {
+    sendTurnMock.mockRejectedValueOnce(
+      Object.assign(new Error('connection reset by peer'), {
+        code: 'TRANSCRIPT_OWNED_TURN_ERROR',
+      }),
+    );
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'hello');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledOnce();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('does not leak a stale session model into an agent without a model pin', async () => {
     const setSessionConfig = vi.fn(async () => undefined);
     mockStore.setState({ setSessionConfig });

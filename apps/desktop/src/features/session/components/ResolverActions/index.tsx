@@ -15,6 +15,7 @@ import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
 import { PROCEED_RESOLVER_PROMPT } from '../../../../shared/utils/proceedResolverPrompt';
+import type { Density } from '../../density';
 import { agentThreadIds } from '../../agentThreadIds';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { resolverCommitSha } from '../../resolverCommitSha';
@@ -25,8 +26,6 @@ import {
   type ResolverActionRole,
 } from '../../resolverActions';
 import { INSPECTOR_ACTION_CLASS } from '../InspectorSection';
-
-type Density = 'compact' | 'full';
 
 type Props = {
   readonly agent: Agent;

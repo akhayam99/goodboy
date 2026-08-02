@@ -28,6 +28,7 @@ export {
   extractCommentAnalysis,
   extractCommentResolved,
   extractCommentWontfix,
+  extractFanOut,
   extractFilesTouched,
   extractHandoff,
   extractMarkers,
@@ -51,6 +52,7 @@ export {
   type AutoPopulateResult,
   type ContextEngineDeps,
   type ExtractedCluster,
+  type ExtractedFanOutArea,
   type ExtractedScoutArea,
   type ExtractedCommentAnalysis,
   type ExtractedCommentReply,
@@ -67,9 +69,13 @@ export {
 export {
   ROLE_DEFAULTS,
   defaultsForRole,
+  fanOutCapabilityForRole,
   isAgentRole,
   type AgentEffort,
   type AgentRole,
+  type RoleFanOutCapability,
+  type RoleFanOutMode,
+  type RoleFanOutPartitionKey,
   type RoleDefaults,
 } from './roles';
 
@@ -131,6 +137,7 @@ export {
   type TurnFallbackPlan,
 } from './providers/planTurnFallback';
 export { cliModelId } from './providers/cliModelId';
+export { cliExitEvents } from './providers/shared/cli-exit-events';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
 export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
 

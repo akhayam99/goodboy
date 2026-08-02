@@ -33,9 +33,7 @@ type AssertParams = {
 
 const emittedModel = ({ provider, selection }: AssertParams): string => {
   const args = resolveModelArgs({ provider, selection }).args;
-  const flag = provider === 'anthropic' || provider === 'cursor' ? '--model' : '-m';
-  const index = args.indexOf(flag);
-  const id = args[index + 1];
+  const id = args[1];
   if (id == null) {
     throw new Error(`missing model argument for ${provider}`);
   }
@@ -64,7 +62,6 @@ const selectionsFor = ({ model }: CrossParams): ReadonlyArray<ModelSelection> =>
         toggles: { thinking: combo.thinking, fast: combo.fast },
       }));
     case 'gemini':
-      return [{ key: model.key }];
     case 'opencode':
     case 'openrouter':
       return model.efforts.map((effort) => ({ key: model.key, effort }));

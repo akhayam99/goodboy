@@ -13,7 +13,7 @@ const ATTACH_SUBDIR: &str = ".goodboy/attachments";
 /// Hard ceiling on a single decoded attachment. Mirrors the composer-side
 /// check — the second guard exists because `rel_path`/payloads also arrive
 /// from persisted turn events, not just the live UI.
-const MAX_BYTES: usize = 15 * 1024 * 1024;
+pub(crate) const MAX_BYTES: usize = 15 * 1024 * 1024;
 
 #[derive(Debug, Error)]
 pub enum AttachmentError {

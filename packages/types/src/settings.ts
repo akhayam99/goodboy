@@ -89,7 +89,7 @@ export type OverrideSettings = Readonly<{
   providerBindings: ProviderBindings | null;
   taskModels: TaskModelPreferences | null;
   roleModels: RoleModelPreferences | null;
-  scoutFanout: boolean | null;
+  parallelAgents: boolean | null;
   enabledProviders?: ReadonlyArray<ProviderId>;
 }>;
 

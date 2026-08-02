@@ -10,7 +10,7 @@ const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly lab
   { combo: ['⌘', 'K'], label: 'command palette' },
   { combo: ['⌘', 'O'], label: 'open workspace switcher' },
   { combo: ['⌘', 'N'], label: 'new session' },
-  { combo: ['⌘', 'B'], label: 'toggle sessions sidebar' },
+  { combo: ['⌘', 'B'], label: 'toggle sessions column' },
   { combo: ['⌘', '1', '..', '9'], label: 'jump to workspace 1 to 9' },
   { combo: ['⌘', '['], label: 'back (lens history)' },
   { combo: ['⌘', ']'], label: 'forward (lens history)' },

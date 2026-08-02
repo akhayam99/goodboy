@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { LayoutDashboard, Unplug } from 'lucide-react';
-import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { classifyAgent, isStandaloneAgent } from '../../../../agent-kind';
 import { isPrReviewSession } from '../../../../../../store/slices/session-view';
@@ -260,11 +260,11 @@ export const LensColumn = ({
               'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
               activeLens === null
-                ? 'bg-foreground/[0.06] text-foreground'
-                : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
           >
-            <span className="flex w-5 flex-none items-center justify-center text-muted-foreground transition-colors">
+            <span className="flex w-5 flex-none items-center justify-center transition-colors">
               <LayoutDashboard size={14} aria-hidden />
             </span>
             <span
@@ -315,23 +315,18 @@ export const LensColumn = ({
                         'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                         active
-                          ? 'bg-foreground/[0.06] text-foreground'
-                          : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground',
+                          ? 'bg-foreground text-background'
+                          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                         row.isConnected === false && 'opacity-40 hover:opacity-70',
                       )}
                     >
                       {row.glyph != null ? (
                         <span className="flex w-5 flex-none items-center justify-center transition-colors">
-                          <IntegrationGlyph provider={row.glyph} size={14} />
+                          <IntegrationGlyph provider={row.glyph} size={14} useBrandColor={false} />
                         </span>
                       ) : null}
                       {row.glyph == null && row.icon != null ? (
-                        <span
-                          className={cn(
-                            'flex w-5 flex-none items-center justify-center transition-colors',
-                            tintClasses(row.tone).icon,
-                          )}
-                        >
+                        <span className="flex w-5 flex-none items-center justify-center transition-colors">
                           <row.icon size={14} aria-hidden />
                         </span>
                       ) : null}

@@ -21,8 +21,8 @@ pub struct SettingsOverrides {
     pub task_models: Option<serde_json::Value>,
     #[serde(rename = "roleModels")]
     pub role_models: Option<serde_json::Value>,
-    #[serde(rename = "scoutFanout")]
-    pub scout_fanout: Option<bool>,
+    #[serde(rename = "parallelAgents", alias = "scoutFanout")]
+    pub parallel_agents: Option<bool>,
     #[serde(rename = "enabledProviders")]
     pub enabled_providers: Option<Vec<String>>,
 }
@@ -60,7 +60,7 @@ pub fn get_workspace_overrides(
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
         let parallel_raw: Option<i64> = row.get(3)?;
-        let scout_raw: Option<i64> = row.get(8)?;
+        let parallel_agents_raw: Option<i64> = row.get(8)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
             default_workflow_id: row.get(1)?,
@@ -70,7 +70,7 @@ pub fn get_workspace_overrides(
             provider_bindings: json_from_text(row.get(5)?),
             task_models: json_from_text(row.get(6)?),
             role_models: json_from_text(row.get(7)?),
-            scout_fanout: scout_raw.map(|v| v != 0),
+            parallel_agents: parallel_agents_raw.map(|v| v != 0),
             enabled_providers: string_array_from_text(row.get(9)?),
         })
     })?;
@@ -88,7 +88,7 @@ pub fn set_workspace_overrides(
 ) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let parallel_val: Option<i64> = overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
-    let scout_val: Option<i64> = overrides.scout_fanout.map(|v| if v { 1 } else { 0 });
+    let parallel_agents_val: Option<i64> = overrides.parallel_agents.map(|v| if v { 1 } else { 0 });
     let now = crate::util::now_ms();
     conn.execute(
         "UPDATE workspaces
@@ -113,7 +113,7 @@ pub fn set_workspace_overrides(
             json_to_text(&overrides.provider_bindings),
             json_to_text(&overrides.task_models),
             json_to_text(&overrides.role_models),
-            scout_val,
+            parallel_agents_val,
             string_array_to_text(&overrides.enabled_providers),
             now,
             workspace_id,
@@ -143,7 +143,7 @@ pub fn get_session_overrides(
             provider_bindings: json_from_text(row.get(4)?),
             task_models: None,
             role_models: None,
-            scout_fanout: None,
+            parallel_agents: None,
             enabled_providers: None,
         })
     })?;

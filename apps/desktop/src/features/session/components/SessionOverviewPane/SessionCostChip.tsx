@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Divider, Popover, ScrollFade, cn, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  Popover,
+  ScrollFade,
+  cn,
+  formatUsd,
+  formatUsdPrecise,
+  tintClasses,
+} from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { openBudgetStudio as openBudgetStudioEvent } from '../../../budget/openBudgetStudio';
 import { SessionBudgetContent } from '../../../budget/components/BudgetStudio/SessionBudgetContent';
 import type { WorkspaceTurn } from '../../../budget/components/BudgetStudio/lib';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
@@ -12,23 +22,33 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
+const CAP_TONE = { near: 'warning', exceeded: 'danger' } as const;
+
+const CAP_NOTE = {
+  clear: '',
+  near: ', close to the cap',
+  exceeded: ', over the cap',
+} as const;
+
 export const SessionCostChip = ({ sessionId }: Props) => {
   const sessionCost = useSessionCost(sessionId);
-  const alertCapUsd = useAppStore(
-    (state) =>
-      state.budgetAlerts.find(
-        (alert) =>
-          alert.sessionId === sessionId &&
-          (alert.kind === 'session-threshold' || alert.kind === 'session-exceeded'),
-      )?.capUsd ?? null,
-  );
+  const capState = useAppStore((state) => {
+    const alerts = state.budgetAlerts.filter(
+      (alert) => alert.sessionId === sessionId && alert.dismissedAt === undefined,
+    );
+    if (alerts.some((alert) => alert.kind === 'session-exceeded')) {
+      return 'exceeded';
+    }
+    if (alerts.some((alert) => alert.kind === 'session-threshold')) {
+      return 'near';
+    }
+    return 'clear';
+  });
   const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId]);
   const session = useAppStore(
     (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
   );
-  const sessionBudget = useAppStore(
-    (state) => state.sessionBudgets[sessionId]?.softCapUsd ?? alertCapUsd,
-  );
+  const sessionBudget = useAppStore((state) => state.sessionBudgets[sessionId]?.softCapUsd ?? null);
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
   const setSessionBudget = useAppStore((state) => state.setSessionBudget);
@@ -40,11 +60,13 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       width: 'w-[40rem] max-w-[calc(100vw-2rem)]',
       strategy: 'fixed',
     });
+  const capTint = capState === 'clear' ? null : tintClasses(CAP_TONE[capState]);
   const spent = formatUsd(sessionCost);
   const label = sessionBudget != null ? `${spent} / ${formatUsd(sessionBudget)}` : spent;
+  const capNote = CAP_NOTE[capState];
   const title =
     sessionBudget != null
-      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap (excluding summarizer), click for budget details`
+      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap${capNote} (excluding summarizer), click for budget details`
       : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summarizer), click for budget details`;
   const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
     () =>
@@ -75,12 +97,15 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   }, [sessionCost, sessionId]);
 
   useEffect(() => {
+    void loadSessionBudget(sessionId);
+  }, [loadSessionBudget, sessionId]);
+
+  useEffect(() => {
     if (open === false) {
       return;
     }
     void loadSessionTelemetry(sessionId);
-    void loadSessionBudget(sessionId);
-  }, [loadSessionBudget, loadSessionTelemetry, open, sessionId]);
+  }, [loadSessionTelemetry, open, sessionId]);
 
   useEffect(() => {
     if (open === false || popupRef.current == null || triggerRef.current == null) {
@@ -91,6 +116,11 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       returnFocusTo: triggerRef.current,
     });
   }, [open, popupRef]);
+
+  const openBudgetStudio = () => {
+    openBudgetStudioEvent({ scope: { kind: 'session', sessionId } });
+    toggle();
+  };
 
   return (
     <div ref={containerRef} className="relative">
@@ -103,7 +133,10 @@ export const SessionCostChip = ({ sessionId }: Props) => {
         title={title}
         onAnimationEnd={() => setPulse(false)}
         className={cn(
-          'inline-flex shrink-0 items-center rounded-md border border-border-soft bg-muted px-2 py-1 font-mono text-2xs tabular-nums text-muted-foreground transition-colors hover:border-border hover:text-foreground',
+          'inline-flex shrink-0 items-center rounded-md border px-2 py-1 font-mono text-2xs tabular-nums transition-colors',
+          capState === 'clear' &&
+            'border-border-soft bg-muted text-muted-foreground hover:border-border hover:text-foreground',
+          capTint != null && `${capTint.borderSoft} ${capTint.bg} ${capTint.text}`,
           pulse && 'cost-chip-pulse',
         )}
       >
@@ -131,8 +164,15 @@ export const SessionCostChip = ({ sessionId }: Props) => {
                 turns={turns}
                 softCapUsd={sessionBudget}
                 onSaveCap={(nextCapUsd) => setSessionBudget(sessionId, nextCapUsd)}
+                density="glance"
               />
             </ScrollFade>
+            <Divider />
+            <div className="p-3">
+              <Button variant="ghost" size="sm" onClick={openBudgetStudio}>
+                Open full budget details
+              </Button>
+            </div>
           </Popover>
         ) : null}
       </DropdownPortal>

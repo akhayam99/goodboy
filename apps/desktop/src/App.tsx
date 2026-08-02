@@ -53,6 +53,7 @@ import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFo
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
 import { useEscapeToCloseDialog } from './shared/hooks/useEscapeToCloseDialog';
 import { useCommitLinkInterceptor } from './shared/hooks/useCommitLinkInterceptor';
+import { isBranchlessSession } from './shared/utils/isBranchlessSession';
 import {
   useAppStore,
   useCurrentSession,
@@ -65,6 +66,7 @@ import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useWorkspaceRemoteHostKind } from './features/worktree/useWorkspaceRemoteHostKind';
 import { resolveSessionRepo } from './store/slices/worktrees/resolveSessionRepo';
+import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -79,6 +81,8 @@ export const App = () => {
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
+  const hasActiveSession = currentSession != null;
+  const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
   const remoteKind = useWorkspaceRemoteHostKind({ workspaceId: currentWorkspace?.id ?? null });
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
@@ -610,6 +614,25 @@ export const App = () => {
     s.setActiveLens(s.currentSessionId, kind);
   }, []);
 
+  const goToDiffOrExploreLens = useCallback(() => {
+    const store = useAppStore.getState();
+    const sessionId = store.currentSessionId;
+    if (sessionId == null) {
+      return;
+    }
+    const session = store.sessions.find((candidate) => candidate.id === sessionId);
+    if (session == null) {
+      store.setActiveLens(sessionId, 'files');
+      return;
+    }
+    const workspace = store.workspaces.find((candidate) => candidate.id === session.workspaceId);
+    const isBranchless = isBranchlessSession({
+      workspaceKind: workspace?.kind,
+      branch: store.sessionBranches[sessionId],
+    });
+    store.setActiveLens(sessionId, isBranchless ? 'explore' : 'files');
+  }, []);
+
   const toggleTerminalLens = useCallback(() => {
     const s = useAppStore.getState();
     const id = s.currentSessionId;
@@ -687,6 +710,7 @@ export const App = () => {
   useKeyboardShortcut('cmd+k', () => openPalette());
   useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
   useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+b', sessionSidebar.toggle, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+]', () => navigateLens(1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+[', () => navigateSession(-1), { ignoreInInputs: false });
@@ -700,7 +724,7 @@ export const App = () => {
   useKeyboardShortcut('cmd+shift+w', () => goToLens('workflows'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+b', () => goToLens('agents'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+r', () => goToLens('resolve'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+d', () => goToLens('files'), { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+shift+d', goToDiffOrExploreLens, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+l', () => goToLens('plans'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+s', () => goToLens('scripts'), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+q', () => goToLens('questions'), { ignoreInInputs: false });
@@ -774,7 +798,15 @@ export const App = () => {
             activeStudio={activeStudio}
           />
         }
-        workspaceBar={currentWorkspace ? <WorkspaceHeader /> : undefined}
+        workspaceBar={
+          currentWorkspace ? (
+            <WorkspaceHeader
+              hasActiveSession={hasActiveSession}
+              isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
+              onToggleSessionSidebar={sessionSidebar.toggle}
+            />
+          ) : undefined
+        }
         footer={
           currentWorkspace ? (
             <AppFooter
@@ -821,7 +853,7 @@ export const App = () => {
             />
           ) : undefined
         }
-        leftHidden={!currentSession}
+        leftHidden={sessionSidebar.leftHidden}
         leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
         main={
           <div className="relative h-full w-full">

@@ -11,7 +11,7 @@ AI workspace orchestrator. Manage macro sessions, route agents across providers,
 - **State**: Zustand
 - **Persistence**: SQLite (via Tauri)
 - **Styling**: Tailwind CSS + Shadcn/ui
-- **Theme**: Light mode (default)
+- **Theme**: Dark mode (default)
 
 ## Claude-specific notes
 

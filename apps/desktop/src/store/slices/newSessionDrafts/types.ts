@@ -7,6 +7,8 @@ export type NewSessionDraft = {
   readonly goal: string;
   readonly branchSlug: string;
   readonly slugTouched: boolean;
+  readonly folderName: string;
+  readonly folderNameTouched: boolean;
   readonly branchMode: 'new' | 'existing';
   readonly existingBranch: string;
   readonly issue: IssueCandidate | null;

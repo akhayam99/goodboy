@@ -162,6 +162,29 @@ describe('LensColumn', () => {
     expect(onSelectOverview).toHaveBeenCalledOnce();
   });
 
+  it('uses one active style and keeps inactive rows muted', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens="agents"
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const agents = screen.getByRole('button', { name: 'Agents' });
+    const workflows = screen.getByRole('button', { name: 'Workflows' });
+    const decisions = screen.getByRole('button', { name: 'Decisions' });
+
+    expect(agents.getAttribute('aria-current')).toBe('page');
+    expect(agents.className).toContain('bg-foreground text-background');
+    expect(workflows.getAttribute('aria-current')).toBeNull();
+    expect(workflows.className).toContain('text-muted-foreground');
+    expect(workflows.className).not.toContain('bg-foreground text-background');
+    expect(decisions.querySelector('span')?.className).not.toContain('text-success');
+  });
+
   it('marks a disconnected integration and leaves connected ones unmarked', () => {
     const { container } = render(
       <LensColumn
@@ -220,6 +243,7 @@ describe('LensColumn', () => {
       'Sentry',
       'GitLab',
     ]);
+    expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull();
   });
 
   it('renders only shared-context lenses for a branchless session', () => {
@@ -255,11 +279,14 @@ describe('LensColumn', () => {
       'Workflows',
       'Agents',
       'Questions',
+      'Explore',
       'File versions',
       'Plans',
     ]);
     expect(screen.queryByText('Integrations')).toBeNull();
-    expect(screen.getByRole('button', { name: 'File versions' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Diff 3' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Explore' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /File versions/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Terminal' })).toBeNull();
   });
 

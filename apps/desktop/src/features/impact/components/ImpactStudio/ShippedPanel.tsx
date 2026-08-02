@@ -1,10 +1,10 @@
 import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import type { QueryResult } from '../../hooks/useImpactMetrics';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
-import { ErrorStrip } from './ErrorStrip';
-import { PanelLoading } from './PanelLoading';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
@@ -47,7 +47,9 @@ export const ShippedPanel = ({
       <ErrorStrip label="pull requests" error={pullRequests.error} onRetry={onRetry} />
       <ErrorStrip label="review throughput" error={reviews.error} onRetry={onRetry} />
       <ErrorStrip label="linked issues" error={externalTasks.error} onRetry={onRetry} />
-      {isLoading && prs === null && reviewData === null && tasks === null ? <PanelLoading /> : null}
+      {isLoading && prs === null && reviewData === null && tasks === null ? (
+        <PanelLoading label="Loading impact metrics" />
+      ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <TrendStatCard
           label="open PRs"

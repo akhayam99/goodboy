@@ -117,7 +117,7 @@ export const AgentMetrics = ({
             className="inline-flex items-baseline gap-0.5 tabular-nums"
             title={`in: ${inputTokens.toLocaleString()} tokens (cumulative)`}
           >
-            <span aria-hidden className="text-muted-foreground/40">
+            <span aria-hidden className="text-muted-foreground/70">
               ↓
             </span>
             {formatTokens(inputTokens)}
@@ -126,7 +126,7 @@ export const AgentMetrics = ({
             className="inline-flex items-baseline gap-0.5 tabular-nums"
             title={`out: ${outputTokens.toLocaleString()} tokens (cumulative)`}
           >
-            <span aria-hidden className="text-muted-foreground/40">
+            <span aria-hidden className="text-muted-foreground/70">
               ↑
             </span>
             {formatTokens(outputTokens)}

@@ -4,6 +4,8 @@ export const EMPTY_NEW_SESSION_DRAFT: NewSessionDraft = {
   goal: '',
   branchSlug: '',
   slugTouched: false,
+  folderName: '',
+  folderNameTouched: false,
   branchMode: 'new',
   existingBranch: '',
   issue: null,

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { BudgetAlert } from '@goodboy/types';
 import {
   asEffortLevel,
   asProvider,
@@ -8,20 +7,8 @@ import {
   extFromMime,
   readFileAsDataUrl,
   toAttachmentInput,
-  toastKindForAlert,
-  toastMessageForAlert,
   type PendingAttachment,
 } from './lib';
-
-const makeAlert = (over: Partial<BudgetAlert> = {}): BudgetAlert =>
-  ({
-    id: 'al_1',
-    kind: 'session-threshold',
-    currentUsd: 5,
-    capUsd: 10,
-    createdAt: '2026-05-15T00:00:00.000Z',
-    ...over,
-  }) as BudgetAlert;
 
 describe('extFromMime', () => {
   it('extracts the subtype as the extension', () => {
@@ -96,60 +83,6 @@ describe('asProvider', () => {
 
   it('rejects null input', () => {
     expect(asProvider(null)).toBeNull();
-  });
-});
-
-describe('toastKindForAlert', () => {
-  it('maps exceeded alerts to errors', () => {
-    expect(toastKindForAlert('provider-exceeded')).toBe('error');
-    expect(toastKindForAlert('session-exceeded')).toBe('error');
-  });
-
-  it('maps threshold alerts to warnings', () => {
-    expect(toastKindForAlert('provider-threshold')).toBe('warning');
-    expect(toastKindForAlert('session-threshold')).toBe('warning');
-  });
-});
-
-describe('toastMessageForAlert', () => {
-  it('reports a provider threshold percentage', () => {
-    const alert = makeAlert({
-      kind: 'provider-threshold',
-      provider: 'cursor',
-      currentUsd: 5,
-      capUsd: 10,
-    });
-    expect(toastMessageForAlert(alert)).toBe('provider cursor budget at 50%');
-  });
-
-  it('reports 0% when the cap is zero', () => {
-    const alert = makeAlert({
-      kind: 'provider-threshold',
-      provider: 'cursor',
-      currentUsd: 5,
-      capUsd: 0,
-    });
-    expect(toastMessageForAlert(alert)).toBe('provider cursor budget at 0%');
-  });
-
-  it('reports a provider exceeded message', () => {
-    const alert = makeAlert({ kind: 'provider-exceeded', provider: 'codex' });
-    expect(toastMessageForAlert(alert)).toBe('provider codex budget exceeded');
-  });
-
-  it('falls back to "?" for a missing provider', () => {
-    const alert = makeAlert({ kind: 'provider-exceeded', provider: undefined });
-    expect(toastMessageForAlert(alert)).toBe('provider ? budget exceeded');
-  });
-
-  it('reports a session threshold percentage', () => {
-    const alert = makeAlert({ kind: 'session-threshold', currentUsd: 9, capUsd: 10 });
-    expect(toastMessageForAlert(alert)).toBe('session budget at 90%');
-  });
-
-  it('reports a session exceeded message', () => {
-    const alert = makeAlert({ kind: 'session-exceeded' });
-    expect(toastMessageForAlert(alert)).toBe('session budget exceeded');
   });
 });
 

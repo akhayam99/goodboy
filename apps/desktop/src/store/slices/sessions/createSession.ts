@@ -41,6 +41,7 @@ import { markSessionMobileShared } from '../../../features/companion/mobileConfi
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
+import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../shared/utils/deriveDefaultSessionDirectoryNameFromGoal';
 import type { GetFn, SetFn } from './types';
 
 const slugifyDir = (raw: string): string =>
@@ -58,6 +59,7 @@ type Input = {
   branchSlug?: string;
   existingBranch?: string;
   fallbackRef?: string;
+  folderName?: string;
   providerPreference?: SessionProviderPreference;
   workflowId?: WorkflowId;
   autoRun?: boolean;
@@ -88,6 +90,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     branchSlug,
     existingBranch,
     fallbackRef,
+    folderName,
     providerPreference,
     workflowId,
     autoRun,
@@ -124,9 +127,14 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const memberWorktrees: Array<{ member: WorkspaceMember; worktree: CreatedWorktree }> = [];
     if (isSimple) {
       const dirSlug = `${slugifyDir(slugSeed)}-${sessionId.slice(0, 8)}`;
+      const directoryName =
+        folderName !== undefined
+          ? folderName
+          : deriveDefaultSessionDirectoryNameFromGoal({ goal: goal.trim() });
       worktree = await createSessionDir({
         basePath: workspace.rootPath,
         slug: dirSlug,
+        directoryName,
         sessionId,
         workspaceId,
       });

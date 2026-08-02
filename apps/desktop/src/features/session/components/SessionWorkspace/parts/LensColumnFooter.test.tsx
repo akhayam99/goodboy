@@ -25,11 +25,27 @@ vi.mock('../../../../../app/components/Toast', () => ({
 }));
 
 vi.mock('../../SessionOverviewPane/EditorMenu', () => ({
-  EditorMenu: () => <button type="button">open worktree</button>,
+  EditorMenu: ({ density = 'full' }: { readonly density?: 'compact' | 'full' }) => (
+    <button type="button" aria-label="open worktree">
+      {density === 'full' ? 'Open' : null}
+    </button>
+  ),
 }));
 
 vi.mock('./SessionGitActions', () => ({
-  SessionGitActions: () => <button type="button">branch actions</button>,
+  SessionGitActions: ({ density = 'full' }: { readonly density?: 'compact' | 'full' }) => (
+    <button type="button" aria-label="branch actions">
+      {density === 'full' ? 'Branch' : null}
+    </button>
+  ),
+}));
+
+vi.mock('../../ProjectSwitcher', () => ({
+  ProjectSwitcher: ({ density = 'full' }: { readonly density?: 'compact' | 'full' }) => (
+    <button type="button" aria-label="Active project">
+      {density === 'full' ? 'Project' : null}
+    </button>
+  ),
 }));
 
 import { LensColumnFooter } from './LensColumnFooter';
@@ -48,10 +64,12 @@ afterEach(cleanup);
 describe('LensColumnFooter', () => {
   it('orders the editor, archive, and delete controls across the footer', () => {
     render(<LensColumnFooter session={session()} />);
+    const project = screen.getByRole('button', { name: /active project/i });
     const editor = screen.getByRole('button', { name: /open worktree/i });
     const archive = screen.getByRole('button', { name: /archive session/i });
     const remove = screen.getByRole('button', { name: /delete session/i });
 
+    expect(project.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(editor.compareDocumentPosition(archive) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(archive.compareDocumentPosition(remove) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
@@ -78,6 +96,36 @@ describe('LensColumnFooter', () => {
     fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
     expect(state.deleteTask).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /delete session/i })).toBeDefined();
+  });
+
+  it('hides neighboring control labels while delete confirm is armed and keeps names', () => {
+    render(<LensColumnFooter session={session()} />);
+    expect(screen.getByText('Project')).toBeDefined();
+    expect(screen.getByText('Open')).toBeDefined();
+    expect(screen.getByText('Branch')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
+
+    expect(screen.getByRole('button', { name: /active project/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open worktree/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /branch actions/i })).toBeDefined();
+    expect(screen.queryByText('Project')).toBeNull();
+    expect(screen.queryByText('Open')).toBeNull();
+    expect(screen.queryByText('Branch')).toBeNull();
+  });
+
+  it('restores neighboring control labels after disarming delete confirm', () => {
+    render(<LensColumnFooter session={session()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    expect(screen.getByRole('button', { name: /active project/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /open worktree/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /branch actions/i })).toBeDefined();
+    expect(screen.getByText('Project')).toBeDefined();
+    expect(screen.getByText('Open')).toBeDefined();
+    expect(screen.getByText('Branch')).toBeDefined();
   });
 
   it('shows an unarchive control for an archived session instead of the archive control', () => {

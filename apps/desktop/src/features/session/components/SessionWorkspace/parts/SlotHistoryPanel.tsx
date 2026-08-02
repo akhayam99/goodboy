@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { EmptyState, Markdown, ScrollFade, cn } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { InspectorHeader } from './InspectorSplit/InspectorHeader';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CopyButton } from '../../../../../shared/components/CopyButton';
 
 type HistoryEntryProps = {
   readonly entry: ContextSlotHistoryEntry;
@@ -21,32 +22,6 @@ const HistoryEntry = ({
   onToggle,
   onRestore,
 }: HistoryEntryProps) => {
-  const [entryCopied, setEntryCopied] = useState(false);
-  const copyTimer = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (copyTimer.current !== null) {
-        window.clearTimeout(copyTimer.current);
-      }
-    },
-    [],
-  );
-
-  const copyEntry = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(entry.value);
-    } catch {
-      return;
-    }
-    setEntryCopied(true);
-    if (copyTimer.current !== null) {
-      window.clearTimeout(copyTimer.current);
-    }
-    copyTimer.current = window.setTimeout(() => setEntryCopied(false), 1500);
-  };
-
   return (
     <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle p-3">
       <div className="flex items-center gap-2">
@@ -62,15 +37,11 @@ const HistoryEntry = ({
           {formatRelativeAge({ fromIso: entry.createdAt })}
         </span>
         <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
-            onClick={(e) => void copyEntry(e)}
-            title={entryCopied ? 'copied' : 'copy this version'}
-            aria-label="copy this version"
-            className="rounded-sm p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
-          >
-            {entryCopied ? <Check size={11} aria-hidden /> : <Copy size={11} aria-hidden />}
-          </button>
+          <CopyButton
+            value={entry.value}
+            label="copy this version"
+            className="rounded-md p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+          />
           <button
             type="button"
             onClick={() => onRestore(entry)}

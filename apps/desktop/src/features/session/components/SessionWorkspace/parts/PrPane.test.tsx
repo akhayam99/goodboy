@@ -80,7 +80,14 @@ vi.mock('../../../../../store/slices/worktrees/useSessionRepo', () => ({
 }));
 
 vi.mock('../../../../context/components/ContextPanel/strips/GitlabMrStrip', () => ({
-  GitlabMrStrip: () => <div>GitLab merge request detail</div>,
+  GitlabMrStrip: ({ onOpenStudio }: { readonly onOpenStudio?: () => void }) => (
+    <div>
+      <div>GitLab merge request detail</div>
+      <button type="button" onClick={onOpenStudio}>
+        Open merge request from code host
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('../../../../github/github', () => ({
@@ -169,6 +176,18 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PrPane', () => {
+  it('uses neutral code host copy for title and description on GitLab sessions', () => {
+    h.remoteKind = 'gitlab';
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByRole('heading', { name: 'Code host work' })).toBeDefined();
+    expect(
+      screen.getByText('Linked issues and pull or merge request for this session.'),
+    ).toBeDefined();
+    expect(screen.queryByText('GitHub')).toBeNull();
+  });
+
   it('never offers create-PR actions inside a PR review session', () => {
     h.store.sessionPhaseRuns = {
       [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
@@ -199,7 +218,7 @@ describe('PrPane', () => {
     ).toBeNull();
     expect(screen.getAllByText('Refactor authentication')).toHaveLength(1);
     expect(screen.getByText('No CI')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open in code host' })).toBeDefined();
   });
 
   it('offers a switcher across every pull request on the branch', () => {
@@ -279,7 +298,7 @@ describe('PrPane', () => {
     view.rerender(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.queryByText('GitLab merge request detail')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open PR' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open in code host' })).toBeDefined();
   });
 
   it('shows PR status, linked issues, and code-host external tasks from stored state', () => {
@@ -421,30 +440,55 @@ describe('PrPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open #9 in GitHub' }));
     expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/goodboy/issues/9');
     expect(h.onSelectLens).not.toHaveBeenCalled();
-    expect(screen.getByText('No pull request yet')).toBeDefined();
+    expect(screen.getByText('No pull or merge request yet')).toBeDefined();
     expect(screen.getByText('ak/refactor-auth')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Open a pull request/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Open in code host/i })).toBeDefined();
 
     expect(screen.queryByRole('region', { name: 'issue #7 details' })).toBeNull();
   });
 
-  it('routes creating a PR to the shared PR studio surface', () => {
-    const events: Array<CustomEvent> = [];
-    const listener = (event: Event) => events.push(event as CustomEvent);
-    window.addEventListener('goodboy:open-github-session', listener);
+  it('routes the open action to GitHub for GitHub sessions', () => {
+    const githubEvents: Array<CustomEvent> = [];
+    const gitlabEvents: Array<CustomEvent> = [];
+    const githubListener = (event: Event) => githubEvents.push(event as CustomEvent);
+    const gitlabListener = (event: Event) => gitlabEvents.push(event as CustomEvent);
+    window.addEventListener('goodboy:open-github-session', githubListener);
+    window.addEventListener('goodboy:open-gitlab-mr', gitlabListener);
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
-    const cta = screen.getByRole('button', { name: /Open a pull request/i });
+    const cta = screen.getByRole('button', { name: /Open in code host/i });
     fireEvent.click(cta);
-    window.removeEventListener('goodboy:open-github-session', listener);
+    window.removeEventListener('goodboy:open-github-session', githubListener);
+    window.removeEventListener('goodboy:open-gitlab-mr', gitlabListener);
 
-    expect(events).toHaveLength(1);
-    expect(events[0]?.detail).toEqual({ sessionId: SESSION_ID });
+    expect(githubEvents).toHaveLength(1);
+    expect(githubEvents[0]?.detail).toEqual({ sessionId: SESSION_ID });
+    expect(gitlabEvents).toHaveLength(0);
     expect(
       screen.getByText('No issues or external tasks are linked to this session yet.'),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Draft with agent' })).toBeNull();
+  });
+
+  it('routes the open action to GitLab for GitLab sessions', () => {
+    h.remoteKind = 'gitlab';
+    const githubEvents: Array<CustomEvent> = [];
+    const gitlabEvents: Array<CustomEvent> = [];
+    const githubListener = (event: Event) => githubEvents.push(event as CustomEvent);
+    const gitlabListener = (event: Event) => gitlabEvents.push(event as CustomEvent);
+    window.addEventListener('goodboy:open-github-session', githubListener);
+    window.addEventListener('goodboy:open-gitlab-mr', gitlabListener);
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+    const cta = screen.getByRole('button', { name: 'Open merge request from code host' });
+    fireEvent.click(cta);
+    window.removeEventListener('goodboy:open-github-session', githubListener);
+    window.removeEventListener('goodboy:open-gitlab-mr', gitlabListener);
+
+    expect(gitlabEvents).toHaveLength(1);
+    expect(gitlabEvents[0]?.detail).toEqual({ sessionId: SESSION_ID });
+    expect(githubEvents).toHaveLength(0);
   });
 
   it('explains that a missing GitHub remote cannot be fixed with a token', () => {
@@ -454,7 +498,7 @@ describe('PrPane', () => {
     expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
     expect(screen.getByText(/does not have a GitHub remote/i)).toBeDefined();
     expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
-    expect(screen.queryByRole('button', { name: /Open a pull request/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Open in code host/i })).toBeNull();
   });
 
   it('clears the token empty state after connecting a repository with a GitHub remote', async () => {
@@ -472,6 +516,6 @@ describe('PrPane', () => {
     await waitFor(() => {
       expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
     });
-    expect(screen.getByRole('button', { name: /Open a pull request/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Open in code host/i })).toBeDefined();
   });
 });

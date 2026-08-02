@@ -322,6 +322,9 @@ describe('sendTurn, terminal state guarantees', () => {
     expect(errorEvent && 'message' in errorEvent ? errorEvent.message : '').toMatch(
       /provider exited without a response/i,
     );
+    expect(errorEvent && 'retryable' in errorEvent ? errorEvent.retryable : undefined).not.toBe(
+      true,
+    );
   });
 
   it('appends user_text event so the user message is visible immediately', async () => {
@@ -368,10 +371,13 @@ describe('sendTurn, terminal state guarantees', () => {
     expect(session?.state.kind).toBe('error');
 
     const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
-    const errorEvent = transcript.find((e) => e.kind === 'error');
+    const errorEvents = transcript.filter((e) => e.kind === 'error');
+    expect(errorEvents).toHaveLength(1);
+    const errorEvent = errorEvents[0];
     expect(errorEvent && 'message' in errorEvent ? errorEvent.message : '').toMatch(
       /provider crashed mid-stream/i,
     );
+    expect(errorEvent && 'retryable' in errorEvent ? errorEvent.retryable : undefined).toBe(true);
   });
 
   it('marks the provider run failed when the stream throws mid-turn', async () => {

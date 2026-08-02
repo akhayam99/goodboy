@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffSidebarCollapsed: `${PREFIX}diff-sidebar-collapsed`,
+  sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   lensColumnWidth: `${PREFIX}lens-column-width`,
   inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
   studioDetailRailWidth: `${PREFIX}studio-detail-rail-width`,
@@ -11,6 +12,7 @@ export const STORAGE_KEYS = {
   planListWidth: `${PREFIX}plan-list-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   rightSidebarWidth: `${PREFIX}right-sidebar-width`,
+  onboardingWorkspaceDraft: `${PREFIX}onboarding-workspace-draft:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {

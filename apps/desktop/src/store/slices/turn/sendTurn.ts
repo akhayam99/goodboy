@@ -26,7 +26,6 @@ import {
 import type {
   AgentId,
   AttachmentInput,
-  BudgetAlert,
   IsoDateTime,
   Message,
   MessageAttachment,
@@ -52,6 +51,7 @@ import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { simpleSessionDirExists, worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
+import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
@@ -100,7 +100,6 @@ type Input = {
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
-  onNewAlerts?: (alerts: ReadonlyArray<BudgetAlert>) => void;
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -122,7 +121,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     content,
     attachments,
     override,
-    onNewAlerts,
     retry,
   }: Input): Promise<void> => {
     const before = get();
@@ -896,7 +894,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             runId,
             sessionId,
             now,
-            ...(onNewAlerts !== undefined && { onNewAlerts }),
           });
         }
 
@@ -920,6 +917,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             runId,
             message:
               'provider exited without a response. check that the CLI is configured correctly.',
+            retryable: false,
             at: now(),
           });
         }
@@ -1052,7 +1050,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         console.error('autoPopulateContext failed', e);
       }
     } catch (err) {
-      lastError = err;
       const rawMessage = formatError(err);
       const maxModeFailure =
         provider === 'cursor' ? matchCursorMaxModeFailure({ message: rawMessage }) : null;
@@ -1098,6 +1095,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           kind: 'error',
           runId,
           message,
+          retryable: false,
           at: now(),
         });
         get().appendTurnEvent(activeAgentId, sessionId, {
@@ -1119,7 +1117,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           content,
           ...(attachments !== undefined && { attachments }),
           ...(override !== undefined && { override }),
-          ...(onNewAlerts !== undefined && { onNewAlerts }),
           retry: {
             attempt: (retry?.attempt ?? 0) + 1,
             provider: fallbackPlan.provider,
@@ -1145,6 +1142,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         kind: 'error',
         runId,
         message,
+        retryable: true,
         at: now(),
       });
       if (resolvedAgentId) {
@@ -1158,6 +1156,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }));
         void get().refreshUnreadWorkspaces();
       }
+      lastError = createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
     } finally {
       if (turnFileVersionCapture != null) {
         await finalizeTurnFileVersionCapture({

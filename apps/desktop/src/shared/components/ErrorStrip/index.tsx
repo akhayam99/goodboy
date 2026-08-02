@@ -11,6 +11,7 @@ export const ErrorStrip = ({ label, error, onRetry }: Props) => {
   if (error === null) {
     return null;
   }
+
   return (
     <div
       role="alert"

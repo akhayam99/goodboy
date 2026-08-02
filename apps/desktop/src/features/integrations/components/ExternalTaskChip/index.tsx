@@ -13,6 +13,7 @@ type Props = {
   ariaLabel?: string;
   repoLabel?: string;
   navigation?: 'internal' | 'external';
+  hasReferenceActions?: boolean;
 };
 
 type ProviderMeta = {
@@ -51,6 +52,7 @@ export const ExternalTaskChip = ({
   ariaLabel,
   repoLabel,
   navigation = 'external',
+  hasReferenceActions = true,
 }: Props) => {
   const meta = PROVIDER_META[task.provider];
   const tooltip = `${task.identifier}: ${task.title}`;
@@ -92,7 +94,7 @@ export const ExternalTaskChip = ({
           ? { attribution: <Chip tone="neutral" label={repoLabel} size="xs" /> }
           : {})}
         actions={
-          task.url !== '' ? (
+          hasReferenceActions && task.url !== '' ? (
             <ExternalRefActions url={task.url} label={task.identifier} hostLabel={meta.label} />
           ) : undefined
         }

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Copy, Terminal } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 import { Tooltip } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { openCommandInExternalTerminal } from '../../external-terminal';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
+import { CopyButton } from '../../../../shared/components/CopyButton';
 
 type Props = {
   readonly command: string;
@@ -17,13 +18,11 @@ type PollParams = {
   readonly startedAt: number;
 };
 
-const RESET_AFTER_MS = 1500;
 const POLL_DELAYS_MS = [3_000, 6_000, 12_000, 24_000] as const;
 const MAX_POLL_DELAY_MS = 24_000;
 const POLL_DURATION_MS = 120_000;
 
 export const EscapeHatch = ({ command, providerId }: Props) => {
-  const [copied, setCopied] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const refreshProviders = useAppStore((state) => state.refreshProviders);
@@ -36,16 +35,6 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
       }
     };
   }, [providerId]);
-
-  const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(command);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), RESET_AFTER_MS);
-    } catch {
-      setCopied(false);
-    }
-  };
 
   const onLaunch = async () => {
     setLaunching(true);
@@ -93,24 +82,13 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-1.5">
         <Tooltip content="Copy command" side="top">
-          <button
-            type="button"
-            onClick={() => void onCopy()}
-            aria-label="copy command"
+          <CopyButton
+            value={command}
+            label="copy command"
             className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2.5 py-1 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            {copied ? (
-              <>
-                <Check size={11} aria-hidden />
-                <span>Copied</span>
-              </>
-            ) : (
-              <>
-                <Copy size={11} aria-hidden />
-                <span>Copy command</span>
-              </>
-            )}
-          </button>
+            <span>Copy command</span>
+          </CopyButton>
         </Tooltip>
         <Tooltip content="Open in your system terminal" side="top">
           <button

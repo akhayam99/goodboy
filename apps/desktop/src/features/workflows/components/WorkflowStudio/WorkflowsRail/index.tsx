@@ -59,6 +59,7 @@ export const WorkflowsRail = ({
             icon={CONCEPT_ICONS.workflows}
             title="No presets yet"
             description="Create one to chain several agents in a single session."
+            size="inline"
             bordered
           />
         ) : (

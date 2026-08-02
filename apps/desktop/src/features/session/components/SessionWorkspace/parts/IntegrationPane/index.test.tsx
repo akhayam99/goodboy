@@ -19,6 +19,14 @@ type Props = {
   readonly actions?: ReactNode;
 };
 
+type LinearDetailProps = {
+  readonly issueId: string;
+};
+
+type SentryDetailProps = {
+  readonly task: SessionExternalTask;
+};
+
 const h = vi.hoisted(() => ({
   store: {
     sessionExternalTasks: {},
@@ -55,12 +63,24 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
 }));
 
 vi.mock('./LinearTaskDetail', () => ({
-  LinearTaskDetail: ({ issueId }: { issueId: string }) => <div>Linear detail {issueId}</div>,
+  LinearTaskDetail: ({ issueId }: LinearDetailProps) => (
+    <div>
+      <a href="https://linear.app/GB-42" aria-label="Open in Linear">
+        Linear detail {issueId}
+      </a>
+      <button type="button" aria-label="Copy issue link" />
+    </div>
+  ),
 }));
 
 vi.mock('./SentryTaskDetail', () => ({
-  SentryTaskDetail: ({ task }: { task: SessionExternalTask }) => (
-    <div>Sentry detail {task.externalId}</div>
+  SentryTaskDetail: ({ task }: SentryDetailProps) => (
+    <div>
+      <a href="https://sentry.io/issues/12345" aria-label="Open in Sentry">
+        Sentry detail {task.externalId}
+      </a>
+      <button type="button" aria-label="Copy issue link" />
+    </div>
   ),
 }));
 
@@ -156,6 +176,23 @@ describe('parseIntegrationTaskUrl', () => {
 });
 
 describe('IntegrationPane', () => {
+  it.each([
+    ['linear', TASK, 'Linear'],
+    ['sentry', SENTRY_TASK, 'Sentry'],
+  ] as const)(
+    'shows one open and copy affordance for a linked %s task with detail',
+    (provider, task, host) => {
+      h.store.sessionExternalTasks = { [SESSION_ID]: [task] };
+
+      render(
+        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
+      );
+
+      expect(screen.getAllByRole('link', { name: `Open in ${host}` })).toHaveLength(1);
+      expect(screen.getAllByRole('button', { name: 'Copy issue link' })).toHaveLength(1);
+    },
+  );
+
   it('opens and confirms before unlinking every provider task shown for the session', async () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 

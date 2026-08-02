@@ -128,13 +128,15 @@ Layout:
 
 - Left: integration tools (GitHub, GitLab, Linear, Sentry), each gated by
   enablement.
-- Right: common studios (workflows, providers, budget, impact), each with its
-  own tone (`primary`, `info`, `warning`, `success` respectively) applied to
-  its icon and label while inactive.
+- Right: common studios (workflows, providers, budget, impact).
 
-Studio buttons show an inverted active state (`bg-foreground text-background`
-with a transition) when their studio is open. Opening any studio closes the
-others (`closeAllStudios` in `App.tsx`).
+Navigation chrome stays muted while inactive across footer launchers, session
+lens rows, and the back-to-board action in the workspace sidebar.
+
+The active navigation item uses one inverted state
+(`bg-foreground text-background`) across those surfaces. Lens rows keep
+`aria-current="page"` on the active row. Opening any studio closes the others
+(`closeAllStudios` in `App.tsx`).
 
 ## Board-only Overview and animated sidebar
 
@@ -143,13 +145,14 @@ animates to zero width via `grid-template-columns` transition; the cell fades
 and slides (`opacity` + `transform`). The resize handle is suppressed while
 hidden.
 
-`App.tsx` sets `leftHidden={!currentSession}`:
+`App.tsx` keeps Overview board-only and applies the user preference in session:
 
 - Overview (no session active): board-only, sidebar hidden.
-- Session entered: sidebar reveals with a ~200ms animation.
+- Session entered: sidebar follows the persisted sessions-column preference.
 
-The sidebar has no collapse toggle, rail, or `cmd+b` shortcut. The left column
-is either `leftHidden` (at Overview) or at its persisted width.
+The sidebar has no collapse rail. In a session, users can hide or show the
+sessions column from the workspace header or with `cmd+b`. The toggle writes a
+persisted preference, while Overview still forces `leftHidden`.
 
 ## Studios
 

@@ -81,7 +81,13 @@ export type TurnEvent =
       at: IsoDateTime;
     }
   | { kind: 'usage'; runId: ProviderRunId; usage: ProviderUsage; at: IsoDateTime }
-  | { kind: 'error'; runId: ProviderRunId; message: string; at: IsoDateTime }
+  | {
+      kind: 'error';
+      runId: ProviderRunId;
+      message: string;
+      retryable?: boolean;
+      at: IsoDateTime;
+    }
   | { kind: 'done'; runId: ProviderRunId; at: IsoDateTime }
   | {
       kind: 'provider_session_init';

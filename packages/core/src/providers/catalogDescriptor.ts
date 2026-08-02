@@ -28,6 +28,7 @@ const effortFor = ({ model }: Params) => {
   switch (model.provider) {
     case 'anthropic':
     case 'codex':
+    case 'gemini':
     case 'opencode':
     case 'openrouter':
       return model.efforts.length > 0 ? model.efforts : null;
@@ -35,8 +36,6 @@ const effortFor = ({ model }: Params) => {
       const efforts = model.combos.map((combo) => combo.effort).filter((effort) => effort != null);
       return efforts.length > 0 ? Array.from(new Set(efforts)) : null;
     }
-    case 'gemini':
-      return null;
     default: {
       const exhaustive: never = model;
       throw new Error(`unknown catalog model: ${String(exhaustive)}`);

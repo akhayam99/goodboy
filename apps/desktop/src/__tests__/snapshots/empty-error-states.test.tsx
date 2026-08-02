@@ -256,7 +256,8 @@ describe('snapshot, empty states', () => {
         hasWorkflow={false}
       />,
     );
-    expect(getByRole('button', { name: /set up a workflow/i })).toBeTruthy();
+    const workflowButton = getByRole('button', { name: /set up a workflow/i });
+    expect(workflowButton.querySelector('.lucide-waypoints')).toBeTruthy();
     expect(container.firstChild).toMatchSnapshot();
   });
 });

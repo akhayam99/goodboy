@@ -1,6 +1,6 @@
 import type { ChangeEventHandler, RefObject } from 'react';
 import { Divider, FieldRow, Input, SectionHeader, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, Expand, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
+import { AlertTriangle, Expand, Folder, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
@@ -40,6 +40,12 @@ type Props = {
   readonly branchPrefix: string;
   readonly branchSlug: string;
   readonly onBranchSlugChange: (value: string) => void;
+  readonly folderName: string;
+  readonly onFolderNameChange: (value: string) => void;
+  readonly folderPathPreview: string | null;
+  readonly folderNameError: string | null;
+  readonly folderConflict: boolean;
+  readonly folderConflictChecking: boolean;
   readonly slugGenerating: boolean;
   readonly onGenerateSlug: () => void;
   readonly existingBranches: ReadonlyArray<LocalBranchInfo>;
@@ -74,6 +80,12 @@ export const NewSessionForm = ({
   branchPrefix,
   branchSlug,
   onBranchSlugChange,
+  folderName,
+  onFolderNameChange,
+  folderPathPreview,
+  folderNameError,
+  folderConflict,
+  folderConflictChecking,
   slugGenerating,
   onGenerateSlug,
   existingBranches,
@@ -214,7 +226,7 @@ export const NewSessionForm = ({
               className={cn(
                 'inline-flex w-fit items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs motion-safe:transition-colors',
                 busy
-                  ? 'cursor-not-allowed text-muted-foreground/40'
+                  ? 'cursor-not-allowed text-muted-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
@@ -225,9 +237,62 @@ export const NewSessionForm = ({
         </FieldRow>
       </section>
 
-      {!isSimple ? (
+      <Divider />
+      {isSimple ? (
         <>
-          <Divider />
+          <section className="flex flex-col">
+            <SectionHeader
+              icon={<Folder size={12} aria-hidden />}
+              label="Folder"
+              hint="This is the folder name you will find on disk inside your workspace folder."
+            />
+            <FieldRow
+              label="Folder name"
+              help="The app creates this folder in your workspace under sessions"
+            >
+              <div className="flex w-full flex-col gap-1.5 sm:w-96">
+                <div className="flex w-full items-center gap-1.5">
+                  <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                    sessions/
+                  </span>
+                  <Input
+                    value={folderName}
+                    onChange={(event) => onFolderNameChange(event.target.value)}
+                    placeholder="session"
+                    className="h-8 min-w-0 flex-1 text-sm"
+                    disabled={busy}
+                    aria-label="Folder name"
+                  />
+                </div>
+                {folderPathPreview != null ? (
+                  <p className="text-2xs leading-relaxed text-muted-foreground">
+                    Folder on disk:{' '}
+                    <span className="break-all font-mono text-muted-foreground">
+                      {folderPathPreview}
+                    </span>
+                  </p>
+                ) : null}
+                {folderNameError != null ? (
+                  <p role="alert" className="text-2xs leading-relaxed text-danger">
+                    {folderNameError}
+                  </p>
+                ) : null}
+                {folderNameError == null && folderConflict ? (
+                  <p role="alert" className="text-2xs leading-relaxed text-danger">
+                    A folder with this name already exists in this workspace
+                  </p>
+                ) : null}
+                {folderNameError == null && !folderConflict && folderConflictChecking ? (
+                  <p className="text-2xs leading-relaxed text-muted-foreground">
+                    Checking if this folder already exists
+                  </p>
+                ) : null}
+              </div>
+            </FieldRow>
+          </section>
+        </>
+      ) : (
+        <>
           <section className="flex flex-col">
             <SectionHeader
               icon={<GitBranch size={12} aria-hidden />}
@@ -311,7 +376,7 @@ export const NewSessionForm = ({
             </FieldRow>
           </section>
         </>
-      ) : null}
+      )}
     </div>
   );
 };

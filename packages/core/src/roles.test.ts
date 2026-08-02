@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ROLE_DEFAULTS, defaultsForRole, isAgentRole } from './roles';
+import { ROLE_DEFAULTS, defaultsForRole, fanOutCapabilityForRole, isAgentRole } from './roles';
 import { PROVIDER_CAPABILITIES } from './providers/capabilities';
 
 describe('ROLE_DEFAULTS', () => {
@@ -55,6 +55,16 @@ describe('ROLE_DEFAULTS', () => {
       expect(r.provider).toBe('anthropic');
     }
   });
+
+  it('declares fan-out capability per role', () => {
+    expect(ROLE_DEFAULTS.scout.fanOut.mode).toBe('natural');
+    expect(ROLE_DEFAULTS.reviewer.fanOut.mode).toBe('conditional');
+    expect(ROLE_DEFAULTS.tester.fanOut.mode).toBe('conditional');
+    expect(ROLE_DEFAULTS.investigator.fanOut.mode).toBe('conditional');
+    expect(ROLE_DEFAULTS.planner.fanOut.mode).toBe('never');
+    expect(ROLE_DEFAULTS.implementer.fanOut.mode).toBe('never');
+    expect(ROLE_DEFAULTS.custom.fanOut.mode).toBe('never');
+  });
 });
 
 describe('isAgentRole', () => {
@@ -78,5 +88,15 @@ describe('defaultsForRole', () => {
 
   it('falls back to custom for an unknown role (no throw)', () => {
     expect(defaultsForRole('emperor')).toBe(ROLE_DEFAULTS.custom);
+  });
+});
+
+describe('fanOutCapabilityForRole', () => {
+  it('returns the role fan-out capability for known roles', () => {
+    expect(fanOutCapabilityForRole('reviewer')).toEqual(ROLE_DEFAULTS.reviewer.fanOut);
+  });
+
+  it('falls back to custom for unknown roles', () => {
+    expect(fanOutCapabilityForRole('unknown')).toEqual(ROLE_DEFAULTS.custom.fanOut);
   });
 });

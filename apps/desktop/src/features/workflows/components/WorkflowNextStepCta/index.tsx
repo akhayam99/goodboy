@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ClipboardList, Play } from 'lucide-react';
+import { AlertTriangle, Play } from 'lucide-react';
 import { InlineConfirm, cn } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
 import type { Agent, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
@@ -9,6 +9,7 @@ import { resolveStepRouting } from '../../resolveStepRouting';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type Props = {
   readonly workflow: Workflow;
@@ -184,7 +185,7 @@ export const WorkflowNextStepCta = ({
         />
         {consumesActivePlan ? (
           <span className="shrink-0" title="advancing will consume the active plan">
-            <ClipboardList size={11} aria-hidden />
+            <CONCEPT_ICONS.plans size={11} aria-hidden />
           </span>
         ) : null}
       </button>

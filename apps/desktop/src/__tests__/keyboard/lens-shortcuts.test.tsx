@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 
 const { setActiveLens, shortcutHandlers, state } = vi.hoisted(() => {
@@ -15,11 +15,18 @@ const { setActiveLens, shortcutHandlers, state } = vi.hoisted(() => {
       bootPhase: 'loading' as const,
       error: null,
       workspaceIntegrations: {},
-      workspaces: [],
-      sessions: [],
+      workspaces: [
+        {
+          id: 'workspace-1',
+          name: 'Workspace',
+          rootPath: '/repo',
+          kind: 'repo' as 'repo' | 'simple',
+        },
+      ],
+      sessions: [{ id: 'session-1', workspaceId: 'workspace-1' }],
       sessionMounts: {},
       sessionActiveMount: {},
-      sessionBranches: {},
+      sessionBranches: { 'session-1': 'feature/branch' },
       setSessionStudio: vi.fn(),
       openWorkspace: vi.fn(),
       setCurrentSession: vi.fn(),
@@ -129,6 +136,16 @@ vi.mock('../../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPol
 
 import { App } from '../../App';
 
+beforeEach(() => {
+  state.workspaces = [{ id: 'workspace-1', name: 'Workspace', rootPath: '/repo', kind: 'repo' }];
+  state.sessions = [{ id: 'session-1', workspaceId: 'workspace-1' }];
+  state.sessionBranches = { 'session-1': 'feature/branch' };
+  state.currentSessionId = 'session-1';
+  setActiveLens.mockClear();
+  state.setCurrentSession.mockClear();
+  shortcutHandlers.clear();
+});
+
 afterEach(() => {
   cleanup();
   setActiveLens.mockClear();
@@ -136,6 +153,23 @@ afterEach(() => {
 });
 
 describe('App lens shortcuts', () => {
+  it('registers cmd+b for the sessions column without colliding with agents lens', () => {
+    render(<App />);
+
+    expect(shortcutHandlers.has('cmd+b')).toBe(true);
+    expect(shortcutHandlers.has('cmd+shift+b')).toBe(true);
+
+    act(() => {
+      shortcutHandlers.get('cmd+b')?.();
+    });
+    expect(setActiveLens).not.toHaveBeenCalled();
+
+    act(() => {
+      shortcutHandlers.get('cmd+shift+b')?.();
+    });
+    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'agents');
+  });
+
   it('dispatches overview, pull request, decisions, and summary lenses', () => {
     render(<App />);
 
@@ -161,5 +195,31 @@ describe('App lens shortcuts', () => {
     });
 
     expect(state.setCurrentSession).toHaveBeenCalledWith(null);
+  });
+
+  it('routes cmd+shift+d to the Diff lens for repo-backed sessions', () => {
+    state.workspaces = [{ id: 'workspace-1', name: 'Workspace', rootPath: '/repo', kind: 'repo' }];
+    state.sessionBranches = { 'session-1': 'feature/branch' };
+    render(<App />);
+
+    act(() => {
+      shortcutHandlers.get('cmd+shift+d')?.();
+    });
+
+    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'files');
+  });
+
+  it('routes cmd+shift+d to the Explore lens for branchless sessions', () => {
+    state.workspaces = [
+      { id: 'workspace-1', name: 'Workspace', rootPath: '/simple', kind: 'simple' },
+    ];
+    state.sessionBranches = { 'session-1': '' };
+    render(<App />);
+
+    act(() => {
+      shortcutHandlers.get('cmd+shift+d')?.();
+    });
+
+    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'explore');
   });
 });

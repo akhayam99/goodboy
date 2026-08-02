@@ -62,6 +62,12 @@ describe('EditorMenu', () => {
     expect(trigger.getAttribute('data-side')).toBe('top');
   });
 
+  it('keeps the open-worktree accessible name in compact density', () => {
+    render(<EditorMenu sessionId={'sess-1' as SessionId} density="compact" />);
+    const trigger = screen.getByRole('button', { name: /open worktree/i });
+    expect(trigger.getAttribute('aria-label')).toBe('open worktree');
+  });
+
   it('loads detected editors once when none are known yet', () => {
     render(<EditorMenu sessionId={'sess-1' as SessionId} />);
     expect(state.loadDetectedEditors).toHaveBeenCalledOnce();

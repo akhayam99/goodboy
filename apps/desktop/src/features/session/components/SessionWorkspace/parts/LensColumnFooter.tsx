@@ -8,6 +8,7 @@ import { useToast } from '../../../../../app/components/Toast';
 import { EditorMenu } from '../../SessionOverviewPane/EditorMenu';
 import { SessionGitActions } from './SessionGitActions';
 import { ProjectSwitcher } from '../../ProjectSwitcher';
+import type { Density } from '../../../density';
 
 const ICON_BUTTON =
   'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
@@ -28,6 +29,7 @@ export const LensColumnFooter = ({ session }: Props) => {
 
   const [armed, setArmed] = useState<Armed>(null);
   const [busy, setBusy] = useState(false);
+  const density: Density = armed === null ? 'full' : 'compact';
 
   useEffect(() => {
     if (armed == null) {
@@ -71,9 +73,9 @@ export const LensColumnFooter = ({ session }: Props) => {
 
   return (
     <div className="flex shrink-0 items-center gap-2 px-2 py-2">
-      <ProjectSwitcher sessionId={sessionId} />
-      <EditorMenu sessionId={sessionId} />
-      <SessionGitActions session={session} />
+      <ProjectSwitcher sessionId={sessionId} density={density} />
+      <EditorMenu sessionId={sessionId} density={density} />
+      <SessionGitActions session={session} density={density} />
       <span className="flex-1" />
       <div className="flex items-center gap-1">
         {archived ? (

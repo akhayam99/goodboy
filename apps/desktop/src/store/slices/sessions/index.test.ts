@@ -846,7 +846,7 @@ describe('store contract', () => {
   });
 
   describe('createSession simple workspace', () => {
-    it('registers a plain session directory with an empty branch', async () => {
+    it('registers a simple session directory with the requested folder name and an empty branch', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
       vi.mocked(db.listWorkspaces).mockResolvedValueOnce([
@@ -856,20 +856,23 @@ describe('store contract', () => {
         }),
       ]);
       createSessionDirSpy.mockResolvedValueOnce({
-        worktreePath: '/tmp/study-space/sessions/study-plan-12345678',
+        worktreePath: '/tmp/study-space/sessions/MatchAnalysis_20260514',
         branchName: '',
-        slug: 'study-plan-12345678',
+        slug: 'MatchAnalysis_20260514',
         reused: false,
       });
       store.setState({ currentWorkspaceId: WS_ID });
 
-      const { session, worktree } = await store
-        .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
+      const { session, worktree } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        goal: 'Study plan',
+        folderName: 'MatchAnalysis_20260514',
+      });
 
       expect(createSessionDirSpy).toHaveBeenCalledWith({
         basePath: '/tmp/study-space',
         slug: expect.stringMatching(/^study-plan-[a-f0-9]{8}$/),
+        directoryName: 'MatchAnalysis_20260514',
         sessionId: session.id,
         workspaceId: WS_ID,
       });
@@ -897,9 +900,9 @@ describe('store contract', () => {
         }),
       ]);
       createSessionDirSpy.mockResolvedValueOnce({
-        worktreePath: '/tmp/study-space/sessions/study-plan-12345678',
+        worktreePath: '/tmp/study-space/sessions/Study plan',
         branchName: '',
-        slug: 'study-plan-12345678',
+        slug: 'Study plan',
         reused: false,
       });
       store.setState({
@@ -916,6 +919,11 @@ describe('store contract', () => {
         .getState()
         .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
 
+      expect(createSessionDirSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          directoryName: 'Study plan',
+        }),
+      );
       expect(session.providerPreference).toEqual({
         defaultProvider: 'codex',
         allowTurnOverride: true,

@@ -19,6 +19,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
 import { runParallelBranch, type ParallelBranchEffects } from '../../parallel-turn';
 import { applySessionUpdate } from '../../session-mutators';
 import { invokeAgentList } from '../../../features/workflows/workflows';
@@ -246,6 +247,7 @@ export const dispatchParallelTurn = async (
       kind: 'error',
       runId: groupSessionRunId,
       message,
+      retryable: true,
       at: now(),
     });
     const errorState: TurnState = {
@@ -255,7 +257,7 @@ export const dispatchParallelTurn = async (
     };
     await updateSessionState(tauriDatabase, sessionId, errorState, now());
     applySessionUpdate(set, sessionId, errorState, activeAgentId);
-    throw err;
+    throw createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
   } finally {
     if (turnFileVersionCapture != null) {
       await finalizeTurnFileVersionCapture({

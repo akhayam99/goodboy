@@ -1,5 +1,6 @@
 import type { ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
+import type { SegmentedTabOption, Tone } from '@goodboy/ui';
 import { PROVIDER_LABEL_LOWER } from '../../../providers/providers';
 
 export type BudgetScope =
@@ -8,6 +9,14 @@ export type BudgetScope =
   | { readonly kind: 'session'; readonly sessionId: SessionId };
 
 export type SortKey = 'recent' | 'expensive';
+export type BudgetWindowId = 'last30' | 'all';
+
+export const BUDGET_WINDOW_DAYS = 30;
+
+export const BUDGET_WINDOW_OPTIONS: ReadonlyArray<SegmentedTabOption<BudgetWindowId>> = [
+  { value: 'last30', label: 'Last 30 days' },
+  { value: 'all', label: 'All time' },
+];
 
 export type WorkspaceTurn = {
   readonly record: TelemetryRecord;
@@ -48,24 +57,18 @@ export const providerLabel = (provider: string): string => {
   return id === null ? provider : PROVIDER_LABEL_LOWER[id];
 };
 
-export const spendBarColor = (pct: number): string => {
-  if (pct >= 1) {
-    return 'bg-danger';
-  }
-  if (pct >= 0.8) {
-    return 'bg-warning';
-  }
-  return 'bg-primary';
+type SpendToneParams = {
+  readonly pct: number;
 };
 
-export const spendStrokeColor = (pct: number): string => {
+export const spendTone = ({ pct }: SpendToneParams): Tone => {
   if (pct >= 1) {
-    return 'var(--color-danger)';
+    return 'danger';
   }
   if (pct >= 0.8) {
-    return 'var(--color-warning)';
+    return 'warning';
   }
-  return 'var(--color-primary)';
+  return 'primary';
 };
 
 export const sortTurns = (

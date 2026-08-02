@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { FileText } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { extractPlanFromMarker } from '@goodboy/core';
 import { useSessionPlans } from '../../../../store';
 import { TranscriptShell } from '../TranscriptShell';
 import { tintClasses } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const accent = tintClasses('primary');
 
@@ -41,7 +41,7 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       variant="pill"
       className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
-      <FileText size={12} aria-hidden />
+      <CONCEPT_ICONS.plans size={12} aria-hidden />
       <span>{plan.title}</span>
     </TranscriptShell>
   );

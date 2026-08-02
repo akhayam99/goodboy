@@ -5,9 +5,21 @@ import type { ParseContext } from './anthropic-envelope-parser';
 
 type ParseLine = (line: string, ctx: ParseContext) => ReadonlyArray<TurnEvent>;
 
-type StreamChildEventsOptions = {
-  readonly onClose?: () => ReadonlyArray<TurnEvent>;
+type CloseParams = {
+  readonly exitCode: number | null;
+  readonly stderr: string;
 };
+
+type EndParams = {
+  readonly exitCode: number | null;
+  readonly source: 'child' | 'stdout';
+};
+
+type StreamChildEventsOptions = {
+  readonly onClose?: ({ exitCode, stderr }: CloseParams) => ReadonlyArray<TurnEvent>;
+};
+
+const STDERR_TAIL_LENGTH = 8000;
 
 export async function* streamChildEvents(
   child: ChildProcess,
@@ -20,24 +32,49 @@ export async function* streamChildEvents(
   let rejector: ((err: unknown) => void) | null = null;
   let ended = false;
   let error: unknown = null;
+  let stderr = '';
+  let exitCode: number | null = null;
+  let isStdoutClosed = false;
+  let isChildClosed = false;
 
   const flush = () => {
-    if (resolver && queue.length > 0) {
+    if (resolver != null && queue.length > 0) {
       const value = queue.shift()!;
       const r = resolver;
       resolver = null;
+      rejector = null;
       r({ value, done: false });
-    } else if (resolver && ended) {
+      return;
+    }
+    if (resolver != null && ended) {
       const r = resolver;
       resolver = null;
-      if (error) {
+      if (error != null) {
         const rej = rejector;
         rejector = null;
         rej?.(error);
-      } else {
-        r({ value: undefined, done: true });
+        return;
       }
+      r({ value: undefined, done: true });
     }
+  };
+
+  const endIfClosed = ({ exitCode: closedExitCode, source }: EndParams) => {
+    if (source === 'stdout') {
+      isStdoutClosed = true;
+    }
+    if (source === 'child') {
+      exitCode = closedExitCode;
+      isChildClosed = true;
+    }
+    if (!isStdoutClosed || !isChildClosed || ended) {
+      return;
+    }
+    if (options.onClose != null) {
+      for (const event of options.onClose({ exitCode, stderr })) queue.push(event);
+    }
+    ended = true;
+    flush();
   };
 
   const lineReader = createInterface({ input: child.stdout! });
@@ -49,11 +86,11 @@ export async function* streamChildEvents(
   });
 
   lineReader.on('close', () => {
-    if (options.onClose) {
-      for (const event of options.onClose()) queue.push(event);
-    }
-    ended = true;
-    flush();
+    endIfClosed({ exitCode: null, source: 'stdout' });
+  });
+
+  child.on('close', (code) => {
+    endIfClosed({ exitCode: code, source: 'child' });
   });
 
   child.on('error', (err) => {
@@ -62,7 +99,10 @@ export async function* streamChildEvents(
     flush();
   });
 
-  child.stderr?.on('data', () => {});
+  child.stderr?.on('data', (chunk: Buffer | string) => {
+    const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+    stderr = `${stderr}${text}`.slice(-STDERR_TAIL_LENGTH);
+  });
 
   try {
     while (true) {
@@ -71,7 +111,7 @@ export async function* streamChildEvents(
         continue;
       }
       if (ended) {
-        if (error) {
+        if (error != null) {
           throw error;
         }
         return;

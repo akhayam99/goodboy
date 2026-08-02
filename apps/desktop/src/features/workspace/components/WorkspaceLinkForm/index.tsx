@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
@@ -13,7 +22,7 @@ import {
   StatusDot,
   cn,
 } from '@goodboy/ui';
-import type { Workspace, WorkspaceId } from '@goodboy/types';
+import type { Workspace } from '@goodboy/types';
 import { AlertTriangle, Boxes, Check, Folder, FolderGit2 } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
@@ -27,23 +36,164 @@ import { lastPathSegment } from './lastPathSegment';
 export type WorkspaceLinkMode = 'single' | 'multi' | 'simple';
 
 type Props = {
-  readonly onComplete: () => void;
+  readonly onComplete: (params: { readonly mode: WorkspaceLinkMode }) => void;
   readonly onCancel: () => void;
   readonly cancelLabel?: string;
   readonly showBreadcrumb: boolean;
   readonly modes: ReadonlyArray<WorkspaceLinkMode>;
   readonly footerContainer?: HTMLElement | null;
+  readonly draftStorageKey?: string;
 };
 
 type Mode = WorkspaceLinkMode;
 
 const DEFAULT_SIMPLE_NAME = 'My workspace';
+const WORKSPACE_LINK_DRAFT_VERSION = 1;
 
 const MODE_OPTIONS = [
   { value: 'single', label: 'Single project', icon: FolderGit2 },
   { value: 'multi', label: 'Multi project', icon: Boxes },
   { value: 'simple', label: 'Standalone', icon: Folder },
 ] as const;
+
+type WorkspaceLinkDraft = {
+  readonly v: number;
+  readonly mode: WorkspaceLinkMode;
+  readonly path: string;
+  readonly selected: ReadonlyArray<string>;
+  readonly mountNames: Record<string, string>;
+  readonly containerPath: string;
+  readonly containerEdited: boolean;
+  readonly compositeName: string;
+  readonly simpleName: string;
+  readonly simplePath: string;
+  readonly simplePathEdited: boolean;
+};
+
+const readMode = ({ value }: { readonly value: unknown }): WorkspaceLinkMode | null => {
+  if (value === 'single' || value === 'multi' || value === 'simple') {
+    return value;
+  }
+  return null;
+};
+
+const readStringArray = ({ value }: { readonly value: unknown }): ReadonlyArray<string> | null => {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  if (!value.every((item) => typeof item === 'string')) {
+    return null;
+  }
+  return value;
+};
+
+const readStringRecord = ({
+  value,
+}: {
+  readonly value: unknown;
+}): Record<string, string> | null => {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+  if (!Object.values(value).every((item) => typeof item === 'string')) {
+    return null;
+  }
+  return value as Record<string, string>;
+};
+
+const readDraft = ({ storageKey }: { readonly storageKey: string }): WorkspaceLinkDraft | null => {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (raw === null) {
+      return null;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) {
+      return null;
+    }
+    const record = parsed as Record<string, unknown>;
+    if (record['v'] !== WORKSPACE_LINK_DRAFT_VERSION) {
+      return null;
+    }
+    const mode = readMode({ value: record['mode'] });
+    if (mode === null) {
+      return null;
+    }
+    const path = typeof record['path'] === 'string' ? record['path'] : null;
+    if (path === null) {
+      return null;
+    }
+    const selected = readStringArray({ value: record['selected'] });
+    if (selected === null) {
+      return null;
+    }
+    const mountNames = readStringRecord({ value: record['mountNames'] });
+    if (mountNames === null) {
+      return null;
+    }
+    const containerPath =
+      typeof record['containerPath'] === 'string' ? record['containerPath'] : null;
+    if (containerPath === null) {
+      return null;
+    }
+    const containerEdited =
+      typeof record['containerEdited'] === 'boolean' ? record['containerEdited'] : null;
+    if (containerEdited === null) {
+      return null;
+    }
+    const compositeName =
+      typeof record['compositeName'] === 'string' ? record['compositeName'] : null;
+    if (compositeName === null) {
+      return null;
+    }
+    const simpleName = typeof record['simpleName'] === 'string' ? record['simpleName'] : null;
+    if (simpleName === null) {
+      return null;
+    }
+    const simplePath = typeof record['simplePath'] === 'string' ? record['simplePath'] : null;
+    if (simplePath === null) {
+      return null;
+    }
+    const simplePathEdited =
+      typeof record['simplePathEdited'] === 'boolean' ? record['simplePathEdited'] : null;
+    if (simplePathEdited === null) {
+      return null;
+    }
+    return {
+      v: WORKSPACE_LINK_DRAFT_VERSION,
+      mode,
+      path,
+      selected,
+      mountNames,
+      containerPath,
+      containerEdited,
+      compositeName,
+      simpleName,
+      simplePath,
+      simplePathEdited,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const writeDraft = ({
+  storageKey,
+  draft,
+}: {
+  readonly storageKey: string;
+  readonly draft: WorkspaceLinkDraft;
+}): void => {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(draft));
+  } catch {}
+};
+
+const clearDraft = ({ storageKey }: { readonly storageKey: string }): void => {
+  try {
+    localStorage.removeItem(storageKey);
+  } catch {}
+};
 
 export const WorkspaceLinkForm = ({
   onComplete,
@@ -52,6 +202,7 @@ export const WorkspaceLinkForm = ({
   showBreadcrumb,
   modes,
   footerContainer,
+  draftStorageKey,
 }: Props) => {
   const formId = useId();
   const addWorkspace = useAppStore((state) => state.addWorkspace);
@@ -74,7 +225,7 @@ export const WorkspaceLinkForm = ({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [selected, setSelected] = useState<ReadonlyArray<WorkspaceId>>([]);
+  const [selected, setSelected] = useState<ReadonlyArray<string>>([]);
   const [mountNames, setMountNames] = useState<Record<string, string>>({});
   const [containerPath, setContainerPath] = useState('');
   const [containerEdited, setContainerEdited] = useState(false);
@@ -82,7 +233,91 @@ export const WorkspaceLinkForm = ({
   const [simpleName, setSimpleName] = useState(DEFAULT_SIMPLE_NAME);
   const [simplePath, setSimplePath] = useState('');
   const [simplePathEdited, setSimplePathEdited] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(draftStorageKey == null);
+  const persistDraftRef = useRef(true);
+  const latestDraftRef = useRef<WorkspaceLinkDraft | null>(null);
   const pathInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (modes.includes(mode)) {
+      return;
+    }
+    setMode(modes[0] ?? 'single');
+  }, [mode, modes]);
+
+  useEffect(() => {
+    persistDraftRef.current = true;
+    if (draftStorageKey == null) {
+      setDraftLoaded(true);
+      return;
+    }
+    const draft = readDraft({ storageKey: draftStorageKey });
+    if (draft === null) {
+      setDraftLoaded(true);
+      return;
+    }
+    setMode(modes.includes(draft.mode) ? draft.mode : (modes[0] ?? 'single'));
+    setPath(draft.path);
+    setSelected(draft.selected);
+    setMountNames(draft.mountNames);
+    setContainerPath(draft.containerPath);
+    setContainerEdited(draft.containerEdited);
+    setCompositeName(draft.compositeName);
+    setSimpleName(draft.simpleName);
+    setSimplePath(draft.simplePath);
+    setSimplePathEdited(draft.simplePathEdited);
+    setDraftLoaded(true);
+  }, [draftStorageKey, modes]);
+
+  useLayoutEffect(() => {
+    if (!draftLoaded || draftStorageKey == null || !persistDraftRef.current) {
+      return;
+    }
+    const draft: WorkspaceLinkDraft = {
+      v: WORKSPACE_LINK_DRAFT_VERSION,
+      mode,
+      path,
+      selected,
+      mountNames,
+      containerPath,
+      containerEdited,
+      compositeName,
+      simpleName,
+      simplePath,
+      simplePathEdited,
+    };
+    latestDraftRef.current = draft;
+    writeDraft({
+      storageKey: draftStorageKey,
+      draft,
+    });
+  }, [
+    draftLoaded,
+    draftStorageKey,
+    mode,
+    path,
+    selected,
+    mountNames,
+    containerPath,
+    containerEdited,
+    compositeName,
+    simpleName,
+    simplePath,
+    simplePathEdited,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (draftStorageKey == null || !persistDraftRef.current) {
+        return;
+      }
+      const draft = latestDraftRef.current;
+      if (draft === null) {
+        return;
+      }
+      writeDraft({ storageKey: draftStorageKey, draft });
+    };
+  }, [draftStorageKey]);
 
   useEffect(() => {
     if (mode !== 'simple' || simplePathEdited) {
@@ -180,10 +415,11 @@ export const WorkspaceLinkForm = ({
   }, [selectedWorkspaces, mountNames]);
 
   useEffect(() => {
-    if (!containerEdited) {
-      setContainerPath(suggestedContainer);
+    if (!draftLoaded || containerEdited) {
+      return;
     }
-  }, [suggestedContainer, containerEdited]);
+    setContainerPath(suggestedContainer);
+  }, [suggestedContainer, containerEdited, draftLoaded]);
 
   const toggleMember = useCallback(({ workspace }: { readonly workspace: Workspace }) => {
     setSelected((previous) =>
@@ -225,19 +461,36 @@ export const WorkspaceLinkForm = ({
     setSimplePath(picked);
   }, []);
 
+  const clearPersistedDraft = useCallback(() => {
+    if (draftStorageKey == null) {
+      return;
+    }
+    persistDraftRef.current = false;
+    clearDraft({ storageKey: draftStorageKey });
+  }, [draftStorageKey]);
+
+  const onCancelClick = useCallback(() => {
+    clearPersistedDraft();
+    onCancel();
+  }, [clearPersistedDraft, onCancel]);
+
   const onSubmitSingle = useCallback(async () => {
     setBusy(true);
     setSubmitError(null);
     try {
       const workspace = await addWorkspace({ rootPath: path });
       await setCurrentWorkspace(workspace.id);
-      onComplete();
+      clearPersistedDraft();
+      setPath('');
+      setValidPath(false);
+      setValidationError(null);
+      onComplete({ mode: 'single' });
     } catch (error) {
       setSubmitError(formatError(error));
     } finally {
       setBusy(false);
     }
-  }, [path, addWorkspace, setCurrentWorkspace, onComplete]);
+  }, [path, addWorkspace, setCurrentWorkspace, clearPersistedDraft, onComplete]);
 
   const onSubmitMulti = useCallback(async () => {
     setBusy(true);
@@ -255,7 +508,8 @@ export const WorkspaceLinkForm = ({
         members,
       });
       await setCurrentWorkspace(workspace.id);
-      onComplete();
+      clearPersistedDraft();
+      onComplete({ mode: 'multi' });
     } catch (error) {
       setSubmitError(formatError(error));
     } finally {
@@ -268,6 +522,7 @@ export const WorkspaceLinkForm = ({
     containerPath,
     addCompositeWorkspace,
     setCurrentWorkspace,
+    clearPersistedDraft,
     onComplete,
   ]);
 
@@ -280,13 +535,21 @@ export const WorkspaceLinkForm = ({
         path: simplePath.trim(),
       });
       await setCurrentWorkspace(workspace.id);
-      onComplete();
+      clearPersistedDraft();
+      onComplete({ mode: 'simple' });
     } catch (error) {
       setSubmitError(formatError(error));
     } finally {
       setBusy(false);
     }
-  }, [addSimpleWorkspace, onComplete, setCurrentWorkspace, simpleName, simplePath]);
+  }, [
+    addSimpleWorkspace,
+    clearPersistedDraft,
+    onComplete,
+    setCurrentWorkspace,
+    simpleName,
+    simplePath,
+  ]);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -338,12 +601,12 @@ export const WorkspaceLinkForm = ({
     session: null,
     chrome: { kind: 'workspace-create' },
     handlers: {
-      toOverview: onCancel,
+      toOverview: onCancelClick,
       toWorkspaceLauncher: () => {
-        onCancel();
+        onCancelClick();
         window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
       },
-      toWorkspaceBoard: onCancel,
+      toWorkspaceBoard: onCancelClick,
     },
   });
 
@@ -357,7 +620,7 @@ export const WorkspaceLinkForm = ({
       ) : (
         <span className="min-w-0 flex-1" aria-hidden />
       )}
-      <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
+      <Button type="button" variant="ghost" onClick={onCancelClick} disabled={busy}>
         {cancelLabel}
       </Button>
       <Button type="submit" form={formId} disabled={primaryDisabled} aria-busy={busy}>

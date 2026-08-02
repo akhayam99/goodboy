@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { SCOUT_DEPTH_CAP, SCOUT_MAX_CHILDREN, scoutDepth } from './scoutTree';
+import { SCOUT_DEPTH_CAP, FAN_OUT_MAX_CHILDREN, scoutDepth } from './scoutTree';
 
 const SID = 'sess-1' as SessionId;
 
@@ -48,6 +48,6 @@ describe('scout caps', () => {
   });
 
   it('bounds fan-out width so one split cannot fork-bomb', () => {
-    expect(SCOUT_MAX_CHILDREN).toBe(6);
+    expect(FAN_OUT_MAX_CHILDREN).toBe(4);
   });
 });

@@ -38,6 +38,7 @@ import {
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { BUDGET_BLOCK_MESSAGE, isBudgetBlocked } from './budgetBlock';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
@@ -339,18 +340,12 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (workflow == null) {
         return;
       }
-      const budgetExceeded = (get().budgetAlerts ?? []).some(
-        (alert) =>
-          alert.dismissedAt === undefined &&
-          ((alert.kind === 'session-exceeded' && alert.sessionId === sessionId) ||
-            alert.kind === 'provider-exceeded'),
-      );
-      if (budgetExceeded) {
+      if (isBudgetBlocked({ alerts: get().budgetAlerts ?? [], sessionId })) {
         await persistOrchestrationError({
           set,
           sessionId,
           workflowRunId,
-          message: 'the budget cap is reached, raise it in Budget to keep this run going',
+          message: BUDGET_BLOCK_MESSAGE,
         });
         return;
       }

@@ -39,6 +39,7 @@ export const DraftsPanel = ({ drafts, onEdit, onDiscard }: Props) => {
             icon={CONCEPT_ICONS.review}
             title="No draft comments yet"
             description="Ask the agent to draft comments, or click a diff line."
+            size="inline"
           />
         </div>
       ) : (

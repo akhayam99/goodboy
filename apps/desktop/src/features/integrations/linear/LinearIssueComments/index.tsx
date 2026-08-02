@@ -34,6 +34,7 @@ export const LinearIssueComments = ({ comments, isLoading, error }: Props) => {
         icon={CONCEPT_ICONS.comments}
         title="No comments"
         description="This issue has no comments yet."
+        size="inline"
         className="py-5"
       />
     );

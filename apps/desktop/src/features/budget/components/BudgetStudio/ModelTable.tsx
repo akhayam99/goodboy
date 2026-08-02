@@ -5,17 +5,23 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly entries: ReadonlyArray<ModelBreakdownEntry>;
+  readonly formatSpent?: (value: number) => string;
+  readonly borderedEmptyState?: boolean;
 };
 
-export const ModelTable = ({ entries }: Props) => {
+export const ModelTable = ({
+  entries,
+  formatSpent = formatUsdPrecise,
+  borderedEmptyState = true,
+}: Props) => {
   if (entries.length === 0) {
     return (
       <EmptyState
-        bordered
+        bordered={borderedEmptyState}
         icon={CONCEPT_ICONS.budget}
         title="No model usage recorded yet"
         size="inline"
-        className="justify-center border-solid bg-muted/10 px-3 py-4"
+        className="justify-center bg-muted/10 px-3 py-4"
       />
     );
   }
@@ -46,7 +52,7 @@ export const ModelTable = ({ entries }: Props) => {
               {formatTokens(entry.tokensOut)}
             </td>
             <td className="px-3 py-2 text-right font-mono tabular-nums font-medium text-foreground">
-              {formatUsdPrecise(entry.spentUsd)}
+              {formatSpent(entry.spentUsd)}
             </td>
           </tr>
         ))}

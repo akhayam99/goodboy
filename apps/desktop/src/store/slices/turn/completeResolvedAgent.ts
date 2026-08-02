@@ -3,14 +3,19 @@ import {
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
+  extractFanOut,
   extractPlanFromMarker,
   extractReviewComments,
-  extractScoutSplit,
+  fanOutCapabilityForRole,
   fallbackStepOutputSummary,
 } from '@goodboy/core';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { inferAgentKindFromName, type AgentKind } from '../../../features/session/agent-kind';
+import {
+  inferAgentKindFromName,
+  KIND_TO_ROLE,
+  type AgentKind,
+} from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
 import type { ResolverThreadOutcome } from '../../types';
 
@@ -37,11 +42,14 @@ export const completeResolvedAgent = async ({
       get().agentKindOverride[resolvedAgentId] ??
       inferAgentKindFromName(ranAgent.name))
     : null;
-  const isScoutNode =
-    ranKind === 'scout' &&
-    (ranAgent?.parentAgentId != null || extractScoutSplit(assistantText) != null);
+  const role = ranKind ? KIND_TO_ROLE[ranKind] : 'custom';
+  const capability = fanOutCapabilityForRole(role);
+  const extractedFanOut = extractFanOut(assistantText);
+  const isFanOutNode =
+    capability.mode !== 'never' &&
+    (ranAgent?.parentAgentId != null || (extractedFanOut != null && extractedFanOut.length >= 2));
 
-  if (isScoutNode) {
+  if (isFanOutNode) {
     await get().advanceScoutTree(sessionId, resolvedAgentId, assistantText);
     return null;
   }

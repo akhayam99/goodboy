@@ -4,6 +4,7 @@ import { Button } from '@goodboy/ui';
 import type { Workspace, WorkspaceKind } from '@goodboy/types';
 import type { WorkspaceLinkMode } from '../../../workspace/components/WorkspaceLinkForm';
 import { WorkspaceLinkForm } from '../../../workspace/components/WorkspaceLinkForm';
+import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 
 export type WorkspaceAudience = 'developer' | 'everyone-else';
 
@@ -114,6 +115,22 @@ export const WorkspaceStep = ({
     );
   }
 
+  const onFormComplete = ({ mode }: { readonly mode: WorkspaceLinkMode }) => {
+    if (workspace === null && audience === 'developer' && mode === 'single') {
+      onIsChangingChange(true);
+      return;
+    }
+    onIsChangingChange(false);
+  };
+
+  const onFormCancel = () => {
+    if (workspace !== null) {
+      onIsChangingChange(false);
+      return;
+    }
+    onAudienceChange(null);
+  };
+
   return (
     <StepFrame
       title={workspace === null ? 'Add workspace' : 'Change workspace'}
@@ -124,11 +141,12 @@ export const WorkspaceStep = ({
       }
     >
       <WorkspaceLinkForm
-        onComplete={() => onIsChangingChange(false)}
-        onCancel={() => onAudienceChange(null)}
+        onComplete={onFormComplete}
+        onCancel={onFormCancel}
         cancelLabel="Back"
         showBreadcrumb={false}
         modes={AUDIENCE_MODES[audience]}
+        draftStorageKey={STORAGE_KEYS.onboardingWorkspaceDraft}
       />
     </StepFrame>
   );

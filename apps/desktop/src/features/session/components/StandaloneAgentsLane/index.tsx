@@ -112,6 +112,7 @@ export const StandaloneAgentsLane = ({
             icon={CONCEPT_ICONS.agents}
             title={hasNoAgents ? 'No agents yet' : 'No active agents'}
             description={hasNoAgents ? NO_AGENTS_DESCRIPTION : ALL_DONE_DESCRIPTION}
+            size="inline"
           />
         )
       }

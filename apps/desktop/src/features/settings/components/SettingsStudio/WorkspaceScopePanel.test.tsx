@@ -28,10 +28,6 @@ vi.mock('../../../../features/skills/components/SkillsPanel', () => ({
   SkillsPanel: () => null,
 }));
 
-vi.mock('../../../../features/scripts', () => ({
-  ScriptsPanel: () => null,
-}));
-
 vi.mock('../../../../features/session/components/VerbositySelect', () => ({
   VerbositySelect: () => null,
 }));
@@ -69,7 +65,7 @@ describe('WorkspaceScopePanel', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
     expect(screen.getByLabelText(/branch prefix/i)).toBeDefined();
     expect(screen.queryByText(/default provider/i)).toBeNull();
-    expect(screen.getByText(/parallel scouts/i)).toBeDefined();
+    expect(screen.getByText(/parallel agents/i)).toBeDefined();
     expect(screen.queryByText('Linear')).toBeNull();
     expect(screen.queryByText('GitHub')).toBeNull();
     expect(screen.queryByRole('button', { name: /^general$/i })).toBeNull();

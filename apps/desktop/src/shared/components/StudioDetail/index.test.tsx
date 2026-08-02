@@ -110,6 +110,23 @@ describe('StudioDetailLayout', () => {
     expect(band.className).toContain('bg-background');
   });
 
+  it('insets the properties rail in flow mode', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+        fit="flow"
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const rail = screen.getByTestId('detail-properties').closest('.px-6');
+    expect(rail).not.toBeNull();
+    expect((rail as HTMLElement).className).toContain('py-4');
+    expect((rail as HTMLElement).className).toContain('lg:p-4');
+  });
+
   it('renders the properties once, as a wrapping row below lg and a column from lg', () => {
     render(
       <StudioDetailLayout
@@ -221,6 +238,17 @@ describe('DetailSection', () => {
     expect(screen.getByText('description')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Edit' })).toBeDefined();
     expect(screen.getByText('Body copy')).toBeDefined();
+  });
+
+  it('renders a frameless body without card styling', () => {
+    render(
+      <DetailSection label="description" variant="frameless">
+        <p>Primary body</p>
+      </DetailSection>,
+    );
+
+    const body = screen.getByText('Primary body').parentElement;
+    expect(body?.className).toBe('');
   });
 });
 

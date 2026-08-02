@@ -7,43 +7,111 @@ export type ParseContext = {
   readonly onUnknown?: (type: string, payload: unknown) => void;
 };
 
-const KNOWN_TYPES = new Set(['response.delta', 'response.completed', 'usage', 'error']);
+type Payload = {
+  readonly event?: unknown;
+  readonly init?: unknown;
+  readonly step_update?: unknown;
+  readonly result?: unknown;
+} & Record<string, unknown>;
 
-type UsagePayload = {
-  readonly input_tokens?: number;
-  readonly cached_input_tokens?: number;
-  readonly cache_creation_input_tokens?: number;
-  readonly output_tokens?: number;
-  readonly inputTokens?: number;
-  readonly cachedInputTokens?: number;
-  readonly cacheCreationInputTokens?: number;
-  readonly outputTokens?: number;
+type UnknownValueParams = {
+  readonly value: unknown;
 };
 
-function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
-  const inputTokens = raw?.input_tokens ?? raw?.inputTokens ?? 0;
-  const outputTokens = raw?.output_tokens ?? raw?.outputTokens ?? 0;
-  return {
-    inputTokens,
-    outputTokens,
-    cachedInputTokens: raw?.cached_input_tokens ?? raw?.cachedInputTokens ?? 0,
-    cacheCreationInputTokens:
-      raw?.cache_creation_input_tokens ?? raw?.cacheCreationInputTokens ?? 0,
-    contextTokens: inputTokens + outputTokens,
-    estimatedCostUsd: 0,
-  };
-}
+type TryParseJsonParams = {
+  readonly line: string;
+};
 
-function tryParseJson(line: string): ({ type?: string } & Record<string, unknown>) | null {
+type ReadNumberParams = {
+  readonly payload: Readonly<Record<string, unknown>> | undefined;
+  readonly key: string;
+};
+
+type BuildUsageParams = {
+  readonly raw: Readonly<Record<string, unknown>> | undefined;
+};
+
+type BuildErrorMessageParams = {
+  readonly payload: Payload;
+  readonly result: Readonly<Record<string, unknown>> | undefined;
+};
+
+const toRecord = ({ value }: UnknownValueParams): Record<string, unknown> | undefined => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as Record<string, unknown>;
+};
+
+const tryParseJson = ({ line }: TryParseJsonParams): Payload | null => {
   if (!line.startsWith('{') && !line.startsWith('[')) {
     return null;
   }
+
   try {
-    return JSON.parse(line) as { type?: string } & Record<string, unknown>;
+    const parsed: unknown = JSON.parse(line);
+    if (typeof parsed !== 'object' || parsed === null) {
+      return null;
+    }
+    return parsed as Payload;
   } catch {
     return null;
   }
-}
+};
+
+const readNumber = ({ payload, key }: ReadNumberParams): number | undefined => {
+  const value = payload?.[key];
+  if (typeof value !== 'number') {
+    return undefined;
+  }
+  return value;
+};
+
+const buildUsage = ({ raw }: BuildUsageParams): ProviderUsage => {
+  const inputTokens = readNumber({ payload: raw, key: 'input_tokens' }) ?? 0;
+  const outputTokens = readNumber({ payload: raw, key: 'output_tokens' }) ?? 0;
+  const totalTokens = readNumber({ payload: raw, key: 'total_tokens' });
+  return {
+    inputTokens,
+    outputTokens,
+    cachedInputTokens: readNumber({ payload: raw, key: 'cache_read_tokens' }) ?? 0,
+    cacheCreationInputTokens: 0,
+    contextTokens: totalTokens ?? inputTokens + outputTokens,
+    estimatedCostUsd: 0,
+  };
+};
+
+const findErrorText = ({ value }: UnknownValueParams): string | undefined => {
+  if (typeof value === 'string' && value.length > 0) {
+    return value;
+  }
+  const record = toRecord({ value });
+  if (record === undefined) {
+    return undefined;
+  }
+
+  const candidates = [record['message'], record['error'], record['error_message'], record['text']];
+  for (const candidate of candidates) {
+    const text = findErrorText({ value: candidate });
+    if (text !== undefined) {
+      return text;
+    }
+  }
+  return undefined;
+};
+
+const buildErrorMessage = ({ payload, result }: BuildErrorMessageParams): string => {
+  const status = result?.['status'];
+  const errorText =
+    findErrorText({ value: result?.['error'] }) ??
+    findErrorText({ value: result?.['error_message'] }) ??
+    findErrorText({ value: result?.['message'] });
+  const detail = errorText ?? JSON.stringify(payload);
+  if (typeof status !== 'string' || status.length === 0) {
+    return detail;
+  }
+  return `${status}: ${detail}`;
+};
 
 export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<TurnEvent> => {
   const trimmed = line.trim();
@@ -52,53 +120,74 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
   }
 
   const at = ctx.now();
-  const payload = tryParseJson(trimmed);
+  const payload = tryParseJson({ line: trimmed });
 
   if (payload === null) {
     return [{ kind: 'assistant_text', runId: ctx.runId, delta: `${trimmed}\n`, at }];
   }
 
-  const type = payload.type;
-  switch (type) {
-    case 'response.delta': {
-      const delta = typeof payload['text'] === 'string' ? (payload['text'] as string) : '';
-      if (delta.length === 0) {
+  const event = payload.event;
+  switch (event) {
+    case 'init': {
+      const conversationId = payload['conversation_id'];
+      if (typeof conversationId !== 'string' || conversationId.length === 0) {
+        return [];
+      }
+      return [
+        {
+          kind: 'provider_session_init',
+          runId: ctx.runId,
+          providerSessionId: conversationId,
+          provider: 'gemini',
+          at,
+        },
+      ];
+    }
+
+    case 'step_update': {
+      const stepUpdate = toRecord({ value: payload.step_update });
+      if (stepUpdate?.['step_type'] !== 'agent_response') {
+        return [];
+      }
+      const delta = stepUpdate['text_delta'];
+      if (typeof delta !== 'string' || delta.length === 0) {
         return [];
       }
       return [{ kind: 'assistant_text', runId: ctx.runId, delta, at }];
     }
 
-    case 'response.completed':
-      return [];
-
-    case 'usage': {
-      const usage = buildUsage(payload['usage'] as UsagePayload | undefined);
-      return [{ kind: 'usage', runId: ctx.runId, usage, at }];
-    }
-
-    case 'error': {
-      const msg =
-        typeof payload['message'] === 'string'
-          ? (payload['message'] as string)
-          : JSON.stringify(payload);
-      return [{ kind: 'error', runId: ctx.runId, message: msg, at }];
+    case 'result': {
+      const result = toRecord({ value: payload.result });
+      const rawUsage = toRecord({ value: result?.['usage'] });
+      const events: TurnEvent[] = [
+        { kind: 'usage', runId: ctx.runId, usage: buildUsage({ raw: rawUsage }), at },
+      ];
+      if (result?.['status'] !== 'SUCCESS') {
+        events.push({
+          kind: 'error',
+          runId: ctx.runId,
+          message: buildErrorMessage({ payload, result }),
+          at,
+        });
+      }
+      return events;
     }
 
     default:
-      if (typeof type === 'string' && !KNOWN_TYPES.has(type)) {
-        devWarn(`[gemini-adapter] unknown json payload type: ${type}`);
-        ctx.onUnknown?.(type, payload);
-        return [
-          {
-            kind: 'unknown_payload',
-            runId: ctx.runId,
-            adapter: 'gemini',
-            payloadType: type,
-            raw: payload,
-            at,
-          },
-        ];
+      if (typeof event !== 'string') {
+        return [];
       }
-      return [];
+      devWarn(`[gemini-adapter] unknown json payload event: ${event}`);
+      ctx.onUnknown?.(event, payload);
+      return [
+        {
+          kind: 'unknown_payload',
+          runId: ctx.runId,
+          adapter: 'gemini',
+          payloadType: event,
+          raw: payload,
+          at,
+        },
+      ];
   }
 };

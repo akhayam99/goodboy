@@ -13,6 +13,6 @@ export const SESSION_FEATURES = {
 } as const;
 
 export const AGENT_FEATURES = {
-  parallelAgents: false,
+  parallelAgents: true,
   maxParallelism: 4,
 } as const;

@@ -52,7 +52,7 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
 
       <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
         {isGlobal ? (
-          <span className="px-1 text-2xs uppercase tracking-eyebrow text-muted-foreground/40 group-focus-within:hidden group-hover:hidden">
+          <span className="px-1 text-2xs uppercase tracking-eyebrow text-muted-foreground group-focus-within:hidden group-hover:hidden">
             global
           </span>
         ) : null}

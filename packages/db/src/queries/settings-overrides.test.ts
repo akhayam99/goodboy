@@ -16,7 +16,7 @@ const EMPTY: OverrideSettings = {
   providerBindings: null,
   taskModels: null,
   roleModels: null,
-  scoutFanout: null,
+  parallelAgents: null,
 };
 
 async function makeDb() {

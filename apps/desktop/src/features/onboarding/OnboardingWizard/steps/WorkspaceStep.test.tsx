@@ -7,15 +7,19 @@ import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
 
 vi.mock('../../../workspace/components/WorkspaceLinkForm', () => ({
   WorkspaceLinkForm: ({
+    onComplete,
     onCancel,
     cancelLabel,
     modes,
   }: {
+    onComplete: (params: { readonly mode: 'single' | 'multi' | 'simple' }) => void;
     onCancel: () => void;
     cancelLabel: string;
     modes: ReadonlyArray<string>;
   }) => (
     <div data-testid="workspace-link-form" data-modes={modes.join(',')}>
+      <button onClick={() => onComplete({ mode: 'single' })}>Complete single</button>
+      <button onClick={() => onComplete({ mode: 'multi' })}>Complete multi</button>
       <button onClick={onCancel}>{cancelLabel}</button>
     </div>
   ),
@@ -68,6 +72,16 @@ describe('WorkspaceStep', () => {
     expect(screen.getByTestId('workspace-link-form').getAttribute('data-modes')).toBe(
       'single,multi',
     );
+  });
+
+  it('keeps the form open after adding the first single-project workspace', () => {
+    const { rerender } = render(<Harness workspace={null} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /I write code/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Complete single' }));
+    rerender(<Harness workspace={REPOSITORY_WORKSPACE} />);
+
+    expect(screen.getByTestId('workspace-link-form')).toBeDefined();
   });
 
   it('sends everyone else straight to the standalone path', () => {

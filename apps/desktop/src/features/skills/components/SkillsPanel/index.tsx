@@ -269,7 +269,7 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
               label={`Delete ${skill.name}`}
               tone="danger"
               size="default"
-              active={isDeleteArmed}
+              highlighted={isDeleteArmed}
               expanded={isDeleteArmed}
               onClick={() => setIsDeleteArmed(true)}
             />

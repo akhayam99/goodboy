@@ -81,6 +81,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
                 <EmptyState
                   icon={CONCEPT_ICONS.workspace}
                   title="No workspaces"
+                  size="inline"
                   className="px-4 py-6"
                 />
               </li>

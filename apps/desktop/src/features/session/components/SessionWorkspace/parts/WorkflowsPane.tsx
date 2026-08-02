@@ -140,6 +140,7 @@ export const WorkflowsPane = ({ session }: Props) => {
                       ? 'Every attached workflow is done. Reveal the completed ones to reread them, or attach another.'
                       : 'No live workflow on this session. Attach one to start.'
                   }
+                  size="inline"
                   action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
                 />
               ) : null}

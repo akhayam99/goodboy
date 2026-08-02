@@ -11,7 +11,7 @@ const EMPTY_OVERRIDE: OverrideSettings = {
   providerBindings: null,
   taskModels: null,
   roleModels: null,
-  scoutFanout: null,
+  parallelAgents: null,
 };
 
 export const setWorkspaceProviderBinding = (set: SetFn, get: GetFn) => {

@@ -1,20 +1,23 @@
-import { CircleAlert } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
-
-const dangerTint = tintClasses('danger');
+import { TurnErrorCallout } from '../TurnErrorCallout';
 
 type Props = {
   readonly message: string;
+  readonly onRetry?: () => void;
+  readonly isRetrying?: boolean;
 };
 
-export const TranscriptErrorRow = ({ message }: Props) => (
-  <div className="flex w-full items-start gap-2 text-xs">
-    <CircleAlert
-      size={12}
-      aria-hidden
-      data-testid="transcript-error-icon"
-      className={cn('shrink-0 translate-y-0.5', dangerTint.icon)}
-    />
-    <span className={cn('min-w-0 break-words', dangerTint.text)}>{message}</span>
-  </div>
+export const TranscriptErrorRow = ({ message, onRetry, isRetrying = false }: Props) => (
+  <TurnErrorCallout
+    message={message}
+    iconTestId="transcript-error-icon"
+    retryAction={
+      onRetry != null
+        ? {
+            label: isRetrying ? 'retrying' : 'retry',
+            onClick: onRetry,
+            disabled: isRetrying === true,
+          }
+        : undefined
+    }
+  />
 );

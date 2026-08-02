@@ -295,7 +295,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             summarizer: { providerId: 'cursor', model: 'sonnet-4.6' },
           },
           roleModels: null,
-          scoutFanout: null,
+          parallelAgents: null,
         },
       },
       workspaces: [
