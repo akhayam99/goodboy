@@ -95,6 +95,8 @@ describe('BudgetStudio', () => {
     );
     expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/session cost/i)).toBeDefined();
+    expect(screen.getByText(/cost per turn/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'recent' })).toBeDefined();
   });
 
   it('authors a new provider cap via saveBudgetRule', () => {

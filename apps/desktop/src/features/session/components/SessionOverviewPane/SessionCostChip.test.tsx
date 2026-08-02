@@ -54,6 +54,21 @@ const alert = (over: Partial<BudgetAlert> = {}): BudgetAlert =>
     ...over,
   }) as BudgetAlert;
 
+const telemetryRecord = (over: Partial<TelemetryRecord> = {}): TelemetryRecord =>
+  ({
+    id: 'telemetry-1',
+    runId: 'run-1',
+    sessionId: SID,
+    kind: 'turn',
+    provider: 'anthropic',
+    model: 'claude-opus-4-8',
+    inputTokens: 120,
+    outputTokens: 220,
+    estimatedCostUsd: 1.7562,
+    recordedAt: '2026-07-27T10:00:00.000Z',
+    ...over,
+  }) as TelemetryRecord;
+
 beforeEach(() => {
   state.sessionCost = 0;
   store.budgetAlerts = [];
@@ -131,6 +146,20 @@ describe('SessionCostChip', () => {
     expect(screen.getByRole('button').getAttribute('title')).toContain('$1.7562');
   });
 
+  it('uses at-a-glance cost formatting in the popover while keeping cap editing', () => {
+    state.sessionCost = 1.7562;
+    store.sessionTelemetry = {
+      [SID]: [telemetryRecord()],
+    };
+    render(<SessionCostChip sessionId={SID} />);
+
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByLabelText('session soft cap')).toBeDefined();
+    expect(screen.getAllByText('$1.76').length).toBeGreaterThan(0);
+    expect(screen.queryByText('$1.7562')).toBeNull();
+  });
+
   it('keeps a sub-cent cap exact in the tooltip too', () => {
     state.sessionCost = 0.0012;
     store.sessionBudgets = {
@@ -157,6 +186,23 @@ describe('SessionCostChip', () => {
     expect(store.loadSessionTelemetry).toHaveBeenCalledWith(SID);
     expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
     expect(handler).not.toHaveBeenCalled();
+    window.removeEventListener('goodboy:open-budget-studio', handler);
+  });
+
+  it('opens budget studio at the same session scope from the popover', () => {
+    const handler = vi.fn();
+    window.addEventListener('goodboy:open-budget-studio', handler);
+    render(<SessionCostChip sessionId={SID} />);
+
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button', { name: /open full budget details/i }));
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    const event = handler.mock.calls[0]?.[0] as CustomEvent<{
+      scope?: { kind?: string; sessionId?: SessionId };
+    }>;
+    expect(event.detail.scope).toEqual({ kind: 'session', sessionId: SID });
+    expect(screen.queryByRole('dialog', { name: 'session budget details' })).toBeNull();
     window.removeEventListener('goodboy:open-budget-studio', handler);
   });
 
