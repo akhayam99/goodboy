@@ -18,6 +18,7 @@ import {
 import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { useThemeStore } from '../../../../shared/lib/theme';
 
 type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'recents';
 
@@ -110,6 +111,8 @@ export const CommandPalette = ({
     currentSession ? (s.sessionWorktrees[currentSession.id]?.[0] ?? null) : null,
   );
   const { showToast } = useToast();
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   const parsed = useMemo(() => parseQuery(query), [query]);
 
@@ -194,6 +197,19 @@ export const CommandPalette = ({
       });
     }
 
+    out.push({
+      id: 'action:toggle-theme',
+      label: theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+      group: 'action',
+      onSelect: () => toggleTheme(),
+    });
+    out.push({
+      id: 'action:pair-device',
+      label: 'Pair your iPhone',
+      group: 'action',
+      onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-pair-device')),
+    });
+
     if (onOpenShortcutHelp) {
       out.push({
         id: 'help:shortcuts',
@@ -203,6 +219,12 @@ export const CommandPalette = ({
         onSelect: () => onOpenShortcutHelp(),
       });
     }
+    out.push({
+      id: 'help:guide',
+      label: 'Getting started',
+      group: 'help',
+      onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-guide')),
+    });
 
     return out;
   }, [
@@ -221,6 +243,8 @@ export const CommandPalette = ({
     onOpenSettings,
     onNewSession,
     onOpenShortcutHelp,
+    theme,
+    toggleTheme,
   ]);
 
   const filtered = useMemo(() => {

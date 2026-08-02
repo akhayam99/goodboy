@@ -38,15 +38,6 @@ vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
 
-vi.mock('../../../shared/lib/theme', () => ({
-  useThemeStore: <T,>(selector: (s: { theme: string; toggleTheme: () => void }) => T) =>
-    selector({ theme: 'light', toggleTheme: vi.fn() }),
-}));
-
-vi.mock('../../../features/companion/bridge', () => ({
-  bridgeStatus: () => Promise.resolve({ running: false, enrolledCount: 0 }),
-}));
-
 vi.mock('../../../features/updater/components/UpdateIndicator', () => ({
   UpdateIndicator: () => <button type="button">Update to 0.2.0</button>,
 }));
@@ -86,6 +77,14 @@ describe('AppTopBar', () => {
   it('renders settings button', () => {
     render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
     expect(screen.getByRole('button', { name: 'open settings' })).toBeDefined();
+  });
+
+  it('keeps set-once preferences out of the bar', () => {
+    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+
+    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /pair your iphone/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /getting started/i })).toBeNull();
   });
 
   it('settings button has active state when settings studio is open', () => {
