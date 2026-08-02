@@ -1,19 +1,21 @@
 import { useMemo } from 'react';
 import { StatCard, formatUsdPrecise } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
 import { CapEditor } from './CapEditor';
 import { ModelTable } from './ModelTable';
-import { Sparkline } from './Sparkline';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { Sparkline } from '../../../../shared/components/Sparkline';
 import { buildModelBreakdown, chronologicalTurnCosts, type WorkspaceTurn } from './lib';
 
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly softCapUsd: number | null;
   readonly onSaveCap: (capUsd: number) => Promise<void>;
+  readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
-export const SessionBudgetContent = ({ turns, softCapUsd, onSaveCap }: Props) => {
+export const SessionBudgetContent = ({ turns, softCapUsd, onSaveCap, onOpenSession }: Props) => {
   const records = useMemo(() => turns.map((turn) => turn.record), [turns]);
   const models = useMemo(() => buildModelBreakdown(records), [records]);
   const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
@@ -46,7 +48,7 @@ export const SessionBudgetContent = ({ turns, softCapUsd, onSaveCap }: Props) =>
       <StudioWidget label="cost per turn">
         <Sparkline values={turnCosts} />
       </StudioWidget>
-      <TurnsTable turns={turns} showSession={false} />
+      <TurnsTable turns={turns} showSession={false} onOpenSession={onOpenSession} />
     </div>
   );
 };

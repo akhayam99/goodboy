@@ -6,15 +6,15 @@ import type {
 } from '@goodboy/db';
 import { EmptyState, StatCard, formatTokens } from '@goodboy/ui';
 import { ArrowUpRight, Wallet } from 'lucide-react';
-import type { QueryResult } from '../../hooks/useImpactMetrics';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import type { QueryResult } from '../../../../shared/types/queryResult';
 import { turnStats } from '../../utils/turnStats';
-import { ErrorStrip } from './ErrorStrip';
-import { PanelLoading } from './PanelLoading';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
-import { Sparkline } from './Sparkline';
 import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { Sparkline } from '../../../../shared/components/Sparkline';
 
 type Props = {
   readonly cacheEfficiency: QueryResult<ReadonlyArray<CacheEfficiencyEntry>>;
@@ -58,7 +58,7 @@ export const EfficiencyPanel = ({
       context === null &&
       turnData === null &&
       nudgeData === null ? (
-        <PanelLoading />
+        <PanelLoading label="Loading impact metrics" />
       ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="cache hit ratio" value={`${Math.round(overallHitRatio * 100)}%`} />
@@ -96,7 +96,10 @@ export const EfficiencyPanel = ({
           </div>
         </StudioWidget>
         <StudioWidget label="context growth per turn" hint="latest 40 measured turns">
-          <Sparkline values={context?.map((point) => point.contextTokens) ?? []} />
+          <Sparkline
+            values={context?.map((point) => point.contextTokens) ?? []}
+            formatMaximum={(maximum) => `${maximum.toLocaleString()} tokens`}
+          />
         </StudioWidget>
         <StudioWidget label="turn distribution" hint={`${stats?.agents ?? 0} agents`}>
           {stats !== null && turnData !== null ? (

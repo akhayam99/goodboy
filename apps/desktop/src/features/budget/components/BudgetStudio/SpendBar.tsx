@@ -1,16 +1,17 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
+import { spendTone } from './lib';
 
 type Props = {
   readonly label: string;
   readonly valueLabel: string;
   readonly pct: number;
-  readonly colorVar: string;
   readonly icon?: React.ReactNode;
   readonly onClick?: () => void;
 };
 
-export const SpendBar = ({ label, valueLabel, pct, colorVar, icon, onClick }: Props) => {
+export const SpendBar = ({ label, valueLabel, pct, icon, onClick }: Props) => {
   const width = `${Math.min(Math.max(pct, 0), 1) * 100}%`;
+  const tone = spendTone({ pct });
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
@@ -24,14 +25,14 @@ export const SpendBar = ({ label, valueLabel, pct, colorVar, icon, onClick }: Pr
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full rounded-full motion-safe:transition-all"
-          style={{ width, backgroundColor: colorVar }}
+          className={cn('h-full rounded-full motion-safe:transition-all', tintClasses(tone).dot)}
+          style={{ width }}
         />
       </div>
     </>
   );
 
-  if (!onClick) {
+  if (onClick === undefined) {
     return <div className="flex flex-col gap-1.5">{body}</div>;
   }
 

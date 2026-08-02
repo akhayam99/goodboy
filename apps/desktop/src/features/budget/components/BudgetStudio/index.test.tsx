@@ -25,6 +25,7 @@ const { state } = vi.hoisted(() => ({
     budgetRules: [] as ReadonlyArray<unknown>,
     sessionBudgets: {} as Record<string, { softCapUsd: number }>,
     currentWorkspaceId: 'workspace-1',
+    setCurrentSession: vi.fn(),
     loadBudgetRules: vi.fn(),
     loadBudgetAlerts: vi.fn(),
     loadSessionTelemetry: vi.fn(),
@@ -46,6 +47,11 @@ vi.mock('../../../../store', () => ({
 import { BudgetStudio } from './index';
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  state.loadBudgetRules.mockResolvedValue(undefined);
+  state.loadBudgetAlerts.mockResolvedValue(undefined);
+  state.loadSessionTelemetry.mockResolvedValue(undefined);
+  state.loadSessionBudget.mockResolvedValue(undefined);
   state.sessionTelemetry = {
     'session-1': [
       {
@@ -58,7 +64,7 @@ beforeEach(() => {
         inputTokens: 50,
         outputTokens: 100,
         estimatedCostUsd: 1.5,
-        recordedAt: '2026-06-01T00:00:00.000Z',
+        recordedAt: new Date().toISOString(),
       },
     ],
   };
@@ -179,5 +185,49 @@ describe('BudgetStudio', () => {
     fireEvent.change(screen.getByLabelText(/session soft cap/i), { target: { value: '12.5' } });
     fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
     expect(state.setSessionBudget).toHaveBeenCalledWith('session-1', 12.5);
+  });
+
+  it('renders a failed panel load and retries it', async () => {
+    state.loadBudgetAlerts.mockRejectedValueOnce(new Error('alerts unavailable'));
+    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
+
+    expect((await screen.findByRole('alert')).textContent).toContain('alerts unavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(state.loadBudgetAlerts).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens the session from a turn row', () => {
+    const onClose = vi.fn();
+    render(<BudgetStudio workspaceName="goodboy" onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open session build the feature' }));
+    expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('filters telemetry with the header window control', () => {
+    state.sessionTelemetry = {
+      'session-1': [
+        ...state.sessionTelemetry['session-1']!,
+        {
+          id: 't-old',
+          runId: 'r-old',
+          sessionId: 'session-1',
+          kind: 'turn',
+          provider: 'anthropic',
+          model: 'legacy-budget-model',
+          inputTokens: 20,
+          outputTokens: 30,
+          estimatedCostUsd: 2,
+          recordedAt: '2020-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+
+    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
+
+    expect(screen.queryByText('Legacy Budget Model')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'All time' }));
+    expect(screen.getAllByText('Legacy Budget Model').length).toBeGreaterThan(0);
   });
 });

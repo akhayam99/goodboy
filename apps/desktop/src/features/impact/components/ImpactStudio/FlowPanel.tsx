@@ -1,10 +1,10 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState, StatCard } from '@goodboy/ui';
-import type { QueryResult } from '../../hooks/useImpactMetrics';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
-import { ErrorStrip } from './ErrorStrip';
-import { PanelLoading } from './PanelLoading';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
@@ -35,7 +35,9 @@ export const FlowPanel = ({
     >
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
       <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
-      {isLoading && agents === null && health === null ? <PanelLoading /> : null}
+      {isLoading && agents === null && health === null ? (
+        <PanelLoading label="Loading impact metrics" />
+      ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label="median wall-clock"

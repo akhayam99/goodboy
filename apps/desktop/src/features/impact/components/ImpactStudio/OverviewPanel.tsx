@@ -2,10 +2,10 @@ import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodb
 import type { SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import type { QueryResult } from '../../hooks/useImpactMetrics';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
-import { ErrorStrip } from './ErrorStrip';
-import { PanelLoading } from './PanelLoading';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SessionRows } from './SessionRows';
 import { TrendStatCard } from './TrendStatCard';
@@ -54,7 +54,7 @@ export const OverviewPanel = ({
         onRetry={onRetryShipped}
       />
       <ErrorStrip label="review outcomes" error={reviews.error} onRetry={onRetryShipped} />
-      {isLoading && data === null ? <PanelLoading /> : null}
+      {isLoading && data === null ? <PanelLoading label="Loading impact metrics" /> : null}
       {data !== null && data.sessionCount === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.impact}

@@ -1,5 +1,5 @@
-import { Eyebrow } from '@goodboy/ui';
-import { spendStrokeColor } from './lib';
+import { cn, Eyebrow, tintClasses } from '@goodboy/ui';
+import { spendTone } from './lib';
 
 type Props = {
   readonly pct: number;
@@ -14,6 +14,7 @@ export const CostRing = ({ pct, centerLabel, subLabel, size = 132 }: Props) => {
   const c = 2 * Math.PI * r;
   const filled = Math.min(Math.max(pct, 0), 1) * c;
   const center = size / 2;
+  const tone = spendTone({ pct });
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -31,17 +32,17 @@ export const CostRing = ({ pct, centerLabel, subLabel, size = 132 }: Props) => {
           cy={center}
           r={r}
           fill="none"
-          stroke={spendStrokeColor(pct)}
+          stroke="currentColor"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${filled} ${c - filled}`}
           transform={`rotate(-90 ${center} ${center})`}
-          className="motion-safe:transition-all"
+          className={cn('motion-safe:transition-all', tintClasses(tone).text)}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
         <span className="font-mono text-lg tabular-nums text-foreground">{centerLabel}</span>
-        {subLabel ? <Eyebrow label={subLabel} /> : null}
+        {subLabel !== undefined ? <Eyebrow label={subLabel} /> : null}
       </div>
     </div>
   );
