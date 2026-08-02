@@ -67,7 +67,7 @@ describe('RoutingPicker', () => {
     );
   });
 
-  it('shows the muted no-tuning line for Gemini', () => {
+  it('offers the effort axis for Gemini because its cli refuses a model without one', () => {
     render(
       <RoutingPicker
         {...baseProps}
@@ -78,11 +78,13 @@ describe('RoutingPicker', () => {
     );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
     expect(trigger.textContent).toContain('3.5 Flash');
-    expect(trigger.textContent).not.toContain('High');
     fireEvent.click(trigger);
-    expect(screen.getByRole('region', { name: 'Tuning' }).textContent).toContain(
-      'No tuning options for this provider',
-    );
+    const effort = within(screen.getByRole('group', { name: 'Effort' }));
+    expect(effort.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Low',
+      'Medium',
+      'High',
+    ]);
   });
 
   it('keeps provider tuning visible but disabled when the caller cannot edit effort', () => {
@@ -354,7 +356,7 @@ describe('RoutingPicker', () => {
     ).toHaveLength(5);
   });
 
-  it('reshapes tuning labels for effort, variant, and no-option providers', () => {
+  it('reshapes tuning labels for every provider that carries an effort axis', () => {
     const view = render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     expect(screen.getByRole('group', { name: 'Effort' })).toBeDefined();
@@ -369,9 +371,11 @@ describe('RoutingPicker', () => {
     routerView.unmount();
     render(<RoutingPicker {...baseProps} provider="gemini" model="gemini-3.1-pro" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('region', { name: 'Tuning' }).textContent).toContain(
-      'No tuning options for this provider',
-    );
+    expect(
+      within(screen.getByRole('group', { name: 'Effort' }))
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Low', 'High']);
   });
 
   it('shows the no-option message without an effort row for Haiku', () => {

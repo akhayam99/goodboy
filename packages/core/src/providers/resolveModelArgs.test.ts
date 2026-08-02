@@ -38,4 +38,27 @@ describe('resolveModelArgs', () => {
     });
     expect(resolved).not.toHaveProperty('maxMode');
   });
+
+  it('gives Gemini the long model flag and an effort, both of which its cli demands', () => {
+    expect(
+      resolveModelArgs({
+        provider: 'gemini',
+        selection: { key: 'gemini-3.5-flash', effort: 'low' },
+      }),
+    ).toEqual({
+      args: ['--model', 'gemini-3.5-flash', '--effort', 'low'],
+    });
+  });
+
+  it('clamps a Gemini effort the selected model does not publish', () => {
+    expect(
+      resolveModelArgs({
+        provider: 'gemini',
+        selection: { key: 'gemini-3.1-pro', effort: 'medium' },
+      }),
+    ).toEqual({
+      args: ['--model', 'gemini-3.1-pro', '--effort', 'low'],
+      clamped: { requested: 'medium', applied: 'low' },
+    });
+  });
 });

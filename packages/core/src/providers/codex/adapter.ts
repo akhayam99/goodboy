@@ -136,6 +136,8 @@ const spawnCodex = async function* ({
   const ctx = { runId: request.runId, now, onUnknown };
 
   yield* streamChildEvents(child, ctx, parseJsonLine, {
-    onClose: () => [{ kind: 'done', runId: request.runId, at: now() }],
+    onClose: ({ exitCode: _exitCode, stderr: _stderr }) => [
+      { kind: 'done', runId: request.runId, at: now() },
+    ],
   });
 };

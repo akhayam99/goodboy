@@ -14,10 +14,10 @@ class FakeChild extends EventEmitter {
   killed = false;
   signal: NodeJS.Signals | null = null;
 
-  constructor(lines: ReadonlyArray<string>, exit = 0) {
+  constructor(lines: ReadonlyArray<string>, exit = 0, stderrLines: ReadonlyArray<string> = []) {
     super();
     this.stdout = Readable.from(lines.map((line) => `${line}\n`));
-    this.stderr = Readable.from([]);
+    this.stderr = Readable.from(stderrLines.map((line) => `${line}\n`));
     queueMicrotask(() => {
       this.exitCode = exit;
       this.stdout.on('end', () => this.emit('close', exit));
@@ -82,18 +82,28 @@ describe('GeminiAdapter.spawn', () => {
     expect(events[0]).toMatchObject({ delta: 'Hello from gemini\n' });
   });
 
-  it('parses a JSON response.delta line into assistant_text', async () => {
-    const line = JSON.stringify({ type: 'response.delta', text: 'streamed' });
+  it('streams agent response text from structured output', async () => {
+    const line = JSON.stringify({
+      event: 'step_update',
+      step_update: {
+        state: 'ACTIVE',
+        step_type: 'agent_response',
+        text_delta: 'streamed',
+      },
+    });
     const child = new FakeChild([line]);
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
     expect(events.find((e) => e.kind === 'assistant_text')).toMatchObject({ delta: 'streamed' });
   });
 
-  it('emits usage with token counts from a usage JSON line', async () => {
+  it('emits usage with token counts from the final result', async () => {
     const line = JSON.stringify({
-      type: 'usage',
-      usage: { input_tokens: 100, cached_input_tokens: 30, output_tokens: 50 },
+      event: 'result',
+      result: {
+        status: 'SUCCESS',
+        usage: { input_tokens: 100, cache_read_tokens: 30, output_tokens: 50 },
+      },
     });
     const child = new FakeChild([line]);
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
@@ -104,12 +114,17 @@ describe('GeminiAdapter.spawn', () => {
     });
   });
 
-  it('surfaces a JSON error line as an error event', async () => {
-    const line = JSON.stringify({ type: 'error', message: 'quota exceeded' });
+  it('surfaces a failed final result as an error event', async () => {
+    const line = JSON.stringify({
+      event: 'result',
+      result: { status: 'FAILED', error: 'quota exceeded' },
+    });
     const child = new FakeChild([line]);
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
-    expect(events.find((e) => e.kind === 'error')).toMatchObject({ message: 'quota exceeded' });
+    expect(events.find((e) => e.kind === 'error')).toMatchObject({
+      message: 'FAILED: quota exceeded',
+    });
   });
 
   it('always emits done as the last event', async () => {
@@ -119,6 +134,25 @@ describe('GeminiAdapter.spawn', () => {
     expect(events[events.length - 1]?.kind).toBe('done');
   });
 
+  it('emits a rejected flag error before done when the CLI exits non-zero', async () => {
+    const child = new FakeChild([], 2, [
+      'flags provided but not defined: -m',
+      'Usage:',
+      '  agy [flags]',
+    ]);
+    const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
+    const events = await collect(adapter);
+    expect(events).toEqual([
+      {
+        kind: 'error',
+        runId: makeRequest().runId,
+        message: 'The installed agy CLI does not accept the -m flag.',
+        at: fakeNow(),
+      },
+      { kind: 'done', runId: makeRequest().runId, at: fakeNow() },
+    ]);
+  });
+
   it('throws when the child process emits error', async () => {
     const child = new FakeChild([], 1);
     queueMicrotask(() => child.emit('error', new Error('ENOENT gemini')));
@@ -126,7 +160,7 @@ describe('GeminiAdapter.spawn', () => {
     await expect(collect(adapter)).rejects.toThrow('ENOENT gemini');
   });
 
-  it('passes -p <prompt> -m <model> --sandbox with system prompt prepended', async () => {
+  it('passes the model with --model and a supported --effort because agy rejects a bare model', async () => {
     let captured: ReadonlyArray<string> = [];
     let capturedBin = '';
     const child = new FakeChild(['ok']);
@@ -138,11 +172,34 @@ describe('GeminiAdapter.spawn', () => {
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn });
     await collect(adapter);
     expect(capturedBin).toBe('agy');
-    expect(captured[0]).toBe('-p');
-    expect(captured[1]).toBe('sys\n\nhi');
-    expect(captured[2]).toBe('-m');
-    expect(captured[3]).toBe(GEMINI_DEFAULT_MODEL);
-    expect(captured[4]).toBe('--sandbox');
+    expect(captured).toEqual([
+      '-p',
+      'sys\n\nhi',
+      '--output-format',
+      'stream-json',
+      '--model',
+      GEMINI_DEFAULT_MODEL,
+      '--effort',
+      'medium',
+      '--sandbox',
+    ]);
+  });
+
+  it('clamps an unsupported effort to one declared by the selected model', async () => {
+    let captured: ReadonlyArray<string> = [];
+    const child = new FakeChild(['ok']);
+    const spawnFn = ((_: string, args: ReadonlyArray<string>) => {
+      captured = args;
+      return child;
+    }) as never;
+    const adapter = new GeminiAdapter({ now: fakeNow, spawnFn });
+    await collect(adapter, {
+      ...makeRequest(),
+      model: 'gemini-3.1-pro',
+      selection: { key: 'gemini-3.1-pro', effort: 'medium' },
+    });
+    expect(captured.slice(2, 4)).toEqual(['--output-format', 'stream-json']);
+    expect(captured.slice(4, 8)).toEqual(['--model', 'gemini-3.1-pro', '--effort', 'low']);
   });
 
   it('kills the child on early break', async () => {

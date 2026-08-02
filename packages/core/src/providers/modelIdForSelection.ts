@@ -8,11 +8,9 @@ type Params = {
 
 export const modelIdForSelection = ({ provider, selection }: Params): string => {
   const { args } = resolveModelArgs({ provider, selection });
-  const flag = provider === 'anthropic' || provider === 'cursor' ? '--model' : '-m';
-  const index = args.indexOf(flag);
-  const id = args[index + 1];
+  const id = args[1];
   if (id == null) {
-    throw new Error(`resolved model args omit ${flag} for ${provider}`);
+    throw new Error(`resolved model args carry no model id for ${provider}`);
   }
   return id;
 };
