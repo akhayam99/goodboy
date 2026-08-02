@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
 import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import type { BudgetRule, ProviderName } from '@goodboy/types';
+import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import type { QueryResult } from '../../../../shared/types/queryResult';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { CapEditor } from './CapEditor';
 import { CostRing } from './CostRing';
@@ -16,11 +19,30 @@ type Props = {
   readonly entry: ProviderSpendEntry | null;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly rule: BudgetRule | null;
+  readonly rulesResult: QueryResult<void>;
+  readonly telemetryResult: QueryResult<void>;
+  readonly isLoading: boolean;
   readonly onSaveCap: (capUsd: number) => Promise<void>;
   readonly onRemoveCap: () => Promise<void>;
+  readonly onRetryRules: () => void;
+  readonly onRetryTelemetry: () => void;
+  readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
-export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemoveCap }: Props) => {
+export const ProviderPanel = ({
+  provider,
+  entry,
+  turns,
+  rule,
+  rulesResult,
+  telemetryResult,
+  isLoading,
+  onSaveCap,
+  onRemoveCap,
+  onRetryRules,
+  onRetryTelemetry,
+  onOpenSession,
+}: Props) => {
   const spent = entry?.spentUsd ?? 0;
   const capUsd = entry?.capUsd ?? null;
   const pct = entry?.pct ?? 0;
@@ -37,7 +59,15 @@ export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemov
       icon={<ProviderIcon provider={provider} size={20} />}
       title={providerLabel(provider)}
       subtitle={`${formatUsdPrecise(spent)} total spend`}
+      maxWidthClass="max-w-5xl"
     >
+      <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
+      <ErrorStrip
+        label="session telemetry"
+        error={telemetryResult.error}
+        onRetry={onRetryTelemetry}
+      />
+      {isLoading && <PanelLoading label="Loading budget data" />}
       {capUsd !== null ? (
         <section className="flex items-center gap-6 rounded-lg border border-border-soft bg-muted/20 p-5">
           <CostRing pct={pct} centerLabel={`${Math.round(pct * 100)}%`} subLabel="of cap" />
@@ -67,7 +97,7 @@ export const ProviderPanel = ({ provider, entry, turns, rule, onSaveCap, onRemov
         <ModelTable entries={models} />
       </StudioWidget>
 
-      <TurnsTable turns={filtered} showSession />
+      <TurnsTable turns={filtered} showSession onOpenSession={onOpenSession} />
     </StudioPanel>
   );
 };

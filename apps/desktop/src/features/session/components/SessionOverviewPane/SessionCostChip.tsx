@@ -13,6 +13,7 @@ import { SessionBudgetContent } from '../../../budget/components/BudgetStudio/Se
 import type { WorkspaceTurn } from '../../../budget/components/BudgetStudio/lib';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
+import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
 
@@ -50,6 +51,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
   const setSessionBudget = useAppStore((state) => state.setSessionBudget);
+  const openSession = useOpenSession();
   const { open, toggle, containerRef, popupRef, popupClassName, popupStyle, portal, portalTarget } =
     useDropdown({
       align: 'end',
@@ -157,6 +159,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
                 turns={turns}
                 softCapUsd={sessionBudget}
                 onSaveCap={(nextCapUsd) => setSessionBudget(sessionId, nextCapUsd)}
+                onOpenSession={(nextSessionId) => openSession(nextSessionId, toggle)}
               />
             </ScrollFade>
           </Popover>

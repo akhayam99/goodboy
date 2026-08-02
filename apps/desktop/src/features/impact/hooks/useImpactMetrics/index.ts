@@ -23,14 +23,10 @@ import {
 } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
+import type { QueryResult } from '../../../../shared/types/queryResult';
 import { IMPACT_WINDOW_DAYS, type ImpactScopeId, type ImpactWindowId } from '../../lib';
 
 const DAY_MS = 86_400_000;
-
-export type QueryResult<T> = {
-  readonly data: T | null;
-  readonly error: Error | null;
-};
 
 export type ImpactMetrics = {
   readonly overview: QueryResult<ImpactOverview>;

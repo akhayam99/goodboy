@@ -1,20 +1,28 @@
 import { useMemo, useState } from 'react';
-import { EmptyState, cn, formatTokens, formatUsdPrecise } from '@goodboy/ui';
+import { Chip, EmptyState, formatTokens, formatUsdPrecise } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { ArrowUpRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { SortChip } from './SortChip';
 
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly showSession: boolean;
+  readonly onOpenSession: (sessionId: SessionId) => void;
+};
+
+type HandleSortKeyParams = {
+  readonly key: SortKey;
 };
 
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
 const PAGE_SIZE = 10;
 
-export const TurnsTable = ({ turns, showSession }: Props) => {
+export const TurnsTable = ({ turns, showSession, onOpenSession }: Props) => {
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const stored = localStorage.getItem(SORT_KEY_STORAGE);
     return stored === 'expensive' ? 'expensive' : 'recent';
@@ -25,7 +33,7 @@ export const TurnsTable = ({ turns, showSession }: Props) => {
   const shown = sorted.slice(0, visible);
   const remaining = sorted.length - shown.length;
 
-  const handleSortKey = (key: SortKey) => {
+  const handleSortKey = ({ key }: HandleSortKeyParams) => {
     setSortKey(key);
     setVisible(PAGE_SIZE);
     localStorage.setItem(SORT_KEY_STORAGE, key);
@@ -35,12 +43,12 @@ export const TurnsTable = ({ turns, showSession }: Props) => {
     <div className="flex gap-1">
       <SortChip
         active={sortKey === 'recent'}
-        onClick={() => handleSortKey('recent')}
+        onClick={() => handleSortKey({ key: 'recent' })}
         label="recent"
       />
       <SortChip
         active={sortKey === 'expensive'}
-        onClick={() => handleSortKey('expensive')}
+        onClick={() => handleSortKey({ key: 'expensive' })}
         label="expensive"
       />
     </div>
@@ -67,42 +75,53 @@ export const TurnsTable = ({ turns, showSession }: Props) => {
                   <th className="px-2 py-2 text-right font-medium">in</th>
                   <th className="px-2 py-2 text-right font-medium">out</th>
                   <th className="px-2 py-2 text-right font-medium">cost</th>
+                  <th className="w-5 px-2 py-2">
+                    <span className="sr-only">Open session</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-soft">
-                {shown.map(({ record, sessionGoal }) => (
-                  <tr key={record.id} className="transition-colors hover:bg-muted/40">
+                {shown.map(({ record, sessionId, sessionGoal }) => (
+                  <tr key={record.id} className="group relative">
                     <td className="px-2 py-2">
-                      <span
-                        className={cn(
-                          'rounded px-1.5 py-0.5 text-2xs font-medium uppercase',
-                          record.kind === 'summarizer'
-                            ? 'bg-muted text-muted-foreground'
-                            : 'bg-primary/15 text-primary',
-                        )}
-                      >
-                        {record.kind}
+                      <button
+                        type="button"
+                        aria-label={`Open session ${sessionGoal}`}
+                        onClick={() => onOpenSession(sessionId)}
+                        className="absolute inset-0 rounded-md transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                      <span className="relative z-10 pointer-events-none">
+                        <Chip
+                          tone={record.kind === 'summarizer' ? 'neutral' : 'primary'}
+                          size="xs"
+                          shape="badge"
+                          label={record.kind}
+                          className="min-w-[5.5rem] justify-center uppercase"
+                        />
                       </span>
                     </td>
-                    <td className="px-2 py-2">
+                    <td className="relative z-10 px-2 py-2 pointer-events-none">
                       <RoutingBadge provider={record.provider} model={record.model} />
                     </td>
                     {showSession ? (
                       <td
-                        className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground"
+                        className="relative z-10 max-w-[12rem] truncate px-2 py-2 text-muted-foreground pointer-events-none"
                         title={sessionGoal}
                       >
                         {sessionGoal}
                       </td>
                     ) : null}
-                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                    <td className="relative z-10 px-2 py-2 text-right font-mono tabular-nums text-muted-foreground pointer-events-none">
                       {formatTokens(record.inputTokens)}
                     </td>
-                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                    <td className="relative z-10 px-2 py-2 text-right font-mono tabular-nums text-muted-foreground pointer-events-none">
                       {formatTokens(record.outputTokens)}
                     </td>
-                    <td className="px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground">
+                    <td className="relative z-10 px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground pointer-events-none">
                       {formatUsdPrecise(record.estimatedCostUsd)}
+                    </td>
+                    <td className="relative z-10 px-2 py-2 pointer-events-none">
+                      <ArrowUpRight size={12} aria-hidden className="text-muted-foreground" />
                     </td>
                   </tr>
                 ))}
@@ -123,26 +142,3 @@ export const TurnsTable = ({ turns, showSession }: Props) => {
     </StudioWidget>
   );
 };
-
-function SortChip({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded px-1.5 py-0.5 text-2xs uppercase tracking-[0.08em]',
-        active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground',
-      )}
-    >
-      {label}
-    </button>
-  );
-}

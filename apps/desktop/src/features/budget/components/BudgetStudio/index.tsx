@@ -6,6 +6,7 @@ import type { ProviderSpendEntry } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { useBudgetData } from '../../hooks/useBudgetData';
 import { OverviewPanel } from './OverviewPanel';
 import { ProviderPanel } from './ProviderPanel';
 import { ScopeRail } from './ScopeRail';
@@ -32,10 +33,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
   const budgetRules = useAppStore((s) => s.budgetRules);
   const sessionBudgets = useAppStore((s) => s.sessionBudgets);
 
-  const loadBudgetRules = useAppStore((s) => s.loadBudgetRules);
-  const loadBudgetAlerts = useAppStore((s) => s.loadBudgetAlerts);
-  const loadSessionTelemetry = useAppStore((s) => s.loadSessionTelemetry);
-  const loadSessionBudget = useAppStore((s) => s.loadSessionBudget);
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const dismissBudgetAlert = useAppStore((s) => s.dismissBudgetAlert);
   const saveBudgetRule = useAppStore((s) => s.saveBudgetRule);
   const deleteBudgetRule = useAppStore((s) => s.deleteBudgetRule);
@@ -43,21 +41,18 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
   const refreshProviderSpendBreakdown = useAppStore((s) => s.refreshProviderSpendBreakdown);
 
   const [scope, setScope] = useState<BudgetScope>(initialScope ?? { kind: 'overview' });
-
-  useEffect(() => {
-    void loadBudgetRules();
-    void loadBudgetAlerts();
-  }, [loadBudgetRules, loadBudgetAlerts]);
-
-  useEffect(() => {
-    for (const s of sessions) {
-      void loadSessionTelemetry(s.id);
-      void loadSessionBudget(s.id);
-    }
-  }, [sessions, loadSessionTelemetry, loadSessionBudget]);
+  const sessionIds = useMemo(() => sessions.map((session) => session.id), [sessions]);
+  const budgetData = useBudgetData({ sessionIds });
+  const openSession = useCallback(
+    (sessionId: SessionId) => {
+      void setCurrentSession(sessionId);
+      onClose();
+    },
+    [onClose, setCurrentSession],
+  );
 
   const refreshBreakdown = useCallback(async () => {
-    if (currentWorkspaceId) {
+    if (currentWorkspaceId !== null) {
       await refreshProviderSpendBreakdown(currentWorkspaceId);
     }
   }, [currentWorkspaceId, refreshProviderSpendBreakdown]);
@@ -132,7 +127,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
     scope.kind === 'session' ? sessions.find((s) => s.id === scope.sessionId) : undefined;
 
   useEffect(() => {
-    if (scope.kind === 'session' && !selectedSession) {
+    if (scope.kind === 'session' && selectedSession == null) {
       setScope({ kind: 'overview' });
     }
   }, [scope, selectedSession]);
@@ -167,8 +162,20 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
                 turns={turns}
                 sessionCount={sessions.length}
                 alerts={budgetAlerts}
+                rulesResult={budgetData.rules}
+                alertsResult={budgetData.alerts}
+                telemetryResult={budgetData.telemetry}
+                isLoading={
+                  budgetData.loading.rules ||
+                  budgetData.loading.alerts ||
+                  budgetData.loading.telemetry
+                }
                 onDismissAlert={(id) => void dismissBudgetAlert(id)}
                 onSelect={setScope}
+                onRetryRules={() => budgetData.retry('rules')}
+                onRetryAlerts={() => budgetData.retry('alerts')}
+                onRetryTelemetry={() => budgetData.retry('telemetry')}
+                onOpenSession={openSession}
               />
             ) : scope.kind === 'provider' ? (
               <ProviderPanel
@@ -176,18 +183,30 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
                 entry={providers.find((p) => p.provider === scope.provider) ?? null}
                 turns={turns}
                 rule={budgetRules.find((r) => r.provider === scope.provider) ?? null}
+                rulesResult={budgetData.rules}
+                telemetryResult={budgetData.telemetry}
+                isLoading={budgetData.loading.rules || budgetData.loading.telemetry}
                 onSaveCap={(capUsd) => saveProviderCap(scope.provider, capUsd)}
                 onRemoveCap={() => removeProviderCap(scope.provider)}
+                onRetryRules={() => budgetData.retry('rules')}
+                onRetryTelemetry={() => budgetData.retry('telemetry')}
+                onOpenSession={openSession}
               />
-            ) : selectedSession ? (
+            ) : selectedSession != null ? (
               <SessionPanel
                 sessionId={selectedSession.id}
                 goal={selectedSession.goal}
                 isCurrent={selectedSession.id === currentSessionId}
                 turns={turns.filter((t) => t.sessionId === selectedSession.id)}
                 softCapUsd={sessionBudgets[selectedSession.id]?.softCapUsd ?? null}
+                telemetryResult={budgetData.telemetry}
+                budgetResult={budgetData.sessionBudgets}
+                isLoading={budgetData.loading.telemetry || budgetData.loading.sessionBudgets}
                 onSaveCap={(capUsd) => saveSessionCap(selectedSession.id, capUsd)}
                 onOpened={requestClose}
+                onRetryTelemetry={() => budgetData.retry('telemetry')}
+                onRetryBudget={() => budgetData.retry('sessionBudgets')}
+                onOpenSession={openSession}
               />
             ) : null
           }

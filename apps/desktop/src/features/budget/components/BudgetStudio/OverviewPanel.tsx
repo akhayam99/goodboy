@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
 import { StatCard, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import type { BudgetAlert, TelemetrySummary } from '@goodboy/types';
+import type { BudgetAlert, SessionId, TelemetrySummary } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import type { QueryResult } from '../../../../shared/types/queryResult';
 import { brandColor } from '../../../providers/components/provider-brand';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { AlertBanner } from './AlertBanner';
@@ -26,8 +29,16 @@ type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly sessionCount: number;
   readonly alerts: ReadonlyArray<BudgetAlert>;
+  readonly rulesResult: QueryResult<void>;
+  readonly alertsResult: QueryResult<void>;
+  readonly telemetryResult: QueryResult<void>;
+  readonly isLoading: boolean;
   readonly onDismissAlert: (id: string) => void;
   readonly onSelect: (scope: BudgetScope) => void;
+  readonly onRetryRules: () => void;
+  readonly onRetryAlerts: () => void;
+  readonly onRetryTelemetry: () => void;
+  readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
 export const OverviewPanel = ({
@@ -36,8 +47,16 @@ export const OverviewPanel = ({
   turns,
   sessionCount,
   alerts,
+  rulesResult,
+  alertsResult,
+  telemetryResult,
+  isLoading,
   onDismissAlert,
   onSelect,
+  onRetryRules,
+  onRetryAlerts,
+  onRetryTelemetry,
+  onOpenSession,
 }: Props) => {
   const records = useMemo(() => turns.map((t) => t.record), [turns]);
   const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
@@ -55,6 +74,14 @@ export const OverviewPanel = ({
       subtitle={`workspace spend across ${sessionCount} sessions`}
       maxWidthClass="max-w-5xl"
     >
+      <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
+      <ErrorStrip label="budget alerts" error={alertsResult.error} onRetry={onRetryAlerts} />
+      <ErrorStrip
+        label="session telemetry"
+        error={telemetryResult.error}
+        onRetry={onRetryTelemetry}
+      />
+      {isLoading && <PanelLoading label="Loading budget data" />}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="workspace total" value={formatUsdPrecise(workspaceCost)} />
         <StatCard label="sessions" value={String(sessionCount)} />
@@ -62,7 +89,7 @@ export const OverviewPanel = ({
         <StatCard label="avg / turn" value={formatUsdPrecise(avgPerTurn)} />
       </div>
 
-      {alerts.some((a) => !a.dismissedAt) ? (
+      {alerts.some((alert) => alert.dismissedAt == null) ? (
         <StudioWidget label="alerts">
           <AlertBanner alerts={alerts} onDismiss={onDismissAlert} />
         </StudioWidget>
@@ -80,7 +107,7 @@ export const OverviewPanel = ({
                     label={providerLabel(entry.provider)}
                     valueLabel={formatUsd(entry.spentUsd)}
                     pct={totalSpend > 0 ? entry.spentUsd / totalSpend : 0}
-                    colorVar={id ? brandColor(id) : 'var(--color-muted-foreground)'}
+                    colorVar={id !== null ? brandColor(id) : 'var(--color-muted-foreground)'}
                     icon={<ProviderIcon provider={entry.provider} size={14} />}
                     onClick={() => onSelect({ kind: 'provider', provider: entry.provider })}
                   />
@@ -99,7 +126,7 @@ export const OverviewPanel = ({
         </StudioWidget>
       </div>
 
-      <TurnsTable turns={turns} showSession />
+      <TurnsTable turns={turns} showSession onOpenSession={onOpenSession} />
     </StudioPanel>
   );
 };
