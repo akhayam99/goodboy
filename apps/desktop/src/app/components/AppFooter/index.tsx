@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, Divider, StatusDot, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, Divider, StatusDot } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
@@ -14,7 +14,6 @@ type FooterButtonProps = {
   pulse?: boolean;
   active?: boolean;
   connected?: boolean;
-  tone?: Tone;
 };
 
 const FooterButton = ({
@@ -25,7 +24,6 @@ const FooterButton = ({
   pulse,
   active,
   connected,
-  tone,
 }: FooterButtonProps) => (
   <button
     type="button"
@@ -38,10 +36,7 @@ const FooterButton = ({
         ? 'bg-foreground text-background'
         : pulse
           ? 'animate-soft-pulse text-info hover:bg-info/10'
-          : cn(
-              tone == null ? 'text-muted-foreground hover:text-foreground' : tintClasses(tone).text,
-              'hover:bg-muted/50',
-            ),
+          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
       connected === false && 'opacity-40',
     )}
   >
@@ -107,7 +102,7 @@ export const AppFooter = ({
           ) : (
             <>
               <FooterButton
-                icon={<IntegrationGlyph provider="github" size="xs" />}
+                icon={<IntegrationGlyph provider="github" size="xs" useBrandColor={false} />}
                 label="GitHub"
                 title={
                   githubEnabled
@@ -119,7 +114,7 @@ export const AppFooter = ({
                 connected={githubEnabled}
               />
               <FooterButton
-                icon={<IntegrationGlyph provider="gitlab" size="xs" />}
+                icon={<IntegrationGlyph provider="gitlab" size="xs" useBrandColor={false} />}
                 label="GitLab"
                 title={gitlabEnabled ? 'launch a session from a GitLab issue' : 'Connect GitLab'}
                 onClick={onOpenGitlab}
@@ -129,7 +124,7 @@ export const AppFooter = ({
             </>
           )}
           <FooterButton
-            icon={<IntegrationGlyph provider="linear" size="xs" />}
+            icon={<IntegrationGlyph provider="linear" size="xs" useBrandColor={false} />}
             label="Linear"
             title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
             onClick={onOpenLinear}
@@ -138,7 +133,7 @@ export const AppFooter = ({
           />
           {isSimpleWorkspace ? null : (
             <FooterButton
-              icon={<IntegrationGlyph provider="sentry" size="xs" />}
+              icon={<IntegrationGlyph provider="sentry" size="xs" useBrandColor={false} />}
               label="Sentry"
               title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
               onClick={onOpenSentry}
@@ -157,7 +152,6 @@ export const AppFooter = ({
             title="open the workflow library for this workspace"
             onClick={onOpenWorkflows}
             active={activeStudio === 'workflow'}
-            tone="primary"
           />
           <FooterButton
             icon={<CONCEPT_ICONS.providers size={12} aria-hidden />}
@@ -166,7 +160,6 @@ export const AppFooter = ({
             onClick={onOpenProviders}
             pulse={noProviderConnected && activeStudio !== 'provider'}
             active={activeStudio === 'provider'}
-            tone="info"
           />
           <FooterButton
             icon={<CONCEPT_ICONS.budget size={12} aria-hidden />}
@@ -174,7 +167,6 @@ export const AppFooter = ({
             title="open budget studio"
             onClick={onOpenBudget}
             active={activeStudio === 'budget'}
-            tone="warning"
           />
           <FooterButton
             icon={<CONCEPT_ICONS.impact size={12} aria-hidden />}
@@ -182,7 +174,6 @@ export const AppFooter = ({
             title="see how orchestration changed the way this workspace works"
             onClick={onOpenImpact}
             active={activeStudio === 'impact'}
-            tone="success"
           />
         </div>
       </div>

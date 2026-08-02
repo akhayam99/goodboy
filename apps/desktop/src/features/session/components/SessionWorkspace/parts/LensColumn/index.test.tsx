@@ -156,6 +156,29 @@ describe('LensColumn', () => {
     expect(onSelectOverview).toHaveBeenCalledOnce();
   });
 
+  it('uses one active style and keeps inactive rows muted', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens="agents"
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const agents = screen.getByRole('button', { name: 'Agents' });
+    const workflows = screen.getByRole('button', { name: 'Workflows' });
+    const decisions = screen.getByRole('button', { name: 'Decisions' });
+
+    expect(agents.getAttribute('aria-current')).toBe('page');
+    expect(agents.className).toContain('bg-foreground text-background');
+    expect(workflows.getAttribute('aria-current')).toBeNull();
+    expect(workflows.className).toContain('text-muted-foreground');
+    expect(workflows.className).not.toContain('bg-foreground text-background');
+    expect(decisions.querySelector('span')?.className).not.toContain('text-success');
+  });
+
   it('marks a disconnected integration and leaves connected ones unmarked', () => {
     const { container } = render(
       <LensColumn

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { Workspace, WorkspaceId } from '@goodboy/types';
+import type { Session, Workspace, WorkspaceId } from '@goodboy/types';
 
-const { state, currentWorkspace } = vi.hoisted(() => ({
+const { state, currentWorkspace, currentSessionRef } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     archivedSessions: {} as Record<string, ReadonlyArray<unknown>>,
@@ -11,12 +11,13 @@ const { state, currentWorkspace } = vi.hoisted(() => ({
     loadArchivedSessions: vi.fn(),
   },
   currentWorkspace: { id: 'ws-1' as WorkspaceId, name: 'Test WS' } as Workspace,
+  currentSessionRef: { value: null as Session | null },
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useCurrentWorkspace: () => currentWorkspace,
-  useCurrentSession: () => null,
+  useCurrentSession: () => currentSessionRef.value,
   useSessions: () => [],
   useWorkspaces: () => [currentWorkspace],
   useSessionLoading: () => false,
@@ -34,7 +35,17 @@ afterEach(cleanup);
 import { WorkspacesSidebar } from './index';
 
 describe('WorkspacesSidebar', () => {
+  it('uses the shared active navigation style for back to board', () => {
+    currentSessionRef.value = { id: 'session-1' } as Session;
+    render(<WorkspacesSidebar />);
+    const back = screen.getByRole('button', { name: 'back to board' });
+    expect(back.className).toContain('bg-foreground text-background');
+    expect(back.className).not.toContain('text-accent');
+    currentSessionRef.value = null;
+  });
+
   it('renders without crashing when workspace is selected', () => {
+    currentSessionRef.value = null;
     render(<WorkspacesSidebar />);
     expect(screen.queryByRole('button', { name: /collapse sidebar/i })).toBeNull();
   });
