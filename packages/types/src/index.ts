@@ -1,6 +1,7 @@
 export type {
   AgentId,
   CredentialId,
+  FileVersionId,
   IsoDateTime,
   MessageId,
   OpenQuestionId,
@@ -20,6 +21,7 @@ export type {
   WorkspaceIntegrationId,
   WorkspaceScriptId,
 } from './ids';
+export type { FileVersion, FileVersionChangeKind, FileVersionSnapshotSource } from './file-version';
 export type { OpenQuestion, OpenQuestionStatus } from './open-question';
 export type {
   ContextSlot,

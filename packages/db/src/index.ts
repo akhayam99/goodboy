@@ -88,6 +88,13 @@ export {
   listContextSlotHistory,
 } from './queries/context-slot';
 export {
+  insertFileVersion,
+  listFileVersionsForSession,
+  listFileVersionsForPath,
+  pruneFileVersionsForPath,
+  deleteFileVersion,
+} from './queries/file-version';
+export {
   insertProviderRun,
   updateProviderRunStatus,
   getProviderRunById,

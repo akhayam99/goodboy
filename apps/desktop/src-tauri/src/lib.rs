@@ -7,6 +7,7 @@ mod cursor_config;
 mod db;
 mod editor;
 mod external_terminal;
+mod file_versions;
 mod github;
 mod gitlab;
 mod linear;
@@ -167,6 +168,11 @@ pub fn run() {
       attachment::attachment_read,
       attachment::attachment_delete,
       attachment::attachment_read_dropped,
+      file_versions::file_versions_begin_snapshot,
+      file_versions::file_versions_finalize_snapshot,
+      file_versions::file_versions_restore,
+      file_versions::file_versions_delete,
+      file_versions::file_versions_purge_session,
       summarize::summarize_session,
       planner::planner_run,
       repo::validate_git_repo,
