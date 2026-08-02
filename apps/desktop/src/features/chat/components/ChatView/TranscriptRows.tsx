@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import type { AgentId, OpenQuestion, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptRow } from '../../utils/cluster-operations';
 import type { ThinkingContext } from '../../utils/thinking-context';
+import type { TranscriptItem } from '../../utils/transcript-items';
 import { OperationsCluster } from '../OperationsCluster';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
@@ -19,6 +20,8 @@ type Props = {
   onOpenDiff: (filePath: string) => void;
   isThinking: boolean;
   thinkingContext: ThinkingContext;
+  onRetryError: (item: Extract<TranscriptItem, { kind: 'error' }>) => void;
+  retryingErrorRunId: ProviderRunId | null;
 };
 
 export const TranscriptRows = ({
@@ -31,6 +34,8 @@ export const TranscriptRows = ({
   onOpenDiff,
   isThinking,
   thinkingContext,
+  onRetryError,
+  retryingErrorRunId,
 }: Props) => {
   const out: ReactNode[] = [];
   let lastDay: string | null = null;
@@ -108,6 +113,8 @@ export const TranscriptRows = ({
           workingDir={workingDir}
           onRefreshAuth={onRefreshAuth}
           onOpenDiff={onOpenDiff}
+          onRetryError={onRetryError}
+          retryingErrorRunId={retryingErrorRunId}
         />,
       );
       return;
@@ -123,6 +130,8 @@ export const TranscriptRows = ({
             workingDir={workingDir}
             onRefreshAuth={onRefreshAuth}
             onOpenDiff={onOpenDiff}
+            onRetryError={onRetryError}
+            retryingErrorRunId={retryingErrorRunId}
           />
         ) : (
           <TranscriptCard
@@ -132,6 +141,8 @@ export const TranscriptRows = ({
             workingDir={workingDir}
             onRefreshAuth={onRefreshAuth}
             onOpenDiff={onOpenDiff}
+            onRetryError={onRetryError}
+            retryingErrorRunId={retryingErrorRunId}
           />
         )}
       </li>,

@@ -26,6 +26,8 @@ vi.mock('./OpenQuestionCluster', () => ({
 
 import { TranscriptRows } from './TranscriptRows';
 
+const retryErrorSpy = vi.fn();
+
 const itemRow = (item: TranscriptItem): TranscriptRow => ({ kind: 'item', key: item.key, item });
 
 const userText = (key: string, at: Date): TranscriptItem => ({
@@ -51,6 +53,8 @@ const renderRows = (
         onOpenDiff={() => undefined}
         isThinking={false}
         thinkingContext="think"
+        onRetryError={retryErrorSpy}
+        retryingErrorRunId={null}
       />
     </ul>,
   );

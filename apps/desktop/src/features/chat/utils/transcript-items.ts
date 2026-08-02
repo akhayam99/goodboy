@@ -35,7 +35,13 @@ export type TranscriptItem =
     }
   | { kind: 'file_edit'; key: string; path: string; editType: 'create' | 'modify' | 'delete' }
   | { kind: 'usage'; key: string; usage: ProviderUsage }
-  | { kind: 'error'; key: string; message: string }
+  | {
+      kind: 'error';
+      key: string;
+      message: string;
+      runId?: ProviderRunId;
+      retryable?: boolean;
+    }
   | { kind: 'auth_required'; key: string; providerId: ProviderId; identity: string | null }
   | { kind: 'skill_invocation'; key: string; skillName: string; args: ReadonlyArray<string> }
   | {
@@ -220,7 +226,13 @@ export const reduceTranscript = (
             identity: authPayload.identity,
           });
         } else {
-          items.push({ kind: 'error', key: `error-${i}`, message: event.message });
+          items.push({
+            kind: 'error',
+            key: `error-${i}`,
+            message: event.message,
+            runId: event.runId,
+            retryable: event.retryable,
+          });
         }
         break;
       }

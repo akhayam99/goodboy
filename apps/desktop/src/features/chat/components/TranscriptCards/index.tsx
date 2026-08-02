@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { SkillInvocationCard } from '../SkillInvocationCard';
@@ -22,6 +22,8 @@ type TranscriptCardProps = {
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
+  readonly onRetryError?: (item: Extract<TranscriptItem, { kind: 'error' }>) => void;
+  readonly retryingErrorRunId?: ProviderRunId | null;
 };
 
 function TranscriptCardImpl({
@@ -31,6 +33,8 @@ function TranscriptCardImpl({
   workingDir = null,
   onRefreshAuth,
   onOpenDiff,
+  onRetryError,
+  retryingErrorRunId = null,
 }: TranscriptCardProps) {
   switch (item.kind) {
     case 'user_text':
@@ -60,7 +64,17 @@ function TranscriptCardImpl({
     case 'usage':
       return <UsageRow usage={item.usage} />;
     case 'error':
-      return <TranscriptErrorRow message={item.message} />;
+      return (
+        <TranscriptErrorRow
+          message={item.message}
+          onRetry={
+            item.retryable === true && onRetryError != null ? () => onRetryError(item) : undefined
+          }
+          isRetrying={
+            item.runId != null && retryingErrorRunId != null && item.runId === retryingErrorRunId
+          }
+        />
+      );
     case 'auth_required':
       return (
         <AuthRequiredCallout
@@ -112,5 +126,7 @@ export const TranscriptCard = memo(
     prev.agentId === next.agentId &&
     prev.workingDir === next.workingDir &&
     prev.onRefreshAuth === next.onRefreshAuth &&
-    prev.onOpenDiff === next.onOpenDiff,
+    prev.onOpenDiff === next.onOpenDiff &&
+    prev.onRetryError === next.onRetryError &&
+    prev.retryingErrorRunId === next.retryingErrorRunId,
 );

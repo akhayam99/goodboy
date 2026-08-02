@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Layers } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatDuration } from '../../utils/format-duration';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
@@ -16,6 +16,8 @@ type Props = {
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
+  readonly onRetryError?: (item: Extract<TranscriptItem, { kind: 'error' }>) => void;
+  readonly retryingErrorRunId?: ProviderRunId | null;
 };
 
 const runningTool = (
@@ -42,6 +44,8 @@ export const OperationsCluster = ({
   workingDir = null,
   onRefreshAuth,
   onOpenDiff,
+  onRetryError,
+  retryingErrorRunId = null,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const running = runningTool(items);
@@ -142,6 +146,8 @@ export const OperationsCluster = ({
           workingDir={workingDir}
           onRefreshAuth={onRefreshAuth}
           onOpenDiff={onOpenDiff}
+          onRetryError={onRetryError}
+          retryingErrorRunId={retryingErrorRunId}
         />
       ))}
     </TranscriptDisclosure>
