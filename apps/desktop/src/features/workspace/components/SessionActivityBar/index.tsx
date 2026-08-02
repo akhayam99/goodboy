@@ -33,7 +33,7 @@ import {
 } from '../../../../features/github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../features/integrations/components/ExternalTaskChip';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { BulkActionBar } from '../BulkActionBar';
 import { SessionViewMenu } from './SessionViewMenu';
 
@@ -238,6 +238,7 @@ export const SessionActivityBar = ({
           {totalVisible === 0 ? (
             <EmptyState
               icon={CONCEPT_ICONS.sessions}
+              tone={CONCEPT_TONE.sessions}
               title={isArchivedView ? 'No archived sessions' : 'No sessions yet'}
               size="inline"
               className="px-1 py-3"

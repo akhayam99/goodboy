@@ -5,7 +5,7 @@ import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   onClose: () => void;
@@ -80,6 +80,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
               <li>
                 <EmptyState
                   icon={CONCEPT_ICONS.workspace}
+                  tone={CONCEPT_TONE.workspace}
                   title="No workspaces"
                   size="inline"
                   className="px-4 py-6"

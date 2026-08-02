@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { StartRowContent } from './StartRowContent';
 
@@ -15,6 +15,7 @@ const START_ROW =
 export const ActivityEmptyState = ({ sessionId, onOpenWorkflowBuilder }: Props) => (
   <EmptyState
     icon={CONCEPT_ICONS.workflows}
+    tone={CONCEPT_TONE.workflows}
     title="Nothing has run in this session yet"
     description="Attach a workflow for a multi-step task, or spawn a single agent when one pass is enough."
     className="rounded-lg bg-muted/20 px-4 py-3.5"

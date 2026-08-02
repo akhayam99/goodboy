@@ -3,7 +3,7 @@ import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AdHocRow } from '../../../workspace/components/WorkspacesSidebar/parts/AdHocRow';
 import { AgentLane } from '../AgentLane';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { AgentLaneNote } from '../AgentLane/AgentLaneNote';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { AgentListSkeleton } from './AgentListSkeleton';
@@ -108,7 +108,7 @@ export const StandaloneAgentsLane = ({
         ) : (
           <EmptyState
             bordered
-            tone="primary"
+            tone={CONCEPT_TONE.agents}
             icon={CONCEPT_ICONS.agents}
             title={hasNoAgents ? 'No agents yet' : 'No active agents'}
             description={hasNoAgents ? NO_AGENTS_DESCRIPTION : ALL_DONE_DESCRIPTION}

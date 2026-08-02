@@ -3,7 +3,7 @@ import { Button, EmptyState, SectionHeader } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import { Plus } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { NewScriptCard } from './NewScriptCard';
@@ -318,7 +318,7 @@ export const ScriptsPanel = ({
         {list.length === 0 && newDraft == null ? (
           <EmptyState
             bordered
-            tone="info"
+            tone={CONCEPT_TONE.scripts}
             icon={CONCEPT_ICONS.scripts}
             title="No scripts yet"
             description="A script is a shell command you run by hand from a session, no agent, no tokens spent. Create one to run setup or checks from the session worktree."

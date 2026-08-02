@@ -16,7 +16,7 @@ import {
   languageForPath,
 } from '../../../permissions/components/DiffViewerDialog/highlight';
 import { LineComposer } from './LineComposer';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 export type ReviewLineTarget = {
   readonly path: string;
@@ -147,6 +147,7 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
           {file.binary || file.hunks.length === 0 ? (
             <EmptyState
               icon={CONCEPT_ICONS.diff}
+              tone={CONCEPT_TONE.diff}
               title={file.binary ? 'Binary file, no diff' : 'No changes'}
               size="inline"
               className="justify-center py-4"

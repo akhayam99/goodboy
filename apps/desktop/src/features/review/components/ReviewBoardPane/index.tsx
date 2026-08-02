@@ -13,7 +13,7 @@ import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
 import { useReviewDiff } from './useReviewDiff';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -156,7 +156,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
             <div className="flex flex-1 items-center justify-center px-6">
               <EmptyState
                 bordered
-                tone="success"
+                tone={CONCEPT_TONE.diff}
                 icon={CONCEPT_ICONS.diff}
                 title="No changes in this pull request"
                 description="The diff is empty, nothing to review."

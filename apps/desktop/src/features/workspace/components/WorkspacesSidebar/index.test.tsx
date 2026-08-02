@@ -35,11 +35,11 @@ afterEach(cleanup);
 import { WorkspacesSidebar } from './index';
 
 describe('WorkspacesSidebar', () => {
-  it('uses the shared active navigation style for back to board', () => {
+  it('keeps the back-to-board button on the primary tone', () => {
     currentSessionRef.value = { id: 'session-1' } as Session;
     render(<WorkspacesSidebar />);
     const back = screen.getByRole('button', { name: 'back to board' });
-    expect(back.className).toContain('bg-foreground text-background');
+    expect(back.className).toContain('bg-primary text-primary-foreground');
     expect(back.className).not.toContain('text-accent');
     currentSessionRef.value = null;
   });

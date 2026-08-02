@@ -628,12 +628,16 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
         Point at a git repo to create your first workspace. Every session spins up its own worktree and branch, your main checkout stays untouched.
       </p>
     </div>
-    <button
-      class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm motion-safe:transition-colors hover:bg-primary/90"
-      type="button"
+    <div
+      class=""
     >
-      Add workspace
-    </button>
+      <button
+        class="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm motion-safe:transition-colors hover:bg-primary/90"
+        type="button"
+      >
+        Add workspace
+      </button>
+    </div>
   </div>
 </div>
 `;
@@ -677,11 +681,47 @@ exports[`snapshot, empty states > QuickActionsPopover: no skills / empty items 1
 <div
   class="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md"
 >
-  <p
-    class="px-3 py-2 text-xs text-muted-foreground"
+  <div
+    class="flex items-start gap-2.5 text-left px-3 py-2"
   >
-    no skills. create one in settings
-  </p>
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-search-x mt-0.5 shrink-0 text-info"
+      fill="none"
+      height="14"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="14"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m13.5 8.5-5 5"
+      />
+      <path
+        d="m8.5 8.5 5 5"
+      />
+      <circle
+        cx="11"
+        cy="11"
+        r="8"
+      />
+      <path
+        d="m21 21-4.3-4.3"
+      />
+    </svg>
+    <div
+      class="flex min-w-0 flex-1 flex-col gap-1"
+    >
+      <span
+        class="text-xs font-medium text-foreground"
+      >
+        no skills. create one in settings
+      </span>
+    </div>
+  </div>
 </div>
 `;
 
@@ -738,7 +778,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
     class="flex flex-col items-center gap-3 px-6 py-10 text-center"
   >
     <span
-      class="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
+      class="flex size-12 items-center justify-center rounded-full bg-accent/10 text-accent"
     >
       <svg
         aria-hidden="true"
@@ -772,12 +812,16 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
         A skill is a reusable prompt fragment agents can opt into by name. Create one, or rescan to pick up skill files already on disk.
       </span>
     </div>
-    <button
-      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-7 px-2.5 text-xs"
-      type="button"
+    <div
+      class=""
     >
-      New skill
-    </button>
+      <button
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-7 px-2.5 text-xs"
+        type="button"
+      >
+        New skill
+      </button>
+    </div>
   </div>
 </div>
 `;
@@ -833,34 +877,38 @@ exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] =
           Point at a local git repo. Each session opens its own worktree off it.
         </span>
       </div>
-      <button
-        class="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
-        type="button"
+      <div
+        class=""
       >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-plus"
-          fill="none"
-          height="12"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="12"
-          xmlns="http://www.w3.org/2000/svg"
+        <button
+          class="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
+          type="button"
         >
-          <path
-            d="M5 12h14"
-          />
-          <path
-            d="M12 5v14"
-          />
-        </svg>
-        <span>
-          Add workspace
-        </span>
-      </button>
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-plus"
+            fill="none"
+            height="12"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="12"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M5 12h14"
+            />
+            <path
+              d="M12 5v14"
+            />
+          </svg>
+          <span>
+            Add workspace
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </div>

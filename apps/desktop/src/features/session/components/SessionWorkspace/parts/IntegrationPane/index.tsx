@@ -11,7 +11,7 @@ import { resolveIntegrationConnection } from '../../../../../integrations/connec
 import { GithubConnectionEmptyState } from '../../../../../github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { PaneShell } from '../PaneShell';
 import { LinearTaskDetail } from './LinearTaskDetail';
 import { LinkIssueForm } from './LinkIssueForm';
@@ -119,6 +119,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         {connection.isConnected && !hasTasks ? (
           <EmptyState
             icon={CONCEPT_ICONS.integrations}
+            tone={CONCEPT_TONE.integrations}
             bordered
             className="px-6 py-8"
             title={`No ${meta.label} issues linked`}

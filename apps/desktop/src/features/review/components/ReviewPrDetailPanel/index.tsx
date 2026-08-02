@@ -16,7 +16,7 @@ import {
 } from '../../../../shared/components/StudioDetail';
 import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { AuthorAvatar } from '../AuthorAvatar';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pr: ReviewablePr | null;
@@ -58,7 +58,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
           bordered
-          tone="neutral"
+          tone={CONCEPT_TONE.pr}
           icon={CONCEPT_ICONS.pr}
           title="No pull request selected"
           description="Pick a pull request to see its details and review it locally."

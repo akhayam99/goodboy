@@ -19,7 +19,7 @@ import type { ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/type
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 
 function severityIcon(severity: NotificationSeverity, size = 13) {
@@ -198,6 +198,7 @@ export const NotificationCenter = () => {
                 ) : notifications.length === 0 ? (
                   <EmptyState
                     icon={CONCEPT_ICONS.notifications}
+                    tone={CONCEPT_TONE.notifications}
                     title="Nothing to catch up on"
                     description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
                     size="inline"

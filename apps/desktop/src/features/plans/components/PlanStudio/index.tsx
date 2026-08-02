@@ -28,7 +28,7 @@ import { PaneShell } from '../../../session/components/SessionWorkspace/parts/Pa
 import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanListPanel } from './PlanListPanel';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -164,7 +164,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
             {plans.length === 0 ? (
               <EmptyState
                 bordered
-                tone="success"
+                tone={CONCEPT_TONE.plans}
                 icon={CONCEPT_ICONS.plans}
                 title="No plans yet"
                 description="Plans appear here once an agent drafts one. Run a planning agent to get started."
@@ -402,7 +402,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
             ) : (
               <EmptyState
                 bordered
-                tone="neutral"
+                tone={CONCEPT_TONE.plans}
                 icon={CONCEPT_ICONS.plans}
                 title="No plan selected"
                 description="Pick a plan from the list to preview, edit, or run it."

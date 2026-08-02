@@ -1,7 +1,7 @@
 import { EmptyState, ScrollFade, SectionHeader, Tooltip, cn } from '@goodboy/ui';
 import { Check, Plus, RotateCcw, X } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { PresetCard } from '../../PresetCard';
 
 type Props = {
@@ -57,6 +57,7 @@ export const WorkflowsRail = ({
         {presets.length === 0 ? (
           <EmptyState
             icon={CONCEPT_ICONS.workflows}
+            tone={CONCEPT_TONE.workflows}
             title="No presets yet"
             description="Create one to chain several agents in a single session."
             size="inline"

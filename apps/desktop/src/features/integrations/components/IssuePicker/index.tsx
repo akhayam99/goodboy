@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn, ScrollFade, Skeleton } from '@goodboy/ui';
+import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly inputId?: string;
@@ -251,7 +252,13 @@ export const IssuePicker = ({
 
       {isOpen && error == null && !isLoading && isLoaded && filtered.length === 0 && (
         <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border border-border bg-subtle px-3 py-2 text-xs text-muted-foreground shadow-lg">
-          {query.trim() !== '' ? 'No matching issues' : 'No open issues assigned to you'}
+          <EmptyState
+            icon={CONCEPT_ICONS.search}
+            tone={CONCEPT_TONE.search}
+            title={query.trim() !== '' ? 'No matching issues' : 'No open issues assigned to you'}
+            size="inline"
+            className="p-0"
+          />
         </div>
       )}
     </div>

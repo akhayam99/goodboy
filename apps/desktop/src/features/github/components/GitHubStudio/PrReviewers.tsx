@@ -7,7 +7,7 @@ import { latestTerminalReviewsByAuthor } from '../Card/lib';
 import { Avatar } from '../Card/parts/Avatar';
 import { ReviewStateIcon } from '../Card/parts/ReviewStateIcon';
 import { ReviewerPicker } from './ReviewerPicker';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly detail: PrDetail | null;
@@ -47,6 +47,7 @@ export const PrReviewers = ({
       {reviewed.length === 0 && requests.length === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.review}
+          tone={CONCEPT_TONE.review}
           title="No reviewers yet"
           size="inline"
           className="basis-full"

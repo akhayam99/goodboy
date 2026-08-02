@@ -5,7 +5,7 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import type { SentryIssue } from '../client';
 import { SentryLevelBadge } from '../SentryLevelBadge';
 import type { SentryIssueRow } from './useSentryIssues';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
 type Props = {
@@ -85,6 +85,7 @@ export const IssueInbox = ({
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
             icon={CONCEPT_ICONS.sentry}
+            tone={CONCEPT_TONE.sentry}
             title={hasQuery ? 'No matching issues' : 'No issues'}
             description={
               hasQuery ? 'Try a different search term.' : 'No unresolved issues in this project.'

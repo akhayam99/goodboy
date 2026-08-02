@@ -1,8 +1,9 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { ArrowDown } from 'lucide-react';
 import type { Agent, ProviderRunId } from '@goodboy/types';
-import { Divider, ScrollFade, StatusDot } from '@goodboy/ui';
+import { Divider, EmptyState, ScrollFade, StatusDot } from '@goodboy/ui';
 import { useAppStore, useTranscript } from '../../../../store';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { filterEventsByRunId, reduceTranscript } from '../../utils/transcript-items';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
@@ -77,7 +78,13 @@ export const ParallelColumn = ({
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
         <ScrollFade className="flex-1" viewportClassName="px-3 py-3">
           {rows.length === 0 ? (
-            <p className="text-xs text-muted-foreground">no events yet for {label}.</p>
+            <EmptyState
+              icon={CONCEPT_ICONS.agents}
+              tone={CONCEPT_TONE.agents}
+              title={`No events yet for ${label}.`}
+              size="inline"
+              className="p-0"
+            />
           ) : (
             <ul className="flex flex-col gap-2.5">
               {rows.map((row) => (

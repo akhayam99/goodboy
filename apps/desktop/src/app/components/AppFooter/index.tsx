@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, Divider, StatusDot } from '@goodboy/ui';
+import { cn, Divider, StatusDot, tintClasses, type Tone } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
@@ -14,6 +14,7 @@ type FooterButtonProps = {
   pulse?: boolean;
   active?: boolean;
   connected?: boolean;
+  tone?: Tone;
 };
 
 const FooterButton = ({
@@ -24,6 +25,7 @@ const FooterButton = ({
   pulse,
   active,
   connected,
+  tone = 'neutral',
 }: FooterButtonProps) => (
   <button
     type="button"
@@ -33,14 +35,14 @@ const FooterButton = ({
     className={cn(
       'relative flex items-center gap-1.5 rounded px-2 py-1 text-2xs font-medium transition-colors',
       active
-        ? 'bg-foreground text-background'
+        ? 'bg-muted text-foreground'
         : pulse
           ? 'animate-soft-pulse text-info hover:bg-info/10'
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
       connected === false && 'opacity-40',
     )}
   >
-    {icon}
+    <span className={cn('flex items-center', active && tintClasses(tone).icon)}>{icon}</span>
     <span>{label}</span>
     {connected === false ? (
       <StatusDot tone="warning" size="sm" className="absolute right-0 top-0 ring-1 ring-subtle" />
@@ -149,6 +151,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.workflows size={12} aria-hidden />}
             label="Workflows"
+            tone="primary"
             title="open the workflow library for this workspace"
             onClick={onOpenWorkflows}
             active={activeStudio === 'workflow'}
@@ -156,6 +159,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.providers size={12} aria-hidden />}
             label="Providers"
+            tone="info"
             title="connect and manage your provider accounts"
             onClick={onOpenProviders}
             pulse={noProviderConnected && activeStudio !== 'provider'}
@@ -164,6 +168,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.budget size={12} aria-hidden />}
             label="Budget"
+            tone="warning"
             title="open budget studio"
             onClick={onOpenBudget}
             active={activeStudio === 'budget'}
@@ -171,6 +176,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.impact size={12} aria-hidden />}
             label="Impact"
+            tone="success"
             title="see how orchestration changed the way this workspace works"
             onClick={onOpenImpact}
             active={activeStudio === 'impact'}

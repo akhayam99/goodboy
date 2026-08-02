@@ -8,7 +8,7 @@ import { ExternalRefActions } from '../../../../shared/components/ExternalRefAct
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PROVIDER_LENS } from '../../../integrations/providerLens';
 
 type Props = {
@@ -112,6 +112,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
         {!hasLinkedWork ? (
           <EmptyState
             icon={CONCEPT_ICONS.integrations}
+            tone={CONCEPT_TONE.integrations}
             title="No linked issues or tasks yet."
             size="inline"
             className="rounded-lg bg-muted/20 px-3.5 py-2.5"

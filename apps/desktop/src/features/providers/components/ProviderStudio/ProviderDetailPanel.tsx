@@ -22,7 +22,7 @@ import { PROVIDER_BRAND } from '../provider-brand';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ApiProviderDetail } from './ApiProviderDetail';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly info: ProviderInfo | null;
@@ -35,7 +35,7 @@ export const ProviderDetailPanel = ({ info, onConnect }: Props) => {
       <div className="flex h-full items-center justify-center p-8">
         <EmptyState
           bordered
-          tone="neutral"
+          tone={CONCEPT_TONE.providers}
           icon={CONCEPT_ICONS.providers}
           title="Select a provider"
           size="lg"
@@ -132,7 +132,7 @@ function Detail({
             ) : info.connection === 'error' ? (
               <EmptyState
                 bordered
-                tone="danger"
+                tone={CONCEPT_TONE.providers}
                 icon={CONCEPT_ICONS.providers}
                 title="Detection failed"
                 action={
@@ -145,6 +145,7 @@ function Detail({
               <EmptyState
                 bordered
                 icon={CONCEPT_ICONS.providers}
+                tone={CONCEPT_TONE.providers}
                 title={`${info.label} CLI not installed`}
                 description="Install the CLI to connect an account from Goodboy."
                 action={
@@ -169,6 +170,7 @@ function Detail({
               <EmptyState
                 bordered
                 icon={CONCEPT_ICONS.providers}
+                tone={CONCEPT_TONE.providers}
                 title="No account connected"
                 description="Sign in to connect an account. Every step runs in the embedded terminal."
                 action={

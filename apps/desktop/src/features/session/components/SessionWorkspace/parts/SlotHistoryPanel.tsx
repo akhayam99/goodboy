@@ -4,7 +4,7 @@ import { EmptyState, Markdown, ScrollFade, cn } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { InspectorHeader } from './InspectorSplit/InspectorHeader';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '../../../../../shared/components/CopyButton';
 
 type HistoryEntryProps = {
@@ -109,7 +109,12 @@ export const SlotHistoryPanel = ({
       />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
         {entries.length === 0 ? (
-          <EmptyState icon={CONCEPT_ICONS.sessionSummary} title="No history yet" size="inline" />
+          <EmptyState
+            icon={CONCEPT_ICONS.sessionSummary}
+            tone={CONCEPT_TONE.sessionSummary}
+            title="No history yet"
+            size="inline"
+          />
         ) : (
           <ul className="flex flex-col gap-3">
             {entries.map((entry) => (

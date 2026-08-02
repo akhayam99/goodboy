@@ -15,7 +15,7 @@ import { useAttachedWorkflowRuns } from '../../useAttachedWorkflowRuns';
 import { isWorkflowStepAgent } from '../../isWorkflowStepAgent';
 import { resolveStepRouting } from '../../resolveStepRouting';
 import { roleModelsForSession } from '../../../../store/slices/overrides/roleModelsForSession';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -103,6 +103,7 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
             {instructions === '' ? (
               <EmptyState
                 icon={CONCEPT_ICONS.workflows}
+                tone={CONCEPT_TONE.workflows}
                 title="No instructions provided"
                 size="inline"
               />
@@ -115,6 +116,7 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
             {expectedOutput === '' ? (
               <EmptyState
                 icon={CONCEPT_ICONS.workflows}
+                tone={CONCEPT_TONE.workflows}
                 title="No expected output provided"
                 size="inline"
               />
@@ -142,6 +144,7 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
             {outputSummary === '' ? (
               <EmptyState
                 icon={CONCEPT_ICONS.sessionSummary}
+                tone={CONCEPT_TONE.sessionSummary}
                 title="No output summary yet"
                 size="inline"
               />

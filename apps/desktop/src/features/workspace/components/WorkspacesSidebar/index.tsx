@@ -25,7 +25,7 @@ export const WorkspacesSidebar = () => {
     [setCurrentSession],
   );
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
-  const neutralTint = tintClasses('neutral');
+  const primaryTint = tintClasses('primary');
 
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
@@ -48,8 +48,8 @@ export const WorkspacesSidebar = () => {
             aria-label="back to board"
             className={cn(
               'group relative w-full flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
-              'bg-foreground text-background ring-1',
-              neutralTint.ring,
+              'bg-primary text-primary-foreground ring-1',
+              primaryTint.ring,
               'motion-safe:transition-opacity hover:opacity-90',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             )}

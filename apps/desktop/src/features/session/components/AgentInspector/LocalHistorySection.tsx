@@ -3,7 +3,7 @@ import { GitCommit } from 'lucide-react';
 import { EmptyState, InlineConfirm, Input, cn } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
 import { INSPECTOR_ACTION_CLASS, InspectorSection } from '../InspectorSection';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Mode = 'amend' | 'squash';
 
@@ -51,6 +51,7 @@ export const LocalHistorySection = ({ commits, headSha, onAmend, onSquash }: Pro
       {commits.length === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.commits}
+          tone={CONCEPT_TONE.commits}
           title="No commit from this resolver yet"
           size="inline"
         />

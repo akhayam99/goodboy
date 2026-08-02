@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ProviderRunId } from '@goodboy/types';
 import { Button, Dialog, EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 export const SKIP_SENTINEL = '__skip__' as const;
 export type MergeResolution = ProviderRunId | typeof SKIP_SENTINEL;
@@ -77,7 +77,12 @@ export const MergeDialog = ({
       }
     >
       {conflicts.length === 0 ? (
-        <EmptyState icon={CONCEPT_ICONS.resolve} title="No conflicts to resolve" size="inline" />
+        <EmptyState
+          icon={CONCEPT_ICONS.resolve}
+          tone={CONCEPT_TONE.resolve}
+          title="No conflicts to resolve"
+          size="inline"
+        />
       ) : (
         <ul className="flex flex-col gap-5">
           {conflicts.map((conflict) => (

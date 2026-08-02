@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
 import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
 import { FileVersionsPane } from './FileVersionsPane';
@@ -30,7 +30,7 @@ export const FilesPane = ({
         >
           <EmptyState
             bordered
-            tone="info"
+            tone={CONCEPT_TONE.diff}
             icon={CONCEPT_ICONS.diff}
             title="Session directory missing"
             description="This session directory is not available, so file versions cannot be loaded."
@@ -48,7 +48,7 @@ export const FilesPane = ({
       >
         <EmptyState
           bordered
-          tone="info"
+          tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No worktree for this session"
           description="This session has no checked-out worktree, so there is no diff to show."

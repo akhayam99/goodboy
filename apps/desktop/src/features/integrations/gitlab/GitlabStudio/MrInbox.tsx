@@ -9,7 +9,7 @@ import {
 } from '@goodboy/ui';
 import { GitMerge, Search } from 'lucide-react';
 import type { GitlabMergeRequest } from '../client';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { GitlabMrGroup } from './useGitlabMrs';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
@@ -91,6 +91,7 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefre
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
             icon={CONCEPT_ICONS.gitlab}
+            tone={CONCEPT_TONE.gitlab}
             title={!hasQuery ? 'Inbox clear' : 'No matching merge requests'}
             description={
               !hasQuery ? 'No open merge requests assigned to you.' : 'Try a different search term.'

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { EmptyState, Eyebrow, ScrollFade } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { DraftCard } from './DraftCard';
 
 type Props = {
@@ -37,6 +37,7 @@ export const DraftsPanel = ({ drafts, onEdit, onDiscard }: Props) => {
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
             icon={CONCEPT_ICONS.review}
+            tone={CONCEPT_TONE.review}
             title="No draft comments yet"
             description="Ask the agent to draft comments, or click a diff line."
             size="inline"

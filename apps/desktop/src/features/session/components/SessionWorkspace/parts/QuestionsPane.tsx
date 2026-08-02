@@ -31,7 +31,7 @@ import {
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from './PaneShell';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
 
@@ -321,7 +321,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
       <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
         <EmptyState
           bordered
-          tone="success"
+          tone={CONCEPT_TONE.questions}
           icon={CONCEPT_ICONS.questions}
           title="No open questions"
           description="When an agent needs a decision, it shows up here."

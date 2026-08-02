@@ -6,7 +6,7 @@ import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { SortChip } from './SortChip';
 
 type Props = {
@@ -59,6 +59,7 @@ export const TurnsTable = ({ turns, showSession, onOpenSession }: Props) => {
       {sorted.length === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.budget}
+          tone={CONCEPT_TONE.budget}
           title="No recorded turns yet"
           size="inline"
           className="justify-center py-4"

@@ -1,6 +1,6 @@
 import { EmptyState, Skeleton, cn } from '@goodboy/ui';
 import type { SentryStackFrame } from '../client';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly frames: ReadonlyArray<SentryStackFrame>;
@@ -29,7 +29,12 @@ export const SentryStackTrace = ({ frames, isLoading, error }: Props) => {
 
   if (frames.length === 0) {
     return (
-      <EmptyState icon={CONCEPT_ICONS.sentry} title="No stack trace available" size="inline" />
+      <EmptyState
+        icon={CONCEPT_ICONS.sentry}
+        tone={CONCEPT_TONE.sentry}
+        title="No stack trace available"
+        size="inline"
+      />
     );
   }
 

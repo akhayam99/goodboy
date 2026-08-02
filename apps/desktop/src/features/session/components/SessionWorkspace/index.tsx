@@ -76,6 +76,7 @@ const SIMPLE_LENSES = new Set<LensKind>([
   'decisions',
   'last_output_summary',
   'explore',
+  'files',
 ]);
 
 type SessionWorkspaceProps = {

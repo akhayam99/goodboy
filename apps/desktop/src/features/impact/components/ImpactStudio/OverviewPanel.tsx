@@ -1,7 +1,7 @@
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import { PanelLoading } from '../../../../shared/components/PanelLoading';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -58,6 +58,7 @@ export const OverviewPanel = ({
       {data !== null && data.sessionCount === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.impact}
+          tone={CONCEPT_TONE.impact}
           title="No activity in this window"
           description="Run sessions to see shipped outcomes, flow time, and efficiency."
           bordered

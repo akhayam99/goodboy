@@ -3,7 +3,7 @@ import { Plus, Search, Unplug } from 'lucide-react';
 import { Checkbox, EmptyState, Eyebrow, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
@@ -101,6 +101,7 @@ export const WorkspaceLauncher = () => {
               <li>
                 <EmptyState
                   icon={CONCEPT_ICONS.workspace}
+                  tone={CONCEPT_TONE.workspace}
                   title="No workspaces found"
                   size="inline"
                   className="px-3 py-8"

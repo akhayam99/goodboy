@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { Button, Divider, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
 import {
   GenericTerminalPanel,
@@ -114,7 +114,7 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
       <PaneShell title="Terminal" description="Run commands in this session's worktree.">
         <EmptyState
           bordered
-          tone="info"
+          tone={CONCEPT_TONE.terminal}
           icon={CONCEPT_ICONS.terminal}
           title="No terminal"
           description="Open a terminal to run commands in this worktree."

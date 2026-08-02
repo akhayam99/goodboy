@@ -1,7 +1,7 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { EmptyState, ScrollFade, cn } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../../../shared/utils/relativeDate';
 
 type Props = {
@@ -23,7 +23,7 @@ export const VersionHistoryList = ({
     return (
       <EmptyState
         bordered
-        tone="info"
+        tone={CONCEPT_TONE.diff}
         icon={CONCEPT_ICONS.diff}
         title="Pick a file to see its versions"
       />

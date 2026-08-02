@@ -10,7 +10,7 @@ import {
   type ExploreEntry,
 } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
 import { ExplorePreviewPanel } from './ExplorePreviewPanel';
@@ -269,8 +269,8 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
           <div
             key={entry.relPath}
             className={cn(
-              'flex flex-col gap-2 rounded-md border border-border-soft p-2',
-              isSelectedFile && 'border-primary/50 bg-primary/5',
+              'group/explore-row flex flex-col gap-2 rounded-md px-2 py-1.5 transition-colors',
+              isSelectedFile ? 'bg-muted text-foreground' : 'hover:bg-muted/40',
             )}
           >
             <div className="flex items-start gap-2">
@@ -407,7 +407,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
           ) : rootError != null ? (
             <EmptyState
               bordered
-              tone="danger"
+              tone={CONCEPT_TONE.explore}
               icon={CONCEPT_ICONS.explore}
               title="Could not read this session folder"
               description={rootError}
@@ -424,7 +424,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
           ) : rootEntries.length === 0 ? (
             <EmptyState
               bordered
-              tone="info"
+              tone={CONCEPT_TONE.explore}
               icon={CONCEPT_ICONS.explore}
               title="This session folder is empty"
               description="Files created while you work on this session appear here. Add one from your editor or terminal and refresh."

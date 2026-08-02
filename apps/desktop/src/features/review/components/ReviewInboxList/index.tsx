@@ -15,7 +15,7 @@ import { RefreshIconButton } from '../../../../shared/components/RefreshIconButt
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { AuthorAvatar } from '../AuthorAvatar';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
 
 type Props = {
@@ -100,6 +100,7 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
           <EmptyState
             icon={CONCEPT_ICONS.review}
+            tone={CONCEPT_TONE.review}
             title={scope === 'others' ? 'No open PRs from teammates' : 'No open pull requests'}
             description={
               scope === 'others'

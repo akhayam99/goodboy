@@ -17,7 +17,7 @@ import { useAppStore } from '../../../../../store';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 
 type Props = {
@@ -142,6 +142,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               {connectedProviderIds.length === 0 ? (
                 <EmptyState
                   icon={CONCEPT_ICONS.providers}
+                  tone={CONCEPT_TONE.providers}
                   title="No providers connected"
                   size="inline"
                 />

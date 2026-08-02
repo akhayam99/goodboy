@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
 import { EmptyState } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   onAddWorkspace: () => void;
@@ -10,7 +10,7 @@ export const NoWorkspaceEmpty = ({ onAddWorkspace }: Props) => {
   return (
     <EmptyState
       icon={CONCEPT_ICONS.workspace}
-      tone="info"
+      tone={CONCEPT_TONE.workspace}
       title="No workspace yet"
       description="Point at a local git repo. Each session opens its own worktree off it."
       className="h-full justify-center px-6 py-10"

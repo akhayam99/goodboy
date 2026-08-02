@@ -9,7 +9,7 @@ import {
 } from '../../../session/components/ResolverStateBadge';
 import type { ResolverLink } from '../../../session/resolver-linkage';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly comments: ReadonlyArray<PrComment>;
@@ -58,6 +58,7 @@ export const PrConversation = ({
       <EmptyState
         bordered
         icon={CONCEPT_ICONS.comments}
+        tone={CONCEPT_TONE.comments}
         title="No comments yet"
         description="Review comments and replies on this pull request will show up here."
         action={

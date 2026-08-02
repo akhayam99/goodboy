@@ -28,7 +28,7 @@ import { useRebaseAgent } from '../../../../features/session/hooks/useRebaseAgen
 import { clampEffort } from '../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import {
   listBranchCommits,
   worktreeDiff,
@@ -951,7 +951,7 @@ export const DiffViewerContent = ({
             <div className={cn('mx-auto w-full max-w-5xl', !isPane && 'px-6 py-5')}>
               <EmptyState
                 bordered
-                tone="success"
+                tone={CONCEPT_TONE.diff}
                 icon={CONCEPT_ICONS.diff}
                 title={emptyStateLabel(view, isGitAware)}
                 description={emptyStateBlurb(view, isGitAware) ?? undefined}
