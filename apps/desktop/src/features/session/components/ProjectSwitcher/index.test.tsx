@@ -64,4 +64,16 @@ describe('ProjectSwitcher', () => {
 
     expect(screen.queryByRole('tablist', { name: 'Active project' })).toBeNull();
   });
+
+  it('uses a compact trigger that keeps the active project name while choosing from a menu', () => {
+    render(<ProjectSwitcher sessionId={'session-1' as never} density="compact" />);
+
+    expect(screen.queryByRole('tablist', { name: 'Active project' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Active project' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'api' }));
+    expect(store.setSessionActiveMount).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      workspaceId: 'workspace-api',
+    });
+  });
 });

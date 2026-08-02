@@ -6,17 +6,22 @@ import { openInEditor } from '../../../../shared/lib/editor';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
+import type { Density } from '../../density';
 
 const REFERENCE_EDITORS = new Set(['code', 'cursor']);
 
-const TRIGGER_BUTTON =
+const FULL_TRIGGER_BUTTON =
   'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+
+const COMPACT_TRIGGER_BUTTON =
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly density?: Density;
 };
 
-export const EditorMenu = ({ sessionId }: Props) => {
+export const EditorMenu = ({ sessionId, density = 'full' }: Props) => {
   const worktreePath = useAppStore((s) => s.sessionWorktrees[sessionId]?.[0] ?? null);
   const detectedEditors = useAppStore((s) => s.detectedEditors);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
@@ -93,17 +98,21 @@ export const EditorMenu = ({ sessionId }: Props) => {
     ];
   }, [detectedEditors, worktreePath]);
 
+  const triggerClassName = density === 'compact' ? COMPACT_TRIGGER_BUTTON : FULL_TRIGGER_BUTTON;
+
   return (
     <OverflowMenu
       items={items}
       label="open worktree"
       align="left"
       side="top"
-      triggerClassName={TRIGGER_BUTTON}
+      triggerClassName={triggerClassName}
       trigger={
         <>
           <FolderOpen size={13} aria-hidden />
-          <span>Open</span>
+          <span className="density-trigger-label" data-density={density}>
+            Open
+          </span>
         </>
       }
     />
