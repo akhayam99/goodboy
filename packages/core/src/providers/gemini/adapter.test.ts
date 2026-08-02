@@ -14,10 +14,10 @@ class FakeChild extends EventEmitter {
   killed = false;
   signal: NodeJS.Signals | null = null;
 
-  constructor(lines: ReadonlyArray<string>, exit = 0) {
+  constructor(lines: ReadonlyArray<string>, exit = 0, stderrLines: ReadonlyArray<string> = []) {
     super();
     this.stdout = Readable.from(lines.map((line) => `${line}\n`));
-    this.stderr = Readable.from([]);
+    this.stderr = Readable.from(stderrLines.map((line) => `${line}\n`));
     queueMicrotask(() => {
       this.exitCode = exit;
       this.stdout.on('end', () => this.emit('close', exit));
@@ -132,6 +132,25 @@ describe('GeminiAdapter.spawn', () => {
     const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
     const events = await collect(adapter);
     expect(events[events.length - 1]?.kind).toBe('done');
+  });
+
+  it('emits a rejected flag error before done when the CLI exits non-zero', async () => {
+    const child = new FakeChild([], 2, [
+      'flags provided but not defined: -m',
+      'Usage:',
+      '  agy [flags]',
+    ]);
+    const adapter = new GeminiAdapter({ now: fakeNow, spawnFn: (() => child) as never });
+    const events = await collect(adapter);
+    expect(events).toEqual([
+      {
+        kind: 'error',
+        runId: makeRequest().runId,
+        message: 'The installed agy CLI does not accept the -m flag.',
+        at: fakeNow(),
+      },
+      { kind: 'done', runId: makeRequest().runId, at: fakeNow() },
+    ]);
   });
 
   it('throws when the child process emits error', async () => {

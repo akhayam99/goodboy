@@ -156,7 +156,7 @@ const spawnOpenCode = async function* ({
   }
   const ctx = { runId: request.runId, now, onUnknown };
   yield* streamChildEvents(child, ctx, (line, parseCtx) => parseJsonLine({ line, ctx: parseCtx }), {
-    onClose: () => {
+    onClose: ({ exitCode: _exitCode, stderr: _stderr }) => {
       resetOpenCodeParseState({ runId: request.runId });
       return [{ kind: 'done', runId: request.runId, at: now() }];
     },

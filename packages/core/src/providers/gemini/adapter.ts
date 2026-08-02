@@ -11,6 +11,7 @@ import type {
 import { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './constants';
 import { computeGeminiCostUsd } from './cost';
 import { parseJsonLine } from './parser';
+import { cliExitEvents } from '../shared/cli-exit-events';
 import { streamChildEvents } from '../shared/stream-events';
 import { resolveModelArgs } from '../resolveModelArgs';
 import { resolveStoredModelSelection } from '../resolveStoredModelSelection';
@@ -123,6 +124,12 @@ const spawnGemini = async function* ({
   const ctx = { runId: request.runId, now, onUnknown };
 
   yield* streamChildEvents(child, ctx, parseJsonLine, {
-    onClose: () => [{ kind: 'done', runId: request.runId, at: now() }],
+    onClose: ({ exitCode, stderr }) => {
+      const at = now();
+      return [
+        ...cliExitEvents({ exitCode, stderr, runId: request.runId, at, binary }),
+        { kind: 'done', runId: request.runId, at },
+      ];
+    },
   });
 };

@@ -131,6 +131,7 @@ export {
   type TurnFallbackPlan,
 } from './providers/planTurnFallback';
 export { cliModelId } from './providers/cliModelId';
+export { cliExitEvents } from './providers/shared/cli-exit-events';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
 export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
 
