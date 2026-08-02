@@ -65,6 +65,7 @@ import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useWorkspaceRemoteHostKind } from './features/worktree/useWorkspaceRemoteHostKind';
 import { resolveSessionRepo } from './store/slices/worktrees/resolveSessionRepo';
+import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -79,6 +80,8 @@ export const App = () => {
   const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
+  const hasActiveSession = currentSession != null;
+  const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
   const remoteKind = useWorkspaceRemoteHostKind({ workspaceId: currentWorkspace?.id ?? null });
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
@@ -687,6 +690,7 @@ export const App = () => {
   useKeyboardShortcut('cmd+k', () => openPalette());
   useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
   useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
+  useKeyboardShortcut('cmd+b', sessionSidebar.toggle, { ignoreInInputs: false });
   useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+]', () => navigateLens(1), { ignoreInInputs: false });
   useKeyboardShortcut('cmd+shift+[', () => navigateSession(-1), { ignoreInInputs: false });
@@ -774,7 +778,15 @@ export const App = () => {
             activeStudio={activeStudio}
           />
         }
-        workspaceBar={currentWorkspace ? <WorkspaceHeader /> : undefined}
+        workspaceBar={
+          currentWorkspace ? (
+            <WorkspaceHeader
+              hasActiveSession={hasActiveSession}
+              isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
+              onToggleSessionSidebar={sessionSidebar.toggle}
+            />
+          ) : undefined
+        }
         footer={
           currentWorkspace ? (
             <AppFooter
@@ -821,7 +833,7 @@ export const App = () => {
             />
           ) : undefined
         }
-        leftHidden={!currentSession}
+        leftHidden={sessionSidebar.leftHidden}
         leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
         main={
           <div className="relative h-full w-full">

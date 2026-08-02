@@ -136,6 +136,23 @@ afterEach(() => {
 });
 
 describe('App lens shortcuts', () => {
+  it('registers cmd+b for the sessions column without colliding with agents lens', () => {
+    render(<App />);
+
+    expect(shortcutHandlers.has('cmd+b')).toBe(true);
+    expect(shortcutHandlers.has('cmd+shift+b')).toBe(true);
+
+    act(() => {
+      shortcutHandlers.get('cmd+b')?.();
+    });
+    expect(setActiveLens).not.toHaveBeenCalled();
+
+    act(() => {
+      shortcutHandlers.get('cmd+shift+b')?.();
+    });
+    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'agents');
+  });
+
   it('dispatches overview, pull request, decisions, and summary lenses', () => {
     render(<App />);
 

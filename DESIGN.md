@@ -60,8 +60,9 @@ functional. One register per surface; let the other supply only texture.
   answers "where do I want to be". Each has one job; they must not compete.
 - **Pin the structure, flex the density.** Nothing appears or disappears at a
   count threshold. A control's position is fixed so it can be learned. The
-  sidebar has no collapse rail or toggle; it is either hidden (board-only
-  Overview) or at its persisted width.
+  sidebar has no collapse rail. Overview stays board-only. Inside a session,
+  the sessions column can be hidden or shown from the workspace header or with
+  ⌘B, and that choice persists.
 - **Settings match the scope they edit.** Configuration splits into two
   surfaces by ownership: application settings is a full-page studio; workspace
   settings is a lightweight scoped pane. Each surface edits only
