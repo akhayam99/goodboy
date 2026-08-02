@@ -3,11 +3,14 @@ import { listOpenQuestionsForSession } from '@goodboy/db';
 import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
+import { BUDGET_BLOCK_MESSAGE, isBudgetBlocked } from './budgetBlock';
+import { persistOrchestrationError } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
 
 const advanceInFlight = new Set<SessionId>();
 
 type Params = {
+  readonly set: SetFn;
   readonly get: GetFn;
   readonly sessionId: SessionId;
 };
@@ -46,8 +49,8 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
   }
 };
 
-const runAdvance = async ({ get, sessionId }: Params): Promise<void> => {
-  await startChainedRuns({ get, sessionId });
+const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
+  await startChainedRuns({ set, get, sessionId });
 
   const state = get();
   const session = state.sessions.find((s) => s.id === sessionId);
@@ -63,13 +66,18 @@ const runAdvance = async ({ get, sessionId }: Params): Promise<void> => {
   if (state.summarizerStatus[sessionId]?.status === 'running') {
     return;
   }
-  const exceeded = state.budgetAlerts.some(
-    (a) =>
-      a.dismissedAt === undefined &&
-      ((a.kind === 'session-exceeded' && a.sessionId === sessionId) ||
-        a.kind === 'provider-exceeded'),
-  );
-  if (exceeded) {
+  if (isBudgetBlocked({ alerts: state.budgetAlerts, sessionId })) {
+    for (const run of activeRuns) {
+      if (run.orchestrationError === BUDGET_BLOCK_MESSAGE) {
+        continue;
+      }
+      await persistOrchestrationError({
+        set,
+        sessionId,
+        workflowRunId: run.id,
+        message: BUDGET_BLOCK_MESSAGE,
+      });
+    }
     return;
   }
   const templates = state.phaseTemplates[session.workspaceId] ?? [];
@@ -129,14 +137,14 @@ const runAdvance = async ({ get, sessionId }: Params): Promise<void> => {
   );
 };
 
-export const maybeAutoAdvanceWorkflow = (_set: SetFn, get: GetFn) => {
+export const maybeAutoAdvanceWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     if (advanceInFlight.has(sessionId)) {
       return;
     }
     advanceInFlight.add(sessionId);
     try {
-      await runAdvance({ get, sessionId });
+      await runAdvance({ set, get, sessionId });
     } finally {
       advanceInFlight.delete(sessionId);
     }
