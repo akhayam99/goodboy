@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Copy, ImageOff } from 'lucide-react';
+import { ImageOff } from 'lucide-react';
 import { Markdown, Skeleton } from '@goodboy/ui';
 import type { MessageAttachment, ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
@@ -8,6 +8,7 @@ import { readAttachment } from '../../turn';
 import { fileIconFor } from '../../attachment-kinds';
 import { ImageLightbox } from '../ImageLightbox';
 import { TranscriptShell } from '../TranscriptShell';
+import { CopyButton } from '../../../../shared/components/CopyButton';
 
 const formatHHMM = (iso: string): string => {
   const d = new Date(iso);
@@ -17,35 +18,6 @@ const formatHHMM = (iso: string): string => {
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
-};
-
-type InlineCopyButtonProps = {
-  value: string;
-};
-
-const InlineCopyButton = ({ value }: InlineCopyButtonProps) => {
-  const [copied, setCopied] = useState(false);
-  const onCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(value);
-    } catch {
-      return;
-    }
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
-  };
-  return (
-    <button
-      type="button"
-      onClick={(e) => void onCopy(e)}
-      title={copied ? 'copied' : 'copy message'}
-      aria-label="copy message"
-      className="rounded p-0.5 text-foreground/60 transition-opacity hover:opacity-80 hover:text-foreground"
-    >
-      {copied ? <Check size={11} aria-hidden /> : <Copy size={11} aria-hidden />}
-    </button>
-  );
 };
 
 type AttachmentThumbProps = {
@@ -222,7 +194,13 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
       <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
         {provider ? <ProviderFootnote provider={provider} model={model} /> : null}
         <span className="font-mono">{formatHHMM(at)}</span>
-        {text.length > 0 && <InlineCopyButton value={text} />}
+        {text.length > 0 && (
+          <CopyButton
+            value={text}
+            label="copy message"
+            className="rounded-md p-0.5 text-foreground/60 transition-opacity hover:opacity-80 hover:text-foreground"
+          />
+        )}
       </div>
     </TranscriptShell>
   );

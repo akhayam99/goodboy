@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronRight, Copy, ExternalLink, MessageSquarePlus } from 'lucide-react';
+import { Check, ChevronRight, ExternalLink, MessageSquarePlus } from 'lucide-react';
 import { Divider, EmptyState, Tooltip, cn } from '@goodboy/ui';
-import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CopyButton } from '../../../../shared/components/CopyButton';
 import type {
   AgentId,
   DiffComment,
@@ -63,12 +63,10 @@ export const FileDiffCard = ({
   onViewAgent,
   getAgentName,
 }: Props) => {
-  const { showToast } = useToast();
   const [collapsed, setCollapsed] = useState(reviewState === 'reviewed');
   const [activeAnchor, setActiveAnchor] = useState<DiffCommentAnchor | null>(null);
   const [fileLevelComposerOpen, setFileLevelComposerOpen] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
-  const [pathCopied, setPathCopied] = useState(false);
   const diffScrollRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -92,17 +90,6 @@ export const FileDiffCard = ({
     const next = !isReviewed;
     onToggleReviewed(next);
     setCollapsed(next);
-  };
-
-  const copyPath = () => {
-    navigator.clipboard.writeText(file.path).then(
-      () => {
-        setPathCopied(true);
-        showToast('success', 'path copied');
-        window.setTimeout(() => setPathCopied(false), 1500);
-      },
-      () => showToast('error', 'failed to copy path'),
-    );
   };
 
   const resolvedCount = useMemo(
@@ -281,14 +268,12 @@ export const FileDiffCard = ({
           </span>
           <div className="flex shrink-0 items-center gap-1">
             <Tooltip content="copy path">
-              <button
-                type="button"
-                onClick={copyPath}
-                aria-label="copy file path"
+              <CopyButton
+                value={file.path}
+                label="copy file path"
+                size={12}
                 className={TOOLBAR_ICON_BTN}
-              >
-                {pathCopied ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
-              </button>
+              />
             </Tooltip>
             {canOpenEditor ? (
               <Tooltip content="open file in editor">

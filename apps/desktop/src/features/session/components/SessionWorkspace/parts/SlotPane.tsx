@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Copy, History, type LucideIcon } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { History, type LucideIcon } from 'lucide-react';
 import { Button, EmptyState, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
@@ -15,6 +15,7 @@ import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from './PaneShell';
 import { SlotHistoryPanel } from './SlotHistoryPanel';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CopyButton } from '../../../../../shared/components/CopyButton';
 
 type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
 
@@ -79,8 +80,6 @@ export const SlotPane = ({ session, slotKey }: Props) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [valueCopied, setValueCopied] = useState(false);
-  const copyTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (!editing) {
@@ -93,15 +92,6 @@ export const SlotPane = ({ session, slotKey }: Props) => {
       void loadSessionOpenQuestions(sessionId);
     }
   }, [slotKey, sessionId, loadSessionOpenQuestions]);
-
-  useEffect(
-    () => () => {
-      if (copyTimer.current !== null) {
-        window.clearTimeout(copyTimer.current);
-      }
-    },
-    [],
-  );
 
   const commit = () => {
     setEditing(false);
@@ -154,20 +144,6 @@ export const SlotPane = ({ session, slotKey }: Props) => {
     return parts.join('\n\n');
   };
 
-  const copyValue = async () => {
-    const text = slotKey === 'last_output_summary' ? buildShareableDocument() : value;
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      return;
-    }
-    setValueCopied(true);
-    if (copyTimer.current !== null) {
-      window.clearTimeout(copyTimer.current);
-    }
-    copyTimer.current = window.setTimeout(() => setValueCopied(false), 1500);
-  };
-
   return (
     <InspectorSplit
       open={historyOpen}
@@ -190,27 +166,12 @@ export const SlotPane = ({ session, slotKey }: Props) => {
         actions={
           <>
             {hasValue ? (
-              <button
-                type="button"
-                onClick={() => void copyValue()}
-                title={
-                  valueCopied
-                    ? 'copied'
-                    : slotKey === 'last_output_summary'
-                      ? 'copy shareable summary'
-                      : 'copy'
-                }
-                aria-label={
-                  valueCopied
-                    ? 'copied'
-                    : slotKey === 'last_output_summary'
-                      ? 'copy shareable summary'
-                      : 'copy'
-                }
+              <CopyButton
+                value={slotKey === 'last_output_summary' ? buildShareableDocument() : value}
+                label={slotKey === 'last_output_summary' ? 'copy shareable summary' : 'copy'}
+                size={15}
                 className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
-              >
-                {valueCopied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
-              </button>
+              />
             ) : null}
             {history.length > 0 ? (
               <button
