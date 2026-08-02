@@ -140,7 +140,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
-vi.mock('../../../workspace/components/SessionDetailPanel/SummarizerBadge', () => ({
+vi.mock('../SummarizerBadge', () => ({
   SummarizerBadge: () => <span data-testid="summarizer-badge" />,
 }));
 

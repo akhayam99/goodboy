@@ -59,6 +59,10 @@ vi.mock('../../../shared/components/DogMascot', () => ({
   DogMascot: () => null,
 }));
 
+vi.mock('../../../features/session/components/SessionStripCrumbs', () => ({
+  SessionStripCrumbs: () => <span>session crumbs</span>,
+}));
+
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
@@ -177,22 +181,24 @@ describe('AppTopBar', () => {
     expect(btn.className).not.toContain('bg-foreground');
   });
 
-  it('centers the update indicator in flow, between two spacers', () => {
-    const { container } = renderBar({
-      onOpenSettings: vi.fn(),
-      onOpenBudget: vi.fn(),
-      activeStudio: null,
-    });
+  it('gives the middle to the session and keeps the update pip on the right', () => {
+    const { container } = renderBar({ hasActiveSession: true });
     const update = screen.getByText('Update to 0.2.0');
+    const crumbs = screen.getByText('session crumbs');
     const bar = container.querySelector('[data-tauri-drag-region]');
     const children = Array.from(bar?.children ?? []);
+    const crumbIndex = children.findIndex((child) => child.contains(crumbs));
     const updateIndex = children.findIndex((child) => child.contains(update));
 
-    expect(updateIndex).toBeGreaterThan(0);
-    expect(children[updateIndex - 1]?.className).toContain('flex-1');
-    expect(children[updateIndex + 1]?.className).toContain('flex-1');
+    expect(children[crumbIndex]?.className).toContain('flex-1');
+    expect(updateIndex).toBeGreaterThan(crumbIndex);
     expect(children.some((child) => child.className.includes('absolute'))).toBe(false);
     expect(update.closest('button')).not.toBeNull();
+  });
+
+  it('leaves the middle empty on the board', () => {
+    renderBar({ hasActiveSession: false });
+    expect(screen.queryByText('session crumbs')).toBeNull();
   });
 
   it('opens budget only from the spend target and omits the beta chip', () => {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import { Divider, ResizeHandle, cn } from '@goodboy/ui';
+import { ResizeHandle, cn } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
 import { PlanStudio } from '../../../plans/components/PlanStudio';
 import { ScriptsPanel } from '../../../scripts';
@@ -17,13 +17,11 @@ import {
 import type { LensKind } from '../../../../store';
 import { worktreeStatus } from '../../../worktree/worktree';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
-import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
-import { SessionTopBar } from './parts/SessionTopBar';
 import { LensColumn } from './parts/LensColumn';
 import { QuestionsPane } from './parts/QuestionsPane';
 import { SlotPane } from './parts/SlotPane';
@@ -32,7 +30,6 @@ import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from './parts/PaneShell';
 import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
-import { buildSessionBreadcrumb } from './sessionBreadcrumb';
 import { resolveOverlayHome } from './resolveOverlayHome';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
@@ -46,38 +43,7 @@ import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
-
-const LENS_LABEL: Record<LensKind, string> = {
-  questions: 'Questions',
-  agents: 'Agents',
-  workflows: 'Workflows',
-  resolve: 'Resolve',
-  review: 'Review board',
-  plans: 'Plans',
-  scripts: 'Scripts',
-  terminal: 'Terminal',
-  goal: 'Goal',
-  decisions: 'Decisions',
-  last_output_summary: 'Session summary',
-  pr: 'Pull request',
-  files: 'Diff',
-  explore: 'Explore',
-  linear: 'Linear',
-  sentry: 'Sentry',
-  gitlab_issues: 'GitLab issues',
-};
-
-const SIMPLE_LENSES = new Set<LensKind>([
-  'workflows',
-  'agents',
-  'questions',
-  'plans',
-  'goal',
-  'decisions',
-  'last_output_summary',
-  'explore',
-  'files',
-]);
+import { LENS_LABEL, SIMPLE_LENSES } from '../../lens-labels';
 
 type SessionWorkspaceProps = {
   readonly session: Session;
@@ -302,43 +268,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     () => plans.find((p) => p.id === focusedPlanId)?.title ?? null,
     [plans, focusedPlanId],
   );
-  const lensLabel = (kind: LensKind): string =>
-    kind === 'files' && isBranchless ? 'File versions' : LENS_LABEL[kind];
-
-  const crumbs = useMemo(
-    () =>
-      buildSessionBreadcrumb({
-        lens,
-        studio,
-        focusedWorkflowName,
-        focusedPlanTitle,
-        lensLabel,
-        handlers: {
-          toOverview: () => setActiveLens(sessionId, null),
-          toLens: (l) => setActiveLens(sessionId, l),
-          toWorkflowsList: () => {
-            setFocusedWorkflowRun(sessionId, null);
-            setActiveLens(sessionId, 'workflows');
-          },
-          toPlansList: () => {
-            setFocusedPlanId(sessionId, null);
-            setActiveLens(sessionId, 'plans');
-          },
-        },
-      }),
-    [
-      lens,
-      studio,
-      focusedWorkflowName,
-      focusedPlanTitle,
-      isBranchless,
-      sessionId,
-      setActiveLens,
-      setFocusedWorkflowRun,
-      setFocusedPlanId,
-    ],
-  );
-
   useEffect(() => {
     if (!showAgentOverlay) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -352,15 +281,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
   return (
     <div className="flex h-full w-full flex-col">
-      <SessionTopBar session={session} />
-      {showAgentOverlay ? null : (
-        <>
-          <div className="flex min-w-0 shrink-0 items-center px-6 py-2.5">
-            <AppBreadcrumb crumbs={crumbs} />
-          </div>
-          <Divider />
-        </>
-      )}
       <div className="flex min-h-0 flex-1">
         <div className="flex shrink-0 flex-col bg-background" style={{ width: lensColumnWidth }}>
           <LensColumn

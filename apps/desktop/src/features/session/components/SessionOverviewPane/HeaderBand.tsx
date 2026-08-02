@@ -6,7 +6,7 @@ import { agentHasUnread, EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '.
 import { STAGE_TONE } from '../../session-stage';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import { SummarizerBadge } from '../../../workspace/components/SessionDetailPanel/SummarizerBadge';
+import { SummarizerBadge } from '../SummarizerBadge';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { BranchChip } from './BranchChip';
 import { SessionCostChip } from './SessionCostChip';

@@ -7,6 +7,7 @@ import { NotificationCenter } from '../../../features/notifications/components/N
 import { RunningScriptsIndicator } from '../../../features/scripts/components/RunningScriptsIndicator';
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
+import { SessionStripCrumbs } from '../../../features/session/components/SessionStripCrumbs';
 import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
 
 const SHOW_COLUMN_LABEL = 'Show sessions column (⌘B)';
@@ -74,11 +75,11 @@ export const AppTopBar = ({
           </div>
         )}
 
-        <div className="min-w-0 flex-1" />
+        <div className="flex min-w-0 flex-1 items-center overflow-hidden pl-1">
+          {hasActiveSession ? <SessionStripCrumbs /> : null}
+        </div>
 
         <UpdateIndicator variant="pip" />
-
-        <div className="min-w-0 flex-1" />
 
         <WorkspaceRollupStrip onOpenBudget={onOpenBudget} />
 
