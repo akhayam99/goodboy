@@ -1,30 +1,27 @@
 import { useMemo } from 'react';
 import { StatCard, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import type { BudgetAlert, SessionId, TelemetrySummary } from '@goodboy/types';
+import type { BudgetAlert, SessionId } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
 import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import { PanelLoading } from '../../../../shared/components/PanelLoading';
 import type { QueryResult } from '../../../../shared/types/queryResult';
-import { brandColor } from '../../../providers/components/provider-brand';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { AlertBanner } from './AlertBanner';
 import { ModelTable } from './ModelTable';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { SpendBar } from './SpendBar';
-import { Sparkline } from './Sparkline';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { Sparkline } from '../../../../shared/components/Sparkline';
 import {
   buildModelBreakdown,
   chronologicalTurnCosts,
   providerLabel,
-  toProviderId,
   type BudgetScope,
   type WorkspaceTurn,
 } from './lib';
 
 type Props = {
-  readonly workspaceSummary: TelemetrySummary | null;
   readonly providers: ReadonlyArray<ProviderSpendEntry>;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly sessionCount: number;
@@ -42,7 +39,6 @@ type Props = {
 };
 
 export const OverviewPanel = ({
-  workspaceSummary,
   providers,
   turns,
   sessionCount,
@@ -59,9 +55,12 @@ export const OverviewPanel = ({
   onOpenSession,
 }: Props) => {
   const records = useMemo(() => turns.map((t) => t.record), [turns]);
-  const workspaceCost = workspaceSummary?.estimatedCostUsd ?? 0;
-  const totalTokens = (workspaceSummary?.inputTokens ?? 0) + (workspaceSummary?.outputTokens ?? 0);
-  const recordCount = workspaceSummary?.recordCount ?? records.length;
+  const workspaceCost = records.reduce((sum, record) => sum + record.estimatedCostUsd, 0);
+  const totalTokens = records.reduce(
+    (sum, record) => sum + record.inputTokens + record.outputTokens,
+    0,
+  );
+  const recordCount = records.length;
   const avgPerTurn = recordCount > 0 ? workspaceCost / recordCount : 0;
 
   const models = useMemo(() => buildModelBreakdown(records), [records]);
@@ -100,14 +99,12 @@ export const OverviewPanel = ({
           <StudioWidget label="spend by provider" hint="share of workspace total">
             <div className="flex flex-col gap-3">
               {providers.map((entry) => {
-                const id = toProviderId(entry.provider);
                 return (
                   <SpendBar
                     key={entry.provider}
                     label={providerLabel(entry.provider)}
                     valueLabel={formatUsd(entry.spentUsd)}
                     pct={totalSpend > 0 ? entry.spentUsd / totalSpend : 0}
-                    colorVar={id !== null ? brandColor(id) : 'var(--color-muted-foreground)'}
                     icon={<ProviderIcon provider={entry.provider} size={14} />}
                     onClick={() => onSelect({ kind: 'provider', provider: entry.provider })}
                   />

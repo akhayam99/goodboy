@@ -64,7 +64,7 @@ beforeEach(() => {
         inputTokens: 50,
         outputTokens: 100,
         estimatedCostUsd: 1.5,
-        recordedAt: '2026-06-01T00:00:00.000Z',
+        recordedAt: new Date().toISOString(),
       },
     ],
   };
@@ -203,5 +203,31 @@ describe('BudgetStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open session build the feature' }));
     expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('filters telemetry with the header window control', () => {
+    state.sessionTelemetry = {
+      'session-1': [
+        ...state.sessionTelemetry['session-1']!,
+        {
+          id: 't-old',
+          runId: 'r-old',
+          sessionId: 'session-1',
+          kind: 'turn',
+          provider: 'anthropic',
+          model: 'legacy-budget-model',
+          inputTokens: 20,
+          outputTokens: 30,
+          estimatedCostUsd: 2,
+          recordedAt: '2020-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+
+    render(<BudgetStudio workspaceName="goodboy" onClose={vi.fn()} />);
+
+    expect(screen.queryByText('Legacy Budget Model')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'All time' }));
+    expect(screen.getAllByText('Legacy Budget Model').length).toBeGreaterThan(0);
   });
 });

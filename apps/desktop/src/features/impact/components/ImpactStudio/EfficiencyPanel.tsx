@@ -11,10 +11,10 @@ import { PanelLoading } from '../../../../shared/components/PanelLoading';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { turnStats } from '../../utils/turnStats';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
-import { Sparkline } from './Sparkline';
 import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { Sparkline } from '../../../../shared/components/Sparkline';
 
 type Props = {
   readonly cacheEfficiency: QueryResult<ReadonlyArray<CacheEfficiencyEntry>>;
@@ -96,7 +96,10 @@ export const EfficiencyPanel = ({
           </div>
         </StudioWidget>
         <StudioWidget label="context growth per turn" hint="latest 40 measured turns">
-          <Sparkline values={context?.map((point) => point.contextTokens) ?? []} />
+          <Sparkline
+            values={context?.map((point) => point.contextTokens) ?? []}
+            formatMaximum={(maximum) => `${maximum.toLocaleString()} tokens`}
+          />
         </StudioWidget>
         <StudioWidget label="turn distribution" hint={`${stats?.agents ?? 0} agents`}>
           {stats !== null && turnData !== null ? (

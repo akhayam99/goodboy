@@ -3,9 +3,9 @@ import { StatCard, formatUsdPrecise } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CapEditor } from './CapEditor';
 import { ModelTable } from './ModelTable';
-import { Sparkline } from './Sparkline';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { Sparkline } from '../../../../shared/components/Sparkline';
 import { buildModelBreakdown, chronologicalTurnCosts, type WorkspaceTurn } from './lib';
 
 type Props = {
