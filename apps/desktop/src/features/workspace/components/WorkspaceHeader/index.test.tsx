@@ -25,7 +25,7 @@ const SETTINGS_EVENT = 'goodboy:open-workspace-settings';
 type Overrides = {
   readonly hasActiveSession?: boolean;
   readonly isSessionSidebarCollapsed?: boolean;
-  readonly onShowSessionSidebar?: () => void;
+  readonly onToggleSessionSidebar?: () => void;
   readonly onSessionSidebarAnchorEnter?: () => void;
   readonly onSessionSidebarAnchorLeave?: () => void;
 };
@@ -35,13 +35,13 @@ const renderHeader = (overrides: Overrides = {}) =>
     <WorkspaceHeader
       hasActiveSession={overrides.hasActiveSession ?? false}
       isSessionSidebarCollapsed={overrides.isSessionSidebarCollapsed ?? false}
-      onShowSessionSidebar={overrides.onShowSessionSidebar ?? vi.fn()}
+      onToggleSessionSidebar={overrides.onToggleSessionSidebar ?? vi.fn()}
       onSessionSidebarAnchorEnter={overrides.onSessionSidebarAnchorEnter ?? vi.fn()}
       onSessionSidebarAnchorLeave={overrides.onSessionSidebarAnchorLeave ?? vi.fn()}
     />,
   );
 
-const anchor = () => screen.queryByRole('button', { name: /show sessions column \(⌘B\)/i });
+const anchor = () => screen.queryByRole('button', { name: /sessions column \(⌘B\)/i });
 
 beforeEach(() => {
   state.currentWorkspace = { id: 'ws-a', name: 'alpha', rootPath: '/code/alpha-app' } as Workspace;
@@ -80,28 +80,31 @@ describe('WorkspaceHeader', () => {
     window.removeEventListener(SETTINGS_EVENT, spy);
   });
 
-  it('holds no sidebar control while the column is on screen', () => {
-    renderHeader({ hasActiveSession: true, isSessionSidebarCollapsed: false });
-    expect(anchor()).toBeNull();
-  });
-
   it('holds no sidebar control on the board, where there is no column', () => {
     renderHeader({ hasActiveSession: false, isSessionSidebarCollapsed: true });
     expect(anchor()).toBeNull();
   });
 
-  it('brings the column back when the anchor is clicked', () => {
-    const onShowSessionSidebar = vi.fn();
-    renderHeader({
+  it('owns the only column control, in both directions', () => {
+    const onToggleSessionSidebar = vi.fn();
+    const { rerender } = renderHeader({
       hasActiveSession: true,
-      isSessionSidebarCollapsed: true,
-      onShowSessionSidebar,
+      isSessionSidebarCollapsed: false,
+      onToggleSessionSidebar,
     });
-    const button = anchor();
-    expect(button).not.toBeNull();
+    expect(screen.getByRole('button', { name: /hide sessions column \(⌘B\)/i })).toBeDefined();
 
-    fireEvent.click(button as HTMLElement);
-    expect(onShowSessionSidebar).toHaveBeenCalledOnce();
+    rerender(
+      <WorkspaceHeader
+        hasActiveSession
+        isSessionSidebarCollapsed
+        onToggleSessionSidebar={onToggleSessionSidebar}
+        onSessionSidebarAnchorEnter={vi.fn()}
+        onSessionSidebarAnchorLeave={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /show sessions column \(⌘B\)/i }));
+    expect(onToggleSessionSidebar).toHaveBeenCalledOnce();
   });
 
   it('asks for a peek when the pointer rests on the anchor', () => {

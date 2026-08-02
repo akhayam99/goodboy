@@ -1,4 +1,4 @@
-import { ChevronsUpDown, PanelLeft, Settings } from 'lucide-react';
+import { ChevronsUpDown, PanelLeft, PanelLeftClose, Settings } from 'lucide-react';
 import { StatusDot } from '@goodboy/ui';
 import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
@@ -7,12 +7,13 @@ const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() 
 
 const basenameOf = (path: string): string => path.replace(/\/+$/, '').split('/').pop() || path;
 
-const SIDEBAR_ANCHOR_LABEL = 'Show sessions column (⌘B)';
+const SHOW_LABEL = 'Show sessions column (⌘B)';
+const HIDE_LABEL = 'Hide sessions column (⌘B)';
 
 type Props = {
   readonly hasActiveSession: boolean;
   readonly isSessionSidebarCollapsed: boolean;
-  readonly onShowSessionSidebar: () => void;
+  readonly onToggleSessionSidebar: () => void;
   readonly onSessionSidebarAnchorEnter: () => void;
   readonly onSessionSidebarAnchorLeave: () => void;
 };
@@ -20,7 +21,7 @@ type Props = {
 export const WorkspaceHeader = ({
   hasActiveSession,
   isSessionSidebarCollapsed,
-  onShowSessionSidebar,
+  onToggleSessionSidebar,
   onSessionSidebarAnchorEnter,
   onSessionSidebarAnchorLeave,
 }: Props) => {
@@ -33,22 +34,26 @@ export const WorkspaceHeader = ({
   const accent = workspaceAccent(currentWorkspace.id);
   const memberCount = currentWorkspace.members?.length ?? 0;
   const subtitle = memberCount > 1 ? `${memberCount} repos` : basenameOf(currentWorkspace.rootPath);
-  const showSidebarAnchor = hasActiveSession && isSessionSidebarCollapsed;
+  const sidebarActionLabel = isSessionSidebarCollapsed ? SHOW_LABEL : HIDE_LABEL;
 
   return (
     <div className="flex shrink-0 items-center gap-1 px-2.5 py-2.5" data-tauri-drag-region="false">
-      {showSidebarAnchor ? (
+      {hasActiveSession ? (
         <button
           type="button"
-          onClick={onShowSessionSidebar}
+          onClick={onToggleSessionSidebar}
           onPointerEnter={onSessionSidebarAnchorEnter}
           onPointerLeave={onSessionSidebarAnchorLeave}
           data-tauri-drag-region="false"
           className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
-          title={SIDEBAR_ANCHOR_LABEL}
-          aria-label={SIDEBAR_ANCHOR_LABEL}
+          title={sidebarActionLabel}
+          aria-label={sidebarActionLabel}
         >
-          <PanelLeft size={14} aria-hidden />
+          {isSessionSidebarCollapsed ? (
+            <PanelLeft size={14} aria-hidden />
+          ) : (
+            <PanelLeftClose size={14} aria-hidden />
+          )}
         </button>
       ) : null}
       <button

@@ -804,7 +804,9 @@ export const App = () => {
             <WorkspaceHeader
               hasActiveSession={hasActiveSession}
               isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
-              onShowSessionSidebar={sessionSidebar.pin}
+              onToggleSessionSidebar={
+                sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
+              }
               onSessionSidebarAnchorEnter={() => sessionSidebar.requestPeek({ source: 'anchor' })}
               onSessionSidebarAnchorLeave={() => {
                 sessionSidebar.cancelPeek();
@@ -860,9 +862,7 @@ export const App = () => {
           ) : undefined
         }
         leftHidden={sessionSidebar.leftHidden}
-        leftSidebar={
-          hasWorkspaces ? <WorkspacesSidebar onCollapse={sessionSidebar.toggle} /> : undefined
-        }
+        leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
         leftOverlay={
           hasWorkspaces && hasActiveSession && sessionSidebar.isCollapsed ? (
             <SidebarPeekOverlay
@@ -877,11 +877,7 @@ export const App = () => {
               onHold={sessionSidebar.holdPeek}
               onRelease={sessionSidebar.releasePeek}
             >
-              <WorkspacesSidebar
-                isPeeking
-                onPin={sessionSidebar.pin}
-                onNavigate={sessionSidebar.closePeek}
-              />
+              <WorkspacesSidebar onNavigate={sessionSidebar.closePeek} />
             </SidebarPeekOverlay>
           ) : undefined
         }

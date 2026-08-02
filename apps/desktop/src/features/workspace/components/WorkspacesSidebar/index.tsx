@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Kanban, PanelLeft, PanelLeftClose } from 'lucide-react';
-import { KbdPill, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { Kanban } from 'lucide-react';
+import { KbdPill, cn, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -14,13 +14,10 @@ import { SessionActivityBar } from '../SessionActivityBar';
 import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
 
 type Props = {
-  readonly isPeeking?: boolean;
-  readonly onCollapse?: () => void;
-  readonly onPin?: () => void;
   readonly onNavigate?: () => void;
 };
 
-export const WorkspacesSidebar = ({ isPeeking = false, onCollapse, onPin, onNavigate }: Props) => {
+export const WorkspacesSidebar = ({ onNavigate }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const currentSession = useCurrentSession();
@@ -34,7 +31,6 @@ export const WorkspacesSidebar = ({ isPeeking = false, onCollapse, onPin, onNavi
   );
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const primaryTint = tintClasses('primary');
-  const columnActionLabel = isPeeking ? 'Keep open (⌘B)' : 'Hide sessions column (⌘B)';
 
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
@@ -50,21 +46,7 @@ export const WorkspacesSidebar = ({ isPeeking = false, onCollapse, onPin, onNavi
   return (
     <div className="flex h-full min-h-0 flex-col">
       {currentWorkspace && currentSession ? (
-        <div className="flex shrink-0 items-center gap-1.5 px-2 pt-2 pb-1">
-          <Tooltip content={columnActionLabel} side="bottom">
-            <button
-              type="button"
-              onClick={isPeeking ? onPin : onCollapse}
-              aria-label={columnActionLabel}
-              className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
-            >
-              {isPeeking ? (
-                <PanelLeft size={14} aria-hidden />
-              ) : (
-                <PanelLeftClose size={14} aria-hidden />
-              )}
-            </button>
-          </Tooltip>
+        <div className="shrink-0 px-2 pt-2 pb-1">
           <button
             type="button"
             onClick={() => {
@@ -73,7 +55,7 @@ export const WorkspacesSidebar = ({ isPeeking = false, onCollapse, onPin, onNavi
             }}
             aria-label="back to board"
             className={cn(
-              'group relative flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
+              'group relative flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
               'bg-primary text-primary-foreground ring-1',
               primaryTint.ring,
               'motion-safe:transition-opacity hover:opacity-90',
