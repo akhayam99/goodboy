@@ -78,6 +78,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 import { AppTopBar } from './index';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
 const ATTENTION_SESSION_ID = 'session-1' as SessionId;
 const ATTENTION_SESSION = {
@@ -200,7 +201,11 @@ describe('AppTopBar', () => {
         onSessionSidebarAnchorLeave={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /show sessions column \(⌘B\)/i }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: `Show sessions column (${shortcutGlyphs('column.toggle')})`,
+      }),
+    );
     expect(onToggleSessionSidebar).toHaveBeenCalledOnce();
   });
 

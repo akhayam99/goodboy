@@ -25,6 +25,7 @@ import { LensColumnFooter } from '../LensColumnFooter';
 import { LENS_SHORTCUTS, buildLensGroups } from './groups';
 import type { LensDot, LensRow } from './groups';
 import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
 
 type Props = {
   readonly session: Session;
@@ -296,7 +297,7 @@ export const LensColumn = ({
               aria-hidden
               className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
             >
-              ⌘⇧O
+              {shortcutGlyphs('lens.overview')}
             </KbdPill>
           </button>
           {visibleGroups.map((group) => (
@@ -317,7 +318,7 @@ export const LensColumn = ({
                 group.rows.map((row) => {
                   const active = activeLens === row.kind;
                   const rowWantsAttention = groupWantsAttention({ rows: [row] });
-                  const shortcut = LENS_SHORTCUTS[row.kind];
+                  const shortcut = shortcutGlyphs(LENS_SHORTCUTS[row.kind]);
                   const hasDiffstat =
                     row.diffstat != null && row.diffstat.additions + row.diffstat.deletions > 0;
                   const hasBadge =
@@ -378,7 +379,7 @@ export const LensColumn = ({
                       <span
                         className={cn(
                           'min-w-0 flex-1 truncate text-[13px]',
-                          shortcut != null && !hasBadge && 'pr-12',
+                          !hasBadge && 'pr-12',
                           active && 'font-medium',
                         )}
                       >
@@ -387,9 +388,8 @@ export const LensColumn = ({
                       {hasBadge ? (
                         <span
                           className={cn(
-                            'flex shrink-0 items-center gap-1.5 transition-opacity',
-                            shortcut != null &&
-                              'min-w-10 justify-end group-hover:opacity-0 group-focus-visible:opacity-0',
+                            'flex min-w-10 shrink-0 items-center justify-end gap-1.5 transition-opacity',
+                            'group-hover:opacity-0 group-focus-visible:opacity-0',
                           )}
                         >
                           {row.isCountLoading === true ? (
@@ -442,14 +442,12 @@ export const LensColumn = ({
                           )}
                         </span>
                       ) : null}
-                      {shortcut != null ? (
-                        <KbdPill
-                          aria-hidden
-                          className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
-                        >
-                          {shortcut}
-                        </KbdPill>
-                      ) : null}
+                      <KbdPill
+                        aria-hidden
+                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
+                      >
+                        {shortcut}
+                      </KbdPill>
                     </button>
                   );
                 })

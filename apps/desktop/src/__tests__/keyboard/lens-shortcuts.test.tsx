@@ -3,11 +3,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 
-const { setActiveLens, shortcutHandlers, state } = vi.hoisted(() => {
+const { setActiveLens, sessionList, state } = vi.hoisted(() => {
   const activeLensSetter = vi.fn();
+  const sessions = [
+    { id: 'session-0', workspaceId: 'workspace-1' },
+    { id: 'session-1', workspaceId: 'workspace-1' },
+  ];
   return {
     setActiveLens: activeLensSetter,
-    shortcutHandlers: new Map<string, () => void>(),
+    sessionList: { current: sessions },
     state: {
       hydrate: vi.fn(async () => undefined),
       checkForUpdates: vi.fn(async () => undefined),
@@ -23,15 +27,18 @@ const { setActiveLens, shortcutHandlers, state } = vi.hoisted(() => {
           kind: 'repo' as 'repo' | 'simple',
         },
       ],
-      sessions: [{ id: 'session-1', workspaceId: 'workspace-1' }],
+      sessions,
       sessionMounts: {},
       sessionActiveMount: {},
-      sessionBranches: { 'session-1': 'feature/branch' },
+      sessionBranches: { 'session-1': 'feature/branch' } as Record<string, string>,
       setSessionStudio: vi.fn(),
       openWorkspace: vi.fn(),
       setCurrentSession: vi.fn(),
       lensGo: vi.fn(),
-      currentSessionId: 'session-1',
+      currentWorkspaceId: 'workspace-1' as string | null,
+      currentSessionId: 'session-1' as string | null,
+      activeLens: {} as Record<string, string | null>,
+      selectedAgentId: {} as Record<string, string | null>,
       setActiveLens: activeLensSetter,
       sessionWorktrees: {},
     },
@@ -101,16 +108,15 @@ vi.mock('../../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));
 vi.mock('../../features/onboarding/onboarding-store', () => ({ markStepComplete: vi.fn() }));
-vi.mock('../../features/terminal/closeTab', () => ({ disposeTerminalPty: vi.fn() }));
-vi.mock('../../shared/hooks/useKeyboardShortcut', () => ({
-  useKeyboardShortcut: (combo: string, handler: () => void) => {
-    shortcutHandlers.set(combo, handler);
-  },
+vi.mock('../../shared/lib/zoom', () => ({
+  applyStoredZoom: vi.fn(async () => undefined),
+  zoomIn: vi.fn(async () => undefined),
+  zoomOut: vi.fn(async () => undefined),
+  zoomReset: vi.fn(async () => undefined),
 }));
 vi.mock('../../shared/hooks/useProviderRefreshOnFocus', () => ({
   useProviderRefreshOnFocus: vi.fn(),
 }));
-vi.mock('../../shared/hooks/useZoomShortcuts', () => ({ useZoomShortcuts: vi.fn() }));
 vi.mock('../../shared/hooks/useEscapeToCloseDialog', () => ({ useEscapeToCloseDialog: vi.fn() }));
 vi.mock('../../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
@@ -122,10 +128,10 @@ vi.mock('../../store', () => {
   );
   return {
     useAppStore,
-    useCurrentSession: () => null,
+    useCurrentSession: () => state.sessions.find((s) => s.id === state.currentSessionId) ?? null,
     useCurrentWorkspace: () => null,
-    useSessions: () => [],
-    useWorkspaces: () => [],
+    useSessions: () => sessionList.current,
+    useWorkspaces: () => state.workspaces,
   };
 });
 vi.mock('../../features/github/hooks/useGithubPolling', () => ({ useGithubPolling: vi.fn() }));
@@ -133,90 +139,167 @@ vi.mock('../../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPol
 
 import { App } from '../../App';
 
+const reload = vi.fn();
+
+type KeyInit = {
+  readonly code: string;
+  readonly key?: string;
+  readonly metaKey?: boolean;
+  readonly shiftKey?: boolean;
+  readonly altKey?: boolean;
+  readonly ctrlKey?: boolean;
+};
+
+const press = (init: KeyInit): void => {
+  act(() => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, ...init }));
+  });
+};
+
 beforeEach(() => {
   state.workspaces = [{ id: 'workspace-1', name: 'Workspace', rootPath: '/repo', kind: 'repo' }];
-  state.sessions = [{ id: 'session-1', workspaceId: 'workspace-1' }];
+  state.sessions = [
+    { id: 'session-0', workspaceId: 'workspace-1' },
+    { id: 'session-1', workspaceId: 'workspace-1' },
+  ];
+  sessionList.current = state.sessions;
   state.sessionBranches = { 'session-1': 'feature/branch' };
+  state.currentWorkspaceId = 'workspace-1';
   state.currentSessionId = 'session-1';
+  state.activeLens = {};
   setActiveLens.mockClear();
   state.setCurrentSession.mockClear();
-  shortcutHandlers.clear();
+  reload.mockClear();
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: { ...window.location, reload, hash: '' },
+  });
 });
 
 afterEach(() => {
   cleanup();
   setActiveLens.mockClear();
-  shortcutHandlers.clear();
 });
 
 describe('App lens shortcuts', () => {
-  it('registers cmd+b for the sessions column without colliding with agents lens', () => {
+  it('jumps to the agents lens on the lens plane modifier', () => {
     render(<App />);
 
-    expect(shortcutHandlers.has('cmd+b')).toBe(true);
-    expect(shortcutHandlers.has('cmd+shift+b')).toBe(true);
+    press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
-    act(() => {
-      shortcutHandlers.get('cmd+b')?.();
-    });
-    expect(setActiveLens).not.toHaveBeenCalled();
-
-    act(() => {
-      shortcutHandlers.get('cmd+shift+b')?.();
-    });
     expect(setActiveLens).toHaveBeenCalledWith('session-1', 'agents');
   });
 
-  it('dispatches overview, pull request, decisions, and summary lenses', () => {
+  it('leaves the lens alone when the sessions column toggles', () => {
     render(<App />);
 
-    const expected = [
-      ['cmd+shift+o', null],
-      ['cmd+shift+h', 'pr'],
-      ['cmd+shift+e', 'decisions'],
-      ['cmd+shift+u', 'last_output_summary'],
-    ] as const;
+    press({ code: 'KeyB', key: 'b', metaKey: true });
 
-    act(() => {
-      expected.forEach(([combo]) => shortcutHandlers.get(combo)?.());
-    });
-
-    expect(setActiveLens.mock.calls).toEqual(expected.map(([, lens]) => ['session-1', lens]));
+    expect(setActiveLens).not.toHaveBeenCalled();
   });
 
-  it('returns to the board on cmd+shift+escape', () => {
+  it('toggles back to the overview when the lens is already active', () => {
+    state.activeLens = { 'session-1': 'agents' };
     render(<App />);
 
-    act(() => {
-      shortcutHandlers.get('cmd+shift+escape')?.();
-    });
+    press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
+
+    expect(setActiveLens).toHaveBeenCalledWith('session-1', null);
+  });
+
+  it('reaches the overview, code host, decisions, and summary lenses', () => {
+    render(<App />);
+
+    press({ code: 'KeyO', key: 'o', metaKey: true, altKey: true });
+    press({ code: 'Digit1', key: '1', metaKey: true, altKey: true });
+    press({ code: 'KeyE', key: 'e', metaKey: true, altKey: true });
+    press({ code: 'KeyU', key: 'u', metaKey: true, altKey: true });
+
+    expect(setActiveLens.mock.calls).toEqual([
+      ['session-1', null],
+      ['session-1', 'pr'],
+      ['session-1', 'decisions'],
+      ['session-1', 'last_output_summary'],
+    ]);
+  });
+
+  it('reaches the integration lenses that had no binding before', () => {
+    render(<App />);
+
+    press({ code: 'KeyB', key: 'b', metaKey: true, altKey: true });
+    press({ code: 'Digit2', key: '2', metaKey: true, altKey: true });
+    press({ code: 'Digit3', key: '3', metaKey: true, altKey: true });
+    press({ code: 'Digit4', key: '4', metaKey: true, altKey: true });
+
+    expect(setActiveLens.mock.calls).toEqual([
+      ['session-1', 'review'],
+      ['session-1', 'linear'],
+      ['session-1', 'sentry'],
+      ['session-1', 'gitlab_issues'],
+    ]);
+  });
+
+  it('walks to the previous session from the bracket key', () => {
+    render(<App />);
+
+    press({ code: 'BracketLeft', key: '{', metaKey: true, shiftKey: true });
+
+    expect(state.setCurrentSession).toHaveBeenCalledWith('session-0');
+  });
+
+  it('returns to the board', () => {
+    render(<App />);
+
+    press({ code: 'KeyH', key: 'h', metaKey: true, shiftKey: true });
 
     expect(state.setCurrentSession).toHaveBeenCalledWith(null);
   });
 
-  it('routes cmd+shift+d to the Diff lens for repo-backed sessions', () => {
-    state.workspaces = [{ id: 'workspace-1', name: 'Workspace', rootPath: '/repo', kind: 'repo' }];
-    state.sessionBranches = { 'session-1': 'feature/branch' };
+  it('routes the diff binding to the Diff lens for repo-backed sessions', () => {
     render(<App />);
 
-    act(() => {
-      shortcutHandlers.get('cmd+shift+d')?.();
-    });
+    press({ code: 'KeyF', key: 'f', metaKey: true, altKey: true });
+    press({ code: 'KeyX', key: 'x', metaKey: true, altKey: true });
 
-    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'files');
+    expect(setActiveLens.mock.calls).toEqual([['session-1', 'files']]);
   });
 
-  it('routes cmd+shift+d to the Explore lens for branchless sessions', () => {
+  it('routes the explore binding to the Explore lens for branchless sessions', () => {
     state.workspaces = [
       { id: 'workspace-1', name: 'Workspace', rootPath: '/simple', kind: 'simple' },
     ];
     state.sessionBranches = { 'session-1': '' };
     render(<App />);
 
-    act(() => {
-      shortcutHandlers.get('cmd+shift+d')?.();
-    });
+    press({ code: 'KeyX', key: 'x', metaKey: true, altKey: true });
+    press({ code: 'KeyF', key: 'f', metaKey: true, altKey: true });
 
-    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'explore');
+    expect(setActiveLens.mock.calls).toEqual([['session-1', 'explore']]);
+  });
+
+  it('reloads on the plain reload combo', () => {
+    render(<App />);
+
+    press({ code: 'KeyR', key: 'r', metaKey: true });
+
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not reload when the Resolve lens combo fires', () => {
+    render(<App />);
+
+    press({ code: 'KeyR', key: 'r', metaKey: true, shiftKey: true });
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(setActiveLens).not.toHaveBeenCalled();
+  });
+
+  it('reaches the Resolve lens on its own binding', () => {
+    render(<App />);
+
+    press({ code: 'KeyR', key: 'r', metaKey: true, altKey: true });
+
+    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'resolve');
+    expect(reload).not.toHaveBeenCalled();
   });
 });

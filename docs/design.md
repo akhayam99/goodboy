@@ -108,7 +108,7 @@ Current mounts, one each:
 | Workspace identity and switcher | `features/workspace/components/WorkspaceIdentityRow/index.tsx` |
 | Session title (read)            | `features/session/components/SessionStripCrumbs/index.tsx`     |
 | Session title (rename)          | `SessionOverviewPane/HeaderBand.tsx`                           |
-| Collapse the sessions column    | the toggle in `AppTopBar/index.tsx`, plus `cmd+b`              |
+| Collapse the sessions column    | the toggle in `AppTopBar/index.tsx`, plus ⌘B                   |
 
 `WorkspaceIdentityRow` is the trigger and the anchor at once: it holds the
 `triggerRef`, and `WorkspaceSwitcher` mounts as its child when open. The command
@@ -127,8 +127,17 @@ strip's half of the same breadcrumb builder the in-content trail uses
 title, so the `Overview` root is the title itself rather than a second word.
 
 The collapse control is one button. The keyboard path
-(`useKeyboardShortcut('cmd+b', sessionSidebar.toggle)` in `App.tsx`) calls the
+(`useShortcut('column.toggle', sessionSidebar.toggle)` in `App.tsx`) calls the
 same hook method, not a parallel implementation.
+
+### One registry, three modifier planes, no hand-typed combos
+
+`shared/keyboard/registry.ts` owns every binding. Bare ⌘ is the app plane, ⌘⇧
+the session plane, ⌘⌥ the lens plane, and a combo string is never written by
+hand outside that file: controls read `shortcutGlyphs(id)`. Bindings are also
+meant to be seen, so a control that has one shows it, as a pill revealed on
+hover in dense rows and as a parenthesised suffix in tooltips and titles.
+A hint that would truncate the label beside it moves to the tooltip instead.
 
 ### Peek is a display of the sidebar, not a second sidebar
 
@@ -454,8 +463,6 @@ Verified against the code, not speculation.
    git actions and the project switcher below its `<Divider>`. The `nav` above
    the divider is navigation only; the column as a whole is not.
 
-5. **Two stale claims in `docs/navigation.md`.** It says the sessions column can
-   be hidden "from the workspace header or with `cmd+b`"; the only mount today is
-   the button in `AppTopBar` plus the shortcut. It also says the Scripts lens
-   runs at `width="5xl"`; `PaneShell` has no `width` prop (only `wide`), and the
-   Scripts lens in `SessionWorkspace/index.tsx` uses the default column.
+5. **One stale claim in `docs/navigation.md`.** It says the Scripts lens runs at
+   `width="5xl"`; `PaneShell` has no `width` prop (only `wide`), and the Scripts
+   lens in `SessionWorkspace/index.tsx` uses the default column.

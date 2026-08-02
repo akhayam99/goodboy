@@ -25,6 +25,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 import { WorkspaceIdentityRow } from './index';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 afterEach(cleanup);
 
@@ -36,11 +37,11 @@ describe('WorkspaceIdentityRow', () => {
     expect(screen.queryByText('monorepo')).toBeNull();
   });
 
-  it('carries the repo in the switcher title', () => {
+  it('carries the repo and the switcher shortcut in the title', () => {
     render(<WorkspaceIdentityRow />);
 
     expect(screen.getByLabelText('Switch or open a workspace').getAttribute('title')).toBe(
-      'Acme, monorepo',
+      `Acme, monorepo (${shortcutGlyphs('workspace.switcher')})`,
     );
   });
 

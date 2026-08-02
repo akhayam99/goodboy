@@ -1,5 +1,6 @@
 import { getSetting, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
+import { shortcutGlyphs } from '../../shared/keyboard/registry';
 
 export type OnboardingStepId =
   | 'workspace'
@@ -61,7 +62,7 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   {
     id: 'palette',
     title: 'Open the command palette',
-    why: '⌘K. Navigate workspaces, sessions, and agents, everything from one input.',
+    why: `${shortcutGlyphs('palette.open')}. Navigate workspaces, sessions, and agents, everything from one input.`,
     group: 'build',
   },
 ];

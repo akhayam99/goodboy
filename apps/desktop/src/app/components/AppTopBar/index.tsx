@@ -9,9 +9,11 @@ import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import { SessionStripCrumbs } from '../../../features/session/components/SessionStripCrumbs';
 import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
-const SHOW_COLUMN_LABEL = 'Show sessions column (⌘B)';
-const HIDE_COLUMN_LABEL = 'Hide sessions column (⌘B)';
+const SHOW_COLUMN_LABEL = `Show sessions column (${shortcutGlyphs('column.toggle')})`;
+const HIDE_COLUMN_LABEL = `Hide sessions column (${shortcutGlyphs('column.toggle')})`;
+const SETTINGS_LABEL = `settings (${shortcutGlyphs('settings.open')})`;
 
 export type AppTopBarProps = {
   onOpenSettings: () => void;
@@ -96,7 +98,7 @@ export const AppTopBar = ({
           <RunningScriptsIndicator />
           <NotificationCenter />
           <OnboardingChip />
-          <Tooltip content="settings (⌘,)">
+          <Tooltip content={SETTINGS_LABEL}>
             <button
               type="button"
               onClick={onOpenSettings}

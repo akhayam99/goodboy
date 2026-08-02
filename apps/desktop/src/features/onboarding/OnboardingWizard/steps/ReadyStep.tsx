@@ -1,5 +1,9 @@
 import { CheckCircle2 } from 'lucide-react';
 import { KbdPill } from '@goodboy/ui';
+import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import type { ShortcutId } from '../../../../shared/keyboard/registry';
+
+const READY_HINTS: ReadonlyArray<ShortcutId> = ['palette.open', 'session.new'];
 
 export const ReadyStep = () => {
   return (
@@ -17,20 +21,12 @@ export const ReadyStep = () => {
       </div>
 
       <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground/70">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-0.5">
-            <KbdPill>⌘</KbdPill>
-            <KbdPill>K</KbdPill>
+        {READY_HINTS.map((id) => (
+          <span key={id} className="inline-flex items-center gap-1.5">
+            <KbdPill>{shortcutGlyphs(id)}</KbdPill>
+            {SHORTCUTS[id].label.toLowerCase()}
           </span>
-          command palette
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-0.5">
-            <KbdPill>⌘</KbdPill>
-            <KbdPill>N</KbdPill>
-          </span>
-          new session
-        </span>
+        ))}
       </p>
     </div>
   );

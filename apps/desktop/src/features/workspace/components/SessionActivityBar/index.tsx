@@ -37,6 +37,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { BulkActionBar } from '../BulkActionBar';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionViewMenu } from './SessionViewMenu';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 type ActivityTab = 'active' | 'archived';
 
@@ -179,7 +180,7 @@ export const SessionActivityBar = ({
               size="sm"
               onClick={onNewSession}
               aria-label="create new session"
-              title="new session"
+              title={`new session (${shortcutGlyphs('session.new')})`}
               className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"
             >
               <Plus size={13} aria-hidden />
@@ -188,7 +189,7 @@ export const SessionActivityBar = ({
                 aria-hidden
                 className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
               >
-                ⌘N
+                {shortcutGlyphs('session.new')}
               </KbdPill>
             </Button>
           )}

@@ -19,6 +19,7 @@ import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-acti
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useThemeStore } from '../../../../shared/lib/theme';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'recents';
 
@@ -183,7 +184,7 @@ export const CommandPalette = ({
       out.push({
         id: 'action:settings',
         label: 'Open settings',
-        sublabel: '⌘,',
+        sublabel: shortcutGlyphs('settings.open'),
         group: 'action',
         onSelect: () => onOpenSettings(),
       });
@@ -192,6 +193,7 @@ export const CommandPalette = ({
       out.push({
         id: 'action:new-session',
         label: 'New session',
+        sublabel: shortcutGlyphs('session.new'),
         group: 'action',
         onSelect: () => onNewSession(),
       });
@@ -214,7 +216,7 @@ export const CommandPalette = ({
       out.push({
         id: 'help:shortcuts',
         label: 'Keyboard shortcuts',
-        sublabel: '⌘/',
+        sublabel: shortcutGlyphs('settings.shortcuts'),
         group: 'help',
         onSelect: () => onOpenShortcutHelp(),
       });

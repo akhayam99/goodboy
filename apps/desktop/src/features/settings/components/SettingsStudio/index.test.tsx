@@ -38,6 +38,7 @@ vi.mock('../../../onboarding/onboarding-store', () => ({
 }));
 
 import { SettingsStudio } from './index';
+import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 beforeEach(() => {
   Object.defineProperty(Element.prototype, 'scrollIntoView', {
@@ -69,10 +70,11 @@ describe('SettingsStudio', () => {
 
     const toggle = screen.getByRole('button', { name: /expand keyboard shortcuts/i });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.getByText('33 shortcuts')).toBeDefined();
-    expect(screen.queryByText('command palette')).toBeNull();
+    expect(screen.getByText(`${Object.keys(SHORTCUTS).length} shortcuts`)).toBeDefined();
+    expect(screen.queryByText('Command palette')).toBeNull();
     fireEvent.click(toggle);
-    expect(screen.getByText('command palette')).toBeDefined();
+    expect(screen.getByText('Command palette')).toBeDefined();
+    expect(screen.getByText(shortcutGlyphs('lens.agents'))).toBeDefined();
   });
 
   it('expands and scrolls to shortcuts when focused', () => {
@@ -83,7 +85,7 @@ describe('SettingsStudio', () => {
         .getByRole('button', { name: /collapse keyboard shortcuts/i })
         .getAttribute('aria-expanded'),
     ).toBe('true');
-    expect(screen.getByText('command palette')).toBeDefined();
+    expect(screen.getByText('Command palette')).toBeDefined();
     expect(scrollIntoViewMock.mock.contexts.at(-1)).toBe(document.getElementById('shortcuts'));
   });
 

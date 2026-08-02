@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import type { LensKind } from '../../../../../../store';
+import type { ShortcutId } from '../../../../../../shared/keyboard/registry';
 import type { IntegrationGlyphProvider } from '../../../../../integrations/components/IntegrationGlyph';
 
 export type LensDot = 'attention' | 'running';
@@ -58,24 +59,24 @@ type Params = {
 };
 
 export const LENS_SHORTCUTS = {
-  questions: '⌘⇧Q',
-  agents: '⌘⇧B',
-  workflows: '⌘⇧W',
-  resolve: '⌘⇧R',
-  review: null,
-  plans: '⌘⇧L',
-  scripts: '⌘⇧S',
-  terminal: '⌘J',
-  goal: '⌘⇧G',
-  decisions: '⌘⇧E',
-  last_output_summary: '⌘⇧U',
-  pr: '⌘⇧H',
-  files: '⌘⇧D',
-  explore: '⌘⇧D',
-  linear: null,
-  sentry: null,
-  gitlab_issues: null,
-} satisfies Readonly<Record<LensKind, string | null>>;
+  questions: 'lens.questions',
+  agents: 'lens.agents',
+  workflows: 'lens.workflows',
+  resolve: 'lens.resolve',
+  review: 'lens.review',
+  plans: 'lens.plans',
+  scripts: 'lens.scripts',
+  terminal: 'lens.terminal',
+  goal: 'lens.goal',
+  decisions: 'lens.decisions',
+  last_output_summary: 'lens.summary',
+  pr: 'lens.pr',
+  files: 'lens.files',
+  explore: 'lens.explore',
+  linear: 'lens.linear',
+  sentry: 'lens.sentry',
+  gitlab_issues: 'lens.gitlab_issues',
+} satisfies Readonly<Record<LensKind, ShortcutId>>;
 
 export const buildLensGroups = ({
   isBranchless,

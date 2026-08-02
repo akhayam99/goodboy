@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Button, Divider } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -110,6 +110,20 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
     [sessionId, setTerminalTabStatus],
   );
 
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (!isActive || !event.metaKey || event.shiftKey || event.altKey || event.ctrlKey) {
+        return;
+      }
+      if (event.code !== 'KeyT') {
+        return;
+      }
+      event.preventDefault();
+      addTerminalTab(sessionId, cwd);
+    },
+    [isActive, addTerminalTab, sessionId, cwd],
+  );
+
   if (tabs.length === 0) {
     return (
       <PaneShell title="Terminal" description="Run commands in this session's worktree.">
@@ -129,7 +143,7 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col" onKeyDown={handleKeyDown}>
       <TerminalTabStrip
         tabs={tabs}
         activeId={activeId}

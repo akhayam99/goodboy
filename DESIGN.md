@@ -89,6 +89,13 @@ functional. One register per surface; let the other supply only texture.
   from one control in the top bar, or with ⌘B, and that choice persists. The
   sidebar has no collapse rail: a rail is a second, narrower copy of the
   column, and peek already serves the case it was for.
+- **A shortcut is taught where it is used.** Bindings live in one registry
+  (`shared/keyboard/registry.ts`) on three modifier planes: bare ⌘ for the app,
+  ⌘⇧ for the session, ⌘⌥ for the lens rail. A control that has a binding shows
+  it, because a shortcut nobody sees is a shortcut nobody learns. Dense rows
+  reveal a pill on hover in the badge's place; tooltips and titles carry the
+  glyph in parentheses. The hint never earns its place by truncating the label
+  beside it: where the row is too tight, the tooltip is the mount.
 - **Hidden is not gone: the column peeks.** With the sessions column collapsed,
   pointing at the window edge or resting on the top bar's control slides the
   same sidebar back over main, and it withdraws on its own when the pointer

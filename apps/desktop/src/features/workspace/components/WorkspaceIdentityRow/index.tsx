@@ -4,6 +4,7 @@ import { StatusDot } from '@goodboy/ui';
 import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
 
@@ -38,7 +39,7 @@ export const WorkspaceIdentityRow = () => {
         aria-label="Switch or open a workspace"
         aria-expanded={isOpen}
         className="group flex min-w-0 max-w-56 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-muted/50"
-        title={`${currentWorkspace.name}, ${subtitle}`}
+        title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
       >
         <span
           aria-hidden
