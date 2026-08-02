@@ -18,6 +18,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       }>,
       rollup: { attentionCount: 0, runningCount: 0, todaySpend: 0 },
       reasons: {} as Record<string, string>,
+      attention: {} as Record<string, string | undefined>,
     },
     store: {
       setCurrentSession: vi.fn(async () => undefined),
@@ -39,6 +40,7 @@ vi.mock('../../../store', () => ({
   useSessionStageInfo: (session: Session) => ({
     stage: 'attention',
     reason: hooks.reasons[session.id] ?? 'Needs attention',
+    attention: hooks.attention[session.id],
   }),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
@@ -68,6 +70,7 @@ beforeEach(() => {
   hooks.groups = [];
   hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 0 };
   hooks.reasons = {};
+  hooks.attention = {};
   store.setCurrentSession.mockClear();
   store.setActiveLens.mockClear();
 });
@@ -266,6 +269,22 @@ describe('AppTopBar', () => {
 
     expect(store.setCurrentSession).toHaveBeenCalledWith(ATTENTION_SESSION_ID);
     expect(screen.queryByText('PR #42: CI failed')).toBeNull();
+  });
+
+  it('marks each row with the icon of its own reason, not a repeated dot', () => {
+    hooks.sessions = [ATTENTION_SESSION];
+    hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
+    hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
+    hooks.reasons = { [ATTENTION_SESSION_ID]: 'PR #42: CI failed' };
+    hooks.attention = { [ATTENTION_SESSION_ID]: 'ci-failed' };
+    renderBar();
+
+    fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
+
+    const row = screen.getByTitle('Review the failing checks · PR #42: CI failed');
+    const icon = row.querySelector('svg');
+    expect(icon?.getAttribute('class')).toContain('text-danger');
+    expect(row.querySelector('[class*="bg-warning"]')).toBeNull();
   });
 
   it('closes the needs-you dialog on Escape', () => {

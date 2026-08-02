@@ -8,7 +8,9 @@ import {
 } from '@goodboy/ui';
 import { SidebarPeekHoldContext, type SidebarPeekHold } from './hold';
 
-const readWidth = (): number => {
+const PEEK_WIDTH_FACTOR = 1.5;
+
+const pinnedWidth = (): number => {
   if (typeof localStorage === 'undefined') {
     return LEFT_SIDEBAR_DEFAULT;
   }
@@ -22,6 +24,9 @@ const readWidth = (): number => {
   }
   return Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, parsed));
 };
+
+const readWidth = (): number =>
+  Math.min(LEFT_SIDEBAR_MAX, Math.round(pinnedWidth() * PEEK_WIDTH_FACTOR));
 
 type Props = {
   readonly isPeeking: boolean;

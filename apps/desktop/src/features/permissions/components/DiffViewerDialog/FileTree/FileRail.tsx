@@ -36,7 +36,7 @@ export const FileRail = ({
 
   return (
     <div className={cn('flex min-h-0 shrink-0', collapsed ? 'w-9' : 'w-[26%]')}>
-      <div className="flex min-w-0 flex-1 flex-col bg-muted/10">
+      <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex shrink-0 items-center justify-end px-1.5 pt-1.5">
           <button
             type="button"

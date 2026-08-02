@@ -1,5 +1,20 @@
 import type { Tone } from '@goodboy/ui';
-import type { SessionStage } from '@goodboy/types';
+import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
+import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+
+type AttentionEntry = {
+  readonly icon: keyof typeof CONCEPT_ICONS;
+  readonly tone: Tone;
+};
+
+export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntry> = {
+  'agent-error': { icon: 'errors', tone: 'danger' },
+  'open-question': { icon: 'questions', tone: 'warning' },
+  'unread-reply': { icon: 'agents', tone: 'primary' },
+  'ci-failed': { icon: 'checks', tone: 'danger' },
+  'changes-requested': { icon: 'review', tone: 'danger' },
+  'pr-approved': { icon: 'pr', tone: 'success' },
+};
 
 type SessionStageEntry = {
   readonly label: string;

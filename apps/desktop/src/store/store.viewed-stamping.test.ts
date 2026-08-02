@@ -485,7 +485,11 @@ describe('markAllAgentsSeen', () => {
         (question) => question.status === 'open',
       ).length,
     });
-    expect(stage).toEqual({ stage: 'attention', reason: '1 open question' });
+    expect(stage).toEqual({
+      stage: 'attention',
+      reason: '1 open question',
+      attention: 'open-question',
+    });
   });
 });
 
