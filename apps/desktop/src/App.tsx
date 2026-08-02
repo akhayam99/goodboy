@@ -21,7 +21,6 @@ import { GuideStudio } from './features/settings/components/GuideStudio';
 import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
 import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
-import { WorkspaceHeader } from './features/workspace/components/WorkspaceHeader';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -797,23 +796,19 @@ export const App = () => {
             onOpenSettings={openSettings}
             onOpenBudget={openBudget}
             activeStudio={activeStudio}
+            hasWorkspace={currentWorkspace != null}
+            hasActiveSession={hasActiveSession}
+            isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
+            isSessionSidebarHidden={sessionSidebar.leftHidden}
+            onToggleSessionSidebar={
+              sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
+            }
+            onSessionSidebarAnchorEnter={() => sessionSidebar.requestPeek({ source: 'anchor' })}
+            onSessionSidebarAnchorLeave={() => {
+              sessionSidebar.cancelPeek();
+              sessionSidebar.scheduleClose();
+            }}
           />
-        }
-        workspaceBar={
-          currentWorkspace ? (
-            <WorkspaceHeader
-              hasActiveSession={hasActiveSession}
-              isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
-              onToggleSessionSidebar={
-                sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
-              }
-              onSessionSidebarAnchorEnter={() => sessionSidebar.requestPeek({ source: 'anchor' })}
-              onSessionSidebarAnchorLeave={() => {
-                sessionSidebar.cancelPeek();
-                sessionSidebar.scheduleClose();
-              }}
-            />
-          ) : undefined
         }
         footer={
           currentWorkspace ? (

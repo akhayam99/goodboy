@@ -63,9 +63,6 @@ vi.mock('../../app/components/Toast', () => ({ ToastProvider: () => null }));
 vi.mock('../../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
 }));
-vi.mock('../../features/workspace/components/WorkspaceHeader', () => ({
-  WorkspaceHeader: () => null,
-}));
 vi.mock('../../features/workspace/components/WorkspacesSidebar', () => ({
   WorkspacesSidebar: () => null,
 }));

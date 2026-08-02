@@ -3,7 +3,11 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 
 const { currentWorkspace, hooks, store } = vi.hoisted(() => {
-  const workspace = { id: 'ws-1' as WorkspaceId, name: 'Test WS' } as Workspace;
+  const workspace = {
+    id: 'ws-1' as WorkspaceId,
+    name: 'Test WS',
+    rootPath: '/code/test-ws',
+  } as Workspace;
   return {
     currentWorkspace: workspace,
     hooks: {
@@ -28,6 +32,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
 
 vi.mock('../../../store', () => ({
   useCurrentWorkspace: () => currentWorkspace,
+  useHasUnreadElsewhere: () => false,
   useSessions: () => hooks.sessions,
   useWorkspaceRollup: () => hooks.rollup,
   useStageGroupedSessions: () => hooks.groups,
@@ -73,36 +78,111 @@ const ATTENTION_SESSION = {
   goal: 'Review the failing checks',
 } as unknown as Session;
 
+type BarOverrides = {
+  readonly onOpenSettings?: () => void;
+  readonly onOpenBudget?: () => void;
+  readonly activeStudio?: string | null;
+  readonly hasWorkspace?: boolean;
+  readonly hasActiveSession?: boolean;
+  readonly isSessionSidebarCollapsed?: boolean;
+  readonly isSessionSidebarHidden?: boolean;
+  readonly onToggleSessionSidebar?: () => void;
+  readonly onSessionSidebarAnchorEnter?: () => void;
+  readonly onSessionSidebarAnchorLeave?: () => void;
+};
+
+const renderBar = (overrides: BarOverrides = {}) =>
+  render(
+    <AppTopBar
+      onOpenSettings={overrides.onOpenSettings ?? vi.fn()}
+      onOpenBudget={overrides.onOpenBudget ?? vi.fn()}
+      activeStudio={overrides.activeStudio ?? null}
+      hasWorkspace={overrides.hasWorkspace ?? true}
+      hasActiveSession={overrides.hasActiveSession ?? false}
+      isSessionSidebarCollapsed={overrides.isSessionSidebarCollapsed ?? false}
+      isSessionSidebarHidden={overrides.isSessionSidebarHidden ?? true}
+      onToggleSessionSidebar={overrides.onToggleSessionSidebar ?? vi.fn()}
+      onSessionSidebarAnchorEnter={overrides.onSessionSidebarAnchorEnter ?? vi.fn()}
+      onSessionSidebarAnchorLeave={overrides.onSessionSidebarAnchorLeave ?? vi.fn()}
+    />,
+  );
+
 describe('AppTopBar', () => {
   it('renders settings button', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
     expect(screen.getByRole('button', { name: 'open settings' })).toBeDefined();
   });
 
   it('keeps set-once preferences out of the bar', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
 
     expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /pair your iphone/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /getting started/i })).toBeNull();
   });
 
+  it('carries workspace identity only when the sidebar is not showing it', () => {
+    const { rerender } = renderBar({ isSessionSidebarHidden: true });
+    expect(screen.getByLabelText('Switch or open a workspace')).toBeDefined();
+
+    rerender(
+      <AppTopBar
+        onOpenSettings={vi.fn()}
+        onOpenBudget={vi.fn()}
+        activeStudio={null}
+        hasWorkspace
+        hasActiveSession
+        isSessionSidebarCollapsed={false}
+        isSessionSidebarHidden={false}
+        onToggleSessionSidebar={vi.fn()}
+        onSessionSidebarAnchorEnter={vi.fn()}
+        onSessionSidebarAnchorLeave={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText('Switch or open a workspace')).toBeNull();
+  });
+
+  it('shows the column control only inside a session', () => {
+    const onToggleSessionSidebar = vi.fn();
+    const { rerender } = renderBar({ hasActiveSession: false });
+    expect(screen.queryByRole('button', { name: /sessions column/i })).toBeNull();
+
+    rerender(
+      <AppTopBar
+        onOpenSettings={vi.fn()}
+        onOpenBudget={vi.fn()}
+        activeStudio={null}
+        hasWorkspace
+        hasActiveSession
+        isSessionSidebarCollapsed
+        isSessionSidebarHidden
+        onToggleSessionSidebar={onToggleSessionSidebar}
+        onSessionSidebarAnchorEnter={vi.fn()}
+        onSessionSidebarAnchorLeave={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /show sessions column \(⌘B\)/i }));
+    expect(onToggleSessionSidebar).toHaveBeenCalledOnce();
+  });
+
   it('settings button has active state when settings studio is open', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio="settings" />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: 'settings' });
     const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).toContain('bg-foreground');
   });
 
   it('settings button is normal when a different studio is open', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio="workflow" />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: 'workflow' });
     const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).not.toContain('bg-foreground');
   });
 
   it('centers the update indicator in flow, between two spacers', () => {
-    const { container } = render(
-      <AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />,
-    );
+    const { container } = renderBar({
+      onOpenSettings: vi.fn(),
+      onOpenBudget: vi.fn(),
+      activeStudio: null,
+    });
     const update = screen.getByText('Update to 0.2.0');
     const bar = container.querySelector('[data-tauri-drag-region]');
     const children = Array.from(bar?.children ?? []);
@@ -120,7 +200,7 @@ describe('AppTopBar', () => {
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 2.5 };
     const onOpenBudget = vi.fn();
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={onOpenBudget} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: onOpenBudget, activeStudio: null });
 
     fireEvent.click(screen.getByTitle("Today's spend across providers, open budget"));
     expect(onOpenBudget).toHaveBeenCalledOnce();
@@ -135,7 +215,7 @@ describe('AppTopBar', () => {
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
     hooks.reasons = { [ATTENTION_SESSION_ID]: 'PR #42: CI failed' };
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
 
@@ -154,7 +234,7 @@ describe('AppTopBar', () => {
     hooks.sessions = [ATTENTION_SESSION];
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
     expect(screen.getByRole('dialog', { name: 'Sessions needing attention' })).toBeDefined();

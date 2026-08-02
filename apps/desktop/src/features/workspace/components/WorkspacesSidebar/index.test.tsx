@@ -10,13 +10,18 @@ const { state, currentWorkspace, currentSessionRef } = vi.hoisted(() => ({
     setCurrentSession: vi.fn(),
     loadArchivedSessions: vi.fn(),
   },
-  currentWorkspace: { id: 'ws-1' as WorkspaceId, name: 'Test WS' } as Workspace,
+  currentWorkspace: {
+    id: 'ws-1' as WorkspaceId,
+    name: 'Test WS',
+    rootPath: '/code/test-ws',
+  } as Workspace,
   currentSessionRef: { value: null as Session | null },
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useCurrentWorkspace: () => currentWorkspace,
+  useHasUnreadElsewhere: () => false,
   useCurrentSession: () => currentSessionRef.value,
   useSessions: () => [],
   useWorkspaces: () => [currentWorkspace],
