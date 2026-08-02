@@ -75,7 +75,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       rail={launch}
       properties={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
     >
-      <DetailSection label="description">
+      <DetailSection label="description" variant="frameless">
         {issue.description ? (
           <Markdown text={issue.description} className="text-sm leading-relaxed" />
         ) : (

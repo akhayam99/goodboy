@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 
@@ -108,7 +108,7 @@ type Block =
       rows: ReadonlyArray<ReadonlyArray<string>>;
     }
   | { kind: 'callout'; tag: string; content: string }
-  | { kind: 'paragraph'; content: string };
+  | { kind: 'paragraph'; content: string; isTree: boolean };
 
 type ListItem = {
   readonly content: string;
@@ -124,6 +124,35 @@ const QUOTE_RE = /^>\s?(.*)$/;
 const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
 const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/;
 const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/;
+const TREE_RE = /[├└│┌┐┘┤┬┼]/;
+
+type Params = {
+  readonly lines: ReadonlyArray<string>;
+};
+
+const joinParagraphLines = ({ lines }: Params): string => {
+  let content = '';
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex] ?? '';
+    const isLastLine = lineIndex === lines.length - 1;
+    if (isLastLine) {
+      content += line;
+      continue;
+    }
+    if (/ {2,}$/.test(line)) {
+      content += `${line.replace(/ {2,}$/, '')}\n`;
+      continue;
+    }
+    if (line.endsWith('\\')) {
+      content += `${line.slice(0, -1)}\n`;
+      continue;
+    }
+    content += `${line} `;
+  }
+
+  return content;
+};
 
 function splitTableCells(line: string): ReadonlyArray<string> {
   const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
@@ -361,7 +390,12 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       paraBuf.push(next);
       i++;
     }
-    blocks.push({ kind: 'paragraph', content: paraBuf.join('\n') });
+    const isTree = paraBuf.some((paragraphLine) => TREE_RE.test(paragraphLine));
+    blocks.push({
+      kind: 'paragraph',
+      content: isTree ? paraBuf.join('\n') : joinParagraphLines({ lines: paraBuf }),
+      isTree,
+    });
   }
 
   return blocks;
@@ -440,7 +474,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
         out.push(
           <code
             key={nextKey()}
-            className="rounded bg-muted px-1 py-0.5 font-mono text-[0.875em] text-foreground"
+            className="rounded bg-muted px-1 py-0.5 font-mono text-[0.875em] text-foreground wrap-anywhere"
           >
             {inner}
           </code>,
@@ -572,7 +606,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
       };
       const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
       return (
-        <Tag key={key} className={sizes[block.level]}>
+        <Tag key={key} className={cn(sizes[block.level], 'wrap-anywhere')}>
           {renderInline(block.content, key)}
         </Tag>
       );
@@ -590,7 +624,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
         return (
           <ol key={key} className="flex list-decimal flex-col gap-1.5 pl-5">
             {block.items.map((item, j) => (
-              <li key={`${key}-${j}`} className="leading-relaxed">
+              <li key={`${key}-${j}`} className="leading-relaxed wrap-anywhere">
                 {renderInline(item.content, `${key}-${j}`)}
               </li>
             ))}
@@ -600,7 +634,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
       return (
         <ul key={key} className="flex list-disc flex-col gap-1.5 pl-5">
           {block.items.map((item, j) => (
-            <li key={`${key}-${j}`} className="leading-relaxed">
+            <li key={`${key}-${j}`} className="leading-relaxed wrap-anywhere">
               {renderInline(item.content, `${key}-${j}`)}
             </li>
           ))}
@@ -608,7 +642,10 @@ function renderBlock(block: Block, idx: number): ReactNode {
       );
     case 'quote':
       return (
-        <blockquote key={key} className="border-l-2 border-border pl-3 text-muted-foreground">
+        <blockquote
+          key={key}
+          className="border-l-2 border-border pl-3 text-muted-foreground wrap-anywhere"
+        >
           {block.lines.map((ln, j) => (
             <p key={`${key}-${j}`}>{renderInline(ln, `${key}-${j}`)}</p>
           ))}
@@ -633,7 +670,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
                   <th
                     key={`${key}-h-${j}`}
                     className={cn(
-                      'px-3 py-1.5 font-medium text-foreground/75',
+                      'px-3 py-1.5 font-medium text-foreground/75 wrap-anywhere',
                       alignClass(block.align[j]),
                     )}
                   >
@@ -651,7 +688,10 @@ function renderBlock(block: Block, idx: number): ReactNode {
                   {row.map((cell, ci) => (
                     <td
                       key={`${key}-r-${ri}-c-${ci}`}
-                      className={cn('px-3 py-1.5 align-top', alignClass(block.align[ci]))}
+                      className={cn(
+                        'px-3 py-1.5 align-top wrap-anywhere',
+                        alignClass(block.align[ci]),
+                      )}
                     >
                       {renderInline(cell, `${key}-r-${ri}-c-${ci}`)}
                     </td>
@@ -678,23 +718,30 @@ function renderBlock(block: Block, idx: number): ReactNode {
             <Icon size={11} aria-hidden className={style.iconClass} />
             {label}
           </div>
-          <div className="whitespace-pre-wrap leading-relaxed text-foreground/90">
+          <div className="whitespace-pre-wrap leading-relaxed text-foreground/90 wrap-anywhere">
             {renderInline(block.content, key)}
           </div>
         </div>
       );
     }
     case 'paragraph': {
-      const isTree = /[├└│┌┐┘┤┬┼]/.test(block.content);
       return (
         <p
           key={key}
           className={cn(
-            'whitespace-pre-wrap leading-relaxed',
-            isTree && 'overflow-x-auto font-mono',
+            'leading-relaxed',
+            block.isTree && 'overflow-x-auto whitespace-pre-wrap font-mono',
+            !block.isTree && 'wrap-anywhere',
           )}
         >
-          {renderInline(block.content, key)}
+          {block.isTree
+            ? renderInline(block.content, key)
+            : block.content.split('\n').map((line, lineIndex, lines) => (
+                <Fragment key={`${key}-${lineIndex}`}>
+                  {renderInline(line, `${key}-${lineIndex}`)}
+                  {lineIndex < lines.length - 1 && <br />}
+                </Fragment>
+              ))}
         </p>
       );
     }

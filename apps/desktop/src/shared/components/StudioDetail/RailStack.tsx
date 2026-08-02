@@ -44,8 +44,8 @@ export const RailStack = ({ rail, properties, isScrollable }: Props) => {
       </div>
       <div
         className={cn(
-          'flex w-full flex-col gap-4 lg:w-[var(--studio-detail-rail-width)]',
-          isScrollable && 'px-6 py-4 lg:h-full lg:min-h-0 lg:p-4',
+          'flex w-full flex-col gap-4 px-6 py-4 lg:w-[var(--studio-detail-rail-width)] lg:p-4',
+          isScrollable && 'lg:h-full lg:min-h-0',
         )}
       >
         {rail != null ? extras : null}

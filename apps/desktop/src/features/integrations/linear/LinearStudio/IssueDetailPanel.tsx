@@ -1,29 +1,16 @@
 import { useEffect, useState } from 'react';
-import { EmptyState, Markdown } from '@goodboy/ui';
-import { FileText, MessageSquare } from 'lucide-react';
+import { EmptyState } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { sanitizeBranchSlug } from '../../../../shared/utils/sanitizeBranchSlug';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { ghPrHeadBranch } from '../../../github/github';
-import {
-  DetailSection,
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../shared/components/StudioDetail';
-import { linearIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
-import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
-import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
 import { goalFromIssue } from '../goal-from-issue';
 import { issuePullRequests, type LinearIssue } from '../client';
-import { LinearIssueComments } from '../LinearIssueComments';
-import { useLinearIssueComments } from '../useLinearIssueComments';
+import { LinearIssueDetail } from '../LinearIssueDetail';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-
-type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: LinearIssue | null;
@@ -34,23 +21,22 @@ type Props = {
 
 const SLUG_MAX_LEN = 48;
 
-const slugify = (input: string): string => slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
+type Params = {
+  readonly issue: LinearIssue;
+};
 
-const sanitizeSlug = (input: string): string =>
-  sanitizeBranchSlug({ input, maxLength: SLUG_MAX_LEN });
-
-function branchSlugFor(issue: LinearIssue): string {
+const branchSlugFor = ({ issue }: Params): string => {
   const branchName = issue.branchName;
-  if (branchName) {
+  if (branchName != null && branchName !== '') {
     const idx = branchName.indexOf('/');
     const tail = idx >= 0 ? branchName.slice(idx + 1) : branchName;
-    const cleaned = sanitizeSlug(tail);
+    const cleaned = sanitizeBranchSlug({ input: tail, maxLength: SLUG_MAX_LEN });
     if (cleaned.length > 0) {
       return cleaned;
     }
   }
-  return slugify(issue.title);
-}
+  return slugifyBranch({ input: issue.title, maxLength: SLUG_MAX_LEN });
+};
 
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
   const rootPath = useAppStore(
@@ -61,14 +47,9 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   );
 
   const adoptablePr =
-    issue && !isBranchless ? (issuePullRequests(issue).find((pr) => pr.repo) ?? null) : null;
-
-  const [section, setSection] = useState<IssueSection>('overview');
-  const {
-    comments,
-    isLoading: commentsLoading,
-    error: commentsError,
-  } = useLinearIssueComments({ workspaceId, issueId: issue?.id ?? null });
+    issue != null && !isBranchless
+      ? (issuePullRequests(issue).find((pr) => pr.repo != null && pr.repo !== '') ?? null)
+      : null;
 
   const [prBranch, setPrBranch] = useState<string | null>(null);
   const [prResolving, setPrResolving] = useState(false);
@@ -77,7 +58,6 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   useEffect(() => {
     setPrBranch(null);
     setPrError(null);
-    setSection('overview');
   }, [issue]);
 
   useEffect(() => {
@@ -109,7 +89,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     };
   }, [adoptablePr?.repo, adoptablePr?.number, rootPath, workspaceId]);
 
-  if (!issue) {
+  if (issue == null) {
     return (
       <div className="flex h-full items-center justify-center px-8">
         <EmptyState
@@ -131,7 +111,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       workspaceId={workspaceId}
       linkedSessionId={sessionId}
       goalSeed={goalFromIssue(issue)}
-      branchSlugSeed={branchSlugFor(issue)}
+      branchSlugSeed={branchSlugFor({ issue })}
       externalTask={{
         provider: 'linear',
         externalId: issue.id,
@@ -140,7 +120,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
         title: issue.title,
       }}
       adoptable={
-        adoptablePr
+        adoptablePr != null
           ? {
               label: `Continue on PR #${adoptablePr.number}`,
               branch: prBranch,
@@ -155,55 +135,12 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
   );
 
   return (
-    <StudioDetailLayout
-      header={
-        <HeaderBand
-          meta={
-            <>
-              <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-                {issue.identifier}
-              </span>
-              <IssueStateBadge>{issue.state.name}</IssueStateBadge>
-            </>
-          }
-          title={issue.title}
-          actions={<ExternalRefActions url={issue.url} label="issue" hostLabel="Linear" />}
-        />
-      }
-      tabs={
-        <StudioDetailTabs
-          ariaLabel="Issue sections"
-          value={section}
-          onChange={setSection}
-          options={[
-            { value: 'overview', label: 'Overview', icon: FileText },
-            {
-              value: 'conversation',
-              label: 'Conversation',
-              icon: MessageSquare,
-              ...(comments.length > 0 && { badge: String(comments.length) }),
-            },
-          ]}
-        />
-      }
+    <LinearIssueDetail
+      key={issue.id}
+      issue={issue}
+      workspaceId={workspaceId}
       rail={launch}
-      properties={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
-    >
-      {section === 'overview' ? (
-        <DetailSection label="description">
-          {issue.description != null && issue.description !== '' ? (
-            <Markdown text={issue.description} className="text-sm leading-relaxed" />
-          ) : (
-            <p className="text-sm italic text-muted-foreground/60">No description.</p>
-          )}
-        </DetailSection>
-      ) : (
-        <LinearIssueComments
-          comments={comments}
-          isLoading={commentsLoading}
-          error={commentsError}
-        />
-      )}
-    </StudioDetailLayout>
+      fit="fill"
+    />
   );
 };

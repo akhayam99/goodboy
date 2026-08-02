@@ -296,7 +296,7 @@ export const MrDetailPanel = ({
           </div>
         ) : null}
 
-        <DetailSection label="description">
+        <DetailSection label="description" variant="frameless">
           {mr.description != null && mr.description !== '' ? (
             <Markdown text={mr.description} className="text-sm leading-relaxed" />
           ) : (
