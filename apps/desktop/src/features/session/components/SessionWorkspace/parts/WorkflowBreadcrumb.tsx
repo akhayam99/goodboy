@@ -254,6 +254,7 @@ export const WorkflowBreadcrumb = ({
                         <span className="min-w-0 flex-1 truncate">{agent.name}</span>
                         <RoutingBadge
                           className="shrink-0"
+                          glyphPlacement="trailing"
                           provider={agent.providerOverride ?? null}
                           model={agent.modelOverride ?? null}
                           effort={agent.effort ?? null}
