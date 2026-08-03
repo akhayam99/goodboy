@@ -177,15 +177,15 @@ describe('MergeDialog, cancel', () => {
 });
 
 describe('MergeDialog, escape', () => {
-  it('calls onCancel when escape key fires a close event on the dialog', () => {
+  it('calls onCancel once on escape', () => {
     const onCancel = vi.fn();
     render(
       <MergeDialog open={true} conflicts={ONE_CONFLICT} onResolve={vi.fn()} onCancel={onCancel} />,
     );
-    const dialogEl = document.querySelector('dialog');
-    expect(dialogEl).not.toBeNull();
-    fireEvent.keyDown(dialogEl!, { key: 'Escape', code: 'Escape' });
-    fireEvent(dialogEl!, new Event('close'));
+    expect(document.querySelector('dialog')).not.toBeNull();
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', cancelable: true }));
+
     expect(onCancel).toHaveBeenCalledOnce();
   });
 });

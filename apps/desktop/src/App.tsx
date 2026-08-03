@@ -49,7 +49,6 @@ import { markStepComplete } from './features/onboarding/onboarding-store';
 import { useShortcut } from './shared/keyboard/useShortcut';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
-import { useEscapeToCloseDialog } from './shared/hooks/useEscapeToCloseDialog';
 import { useCommitLinkInterceptor } from './shared/hooks/useCommitLinkInterceptor';
 import { isBranchlessSession } from './shared/utils/isBranchlessSession';
 import {
@@ -154,7 +153,6 @@ export const App = () => {
   useUpdaterPolling();
   useWindowPresence();
   useZoomShortcuts();
-  useEscapeToCloseDialog();
 
   // Stateless overlay-open listeners (all with empty deps) registered under one hook:
   // each handler only touches stable setters or reads fresh state via useAppStore.getState().
