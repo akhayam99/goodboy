@@ -93,7 +93,7 @@ export const WorkflowsRail = ({
                   onClick={onReset}
                   disabled={resetting}
                   aria-label="confirm restore defaults"
-                  className="rounded p-0.5 text-warning transition-colors hover:bg-warning/10 disabled:opacity-50"
+                  className="rounded-md p-0.5 text-warning transition-colors hover:bg-warning/10 disabled:opacity-50"
                 >
                   <Check size={13} aria-hidden />
                 </button>
@@ -106,7 +106,7 @@ export const WorkflowsRail = ({
                   onClick={() => setConfirmReset(false)}
                   disabled={resetting}
                   aria-label="cancel restore defaults"
-                  className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+                  className="rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
                 >
                   <X size={13} aria-hidden />
                 </button>

@@ -29,7 +29,7 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
         <div className="flex items-center gap-2">
           <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
           {!approved ? (
-            <span className="shrink-0 rounded bg-warning/15 px-1 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow text-warning">
+            <span className="shrink-0 rounded-md bg-warning/15 px-1 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow text-warning">
               draft
             </span>
           ) : null}
@@ -64,7 +64,7 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
             }}
             title="confirm delete"
             aria-label={`confirm delete ${template.name}`}
-            className="rounded p-0.5 text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10"
+            className="rounded-md p-0.5 text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10"
           >
             <Check size={12} aria-hidden />
           </button>
@@ -76,7 +76,7 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
             }}
             title="cancel"
             aria-label="cancel delete"
-            className="rounded p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+            className="rounded-md p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <X size={12} aria-hidden />
           </button>
@@ -90,7 +90,7 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
           }}
           title="delete workflow"
           aria-label={`delete ${template.name}`}
-          className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground/0 focus-visible:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 group-focus-within:text-muted-foreground group-hover:text-muted-foreground hover:!text-danger"
+          className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground/0 focus-visible:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 group-focus-within:text-muted-foreground group-hover:text-muted-foreground hover:!text-danger"
         >
           <Trash2 size={12} aria-hidden />
         </button>

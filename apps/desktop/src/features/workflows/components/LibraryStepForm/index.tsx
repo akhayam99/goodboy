@@ -127,7 +127,7 @@ export const LibraryStepForm = ({
             type="button"
             onClick={onClose}
             aria-label="close step editor"
-            className="shrink-0 rounded p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+            className="shrink-0 rounded-md p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <X size={13} aria-hidden />
           </button>

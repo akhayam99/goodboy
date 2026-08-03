@@ -1,5 +1,5 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn, formatUsd, formatUsdPrecise, StatusDot } from '@goodboy/ui';
+import { cn, formatUsd, formatUsdPrecise, MetaRow, StatusDot } from '@goodboy/ui';
 import { ChevronDown, ChevronRight, ChevronUp, Play, Undo2, Zap, ZapOff } from 'lucide-react';
 import type {
   Agent,
@@ -196,30 +196,22 @@ export const WorkflowRow = ({
                   predecessorName={predecessorName}
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                {total > 0 ? (
-                  <>
+              <MetaRow
+                items={[
+                  total > 0 ? (
                     <span className="tabular-nums">
                       Step {Math.min(done + 1, total)} of {total}
                     </span>
-                    <span aria-hidden className="text-muted-foreground/40">
-                      ·
-                    </span>
-                  </>
-                ) : null}
-                {currentStepName != null && !isCompleted ? (
-                  <>
+                  ) : null,
+                  currentStepName != null && !isCompleted ? (
                     <span className="min-w-0 truncate">{currentStepName}</span>
-                    <span aria-hidden className="text-muted-foreground/40">
-                      ·
-                    </span>
-                  </>
-                ) : null}
-                <CostBadge
-                  value={runCostUsd}
-                  title={`${formatUsdPrecise(runCostUsd)} for this run`}
-                />
-              </div>
+                  ) : null,
+                  <CostBadge
+                    value={runCostUsd}
+                    title={`${formatUsdPrecise(runCostUsd)} for this run`}
+                  />,
+                ]}
+              />
             </div>
           </div>
         ) : (
@@ -229,7 +221,7 @@ export const WorkflowRow = ({
             title={workflow.name || name}
             aria-expanded={expanded}
             aria-label={`${name} workflow`}
-            className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
+            className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
           >
             {forceExpanded ? (
               <CONCEPT_ICONS.workflows size={13} aria-hidden className="shrink-0 text-accent" />
@@ -239,7 +231,7 @@ export const WorkflowRow = ({
             </span>
             {unreadCount > 0 ? (
               <span
-                className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-warning/15 px-1.5 py-0.5 text-2xs font-medium text-warning"
                 title={`${unreadCount} agent ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
               >
                 <StatusDot tone="warning" size="sm" />
@@ -253,7 +245,7 @@ export const WorkflowRow = ({
               predecessorName={predecessorName}
             />
             {total > 0 ? (
-              <span className="shrink-0 font-mono text-[10px] text-muted-foreground/50">
+              <span className="shrink-0 font-mono text-2xs text-muted-foreground/50">
                 {done}/{total}
               </span>
             ) : null}
@@ -441,7 +433,7 @@ export const WorkflowRow = ({
                               </span>
                               {!clustersExpanded && clusterUnread > 0 ? (
                                 <span
-                                  className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-md bg-warning/15 px-1 py-0.5 text-2xs font-medium text-warning"
                                   title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
                                 >
                                   <span aria-hidden className="size-1 rounded-full bg-warning" />

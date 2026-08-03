@@ -52,6 +52,9 @@ vi.mock('@goodboy/ui', () => ({
   StatusDot: ({ tone }: { tone: string }) => <span data-testid={`status-dot-${tone}`} />,
   formatUsd: (usd: number) => `$${usd}`,
   formatUsdPrecise: (usd: number) => `$${usd}`,
+  MetaRow: ({ items }: { items: ReadonlyArray<ReactNode> }) => (
+    <span>{items.filter((item) => item != null && item !== false)}</span>
+  ),
   Tooltip: ({ children }: { children: ReactNode }) => children,
   SegmentedTabs: ({
     options,

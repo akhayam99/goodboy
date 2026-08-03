@@ -123,7 +123,7 @@ export const WorkflowComposer = ({
               {title}
               <span
                 className={cn(
-                  'shrink-0 rounded px-1.5 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow',
+                  'shrink-0 rounded-md px-1.5 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow',
                   approved ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning',
                 )}
               >
