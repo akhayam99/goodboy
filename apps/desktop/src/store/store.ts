@@ -211,7 +211,6 @@ export type AppActions = {
       url: string;
       title: string;
     };
-    openWorkflowBuilder?: boolean;
     mobileShared?: boolean;
   }): Promise<{ session: Session; worktree: CreatedWorktree }>;
   linkSessionExternalTask(

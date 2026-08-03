@@ -75,7 +75,6 @@ type Input = {
     title: string;
   };
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
-  openWorkflowBuilder?: boolean;
   // TODO (@ak): origin marker for the pending sandbox-exec confinement. Marked
   // synchronously before any async kickoff so a turn fired during creation is
   // already tagged mobile-origin. No longer affects permission mode.
@@ -99,7 +98,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     kickoffPrompt,
     externalTask,
     attachmentInputs,
-    openWorkflowBuilder = false,
     mobileShared = false,
   }: Input): Promise<{ session: Session; worktree: CreatedWorktree }> => {
     const workspace = (await listWorkspaces(tauriDatabase)).find((w) => w.id === workspaceId);
@@ -392,7 +390,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
         sessionId: session.id,
         focus: {
           kind: 'session-created',
-          studio: openWorkflowBuilder ? { kind: 'workflow' } : null,
+          studio: null,
           agentId: firstAgent?.id ?? null,
         },
         activeLens: state.activeLens,

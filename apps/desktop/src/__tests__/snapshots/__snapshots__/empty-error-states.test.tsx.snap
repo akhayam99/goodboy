@@ -546,39 +546,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
     >
       <div
         class="flex min-w-0 flex-1 items-center gap-3"
-      >
-        <label
-          class="inline-flex items-center gap-2 cursor-pointer text-2xs text-muted-foreground"
-        >
-          <span
-            class="relative inline-flex size-3.5 shrink-0"
-          >
-            <input
-              checked=""
-              class="peer absolute inset-0 size-3.5 cursor-pointer appearance-none rounded-md border border-border-soft bg-background transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:cursor-not-allowed"
-              type="checkbox"
-            />
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-check pointer-events-none absolute inset-0 m-auto text-background"
-              fill="none"
-              height="11"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="3"
-              viewBox="0 0 24 24"
-              width="11"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M20 6 9 17l-5-5"
-              />
-            </svg>
-          </span>
-          Set up workflow next
-        </label>
-      </div>
+      />
       <button
         class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-8 px-3 text-sm"
         type="button"
@@ -1621,39 +1589,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
     >
       <div
         class="flex min-w-0 flex-1 items-center gap-3"
-      >
-        <label
-          class="inline-flex items-center gap-2 cursor-pointer text-2xs text-muted-foreground"
-        >
-          <span
-            class="relative inline-flex size-3.5 shrink-0"
-          >
-            <input
-              checked=""
-              class="peer absolute inset-0 size-3.5 cursor-pointer appearance-none rounded-md border border-border-soft bg-background transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:cursor-not-allowed"
-              type="checkbox"
-            />
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-check pointer-events-none absolute inset-0 m-auto text-background"
-              fill="none"
-              height="11"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="3"
-              viewBox="0 0 24 24"
-              width="11"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M20 6 9 17l-5-5"
-              />
-            </svg>
-          </span>
-          Set up workflow next
-        </label>
-      </div>
+      />
       <button
         class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-8 px-3 text-sm"
         type="button"

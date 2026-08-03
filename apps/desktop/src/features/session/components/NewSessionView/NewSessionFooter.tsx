@@ -3,13 +3,10 @@ import type { SessionId } from '@goodboy/types';
 import { Button, Divider, cn } from '@goodboy/ui';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
 import { isMissingBaseRefError } from '../../../../shared/lib/errors';
-import { SetupWorkflowToggle } from '../SetupWorkflowToggle';
 
 type Props = {
   readonly isSimple: boolean;
   readonly error: string | null;
-  readonly setupWorkflow: boolean;
-  readonly onSetupWorkflowChange: (checked: boolean) => void;
   readonly busy: boolean;
   readonly onClose: () => void;
   readonly conflictSessionId: SessionId | null;
@@ -23,8 +20,6 @@ type Props = {
 export const NewSessionFooter = ({
   isSimple,
   error,
-  setupWorkflow,
-  onSetupWorkflowChange,
   busy,
   onClose,
   conflictSessionId,
@@ -44,11 +39,6 @@ export const NewSessionFooter = ({
       <Divider />
       <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <SetupWorkflowToggle
-            checked={setupWorkflow}
-            disabled={busy}
-            onChange={onSetupWorkflowChange}
-          />
           {error != null && !isMissingBaseRefError(error) ? (
             <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
               <AlertTriangle size={12} aria-hidden />

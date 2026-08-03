@@ -195,6 +195,7 @@ const initialStage = (d: WorkflowBuilderDraft | undefined): Stage => {
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
@@ -658,6 +659,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       if (usePresetAsIs) {
         await attachWorkflowToSession(session.id, selectedPreset!.id, attachOptions());
+        setActiveLens(session.id, 'workflows');
         showToast('success', `workflow started: ${selectedPreset!.name}`);
         handleClose();
         return;
@@ -695,6 +697,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       };
       const saved = await savePhaseTemplate(workflow);
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
+      setActiveLens(session.id, 'workflows');
       showToast('success', `workflow started: ${saved?.name ?? name}`);
       handleClose();
     } catch (err) {
