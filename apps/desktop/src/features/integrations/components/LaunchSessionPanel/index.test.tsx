@@ -137,6 +137,37 @@ describe('LaunchSessionPanel', () => {
     expect(screen.getByRole('button', { name: 'Session setup: ak/fix-the-flake' })).toBeDefined();
   });
 
+  it('keeps a setup region opened by a branch error mounted once the error clears', () => {
+    render(
+      <LaunchSessionPanel
+        workspaceId={WORKSPACE_ID}
+        linkedSessionId={null}
+        goalSeed="Fix the flake"
+        branchSlugSeed="7-fix-the-flake"
+        externalTask={EXTERNAL_TASK}
+        adoptable={{
+          label: 'Continue on PR #12',
+          branch: null,
+          hint: 'Adopts the branch of PR #12.',
+          isResolving: false,
+          error: 'PR #12 has no branch',
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: /Session setup/ }).getAttribute('aria-expanded'),
+    ).toBe('true');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Start fresh' }));
+
+    expect(screen.getByRole('tab', { name: 'Start fresh' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.getByLabelText('Branch slug').getAttribute('value')).toBe('7-fix-the-flake');
+  });
+
   it('blocks launch for invalid folder names in a repo-less workspace', () => {
     h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
 

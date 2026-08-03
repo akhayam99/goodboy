@@ -143,6 +143,14 @@ export const LaunchSessionPanel = ({
     isMissingBase ||
     (isBranchless && (folderNameError != null || folderConflict.exists)) ||
     (!isBranchless && !isBranchReady && !isResolvingAdopted);
+
+  useEffect(() => {
+    if (!needsConfig) {
+      return;
+    }
+    setConfigRevealed(true);
+  }, [needsConfig]);
+
   const isConfigOpen = isConfigRevealed || needsConfig;
   const configLabel = isBranchless
     ? `sessions/${folderName}`
