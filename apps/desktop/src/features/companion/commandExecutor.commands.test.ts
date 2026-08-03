@@ -375,6 +375,7 @@ describe('spawnAgent option mapping', () => {
       kindOverride: 'scout',
       provider: 'codex',
       model: 'gpt-5-codex',
+      focus: 'agent',
     });
     expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
   });
@@ -382,7 +383,7 @@ describe('spawnAgent option mapping', () => {
   it('spawns with no options (plan-approval affordance: desktop auto-selects)', async () => {
     const res = await executeBridgeCommand(cmd('spawnAgent', { sessionId: 's1' }));
     expect(res.ok).toBe(true);
-    expect(h.spawnAgent).toHaveBeenCalledWith('s1', {});
+    expect(h.spawnAgent).toHaveBeenCalledWith('s1', { focus: 'agent' });
   });
 });
 

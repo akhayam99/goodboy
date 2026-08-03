@@ -133,6 +133,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'haiku-4.5',
       effort: 'low',
+      focus: 'agent',
     });
   });
 
@@ -156,6 +157,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'claude-opus-5',
       effort: 'high',
+      focus: 'agent',
     });
   });
 
@@ -181,6 +183,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'haiku-4.5',
       effort: 'low',
+      focus: 'agent',
     });
   });
 
@@ -210,6 +213,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'claude-opus-5',
       effort: 'low',
+      focus: 'agent',
     });
   });
 
@@ -240,6 +244,7 @@ describe('CreateAgentPopover', () => {
       provider: 'codex',
       model: 'gpt-5.6-terra',
       effort: 'high',
+      focus: 'agent',
     });
   });
 
@@ -293,6 +298,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'haiku-4.5',
       effort: 'low',
+      focus: 'agent',
     });
   });
 

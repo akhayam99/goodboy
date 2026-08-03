@@ -76,6 +76,7 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
         model: config.model,
         provider: config.provider,
         effort: config.effort,
+        focus: 'agent',
       });
       await selectAgent(sessionId, agentId);
     } catch (failure) {

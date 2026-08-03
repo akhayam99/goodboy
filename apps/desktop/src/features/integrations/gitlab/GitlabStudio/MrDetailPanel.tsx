@@ -196,6 +196,7 @@ export const MrDetailPanel = ({
         model: agentConfig.model,
         ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
         effort: agentConfig.effort,
+        focus: 'agent',
       });
       await setCurrentSession(sessionId);
       await selectAgent(sessionId, agentId);

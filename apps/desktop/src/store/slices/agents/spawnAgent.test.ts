@@ -60,6 +60,8 @@ vi.mock('../workflows/clusterImplementation', async (importOriginal) => {
 });
 
 import { spawnAgent } from './spawnAgent';
+import { beginSessionCreation, endSessionCreation } from '../session-view/sessionCreation';
+import type { SetFn } from '../../slice-types';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 'ses-1' as SessionId;
@@ -158,6 +160,8 @@ function buildHarness(
     sessionPhaseRuns: { [SESSION_ID]: [] },
     sessionPlans: { [SESSION_ID]: plans },
     planConsumptions: {},
+    activeLens: { [SESSION_ID]: 'agents' },
+    sessionStudio: { [SESSION_ID]: { kind: 'github' } },
     selectedAgentId: {},
     agentTurnState: {},
     workspaceOverrides: {
@@ -178,6 +182,7 @@ function buildHarness(
     agentEffortOverride: {},
     agentKindOverride: {},
     pendingResolverKickoff: {},
+    sessionCreations: {},
     sendTurn,
   };
   const get = (() => state) as unknown as Parameters<typeof spawnAgent>[1];
@@ -185,12 +190,49 @@ function buildHarness(
     const patch = typeof update === 'function' ? update(get()) : update;
     Object.assign(state, patch);
   });
+  Object.assign(state, {
+    beginSessionCreation: beginSessionCreation(set as unknown as SetFn),
+    endSessionCreation: endSessionCreation(set as unknown as SetFn),
+  });
   return {
     getState: get,
     sendTurn,
     spawn: spawnAgent(set, get),
   };
 }
+
+describe('spawnAgent focus', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listConsumptionsForPlanSpy.mockResolvedValue([]);
+  });
+
+  it('leaves the current work surface alone when no focus is requested', async () => {
+    const { getState, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { name: 'quiet spawn' });
+
+    expect(getState().selectedAgentId[SESSION_ID]).toBeUndefined();
+    expect(getState().sessionStudio[SESSION_ID]).toEqual({ kind: 'github' });
+  });
+
+  it('routes an explicit focus through the work surface, closing the studio', async () => {
+    const { getState, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { name: 'loud spawn', focus: 'agent' });
+
+    expect(getState().selectedAgentId[SESSION_ID]).toBe(INSERTED_ID);
+    expect(getState().sessionStudio[SESSION_ID]).toBeNull();
+  });
+
+  it('clears the creation signal once the spawn settles', async () => {
+    const { getState, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { name: 'tracked spawn' });
+
+    expect(getState().sessionCreations[SESSION_ID]).toEqual([]);
+  });
+});
 
 describe('spawnAgent ad-hoc cluster fan-out', () => {
   beforeEach(() => {

@@ -47,6 +47,9 @@ describe('HandoffChip', () => {
     extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: null });
     render(<HandoffChip assistantText="x" sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByTestId('handoff-chip'));
-    expect(state.spawnAgent).toHaveBeenCalledWith('sess-1', { kindOverride: 'implementer' });
+    expect(state.spawnAgent).toHaveBeenCalledWith('sess-1', {
+      kindOverride: 'implementer',
+      focus: 'agent',
+    });
   });
 });

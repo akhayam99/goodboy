@@ -1,5 +1,13 @@
 import type { PlanId, SessionId } from '@goodboy/types';
-import type { DiffFocus, GetFn, LensKind, SessionStudio, SetFn } from './types';
+import type {
+  DiffFocus,
+  GetFn,
+  LensKind,
+  SessionStudio,
+  SetFn,
+  WorkSurfacePosition,
+} from './types';
+import { amendTopPosition } from './amendTopPosition';
 import { workSurfaceFocus } from './workSurfaceFocus';
 import { writePersistedLens } from './workSurfaceStorage';
 
@@ -9,8 +17,16 @@ export const setActiveLens = (set: SetFn) => {
     set((s) => {
       const prev = s.lensHistory[sessionId];
       const trimmed = prev ? prev.entries.slice(0, prev.index + 1) : [];
-      const sameTop = trimmed.length > 0 && trimmed[trimmed.length - 1] === lens;
-      const entries = sameTop ? trimmed : [...trimmed, lens];
+      const current: WorkSurfacePosition = {
+        lens: s.activeLens[sessionId] ?? null,
+        agentId: s.selectedAgentId[sessionId] ?? null,
+        studio: s.sessionStudio[sessionId] ?? null,
+      };
+      const amended = amendTopPosition({ entries: trimmed, current });
+      const top = amended[amended.length - 1];
+      const sameTop =
+        top != null && top.lens === lens && top.agentId === null && top.studio === null;
+      const entries = sameTop ? amended : [...amended, { lens, agentId: null, studio: null }];
       return {
         ...workSurfaceFocus({
           sessionId,
@@ -39,19 +55,32 @@ export const lensGo = (set: SetFn, get: GetFn) => {
     if (!hist) return;
     const nextIndex = Math.min(Math.max(hist.index + delta, 0), hist.entries.length - 1);
     if (nextIndex === hist.index) return;
-    const lens = hist.entries[nextIndex] ?? null;
-    writePersistedLens(sessionId, lens);
+    const entry = hist.entries[nextIndex];
+    if (entry == null) return;
+    const runs = get().sessionPhaseRuns[sessionId] ?? [];
+    const agentId =
+      entry.agentId != null && runs.some((run) => run.id === entry.agentId) ? entry.agentId : null;
+    const restored: WorkSurfacePosition = { lens: entry.lens, agentId, studio: entry.studio };
+    writePersistedLens(sessionId, restored.lens);
     set((s) => ({
       ...workSurfaceFocus({
         sessionId,
-        focus: { kind: 'lens', lens },
+        focus: {
+          kind: 'restore',
+          lens: restored.lens,
+          studio: restored.studio,
+          agentId: restored.agentId,
+        },
         activeLens: s.activeLens,
         sessionStudio: s.sessionStudio,
         selectedAgentId: s.selectedAgentId,
       }),
       lensHistory: {
         ...s.lensHistory,
-        [sessionId]: { entries: hist.entries, index: nextIndex },
+        [sessionId]: {
+          entries: hist.entries.map((item, index) => (index === nextIndex ? restored : item)),
+          index: nextIndex,
+        },
       },
     }));
   };

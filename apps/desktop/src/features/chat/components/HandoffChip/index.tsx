@@ -40,6 +40,7 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
     void spawnAgent(sessionId, {
       kindOverride: handoff.kind,
       ...(handoff.planId ? { triggeredPlanId: handoff.planId as PlanId } : {}),
+      focus: 'agent',
     });
   };
   return (

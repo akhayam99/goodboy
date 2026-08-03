@@ -679,6 +679,7 @@ export const DiffViewerContent = ({
         effort: resolverRouting.effort,
         kindOverride: 'resolver',
         sourceKind: 'diff_comment',
+        focus: 'agent',
       });
       try {
         await consumeDiffComments(sessionId, idsToConsume, agentId);

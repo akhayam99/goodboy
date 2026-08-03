@@ -196,6 +196,7 @@ export const PrDetailPanel = ({
       sourceCommentUrl: args.sourceCommentUrl,
       sourceKind: args.sourceKind,
       ...(deferKickoff && { deferKickoff: true }),
+      focus: 'agent',
     });
     await setAgentConfig(sessionId, agentId, {
       ...(choice.provider !== undefined && { providerOverride: choice.provider }),

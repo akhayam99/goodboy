@@ -252,7 +252,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setValue(content);
     await scope.recordScopeOutcome('accepted');
     try {
-      await spawnAgent(session.id, { kindOverride: target });
+      await spawnAgent(session.id, { kindOverride: target, focus: 'agent' });
     } catch {
       // ignore
     }

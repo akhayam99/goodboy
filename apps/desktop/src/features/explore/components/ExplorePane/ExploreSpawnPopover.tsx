@@ -90,6 +90,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
         model: config.model,
         ...(config.provider !== '' && { provider: config.provider }),
         effort: config.effort,
+        focus: 'agent',
       });
       close();
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));

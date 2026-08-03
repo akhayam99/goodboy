@@ -608,6 +608,52 @@ describe('store contract', () => {
       expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
     });
 
+    it('lensGo restores the agent chat the user was on, not just its lens', async () => {
+      const store = await getStore();
+      store.setState({
+        sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: AGENT_ID })] },
+      } as never);
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+
+      store.getState().lensGo(SESSION_ID, -1);
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(store.getState().selectedAgentId[SESSION_ID]).toBe(AGENT_ID);
+    });
+
+    it('lensGo drops an agent that no longer exists and still restores its lens', async () => {
+      const store = await getStore();
+      store.setState({
+        sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: AGENT_ID })] },
+      } as never);
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [] } } as never);
+
+      store.getState().lensGo(SESSION_ID, -1);
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
+    });
+
+    it('lensGo does not push a new entry, so back and forward stay symmetric', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+      const before = store.getState().lensHistory[SESSION_ID]?.entries.length;
+
+      store.getState().lensGo(SESSION_ID, -1);
+      store.getState().lensGo(SESSION_ID, -1);
+
+      expect(store.getState().lensHistory[SESSION_ID]?.entries.length).toBe(before);
+      expect(store.getState().lensHistory[SESSION_ID]?.index).toBe(0);
+      store.getState().lensGo(SESSION_ID, 1);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('plans');
+    });
+
     it('selecting a new lens after going back truncates the forward history', async () => {
       const store = await getStore();
       store.getState().setActiveLens(SESSION_ID, 'agents');

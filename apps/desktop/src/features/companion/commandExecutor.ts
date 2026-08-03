@@ -520,6 +520,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
         ...(kind ? { kindOverride: kind } : {}),
         ...(override ? { provider: override.providerId } : {}),
         ...(override?.model ? { model: override.model } : {}),
+        focus: 'agent',
       });
       return undefined;
     }
@@ -560,6 +561,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
         ...(sourceCommentUrl ? { sourceCommentUrl } : {}),
         ...(sourceThreadId ? { sourceThreadId } : {}),
         ...(sourceKind !== null && { sourceKind }),
+        focus: 'agent',
       });
       await store.activateNextResolver(sessionId);
       return undefined;

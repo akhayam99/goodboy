@@ -94,7 +94,14 @@ import { createSidebarSlice } from './slices/sidebar';
 import type { PanelSection } from './slices/sidebar/types';
 import { createSessionViewSlice } from './slices/session-view';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
-import type { DiffFocus, LensKind, SessionStudio } from './slices/session-view';
+import type {
+  DiffFocus,
+  LensKind,
+  SessionCreationId,
+  SessionCreationKind,
+  SessionStudio,
+} from './slices/session-view';
+import type { SpawnFocus } from './slices/agents/spawnAgent';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { createPermissionsSlice } from './slices/permissions';
@@ -393,6 +400,7 @@ export type AppActions = {
       sourceCommentUrl?: string;
       sourceKind?: AgentSourceKind;
       deferKickoff?: boolean;
+      focus?: SpawnFocus;
     },
   ): Promise<AgentId>;
   activateNextResolver(sessionId: SessionId): Promise<void>;
@@ -633,6 +641,11 @@ export type AppActions = {
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
+  beginSessionCreation(
+    sessionId: SessionId,
+    creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
+  ): SessionCreationId;
+  endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
   closeTerminal(sessionId: SessionId): Promise<void>;
   addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;

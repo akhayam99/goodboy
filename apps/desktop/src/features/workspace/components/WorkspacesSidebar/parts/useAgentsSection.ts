@@ -238,6 +238,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
         ...(agent.stepId != null && { stepId: agent.stepId }),
         ...(agent.workflowRunId != null && { workflowRunId: agent.workflowRunId }),
         ...(model !== undefined && { model }),
+        focus: 'agent',
       });
     } catch (err) {
       setSpawnError(formatError(err));

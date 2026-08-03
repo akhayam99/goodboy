@@ -89,6 +89,7 @@ export const CreateAgentPopover = ({
       provider: effective.provider,
       model: effective.model,
       effort: effective.effort,
+      focus: 'agent',
     });
     setKind('generic');
     setRouting(null);
