@@ -153,7 +153,9 @@ export type {
   Step,
   StepDef,
   Workflow,
+  WorkflowOrigin,
 } from './workflow';
+export { WORKFLOW_ORIGINS } from './workflow';
 export type {
   AuxTaskId,
   GlobalSettings,

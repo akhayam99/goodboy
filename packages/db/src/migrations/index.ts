@@ -97,6 +97,7 @@ import { m096SessionExternalTaskMount } from './m096-session-external-task-mount
 import { m097SessionActiveMount } from './m097-session-active-mount';
 import { m098WorkflowStepRouting } from './m098-workflow-step-routing';
 import { m099FileVersions } from './m099-file-versions';
+import { m100WorkflowOrigin } from './m100-workflow-origin';
 
 export type Migration = {
   readonly version: number;
@@ -203,4 +204,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 97, sql: m097SessionActiveMount },
   { version: 98, sql: m098WorkflowStepRouting },
   { version: 99, sql: m099FileVersions },
+  { version: 100, sql: m100WorkflowOrigin },
 ];

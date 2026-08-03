@@ -67,6 +67,7 @@ export const seedWorkflowLibrary = async (
       description: entry.description,
       ...(entry.goal && { goal: entry.goal }),
       steps,
+      origin: 'library',
       createdAt: now,
       updatedAt: now,
     };

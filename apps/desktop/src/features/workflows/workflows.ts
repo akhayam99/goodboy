@@ -17,12 +17,14 @@ import type {
   VerbosityLevel,
   Workflow,
   WorkflowId,
+  WorkflowOrigin,
   WorkflowRunId,
   ProviderRunId,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
+import { WORKFLOW_ORIGINS } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -68,6 +70,7 @@ type RawWorkflowRow = {
   readonly updatedAt: string;
   readonly deletedAt: number | null;
   readonly isPreset: boolean;
+  readonly origin: string | null;
 };
 
 type RawAgentRow = {
@@ -144,6 +147,9 @@ function rowToStepDef(row: RawStepDefRow): StepDef {
   };
 }
 
+const isWorkflowOrigin = (value: string | null): value is WorkflowOrigin =>
+  value != null && (WORKFLOW_ORIGINS as ReadonlyArray<string>).includes(value);
+
 function rowToWorkflow(row: RawWorkflowRow): Workflow {
   return {
     id: row.id as WorkflowId,
@@ -154,6 +160,7 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
     ...(row.processText != null && row.processText !== '' && { processText: row.processText }),
     steps: row.steps.map(rowToStep),
     isPreset: row.isPreset,
+    ...(isWorkflowOrigin(row.origin) && { origin: row.origin }),
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
     ...(row.deletedAt != null && {
@@ -248,6 +255,7 @@ export type WorkflowUpsertArgs = {
   readonly processText?: string;
   readonly steps: ReadonlyArray<WorkflowStepUpsertArgs>;
   readonly isPreset?: boolean;
+  readonly origin?: WorkflowOrigin;
 };
 
 export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Workflow> => {
@@ -260,6 +268,7 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
       goal: args.goal ?? null,
       processText: args.processText ?? null,
       isPreset: args.isPreset ?? true,
+      origin: args.origin ?? null,
       steps: args.steps.map((d) => ({
         id: d.id ?? null,
         libraryStepId: d.libraryStepId ?? null,

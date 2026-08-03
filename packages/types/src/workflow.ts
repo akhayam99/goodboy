@@ -65,6 +65,14 @@ export type Step = Readonly<{
   deletedAt?: IsoDateTime;
 }>;
 
+export type WorkflowOrigin = 'library' | 'custom' | 'orchestrated';
+
+export const WORKFLOW_ORIGINS: ReadonlyArray<WorkflowOrigin> = [
+  'library',
+  'custom',
+  'orchestrated',
+];
+
 export type Workflow = Readonly<{
   id: WorkflowId;
   workspaceId: WorkspaceId;
@@ -74,6 +82,7 @@ export type Workflow = Readonly<{
   processText?: string;
   steps: ReadonlyArray<Step>;
   isPreset?: boolean;
+  origin?: WorkflowOrigin;
   deletedAt?: IsoDateTime;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;

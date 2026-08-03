@@ -1,11 +1,12 @@
 import { ChevronRight } from 'lucide-react';
-import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
+import type { Agent, Workflow, WorkflowOrigin, WorkflowRun } from '@goodboy/types';
 import { cn, formatUsdPrecise } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunStatus } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowRunStatus';
 import { formatRelativeDuration } from '../../../../../shared/utils/relativeDate';
 import { CostBadge } from '../../../../providers/components/CostBadge';
+import { WorkflowOriginTag } from '../../../../workflows/components/WorkflowOriginTag';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -56,6 +57,8 @@ export const WorkflowRailCard = ({
     isCompleted && startedAt != null && completedAt != null
       ? formatRelativeDuration(startedAt, completedAt)
       : null;
+  const origin: WorkflowOrigin | null =
+    run.executionMode === 'dynamic' ? 'orchestrated' : (workflow.origin ?? null);
   const stepCount =
     run.executionMode === 'dynamic'
       ? `${ranAgents.length} ${ranAgents.length === 1 ? 'step' : 'steps'} run`
@@ -114,7 +117,10 @@ export const WorkflowRailCard = ({
             ) : null}
           </span>
         </span>
-        <ChevronRight size={14} aria-hidden className="shrink-0 text-muted-foreground/50" />
+        <span className="flex shrink-0 items-center gap-2">
+          {origin != null ? <WorkflowOriginTag origin={origin} /> : null}
+          <ChevronRight size={14} aria-hidden className="text-muted-foreground/50" />
+        </span>
       </button>
       {isDiscarded ? (
         <button
