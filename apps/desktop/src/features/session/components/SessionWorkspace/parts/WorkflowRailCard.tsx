@@ -75,11 +75,8 @@ export const WorkflowRailCard = ({
         )}
       >
         <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className="flex items-center gap-2">
-            <span className="line-clamp-2 text-sm font-medium text-foreground">
-              {workflowKindName(workflow)}
-            </span>
-            {origin != null ? <WorkflowOriginTag origin={origin} /> : null}
+          <span className="line-clamp-2 text-sm font-medium text-foreground">
+            {workflowKindName(workflow)}
           </span>
           <span className="flex flex-wrap items-center gap-2">
             <WorkflowRunStatus
@@ -120,7 +117,10 @@ export const WorkflowRailCard = ({
             ) : null}
           </span>
         </span>
-        <ChevronRight size={14} aria-hidden className="shrink-0 text-muted-foreground/50" />
+        <span className="flex shrink-0 items-center gap-2">
+          {origin != null ? <WorkflowOriginTag origin={origin} /> : null}
+          <ChevronRight size={14} aria-hidden className="text-muted-foreground/50" />
+        </span>
       </button>
       {isDiscarded ? (
         <button

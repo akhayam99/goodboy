@@ -28,14 +28,16 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
       >
         <div className="flex items-center gap-2">
           <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
-          {template.origin != null ? <WorkflowOriginTag origin={template.origin} /> : null}
           {!approved ? (
             <span className="shrink-0 rounded bg-warning/15 px-1 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow text-warning">
               draft
             </span>
           ) : null}
-          <span className="ml-auto shrink-0 text-2xs tabular-nums text-muted-foreground/50">
-            {steps.length} {steps.length === 1 ? 'step' : 'steps'}
+          <span className="ml-auto flex shrink-0 items-center gap-1.5">
+            {template.origin != null ? <WorkflowOriginTag origin={template.origin} /> : null}
+            <span className="text-2xs tabular-nums text-muted-foreground/50">
+              {steps.length} {steps.length === 1 ? 'step' : 'steps'}
+            </span>
           </span>
         </div>
         {description ? (
