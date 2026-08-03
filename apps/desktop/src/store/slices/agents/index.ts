@@ -17,6 +17,7 @@ import { setAgentDone } from './setAgentDone';
 import { setAgentEffortOverride } from './setAgentEffortOverride';
 import { setAgentKind } from './setAgentKind';
 import { setAgentQueue } from './setAgentQueue';
+import { setResolverThreadReply } from './setResolverThreadReply';
 import { spawnAgent } from './spawnAgent';
 import type { GetFn, SetFn } from './types';
 
@@ -42,5 +43,6 @@ export const createAgentsSlice = (set: SetFn, get: GetFn) => {
     deleteAgent: deleteAgent(set, get),
     activateNextResolver: activateNextResolver(set, get),
     forceCloseResolver: forceCloseResolver(set, get),
+    setResolverThreadReply: setResolverThreadReply(set),
   };
 };

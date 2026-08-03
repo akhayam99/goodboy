@@ -88,6 +88,46 @@ describe('completeResolvedAgent', () => {
     expect(buildResolutionReplyBody(outcome, null)).toBe(summary);
   });
 
+  it('keeps an agent that fixed two threads and asked about a third in needs-you', async () => {
+    const { state, set, get } = createHarness({});
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ ...agent, sourceThreadIds: ['PRRT_1', 'PRRT_2', 'PRRT_3'] }],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText:
+        '<<comment-resolved threadId="PRRT_1" commitSha="abcdef1234567890">> <<comment-resolved threadId="PRRT_2" commitSha="abcdef1234567890">>',
+      now: () => NOW,
+    });
+
+    expect(state.resolverState[AGENT_ID]).toBe('awaiting');
+    expect(Object.keys(state.resolverThreadOutcomes[AGENT_ID] ?? {})).toEqual(['PRRT_1', 'PRRT_2']);
+    expect(state.activateNextResolver).toHaveBeenCalledWith(SESSION_ID);
+  });
+
+  it('settles an agent as committed once every owned thread has an outcome', async () => {
+    const { state, set, get } = createHarness({});
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ ...agent, sourceThreadIds: ['PRRT_1', 'PRRT_2'] }],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText:
+        '<<comment-resolved threadId="PRRT_1" commitSha="abcdef1234567890">> <<comment-wontfix threadId="PRRT_2" reason="intentional">>',
+      now: () => NOW,
+    });
+
+    expect(state.resolverState[AGENT_ID]).toBe('committed');
+  });
+
   it('does not downgrade a resolved marker for the same thread', async () => {
     const { state, set, get } = createHarness({});
 

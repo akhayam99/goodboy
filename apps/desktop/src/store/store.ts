@@ -397,6 +397,7 @@ export type AppActions = {
   ): Promise<AgentId>;
   activateNextResolver(sessionId: SessionId): Promise<void>;
   forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;
+  setResolverThreadReply(params: { agentId: AgentId; threadId: string; reply: string }): void;
   renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
   setAgentKind(agentId: AgentId, kind: AgentKind): void;
   setAgentEffortOverride(agentId: AgentId, effort: string): void;
@@ -471,7 +472,7 @@ export type AppActions = {
   resolveGithubThread(
     sessionId: SessionId,
     threadId: string,
-    closure?: { commitSha?: string; reason?: string },
+    closure?: { commitSha?: string; reason?: string; reply?: string },
   ): Promise<boolean>;
   resolveAgentThreads(sessionId: SessionId, agentId: AgentId): Promise<boolean>;
   queueResolution(

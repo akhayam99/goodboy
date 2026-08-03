@@ -1,9 +1,10 @@
 import { deletePendingResolution, listPendingResolutionsForSession } from '@goodboy/db';
-import type { AgentId, PendingResolution, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
+import { resolverThreadSettlements } from '../../../features/session/resolverThreadSettlements';
+import type { ResolverThreadSettlement } from '../../../features/session/resolverThreadSettlements';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
-import type { ResolverThreadOutcome } from '../../types';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
 import type { GetFn, SetFn } from './types';
@@ -20,35 +21,18 @@ type Target = {
   readonly shouldPush: boolean;
 };
 
-type OutcomeClosureParams = {
-  readonly outcome: ResolverThreadOutcome;
+type ClosureParams = {
+  readonly settlement: ResolverThreadSettlement;
 };
 
-const outcomeClosure = ({ outcome }: OutcomeClosureParams): Closure => {
-  if (outcome.kind === 'resolved') {
-    return { commitSha: outcome.commitSha, reply: outcome.reply };
-  }
-  if (outcome.kind === 'wontfix') {
-    return { reason: outcome.reason, reply: outcome.reply };
-  }
-  return { reply: outcome.reply };
-};
+const settlementClosure = ({ settlement }: ClosureParams): Closure => ({
+  ...(settlement.commitSha !== null && { commitSha: settlement.commitSha }),
+  ...(settlement.reason !== null && { reason: settlement.reason }),
+  ...(settlement.reply !== null && { reply: settlement.reply }),
+});
 
-type PendingClosureParams = {
-  readonly resolution: PendingResolution;
-};
-
-const pendingClosure = ({ resolution }: PendingClosureParams): Closure => {
-  if ((resolution.outcome ?? 'resolved') === 'resolved') {
-    return {
-      commitSha: resolution.commitSha,
-      ...(resolution.reply !== null && { reply: resolution.reply }),
-    };
-  }
-  return {
-    ...(resolution.reply !== null && { reply: resolution.reply }),
-  };
-};
+const hasContent = ({ closure }: { readonly closure: Closure }): boolean =>
+  closure.commitSha !== undefined || closure.reason !== undefined || closure.reply !== undefined;
 
 export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId): Promise<boolean> => {
@@ -72,41 +56,42 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
       ...(workspace !== undefined && { workspaceId: workspace.id }),
     };
     const outcomes = get().resolverThreadOutcomes[agentId] ?? {};
-    const outcomeEntries = Object.entries(outcomes);
     const persisted = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
-    const persistedByThreadId = new Map(
-      persisted.map((resolution) => [resolution.threadId, resolution] as const),
-    );
-    const threadIds = new Set([...agentThreadIds(agent), ...Object.keys(outcomes)]);
-    const targets = [...threadIds].map((threadId): Target => {
-      const outcome = outcomes[threadId];
-      if (outcome !== undefined) {
-        return {
-          threadId,
-          closure: outcomeClosure({ outcome }),
-          shouldPush: outcome.kind === 'resolved',
-        };
-      }
-      const resolution = persistedByThreadId.get(threadId);
-      if (resolution !== undefined) {
-        return {
-          threadId,
-          closure: pendingClosure({ resolution }),
-          shouldPush: (resolution.outcome ?? 'resolved') === 'resolved',
-        };
-      }
-      return {
-        threadId,
-        closure: {},
-        shouldPush: outcomeEntries.length === 0,
-      };
-    });
-    if (targets.length === 0) {
+    const threadIds = [...new Set([...agentThreadIds(agent), ...Object.keys(outcomes)])];
+    if (threadIds.length === 0) {
       void get().emitNotification(
         'error',
         'error',
         'nothing to resolve',
         'this resolver owns no review thread, so nothing was closed on GitHub',
+        notifyTarget,
+      );
+      return false;
+    }
+    const settlements = resolverThreadSettlements({
+      threadIds,
+      outcomes,
+      pendingResolutions: persisted,
+    });
+    const targets = settlements.flatMap((settlement): ReadonlyArray<Target> => {
+      if (settlement.kind === 'open') {
+        return [];
+      }
+      const closure = settlementClosure({ settlement });
+      if (!hasContent({ closure })) {
+        return [];
+      }
+      return [
+        { threadId: settlement.threadId, closure, shouldPush: settlement.kind === 'resolved' },
+      ];
+    });
+    const skipped = threadIds.length - targets.length;
+    if (targets.length === 0) {
+      void get().emitNotification(
+        'error',
+        'error',
+        'nothing to resolve',
+        'no thread of this resolver carries a resolution yet, so nothing was closed on GitHub',
         notifyTarget,
       );
       return false;
@@ -142,6 +127,15 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
         },
       }));
       await get().refreshSessionPrDetail(sessionId, { force: true });
+      if (skipped > 0) {
+        void get().emitNotification(
+          'error',
+          'warning',
+          `${skipped} thread${skipped === 1 ? '' : 's'} left open`,
+          'they carry no resolution yet, so only the settled threads were closed on GitHub',
+          notifyTarget,
+        );
+      }
       return true;
     } catch (error) {
       void get().emitNotification(

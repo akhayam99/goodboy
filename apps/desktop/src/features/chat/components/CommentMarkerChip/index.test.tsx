@@ -93,7 +93,9 @@ describe('CommentMarkerChip', () => {
       },
     ]);
     const reveal = vi.fn();
+    const inspect = vi.fn();
     window.addEventListener('goodboy:reveal-chat', reveal);
+    window.addEventListener('goodboy:open-resolver-inspector', inspect);
     render(
       <CommentMarkerChip
         kind="analysis"
@@ -107,7 +109,12 @@ describe('CommentMarkerChip', () => {
 
     expect(h.selectAgent).toHaveBeenCalledWith('s', 'agent-1');
     expect(reveal).toHaveBeenCalledOnce();
+    expect((inspect.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
+      sessionId: 's',
+      agentId: 'agent-1',
+    });
     window.removeEventListener('goodboy:reveal-chat', reveal);
+    window.removeEventListener('goodboy:open-resolver-inspector', inspect);
   });
 
   it('stays inert without a resolver to navigate to', () => {

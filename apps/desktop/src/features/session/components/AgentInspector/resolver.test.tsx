@@ -80,6 +80,7 @@ type ResetParams = {
   readonly resolvedThreadIds?: ReadonlyArray<string>;
   readonly outcomes?: Readonly<Record<string, unknown>>;
   readonly pending?: ReadonlyArray<{ readonly threadId: string; readonly commitSha: string }>;
+  readonly settledThreadIds?: ReadonlyArray<string>;
 };
 
 const reset = ({
@@ -87,11 +88,16 @@ const reset = ({
   resolvedThreadIds = [],
   outcomes = { [RUNNING_ID]: { PRRT_1: { kind: 'resolved', commitSha: 'abc1234def' } } },
   pending = [],
+  settledThreadIds,
 }: ResetParams = {}) => {
+  const settled =
+    settledThreadIds === undefined
+      ? SETTLED
+      : { ...SETTLED, sourceThreadId: undefined, sourceThreadIds: settledThreadIds };
   Object.assign(h.state, {
     sessions: [{ id: SESSION_ID, workspaceId: 'workspace-1' as WorkspaceId }],
     workspaces: [{ id: 'workspace-1' as WorkspaceId, rootPath: '/tmp/repo', kind: 'repo' }],
-    sessionPhaseRuns: { [SESSION_ID]: [RUNNING, QUEUED, SETTLED] },
+    sessionPhaseRuns: { [SESSION_ID]: [RUNNING, QUEUED, settled] },
     agentKindOverride: {},
     agentModelOverride: {},
     agentProviderOverride: {},
@@ -133,6 +139,17 @@ const reset = ({
               path: 'c.ts',
               line: 4,
               resolved: resolvedThreadIds.includes('PRRT_3'),
+            },
+            {
+              id: 'c4',
+              author: 'reviewer',
+              body: 'and this one',
+              url: 'https://github.com/x/y/pull/7#discussion_r4',
+              source: 'review',
+              threadId: 'PRRT_4',
+              path: 'd.ts',
+              line: 9,
+              resolved: resolvedThreadIds.includes('PRRT_4'),
             },
           ],
         },
@@ -347,9 +364,79 @@ describe('AgentInspector (resolver)', () => {
     });
     renderInspector(SETTLED_ID);
 
-    expect(screen.getByText('Verdict')).toBeDefined();
-    expect(screen.getByText('covered by the follow up')).toBeDefined();
+    expect(screen.getByText('Thread')).toBeDefined();
+    expect(screen.getByText('no change')).toBeDefined();
+    expect((screen.getByLabelText('reply for thread 1') as HTMLTextAreaElement).value).toBe(
+      'covered by the follow up',
+    );
     expect(screen.getByText('Already guarded')).toBeDefined();
+  });
+
+  it('gives every owned thread its own outcome, its own reply and its own action', () => {
+    reset({
+      settledThreadIds: ['PRRT_3', 'PRRT_4'],
+      resolverState: { [SETTLED_ID]: 'awaiting' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'resolved', commitSha: 'abc1234def', reply: 'guarded the null case' },
+          PRRT_4: { kind: 'wontfix', reason: 'the branch is unreachable' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText('Threads')).toBeDefined();
+    expect(screen.getByText('fixed')).toBeDefined();
+    expect(screen.getByText('no change')).toBeDefined();
+    expect((screen.getByLabelText('reply for thread 1') as HTMLTextAreaElement).value).toBe(
+      'guarded the null case',
+    );
+    expect((screen.getByLabelText('reply for thread 2') as HTMLTextAreaElement).value).toBe(
+      'the branch is unreachable',
+    );
+    expect(screen.getByRole('button', { name: 'Add to batch' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Post & close' })).toBeDefined();
+  });
+
+  it('posts the reply of the thread it belongs to, not the reply of its sibling', () => {
+    reset({
+      settledThreadIds: ['PRRT_3', 'PRRT_4'],
+      resolverState: { [SETTLED_ID]: 'awaiting' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'analyzed', reply: 'the first summary' },
+          PRRT_4: { kind: 'wontfix', reason: 'the second reason' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post & close' })[1]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post & close' })[1]!);
+
+    expect(h.resolveGithubThread).toHaveBeenCalledTimes(1);
+    expect(h.resolveGithubThread).toHaveBeenCalledWith(SESSION_ID, 'PRRT_4', {
+      reason: 'the second reason',
+    });
+  });
+
+  it('will not offer to post a closure with nothing written in it', () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'wontfix' },
+      outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'wontfix', reason: '' } } },
+    });
+    renderInspector(SETTLED_ID);
+
+    const post = screen.getByRole('button', { name: 'Post & close' }) as HTMLButtonElement;
+    expect(post.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('reply for thread 1'), {
+      target: { value: 'the check already covers it' },
+    });
+
+    expect(
+      (screen.getByRole('button', { name: 'Post & close' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
   });
 
   it('hides the changes section entirely when there is no commit', () => {

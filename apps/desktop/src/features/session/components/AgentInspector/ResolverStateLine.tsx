@@ -4,16 +4,26 @@ import {
   resolverStateSentence,
 } from '../ResolverStateBadge';
 import type { ResolverStatus } from '../../resolver-linkage';
+import { resolverTallySentence } from '../../resolverTallySentence';
+import type { ResolverThreadTally } from '../../resolverThreadTally';
 
 type Props = {
   readonly status: ResolverStatus;
+  readonly tally: ResolverThreadTally;
   readonly queuePosition: number;
   readonly queueTotal: number;
   readonly blockedBy: string | null;
 };
 
-export const ResolverStateLine = ({ status, queuePosition, queueTotal, blockedBy }: Props) => {
+export const ResolverStateLine = ({
+  status,
+  tally,
+  queuePosition,
+  queueTotal,
+  blockedBy,
+}: Props) => {
   const sentence = resolverStateSentence(status);
+  const tallySentence = resolverTallySentence({ tally });
 
   return (
     <div className="flex flex-col gap-1">
@@ -26,6 +36,9 @@ export const ResolverStateLine = ({ status, queuePosition, queueTotal, blockedBy
           </span>
         )}
       </div>
+      {tallySentence !== null && (
+        <span className="text-2xs tabular-nums text-muted-foreground/80">{tallySentence}</span>
+      )}
       {blockedBy !== null && <p className="text-2xs text-warning">blocked: {blockedBy}</p>}
     </div>
   );

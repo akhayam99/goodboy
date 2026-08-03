@@ -14,6 +14,7 @@ import { ResolverCardAction } from './ResolverCardAction';
 import { resolverOrigin } from '../../resolver-origin';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
+import { ResolverCardTally } from './ResolverCardTally';
 import { resolverCardTone } from './resolverCardTone';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 
@@ -152,6 +153,7 @@ export const ResolverCard = ({
           />
           <AgentLastUpdate agent={agent} />
           <ContextWindowBar usage={contextUsage} />
+          <ResolverCardTally agent={agent} sessionId={agent.sessionId} />
         </div>
         <ResolverCardSnippet threadComment={threadComment} diffComment={diffComment} />
       </div>

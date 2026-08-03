@@ -41,6 +41,7 @@ export const ResolverCardAction = ({
     sessionId,
     status,
     commitSha,
+    surface: 'lane',
     isQueueStalled,
     hasOtherActiveResolvers,
   });
@@ -63,6 +64,7 @@ export const ResolverCardAction = ({
         <button
           type="button"
           disabled={!action.isEnabled}
+          title={actions.plan.note ?? undefined}
           onClick={() => {
             if (resolverActionOpensPanel({ action })) {
               onOpenPanel();
@@ -83,10 +85,7 @@ export const ResolverCardAction = ({
       {isArmed && (
         <ResolverConfirm
           action={action}
-          explanation={actions.explanation}
-          threadCount={actions.threadCount}
           className="w-full max-w-72 self-end"
-          onExplanationChange={actions.setExplanation}
           onConfirm={async () => {
             await actions.run(action.kind);
             setIsArmed(false);

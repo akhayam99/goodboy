@@ -1,19 +1,23 @@
-import { useEffect, useState } from 'react';
-import type { Agent, SessionId } from '@goodboy/types';
+import type { Agent, PendingResolution, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
 import { PROCEED_RESOLVER_PROMPT } from '../../../../shared/utils/proceedResolverPrompt';
 import { RERUN_RESOLVER_PROMPT } from '../../../../shared/utils/rerunResolverPrompt';
 import { agentThreadIds } from '../../agentThreadIds';
 import type { ResolverStatus } from '../../resolver-linkage';
-import { resolverCommitSha } from '../../resolverCommitSha';
 import {
   resolverActionPlan,
   type ResolverActionKind,
   type ResolverActionPlan,
+  type ResolverActionSurface,
 } from '../../resolverActions';
+import {
+  resolverThreadSettlements,
+  type ResolverThreadSettlement,
+} from '../../resolverThreadSettlements';
+import { resolverThreadTally, type ResolverThreadTally } from '../../resolverThreadTally';
 
-const EMPTY_PENDING: ReadonlyArray<never> = [];
+const EMPTY_PENDING: ReadonlyArray<PendingResolution> = [];
 const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
 
 type Params = {
@@ -21,24 +25,54 @@ type Params = {
   readonly sessionId: SessionId;
   readonly status: ResolverStatus;
   readonly commitSha: string | null;
+  readonly surface: ResolverActionSurface;
   readonly isQueueStalled: boolean;
   readonly hasOtherActiveResolvers: boolean;
 };
 
+export type ResolverThreadRunParams = {
+  readonly threadId: string;
+  readonly kind: ResolverActionKind;
+  readonly text: string;
+};
+
 export type ResolverActionsController = {
   readonly plan: ResolverActionPlan;
-  readonly explanation: string;
   readonly threadCount: number;
-  readonly setExplanation: (value: string) => void;
-  readonly resetExplanation: () => void;
+  readonly settlements: ReadonlyArray<ResolverThreadSettlement>;
+  readonly tally: ResolverThreadTally;
+  readonly prNumber: number | null;
+  readonly isBusy: boolean;
   readonly run: (kind: ResolverActionKind) => Promise<void>;
+  readonly runThread: (params: ResolverThreadRunParams) => Promise<void>;
 };
+
+const closureFor = ({
+  settlement,
+  text,
+}: {
+  readonly settlement: ResolverThreadSettlement;
+  readonly text: string;
+}): { commitSha?: string; reason?: string; reply?: string } => {
+  const trimmed = text.trim();
+  if (trimmed === '') {
+    return {};
+  }
+  return settlement.kind === 'wontfix' ? { reason: trimmed } : { reply: trimmed };
+};
+
+const defaultTextFor = ({
+  settlement,
+}: {
+  readonly settlement: ResolverThreadSettlement;
+}): string => settlement.reason ?? settlement.reply ?? '';
 
 export const useResolverActions = ({
   agent,
   sessionId,
   status,
   commitSha,
+  surface,
   isQueueStalled,
   hasOtherActiveResolvers,
 }: Params): ResolverActionsController => {
@@ -55,94 +89,150 @@ export const useResolverActions = ({
   const pending =
     useAppStore((state) => state.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
   const outcomes = useAppStore((state) => state.resolverThreadOutcomes[agent.id]) ?? EMPTY_OUTCOMES;
-  const [edited, setEdited] = useState<string | null>(null);
-
-  useEffect(() => {
-    setEdited(null);
-  }, [agent.id]);
 
   const threadIds = agentThreadIds(agent);
-  const fromAgent = threadIds
-    .map((id) => {
-      const outcome = outcomes[id];
-      return outcome?.kind === 'wontfix' ? outcome.reason : null;
-    })
-    .find((value) => value != null && value.trim() !== '');
-  const explanation = edited ?? fromAgent ?? '';
-
-  const pendingResolutions = pending.filter((resolution) =>
-    threadIds.includes(resolution.threadId),
-  );
-  const resolvedTargets = Object.entries(outcomes).flatMap(([targetThreadId, outcome]) =>
-    outcome.kind === 'resolved' ? [{ threadId: targetThreadId, commitSha: outcome.commitSha }] : [],
-  );
-  const effectiveCommitSha = resolverCommitSha({
+  const settlements = resolverThreadSettlements({
     threadIds,
     outcomes,
     pendingResolutions: pending,
-    reportedSha: commitSha,
   });
+  const tally = resolverThreadTally({ settlements });
+
+  const queuedThreadIds = settlements
+    .filter((settlement) => settlement.isQueued)
+    .map((settlement) => settlement.threadId);
   const plan = resolverActionPlan({
     agent,
     status,
     turnState,
-    commitSha: effectiveCommitSha,
-    queuedThreadIds: pendingResolutions.map((resolution) => resolution.threadId),
+    commitSha,
+    tally,
+    surface,
+    queuedThreadIds,
     prNumber,
     isQueueStalled,
     hasOtherActiveResolvers,
   });
 
-  const queueTargets =
-    resolvedTargets.length > 0
-      ? resolvedTargets
-      : effectiveCommitSha !== null
-        ? threadIds.map((targetThreadId) => ({
-            threadId: targetThreadId,
-            commitSha: effectiveCommitSha,
-          }))
-        : [];
+  const queueOne = async ({
+    threadId,
+    sha,
+    reply,
+  }: {
+    readonly threadId: string;
+    readonly sha: string;
+    readonly reply: string | null;
+  }) => {
+    if (prNumber === null) {
+      return;
+    }
+    await queueResolution(sessionId, {
+      threadId,
+      commitSha: sha,
+      prNumber,
+      outcome: 'resolved',
+      ...(reply !== null && { reply }),
+    });
+  };
+
+  const queueTargets = settlements.flatMap((settlement) => {
+    if (settlement.kind === 'resolved' && settlement.commitSha !== null && !settlement.isQueued) {
+      return [
+        { threadId: settlement.threadId, sha: settlement.commitSha, reply: settlement.reply },
+      ];
+    }
+    if (
+      settlement.kind === 'open' &&
+      settlements.length === 1 &&
+      tally.settled === 0 &&
+      commitSha !== null
+    ) {
+      return [{ threadId: settlement.threadId, sha: commitSha, reply: null }];
+    }
+    return [];
+  });
+
+  const runThread = async ({ threadId, kind, text }: ResolverThreadRunParams) => {
+    const settlement = settlements.find((candidate) => candidate.threadId === threadId);
+    if (settlement === undefined) {
+      return;
+    }
+    if (kind === 'queue') {
+      const sha = settlement.commitSha ?? commitSha;
+      if (sha === null) {
+        return;
+      }
+      await queueOne({ threadId, sha, reply: text.trim() === '' ? settlement.reply : text.trim() });
+      return;
+    }
+    if (kind === 'dequeue') {
+      await dequeueResolution(sessionId, threadId);
+      return;
+    }
+    if (kind === 'explain') {
+      const closure = closureFor({ settlement, text });
+      if (Object.keys(closure).length === 0) {
+        return;
+      }
+      await resolveGithubThread(sessionId, threadId, closure);
+      return;
+    }
+    if (kind === 'forceResolve') {
+      await resolveGithubThread(sessionId, threadId, closureFor({ settlement, text }));
+      return;
+    }
+    if (kind === 'answer') {
+      await selectAgent(sessionId, agent.id);
+      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      window.dispatchEvent(new CustomEvent('goodboy:focus-composer'));
+    }
+  };
+
+  const closeSettled = async ({ includeOpen }: { readonly includeOpen: boolean }) => {
+    for (const settlement of settlements) {
+      if (settlement.kind === 'resolved') {
+        continue;
+      }
+      if (settlement.kind === 'open' && !includeOpen) {
+        continue;
+      }
+      const text = defaultTextFor({ settlement });
+      if (!includeOpen && text.trim() === '') {
+        continue;
+      }
+      await resolveGithubThread(sessionId, settlement.threadId, closureFor({ settlement, text }));
+    }
+  };
 
   const run = async (kind: ResolverActionKind) => {
+    if (kind === 'review') {
+      return;
+    }
     if (kind === 'push') {
-      if (threadIds.length === 0 || effectiveCommitSha === null) {
+      if (threadIds.length === 0) {
         return;
       }
       await resolveAgentThreads(sessionId, agent.id);
       return;
     }
     if (kind === 'queue') {
-      if (prNumber === null) {
-        return;
-      }
       for (const target of queueTargets) {
-        await queueResolution(sessionId, { ...target, prNumber });
+        await queueOne(target);
       }
       return;
     }
     if (kind === 'dequeue') {
-      for (const resolution of pendingResolutions) {
-        await dequeueResolution(sessionId, resolution.threadId);
+      for (const threadId of queuedThreadIds) {
+        await dequeueResolution(sessionId, threadId);
       }
       return;
     }
-    if (kind === 'explain' || kind === 'forceResolve') {
-      const trimmed = explanation.trim();
-      if (kind === 'explain' && trimmed === '') {
-        return;
-      }
-      let allResolved = threadIds.length > 0;
-      for (const targetThreadId of threadIds) {
-        const didResolve = await resolveGithubThread(
-          sessionId,
-          targetThreadId,
-          trimmed !== '' ? { reason: trimmed } : {},
-        );
-        allResolved = allResolved && didResolve;
-      }
-      if (allResolved) {
-        setEdited(null);
-      }
+    if (kind === 'explain') {
+      await closeSettled({ includeOpen: false });
+      return;
+    }
+    if (kind === 'forceResolve') {
+      await closeSettled({ includeOpen: true });
       return;
     }
     if (kind === 'proceed') {
@@ -169,10 +259,12 @@ export const useResolverActions = ({
 
   return {
     plan,
-    explanation,
     threadCount: threadIds.length,
-    setExplanation: setEdited,
-    resetExplanation: () => setEdited(null),
+    settlements,
+    tally,
+    prNumber,
+    isBusy: turnState?.kind === 'running' || turnState?.kind === 'starting',
     run,
+    runThread,
   };
 };

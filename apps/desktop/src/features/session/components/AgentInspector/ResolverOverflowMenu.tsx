@@ -106,9 +106,6 @@ export const ResolverOverflowMenu = ({
             <div className="p-2">
               <ResolverConfirm
                 action={armedAction}
-                explanation={actions.explanation}
-                threadCount={actions.threadCount}
-                onExplanationChange={actions.setExplanation}
                 onConfirm={async () => {
                   await actions.run(armedAction.kind);
                   close();
@@ -143,10 +140,7 @@ export const ResolverOverflowMenu = ({
                     key={action.kind}
                     type="button"
                     role="menuitem"
-                    onClick={() => {
-                      actions.resetExplanation();
-                      setArmed(action.kind);
-                    }}
+                    onClick={() => setArmed(action.kind)}
                     className={cn(
                       ITEM_CLASS,
                       action.role === 'danger'

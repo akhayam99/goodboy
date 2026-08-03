@@ -25,9 +25,6 @@ export const ResolverActionBlock = ({ actions }: Props) => {
     return (
       <ResolverConfirm
         action={armedAction}
-        explanation={actions.explanation}
-        threadCount={actions.threadCount}
-        onExplanationChange={actions.setExplanation}
         onConfirm={async () => {
           await actions.run(armedAction.kind);
           setArmed(null);
@@ -59,7 +56,6 @@ export const ResolverActionBlock = ({ actions }: Props) => {
               void actions.run(action.kind);
               return;
             }
-            actions.resetExplanation();
             setArmed(action.kind);
           }}
         >
@@ -81,7 +77,6 @@ export const ResolverActionBlock = ({ actions }: Props) => {
               void actions.run(action.kind);
               return;
             }
-            actions.resetExplanation();
             setArmed(action.kind);
           }}
         >
