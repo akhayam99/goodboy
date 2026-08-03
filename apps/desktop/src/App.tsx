@@ -143,6 +143,21 @@ export const App = () => {
   const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
 
+  const closeAllStudios = useCallback(() => {
+    setWorkflowStudioOpen(false);
+    setGithubStudioOpen(false);
+    setProviderStudioOpen(false);
+    setBudgetStudioOpen(false);
+    setImpactStudioOpen(false);
+    setChangelogStudioOpen(false);
+    setLinearStudioOpen(false);
+    setSentryStudioOpen(false);
+    setGitlabStudioOpen(false);
+    setAppSettingsOpen(false);
+    setGuideStudioOpen(false);
+    setAddWorkspaceOpen(false);
+  }, []);
+
   useEffect(() => {
     void hydrate();
     if (import.meta.env.PROD) {
@@ -156,36 +171,15 @@ export const App = () => {
   useWindowPresence();
   useZoomShortcuts();
 
-  // Stateless overlay-open listeners (all with empty deps) registered under one hook:
-  // each handler only touches stable setters or reads fresh state via useAppStore.getState().
-  // Moved verbatim — no open/close behavior changed.
   useEffect(() => {
     const onOpenSettings = (event: Event) => {
       const detail = (event as CustomEvent<{ section?: string }>).detail;
-      setWorkflowStudioOpen(false);
-      setGithubStudioOpen(false);
-      setProviderStudioOpen(false);
-      setBudgetStudioOpen(false);
-      setLinearStudioOpen(false);
-      setSentryStudioOpen(false);
-      setGitlabStudioOpen(false);
-      setGuideStudioOpen(false);
-      setChangelogStudioOpen(false);
-      setAddWorkspaceOpen(false);
+      closeAllStudios();
       setAppSettingsFocus(detail?.section);
       setAppSettingsOpen(true);
     };
     const onOpenGuide = () => {
-      setWorkflowStudioOpen(false);
-      setGithubStudioOpen(false);
-      setProviderStudioOpen(false);
-      setBudgetStudioOpen(false);
-      setLinearStudioOpen(false);
-      setSentryStudioOpen(false);
-      setGitlabStudioOpen(false);
-      setAppSettingsOpen(false);
-      setChangelogStudioOpen(false);
-      setAddWorkspaceOpen(false);
+      closeAllStudios();
       setGuideStudioOpen(true);
     };
     const onOpenGithubStudio = (event: Event) => {
@@ -197,16 +191,7 @@ export const App = () => {
           issueExternalId?: string;
         }>
       ).detail;
-      setWorkflowStudioOpen(false);
-      setProviderStudioOpen(false);
-      setBudgetStudioOpen(false);
-      setLinearStudioOpen(false);
-      setSentryStudioOpen(false);
-      setGitlabStudioOpen(false);
-      setAppSettingsOpen(false);
-      setGuideStudioOpen(false);
-      setChangelogStudioOpen(false);
-      setAddWorkspaceOpen(false);
+      closeAllStudios();
       setGithubStudioSession(detail?.sessionId ?? null);
       setGithubStudioPrNumber(detail?.prNumber ?? null);
       setGithubStudioThreadId(detail?.threadId ?? null);
@@ -239,78 +224,32 @@ export const App = () => {
       const detail = (
         event as CustomEvent<{ providerId?: ProviderId; action?: ProviderLifecycleAction }>
       ).detail;
-      setWorkflowStudioOpen(false);
-      setGithubStudioOpen(false);
-      setBudgetStudioOpen(false);
-      setLinearStudioOpen(false);
-      setSentryStudioOpen(false);
-      setGitlabStudioOpen(false);
-      setAppSettingsOpen(false);
-      setGuideStudioOpen(false);
-      setChangelogStudioOpen(false);
-      setAddWorkspaceOpen(false);
+      closeAllStudios();
       setProviderStudioFocus(detail?.providerId ?? null);
       setProviderStudioAction(detail?.action ?? null);
       setProviderStudioOpen(true);
     };
     const onOpenBudgetStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ scope?: BudgetScope }>).detail;
-      setWorkflowStudioOpen(false);
-      setGithubStudioOpen(false);
-      setProviderStudioOpen(false);
-      setImpactStudioOpen(false);
-      setLinearStudioOpen(false);
-      setSentryStudioOpen(false);
-      setGitlabStudioOpen(false);
-      setAppSettingsOpen(false);
-      setGuideStudioOpen(false);
-      setChangelogStudioOpen(false);
-      setAddWorkspaceOpen(false);
+      closeAllStudios();
       setBudgetStudioScope(detail?.scope);
       setBudgetStudioOpen(true);
     };
     const onOpenLinearStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setWorkflowStudioOpen(false);
-      setGithubStudioOpen(false);
-      setProviderStudioOpen(false);
-      setBudgetStudioOpen(false);
-      setSentryStudioOpen(false);
-      setGitlabStudioOpen(false);
-      setAppSettingsOpen(false);
-      setGuideStudioOpen(false);
-      setChangelogStudioOpen(false);
-      setAddWorkspaceOpen(false);
+      closeAllStudios();
       setLinearStudioFocus(detail?.issueExternalId ?? null);
       setLinearStudioOpen(true);
     };
     const onOpenSentryStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setWorkflowStudioOpen(false);
-      setGithubStudioOpen(false);
-      setProviderStudioOpen(false);
-      setBudgetStudioOpen(false);
-      setLinearStudioOpen(false);
-      setGitlabStudioOpen(false);
-      setAppSettingsOpen(false);
-      setGuideStudioOpen(false);
-      setChangelogStudioOpen(false);
-      setAddWorkspaceOpen(false);
+      closeAllStudios();
       setSentryStudioFocus(detail?.issueExternalId ?? null);
       setSentryStudioOpen(true);
     };
     const onOpenGitlabStudio = (event: Event) => {
       const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
-      setWorkflowStudioOpen(false);
-      setGithubStudioOpen(false);
-      setProviderStudioOpen(false);
-      setBudgetStudioOpen(false);
-      setLinearStudioOpen(false);
-      setSentryStudioOpen(false);
-      setAppSettingsOpen(false);
-      setGuideStudioOpen(false);
-      setChangelogStudioOpen(false);
-      setAddWorkspaceOpen(false);
+      closeAllStudios();
       setGitlabStudioFocus(detail?.issueExternalId ?? null);
       setGitlabStudioOpen(true);
     };
@@ -355,7 +294,7 @@ export const App = () => {
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
       window.removeEventListener('goodboy:open-pair-device', onPairDevice);
     };
-  }, []);
+  }, [closeAllStudios]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -478,21 +417,6 @@ export const App = () => {
       return next.length > KEEP_ALIVE_CAP ? next.slice(next.length - KEEP_ALIVE_CAP) : next;
     });
   }, [currentSession?.id]);
-
-  const closeAllStudios = useCallback(() => {
-    setWorkflowStudioOpen(false);
-    setGithubStudioOpen(false);
-    setProviderStudioOpen(false);
-    setBudgetStudioOpen(false);
-    setImpactStudioOpen(false);
-    setChangelogStudioOpen(false);
-    setLinearStudioOpen(false);
-    setSentryStudioOpen(false);
-    setGitlabStudioOpen(false);
-    setAppSettingsOpen(false);
-    setGuideStudioOpen(false);
-    setAddWorkspaceOpen(false);
-  }, []);
 
   const activeStudio: string | null = workflowStudioOpen
     ? 'workflow'
