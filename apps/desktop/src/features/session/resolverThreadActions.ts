@@ -58,6 +58,15 @@ const POST_AND_CLOSE: ResolverAction = {
   opensInspector: false,
 };
 
+const FIX_ANYWAY: ResolverAction = {
+  kind: 'fix',
+  label: 'Fix it anyway',
+  role: 'neutral',
+  isEnabled: true,
+  confirm: null,
+  opensInspector: false,
+};
+
 const queueAction = ({ isEnabled }: { readonly isEnabled: boolean }): ResolverAction => ({
   kind: 'queue',
   label: 'Add to batch',
@@ -84,5 +93,5 @@ export const resolverThreadActions = ({
   if (settlement.kind === 'open') {
     return { primary: ANSWER, overflow: isBusy ? [] : [MARK_RESOLVED] };
   }
-  return { primary: POST_AND_CLOSE, overflow: [] };
+  return { primary: POST_AND_CLOSE, overflow: isBusy ? [] : [FIX_ANYWAY] };
 };

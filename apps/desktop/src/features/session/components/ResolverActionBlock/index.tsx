@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@goodboy/ui';
 import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
+import { RESOLVER_ACTION_BUSY_LABEL } from '../../resolverActionBusyLabel';
 import type { ResolverActionKind } from '../../resolverActions';
 import type { ResolverActionsController } from '../../hooks/useResolverActions';
 import { ResolverConfirm } from '../ResolverConfirm';
@@ -25,6 +26,7 @@ export const ResolverActionBlock = ({ actions }: Props) => {
     return (
       <ResolverConfirm
         action={armedAction}
+        isBusy={actions.runningAction === armedAction.kind}
         onConfirm={async () => {
           await actions.run(armedAction.kind);
           setArmed(null);
@@ -36,6 +38,7 @@ export const ResolverActionBlock = ({ actions }: Props) => {
 
   const PrimaryIcon = plan.primary === null ? null : RESOLVER_ACTION_ICON[plan.primary.kind];
   const SecondaryIcon = plan.secondary === null ? null : RESOLVER_ACTION_ICON[plan.secondary.kind];
+  const running = actions.runningAction;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -46,7 +49,9 @@ export const ResolverActionBlock = ({ actions }: Props) => {
         <Button
           size="sm"
           variant="primary"
-          disabled={!plan.primary.isEnabled}
+          isBusy={running === plan.primary.kind}
+          busyLabel={RESOLVER_ACTION_BUSY_LABEL[plan.primary.kind]}
+          disabled={!plan.primary.isEnabled || running !== null}
           onClick={() => {
             const action = plan.primary;
             if (action === null) {
@@ -67,7 +72,9 @@ export const ResolverActionBlock = ({ actions }: Props) => {
         <Button
           size="sm"
           variant="ghost"
-          disabled={!plan.secondary.isEnabled}
+          isBusy={running === plan.secondary.kind}
+          busyLabel={RESOLVER_ACTION_BUSY_LABEL[plan.secondary.kind]}
+          disabled={!plan.secondary.isEnabled || running !== null}
           onClick={() => {
             const action = plan.secondary;
             if (action === null) {

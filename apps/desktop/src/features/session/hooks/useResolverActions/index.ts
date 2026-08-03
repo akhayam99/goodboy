@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Agent, PendingResolution, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
@@ -16,6 +17,7 @@ import {
   type ResolverThreadSettlement,
 } from '../../resolverThreadSettlements';
 import { resolverThreadTally, type ResolverThreadTally } from '../../resolverThreadTally';
+import { resolverFixThreadPrompt } from '../../resolverFixThreadPrompt';
 import { useClosedThreadIds } from '../useClosedThreadIds';
 
 const EMPTY_PENDING: ReadonlyArray<PendingResolution> = [];
@@ -37,6 +39,11 @@ export type ResolverThreadRunParams = {
   readonly text: string;
 };
 
+export type ResolverRunningThreadAction = {
+  readonly threadId: string;
+  readonly kind: ResolverActionKind;
+};
+
 export type ResolverActionsController = {
   readonly plan: ResolverActionPlan;
   readonly threadCount: number;
@@ -44,6 +51,8 @@ export type ResolverActionsController = {
   readonly tally: ResolverThreadTally;
   readonly prNumber: number | null;
   readonly isBusy: boolean;
+  readonly runningAction: ResolverActionKind | null;
+  readonly runningThreadAction: ResolverRunningThreadAction | null;
   readonly run: (kind: ResolverActionKind) => Promise<void>;
   readonly runThread: (params: ResolverThreadRunParams) => Promise<void>;
 };
@@ -91,6 +100,9 @@ export const useResolverActions = ({
     useAppStore((state) => state.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
   const outcomes = useAppStore((state) => state.resolverThreadOutcomes[agent.id]) ?? EMPTY_OUTCOMES;
   const closedThreadIds = useClosedThreadIds({ sessionId });
+  const [runningAction, setRunningAction] = useState<ResolverActionKind | null>(null);
+  const [runningThreadAction, setRunningThreadAction] =
+    useState<ResolverRunningThreadAction | null>(null);
 
   const threadIds = agentThreadIds(agent);
   const settlements = resolverThreadSettlements({
@@ -158,7 +170,7 @@ export const useResolverActions = ({
     return [];
   });
 
-  const runThread = async ({ threadId, kind, text }: ResolverThreadRunParams) => {
+  const dispatchThread = async ({ threadId, kind, text }: ResolverThreadRunParams) => {
     const settlement = settlements.find((candidate) => candidate.threadId === threadId);
     if (settlement === undefined) {
       return;
@@ -187,6 +199,15 @@ export const useResolverActions = ({
       await resolveGithubThread(sessionId, threadId, closureFor({ settlement, text }));
       return;
     }
+    if (kind === 'fix') {
+      await selectAgent(sessionId, agent.id);
+      await sendTurn({
+        sessionId,
+        agentId: agent.id,
+        content: resolverFixThreadPrompt({ threadId }),
+      });
+      return;
+    }
     if (kind === 'answer') {
       await selectAgent(sessionId, agent.id);
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
@@ -210,8 +231,8 @@ export const useResolverActions = ({
     }
   };
 
-  const run = async (kind: ResolverActionKind) => {
-    if (kind === 'review') {
+  const dispatch = async (kind: ResolverActionKind) => {
+    if (kind === 'review' || kind === 'fix') {
       return;
     }
     if (kind === 'push') {
@@ -263,6 +284,24 @@ export const useResolverActions = ({
     await forceCloseResolver(sessionId, agent.id);
   };
 
+  const run = async (kind: ResolverActionKind) => {
+    setRunningAction(kind);
+    try {
+      await dispatch(kind);
+    } finally {
+      setRunningAction(null);
+    }
+  };
+
+  const runThread = async (params: ResolverThreadRunParams) => {
+    setRunningThreadAction({ threadId: params.threadId, kind: params.kind });
+    try {
+      await dispatchThread(params);
+    } finally {
+      setRunningThreadAction(null);
+    }
+  };
+
   return {
     plan,
     threadCount: threadIds.length,
@@ -270,6 +309,8 @@ export const useResolverActions = ({
     tally,
     prNumber,
     isBusy: turnState?.kind === 'running' || turnState?.kind === 'starting',
+    runningAction,
+    runningThreadAction,
     run,
     runThread,
   };

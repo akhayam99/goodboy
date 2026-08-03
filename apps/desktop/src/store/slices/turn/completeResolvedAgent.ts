@@ -121,10 +121,15 @@ export const completeResolvedAgent = async ({
     }
   }
   const markerCount = resolvedMarkers.length + wontfixMarkers.length + analysisMarkers.length;
+  const previousOutcomes = get().resolverThreadOutcomes[resolvedAgentId] ?? {};
+  const nextOutcomes: Record<string, ResolverThreadOutcome> =
+    markerCount === 0 ? previousOutcomes : { ...previousOutcomes, ...outcomes };
+  const verdictOutcomes = markerCount === 0 ? outcomes : nextOutcomes;
   const ownedThreadIds = ranAgent ? agentThreadIds(ranAgent) : [];
-  const settledThreadIds = ownedThreadIds.length > 0 ? ownedThreadIds : Object.keys(outcomes);
+  const settledThreadIds =
+    ownedThreadIds.length > 0 ? ownedThreadIds : Object.keys(verdictOutcomes);
   const kinds = settledThreadIds.flatMap((threadId) => {
-    const outcome = outcomes[threadId];
+    const outcome = verdictOutcomes[threadId];
     return outcome === undefined ? [] : [outcome.kind];
   });
   const hasOpenThread = kinds.length < settledThreadIds.length;
@@ -140,7 +145,7 @@ export const completeResolvedAgent = async ({
     resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
     resolverThreadOutcomes: {
       ...state.resolverThreadOutcomes,
-      [resolvedAgentId]: outcomes,
+      [resolvedAgentId]: nextOutcomes,
     },
   }));
   if (markerCount > 0) {
