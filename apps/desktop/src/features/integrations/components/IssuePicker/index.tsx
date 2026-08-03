@@ -13,6 +13,7 @@ type Props = {
   readonly value: IssueCandidate | null;
   readonly placeholder: string;
   readonly disabled: boolean;
+  readonly resolvePaste?: (rawValue: string) => IssueCandidate | null;
   readonly onOpen: () => void;
   readonly onPick: (candidate: IssueCandidate) => void;
   readonly onClear: () => void;
@@ -27,6 +28,7 @@ export const IssuePicker = ({
   value,
   placeholder,
   disabled,
+  resolvePaste,
   onOpen,
   onPick,
   onClear,
@@ -68,6 +70,12 @@ export const IssuePicker = ({
         row.identifier.toLowerCase().includes(needle) || row.title.toLowerCase().includes(needle),
     );
   }, [rows, query]);
+
+  const pasted = useMemo(
+    () => (resolvePaste == null ? null : resolvePaste(query)),
+    [resolvePaste, query],
+  );
+  const options = pasted != null ? [pasted] : filtered;
 
   const select = useCallback(
     (candidate: IssueCandidate) => {
@@ -115,7 +123,7 @@ export const IssuePicker = ({
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        setHighlightIdx((index) => Math.min(index + 1, filtered.length - 1));
+        setHighlightIdx((index) => Math.min(index + 1, options.length - 1));
         break;
       case 'ArrowUp':
         event.preventDefault();
@@ -123,7 +131,7 @@ export const IssuePicker = ({
         break;
       case 'Enter': {
         event.preventDefault();
-        const highlighted = filtered[highlightIdx];
+        const highlighted = options[highlightIdx];
         if (highlighted != null) {
           select(highlighted);
         }
@@ -195,7 +203,7 @@ export const IssuePicker = ({
         </button>
       </div>
 
-      {isOpen && isLoading && rows.length === 0 && (
+      {isOpen && pasted == null && isLoading && rows.length === 0 && (
         <div
           role="status"
           aria-label="Loading issues"
@@ -210,20 +218,20 @@ export const IssuePicker = ({
         </div>
       )}
 
-      {isOpen && error != null && (
+      {isOpen && pasted == null && error != null && (
         <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-xs text-danger shadow-lg">
           {error}
         </div>
       )}
 
-      {isOpen && error == null && filtered.length > 0 && (
+      {isOpen && (pasted != null || error == null) && options.length > 0 && (
         <ScrollFade
           className="absolute left-0 top-full z-50 mt-1 max-h-72 w-full rounded-md border border-border bg-subtle shadow-lg"
           viewportClassName="py-0.5"
           fadeFrom="subtle"
         >
           <ul ref={listRef} role="listbox">
-            {filtered.map((row, index) => (
+            {options.map((row, index) => (
               <li
                 key={`${row.provider}:${row.externalId}`}
                 role="option"
@@ -239,10 +247,18 @@ export const IssuePicker = ({
                 )}
               >
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="shrink-0 font-mono text-2xs text-muted-foreground">
-                    {row.identifier}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-foreground">{row.title}</span>
+                  {pasted == null ? (
+                    <>
+                      <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+                        {row.identifier}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-foreground">{row.title}</span>
+                    </>
+                  ) : (
+                    <span className="min-w-0 flex-1 truncate text-foreground">
+                      Link {row.identifier}
+                    </span>
+                  )}
                 </div>
               </li>
             ))}
@@ -250,7 +266,7 @@ export const IssuePicker = ({
         </ScrollFade>
       )}
 
-      {isOpen && error == null && !isLoading && isLoaded && filtered.length === 0 && (
+      {isOpen && error == null && !isLoading && isLoaded && options.length === 0 && (
         <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border border-border bg-subtle px-3 py-2 text-xs text-muted-foreground shadow-lg">
           <EmptyState
             icon={CONCEPT_ICONS.search}

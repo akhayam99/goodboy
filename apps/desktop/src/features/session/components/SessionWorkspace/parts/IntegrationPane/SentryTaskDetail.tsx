@@ -14,16 +14,19 @@ export const SentryTaskDetail = ({ workspaceId, task }: Props) => {
   });
 
   return (
-    <SentryIssueDetail
-      identifier={task.identifier}
-      title={task.title}
-      culprit={null}
-      level={null}
-      status={null}
-      permalink={task.url}
-      detail={detail}
-      isLoading={isLoading}
-      error={error}
-    />
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <SentryIssueDetail
+        identifier={task.identifier}
+        title={task.title}
+        culprit={null}
+        level={null}
+        status={null}
+        permalink={task.url}
+        detail={detail}
+        isLoading={isLoading}
+        error={error}
+        fit="fill"
+      />
+    </div>
   );
 };

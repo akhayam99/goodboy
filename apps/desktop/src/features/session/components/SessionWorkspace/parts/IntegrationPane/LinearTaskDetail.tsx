@@ -13,7 +13,11 @@ export const LinearTaskDetail = ({ workspaceId, issueId }: Props) => {
 
   if (isLoading) {
     return (
-      <div role="status" aria-label="Loading Linear issue" className="flex flex-col gap-3 py-2">
+      <div
+        role="status"
+        aria-label="Loading Linear issue"
+        className="flex min-w-0 flex-1 flex-col gap-3 px-6 py-5"
+      >
         <Skeleton className="h-4 w-2/3 rounded" />
         <Skeleton className="h-3 w-full rounded" />
         <Skeleton className="h-3 w-3/4 rounded" />
@@ -22,12 +26,16 @@ export const LinearTaskDetail = ({ workspaceId, issueId }: Props) => {
   }
 
   if (error != null) {
-    return <p className="text-sm text-danger">{error}</p>;
+    return <p className="px-6 py-5 text-sm text-danger">{error}</p>;
   }
 
   if (issue == null) {
     return null;
   }
 
-  return <LinearIssueDetail issue={issue} workspaceId={workspaceId} />;
+  return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <LinearIssueDetail issue={issue} workspaceId={workspaceId} fit="fill" />
+    </div>
+  );
 };
