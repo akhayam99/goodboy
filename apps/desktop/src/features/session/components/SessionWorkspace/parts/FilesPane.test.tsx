@@ -43,7 +43,14 @@ vi.mock('../../../../permissions/components/DiffViewerDialog', () => ({
 }));
 
 vi.mock('./FileVersionsPane', () => ({
-  FileVersionsPane: () => <div data-testid="file-versions" />,
+  FileVersionsPane: ({ actions, onClose }: { actions?: React.ReactNode; onClose: () => void }) => (
+    <div data-testid="file-versions">
+      {actions}
+      <button type="button" onClick={onClose}>
+        Close
+      </button>
+    </div>
+  ),
 }));
 
 import { FilesPane } from './FilesPane';
@@ -73,6 +80,17 @@ const renderPane = ({ worktreePath }: { readonly worktreePath: string | null }) 
       sessionDir="/tmp/wt"
       worktreePath={worktreePath}
       isBranchless={false}
+      onClose={() => undefined}
+    />,
+  );
+
+const renderBranchlessPane = () =>
+  render(
+    <FilesPane
+      sessionId={SESSION_ID}
+      sessionDir="/tmp/wt"
+      worktreePath={null}
+      isBranchless
       onClose={() => undefined}
     />,
   );
@@ -111,5 +129,29 @@ describe('FilesPane', () => {
 
     expect(screen.getByText('No worktree for this session')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+  });
+
+  it('carries the way back into the branchless file versions pane too', () => {
+    reset();
+    setActiveLens(set)(SESSION_ID, 'resolve');
+    setActiveLens(set)(SESSION_ID, 'files');
+
+    renderBranchlessPane();
+
+    expect(screen.getByTestId('file-versions')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect((state['activeLens'] as Record<string, string>)[SESSION_ID]).toBe('resolve');
+  });
+
+  it('keeps back and close as two distinct controls on the branchless file versions pane', () => {
+    reset();
+    setActiveLens(set)(SESSION_ID, 'resolve');
+    setActiveLens(set)(SESSION_ID, 'files');
+
+    renderBranchlessPane();
+
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
   });
 });

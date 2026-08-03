@@ -115,4 +115,24 @@ describe('FileVersionsPane', () => {
       sessionDir: '/tmp/session-1',
     });
   });
+
+  it('closes to the overview from the empty state, keeping the passed-in back action separate', () => {
+    store.sessionFileVersions = {} as Record<SessionId, ReadonlyArray<FileVersion>>;
+    const onClose = vi.fn();
+
+    render(
+      <FileVersionsPane
+        sessionId={SESSION_ID}
+        sessionDir="/tmp/session-1"
+        onClose={onClose}
+        actions={<button type="button">Back</button>}
+      />,
+    );
+
+    expect(screen.getByText('No versions yet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
 });

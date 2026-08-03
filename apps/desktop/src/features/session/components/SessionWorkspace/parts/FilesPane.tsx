@@ -43,7 +43,14 @@ export const FilesPane = ({
         </PaneShell>
       );
     }
-    return <FileVersionsPane sessionId={sessionId} sessionDir={sessionDir} onClose={onClose} />;
+    return (
+      <FileVersionsPane
+        sessionId={sessionId}
+        sessionDir={sessionDir}
+        onClose={onClose}
+        actions={backButton}
+      />
+    );
   }
   if (worktreePath == null) {
     return (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Divider } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
@@ -16,11 +17,12 @@ type Props = {
   sessionId: SessionId;
   sessionDir: string;
   onClose: () => void;
+  actions?: ReactNode;
 };
 
 const EMPTY_VERSIONS: ReadonlyArray<FileVersion> = [];
 
-export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
+export const FileVersionsPane = ({ sessionId, sessionDir, onClose, actions = null }: Props) => {
   const versions = useAppStore(
     useShallow((state) => state.sessionFileVersions[sessionId] ?? EMPTY_VERSIONS),
   );
@@ -92,37 +94,40 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
       description="Before an agent changes a file in this session, Goodboy stores the previous copy here so you can bring it back."
       measure={loading || groups.length > 0 ? 'full' : 'pane'}
       actions={
-        deleteAllArmed ? (
-          <>
+        <>
+          {actions}
+          {deleteAllArmed ? (
+            <>
+              <button
+                type="button"
+                onClick={() => void onDeleteAll()}
+                disabled={deletingAll}
+                className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 size={12} aria-hidden />
+                {deletingAll ? 'Deleting' : 'Confirm delete all'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteAllArmed(false)}
+                disabled={deletingAll}
+                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              onClick={() => void onDeleteAll()}
-              disabled={deletingAll}
-              className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => setDeleteAllArmed(true)}
+              disabled={versions.length === 0 || loading}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={12} aria-hidden />
-              {deletingAll ? 'Deleting' : 'Confirm delete all'}
+              Delete all
             </button>
-            <button
-              type="button"
-              onClick={() => setDeleteAllArmed(false)}
-              disabled={deletingAll}
-              className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Cancel
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setDeleteAllArmed(true)}
-            disabled={versions.length === 0 || loading}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Trash2 size={12} aria-hidden />
-            Delete all
-          </button>
-        )
+          )}
+        </>
       }
     >
       {loading || groups.length > 0 ? (
@@ -164,7 +169,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
               onClick={onClose}
               className="inline-flex rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
             >
-              Back
+              Close
             </button>
           }
         />
