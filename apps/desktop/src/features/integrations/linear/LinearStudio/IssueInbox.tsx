@@ -70,10 +70,12 @@ export const IssueInbox = ({
       {loading && groups.length === 0 ? (
         <div role="status" aria-label="Loading issues" className="flex flex-col gap-1 px-3 pb-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-2.5 px-2.5 py-2">
-              <Skeleton className="size-1.5 shrink-0 rounded-full" />
-              <Skeleton className="h-3 w-12 shrink-0 rounded" />
-              <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+            <div key={i} className="flex flex-col gap-1.5 px-2.5 py-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="size-1.5 shrink-0 rounded-full" />
+                <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+              </div>
+              <Skeleton className="h-2.5 w-16 rounded" />
             </div>
           ))}
         </div>
@@ -128,37 +130,44 @@ export const IssueInbox = ({
                           onClick={() => onSelect(row.issue)}
                           title={row.issue.title}
                           ariaCurrent={active}
-                          className="items-center gap-2.5 px-2.5 py-2"
+                          className="flex-col items-stretch gap-1 px-2.5 py-2"
                         >
-                          <LinearPriority
-                            appearance="dot"
-                            priority={row.issue.priority}
-                            priorityLabel={row.issue.priorityLabel}
-                          />
-                          <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground/70">
-                            {row.issue.identifier}
+                          <span className="flex items-center gap-2">
+                            <LinearPriority
+                              appearance="dot"
+                              priority={row.issue.priority}
+                              priorityLabel={row.issue.priorityLabel}
+                            />
+                            <span className="min-w-0 flex-1 truncate text-xs">
+                              {row.issue.title}
+                            </span>
                           </span>
-                          <span className="min-w-0 flex-1 truncate text-xs">{row.issue.title}</span>
-                          <InboxStatusIcons
-                            sessionIcon={
-                              row.sessionId != null ? (
-                                <MessagesSquare
-                                  size={11}
-                                  aria-label="session launched"
-                                  className="text-success"
-                                />
-                              ) : null
-                            }
-                            codeHostIcon={
-                              linkedPullRequest != null ? (
-                                <CodeHostIcon
-                                  size={11}
-                                  aria-label="has linked pull request"
-                                  className="text-muted-foreground/70"
-                                />
-                              ) : null
-                            }
-                          />
+                          <span className="flex items-center gap-1.5 text-2xs text-muted-foreground/70">
+                            <span className="shrink-0 font-mono tabular-nums">
+                              {row.issue.identifier}
+                            </span>
+                            <InboxStatusIcons
+                              className="ml-auto"
+                              sessionIcon={
+                                row.sessionId != null ? (
+                                  <MessagesSquare
+                                    size={11}
+                                    aria-label="session launched"
+                                    className="text-success"
+                                  />
+                                ) : null
+                              }
+                              codeHostIcon={
+                                linkedPullRequest != null ? (
+                                  <CodeHostIcon
+                                    size={11}
+                                    aria-label="has linked pull request"
+                                    className="text-muted-foreground/70"
+                                  />
+                                ) : null
+                              }
+                            />
+                          </span>
                         </SelectableRow>
                       </li>
                     );

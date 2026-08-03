@@ -75,9 +75,12 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefre
           aria-label="Loading merge requests"
         >
           {Array.from({ length: 7 }).map((_, index) => (
-            <div key={index} className="flex items-center gap-2.5 px-2.5 py-2">
-              <Skeleton className="h-3 w-8 shrink-0 rounded" />
-              <Skeleton className="h-3 flex-1 rounded" />
+            <div key={index} className="flex flex-col gap-1.5 px-2.5 py-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-3 w-3 shrink-0 rounded" />
+                <Skeleton className="h-3 flex-1 rounded" />
+              </div>
+              <Skeleton className="h-2.5 w-16 rounded" />
             </div>
           ))}
         </div>
@@ -128,29 +131,35 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefre
                           onClick={() => onSelect(mr)}
                           title={mr.title}
                           ariaCurrent={isActive}
-                          className="items-center gap-2.5 px-2.5 py-2"
+                          className="flex-col items-stretch gap-1 px-2.5 py-2"
                         >
-                          <GitMerge
-                            size={12}
-                            aria-hidden
-                            className="shrink-0 text-provider-gitlab"
-                          />
-                          <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground/70">
-                            !{mr.iid}
+                          <span className="flex items-center gap-2">
+                            <GitMerge
+                              size={12}
+                              aria-hidden
+                              className="shrink-0 text-provider-gitlab"
+                            />
+                            <span className="min-w-0 flex-1 truncate text-xs">{mr.title}</span>
                           </span>
-                          <span className="min-w-0 flex-1 truncate text-xs">{mr.title}</span>
-                          <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">
-                            {shortDate({ iso: mr.updatedAt })}
+                          <span className="flex items-center gap-1.5 text-2xs text-muted-foreground/70">
+                            <span className="shrink-0 font-mono tabular-nums">!{mr.iid}</span>
+                            <span aria-hidden className="text-muted-foreground/40">
+                              ·
+                            </span>
+                            <span className="shrink-0 tabular-nums text-muted-foreground/50">
+                              {shortDate({ iso: mr.updatedAt })}
+                            </span>
+                            <InboxStatusIcons
+                              className="ml-auto"
+                              codeHostIcon={
+                                <CONCEPT_ICONS.gitlab
+                                  size={11}
+                                  aria-label="GitLab merge request"
+                                  className="text-muted-foreground/70"
+                                />
+                              }
+                            />
                           </span>
-                          <InboxStatusIcons
-                            codeHostIcon={
-                              <CONCEPT_ICONS.gitlab
-                                size={11}
-                                aria-label="GitLab merge request"
-                                className="text-muted-foreground/70"
-                              />
-                            }
-                          />
                         </SelectableRow>
                       </li>
                     );
