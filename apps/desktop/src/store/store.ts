@@ -126,6 +126,8 @@ import { createWorktreesSlice } from './slices/worktrees';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
+import { createChangelogSlice } from './slices/changelog';
+import { initialChangelogState } from './slices/changelog/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
@@ -148,6 +150,8 @@ export type AppActions = {
   hydrate(): Promise<void>;
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
+  loadChangelog(): Promise<void>;
+  reloadChangelog(): Promise<void>;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   openWorkspace(id: WorkspaceId, title: string): Promise<void>;
@@ -642,6 +646,7 @@ export type AppStore = AppState & AppActions;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
+  ...initialChangelogState,
   ...createInitialSessionViewState({}),
   workspaces: [],
   workspaceIntegrations: {},
@@ -794,6 +799,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createWorktreesSlice(set, get),
   ...createBootSlice(set, get),
   ...createUpdaterSlice(set, get),
+  ...createChangelogSlice(set, get),
 }));
 
 export const useResolvedSettings = (sessionId: SessionId | null): ResolvedSettings => {

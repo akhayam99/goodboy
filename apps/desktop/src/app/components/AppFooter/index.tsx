@@ -56,6 +56,7 @@ type Props = {
   onOpenProviders: () => void;
   onOpenBudget: () => void;
   onOpenImpact: () => void;
+  onOpenChangelog: () => void;
   onOpenGithub: () => void;
   onOpenLinear: () => void;
   onOpenSentry: () => void;
@@ -74,6 +75,7 @@ export const AppFooter = ({
   onOpenProviders,
   onOpenBudget,
   onOpenImpact,
+  onOpenChangelog,
   onOpenGithub,
   onOpenLinear,
   onOpenSentry,
@@ -180,6 +182,14 @@ export const AppFooter = ({
             title="see how orchestration changed the way this workspace works"
             onClick={onOpenImpact}
             active={activeStudio === 'impact'}
+          />
+          <FooterButton
+            icon={<CONCEPT_ICONS.changelog size={12} aria-hidden />}
+            label="Changelog"
+            tone={CONCEPT_TONE.changelog}
+            title="see what changed, release by release"
+            onClick={onOpenChangelog}
+            active={activeStudio === 'changelog'}
           />
         </div>
       </div>

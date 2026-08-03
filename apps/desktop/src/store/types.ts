@@ -60,6 +60,7 @@ import type { TerminalTab, TerminalTabId } from '../shared/types/terminal';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
 import type { ProviderSpendEntry } from './slices/budget';
+import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderLifecycleMap } from './slices/providers';
 import type { ReviewPrsState } from './slices/review-prs/types';
 import type { DiffFocus, LensHistory, LensKind, SessionStudio } from './slices/session-view';
@@ -152,7 +153,9 @@ export type SummarizerSessionStatus = {
   } | null;
 };
 
-export type AppState = UpdaterState & {
+type AppSliceState = UpdaterState & ChangelogState;
+
+export type AppState = AppSliceState & {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
