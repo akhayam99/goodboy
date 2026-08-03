@@ -343,7 +343,14 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
       >
         {showAnswered ? (
           <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
-        ) : null}
+        ) : (
+          <LensEmptyState
+            tone={CONCEPT_TONE.questions}
+            icon={CONCEPT_ICONS.questions}
+            title="Nothing needs you right now"
+            description={`Every question on this session is answered. Reveal the ${answered.length} answered ${answered.length === 1 ? 'one' : 'ones'} to reread them.`}
+          />
+        )}
       </PaneShell>
     );
   }
