@@ -1,4 +1,5 @@
 import { cn } from '@goodboy/ui';
+import { markdownPreview } from '../../../../shared/utils/markdownPreview';
 
 type CommentSnippetProps = {
   readonly author?: string | null;
@@ -10,7 +11,7 @@ type CommentSnippetProps = {
 export const CommentSnippet = ({ author, location, body, className }: CommentSnippetProps) => {
   const who = author?.trim() || 'reviewer';
   const where = location?.trim() || 'conversation';
-  const text = body?.trim() ?? '';
+  const text = markdownPreview({ text: body });
   return (
     <div className={cn('flex flex-col gap-0.5 text-2xs', className)}>
       <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground/70">

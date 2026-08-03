@@ -1,3 +1,5 @@
+import { markdownPreview } from '../../shared/utils/markdownPreview';
+
 type Params = {
   readonly text: string;
 };
@@ -6,18 +8,8 @@ const MAX_LENGTH = 120;
 
 const SENTENCE_END = /(?<=[.!?])\s/;
 
-const stripMarkup = ({ text }: Params): string =>
-  text
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/`([^`]*)`/g, '$1')
-    .replace(/^\s*[-*+]\s+/gm, '')
-    .replace(/^\s*#{1,6}\s+/gm, '')
-    .replace(/\*\*([^*]*)\*\*/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim();
-
 export const resolverReplySummary = ({ text }: Params): string => {
-  const flat = stripMarkup({ text });
+  const flat = markdownPreview({ text });
   if (flat === '') {
     return '';
   }
