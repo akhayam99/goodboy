@@ -16,8 +16,8 @@ const ITEMS: ReadonlyArray<Qa> = [
     q: 'Is it free?',
     a: (
       <>
-        Yes. Goodboy is open source under the <B>MIT license</B>. You bring your own agent logins
-        and plans.
+        Yes. Goodboy is open source under the <B>MIT license</B>. It runs on the agent subscriptions
+        and logins you already have.
       </>
     ),
   },
@@ -26,8 +26,8 @@ const ITEMS: ReadonlyArray<Qa> = [
     a: (
       <>
         No, except OpenRouter. Goodboy drives the command-line tools you already installed and
-        signed into: Claude, Cursor, Codex, Gemini and OpenCode. OpenRouter runs through the{' '}
-        <B>OpenCode runtime</B> on an API key you provide.
+        signed into: Claude, Cursor, Codex, Google (Antigravity), and OpenCode. OpenRouter runs
+        through the <B>OpenCode runtime</B> on an API key you provide.
       </>
     ),
   },
@@ -51,11 +51,30 @@ const ITEMS: ReadonlyArray<Qa> = [
     ),
   },
   {
+    q: 'Can I control what agents are allowed to do?',
+    a: (
+      <>
+        Yes. Tool rules let you <B>allow, deny, or ask</B> for each tool, at global, workspace, or
+        session scope. A blocked call surfaces in the transcript and you can approve it inline. The
+        feature is in beta, enforced on Claude sessions first.
+      </>
+    ),
+  },
+  {
     q: 'Which platforms?',
     a: (
       <>
-        <B>macOS today</B>, as a universal build or via Homebrew. Linux and Windows are in progress;
-        you can build from source in the meantime.
+        <B>macOS today</B>, as a universal build or via Homebrew. Prebuilt binaries for Linux and
+        Windows coming; you can build from source in the meantime, with a Rust toolchain.
+      </>
+    ),
+  },
+  {
+    q: 'Is there a mobile app?',
+    a: (
+      <>
+        Not a separate app. A <B>beta companion</B> pairs your phone with the desktop through a
+        bridge: enough to spawn a workflow or merge a PR while you&apos;re away.
       </>
     ),
   },
@@ -94,7 +113,7 @@ export const Faq = () => {
           <SectionTitle>Before you install</SectionTitle>
         </div>
 
-        <div className="reveal mt-10 flex flex-col" style={{ animationDelay: '100ms' }}>
+        <div className="reveal mt-12 flex flex-col" style={{ animationDelay: '100ms' }}>
           {ITEMS.map((item) => (
             <details key={item.q} className="group border-t border-border-soft py-4 last:border-b">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4">

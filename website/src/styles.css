@@ -5,19 +5,21 @@
    semantic chips. Anything that drifts here is a bug.
 */
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Cascadia Mono', monospace;
-  --font-serif: 'Iowan Old Style', 'Apple Garamond', Baskerville, 'Times New Roman', 'Droid Serif', Times, serif;
+  --font-serif:
+    'Iowan Old Style', 'Apple Garamond', Baskerville, 'Times New Roman', 'Droid Serif', Times, serif;
 
   /* Dark palette: desktop tokens, identical L/C/h. Lifted black base. */
   --color-background: oklch(0.25 0.006 255);
   --color-foreground: oklch(0.91 0.006 90);
   --color-subtle: oklch(0.29 0.008 255);
-  --color-muted: oklch(0.33 0.010 255);
+  --color-muted: oklch(0.33 0.01 255);
   --color-elevated: oklch(0.37 0.011 255);
   --color-muted-foreground: oklch(0.68 0.015 255);
-  --color-border: oklch(0.40 0.012 255);
-  --color-border-soft: oklch(0.32 0.010 255);
+  --color-border: oklch(0.4 0.012 255);
+  --color-border-soft: oklch(0.32 0.01 255);
 
   --color-primary: oklch(0.74 0.11 200);
   --color-primary-foreground: oklch(0.13 0.02 200);
@@ -26,7 +28,7 @@
   --color-warning: oklch(0.76 0.13 78);
   --color-success: oklch(0.69 0.13 148);
   --color-info: oklch(0.69 0.11 238);
-  --color-merged: oklch(0.70 0.15 305);
+  --color-merged: oklch(0.7 0.15 305);
 
   --text-2xs: 11px;
   --text-xs: 12px;
@@ -46,16 +48,12 @@
   --radius-xl: 16px;
 
   /* Shadows mirror desktop dark mode (subtle drop + inner highlight). */
-  --shadow-sm:
-    0 1px 2px 0 oklch(0 0 0 / 0.28),
-    inset 0 1px 0 0 oklch(1 0 0 / 0.03);
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.28), inset 0 1px 0 0 oklch(1 0 0 / 0.03);
   --shadow-md:
-    0 6px 16px -4px oklch(0 0 0 / 0.44),
-    0 2px 4px -1px oklch(0 0 0 / 0.30),
+    0 6px 16px -4px oklch(0 0 0 / 0.44), 0 2px 4px -1px oklch(0 0 0 / 0.3),
     inset 0 1px 0 0 oklch(1 0 0 / 0.04);
   --shadow-lg:
-    0 18px 40px -10px oklch(0 0 0 / 0.52),
-    0 6px 12px -4px oklch(0 0 0 / 0.38),
+    0 18px 40px -10px oklch(0 0 0 / 0.52), 0 6px 12px -4px oklch(0 0 0 / 0.38),
     inset 0 1px 0 0 oklch(1 0 0 / 0.05);
 }
 
@@ -63,17 +61,22 @@
   --color-provider-anthropic: oklch(0.74 0.15 55);
   --color-provider-cursor: oklch(0.7 0.16 290);
   --color-provider-codex: oklch(0.72 0.16 150);
-  --color-provider-gemini: oklch(0.7 0.15 255);
+  --color-provider-gemini: oklch(0.72 0.16 240);
+  --color-provider-opencode: #fab283;
+  --color-provider-openrouter: #6467f2;
+
+  /* Diff/code palette, same values as the desktop syntax tokens. */
+  --color-syntax-keyword: oklch(0.75 0.13 300);
+  --color-syntax-string: oklch(0.75 0.12 145);
+  --color-syntax-number: oklch(0.79 0.1 75);
+  --color-syntax-function: oklch(0.75 0.1 240);
+  --color-syntax-property: oklch(0.85 0.025 230);
 }
 
+/* Anchors resolve under the sticky nav (h-14). */
 html {
   scroll-behavior: smooth;
-  scroll-snap-type: y proximity;
-  scroll-padding-top: 5rem;
-}
-
-main > section {
-  scroll-snap-align: start;
+  scroll-padding-top: 3.5rem;
 }
 
 html,
@@ -88,10 +91,10 @@ body,
 }
 
 #root {
-  /* a fine dot grid across the whole page. #root carries the opaque base
-     colour, so the dots must live here (a pattern on body is hidden behind it). */
-  background-image: radial-gradient(oklch(0.78 0.02 255 / 0.08) 1px, transparent 1.5px);
-  background-size: 20px 20px;
+  /* Flat charcoal canvas, one single value. Any tint or ramp behind the
+     sticky nav makes the nav read as a different colour, so the page keeps
+     none: interest lives in the product mockups, not the background. */
+  background-color: var(--color-background);
 }
 
 ::selection {
@@ -116,11 +119,11 @@ body,
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: oklch(0.40 0.012 255 / 0.5);
+  background: oklch(0.4 0.012 255 / 0.5);
   border-radius: 999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.40 0.012 255 / 0.85);
+  background: oklch(0.4 0.012 255 / 0.85);
 }
 
 /* Minimal motion. Two keyframes total. */
@@ -140,8 +143,13 @@ body,
 }
 
 @keyframes soft-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .pulse {
@@ -161,14 +169,46 @@ body,
   border: 1px solid transparent;
 }
 
-.chip-anthropic { background: oklch(0.74 0.15 55 / 0.12); color: oklch(0.85 0.13 55); border-color: oklch(0.74 0.15 55 / 0.25); }
-.chip-cursor    { background: oklch(0.70 0.16 290 / 0.12); color: oklch(0.82 0.13 290); border-color: oklch(0.70 0.16 290 / 0.25); }
-.chip-codex     { background: oklch(0.72 0.16 150 / 0.12); color: oklch(0.85 0.13 150); border-color: oklch(0.72 0.16 150 / 0.25); }
-.chip-primary   { background: oklch(0.74 0.11 200 / 0.12); color: oklch(0.86 0.10 200); border-color: oklch(0.74 0.11 200 / 0.25); }
-.chip-warning   { background: oklch(0.76 0.13 78 / 0.12); color: oklch(0.85 0.13 78); border-color: oklch(0.76 0.13 78 / 0.25); }
-.chip-success   { background: oklch(0.69 0.13 148 / 0.12); color: oklch(0.82 0.13 148); border-color: oklch(0.69 0.13 148 / 0.25); }
-.chip-info      { background: oklch(0.69 0.11 238 / 0.12); color: oklch(0.82 0.11 238); border-color: oklch(0.69 0.11 238 / 0.25); }
-.chip-merged    { background: oklch(0.70 0.15 305 / 0.12); color: oklch(0.82 0.13 305); border-color: oklch(0.70 0.15 305 / 0.25); }
+.chip-anthropic {
+  background: oklch(0.74 0.15 55 / 0.12);
+  color: oklch(0.85 0.13 55);
+  border-color: oklch(0.74 0.15 55 / 0.25);
+}
+.chip-cursor {
+  background: oklch(0.7 0.16 290 / 0.12);
+  color: oklch(0.82 0.13 290);
+  border-color: oklch(0.7 0.16 290 / 0.25);
+}
+.chip-codex {
+  background: oklch(0.72 0.16 150 / 0.12);
+  color: oklch(0.85 0.13 150);
+  border-color: oklch(0.72 0.16 150 / 0.25);
+}
+.chip-primary {
+  background: oklch(0.74 0.11 200 / 0.12);
+  color: oklch(0.86 0.1 200);
+  border-color: oklch(0.74 0.11 200 / 0.25);
+}
+.chip-warning {
+  background: oklch(0.76 0.13 78 / 0.12);
+  color: oklch(0.85 0.13 78);
+  border-color: oklch(0.76 0.13 78 / 0.25);
+}
+.chip-success {
+  background: oklch(0.69 0.13 148 / 0.12);
+  color: oklch(0.82 0.13 148);
+  border-color: oklch(0.69 0.13 148 / 0.25);
+}
+.chip-info {
+  background: oklch(0.69 0.11 238 / 0.12);
+  color: oklch(0.82 0.11 238);
+  border-color: oklch(0.69 0.11 238 / 0.25);
+}
+.chip-merged {
+  background: oklch(0.7 0.15 305 / 0.12);
+  color: oklch(0.82 0.13 305);
+  border-color: oklch(0.7 0.15 305 / 0.25);
+}
 
 /* Hairline divider used between editorial blocks. */
 .rule {
@@ -228,8 +268,8 @@ body,
 }
 
 /* ------------------------------------------------------------------ *
- *  Motion layer. Demolish-and-rebuild pass: the page is allowed to be
- *  alive now. Scroll-reveal, a drifting aurora, flowing wires, a marquee.
+ *  Motion layer. Product-semantic motion only: scroll-reveal, status
+ *  flips, packet dots, press rings, card translation.
  *  Everything below collapses to a static end-state under reduced motion.
  * ------------------------------------------------------------------ */
 
@@ -237,8 +277,14 @@ body,
    enters the viewport (IntersectionObserver). Children tagged `.reveal`
    animate in, staggered by an inline animation-delay. */
 @keyframes reveal-up {
-  from { opacity: 0; transform: translateY(26px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .reveal-group .reveal {
   opacity: 0;
@@ -248,151 +294,46 @@ body,
   animation: reveal-up 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Aurora: two oversized, blurred colour fields that drift behind the hero.
-   Pure transform animation, GPU-cheap, sits at -z under the content. */
-@keyframes aurora-a {
-  0%, 100% { transform: translate3d(-8%, -6%, 0) scale(1); }
-  50% { transform: translate3d(6%, 8%, 0) scale(1.18); }
-}
-@keyframes aurora-b {
-  0%, 100% { transform: translate3d(8%, 6%, 0) scale(1.1); }
-  50% { transform: translate3d(-6%, -8%, 0) scale(0.92); }
-}
-.aurora {
-  position: absolute;
-  inset: -20% -10% auto -10%;
-  height: 760px;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  /* Feather the bottom so the clipped, blurred blobs dissolve into the page
-     instead of cutting off in a hard horizontal seam. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
-}
-.aurora::before,
-.aurora::after {
-  content: '';
-  position: absolute;
-  width: 60vw;
-  height: 60vw;
-  max-width: 760px;
-  max-height: 760px;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.5;
-}
-.aurora::before {
-  top: -18%;
-  left: 8%;
-  background: radial-gradient(circle at 50% 50%, oklch(0.74 0.11 200 / 0.55), transparent 70%);
-  animation: aurora-a 16s ease-in-out infinite;
-}
-.aurora::after {
-  top: -8%;
-  right: 6%;
-  background: radial-gradient(circle at 50% 50%, oklch(0.70 0.16 290 / 0.4), transparent 70%);
-  animation: aurora-b 19s ease-in-out infinite;
-}
-
-/* Animated gradient text. Used on the hero tagline. */
-@keyframes gradient-pan {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-.text-gradient {
-  background-image: linear-gradient(
-    100deg,
-    oklch(0.95 0.02 90),
-    oklch(0.82 0.12 200),
-    oklch(0.80 0.13 290),
-    oklch(0.95 0.02 90)
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: gradient-pan 7s linear infinite;
-}
-
-/* Floating element (hero snapshot). Tiny vertical drift. */
-@keyframes float-y {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-.float {
-  animation: float-y 7s ease-in-out infinite;
-}
-
-/* Flowing wires: dashed strokes that scroll along their path so the
-   connectors read as live data moving between nodes. */
-@keyframes dash-flow {
-  to { stroke-dashoffset: -28; }
-}
-.wire-flow {
-  stroke-dasharray: 4 8;
-  animation: dash-flow 1s linear infinite;
-}
-
-/* Data packets traveling along a connector via offset-path: a bright dot
-   that rides the curve, fading in at the source and out at the target. */
-@keyframes tg-travel {
-  0% { offset-distance: 0%; opacity: 0; }
-  14% { opacity: 1; }
-  82% { opacity: 1; }
-  100% { offset-distance: 100%; opacity: 0; }
-}
-.tg-pulse {
-  offset-rotate: 0deg;
-  animation: tg-travel 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-  will-change: offset-distance;
-}
+/* A single data packet firing along a connector: fades in, slides from
+   source to target cx, fades out. */
 @keyframes tg-send {
-  0% { cx: 198px; opacity: 0; }
-  25% { opacity: 1; }
-  100% { cx: 242px; opacity: 0; }
+  0% {
+    cx: 198px;
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    cx: 242px;
+    opacity: 0;
+  }
 }
 .tg-send {
   animation: tg-send 0.6s ease-in both;
   will-change: cx, opacity;
 }
 @keyframes tg-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .tg-fade {
   animation: tg-fade 0.45s ease-out both;
 }
 
-/* Node breathing glow for the orchestration diagram. */
-@keyframes node-glow {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50% { opacity: 0.75; transform: scale(1.08); }
-}
-.node-glow {
-  animation: node-glow 3s ease-in-out infinite;
-}
-
-/* Self-playing workflow demo: a per-step progress bar that fills while a step
-   runs, and a one-shot ripple where the simulated cursor presses. */
-@keyframes run-progress {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-.run-bar {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 2px;
-  width: 100%;
-  background: var(--color-primary);
-  transform-origin: left;
-  transform: scaleX(0);
-  animation: run-progress 1.4s ease-in-out forwards;
-}
 @keyframes press-ring {
-  from { opacity: 0.5; transform: translate(-50%, -50%) scale(0.4); }
-  to { opacity: 0; transform: translate(-50%, -50%) scale(1.7); }
+  from {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.7);
+  }
 }
 .press-ring {
   position: absolute;
@@ -405,66 +346,18 @@ body,
   animation: press-ring 420ms ease-out forwards;
 }
 
-@keyframes typing {
-  to {
-    width: 38ch;
-  }
-}
-.typewriter {
-  display: inline-block;
-  width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  vertical-align: bottom;
-  animation: typing 1.6s steps(38, end) forwards;
-}
-
-/* Marquee: a track duplicated twice, translated -50% on loop, so the row
-   scrolls forever with no seam. Always animating, no hover pause. */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-.marquee {
-  display: flex;
-  width: max-content;
-  animation: marquee 34s linear infinite;
-}
-
-/* Shimmer sweep for the eyebrow pill. */
-@keyframes shimmer {
-  0% { background-position: -150% 0; }
-  100% { background-position: 250% 0; }
-}
-.shimmer {
-  background-image: linear-gradient(
-    100deg,
-    transparent 20%,
-    oklch(1 0 0 / 0.07) 50%,
-    transparent 80%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 3.4s ease-in-out infinite;
-}
-
-/* Snapshot hover-tilt. Lifts toward the cursor on hover. */
-.tilt {
-  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms ease;
-}
-.tilt:hover {
-  transform: perspective(1400px) rotateX(2deg) translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  html { scroll-snap-type: none !important; }
   /* Never leave reveal content stuck at opacity 0 if motion is disabled. */
-  .reveal-group .reveal { opacity: 1 !important; transform: none !important; }
-  .aurora { display: none; }
+  .reveal-group .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

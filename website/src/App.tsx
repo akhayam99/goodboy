@@ -3,6 +3,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
 import { Solutions } from './sections/Solutions';
+import { Ship } from './sections/Ship';
 import { Proof } from './sections/Proof';
 import { MoreBriefly } from './sections/MoreBriefly';
 import { Faq } from './sections/Faq';
@@ -11,13 +12,17 @@ import { Footer } from './sections/Footer';
 
 export const App = () => {
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-clip">
       <Nav />
       <main>
         <Hero />
         <Solutions />
-        <Proof />
+        <Ship />
         <MoreBriefly />
+        <div className="mx-auto max-w-3xl px-6">
+          <div className="rule" />
+        </div>
+        <Proof />
         <Faq />
         <CTA />
         <div aria-hidden className="sr-only">

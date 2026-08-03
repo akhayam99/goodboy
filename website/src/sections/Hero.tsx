@@ -34,12 +34,14 @@ export const Hero = () => (
         className="rise mx-auto mt-6 max-w-xl text-pretty text-[17px] leading-[1.6] text-muted-foreground sm:text-[19px]"
         style={{ animationDelay: '180ms' }}
       >
-        It carries the goal, the plan, and the decisions into every{' '}
-        <strong className="font-semibold text-foreground">coding agent</strong> it runs, on the{' '}
-        <strong className="font-semibold text-foreground">right model</strong> for each step.
-        <br className="hidden sm:block" />{' '}
-        <strong className="font-semibold text-foreground">One thread</strong>, across Claude,
-        Cursor, Codex, Gemini, OpenCode, and OpenRouter.
+        It carries what you&apos;re building, what you decided, and what&apos;s still open into
+        every <strong className="font-semibold text-foreground">coding agent</strong> it runs. When
+        a step ends, an <strong className="font-semibold text-foreground">orchestrator</strong>{' '}
+        reads the result and{' '}
+        <strong className="font-semibold text-foreground">picks the next one</strong>: the agent,
+        the model, how hard to think.
+        <br className="hidden sm:block" /> Across Claude, Cursor, Codex, Antigravity, OpenCode, and
+        OpenRouter.
       </p>
 
       <div
@@ -93,7 +95,7 @@ export const Hero = () => (
     </div>
 
     <div
-      className="rise relative z-10 mx-auto mt-12 flex max-w-3xl justify-center px-6"
+      className="rise relative z-10 mx-auto mt-12 max-w-[660px] px-6"
       style={{ animationDelay: '320ms' }}
     >
       <ThreadGraphSnapshot />

@@ -33,7 +33,8 @@ const FACTS: ReadonlyArray<{ k: string; v: ReactNode }> = [
     k: 'Your own logins',
     v: (
       <>
-        <B>No new account, no API keys</B> to paste. It drives the tools you already signed into.
+        <B>No new account</B>. It drives the command-line tools you already signed into, on the
+        plans you already pay for.
       </>
     ),
   },
@@ -53,7 +54,7 @@ export const Proof = () => {
           <SectionTitle>The tool I use every day</SectionTitle>
         </div>
 
-        <div className="reveal mt-10 grid gap-3 sm:grid-cols-3" style={{ animationDelay: '100ms' }}>
+        <div className="reveal mt-12 grid gap-3 sm:grid-cols-3" style={{ animationDelay: '100ms' }}>
           {FACTS.map((f) => (
             <div key={f.k} className="rounded-2xl border border-border-soft bg-subtle/40 p-5">
               <h3 className="text-[14px] font-semibold text-foreground">{f.k}</h3>
@@ -63,7 +64,7 @@ export const Proof = () => {
         </div>
 
         <div
-          className="reveal letter mt-12 flex flex-col gap-5 text-[18px] leading-[1.6] text-foreground/90"
+          className="reveal letter mt-10 flex flex-col gap-5 text-[18px] leading-[1.6] text-foreground/90"
           style={{ animationDelay: '160ms' }}
         >
           <p>
@@ -81,7 +82,7 @@ export const Proof = () => {
           </p>
         </div>
 
-        <div className="reveal mt-9 flex" style={{ animationDelay: '220ms' }}>
+        <div className="reveal mt-8 flex" style={{ animationDelay: '220ms' }}>
           <LinkButton
             href="https://github.com/akhayam99/goodboy"
             target="_blank"

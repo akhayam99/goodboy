@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Eyebrow, SectionTitle } from '../components/ui';
 import { useInView } from '../components/Reveal';
 
-type Item = { k: string; v: ReactNode };
+type Item = { k: string; v: ReactNode; beta?: boolean };
 
 const B = ({ children }: { children: ReactNode }) => (
   <strong className="font-semibold text-foreground">{children}</strong>
@@ -10,18 +10,11 @@ const B = ({ children }: { children: ReactNode }) => (
 
 const ITEMS: ReadonlyArray<Item> = [
   {
-    k: 'Scout fan-out',
+    k: 'Fan-out',
     v: (
       <>
-        On a huge repo, a scout splits into <B>parallel child scouts</B> to survey more at once.
-      </>
-    ),
-  },
-  {
-    k: 'Plan clusters',
-    v: (
-      <>
-        When a plan splits into clusters, the implementer runs <B>one agent per cluster</B>.
+        On a huge repo a scout splits into <B>parallel child scouts</B>, and a big plan splits into
+        clusters, one implementer each.
       </>
     ),
   },
@@ -29,8 +22,8 @@ const ITEMS: ReadonlyArray<Item> = [
     k: 'Stage board',
     v: (
       <>
-        The home sorts every session by <B>what it needs</B>: attention, running, in review,
-        building, done.
+        The home sorts every session by <B>what it needs</B>: building, running, needs you, in
+        review, done.
       </>
     ),
   },
@@ -43,7 +36,24 @@ const ITEMS: ReadonlyArray<Item> = [
     ),
   },
   {
-    k: 'Budget register',
+    k: 'Impact Studio',
+    v: (
+      <>
+        Outcome and flow analytics on the work you <B>shipped</B>, last 30 days or all time.
+      </>
+    ),
+  },
+  {
+    k: 'Model picker',
+    v: (
+      <>
+        Every provider's catalog in one picker: <B>families, versions, and an effort ladder</B>,
+        each model under its authored name.
+      </>
+    ),
+  },
+  {
+    k: 'Budget Studio',
     v: (
       <>
         One dashboard totals your spend <B>per provider</B>, against the caps you set.
@@ -59,28 +69,30 @@ const ITEMS: ReadonlyArray<Item> = [
     ),
   },
   {
-    k: 'Composite workspaces',
+    k: 'Workspaces, plain or composite',
     v: (
       <>
-        Run one session across <B>many repos</B>, one chat, a branch checked out per repo.
+        Start <B>without a repo</B> and convert later, run one session across many repos, or pop a
+        workspace into its own window.
       </>
     ),
   },
   {
-    k: 'Mobile companion',
+    k: 'Tool permissions',
+    beta: true,
     v: (
       <>
-        Spawn a workflow or merge a PR <B>from your phone</B>. A companion, not a full app.
+        <B>Allow, deny, or ask</B> per tool, scoped global, workspace, or session. Beta, enforced on
+        Claude sessions first.
       </>
     ),
   },
   {
-    k: 'Integrations',
+    k: 'Skills',
     v: (
       <>
-        GitHub, GitLab, Linear and Sentry issues turn into a session with the{' '}
-        <B>goal and branch already written</B>. Pull requests and merge requests feed a review inbox
-        instead.
+        Markdown skills per workspace, invoked with a <B>slash command</B>, runnable on any
+        provider.
       </>
     ),
   },
@@ -106,7 +118,10 @@ export const MoreBriefly = () => {
         >
           {ITEMS.map((it) => (
             <div key={it.k} className="border-t border-border-soft pt-3.5">
-              <dt className="text-[15px] font-semibold text-foreground">{it.k}</dt>
+              <dt className="text-[15px] font-semibold text-foreground">
+                {it.k}
+                {it.beta ? <span className="chip chip-warning ml-2 align-middle">beta</span> : null}
+              </dt>
               <dd className="mt-1.5 text-pretty text-[13.5px] leading-[1.6] text-muted-foreground">
                 {it.v}
               </dd>

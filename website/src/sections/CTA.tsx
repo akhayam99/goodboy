@@ -72,7 +72,7 @@ export function CTA() {
           Connect a command-line tool you already use and you&apos;re running in a minute.
         </p>
 
-        <div className="mx-auto mt-11 max-w-lg pointer-fine:hidden">
+        <div className="mx-auto mt-12 max-w-lg pointer-fine:hidden">
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             When you&apos;re on your Mac
           </p>
@@ -108,7 +108,7 @@ export function CTA() {
           </div>
         </div>
 
-        <div className="mx-auto mt-11 hidden max-w-lg pointer-fine:block">
+        <div className="mx-auto mt-12 hidden max-w-lg pointer-fine:block">
           {/* macOS: the primary path. dmg.direct → straight to the file; the
               fallback releases page opens in a new tab. */}
           <LinkButton
@@ -148,12 +148,12 @@ export function CTA() {
               ))}
             </TerminalFrame>
             <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
-              Needs a Rust toolchain &middot; prebuilt binaries coming soon
+              Needs a Rust toolchain. Prebuilt binaries for Linux and Windows coming.
             </p>
           </div>
         </div>
 
-        <div className="mt-11 hidden flex-col items-center justify-center gap-3 pointer-fine:flex sm:flex-row">
+        <div className="mt-10 hidden flex-col items-center justify-center gap-3 pointer-fine:flex sm:flex-row">
           <LinkButton
             href="https://github.com/akhayam99/goodboy"
             target="_blank"
