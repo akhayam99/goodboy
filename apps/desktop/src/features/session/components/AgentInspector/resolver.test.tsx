@@ -26,6 +26,8 @@ const h = vi.hoisted(() => {
     resolveAgentThreads: vi.fn(async () => true),
     amendSessionCommit: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
     squashSessionCommits: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
+    setActiveLens: vi.fn(),
+    setDiffFocus: vi.fn(),
   };
 });
 
@@ -99,6 +101,8 @@ const state = {
   resolveAgentThreads: h.resolveAgentThreads,
   amendSessionCommit: h.amendSessionCommit,
   squashSessionCommits: h.squashSessionCommits,
+  setActiveLens: h.setActiveLens,
+  setDiffFocus: h.setDiffFocus,
 };
 
 vi.mock('../../../../store', () => ({
@@ -142,6 +146,13 @@ const fileEdit: TurnEvent = {
   path: 'src/auth/guard.ts',
   editType: 'modify',
   at: '2026-07-25T09:01:00.000Z' as IsoDateTime,
+};
+
+const resolvedMarker: TurnEvent = {
+  kind: 'assistant_text',
+  runId: 'run-1' as ProviderRunId,
+  delta: '<<comment-resolved threadId="PRRT_1" commitSha="deadbee" />>',
+  at: '2026-07-25T09:02:00.000Z' as IsoDateTime,
 };
 
 const COMMIT: BranchCommit = {
@@ -188,6 +199,8 @@ describe('AgentInspector (resolver)', () => {
     h.runtime.events = [];
     h.listTurnEventsForAgent.mockResolvedValue([]);
     h.listBranchCommits.mockResolvedValue([COMMIT]);
+    h.setActiveLens.mockClear();
+    h.setDiffFocus.mockClear();
   });
 
   afterEach(cleanup);
@@ -226,19 +239,46 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getByText('src/auth/guard.ts')).toBeDefined();
   });
 
-  it('opens the commit diff filtered on the file the resolver edited', () => {
+  it('opens the diff lens on the file the resolver edited, at the commit it reported', () => {
     h.runtime.events = [fileEdit];
-    const seen: Array<unknown> = [];
-    const listener = (event: Event) => seen.push((event as CustomEvent).detail);
-    window.addEventListener('goodboy:open-commit-diff', listener);
 
     render(
       <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'src/auth/guard.ts' }));
-    window.removeEventListener('goodboy:open-commit-diff', listener);
 
-    expect(seen).toEqual([{ repo: 'x/y', sha: 'abc1234def', file: 'src/auth/guard.ts' }]);
+    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+      sha: 'abc1234def',
+      path: 'src/auth/guard.ts',
+    });
+    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'files');
+  });
+
+  it('renders an edited file repo-relative and keeps the absolute path reachable', () => {
+    h.runtime.events = [{ ...fileEdit, path: '/tmp/wt/src/auth/guard.ts' }];
+
+    render(
+      <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'src/auth/guard.ts' }));
+
+    expect(screen.getByTitle('/tmp/wt/src/auth/guard.ts')).toBeDefined();
+    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+      sha: 'abc1234def',
+      path: 'src/auth/guard.ts',
+    });
+  });
+
+  it('opens the diff lens at a reported sha the branch does not carry', () => {
+    h.runtime.events = [resolvedMarker];
+
+    render(
+      <AgentInspector sessionId={SESSION_ID} agentId={RUNNING_ID} onClose={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'deadbee' }));
+
+    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, { sha: 'deadbee', path: null });
+    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'files');
   });
 
   it('offers force close for the running resolver', () => {

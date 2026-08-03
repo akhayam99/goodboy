@@ -8,4 +8,5 @@ export const createInitialSessionViewState = ({}: Params) => ({
   sessionStudio: {},
   workflowExpand: {},
   focusedWorkflowRunId: {},
+  diffFocus: {},
 });

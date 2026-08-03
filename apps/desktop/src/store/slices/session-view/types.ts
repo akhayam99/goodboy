@@ -51,6 +51,11 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'gitlab_issues',
 ]);
 
+export type DiffFocus = {
+  readonly sha: string | null;
+  readonly path: string | null;
+};
+
 export type SessionStudio =
   | { readonly kind: 'workflow' }
   | { readonly kind: 'github'; readonly prNumber?: number; readonly threadId?: string }
@@ -92,6 +97,7 @@ type SessionViewSliceState = {
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
+  readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
 };
 
 type SessionViewSliceActions = {
@@ -104,6 +110,7 @@ type SessionViewSliceActions = {
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
+  setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
 };
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;

@@ -1,5 +1,5 @@
 import type { PlanId, SessionId } from '@goodboy/types';
-import type { GetFn, LensKind, SessionStudio, SetFn } from './types';
+import type { DiffFocus, GetFn, LensKind, SessionStudio, SetFn } from './types';
 import { workSurfaceFocus } from './workSurfaceFocus';
 import { writePersistedLens } from './workSurfaceStorage';
 
@@ -23,6 +23,7 @@ export const setActiveLens = (set: SetFn) => {
           lens === 'workflows'
             ? s.focusedWorkflowRunId
             : { ...s.focusedWorkflowRunId, [sessionId]: null },
+        diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
         lensHistory: {
           ...s.lensHistory,
           [sessionId]: { entries, index: entries.length - 1 },
@@ -77,6 +78,12 @@ export const setFocusedWorkflowRun = (set: SetFn) => {
     set((s) => ({
       focusedWorkflowRunId: { ...s.focusedWorkflowRunId, [sessionId]: runId },
     }));
+  };
+};
+
+export const setDiffFocus = (set: SetFn) => {
+  return (sessionId: SessionId, focus: DiffFocus | null): void => {
+    set((s) => ({ diffFocus: { ...s.diffFocus, [sessionId]: focus } }));
   };
 };
 

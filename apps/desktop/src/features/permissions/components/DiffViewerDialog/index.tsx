@@ -1,5 +1,6 @@
 import { Dialog } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import type { DiffFocus } from '../../../../store';
 import { DiffViewerContent } from './DiffViewerContent';
 
 type DiffViewerContentProps = {
@@ -14,6 +15,7 @@ type DiffViewerContentProps = {
   worktreePath?: string;
   jumpToFirstCommented?: boolean;
   jumpToFile?: string;
+  diffFocus?: DiffFocus | null;
   showToolbarClose?: boolean;
 };
 

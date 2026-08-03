@@ -1,22 +1,10 @@
 import { useEffect, useState } from 'react';
 import { openUrl } from '../../lib/editor';
 
-export type CommitDiffTarget = { repo: string; sha: string; file?: string };
+export type CommitDiffTarget = { repo: string; sha: string };
 
 export const useCommitLinkInterceptor = () => {
   const [commitDiff, setCommitDiff] = useState<CommitDiffTarget | null>(null);
-
-  useEffect(() => {
-    const onOpen = (event: Event) => {
-      const detail = (event as CustomEvent<Partial<CommitDiffTarget>>).detail;
-      if (detail?.sha == null || detail.sha === '') {
-        return;
-      }
-      setCommitDiff({ repo: detail.repo ?? '', sha: detail.sha, file: detail.file });
-    };
-    window.addEventListener('goodboy:open-commit-diff', onOpen);
-    return () => window.removeEventListener('goodboy:open-commit-diff', onOpen);
-  }, []);
 
   useEffect(() => {
     const COMMIT_RE = /^https?:\/\/github\.com\/([^/]+\/[^/]+)\/commit\/([0-9a-f]{7,40})/i;

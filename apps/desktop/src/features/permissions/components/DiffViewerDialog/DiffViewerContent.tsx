@@ -21,7 +21,12 @@ import {
   SETTING_DEFAULT_EDITOR,
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
-import { useAppStore, useDiffComments, useSummarizerStatus } from '../../../../store';
+import {
+  useAppStore,
+  useDiffComments,
+  useSummarizerStatus,
+  type DiffFocus,
+} from '../../../../store';
 import { kindRouting, type AgentKindRouting } from '../../../../features/session/agent-kind';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { useRebaseAgent } from '../../../../features/session/hooks/useRebaseAgent';
@@ -57,6 +62,7 @@ type Props = {
   worktreePath?: string;
   jumpToFirstCommented?: boolean;
   jumpToFile?: string;
+  diffFocus?: DiffFocus | null;
   showToolbarClose?: boolean;
   presentation?: 'dialog' | 'pane';
 };
@@ -262,10 +268,12 @@ export const DiffViewerContent = ({
   worktreePath,
   jumpToFirstCommented = false,
   jumpToFile,
+  diffFocus = null,
   showToolbarClose = true,
   presentation = 'dialog',
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
+  const [focusPath, setFocusPath] = useState<string | null>(null);
   const [mountedCount, setMountedCount] = useState(DIFF_BATCH_SIZE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -418,6 +426,16 @@ export const DiffViewerContent = ({
   }, []);
 
   useEffect(() => {
+    if (diffFocus == null) {
+      return;
+    }
+    if (diffFocus.sha != null) {
+      setView({ kind: 'commit', sha: diffFocus.sha });
+    }
+    setFocusPath(diffFocus.path);
+  }, [diffFocus, setView]);
+
+  useEffect(() => {
     if (!worktreePath) {
       return;
     }
@@ -554,6 +572,19 @@ export const DiffViewerContent = ({
       requestAnimationFrame(() => scrollToFile(path));
     }
   }, [files, jumpToFile, jumpToFirstCommented, openCommentsByFile, scrollToFile]);
+
+  useEffect(() => {
+    if (focusPath == null || files.length === 0) {
+      return;
+    }
+    const target = files.find((f) => f.path === focusPath || focusPath.endsWith(f.path))?.path;
+    setFocusPath(null);
+    if (target === undefined) {
+      return;
+    }
+    didInitialScroll.current = true;
+    requestAnimationFrame(() => scrollToFile(target));
+  }, [files, focusPath, scrollToFile]);
 
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined' || files.length === 0) {

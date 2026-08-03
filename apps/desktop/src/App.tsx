@@ -985,7 +985,6 @@ export const App = () => {
           onClose={() => setCommitDiff(null)}
           title={`commit ${commitDiff.sha.slice(0, 7)}`}
           loader={commitDiffLoader}
-          jumpToFile={commitDiff.file}
         />
       ) : null}
       {currentSession && deleteOpen ? (

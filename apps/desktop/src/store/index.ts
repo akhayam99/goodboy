@@ -33,6 +33,6 @@ export {
 } from './selectors';
 export { useTranscript } from './transcript';
 export { readPersistedLens, LENS_KINDS } from './slices/session-view';
-export type { SessionStudio, LensKind } from './slices/session-view';
+export type { SessionStudio, LensKind, DiffFocus } from './slices/session-view';
 
 export const EMPTY_ARRAY: readonly never[] = [];

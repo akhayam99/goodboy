@@ -281,6 +281,24 @@ describe('DiffViewerPane', () => {
     expect(button.hasAttribute('disabled')).toBe(true);
     expect(button.getAttribute('title')).toBe('Rebase agent is still running');
   });
+
+  it('loads the commit a diff focus names and scrolls to its file', async () => {
+    fixtures.files = fileFixture();
+    const { worktreeDiffCommit } = await import('../../../../features/worktree/worktree');
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        diffFocus={{ sha: 'abc1234def', path: 'src/a.ts' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(worktreeDiffCommit).toHaveBeenCalledWith('/tmp/worktree', 'abc1234def'),
+    );
+    await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalled());
+  });
 });
 
 describe('line comment add (single + multi-line drag)', () => {

@@ -62,7 +62,7 @@ import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { ProviderLifecycleMap } from './slices/providers';
 import type { ReviewPrsState } from './slices/review-prs/types';
-import type { LensHistory, LensKind, SessionStudio } from './slices/session-view';
+import type { DiffFocus, LensHistory, LensKind, SessionStudio } from './slices/session-view';
 import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
@@ -267,6 +267,7 @@ export type AppState = UpdaterState & {
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
+  readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;

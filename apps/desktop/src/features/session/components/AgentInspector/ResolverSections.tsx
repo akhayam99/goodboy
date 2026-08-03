@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { Divider } from '@goodboy/ui';
 import type { Agent, AgentSourceKind, PrComment, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useDiffComments, type DiffFocus } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
 import { openUrl } from '../../../../shared/lib/editor';
-import { githubRepoSlug } from '../../../../shared/lib/githubRepoSlug';
+import { displayPath } from '../../../../shared/utils/display-path';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { useResolverChanges } from '../../hooks/useResolverChanges';
 import { resolverOrigin } from '../../resolver-origin';
@@ -40,8 +40,9 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
       s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
   );
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
-  const prUrl = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.url ?? null);
   const worktreePath = useSessionRepo({ sessionId })?.worktreePath ?? null;
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const setDiffFocus = useAppStore((s) => s.setDiffFocus);
   const hasKickoff = useAppStore((s) => s.pendingResolverKickoff[agent.id] !== undefined);
   const pendingResolutions =
     useAppStore((s) => s.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
@@ -124,12 +125,9 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
     pendingResolutions,
     reportedSha: changes.reported[0]?.sha ?? null,
   });
-  const openCommitDiff = (sha: string, file?: string) => {
-    window.dispatchEvent(
-      new CustomEvent('goodboy:open-commit-diff', {
-        detail: { repo: githubRepoSlug(prUrl), sha, file },
-      }),
-    );
+  const openDiffLens = (focus: DiffFocus) => {
+    setDiffFocus(sessionId, focus);
+    setActiveLens(sessionId, 'files');
   };
   const threadLinks = threadIds.map((threadId, index) => ({
     threadId,
@@ -160,8 +158,13 @@ export const ResolverSections = ({ sessionId, agent }: Props) => {
         reportedMissingShas={changes.reportedMissingShas}
         withinRunWindow={changes.withinRunWindow}
         isLoading={changes.isLoading}
-        onOpenCommit={(sha) => openCommitDiff(sha)}
-        onOpenFile={commitSha === null ? undefined : (path) => openCommitDiff(commitSha, path)}
+        worktreePath={worktreePath}
+        onOpenCommit={(sha) => openDiffLens({ sha, path: null })}
+        onOpenFile={
+          commitSha === null
+            ? undefined
+            : (path) => openDiffLens({ sha: commitSha, path: displayPath(path, worktreePath) })
+        }
       />
       <Divider />
       <LocalHistorySection

@@ -4,6 +4,7 @@ import type { BranchCommit } from '@goodboy/types';
 import { CommitRow } from './CommitRow';
 import { InspectorSection } from '../InspectorSection';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { displayPath } from '../../../../shared/utils/display-path';
 
 type Props = {
   readonly files: ReadonlyArray<string>;
@@ -11,11 +12,14 @@ type Props = {
   readonly reportedMissingShas: ReadonlyArray<string>;
   readonly withinRunWindow: ReadonlyArray<BranchCommit>;
   readonly isLoading: boolean;
+  readonly worktreePath: string | null;
   readonly onOpenCommit?: (sha: string) => void;
   readonly onOpenFile?: (path: string) => void;
 };
 
 const FILE_ROW_CLASS = 'flex w-full min-w-0 items-baseline gap-2 text-left';
+
+const MISSING_SHA_CLASS = 'font-mono text-2xs text-warning';
 
 export const ChangesSection = ({
   files,
@@ -23,6 +27,7 @@ export const ChangesSection = ({
   reportedMissingShas,
   withinRunWindow,
   isLoading,
+  worktreePath,
   onOpenCommit,
   onOpenFile,
 }: Props) => (
@@ -34,7 +39,7 @@ export const ChangesSection = ({
             <>
               <FileText size={11} aria-hidden className="shrink-0 text-muted-foreground/60" />
               <span className="truncate font-mono text-2xs text-foreground/80" title={path}>
-                {path}
+                {displayPath(path, worktreePath)}
               </span>
             </>
           );
@@ -86,8 +91,22 @@ export const ChangesSection = ({
         <span className="text-2xs text-muted-foreground/60">reported, absent from the branch</span>
         <ul className="flex flex-col gap-1">
           {reportedMissingShas.map((sha) => (
-            <li key={sha} className="font-mono text-2xs text-warning">
-              {sha.slice(0, 7)}
+            <li key={sha} className="min-w-0">
+              {onOpenCommit === undefined ? (
+                <span className={MISSING_SHA_CLASS}>{sha.slice(0, 7)}</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onOpenCommit(sha)}
+                  title={`Open the diff of ${sha}`}
+                  className={cn(
+                    MISSING_SHA_CLASS,
+                    'rounded-md text-left motion-safe:transition-colors hover:text-primary',
+                  )}
+                >
+                  {sha.slice(0, 7)}
+                </button>
+              )}
             </li>
           ))}
         </ul>
