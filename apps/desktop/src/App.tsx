@@ -38,6 +38,7 @@ import { ProviderStudio } from './features/providers/components/ProviderStudio';
 import { BudgetStudio } from './features/budget/components/BudgetStudio';
 import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
 import { ImpactStudio } from './features/impact/components/ImpactStudio';
+import { ChangelogStudio } from './features/changelog/components/ChangelogStudio';
 import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
@@ -130,6 +131,7 @@ export const App = () => {
   const [budgetStudioOpen, setBudgetStudioOpen] = useState(false);
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [impactStudioOpen, setImpactStudioOpen] = useState(false);
+  const [changelogStudioOpen, setChangelogStudioOpen] = useState(false);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const clearSessionStudio = useCallback(() => {
     const id = useAppStore.getState().currentSessionId;
@@ -168,6 +170,7 @@ export const App = () => {
       setSentryStudioOpen(false);
       setGitlabStudioOpen(false);
       setGuideStudioOpen(false);
+      setChangelogStudioOpen(false);
       setAddWorkspaceOpen(false);
       setAppSettingsFocus(detail?.section);
       setAppSettingsOpen(true);
@@ -181,6 +184,7 @@ export const App = () => {
       setSentryStudioOpen(false);
       setGitlabStudioOpen(false);
       setAppSettingsOpen(false);
+      setChangelogStudioOpen(false);
       setAddWorkspaceOpen(false);
       setGuideStudioOpen(true);
     };
@@ -201,6 +205,7 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
+      setChangelogStudioOpen(false);
       setAddWorkspaceOpen(false);
       setGithubStudioSession(detail?.sessionId ?? null);
       setGithubStudioPrNumber(detail?.prNumber ?? null);
@@ -242,6 +247,7 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
+      setChangelogStudioOpen(false);
       setAddWorkspaceOpen(false);
       setProviderStudioFocus(detail?.providerId ?? null);
       setProviderStudioAction(detail?.action ?? null);
@@ -258,6 +264,7 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
+      setChangelogStudioOpen(false);
       setAddWorkspaceOpen(false);
       setBudgetStudioScope(detail?.scope);
       setBudgetStudioOpen(true);
@@ -272,6 +279,7 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
+      setChangelogStudioOpen(false);
       setAddWorkspaceOpen(false);
       setLinearStudioFocus(detail?.issueExternalId ?? null);
       setLinearStudioOpen(true);
@@ -286,6 +294,7 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
+      setChangelogStudioOpen(false);
       setAddWorkspaceOpen(false);
       setSentryStudioFocus(detail?.issueExternalId ?? null);
       setSentryStudioOpen(true);
@@ -300,6 +309,7 @@ export const App = () => {
       setSentryStudioOpen(false);
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
+      setChangelogStudioOpen(false);
       setAddWorkspaceOpen(false);
       setGitlabStudioFocus(detail?.issueExternalId ?? null);
       setGitlabStudioOpen(true);
@@ -475,6 +485,7 @@ export const App = () => {
     setProviderStudioOpen(false);
     setBudgetStudioOpen(false);
     setImpactStudioOpen(false);
+    setChangelogStudioOpen(false);
     setLinearStudioOpen(false);
     setSentryStudioOpen(false);
     setGitlabStudioOpen(false);
@@ -493,17 +504,19 @@ export const App = () => {
           ? 'budget'
           : impactStudioOpen
             ? 'impact'
-            : linearStudioOpen
-              ? 'linear'
-              : sentryStudioOpen
-                ? 'sentry'
-                : gitlabStudioOpen
-                  ? 'gitlab'
-                  : appSettingsOpen
-                    ? 'settings'
-                    : guideStudioOpen
-                      ? 'guide'
-                      : null;
+            : changelogStudioOpen
+              ? 'changelog'
+              : linearStudioOpen
+                ? 'linear'
+                : sentryStudioOpen
+                  ? 'sentry'
+                  : gitlabStudioOpen
+                    ? 'gitlab'
+                    : appSettingsOpen
+                      ? 'settings'
+                      : guideStudioOpen
+                        ? 'guide'
+                        : null;
 
   const openSettings = useCallback(() => {
     closeAllStudios();
@@ -519,6 +532,10 @@ export const App = () => {
   const openImpact = useCallback(() => {
     closeAllStudios();
     setImpactStudioOpen(true);
+  }, [closeAllStudios]);
+  const openChangelog = useCallback(() => {
+    closeAllStudios();
+    setChangelogStudioOpen(true);
   }, [closeAllStudios]);
   const openDeleteSession = useCallback(() => {
     if (currentSession) {
@@ -779,6 +796,7 @@ export const App = () => {
               }}
               onOpenBudget={openBudget}
               onOpenImpact={openImpact}
+              onOpenChangelog={openChangelog}
               onOpenGithub={() => {
                 closeAllStudios();
                 setGithubStudioSession(currentSession?.id ?? null);
@@ -953,6 +971,12 @@ export const App = () => {
           workspaceId={currentWorkspace.id}
           workspaceName={currentWorkspace.name}
           onClose={() => setImpactStudioOpen(false)}
+        />
+      ) : null}
+      {changelogStudioOpen && currentWorkspace ? (
+        <ChangelogStudio
+          workspaceName={currentWorkspace.name}
+          onClose={() => setChangelogStudioOpen(false)}
         />
       ) : null}
       {linearStudioOpen && currentWorkspace ? (
