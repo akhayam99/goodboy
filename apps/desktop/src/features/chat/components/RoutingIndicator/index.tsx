@@ -63,7 +63,7 @@ export const RoutingIndicator = ({
           <button
             type="button"
             onClick={onSendAnyway}
-            className={`shrink-0 rounded border px-2 py-0.5 font-medium transition-colors ${dangerAccent.border} ${dangerAccent.hoverBg} ${dangerAccent.text}`}
+            className={`shrink-0 rounded-md border px-2 py-0.5 font-medium transition-colors ${dangerAccent.border} ${dangerAccent.hoverBg} ${dangerAccent.text}`}
           >
             send anyway
           </button>

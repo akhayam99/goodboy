@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   extractAllCommentAnalysis,
+  extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
   isReviewThreadId,
@@ -57,6 +58,11 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
       extractAllCommentWontfix(assistantText).filter((marker) => isReviewThreadId(marker.threadId)),
     [assistantText],
   );
+  const replyMarkers = useMemo(
+    () =>
+      extractAllCommentReplies(assistantText).filter((marker) => isReviewThreadId(marker.threadId)),
+    [assistantText],
+  );
 
   const githubComments = useAppStore(
     (state) => state.sessionGithub[sessionId]?.detail?.comments ?? EMPTY_COMMENTS,
@@ -65,6 +71,8 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
     (state) => state.sessionPendingResolutions[sessionId] ?? EMPTY_PENDING,
   );
   const selectAgent = useAppStore((state) => state.selectAgent);
+  const setDiffFocus = useAppStore((state) => state.setDiffFocus);
+  const setActiveLens = useAppStore((state) => state.setActiveLens);
 
   const resolvedOnGithub = useMemo(
     () =>
@@ -86,10 +94,18 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
         analysisMarkers,
         resolvedMarkers,
         wontfixMarkers,
+        replyMarkers,
         resolvedOnGithub,
         queuedThreadIds,
       }),
-    [analysisMarkers, resolvedMarkers, wontfixMarkers, resolvedOnGithub, queuedThreadIds],
+    [
+      analysisMarkers,
+      resolvedMarkers,
+      wontfixMarkers,
+      replyMarkers,
+      resolvedOnGithub,
+      queuedThreadIds,
+    ],
   );
 
   const [open, setOpen] = useState(false);
@@ -107,6 +123,11 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
           );
         };
 
+  const onOpenCommit = (sha: string) => {
+    setDiffFocus(sessionId, { sha, path: null });
+    setActiveLens(sessionId, 'files');
+  };
+
   const [onlyVerdict] = verdicts;
 
   if (onlyVerdict === undefined) {
@@ -120,6 +141,7 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
         position={1}
         nested={false}
         onOpen={onOpen}
+        onOpenCommit={onOpenCommit}
         data-testid="resolver-thread-verdict"
       />
     );
@@ -153,6 +175,7 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
               position={index + 1}
               nested
               onOpen={onOpen}
+              onOpenCommit={onOpenCommit}
               data-testid={`resolver-thread-verdict-${index}`}
             />
           </li>

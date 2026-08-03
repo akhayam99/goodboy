@@ -22,7 +22,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
 } from '@goodboy/types';
-import { Divider, ScrollFade } from '@goodboy/ui';
+import { Button, Divider, ScrollFade } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -519,14 +519,14 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             <Divider />
             <div className="flex items-center justify-between bg-muted/40 px-4 py-2">
               <span className="text-xs text-muted-foreground">merge pending. review conflicts</span>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 data-testid="merge-dialog-trigger"
-                className="rounded border border-border bg-background px-3 py-1 text-xs motion-safe:transition-colors hover:bg-muted"
                 onClick={() => setMergeDialogOpen(true)}
               >
                 Merge
-              </button>
+              </Button>
             </div>
           </>
         ) : null}
@@ -540,8 +540,8 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         {isEnded ? (
           <>
             <Divider />
-            <div className="px-4 py-3 text-xs text-muted-foreground">
-              session ended. no further turns. branch preserved.
+            <div className="px-6 py-3 text-center text-xs text-muted-foreground">
+              Session ended. The branch is preserved.
             </div>
           </>
         ) : (
@@ -644,7 +644,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
       otherAgentQuestion != null &&
       otherAgentId != null &&
       otherAgentQuestionCount > 0 ? (
-        <div className="flex shrink-0 justify-center">
+        <div className="flex shrink-0 justify-center py-2">
           <button
             type="button"
             className="rounded-md border border-warning/20 bg-warning/5 px-3 py-1.5 text-xs font-medium text-warning transition-colors hover:bg-warning/10"

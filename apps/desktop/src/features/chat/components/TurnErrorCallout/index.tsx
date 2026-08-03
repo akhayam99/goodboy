@@ -66,7 +66,7 @@ export const TurnErrorCallout = ({ message, role, className, iconTestId, retryAc
             onClick={() => setExpanded((value) => !value)}
             aria-expanded={expanded}
             className={cn(
-              'w-fit rounded px-1 py-0.5 text-2xs font-medium',
+              'w-fit rounded-md px-1 py-0.5 text-2xs font-medium',
               dangerTint.text,
               dangerTint.hoverBgSoft,
             )}
@@ -81,7 +81,7 @@ export const TurnErrorCallout = ({ message, role, className, iconTestId, retryAc
           onClick={retryAction.onClick}
           disabled={retryAction.disabled === true}
           className={cn(
-            'shrink-0 rounded border px-2 py-0.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+            'shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
             dangerTint.text,
             dangerTint.borderSoft,
             dangerTint.bgSoft,

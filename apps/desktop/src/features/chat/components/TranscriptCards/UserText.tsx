@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
-import { Markdown, Skeleton } from '@goodboy/ui';
+import { Markdown, MetaRow, Skeleton } from '@goodboy/ui';
 import type { MessageAttachment, ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
@@ -191,9 +191,16 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
           <Markdown text={text} />
         </div>
       )}
-      <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
-        {provider ? <ProviderFootnote provider={provider} model={model} /> : null}
-        <span className="font-mono">{formatHHMM(at)}</span>
+      <div className="flex items-center justify-end gap-1.5">
+        <MetaRow
+          items={[
+            provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
+            provider && model ? <span key="model">{modelLabel(model)}</span> : null,
+            <span key="time" className="font-mono">
+              {formatHHMM(at)}
+            </span>,
+          ]}
+        />
         {text.length > 0 && (
           <CopyButton
             value={text}
@@ -216,12 +223,11 @@ const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
   const label = PROVIDER_LABEL[provider];
   return (
     <span
-      className="mr-auto inline-flex items-center gap-1 text-foreground/45"
+      className="inline-flex items-center gap-1"
       title={`sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
     >
       <Icon size={11} aria-hidden style={{ color: brandColor(provider) }} />
       <span>{label}</span>
-      {model ? <span className="text-foreground/35">· {modelLabel(model)}</span> : null}
     </span>
   );
 };

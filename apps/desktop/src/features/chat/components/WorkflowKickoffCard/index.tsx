@@ -1,23 +1,16 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Rocket } from 'lucide-react';
 import { Markdown } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { codeFenceMarkers } from '../../utils/codeFenceMarkers';
 import { formatCardTime } from '../../utils/format-card-time';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
+import { Section } from './Section';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'workflow_kickoff' }>;
 };
-
-const Section = ({ label, children }: { label: string; children: ReactNode }) => (
-  <div className="flex min-w-0 flex-col gap-1">
-    <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-      {label}
-    </span>
-    {children}
-  </div>
-);
 
 export const WorkflowKickoffCard = ({ item }: Props) => {
   const [open, setOpen] = useState(false);
@@ -64,14 +57,14 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
           {item.marker.length > 0 ? (
             <Section label="marker to emit">
               <div className="overflow-x-auto text-xs text-foreground/60">
-                <Markdown text={item.marker} />
+                <Markdown text={codeFenceMarkers({ text: item.marker })} />
               </div>
             </Section>
           ) : null}
         </>
       ) : (
         <div className="overflow-x-auto text-xs text-foreground/85">
-          <Markdown text={item.raw} />
+          <Markdown text={codeFenceMarkers({ text: item.raw })} />
         </div>
       )}
     </TranscriptDisclosure>
