@@ -34,11 +34,22 @@ const StateDot = ({ state }: { state: State }) => (
     {state === 'running' && (
       <span className="pulse absolute inset-0 rounded-full border border-info" />
     )}
-    <span
-      className={`size-1.5 rounded-full ${
-        state === 'done' ? 'bg-success' : state === 'running' ? 'bg-info' : 'bg-muted-foreground/40'
-      }`}
-    />
+    {state === 'done' ? (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-success">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+        <path
+          d="m9 12 2 2 4-4"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ) : (
+      <span
+        className={`size-1.5 rounded-full ${state === 'running' ? 'bg-info' : 'bg-muted-foreground/40'}`}
+      />
+    )}
   </span>
 );
 
