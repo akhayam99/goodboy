@@ -9,6 +9,22 @@ vi.mock('@goodboy/ui', () => ({
   ResizeHandle: ({ ariaLabel }: { readonly ariaLabel: string }) => (
     <div role="separator" aria-label={ariaLabel} />
   ),
+  CountToggle: ({
+    label,
+    count,
+    isShown,
+    onChange,
+  }: {
+    readonly label: string;
+    readonly count: number;
+    readonly isShown: boolean;
+    readonly onChange: (isShown: boolean) => void;
+  }) =>
+    count === 0 ? null : (
+      <button type="button" aria-pressed={isShown} onClick={() => onChange(!isShown)}>
+        {label} ({count})
+      </button>
+    ),
   cn: (...values: ReadonlyArray<unknown>) => values.filter(Boolean).join(' '),
 }));
 

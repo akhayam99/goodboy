@@ -23,6 +23,12 @@ type DividerMockProps = { readonly orientation?: string };
 type ResizeHandleMockProps = { readonly ariaLabel: string };
 type MetaRowMockProps = { readonly items: ReadonlyArray<React.ReactNode> };
 type ChildrenMockProps = { readonly children: React.ReactNode };
+type CountToggleMockProps = {
+  readonly label: string;
+  readonly count: number;
+  readonly isShown: boolean;
+  readonly onChange: (isShown: boolean) => void;
+};
 type AgentsSectionMockProps = { readonly workflowRunId?: string };
 type BuildWorkflowParams = { readonly id: string; readonly name: string };
 type BuildSessionParams = {
@@ -56,6 +62,12 @@ vi.mock('@goodboy/ui', () => ({
       {children}
     </button>
   ),
+  CountToggle: ({ label, count, isShown, onChange }: CountToggleMockProps) =>
+    count === 0 ? null : (
+      <button type="button" aria-pressed={isShown} onClick={() => onChange(!isShown)}>
+        {label} ({count})
+      </button>
+    ),
   Divider: ({ orientation }: DividerMockProps) => (
     <div data-testid="divider" data-orientation={orientation ?? 'horizontal'} />
   ),

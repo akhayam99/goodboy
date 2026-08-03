@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Ban, Check } from 'lucide-react';
+import { CountToggle } from '@goodboy/ui';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
-import { WorkflowRailSectionToggle } from './WorkflowRailSectionToggle';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
 import { WorkflowStartButton } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowStartButton';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
@@ -99,18 +99,20 @@ export const WorkflowsPane = ({ session }: Props) => {
       meta={hasRuns ? attachedRuns.length : undefined}
       actions={
         <>
-          <WorkflowRailSectionToggle
+          <CountToggle
             label="Completed"
             count={completed.length}
             isShown={showCompleted}
             icon={Check}
+            itemsLabel="workflows"
             onChange={setShowCompleted}
           />
-          <WorkflowRailSectionToggle
+          <CountToggle
             label="Discarded"
             count={discarded.length}
             isShown={showDiscarded}
             icon={Ban}
+            itemsLabel="workflows"
             onChange={setShowDiscarded}
           />
           {shouldShowHeaderAttach ? (

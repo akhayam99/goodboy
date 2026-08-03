@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Bot, Check } from 'lucide-react';
+import { CountToggle } from '@goodboy/ui';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import type {
   Agent,
@@ -32,7 +33,6 @@ import {
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { WorkflowRailSectionToggle } from './WorkflowRailSectionToggle';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
 
@@ -332,11 +332,12 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         title="Questions"
         description="Decisions agents need from you to keep going."
         actions={
-          <WorkflowRailSectionToggle
+          <CountToggle
             label="Answered"
             count={answered.length}
             isShown={showAnswered}
             icon={Check}
+            itemsLabel="questions"
             onChange={setShowAnswered}
           />
         }
@@ -364,11 +365,12 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
           : 'Decisions agents need from you to keep going.'
       }
       actions={
-        <WorkflowRailSectionToggle
+        <CountToggle
           label="Answered"
           count={answered.length}
           isShown={showAnswered}
           icon={Check}
+          itemsLabel="questions"
           onChange={setShowAnswered}
         />
       }

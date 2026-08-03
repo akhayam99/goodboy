@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { CircleCheck } from 'lucide-react';
+import { CountToggle } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { ShowCompletedToggle } from '../../AgentLane/ShowCompletedToggle';
 import { ResolverAgentsLane } from '../../ResolverAgentsLane';
 import { AgentInspector } from '../../AgentInspector';
 import { InspectorSplit } from './InspectorSplit';
@@ -47,9 +48,12 @@ export const ResolvePane = ({
         actions={
           <>
             <WorkSurfaceBackButton sessionId={sessionId} />
-            <ShowCompletedToggle
-              completedCount={completedCount}
+            <CountToggle
+              label="Completed"
+              count={completedCount}
               isShown={showCompleted}
+              icon={CircleCheck}
+              itemsLabel="agents"
               onChange={onShowCompletedChange}
             />
           </>

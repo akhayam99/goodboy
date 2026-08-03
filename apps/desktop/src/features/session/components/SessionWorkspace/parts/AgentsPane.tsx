@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { CircleCheck } from 'lucide-react';
+import { CountToggle } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentInspector } from '../../AgentInspector';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
-import { ShowCompletedToggle } from '../../AgentLane/ShowCompletedToggle';
 import { StandaloneAgentsLane } from '../../StandaloneAgentsLane';
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
@@ -46,9 +47,12 @@ export const AgentsPane = ({
         meta={meta}
         actions={
           <>
-            <ShowCompletedToggle
-              completedCount={completedCount}
+            <CountToggle
+              label="Completed"
+              count={completedCount}
               isShown={showCompleted}
+              icon={CircleCheck}
+              itemsLabel="agents"
               onChange={onShowCompletedChange}
             />
             <CreateAgentPopover sessionId={sessionId} variant="compact" />
