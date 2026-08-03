@@ -4,7 +4,10 @@ import type { AgentMetrics } from '../../hooks/useAgentMetrics';
 import { agentThreadIds } from '../../agentThreadIds';
 import type { ResolverLink } from '../../resolver-linkage';
 import { ResolverCard } from './ResolverCard';
+import type { ResolverDiffTarget } from './resolverDiffActionLabel';
 import { hasOtherActiveResolver } from './resolverLaneEntries';
+
+const UNKNOWN_DIFF_TARGET: ResolverDiffTarget = { kind: 'unknown' };
 
 type Props = {
   readonly entries: ReadonlyArray<ResolverLink>;
@@ -20,7 +23,7 @@ type Props = {
   readonly diffCommentByAgentId: ReadonlyMap<AgentId, DiffComment>;
   readonly metrics: AgentMetrics;
   readonly reportedCommitShaByAgentId: ReadonlyMap<AgentId, string>;
-  readonly diffCommitShaByAgentId: ReadonlyMap<AgentId, string>;
+  readonly diffTargetByAgentId: ReadonlyMap<AgentId, ResolverDiffTarget>;
   readonly onOpenChat: (agentId: AgentId) => void;
   readonly onInspect: (agentId: AgentId) => void;
   readonly onJump: (agent: Agent) => void;
@@ -41,7 +44,7 @@ export const ResolverRows = ({
   diffCommentByAgentId,
   metrics,
   reportedCommitShaByAgentId,
-  diffCommitShaByAgentId,
+  diffTargetByAgentId,
   onOpenChat,
   onInspect,
   onJump,
@@ -69,7 +72,7 @@ export const ResolverRows = ({
           turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
           turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
           reportedCommitSha={reportedCommitShaByAgentId.get(agent.id) ?? null}
-          diffCommitSha={diffCommitShaByAgentId.get(agent.id) ?? null}
+          diffTarget={diffTargetByAgentId.get(agent.id) ?? UNKNOWN_DIFF_TARGET}
           canOpenDiff={canOpenDiff}
           isQueueStalled={isQueueStalled}
           hasOtherActiveResolvers={hasOtherActiveResolver({ activeIds, agentId: agent.id })}

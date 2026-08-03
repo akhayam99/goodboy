@@ -1,8 +1,23 @@
+export type ResolverDiffTarget =
+  | { readonly kind: 'unknown' }
+  | { readonly kind: 'commit'; readonly sha: string }
+  | { readonly kind: 'working' };
+
 type Params = {
-  readonly commitSha: string | null;
+  readonly target: ResolverDiffTarget;
 };
 
-export const resolverDiffActionLabel = ({ commitSha }: Params): string =>
-  commitSha === null
-    ? 'Open the diff of the uncommitted changes'
-    : `Open the diff of commit ${commitSha.slice(0, 7)}`;
+export const resolverDiffActionLabel = ({ target }: Params): string => {
+  switch (target.kind) {
+    case 'unknown':
+      return 'Open the diff';
+    case 'commit':
+      return `Open the diff of commit ${target.sha.slice(0, 7)}`;
+    case 'working':
+      return 'Open the diff of the uncommitted changes';
+    default: {
+      const exhaustive: never = target;
+      return exhaustive;
+    }
+  }
+};

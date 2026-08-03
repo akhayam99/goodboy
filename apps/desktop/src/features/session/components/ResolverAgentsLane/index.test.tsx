@@ -57,35 +57,42 @@ vi.mock('./ResolverRows', () => ({
     isMuted,
     canOpenDiff,
     reportedCommitShaByAgentId,
-    diffCommitShaByAgentId,
+    diffTargetByAgentId,
     onOpenDiff,
   }: {
     entries: ReadonlyArray<{ agent: Agent }>;
     isMuted: boolean;
     canOpenDiff: boolean;
     reportedCommitShaByAgentId: ReadonlyMap<AgentId, string>;
-    diffCommitShaByAgentId: ReadonlyMap<AgentId, string>;
+    diffTargetByAgentId: ReadonlyMap<
+      AgentId,
+      { kind: 'unknown' } | { kind: 'commit'; sha: string } | { kind: 'working' }
+    >;
     onOpenDiff: (agentId: AgentId) => void;
   }) => (
     <ul data-muted={String(isMuted)}>
-      {entries.map(({ agent }) => (
-        <li
-          key={agent.id}
-          data-testid="resolver-row"
-          data-muted={String(isMuted)}
-          data-reported-sha={reportedCommitShaByAgentId.get(agent.id) ?? ''}
-          data-diff-sha={diffCommitShaByAgentId.get(agent.id) ?? ''}
-        >
-          {agent.name}
-          {canOpenDiff && (
-            <button
-              type="button"
-              aria-label={`open diff ${agent.name}`}
-              onClick={() => onOpenDiff(agent.id)}
-            />
-          )}
-        </li>
-      ))}
+      {entries.map(({ agent }) => {
+        const target = diffTargetByAgentId.get(agent.id) ?? { kind: 'unknown' as const };
+        return (
+          <li
+            key={agent.id}
+            data-testid="resolver-row"
+            data-muted={String(isMuted)}
+            data-reported-sha={reportedCommitShaByAgentId.get(agent.id) ?? ''}
+            data-diff-kind={target.kind}
+            data-diff-sha={target.kind === 'commit' ? target.sha : ''}
+          >
+            {agent.name}
+            {canOpenDiff && (
+              <button
+                type="button"
+                aria-label={`open diff ${agent.name}`}
+                onClick={() => onOpenDiff(agent.id)}
+              />
+            )}
+          </li>
+        );
+      })}
     </ul>
   ),
 }));
@@ -412,6 +419,19 @@ describe('ResolverAgentsLane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open diff first' }));
 
     expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, { kind: 'working', path: null });
+  });
+
+  it('does not claim the working tree diff until the event read and branch commits both settle', async () => {
+    setResolvers([
+      buildResolver({ id: 'resolver-a' as AgentId, name: 'first', sourceThreadId: 'PRRT_1' }),
+    ]);
+    renderLane();
+
+    expect(screen.getByTestId('resolver-row').getAttribute('data-diff-kind')).toBe('unknown');
+
+    await waitFor(() =>
+      expect(screen.getByTestId('resolver-row').getAttribute('data-diff-kind')).toBe('working'),
+    );
   });
 
   it('offers no diff shortcut when the session has no worktree', () => {

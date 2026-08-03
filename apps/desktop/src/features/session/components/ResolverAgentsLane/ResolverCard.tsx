@@ -15,7 +15,7 @@ import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { ResolverCardTally } from './ResolverCardTally';
 import { resolverCardTone } from './resolverCardTone';
-import { resolverDiffActionLabel } from './resolverDiffActionLabel';
+import { resolverDiffActionLabel, type ResolverDiffTarget } from './resolverDiffActionLabel';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 
 type Props = {
@@ -29,7 +29,7 @@ type Props = {
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly reportedCommitSha: string | null;
-  readonly diffCommitSha: string | null;
+  readonly diffTarget: ResolverDiffTarget;
   readonly canOpenDiff: boolean;
   readonly isQueueStalled: boolean;
   readonly hasOtherActiveResolvers: boolean;
@@ -55,7 +55,7 @@ export const ResolverCard = ({
   turns,
   turnsLoading,
   reportedCommitSha,
-  diffCommitSha,
+  diffTarget,
   canOpenDiff,
   isQueueStalled,
   hasOtherActiveResolvers,
@@ -106,8 +106,8 @@ export const ResolverCard = ({
           <span className="flex size-6 shrink-0 items-center justify-center">
             {canOpenDiff && (
               <AgentCardAction
-                icon={diffCommitSha === null ? FileDiff : GitCommitHorizontal}
-                label={resolverDiffActionLabel({ commitSha: diffCommitSha })}
+                icon={diffTarget.kind === 'commit' ? GitCommitHorizontal : FileDiff}
+                label={resolverDiffActionLabel({ target: diffTarget })}
                 reveal
                 onClick={onOpenDiff}
               />

@@ -28,6 +28,7 @@ import {
   isResolverQueueStalled,
   resolverLaneEntries,
 } from './resolverLaneEntries';
+import type { ResolverDiffTarget } from './resolverDiffActionLabel';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
 type Params = {
@@ -64,6 +65,8 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   const metrics = useAgentMetrics({ sessionId });
   const [storedEvents, setStoredEvents] = useState<ReadonlyArray<TurnEvent>>(EMPTY_EVENTS);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>(EMPTY_COMMITS);
+  const [isEventsLoading, setIsEventsLoading] = useState(true);
+  const [isCommitsLoading, setIsCommitsLoading] = useState(true);
 
   const entries = useMemo(
     () => resolverLaneEntries({ links: resolverIndex.links }),
@@ -72,13 +75,19 @@ export const useResolverAgentsLane = ({ session }: Params) => {
 
   useEffect(() => {
     let cancelled = false;
+    setIsEventsLoading(true);
     listTurnEventsForSession(tauriDatabase, sessionId)
       .then((events) => {
         if (!cancelled) {
           setStoredEvents(events);
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) {
+          setIsEventsLoading(false);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -87,16 +96,23 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   useEffect(() => {
     setCommits(EMPTY_COMMITS);
     if (worktreePath === null) {
+      setIsCommitsLoading(false);
       return;
     }
     let cancelled = false;
+    setIsCommitsLoading(true);
     listBranchCommits(worktreePath)
       .then((list) => {
         if (!cancelled) {
           setCommits(list);
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) {
+          setIsCommitsLoading(false);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -146,6 +162,21 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     }
     return map;
   }, [outcomesByAgentId, pendingResolutions, reportedCommitShaByAgentId, resolverIndex.links]);
+
+  const isDiffMetadataLoading = isEventsLoading || isCommitsLoading;
+
+  const diffTargetByAgentId = useMemo(() => {
+    const map = new Map<AgentId, ResolverDiffTarget>();
+    for (const { agent } of resolverIndex.links) {
+      const sha = diffCommitShaByAgentId.get(agent.id) ?? null;
+      if (sha !== null) {
+        map.set(agent.id, { kind: 'commit', sha });
+        continue;
+      }
+      map.set(agent.id, isDiffMetadataLoading ? { kind: 'unknown' } : { kind: 'working' });
+    }
+    return map;
+  }, [diffCommitShaByAgentId, isDiffMetadataLoading, resolverIndex.links]);
 
   const onOpenDiff = useCallback(
     (agentId: AgentId) => {
@@ -231,6 +262,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     completedEntries: entries.completed,
     diffCommentByAgentId,
     diffCommitShaByAgentId,
+    diffTargetByAgentId,
     isStalled,
     isTaskActive,
     isTranscriptLoading: loading.transcript,

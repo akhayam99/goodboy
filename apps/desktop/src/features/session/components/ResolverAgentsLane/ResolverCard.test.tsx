@@ -26,6 +26,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 import { ResolverCard } from './ResolverCard';
+import type { ResolverDiffTarget } from './resolverDiffActionLabel';
 
 const SID = 'sess-1' as SessionId;
 
@@ -64,7 +65,7 @@ type Params = {
     readonly contextTokens?: number;
   }>;
   readonly reportedCommitSha?: string | null;
-  readonly diffCommitSha?: string | null;
+  readonly diffTarget?: ResolverDiffTarget;
   readonly canOpenDiff?: boolean;
   readonly hasOtherActiveResolvers?: boolean;
   readonly onOpenChat?: () => void;
@@ -86,7 +87,7 @@ const renderCard = ({
     },
   ],
   reportedCommitSha = null,
-  diffCommitSha = null,
+  diffTarget = { kind: 'working' },
   canOpenDiff = true,
   hasOtherActiveResolvers = false,
   onOpenChat = () => undefined,
@@ -105,7 +106,7 @@ const renderCard = ({
       turns={2}
       turnsLoading={false}
       reportedCommitSha={reportedCommitSha}
-      diffCommitSha={diffCommitSha}
+      diffTarget={diffTarget}
       canOpenDiff={canOpenDiff}
       isQueueStalled={false}
       hasOtherActiveResolvers={hasOtherActiveResolvers}
@@ -198,7 +199,11 @@ describe('ResolverCard', () => {
   it('names the commit the diff shortcut will open, and reaches it without the inspector', () => {
     const onOpenDiff = vi.fn();
     const onInspect = vi.fn();
-    renderCard({ diffCommitSha: 'abcdef1234567890', onOpenDiff, onInspect });
+    renderCard({
+      diffTarget: { kind: 'commit', sha: 'abcdef1234567890' },
+      onOpenDiff,
+      onInspect,
+    });
 
     const shortcut = screen.getByRole('button', { name: 'Open the diff of commit abcdef1' });
     const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
@@ -210,16 +215,26 @@ describe('ResolverCard', () => {
     expect(onInspect).not.toHaveBeenCalled();
   });
 
-  it('says it will open the uncommitted changes while the resolver has no commit', () => {
-    renderCard({ diffCommitSha: null });
+  it('says it will open the uncommitted changes once confirmed the resolver has no commit', () => {
+    renderCard({ diffTarget: { kind: 'working' } });
 
     expect(
       screen.getByRole('button', { name: 'Open the diff of the uncommitted changes' }),
     ).toBeTruthy();
   });
 
+  it('never claims working tree or a commit while the diff metadata is still loading', () => {
+    renderCard({ diffTarget: { kind: 'unknown' } });
+
+    expect(screen.getByRole('button', { name: 'Open the diff' })).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Open the diff of the uncommitted changes' }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /Open the diff of commit/ })).toBeNull();
+  });
+
   it('drops the diff shortcut when the session has no worktree to diff', () => {
-    renderCard({ diffCommitSha: 'abcdef1234567890', canOpenDiff: false });
+    renderCard({ diffTarget: { kind: 'commit', sha: 'abcdef1234567890' }, canOpenDiff: false });
 
     expect(screen.queryByRole('button', { name: /Open the diff/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Toggle resolver details' })).toBeTruthy();
