@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -23,6 +23,10 @@ const h = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (state: typeof h.state) => T) => selector(h.state),
+}));
+
+vi.mock('zustand/react/shallow', () => ({
+  useShallow: <T,>(selector: T) => selector,
 }));
 
 vi.mock('../../../session/hooks/useAgentMetrics', () => ({
@@ -127,7 +131,25 @@ const session = {
   ],
 } as unknown as Session;
 
+const child = (over: {
+  id: string;
+  name: string;
+  ordinal: number;
+  status: Agent['status'];
+}): Agent =>
+  ({
+    id: over.id as AgentId,
+    sessionId: SESSION_ID,
+    parentAgentId: AGENT_ID,
+    ordinal: over.ordinal,
+    name: over.name,
+    status: over.status,
+  }) as Agent;
+
+const selectAgentSpy = vi.fn(async () => undefined);
+
 beforeEach(() => {
+  selectAgentSpy.mockClear();
   Object.assign(h.state, {
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
@@ -135,6 +157,8 @@ beforeEach(() => {
     agentKindOverride: { [AGENT_ID]: 'implementer' },
     agentModelOverride: {},
     agentProviderOverride: {},
+    agentTurnState: {},
+    selectAgent: selectAgentSpy,
   });
 });
 
@@ -158,5 +182,29 @@ describe('WorkflowStepInspector', () => {
     expect(screen.getByText('300')).toBeDefined();
     expect(screen.getByText(expectedStartedAt)).toBeDefined();
     expect(screen.getByText(expectedCompletedAt)).toBeDefined();
+  });
+
+  it('omits the spawned section for a step that never fanned out', () => {
+    render(<WorkflowStepInspector session={session} agentId={AGENT_ID} />);
+    expect(screen.queryByText('What it spawned')).toBeNull();
+  });
+
+  it('lists the children with their live status and jumps to the one clicked', () => {
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        agent,
+        child({ id: 'child-0', name: 'auth', ordinal: 2, status: 'running' }),
+        child({ id: 'child-1', name: 'routing', ordinal: 3, status: 'completed' }),
+      ],
+    };
+
+    render(<WorkflowStepInspector session={session} agentId={AGENT_ID} />);
+
+    expect(screen.getByText('What it spawned')).toBeDefined();
+    expect(screen.getByText('running…')).toBeDefined();
+    expect(screen.getByText('done')).toBeDefined();
+
+    fireEvent.click(screen.getByText('routing'));
+    expect(selectAgentSpy).toHaveBeenCalledWith(SESSION_ID, 'child-1');
   });
 });

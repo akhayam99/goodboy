@@ -16,6 +16,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     selectedAgentId: {} as Record<string, string | null>,
     transcripts: {} as Record<string, unknown>,
     selectAgent: vi.fn(async () => undefined),
+    advanceClusterImplementation: vi.fn(async () => undefined),
     markAgentViewed: vi.fn(async () => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
@@ -141,6 +142,7 @@ beforeEach(() => {
   state.clearOpenQuestionScroll.mockClear();
   state.requestOpenQuestionScroll.mockClear();
   state.selectAgent.mockClear();
+  state.advanceClusterImplementation.mockClear();
   chatBreadcrumbMock.mockClear();
   diffViewerMock.mockClear();
   openQuestions.current = [];
@@ -448,53 +450,71 @@ const clusterPlan = {
   ],
 };
 
-describe('ChatView cluster dashboard', () => {
-  it('renders the cluster progress dashboard in place of the empty state', () => {
+describe('ChatView spawned children', () => {
+  it('records the children in place of the empty state', () => {
     state.selectedAgentId = { 'sess-1': 'container' };
     state.sessionPhaseRuns = { 'sess-1': clusterRuns };
     state.sessionPlans = { 'sess-1': [clusterPlan] };
 
     render(<ChatView session={session} />);
 
-    expect(screen.getByTestId('cluster-progress-dashboard')).toBeTruthy();
-    expect(screen.getByText('cluster progress 1/2')).toBeTruthy();
-    expect(screen.getByText('cluster A')).toBeTruthy();
-    expect(screen.getByText('cluster B')).toBeTruthy();
+    expect(screen.getByTestId('spawned-children-card')).toBeTruthy();
+    expect(screen.getByText('do A')).toBeTruthy();
+    expect(screen.getByText('do B')).toBeTruthy();
   });
 
-  it('folds running turn-state onto a pending cluster child', () => {
+  it('keeps the record in the transcript once the conversation has turns', () => {
     state.selectedAgentId = { 'sess-1': 'container' };
     state.sessionPhaseRuns = { 'sess-1': clusterRuns };
     state.sessionPlans = { 'sess-1': [clusterPlan] };
-    state.agentTurnState = { child1: { kind: 'running' } };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u1', text: 'go', at: '2026-06-13T00:00:00.000Z' },
+      { kind: 'assistant_text', key: 'a1', text: 'working' },
+    ];
 
     render(<ChatView session={session} />);
 
-    expect(screen.getByText('running…')).toBeTruthy();
+    expect(screen.getByTestId('spawned-children-card')).toBeTruthy();
+    expect(screen.getByText('do A')).toBeTruthy();
   });
 
-  it('selects the agent when a cluster card is clicked', () => {
-    state.selectedAgentId = { 'sess-1': 'container' };
-    state.sessionPhaseRuns = { 'sess-1': clusterRuns };
-    state.sessionPlans = { 'sess-1': [clusterPlan] };
-
-    render(<ChatView session={session} />);
-
-    fireEvent.click(screen.getByText('cluster B'));
-    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'child1');
-  });
-
-  it('shows the empty state when no cluster plan matches', () => {
+  it('records children with no plan behind them and drops the advance affordance', () => {
     state.selectedAgentId = { 'sess-1': 'container' };
     state.sessionPhaseRuns = { 'sess-1': clusterRuns };
     state.sessionPlans = { 'sess-1': [] };
 
     render(<ChatView session={session} />);
 
-    expect(screen.queryByTestId('cluster-progress-dashboard')).toBeNull();
+    expect(screen.getByTestId('spawned-children-card')).toBeTruthy();
+    expect(screen.queryByTestId('spawned-children-advance')).toBeNull();
   });
 
-  it('prefers the disconnected callout over the dashboard', () => {
+  it('advances the cluster from the record when a plan owns the fan-out', () => {
+    state.selectedAgentId = { 'sess-1': 'container' };
+    state.sessionPhaseRuns = { 'sess-1': clusterRuns };
+    state.sessionPlans = { 'sess-1': [clusterPlan] };
+
+    render(<ChatView session={session} />);
+
+    const button = screen.getByTestId('spawned-children-advance');
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(state.advanceClusterImplementation).toHaveBeenCalledWith('sess-1', 'child1', '', {
+      force: true,
+    });
+  });
+
+  it('shows nothing but the empty state for a step that never fanned out', () => {
+    state.selectedAgentId = { 'sess-1': 'container' };
+    state.sessionPhaseRuns = { 'sess-1': [clusterRuns[0]] };
+    state.sessionPlans = { 'sess-1': [clusterPlan] };
+
+    render(<ChatView session={session} />);
+
+    expect(screen.queryByTestId('spawned-children-card')).toBeNull();
+  });
+
+  it('prefers the disconnected callout over the record', () => {
     state.selectedAgentId = { 'sess-1': 'container' };
     state.sessionPhaseRuns = { 'sess-1': clusterRuns };
     state.sessionPlans = { 'sess-1': [clusterPlan] };
@@ -502,6 +522,6 @@ describe('ChatView cluster dashboard', () => {
 
     render(<ChatView session={session} />);
 
-    expect(screen.queryByTestId('cluster-progress-dashboard')).toBeNull();
+    expect(screen.queryByTestId('spawned-children-card')).toBeNull();
   });
 });
