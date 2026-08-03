@@ -145,7 +145,7 @@ describe('ResolverCard', () => {
     renderCard();
     expect(
       screen.getByText('resolve comment 12').previousElementSibling?.getAttribute('title'),
-    ).toBe('done');
+    ).toBe('needs you');
     expect(screen.queryByText(/^\d+\/\d+$/)).toBeNull();
     expect(screen.getByText('Review comment')).toBeTruthy();
   });
