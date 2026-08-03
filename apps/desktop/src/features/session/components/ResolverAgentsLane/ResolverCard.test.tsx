@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ResolverStatus } from '../../resolver-linkage';
 
@@ -164,20 +164,24 @@ describe('ResolverCard', () => {
     expect(onInspect).toHaveBeenCalledOnce();
   });
 
-  it('shows the token split, duration and context gauge without being selected', () => {
+  it('keeps duration and last update on the one fact line', () => {
+    const meta = within(renderCard().getByTestId('agent-metrics-inline'));
+    expect(meta.getByTitle(/^started .+2026/)).toBeTruthy();
+    expect(meta.getByText(/^updated /)).toBeTruthy();
+  });
+
+  it('leaves the token split and the context gauge to the inspector', () => {
     const { container } = renderCard();
-    expect(screen.getByTestId('agent-metrics-block')).toBeTruthy();
-    expect(screen.getByTitle('in: 400 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle('out: 40 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle(/^started .+2026/)).toBeTruthy();
-    expect(container.querySelectorAll('[title*="context:"]').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
+    expect(screen.queryByTitle('in: 400 tokens (cumulative)')).toBeNull();
+    expect(container.querySelector('[title*="last turn context:"]')).toBeNull();
   });
 
   it('keeps the resolver name and its origin readable alongside the metrics', () => {
     renderCard();
-    expect(
-      screen.getByText('resolve comment 12').previousElementSibling?.getAttribute('title'),
-    ).toBe('needs you');
+    const name = screen.getByText('resolve comment 12');
+    expect(name.previousElementSibling?.getAttribute('title')).toBe('needs you');
+    expect(name.className).toContain('text-sm');
     expect(screen.queryByText(/^\d+\/\d+$/)).toBeNull();
     expect(screen.getByText('Review comment')).toBeTruthy();
   });

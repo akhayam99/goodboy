@@ -1,13 +1,12 @@
 import { MessageSquareReply, PanelRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Chip } from '@goodboy/ui';
 import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../store';
-import { ContextWindowBar } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
+import { agentCardTitleClass } from '../AgentCard/agentCardTitleClass';
 import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
-import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { resolverBadgeState } from '../ResolverStateBadge';
 import { ResolverStateIcon } from '../ResolverStateBadge/ResolverStateIcon';
 import { ResolverCardAction } from './ResolverCardAction';
@@ -82,6 +81,7 @@ export const ResolverCard = ({
   return (
     <AgentCard
       tone={resolverCardTone({ status, hasUnread })}
+      density="lane"
       ariaLabel={agent.name}
       isSelected={isSelected}
       isInspected={isInspected}
@@ -92,14 +92,7 @@ export const ResolverCard = ({
       onMouseLeave={hoverMarkViewed.onMouseLeave}
       leading={<ResolverStateIcon state={resolverBadgeState(status)} />}
       title={
-        <span
-          className={cn(
-            'min-w-0 flex-1 truncate text-left text-2xs font-medium',
-            isSelected ? 'text-foreground' : 'text-muted-foreground',
-          )}
-        >
-          {agent.name}
-        </span>
+        <span className={agentCardTitleClass({ density: 'lane', isSelected })}>{agent.name}</span>
       }
       navigationAction={
         <>
@@ -122,10 +115,23 @@ export const ResolverCard = ({
           />
         </>
       }
-      headline={
-        <span className="inline-flex w-fit items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-          {origin.label}
-        </span>
+      status={
+        <>
+          <Chip tone="neutral" size="sm" label={origin.label} />
+          <ResolverCardTally agent={agent} sessionId={agent.sessionId} />
+        </>
+      }
+      meta={
+        <AgentMetrics
+          run={agent}
+          telemetry={telemetry}
+          aggregate={aggregate}
+          contextUsage={contextUsage}
+          turns={turns}
+          turnsLoading={turnsLoading}
+          density="lane"
+          plannedModel={plannedModel}
+        />
       }
       footer={
         <ResolverCardAction
@@ -139,24 +145,7 @@ export const ResolverCard = ({
         />
       }
     >
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-col gap-0.5">
-          <AgentMetrics
-            run={agent}
-            telemetry={telemetry}
-            aggregate={aggregate}
-            contextUsage={contextUsage}
-            turns={turns}
-            turnsLoading={turnsLoading}
-            density="full"
-            plannedModel={plannedModel}
-          />
-          <AgentLastUpdate agent={agent} />
-          <ContextWindowBar usage={contextUsage} />
-          <ResolverCardTally agent={agent} sessionId={agent.sessionId} />
-        </div>
-        <ResolverCardSnippet threadComment={threadComment} diffComment={diffComment} />
-      </div>
+      <ResolverCardSnippet threadComment={threadComment} diffComment={diffComment} />
     </AgentCard>
   );
 };

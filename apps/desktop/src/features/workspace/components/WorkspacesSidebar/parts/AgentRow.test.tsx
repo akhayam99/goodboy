@@ -100,17 +100,17 @@ describe('AgentRow', () => {
     expect(screen.getByText(/ctx \d+%/)).toBeTruthy();
   });
 
-  it('shows the token split and the duration without being selected', () => {
-    renderRow(false);
-    expect(screen.getByTestId('agent-metrics-block')).toBeTruthy();
-    expect(screen.getByTitle('in: 100 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle('out: 20 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle(/^started .+2026/)).toBeTruthy();
+  it('keeps duration and last update on the one fact line', () => {
+    const meta = within(renderRow(false).getByTestId('agent-metrics-inline'));
+    expect(meta.getByTitle(/^started .+2026/)).toBeTruthy();
+    expect(meta.getByText(/^updated /)).toBeTruthy();
   });
 
-  it('shows the per-provider context gauge without being selected', () => {
+  it('leaves the token split and the context gauge to the inspector', () => {
     const { container } = renderRow(false);
-    expect(container.querySelectorAll('[title*="context:"]').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
+    expect(screen.queryByTitle('in: 100 tokens (cumulative)')).toBeNull();
+    expect(container.querySelector('[title*="last turn context:"]')).toBeNull();
   });
 
   it('includes cache tokens in the last-turn tooltip total', () => {
@@ -119,18 +119,17 @@ describe('AgentRow', () => {
   });
 
   it('prints cost, turns and duration exactly once', () => {
-    const { container } = renderRow(false);
-    expect(container.querySelectorAll('[title^="in: "]')).toHaveLength(1);
-    expect(container.querySelectorAll('[title^="out: "]')).toHaveLength(1);
+    renderRow(false);
     expect(screen.getAllByText('3t')).toHaveLength(1);
     expect(screen.getAllByTitle(/^started .+2026/)).toHaveLength(1);
+    expect(screen.getAllByText(/^updated /)).toHaveLength(1);
   });
 
   it('shows the same metrics when selected', () => {
     renderRow(true);
     expect(screen.getByText('Sonnet 4.5')).toBeTruthy();
     expect(screen.getAllByTestId('agent-metrics-inline')).toHaveLength(1);
-    expect(screen.getAllByTestId('agent-metrics-block')).toHaveLength(1);
+    expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
   });
 
   it('marks an unread row seen after the hover dwell', () => {
