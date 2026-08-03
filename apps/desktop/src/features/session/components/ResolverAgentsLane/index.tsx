@@ -31,8 +31,8 @@ export const ResolverAgentsLane = ({
 }: Props) => {
   const lane = useResolverAgentsLane({ session });
   const hasNoResolvers = lane.totalCount === 0;
-  const hasVisibleEntries =
-    lane.activeEntries.length > 0 || (showCompleted && lane.completedEntries.length > 0);
+  const hasActiveEntries = lane.activeEntries.length > 0;
+  const hasVisibleEntries = hasActiveEntries || (showCompleted && lane.completedEntries.length > 0);
 
   useEffect(() => {
     if (onCompletedCountChange == null) {
@@ -51,7 +51,7 @@ export const ResolverAgentsLane = ({
           onForceNext={lane.onForceNext}
         />
       }
-      isEmpty={!hasVisibleEntries}
+      isEmpty={!hasActiveEntries}
       empty={
         <LensEmptyState
           tone={CONCEPT_TONE.resolve}
@@ -67,37 +67,43 @@ export const ResolverAgentsLane = ({
         ) : null
       }
     >
-      <ResolverRows
-        entries={lane.activeEntries}
-        isTaskActive={lane.isTaskActive}
-        isTranscriptLoading={lane.isTranscriptLoading}
-        isMuted={false}
-        selectedAgentId={lane.selectedAgentId}
-        inspectedAgentId={inspectedResolverId}
-        commentByThreadId={lane.commentByThreadId}
-        diffCommentByAgentId={lane.diffCommentByAgentId}
-        metrics={lane.metrics}
-        reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
-        onOpenChat={lane.onOpenChat}
-        onInspect={onInspectResolver}
-        onJump={lane.onJump}
-      />
-      {showCompleted && lane.completedEntries.length > 0 ? (
-        <ResolverRows
-          entries={lane.completedEntries}
-          isTaskActive={lane.isTaskActive}
-          isTranscriptLoading={lane.isTranscriptLoading}
-          isMuted
-          selectedAgentId={lane.selectedAgentId}
-          inspectedAgentId={inspectedResolverId}
-          commentByThreadId={lane.commentByThreadId}
-          diffCommentByAgentId={lane.diffCommentByAgentId}
-          metrics={lane.metrics}
-          reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
-          onOpenChat={lane.onOpenChat}
-          onInspect={onInspectResolver}
-          onJump={lane.onJump}
-        />
+      {hasVisibleEntries ? (
+        <div className="flex flex-col gap-5">
+          {hasActiveEntries ? (
+            <ResolverRows
+              entries={lane.activeEntries}
+              isTaskActive={lane.isTaskActive}
+              isTranscriptLoading={lane.isTranscriptLoading}
+              isMuted={false}
+              selectedAgentId={lane.selectedAgentId}
+              inspectedAgentId={inspectedResolverId}
+              commentByThreadId={lane.commentByThreadId}
+              diffCommentByAgentId={lane.diffCommentByAgentId}
+              metrics={lane.metrics}
+              reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+              onOpenChat={lane.onOpenChat}
+              onInspect={onInspectResolver}
+              onJump={lane.onJump}
+            />
+          ) : null}
+          {showCompleted && lane.completedEntries.length > 0 ? (
+            <ResolverRows
+              entries={lane.completedEntries}
+              isTaskActive={lane.isTaskActive}
+              isTranscriptLoading={lane.isTranscriptLoading}
+              isMuted
+              selectedAgentId={lane.selectedAgentId}
+              inspectedAgentId={inspectedResolverId}
+              commentByThreadId={lane.commentByThreadId}
+              diffCommentByAgentId={lane.diffCommentByAgentId}
+              metrics={lane.metrics}
+              reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+              onOpenChat={lane.onOpenChat}
+              onInspect={onInspectResolver}
+              onJump={lane.onJump}
+            />
+          ) : null}
+        </div>
       ) : null}
     </AgentLane>
   );

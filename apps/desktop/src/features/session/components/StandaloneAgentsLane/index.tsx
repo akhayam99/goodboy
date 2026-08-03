@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { AgentId, Session, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AdHocRow } from '../../../workspace/components/WorkspacesSidebar/parts/AdHocRow';
 import { AgentLane } from '../AgentLane';
 import { EmptyState } from '@goodboy/ui';
@@ -54,9 +54,9 @@ export const StandaloneAgentsLane = ({
     onCompletedCountChange(lane.completedAgents.length);
   }, [isLens, lane.completedAgents.length, onCompletedCountChange]);
 
-  const list = (
+  const renderList = (rows: ReadonlyArray<Agent>, muted: boolean) => (
     <ul className="flex flex-col gap-1">
-      {agents.map((run) => (
+      {rows.map((run) => (
         <AdHocRow
           key={run.id}
           run={run}
@@ -80,11 +80,13 @@ export const StandaloneAgentsLane = ({
           isInspected={run.id === inspectedAgentId}
           onInspectAgent={onInspectAgent}
           onMarkDone={lane.onMarkDone}
-          isMuted={isLens && run.doneAt != null}
+          isMuted={muted}
         />
       ))}
     </ul>
   );
+
+  const list = renderList(agents, false);
 
   const error = lane.error != null && <p className="text-2xs text-danger">{lane.error}</p>;
 
@@ -102,7 +104,7 @@ export const StandaloneAgentsLane = ({
 
   return (
     <AgentLane
-      isEmpty={agents.length === 0}
+      isEmpty={lane.activeAgents.length === 0}
       empty={
         isLoadingEmpty ? (
           <AgentListSkeleton />
@@ -117,7 +119,14 @@ export const StandaloneAgentsLane = ({
       }
       footer={error}
     >
-      {list}
+      {agents.length > 0 ? (
+        <div className="flex flex-col gap-5">
+          {lane.activeAgents.length > 0 ? renderList(lane.activeAgents, false) : null}
+          {showCompleted && lane.completedAgents.length > 0
+            ? renderList(lane.completedAgents, true)
+            : null}
+        </div>
+      ) : null}
     </AgentLane>
   );
 };

@@ -14,6 +14,24 @@ describe('RoutingBadge', () => {
     expect(screen.queryByText('claude-sonnet-4-5')).toBeNull();
   });
 
+  it('puts the provider glyph after the model when the cluster is right aligned', () => {
+    const { container } = render(
+      <RoutingBadge provider="anthropic" model="claude-sonnet-4-5" glyphPlacement="trailing" />,
+    );
+    const badge = container.firstElementChild!;
+    const model = screen.getByText('Sonnet 4.5');
+
+    expect(badge.lastElementChild).not.toBe(model);
+    expect(badge.firstElementChild).toBe(model);
+  });
+
+  it('leads with the glyph by default', () => {
+    const { container } = render(<RoutingBadge provider="anthropic" model="claude-sonnet-4-5" />);
+    const badge = container.firstElementChild!;
+
+    expect(badge.firstElementChild).not.toBe(screen.getByText('Sonnet 4.5'));
+  });
+
   it('keeps the raw id reachable as the title for support', () => {
     render(<RoutingBadge provider="anthropic" model="claude-sonnet-4-5" />);
 

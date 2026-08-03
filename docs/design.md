@@ -266,6 +266,28 @@ children of the `flex flex-col gap-2` body in `ActivitySection.tsx`. Same rule
 in the rail: `buildLensGroups` filters out groups whose `rows` are empty rather
 than rendering a group heading over nothing.
 
+**What "empty" counts.** A lens is empty when it has no ACTIVE item, not when it
+has nothing on screen. Revealing the completed or discarded group does not fill
+the lens: those rows are a reread, not work in flight. So a single flag decides
+both halves of the layout:
+
+```
+hasActive
+  false -> the empty state stays in the body, its CTA inside it,
+           and any revealed group renders underneath it
+  true  -> the empty state goes, the CTA moves to the section header
+```
+
+`WorkflowsPane`, `StandaloneAgentsLane` and `ResolverAgentsLane` all read
+`hasActive` this way, and `AgentLane` renders the empty state and the children
+together rather than one or the other. The copy has to match the flag: an empty
+state above a visible list says "No active agents", never "No agents yet".
+
+**The gap between groups.** Rows inside a group sit at `gap-1` or `gap-2`; the
+groups themselves are separated by `gap-5`, the same step `PaneShell` puts
+between its body children. That is what makes active, completed and discarded
+read as three answers instead of one long list.
+
 ## 5. Icon and tone vocabulary
 
 `apps/desktop/src/shared/components/conceptIcons.ts` holds two maps over the
@@ -379,6 +401,26 @@ truncate`, each trailing crumb is `max-w-48 truncate`, and workspace identity is
 cluster are `shrink-0` and never move. In the rail, the label is `min-w-0
 flex-1 truncate` and the count badge is `shrink-0`, so a long lens label loses
 characters before a count disappears.
+
+**What lines up in a repeated row.** A list of peers is read down a column, not
+across a line, so anything whose width follows its content breaks the column for
+every row under it. Two rules follow.
+
+A label chip in a repeated row carries a fixed width. `Chip` takes `width="sm" |
+"md" | "lg"` (`min-w-16`, `min-w-24`, `min-w-32`, each with `justify-center`);
+`auto` stays content-sized and belongs to one-off chips in a detail panel, never
+to a column. `WorkflowOriginTag` is `lg`, because ORCHESTRATED is the longest
+label it can carry; the provider routing status and the budget turn kind are
+`md`. A fixed-width wrapper around the chip does not count: it aligns what comes
+after the chip and leaves the chip itself ragged.
+
+In a right-aligned cluster, variable text comes first and glyphs last. The
+things nearest the edge have to be the constant-width ones or they wander row to
+row. So a workflow step row reads model name, then provider glyph, then status
+icon, which is what `RoutingBadge`'s `glyphPlacement="trailing"` is for. In a
+left-aligned cluster the opposite holds and the glyph leads, which is the
+default. The test is where the group is anchored, not what looks tidy in one
+row.
 
 ## 8. The session overview as the reference page
 

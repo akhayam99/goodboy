@@ -28,6 +28,7 @@ export const WorkflowOriginTag = ({ origin }: Props) => (
   <Chip
     tone={TONE[origin]}
     size="xs"
+    width="lg"
     shape="badge"
     bordered={false}
     label={LABEL[origin]}

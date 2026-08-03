@@ -1,4 +1,3 @@
-import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { Agent, ProviderId } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
@@ -14,9 +13,7 @@ type Props = {
   readonly marker: string;
   readonly childCount: number;
   readonly doneChildCount: number;
-  readonly isBranchOpen: boolean;
   readonly isSelected: boolean;
-  readonly onToggleBranch: () => void;
   readonly onSelect: () => void;
 };
 
@@ -28,9 +25,7 @@ export const WorkflowStepGraphNode = ({
   marker,
   childCount,
   doneChildCount,
-  isBranchOpen,
   isSelected,
-  onToggleBranch,
   onSelect,
 }: Props) => (
   <div className="flex min-w-0 items-center gap-1.5">
@@ -50,24 +45,21 @@ export const WorkflowStepGraphNode = ({
       <span className="min-w-0 flex-1 truncate text-2xs font-medium text-foreground">
         {run.name}
       </span>
-      <RoutingBadge provider={provider} model={model} className="max-w-28 shrink-0" />
+      <RoutingBadge
+        provider={provider}
+        model={model}
+        glyphPlacement="trailing"
+        className="max-w-28 shrink-0"
+      />
       <WorkflowStepStatus status={run.status} label={run.name} />
     </button>
     {childCount > 0 ? (
-      <button
-        type="button"
-        onClick={onToggleBranch}
-        aria-expanded={isBranchOpen}
-        aria-label={`${isBranchOpen ? 'hide' : 'show'} the ${childCount} agents under ${run.name}`}
-        className="flex shrink-0 items-center gap-0.5 rounded-md px-1 py-1 font-mono text-[10px] tabular-nums text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+      <span
+        title={`${doneChildCount} of ${childCount} agents under ${run.name} are done`}
+        className="shrink-0 px-1 py-1 font-mono text-[10px] tabular-nums text-muted-foreground/70"
       >
-        {isBranchOpen ? (
-          <ChevronDown size={11} aria-hidden />
-        ) : (
-          <ChevronRight size={11} aria-hidden />
-        )}
         {doneChildCount}/{childCount}
-      </button>
+      </span>
     ) : null}
   </div>
 );
