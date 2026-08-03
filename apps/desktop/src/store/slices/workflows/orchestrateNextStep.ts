@@ -475,7 +475,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           stepName: agent.name,
           preferredAgentId: agent.id,
         });
-        await get().activateWorkflowAgent(sessionId, agent.id);
+        await get().activateWorkflowAgent(sessionId, agent.id, undefined, 'agent');
         return;
       }
       await persistOrchestrationOutcome({

@@ -174,7 +174,12 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
       expect(state.spawnAgent).not.toHaveBeenCalled();
       expect(state.activateWorkflowAgent).toHaveBeenCalledTimes(1);
-      expect(state.activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID);
+      expect(state.activateWorkflowAgent).toHaveBeenCalledWith(
+        SESSION_ID,
+        IMPL_AGENT_ID,
+        PLAN_ID,
+        'agent',
+      );
     });
 
     it('does not insert a duplicate agent for a step that already has a pending slot', async () => {
@@ -209,7 +214,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
         expect(
           state.activateWorkflowAgent,
           `alias "${name}" should activate the slot`,
-        ).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID);
+        ).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID, 'agent');
       }
     });
 
@@ -235,6 +240,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
           SESSION_ID,
           IMPL_AGENT_ID,
           PLAN_ID,
+          'agent',
         );
       },
     );

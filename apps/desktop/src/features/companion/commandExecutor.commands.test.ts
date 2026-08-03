@@ -424,7 +424,7 @@ describe('advanceStep workflow advancement', () => {
     });
     const res = await executeBridgeCommand(cmd('advanceStep', { sessionId: 's1' }));
     expect(res.ok).toBe(true);
-    expect(h.activateWorkflowAgent).toHaveBeenCalledWith('s1', 'ag2');
+    expect(h.activateWorkflowAgent).toHaveBeenCalledWith('s1', 'ag2', undefined, 'agent');
     expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
   });
 
@@ -434,7 +434,7 @@ describe('advanceStep workflow advancement', () => {
     });
     const res = await executeBridgeCommand(cmd('advanceStep', { sessionId: 's1' }));
     expect(res.ok).toBe(true);
-    expect(h.activateWorkflowAgent).toHaveBeenCalledWith('s1', 'ag1');
+    expect(h.activateWorkflowAgent).toHaveBeenCalledWith('s1', 'ag1', undefined, 'agent');
   });
 
   it('refuses to skip ahead when an earlier step is still running', async () => {

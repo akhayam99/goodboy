@@ -79,6 +79,6 @@ export const runPlan = (get: GetFn) => {
       });
       return;
     }
-    await get().activateWorkflowAgent(sessionId, stepAgent.id, planId);
+    await get().activateWorkflowAgent(sessionId, stepAgent.id, planId, 'agent');
   };
 };

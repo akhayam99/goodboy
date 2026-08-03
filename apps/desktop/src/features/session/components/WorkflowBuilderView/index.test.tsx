@@ -413,15 +413,14 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expect(continueBtn().disabled).toBe(true);
   });
 
-  it('lands on the new run detail after starting a custom workflow', async () => {
-    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+  it('leaves the landing to attachWorkflowToSession after starting a custom workflow', async () => {
+    const onClose = vi.fn();
+    render(<WorkflowBuilderView session={session} onClose={onClose} />);
     await draftPlan();
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
-    await waitFor(() => expect(mockSetActiveLens).toHaveBeenCalledWith('sess-1', 'workflows'));
-    const attachOrder = mockAttach.mock.invocationCallOrder[0]!;
-    const lensOrder = mockSetActiveLens.mock.invocationCallOrder[0]!;
-    expect(attachOrder).toBeLessThan(lensOrder);
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(mockSetActiveLens).not.toHaveBeenCalled();
   });
 
   it('closes via the header close button', async () => {
@@ -537,17 +536,16 @@ describe('WorkflowBuilderView (preset mode)', () => {
     expect(toastMock).toHaveBeenCalledWith('success', 'workflow started: Ship It');
   });
 
-  it('lands on the new run detail after starting a preset as-is', async () => {
+  it('leaves the landing to attachWorkflowToSession after starting a preset as-is', async () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
-    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    const onClose = vi.fn();
+    render(<WorkflowBuilderView session={session} onClose={onClose} />);
     goToApproach();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
-    await waitFor(() => expect(mockSetActiveLens).toHaveBeenCalledWith('sess-1', 'workflows'));
-    const attachOrder = mockAttach.mock.invocationCallOrder[0]!;
-    const lensOrder = mockSetActiveLens.mock.invocationCallOrder[0]!;
-    expect(attachOrder).toBeLessThan(lensOrder);
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(mockSetActiveLens).not.toHaveBeenCalled();
   });
 
   it('switches to custom mode via the segment', () => {

@@ -56,7 +56,7 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
     if (pending == null) {
       return;
     }
-    await activateWorkflowAgent(sessionId, pending.id);
+    await activateWorkflowAgent(sessionId, pending.id, undefined, 'agent');
   };
 
   return (

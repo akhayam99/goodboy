@@ -127,7 +127,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     }
     return;
   }
-  await get().activateWorkflowAgent(sessionId, nextPendingAgent.id);
+  await get().activateWorkflowAgent(sessionId, nextPendingAgent.id, undefined, 'agent');
   void get().emitNotification(
     'agent-auto-spawn',
     'info',

@@ -15,6 +15,7 @@ import { WorkflowRunDetail } from './WorkflowRunDetail';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../shared/components/PaneShell/FocusedPane';
+import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
 
 type Props = {
   readonly session: Session;
@@ -78,9 +79,12 @@ export const WorkflowsPane = ({ session }: Props) => {
         lens="Workflows"
         count={attachedRuns.length}
         actions={
-          shouldShowHeaderAttach ? (
-            <WorkflowAttachButton sessionId={sessionId} placement="header" />
-          ) : null
+          <>
+            <WorkSurfaceBackButton sessionId={sessionId} />
+            {shouldShowHeaderAttach ? (
+              <WorkflowAttachButton sessionId={sessionId} placement="header" />
+            ) : null}
+          </>
         }
       >
         <WorkflowRunDetail session={session} workflowRunId={focusedRun.run.id} />

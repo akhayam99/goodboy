@@ -288,7 +288,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(payload.content).not.toContain('do the thing');
   });
 
-  it('default call navigates: sets selectedAgentId for the session', async () => {
+  it('default call stays put: starts the step without selecting its agent', async () => {
     const { set, state, activate } = buildHarness({
       agent: makeAgent('generic', 'Execute commits'),
       workflow: makeWorkflow('Execute commits'),
@@ -298,7 +298,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     await activate(SESSION_ID, AGENT_ID);
 
     const merged = mergedSetPartials(set, state);
-    expect((merged.selectedAgentId as Record<string, unknown>)[SESSION_ID]).toBe(AGENT_ID);
+    expect(merged.selectedAgentId).toBeUndefined();
     expect((merged.agentTurnState as Record<string, unknown>)[AGENT_ID]).toBeDefined();
   });
 
@@ -310,7 +310,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     });
     Object.assign(state, { activeLens: { [SESSION_ID]: 'workflows' } });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate(SESSION_ID, AGENT_ID, undefined, 'agent');
 
     const merged = mergedSetPartials(set, state);
     expect(merged.selectedAgentId).toBeUndefined();
@@ -328,20 +328,20 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       selectedAgentId: { [SESSION_ID]: 'other-agent' },
     });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate(SESSION_ID, AGENT_ID, undefined, 'agent');
 
     const merged = mergedSetPartials(set, state);
     expect((merged.selectedAgentId as Record<string, unknown>)[SESSION_ID]).toBe(AGENT_ID);
   });
 
-  it('navigate=false starts the step without setting selectedAgentId but still inits turn and sends', async () => {
+  it("focus 'none' starts the step without setting selectedAgentId but still inits turn and sends", async () => {
     const { set, state, sendTurn, activate } = buildHarness({
       agent: makeAgent('generic', 'Execute commits'),
       workflow: makeWorkflow('Execute commits'),
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, false);
+    await activate(SESSION_ID, AGENT_ID, undefined, 'none');
 
     const merged = mergedSetPartials(set, state);
     expect(merged.selectedAgentId).toBeUndefined();
@@ -361,7 +361,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
   });
 
-  it('navigate=false fans out a multi-cluster implementer without setting selectedAgentId', async () => {
+  it("focus 'none' fans out a multi-cluster implementer without setting selectedAgentId", async () => {
     const clusters: ReadonlyArray<ImplementationCluster> = [
       { title: 'a', instructions: 'i1' },
       { title: 'b', instructions: 'i2' },
@@ -373,7 +373,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       autoRun: true,
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, false);
+    await activate(SESSION_ID, AGENT_ID, undefined, 'none');
 
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
     const merged = mergedSetPartials(set, state);
@@ -381,14 +381,14 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect((merged.agentTurnState as Record<string, unknown>)[AGENT_ID]).toBeDefined();
   });
 
-  it('navigate=false on a reviewer step sends the kickoff without navigating', async () => {
+  it("focus 'none' on a reviewer step sends the kickoff without navigating", async () => {
     const { set, state, sendTurn, activate } = buildHarness({
       agent: makeAgent('reviewer', 'Review'),
       workflow: makeWorkflow('Review'),
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, false);
+    await activate(SESSION_ID, AGENT_ID, undefined, 'none');
 
     const merged = mergedSetPartials(set, state);
     expect(merged.selectedAgentId).toBeUndefined();
@@ -398,7 +398,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(sendTurn.mock.calls[0]![0].content).toContain('<<step-done');
   });
 
-  it('navigate=false still injects and consumes an explicit plan', async () => {
+  it("focus 'none' still injects and consumes an explicit plan", async () => {
     const EXPLICIT_ID = 'plan-explicit' as PlanId;
     const { set, state, sendTurn, activate } = buildHarness({
       agent: makeAgent('generic', 'Execute commits'),
@@ -406,7 +406,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan({ id: EXPLICIT_ID, bodyMd: 'explicit body' })],
     });
 
-    await activate(SESSION_ID, AGENT_ID, EXPLICIT_ID, false);
+    await activate(SESSION_ID, AGENT_ID, EXPLICIT_ID, 'none');
 
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(EXPLICIT_ID, AGENT_ID);
     const merged = mergedSetPartials(set, state);
@@ -414,14 +414,14 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(sendTurn.mock.calls[0]![0].content).toContain('explicit body');
   });
 
-  it('navigate=false never emits a selectedAgentId key, leaving prior selection intact', async () => {
+  it("focus 'none' never emits a selectedAgentId key, leaving prior selection intact", async () => {
     const { set, activate } = buildHarness({
       agent: makeAgent('generic', 'Execute commits'),
       workflow: makeWorkflow('Execute commits'),
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, false);
+    await activate(SESSION_ID, AGENT_ID, undefined, 'none');
 
     const touchesSelection = set.mock.calls.some((call) => {
       const updater = call[0] as (s: Record<string, unknown>) => Record<string, unknown>;
@@ -430,14 +430,14 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(touchesSelection).toBe(false);
   });
 
-  it('explicit navigate=true behaves like the default and navigates', async () => {
+  it("explicit focus 'agent' navigates to the step chat", async () => {
     const { set, state, activate } = buildHarness({
       agent: makeAgent('generic', 'Execute commits'),
       workflow: makeWorkflow('Execute commits'),
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, true);
+    await activate(SESSION_ID, AGENT_ID, undefined, 'agent');
 
     const merged = mergedSetPartials(set, state);
     expect((merged.selectedAgentId as Record<string, unknown>)[SESSION_ID]).toBe(AGENT_ID);
@@ -450,7 +450,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await expect(activate(SESSION_ID, 'nope' as AgentId, undefined, false)).rejects.toThrow(
+    await expect(activate(SESSION_ID, 'nope' as AgentId, undefined, 'none')).rejects.toThrow(
       'agent not found or not a workflow agent',
     );
     expect(set).not.toHaveBeenCalled();

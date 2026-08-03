@@ -133,7 +133,12 @@ describe('maybeAutoAdvanceWorkflow', () => {
     );
     const { set, get } = harness(state);
     await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
-    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(SESSION_ID, `${RUN_ID}-s1`);
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(
+      SESSION_ID,
+      `${RUN_ID}-s1`,
+      undefined,
+      'agent',
+    );
   });
 
   it('does not skip past a step that failed', async () => {
@@ -211,7 +216,12 @@ describe('maybeAutoAdvanceWorkflow', () => {
     await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
 
     expect(state['startWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, CHAINED_ID);
-    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(SESSION_ID, `${CHAINED_ID}-s0`);
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(
+      SESSION_ID,
+      `${CHAINED_ID}-s0`,
+      undefined,
+      'agent',
+    );
   });
 
   it('holds while the summarizer runs and advances once it finishes', async () => {
@@ -225,7 +235,12 @@ describe('maybeAutoAdvanceWorkflow', () => {
 
     state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
     await advance(SESSION_ID);
-    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(SESSION_ID, `${RUN_ID}-s0`);
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(
+      SESSION_ID,
+      `${RUN_ID}-s0`,
+      undefined,
+      'agent',
+    );
   });
 
   it('orchestrates a dynamic run when no pending agent exists', async () => {

@@ -679,15 +679,14 @@ export const DiffViewerContent = ({
         effort: resolverRouting.effort,
         kindOverride: 'resolver',
         sourceKind: 'diff_comment',
-        focus: 'agent',
+        focus: 'none',
       });
       try {
         await consumeDiffComments(sessionId, idsToConsume, agentId);
       } catch (err) {
         console.error('failed to mark comments consumed', err);
       }
-      void sendTurn({ sessionId, content: prompt });
-      onClose();
+      void sendTurn({ sessionId, agentId, content: prompt });
     } finally {
       setSpawning(false);
     }

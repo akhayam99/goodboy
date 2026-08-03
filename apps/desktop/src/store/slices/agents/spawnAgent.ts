@@ -29,9 +29,8 @@ import {
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../../kickoff';
 import { fanOutClusters, selectFanOutPlan } from '../workflows/clusterImplementation';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
+import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn, SetFn } from './types';
-
-export type SpawnFocus = 'agent' | 'none';
 
 type SpawnArgs = {
   stepId?: StepId;

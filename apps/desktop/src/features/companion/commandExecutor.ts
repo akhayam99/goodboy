@@ -385,7 +385,7 @@ async function advanceNextWorkflowStep(sessionId: SessionId): Promise<void> {
           ),
         );
       if (allPrevDone) {
-        await store.activateWorkflowAgent(sessionId, agent.id);
+        await store.activateWorkflowAgent(sessionId, agent.id, undefined, 'agent');
         return;
       }
       break;

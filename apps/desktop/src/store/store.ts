@@ -101,7 +101,7 @@ import type {
   SessionCreationKind,
   SessionStudio,
 } from './slices/session-view';
-import type { SpawnFocus } from './slices/agents/spawnAgent';
+import type { SpawnFocus } from './slices/session-view/spawnFocus';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { createPermissionsSlice } from './slices/permissions';
@@ -278,7 +278,7 @@ export type AppActions = {
     sessionId: SessionId,
     agentId: AgentId,
     explicitPlanId?: PlanId,
-    navigate?: boolean,
+    focus?: SpawnFocus,
   ): Promise<void>;
   advanceClusterImplementation(
     sessionId: SessionId,

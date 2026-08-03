@@ -302,6 +302,8 @@ describe('startWorkflowRun', () => {
       maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
       orchestrateNextStep: vi.fn(async () => undefined),
       activateWorkflowAgent: vi.fn(async () => undefined),
+      setFocusedWorkflowRun: vi.fn(),
+      setActiveLens: vi.fn(),
     };
   }
 
@@ -320,7 +322,7 @@ describe('startWorkflowRun', () => {
     expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
   });
 
-  it('activates the first pending agent for non-autoRun runs', async () => {
+  it('activates the first pending agent for non-autoRun runs without moving the operator', async () => {
     const run = makeRun('q', 'manual', { autoRun: false });
     const agents = [
       makeAgent('q' as WorkflowRunId, 's0', 'pending', 0),
@@ -329,7 +331,14 @@ describe('startWorkflowRun', () => {
     const state = baseState(run, agents);
     const { set, get } = harness(state);
     await startWorkflowRun(set, get)(SESSION_ID, 'q' as WorkflowRunId);
-    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(SESSION_ID, 'q-s0');
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(
+      SESSION_ID,
+      'q-s0',
+      undefined,
+      'none',
+    );
+    expect(state['setFocusedWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, 'q');
+    expect(state['setActiveLens']).not.toHaveBeenCalled();
   });
 
   it('is a no-op for an already-immediate run', async () => {
@@ -503,6 +512,7 @@ describe('attachWorkflowToSession trigger modes', () => {
       maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
       orchestrateNextStep: vi.fn(async () => undefined),
       activateWorkflowAgent: vi.fn(async () => undefined),
+      setActiveLens: vi.fn(),
     };
   }
 

@@ -209,7 +209,12 @@ describe('orchestrateNextStep', () => {
     expect(templates[WORKSPACE_ID]![0]!.steps).toHaveLength(2);
     const agents = (state['sessionPhaseRuns'] as Record<string, ReadonlyArray<Agent>>)[SESSION_ID]!;
     expect(agents[1]).toMatchObject({ name: 'Implement', status: 'pending' });
-    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(SESSION_ID, 'agent-2');
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(
+      SESSION_ID,
+      'agent-2',
+      undefined,
+      'agent',
+    );
     expect(state['appendTurnEvent']).toHaveBeenCalledWith(
       'agent-2',
       SESSION_ID,

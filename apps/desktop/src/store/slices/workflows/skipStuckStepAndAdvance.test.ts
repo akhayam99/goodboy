@@ -134,7 +134,7 @@ describe('skipStuckStepAndAdvance', () => {
       STUCK,
       expect.objectContaining({ status: 'skipped' }),
     );
-    expect(activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, NEXT);
+    expect(activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, NEXT, undefined, 'agent');
   });
 
   it('does not skip a step with a live turn', async () => {

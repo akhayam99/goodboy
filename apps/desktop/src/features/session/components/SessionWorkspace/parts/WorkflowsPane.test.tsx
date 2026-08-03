@@ -12,6 +12,8 @@ type Store = {
   messages: Record<string, ReadonlyArray<never>>;
   agentRunHistory: Record<string, ReadonlyArray<never>>;
   focusedWorkflowRunId: Record<string, string | null>;
+  lensHistory: Record<string, { readonly index: number }>;
+  lensGo: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   restoreWorkflow: ReturnType<typeof vi.fn>;
 };
@@ -36,6 +38,8 @@ const store: Store = {
   messages: {},
   agentRunHistory: {},
   focusedWorkflowRunId: {},
+  lensHistory: {},
+  lensGo: vi.fn(),
   setFocusedWorkflowRun: vi.fn(),
   restoreWorkflow: vi.fn(),
 };

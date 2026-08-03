@@ -659,7 +659,7 @@ describe('SessionOverviewPane pipeline lane next-step badge', () => {
   it('clicking the next-step badge starts the step without navigating', () => {
     const { onSelectLens } = renderPane(sessionWithRun());
     fireEvent.click(screen.getByTitle(/^start execute$/i));
-    expect(store.activateWorkflowAgent).toHaveBeenCalledWith('sess-1', AGENT_ID, undefined, false);
+    expect(store.activateWorkflowAgent).toHaveBeenCalledWith('sess-1', AGENT_ID, undefined, 'none');
     expect(store.setFocusedWorkflowRun).not.toHaveBeenCalled();
     expect(onSelectLens).not.toHaveBeenCalledWith('workflows');
   });

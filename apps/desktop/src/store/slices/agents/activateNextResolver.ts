@@ -28,7 +28,6 @@ export const activateNextResolver = (set: SetFn, get: GetFn) => {
       delete nextPending[next.id];
       return { pendingResolverKickoff: nextPending };
     });
-    await get().selectAgent(sessionId, next.id);
     void get().sendTurn({ sessionId, agentId: next.id, content: kickoff });
   };
 };

@@ -147,6 +147,8 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       focusedWorkflowRunId: { ...state.focusedWorkflowRunId, [sessionId]: workflowRunId },
     }));
 
+    get().setActiveLens(sessionId, 'workflows');
+
     const attachmentInputs = options?.attachmentInputs;
     if (attachmentInputs && attachmentInputs.length > 0) {
       await get().addGoalAttachments({ type: 'workflow_run', id: workflowRunId }, attachmentInputs);
@@ -162,7 +164,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       } else if (autoRun) {
         void get().maybeAutoAdvanceWorkflow(sessionId);
       } else if (newAgents.length > 0) {
-        void get().activateWorkflowAgent(sessionId, newAgents[0]!.id);
+        void get().activateWorkflowAgent(sessionId, newAgents[0]!.id, undefined, 'none');
       }
     }
   };
