@@ -1,41 +1,56 @@
+import type { ReactNode } from 'react';
 import { Skeleton } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
+import { HeaderBand, StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { LinearIssueDetail } from '../../../../../integrations/linear/LinearIssueDetail';
 import { useLinearIssue } from '../../../../../integrations/linear/useLinearIssue';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly issueId: string;
+  readonly task: SessionExternalTask;
+  readonly headerActions: ReactNode;
 };
 
-export const LinearTaskDetail = ({ workspaceId, issueId }: Props) => {
-  const { issue, isLoading, error } = useLinearIssue({ workspaceId, issueId });
+export const LinearTaskDetail = ({ workspaceId, task, headerActions }: Props) => {
+  const { issue, isLoading, error } = useLinearIssue({
+    workspaceId,
+    issueId: task.externalId,
+  });
 
-  if (isLoading) {
+  if (issue != null) {
     return (
-      <div
-        role="status"
-        aria-label="Loading Linear issue"
-        className="flex min-w-0 flex-1 flex-col gap-3 px-6 py-5"
-      >
-        <Skeleton className="h-4 w-2/3 rounded" />
-        <Skeleton className="h-3 w-full rounded" />
-        <Skeleton className="h-3 w-3/4 rounded" />
-      </div>
+      <LinearIssueDetail
+        issue={issue}
+        workspaceId={workspaceId}
+        fit="fill"
+        headerActions={headerActions}
+      />
     );
   }
 
-  if (error != null) {
-    return <p className="px-6 py-5 text-sm text-danger">{error}</p>;
-  }
-
-  if (issue == null) {
-    return null;
-  }
-
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <LinearIssueDetail issue={issue} workspaceId={workspaceId} fit="fill" />
-    </div>
+    <StudioDetailLayout
+      fit="fill"
+      header={
+        <HeaderBand
+          meta={
+            <span className="font-mono text-2xs tabular-nums text-muted-foreground">
+              {task.identifier}
+            </span>
+          }
+          title={task.title}
+          actions={headerActions}
+        />
+      }
+    >
+      {isLoading ? (
+        <div role="status" aria-label="Loading Linear issue" className="flex flex-col gap-3">
+          <Skeleton className="h-4 w-2/3 rounded" />
+          <Skeleton className="h-3 w-full rounded" />
+          <Skeleton className="h-3 w-3/4 rounded" />
+        </div>
+      ) : null}
+      {error != null ? <p className="text-sm text-danger">{error}</p> : null}
+    </StudioDetailLayout>
   );
 };

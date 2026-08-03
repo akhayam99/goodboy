@@ -120,6 +120,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
 
   return (
     <StudioDetailLayout
+      fit="fill"
       header={
         <HeaderBand
           meta={

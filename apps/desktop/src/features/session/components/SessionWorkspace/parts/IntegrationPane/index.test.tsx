@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
 
 type Store = {
@@ -19,12 +19,9 @@ type Props = {
   readonly actions?: ReactNode;
 };
 
-type LinearDetailProps = {
-  readonly issueId: string;
-};
-
-type SentryDetailProps = {
+type TaskDetailProps = {
   readonly task: SessionExternalTask;
+  readonly headerActions: ReactNode;
 };
 
 const h = vi.hoisted(() => ({
@@ -63,10 +60,11 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
 }));
 
 vi.mock('./LinearTaskDetail', () => ({
-  LinearTaskDetail: ({ issueId }: LinearDetailProps) => (
-    <div>
+  LinearTaskDetail: ({ task, headerActions }: TaskDetailProps) => (
+    <div data-testid="task-detail">
+      {headerActions}
       <a href="https://linear.app/GB-42" aria-label="Open in Linear">
-        Linear detail {issueId}
+        Linear detail {task.externalId}
       </a>
       <button type="button" aria-label="Copy issue link" />
     </div>
@@ -74,8 +72,9 @@ vi.mock('./LinearTaskDetail', () => ({
 }));
 
 vi.mock('./SentryTaskDetail', () => ({
-  SentryTaskDetail: ({ task }: SentryDetailProps) => (
-    <div>
+  SentryTaskDetail: ({ task, headerActions }: TaskDetailProps) => (
+    <div data-testid="task-detail">
+      {headerActions}
       <a href="https://sentry.io/issues/12345" aria-label="Open in Sentry">
         Sentry detail {task.externalId}
       </a>
@@ -208,6 +207,16 @@ describe('IntegrationPane', () => {
     expect(screen.getByText('Linear detail GB-42')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'view GB-42' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
+  });
+
+  it('hands the focused actions to the detail header instead of stacking a pane header', () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    const detail = screen.getByTestId('task-detail');
+
+    expect(within(detail).getByRole('button', { name: 'unlink GB-42' })).toBeDefined();
+    expect(within(detail).getByRole('button', { name: 'Link issue' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'unlink GB-42' })).toHaveLength(1);
   });
 
   it('lists every linked task as a card and focuses the clicked one', () => {

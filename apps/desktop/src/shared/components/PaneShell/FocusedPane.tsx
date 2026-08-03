@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Divider } from '@goodboy/ui';
+import { Divider, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../paneRhythm';
 
 type Props = {
   readonly lens: string;
@@ -10,7 +11,7 @@ type Props = {
 
 export const FocusedPane = ({ lens, count, actions, children }: Props) => (
   <div className="flex h-full min-h-0 flex-col bg-background">
-    <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-3">
+    <div className={cn('flex shrink-0 items-center justify-between gap-3', PANE_RHYTHM.header)}>
       <div className="flex items-baseline gap-2">
         <h1 className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
           {lens}

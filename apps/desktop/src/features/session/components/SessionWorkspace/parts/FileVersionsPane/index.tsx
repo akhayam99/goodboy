@@ -90,7 +90,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
     <PaneShell
       title="File versions"
       description="Before an agent changes a file in this session, Goodboy stores the previous copy here so you can bring it back."
-      wide={loading || groups.length > 0}
+      measure={loading || groups.length > 0 ? 'full' : 'pane'}
       actions={
         deleteAllArmed ? (
           <>

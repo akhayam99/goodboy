@@ -25,6 +25,18 @@ type Entity = {
 
 const PROPERTY_ENTITY: Entity = { state: 'open', author: 'ada', milestone: null };
 
+const scrollAncestors = ({ node }: { readonly node: HTMLElement }) => {
+  const found: Array<HTMLElement> = [];
+  let current: HTMLElement | null = node;
+  while (current != null) {
+    if (current.className.includes('overflow-y-auto')) {
+      found.push(current);
+    }
+    current = current.parentElement;
+  }
+  return found;
+};
+
 const PROPERTY_REGISTRY: DetailFieldRegistry<Entity> = [
   { kind: 'field', key: 'state', label: 'State', render: ({ entity }) => entity.state },
   { kind: 'field', key: 'author', label: 'Author', render: ({ entity }) => entity.author },
@@ -80,21 +92,27 @@ describe('StudioDetailLayout', () => {
     expect(screen.queryByTestId('detail-properties')).toBeNull();
   });
 
-  it('bounds the rail extras below lg and keeps the properties out of the scroll region', () => {
+  it('scrolls the rail as one region that carries the action and the properties', () => {
     render(
       <StudioDetailLayout
         header={<span>Header slot</span>}
-        rail={<span>Rail slot</span>}
+        rail={<button type="button">Launch session</button>}
         properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
       >
         <span>Main slot</span>
       </StudioDetailLayout>,
     );
 
-    const extras = screen.getByText('Rail slot').closest('div.max-h-64');
-    expect(extras).not.toBeNull();
-    expect((extras as HTMLElement).className).toContain('lg:max-h-none');
-    expect(screen.getByTestId('detail-properties').closest('div.max-h-64')).toBeNull();
+    const viewport = screen
+      .getByRole('button', { name: 'Launch session' })
+      .closest('.overflow-y-auto');
+    expect(viewport).not.toBeNull();
+    expect(viewport).toBe(screen.getByTestId('detail-properties').closest('.overflow-y-auto'));
+
+    const bounds = (viewport as HTMLElement).parentElement as HTMLElement;
+    expect(bounds.className).toContain('max-h-64');
+    expect(bounds.className).toContain('lg:max-h-none');
+    expect(scrollAncestors({ node: viewport as HTMLElement })).toHaveLength(1);
   });
 
   it('pins the header band while a flow body scrolls', () => {

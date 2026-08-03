@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Divider, ScrollFade, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../paneRhythm';
 
 type Props = {
   readonly icon?: ReactNode;
@@ -15,12 +16,12 @@ export const StudioPanel = ({
   title,
   subtitle,
   action,
-  maxWidthClass = 'max-w-3xl',
+  maxWidthClass = PANE_RHYTHM.measure.reading,
   children,
 }: Props) => {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 px-8 py-4">
+      <div className={cn('flex items-center gap-3', PANE_RHYTHM.header)}>
         {icon ?? null}
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-base font-semibold text-foreground">{title}</span>
@@ -33,11 +34,11 @@ export const StudioPanel = ({
       <Divider />
       <div className="min-h-0 flex-1">
         <ScrollFade
-          className={cn('mx-auto h-full', maxWidthClass)}
-          viewportClassName="px-10 py-8"
+          className={cn('h-full', maxWidthClass)}
+          viewportClassName={PANE_RHYTHM.body}
           fadeSize={24}
         >
-          <div className="flex flex-col gap-6">{children}</div>
+          <div className={cn('flex flex-col', PANE_RHYTHM.stack)}>{children}</div>
         </ScrollFade>
       </div>
     </div>

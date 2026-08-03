@@ -1,21 +1,30 @@
 import type { ReactNode } from 'react';
 import { ScrollFade, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../paneRhythm';
 
 type Props = {
   readonly title: string;
   readonly description?: string;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
-  readonly wide?: boolean;
+  readonly measure?: keyof typeof PANE_RHYTHM.measure;
   readonly children: ReactNode;
 };
 
-export const PaneShell = ({ title, description, meta, actions, wide, children }: Props) => (
-  <ScrollFade className="h-full" viewportClassName="px-6 py-5" fadeSize={24}>
+export const PaneShell = ({
+  title,
+  description,
+  meta,
+  actions,
+  measure = 'pane',
+  children,
+}: Props) => (
+  <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
     <div
       className={cn(
-        'mx-auto flex w-full flex-col gap-5 motion-safe:animate-studio-in',
-        wide === true ? 'max-w-none' : 'max-w-5xl',
+        'flex w-full flex-col motion-safe:animate-studio-in',
+        PANE_RHYTHM.stack,
+        PANE_RHYTHM.measure[measure],
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">

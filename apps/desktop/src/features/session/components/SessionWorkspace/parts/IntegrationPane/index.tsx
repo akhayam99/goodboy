@@ -18,7 +18,6 @@ import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '../../../../../../shared/components/GhostActionButton';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
-import { FocusedPane } from '../../../../../../shared/components/PaneShell/FocusedPane';
 import { FocusedTaskBody } from './FocusedTaskBody';
 import { IntegrationTaskCard } from './IntegrationTaskCard';
 import { integrationTaskKey } from './integrationTaskKey';
@@ -108,57 +107,54 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
 
   if (focusedTask != null) {
     return (
-      <FocusedPane
-        lens={meta.label}
-        count={tasks.length}
-        actions={
-          isUnlinkArmed ? (
-            <InlineConfirm
-              role="danger"
-              className="max-w-sm"
-              icon={<Unlink size={12} aria-hidden />}
-              title={`Unlink ${focusedTask.identifier}?`}
-              description={`Removes the ${meta.label} issue from this session without changing the issue.`}
-              confirmLabel={`Unlink ${focusedTask.identifier}`}
-              autoDisarmMs={4000}
-              isBusy={isUnlinking}
-              onConfirm={() => handleUnlink({ task: focusedTask })}
-              onCancel={() => setIsUnlinkArmed(false)}
-            />
-          ) : (
-            <div className="flex items-center gap-1.5">
-              {tasks.length > 1 ? (
-                <GhostActionButton
-                  icon={ArrowLeft}
-                  label="All issues"
-                  onClick={() => setFocusedTaskKey(null)}
-                />
-              ) : null}
-              <GhostActionButton
-                icon={Unlink}
-                tone="danger"
-                label="Unlink"
-                ariaLabel={`unlink ${focusedTask.identifier}`}
-                disabled={isUnlinking}
-                onClick={() => setIsUnlinkArmed(true)}
-              />
-              {linkAction}
-            </div>
-          )
-        }
-      >
+      <div className="flex h-full min-h-0 min-w-0 flex-col bg-background">
+        {unlinkError != null ? (
+          <p className="shrink-0 px-6 pt-3 text-xs text-danger">{unlinkError}</p>
+        ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {unlinkError != null ? (
-            <p className="shrink-0 px-6 pt-3 text-xs text-danger">{unlinkError}</p>
-          ) : null}
           <FocusedTaskBody
             provider={provider}
             workspaceId={workspaceId}
             task={focusedTask}
             isConnected={connection.isConnected}
+            headerActions={
+              isUnlinkArmed ? (
+                <InlineConfirm
+                  role="danger"
+                  className="max-w-sm"
+                  icon={<Unlink size={12} aria-hidden />}
+                  title={`Unlink ${focusedTask.identifier}?`}
+                  description={`Removes the ${meta.label} issue from this session without changing the issue.`}
+                  confirmLabel={`Unlink ${focusedTask.identifier}`}
+                  autoDisarmMs={4000}
+                  isBusy={isUnlinking}
+                  onConfirm={() => handleUnlink({ task: focusedTask })}
+                  onCancel={() => setIsUnlinkArmed(false)}
+                />
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  {tasks.length > 1 ? (
+                    <GhostActionButton
+                      icon={ArrowLeft}
+                      label="All issues"
+                      onClick={() => setFocusedTaskKey(null)}
+                    />
+                  ) : null}
+                  <GhostActionButton
+                    icon={Unlink}
+                    tone="danger"
+                    label="Unlink"
+                    ariaLabel={`unlink ${focusedTask.identifier}`}
+                    disabled={isUnlinking}
+                    onClick={() => setIsUnlinkArmed(true)}
+                  />
+                  {linkAction}
+                </div>
+              )
+            }
           />
         </div>
-      </FocusedPane>
+      </div>
     );
   }
 
@@ -167,6 +163,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       title={meta.label}
       description={`External ${meta.label} issues linked to this session.`}
       meta={hasTasks ? tasks.length : undefined}
+      measure="reading"
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
     >
       {!connection.isConnected ? (
