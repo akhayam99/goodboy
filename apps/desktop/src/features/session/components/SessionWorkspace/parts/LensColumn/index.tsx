@@ -3,6 +3,7 @@ import { LayoutDashboard, Unplug } from 'lucide-react';
 import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { classifyAgent, isStandaloneAgent } from '../../../../agent-kind';
+import { isAgentFinished } from '../../../../agent-lifecycle';
 import { isPrReviewSession } from '../../../../../../store/slices/session-view';
 import {
   EMPTY_ARRAY,
@@ -81,7 +82,7 @@ export const LensColumn = ({
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const nonResolverStandalone = useNonResolverStandaloneAgents(sessionId);
   const activeNonResolverStandalone = useMemo(
-    () => nonResolverStandalone.filter((agent) => agent.doneAt == null),
+    () => nonResolverStandalone.filter((agent) => !isAgentFinished({ agent })),
     [nonResolverStandalone],
   );
   const unreadLens = useSessionUnreadLens(sessionId);

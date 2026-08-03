@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -647,7 +647,7 @@ describe('AgentInspector (resolver)', () => {
     expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'files');
   });
 
-  it('keeps force close, mark done and delete behind the header overflow', () => {
+  it('keeps force close behind the header overflow, off the card', () => {
     renderInspector(RUNNING_ID);
 
     expect(screen.queryByRole('menuitem', { name: 'Force close' })).toBeNull();
@@ -655,8 +655,29 @@ describe('AgentInspector (resolver)', () => {
     openOverflow();
 
     expect(screen.getByRole('menuitem', { name: 'Force close' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Mark done' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Delete' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Mark done' })).toBeNull();
+  });
+
+  it('puts mark done, reopen and delete in the footer at the bottom of the panel, not the header', () => {
+    renderInspector(RUNNING_ID);
+
+    expect(screen.getByRole('button', { name: 'Mark done' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Reopen' })).toBeNull();
+  });
+
+  it('marks a resolver done from the footer and deletes it after confirming', async () => {
+    renderInspector(RUNNING_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+    expect(h.setAgentDone).toHaveBeenCalledWith(SESSION_ID, RUNNING_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    const panel = screen.getByRole('group', { name: 'Delete this resolver?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
+
+    await vi.waitFor(() => expect(h.deleteAgent).toHaveBeenCalledWith(SESSION_ID, RUNNING_ID));
   });
 
   it('rewords the newest local commit from the overflow', async () => {

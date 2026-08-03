@@ -147,29 +147,31 @@ export const AgentRow = ({
         )
       }
       lifecycleActions={
-        <>
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            {isMarkDoneAvailable && (
+        density === 'sidebar' ? (
+          <>
+            <span className="flex size-6 shrink-0 items-center justify-center">
+              {isMarkDoneAvailable && (
+                <AgentCardAction
+                  icon={CircleCheck}
+                  label="mark agent done"
+                  tone="success"
+                  reveal
+                  onClick={() => onMarkDone?.()}
+                />
+              )}
+            </span>
+            <span className="flex size-6 shrink-0 items-center justify-center">
               <AgentCardAction
-                icon={CircleCheck}
-                label="mark agent done"
-                tone="success"
-                reveal
-                onClick={() => onMarkDone?.()}
+                icon={Trash2}
+                label="delete agent"
+                tone="danger"
+                highlighted={isConfirmingDelete}
+                reveal={!isConfirmingDelete}
+                onClick={() => setIsConfirmingDelete(true)}
               />
-            )}
-          </span>
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            <AgentCardAction
-              icon={Trash2}
-              label="delete agent"
-              tone="danger"
-              highlighted={isConfirmingDelete}
-              reveal={!isConfirmingDelete}
-              onClick={() => setIsConfirmingDelete(true)}
-            />
-          </span>
-        </>
+            </span>
+          </>
+        ) : undefined
       }
       status={
         <AgentKindChip

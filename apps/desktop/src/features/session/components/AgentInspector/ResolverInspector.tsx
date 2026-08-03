@@ -21,6 +21,7 @@ import {
   isResolverQueueStalled,
 } from '../ResolverAgentsLane/resolverLaneEntries';
 import { InspectorHeader } from '../SessionWorkspace/parts/InspectorSplit/InspectorHeader';
+import { AgentActionsFooter } from './AgentActionsFooter';
 import { ChangesSection } from './ChangesSection';
 import { ResolverCommentSection, type ResolverCommentLink } from './ResolverCommentSection';
 import { ResolverMetaLine } from './ResolverMetaLine';
@@ -180,7 +181,6 @@ export const ResolverInspector = ({
         onClose={onClose}
         actions={
           <ResolverOverflowMenu
-            sessionId={sessionId}
             agent={agent}
             actions={actions}
             commits={localCommits}
@@ -193,7 +193,6 @@ export const ResolverInspector = ({
               await squashSessionCommits(sessionId, { sha, message });
               changes.reload();
             }}
-            onDeleted={onClose}
           />
         }
       />
@@ -249,6 +248,14 @@ export const ResolverInspector = ({
           />
         </div>
       </ScrollFade>
+      <Divider />
+      <AgentActionsFooter
+        agent={agent}
+        sessionId={sessionId}
+        deleteTitle="Delete this resolver?"
+        deleteDescription="Removes the agent and its transcript from the session."
+        onDeleted={onClose}
+      />
     </div>
   );
 };

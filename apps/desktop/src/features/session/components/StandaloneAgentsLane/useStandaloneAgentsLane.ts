@@ -4,6 +4,7 @@ import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { classifyAgent, isStandaloneAgent, type AgentKind } from '../../agent-kind';
+import { isAgentFinished } from '../../agent-lifecycle';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 
 type Params = {
@@ -128,11 +129,11 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
     [sorted, agentKindOverride],
   );
   const activeAgents = useMemo(
-    () => standaloneAgents.filter((agent) => agent.doneAt == null),
+    () => standaloneAgents.filter((agent) => !isAgentFinished({ agent })),
     [standaloneAgents],
   );
   const completedAgents = useMemo(
-    () => standaloneAgents.filter((agent) => agent.doneAt != null),
+    () => standaloneAgents.filter((agent) => isAgentFinished({ agent })),
     [standaloneAgents],
   );
 

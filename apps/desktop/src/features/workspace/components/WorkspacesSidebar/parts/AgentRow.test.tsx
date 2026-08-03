@@ -51,7 +51,11 @@ const markDone = vi.fn();
 const remove = vi.fn();
 const inspect = vi.fn();
 
-const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
+const renderRow = (
+  isSelected: boolean,
+  runOverride: Partial<Agent> = {},
+  density?: 'lane' | 'sidebar',
+) =>
   render(
     <ul>
       <AgentRow
@@ -80,6 +84,7 @@ const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
         onDelete={remove}
         onInspect={inspect}
         onMarkDone={markDone}
+        density={density}
       />
     </ul>,
   );
@@ -229,6 +234,21 @@ describe('AgentRow', () => {
     const panel = screen.getByRole('group', { name: 'Delete agent?' });
     fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
     expect(remove).toHaveBeenCalledOnce();
+  });
+
+  it('drops mark done and delete from the lane density card, the inspector footer owns them there', () => {
+    renderRow(false, {}, 'lane');
+
+    expect(screen.queryByRole('button', { name: 'mark agent done' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'delete agent' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Toggle agent details' })).toBeTruthy();
+  });
+
+  it('keeps mark done and delete on the sidebar density card', () => {
+    renderRow(false, {}, 'sidebar');
+
+    expect(screen.getByRole('button', { name: 'mark agent done' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'delete agent' })).toBeTruthy();
   });
 });
 

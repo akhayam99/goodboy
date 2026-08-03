@@ -4,7 +4,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { classifyAgent } from '../../agent-kind';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { InspectorHeader } from '../SessionWorkspace/parts/InspectorSplit/InspectorHeader';
-import { ActionsSection } from './ActionsSection';
+import { AgentActionsFooter } from './AgentActionsFooter';
 import { CostsSection } from './CostsSection';
 import { IdentitySection } from './IdentitySection';
 import { ResolverInspector } from './ResolverInspector';
@@ -73,10 +73,10 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
             contextUsage={metrics.providerUsageByAgentId.get(agentId) ?? EMPTY_ARRAY}
             turns={metrics.turnsByAgentId.get(agentId) ?? 0}
           />
-          <Divider />
-          <ActionsSection agent={agent} sessionId={sessionId} onDeleted={onClose} />
         </div>
       </ScrollFade>
+      <Divider />
+      <AgentActionsFooter agent={agent} sessionId={sessionId} allowInterrupt onDeleted={onClose} />
     </div>
   );
 };

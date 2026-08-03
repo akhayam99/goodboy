@@ -44,7 +44,10 @@ const stepAgent = buildAgent({
 
 const onHome = vi.fn();
 
-const renderCrumb = (selectedAgentId: AgentId | null, overlayHome: 'agents' | 'workflows') =>
+const renderCrumb = (
+  selectedAgentId: AgentId | null,
+  overlayHome: 'agents' | 'resolve' | 'workflows',
+) =>
   render(
     <AgentBreadcrumb
       sessionId={SESSION_ID}
@@ -60,6 +63,10 @@ beforeEach(() => {
   Object.assign(h.state, {
     sessionPhaseRuns: { [SESSION_ID]: [scout, implementer, stepAgent] },
     agentKindOverride: {},
+    resolverState: {},
+    sessionPendingResolutions: {},
+    sessionResolvedThreads: {},
+    sessionGithub: {},
     selectAgent: h.selectAgent,
   });
 });
@@ -139,6 +146,38 @@ describe('AgentBreadcrumb', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /implement two/ }));
 
     expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, implementer.id);
+  });
+
+  it('agrees with the resolve lane: a settled-but-not-done resolver shows as Done', () => {
+    const runningResolver = buildAgent({
+      id: 'resolver-running' as AgentId,
+      name: 'resolve: reviewer on a.ts',
+      ordinal: 0,
+      status: 'running',
+      sourceThreadId: 'PRRT_1',
+    });
+    const settledResolver = buildAgent({
+      id: 'resolver-settled' as AgentId,
+      name: 'resolve: reviewer on b.ts',
+      ordinal: 1,
+      status: 'completed',
+      sourceThreadId: 'PRRT_2',
+    });
+    h.state.sessionPhaseRuns = { [SESSION_ID]: [runningResolver, settledResolver] };
+    h.state.agentKindOverride = {
+      [runningResolver.id]: 'resolver',
+      [settledResolver.id]: 'resolver',
+    };
+    h.state.sessionResolvedThreads = { [SESSION_ID]: ['PRRT_2'] };
+    renderCrumb(runningResolver.id, 'resolve');
+
+    fireEvent.click(screen.getByRole('button', { name: 'resolve: reviewer on a.ts' }));
+
+    expect(screen.getByText('Active')).toBeTruthy();
+    expect(screen.getByText('Done')).toBeTruthy();
+    const items = screen.getAllByRole('menuitem').map((el) => el.textContent ?? '');
+    expect(items[0]).toContain('resolve: reviewer on a.ts');
+    expect(items[1]).toContain('resolve: reviewer on b.ts');
   });
 
   it('seals the last crumb when the lens has no other agent', () => {

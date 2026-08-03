@@ -1,10 +1,9 @@
 import type { AgentId } from '@goodboy/types';
-import type { ResolverLink, ResolverStatus } from '../../resolver-linkage';
-
-const SETTLED_STATUSES: ReadonlyArray<ResolverStatus> = ['resolved', 'stopped'];
+import { isAgentFinished } from '../../agent-lifecycle';
+import type { ResolverLink } from '../../resolver-linkage';
 
 export const isResolverSettled = ({ agent, status }: ResolverLink): boolean =>
-  agent.doneAt != null || SETTLED_STATUSES.includes(status);
+  isAgentFinished({ agent, resolverStatus: status });
 
 type Params = {
   readonly links: ReadonlyArray<ResolverLink>;

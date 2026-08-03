@@ -6,6 +6,9 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { AgentAvatar } from '../../../../../shared/components/AgentAvatar';
 import { useDropdown } from '../../../../../shared/hooks/useDropdown';
 import { agentHomeLens, classifyAgent, type AgentHomeLens } from '../../../agent-kind';
+import { isAgentFinished } from '../../../agent-lifecycle';
+import { useResolverIndex } from '../../../hooks/useResolverIndex';
+import type { ResolverStatus } from '../../../resolver-linkage';
 import { agentOverlayCrumbs } from './agentOverlayCrumbs';
 
 const CRUMB_CLASS =
@@ -39,6 +42,14 @@ export const AgentBreadcrumb = ({
   );
   const agentKindOverride = useAppStore((state) => state.agentKindOverride);
   const selectAgent = useAppStore((state) => state.selectAgent);
+  const resolverIndex = useResolverIndex(sessionId);
+  const resolverStatusByAgentId = useMemo(() => {
+    const map = new Map<AgentId, ResolverStatus>();
+    for (const link of resolverIndex.links) {
+      map.set(link.agent.id, link.status);
+    }
+    return map;
+  }, [resolverIndex]);
   const siblings = useMemo(
     () =>
       phaseRuns
@@ -51,11 +62,16 @@ export const AgentBreadcrumb = ({
         .sort((a, b) => b.ordinal - a.ordinal),
     [phaseRuns, agentKindOverride, overlayHome],
   );
+  const siblingFinished = (agent: Agent): boolean =>
+    isAgentFinished({ agent, resolverStatus: resolverStatusByAgentId.get(agent.id) ?? null });
   const activeSiblings = useMemo(
-    () => siblings.filter((agent) => agent.doneAt == null),
-    [siblings],
+    () => siblings.filter((agent) => !siblingFinished(agent)),
+    [siblings, resolverStatusByAgentId],
   );
-  const doneSiblings = useMemo(() => siblings.filter((agent) => agent.doneAt != null), [siblings]);
+  const doneSiblings = useMemo(
+    () => siblings.filter((agent) => siblingFinished(agent)),
+    [siblings, resolverStatusByAgentId],
+  );
   const showSiblingGroupLabels = activeSiblings.length > 0 && doneSiblings.length > 0;
   const selectedAgent = phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null;
   const crumbs = agentOverlayCrumbs({
