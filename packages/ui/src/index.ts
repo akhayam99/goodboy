@@ -21,6 +21,8 @@ export { ClampedProse } from './components/ClampedProse';
 export type { ClampLines, ClampedProseProps } from './components/ClampedProse';
 export { Collapsible } from './components/Collapsible';
 export type { CollapsibleProps } from './components/Collapsible';
+export { CountToggle } from './components/CountToggle';
+export type { Props as CountToggleProps } from './components/CountToggle';
 export { CopyButton } from './components/CopyButton';
 export type { CopyButtonProps } from './components/CopyButton';
 export { Dialog } from './components/Dialog';
