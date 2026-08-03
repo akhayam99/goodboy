@@ -131,7 +131,7 @@ function BootErrorRecovery({
   return (
     <div
       role="alert"
-      className="flex w-64 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 font-mono text-[11px]"
+      className="flex w-64 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 font-mono text-2xs"
     >
       <div className="flex flex-col gap-1">
         <span className="text-danger">✗ {category} failed</span>

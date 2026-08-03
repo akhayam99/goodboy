@@ -1006,12 +1006,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                         <span className="min-w-0 truncate text-xs font-medium text-foreground">
                                           {t.name}
                                         </span>
-                                        <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] tabular-nums text-muted-foreground">
+                                        <span className="shrink-0 rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground">
                                           {tSteps.length}
                                         </span>
                                       </span>
                                       {desc ? (
-                                        <span className="truncate text-[10px] leading-snug text-muted-foreground/70">
+                                        <span className="truncate text-3xs leading-snug text-muted-foreground/70">
                                           {desc}
                                         </span>
                                       ) : null}
@@ -1021,7 +1021,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                         <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
                                       ))}
                                       {kinds.length > shown.length ? (
-                                        <span className="text-[10px] text-muted-foreground">
+                                        <span className="text-3xs text-muted-foreground">
                                           +{kinds.length - shown.length}
                                         </span>
                                       ) : null}

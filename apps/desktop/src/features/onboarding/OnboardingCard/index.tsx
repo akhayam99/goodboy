@@ -60,7 +60,7 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
           }
           return (
             <div key={group} className="flex flex-col gap-1">
-              <span className="px-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/50">
+              <span className="px-1.5 text-3xs font-medium uppercase tracking-[0.08em] text-muted-foreground/50">
                 {GROUP_LABEL[group]}
               </span>
               <ul className="flex flex-col gap-1">
@@ -78,7 +78,7 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
           );
         })}
       </div>
-      <p className="text-[10px] leading-snug text-muted-foreground/60">
+      <p className="text-3xs leading-snug text-muted-foreground/60">
         {progress.completedCount} of {progress.totalCount} steps done
       </p>
     </>

@@ -48,7 +48,7 @@ export const DraftsPanel = ({ drafts, onEdit, onDiscard }: Props) => {
           <div className="flex flex-col gap-3 px-3 pb-3 pt-1">
             {groups.map((group) => (
               <div key={group.path} className="flex flex-col gap-1.5">
-                <span className="truncate px-0.5 font-mono text-[10px] text-muted-foreground/70">
+                <span className="truncate px-0.5 font-mono text-3xs text-muted-foreground/70">
                   {group.path}
                 </span>
                 {group.items.map((draft) => (

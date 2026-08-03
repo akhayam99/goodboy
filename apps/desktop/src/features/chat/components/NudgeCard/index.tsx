@@ -79,7 +79,7 @@ export const NudgeCard = ({
           ) : null}
           <div className="flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-0.5">
-              <p className="text-[13px] font-medium leading-relaxed text-foreground">{title}</p>
+              <p className="text-sm font-medium leading-relaxed text-foreground">{title}</p>
               {body ? <p className="text-xs text-muted-foreground">{body}</p> : null}
             </div>
             {primary || secondary || tertiary ? (

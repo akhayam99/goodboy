@@ -187,7 +187,7 @@ export const SessionActivityBar = ({
               New
               <KbdPill
                 aria-hidden
-                className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
+                className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-3xs opacity-0 transition-opacity group-hover:opacity-100"
               >
                 {shortcutGlyphs('session.new')}
               </KbdPill>
@@ -344,7 +344,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
             pulsing={stage === 'running'}
           />
         </span>
-        <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">
+        <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
           {session.goal}
         </span>
         {externalTasks.map((task) => (
@@ -357,14 +357,14 @@ const SessionActivityItem = memo(function SessionActivityItem({
         {prState && <PullRequestChip state={prState} variant="icon" iconSize={11} />}
       </span>
       <span className="flex w-full items-center gap-1.5 pl-[14px]">
-        <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-muted-foreground/60">
+        <span className="min-w-0 flex-1 truncate text-2xs leading-tight text-muted-foreground/60">
           {reason}
         </span>
         {sessionCost > 0 && (
           <CostBadge
             value={sessionCost}
             title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-            className="shrink-0 text-[11px] font-medium text-muted-foreground/55"
+            className="shrink-0 text-2xs font-medium text-muted-foreground/55"
           />
         )}
       </span>

@@ -28,7 +28,7 @@ export const ResolverLaneToolbar = ({ sessionId, queuedCount, isStalled, onForce
             type="button"
             onClick={onForceNext}
             title="the current resolver has not committed or explained yet; run the next queued one anyway"
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning transition-colors hover:bg-warning/20"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-3xs font-medium text-warning transition-colors hover:bg-warning/20"
           >
             <Play size={9} aria-hidden />
             Run next ({queuedCount})

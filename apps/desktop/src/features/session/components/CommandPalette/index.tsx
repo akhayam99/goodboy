@@ -331,7 +331,7 @@ export const CommandPalette = ({
 
         {parsed.prefix === null && query.length === 0 && (
           <>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-[10px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-3xs text-muted-foreground">
               {PALETTE_PREFIXES.map((p) => (
                 <button
                   key={p.symbol}

@@ -1,5 +1,5 @@
 import { Bug, GitBranch, GitFork, Link2, ListTodo } from 'lucide-react';
-import { EmptyState, Eyebrow } from '@goodboy/ui';
+import { Eyebrow } from '@goodboy/ui';
 import type { SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -8,7 +8,6 @@ import { ExternalRefActions } from '../../../../shared/components/ExternalRefAct
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PROVIDER_LENS } from '../../../integrations/providerLens';
 
 type Props = {
@@ -75,50 +74,43 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
           }
         />
       </div>
-      <div className="flex flex-col gap-2">
-        {linkedIssues.map((issue) => (
-          <LinkedWorkRow
-            key={issue.url}
-            leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
-            identifier={`#${issue.number}`}
-            title={issue.title ?? 'GitHub issue'}
-            onClick={() => onSelectLens('pr')}
-            actions={
-              <ExternalRefActions
-                url={issue.url}
-                label={`issue #${issue.number}`}
-                hostLabel="GitHub"
-              />
-            }
-          />
-        ))}
-        {orderedExternalTasks.map((task) => (
-          <ExternalTaskChip
-            key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
-            task={task}
-            variant="full"
-            appearance="row"
-            navigation="internal"
-            ariaLabel={`open ${task.identifier} integration`}
-            repoLabel={
-              workspaceMountName({
-                workspace,
-                mountWorkspaceId: task.mountWorkspaceId,
-              }) ?? undefined
-            }
-            onClick={() => onSelectLens(PROVIDER_LENS[task.provider])}
-          />
-        ))}
-        {!hasLinkedWork ? (
-          <EmptyState
-            icon={CONCEPT_ICONS.integrations}
-            tone={CONCEPT_TONE.integrations}
-            title="No linked issues or tasks yet."
-            size="inline"
-            className="rounded-lg bg-muted/20 px-3.5 py-2.5"
-          />
-        ) : null}
-      </div>
+      {hasLinkedWork ? (
+        <div className="flex flex-col gap-2">
+          {linkedIssues.map((issue) => (
+            <LinkedWorkRow
+              key={issue.url}
+              leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
+              identifier={`#${issue.number}`}
+              title={issue.title ?? 'GitHub issue'}
+              onClick={() => onSelectLens('pr')}
+              actions={
+                <ExternalRefActions
+                  url={issue.url}
+                  label={`issue #${issue.number}`}
+                  hostLabel="GitHub"
+                />
+              }
+            />
+          ))}
+          {orderedExternalTasks.map((task) => (
+            <ExternalTaskChip
+              key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
+              task={task}
+              variant="full"
+              appearance="row"
+              navigation="internal"
+              ariaLabel={`open ${task.identifier} integration`}
+              repoLabel={
+                workspaceMountName({
+                  workspace,
+                  mountWorkspaceId: task.mountWorkspaceId,
+                }) ?? undefined
+              }
+              onClick={() => onSelectLens(PROVIDER_LENS[task.provider])}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };

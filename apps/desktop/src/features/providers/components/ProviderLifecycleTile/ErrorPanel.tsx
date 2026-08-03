@@ -13,7 +13,7 @@ export const ErrorPanel = ({ tail }: Props) => {
         <span>The command failed</span>
       </div>
       <ScrollFade className="max-h-24">
-        <pre className="whitespace-pre-wrap break-words font-mono text-[10px] leading-snug text-foreground/80">
+        <pre className="whitespace-pre-wrap break-words font-mono text-3xs leading-snug text-foreground/80">
           {tail.trim() || 'No output captured.'}
         </pre>
       </ScrollFade>

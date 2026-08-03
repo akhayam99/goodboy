@@ -37,7 +37,7 @@ const ProviderBar = ({ usage, showProvider }: ProviderBarProps) => {
     `last turn context: ${usage.inputTokens.toLocaleString()} input · ${(usage.cachedInputTokens ?? 0).toLocaleString()} cache read · ${(usage.cacheCreationInputTokens ?? 0).toLocaleString()} cache write · ${usage.outputTokens.toLocaleString()} output`;
   return (
     <div className="flex flex-col gap-0.5" title={tooltip}>
-      <div className="flex items-center justify-between text-[9px] uppercase tracking-wide text-muted-foreground/60">
+      <div className="flex items-center justify-between text-3xs uppercase tracking-wide text-muted-foreground/60">
         <span
           className={cn('flex items-center gap-0.5', contextUsageTone({ pct, prefix: 'text' }))}
         >

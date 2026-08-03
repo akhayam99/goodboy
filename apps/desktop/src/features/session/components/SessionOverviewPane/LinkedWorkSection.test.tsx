@@ -76,7 +76,7 @@ describe('LinkedWorkSection', () => {
 
     expect(screen.queryByText('#42')).toBeNull();
     expect(screen.queryByText('Ship linked work')).toBeNull();
-    expect(screen.getByText('No linked issues or tasks yet.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'link work' })).toBeDefined();
   });
 
   it('renders every linked issue and routes it to the PR lens', () => {
@@ -208,7 +208,7 @@ describe('LinkedWorkSection', () => {
   it('keeps the link hub visible when no linked work exists', () => {
     render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByText('No linked issues or tasks yet.')).toBeDefined();
+    expect(screen.getByText('Linked work')).toBeDefined();
     expect(screen.getByRole('button', { name: 'link work' })).toBeDefined();
   });
 });

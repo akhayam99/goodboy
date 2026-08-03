@@ -126,32 +126,30 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
       }
     >
       {loading || groups.length > 0 ? (
-        <div className="flex min-h-[460px] flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-3">
-          <div className="flex min-h-0 flex-1 items-stretch gap-3">
-            <div className="flex min-h-0 w-80 shrink-0 flex-col gap-2">
-              <h2 className="text-sm font-semibold text-foreground">Files</h2>
-              <PathSummaryList
-                groups={groups}
-                selectedPath={selectedGroup?.relativePath ?? null}
-                loading={loading}
-                onSelectPath={(relativePath) =>
-                  selectSessionFileVersionPath({ sessionId, relativePath })
-                }
-              />
-            </div>
-            <Divider orientation="vertical" />
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-              <h2 className="text-sm font-semibold text-foreground">
-                {selectedGroup?.relativePath ?? 'History'}
-              </h2>
-              <VersionHistoryList
-                versions={selectedGroup?.versions ?? []}
-                restoringVersionId={restoringVersionId}
-                deletingVersionId={deletingVersionId}
-                onRestoreVersion={onRestoreVersion}
-                onDeleteVersion={onDeleteVersion}
-              />
-            </div>
+        <div className="flex min-h-[460px] items-stretch gap-3">
+          <div className="flex min-h-0 w-80 shrink-0 flex-col gap-2">
+            <h2 className="text-sm font-semibold text-foreground">Files</h2>
+            <PathSummaryList
+              groups={groups}
+              selectedPath={selectedGroup?.relativePath ?? null}
+              loading={loading}
+              onSelectPath={(relativePath) =>
+                selectSessionFileVersionPath({ sessionId, relativePath })
+              }
+            />
+          </div>
+          <Divider orientation="vertical" />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+            <h2 className="text-sm font-semibold text-foreground">
+              {selectedGroup?.relativePath ?? 'History'}
+            </h2>
+            <VersionHistoryList
+              versions={selectedGroup?.versions ?? []}
+              restoringVersionId={restoringVersionId}
+              deletingVersionId={deletingVersionId}
+              onRestoreVersion={onRestoreVersion}
+              onDeleteVersion={onDeleteVersion}
+            />
           </div>
         </div>
       ) : (

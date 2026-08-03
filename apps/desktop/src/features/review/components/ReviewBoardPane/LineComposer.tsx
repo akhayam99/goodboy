@@ -15,7 +15,7 @@ export const LineComposer = ({ label, onSubmit, onCancel }: Props) => {
     <div className="flex gap-2">
       <MessageSquarePlus size={13} aria-hidden className="shrink-0 text-indigo-500" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
+        <span className="text-3xs font-medium text-muted-foreground">{label}</span>
         <Textarea
           autoFocus
           value={body}
@@ -42,7 +42,7 @@ export const LineComposer = ({ label, onSubmit, onCancel }: Props) => {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-sm px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             Cancel
           </button>
@@ -50,7 +50,7 @@ export const LineComposer = ({ label, onSubmit, onCancel }: Props) => {
             type="button"
             onClick={() => trimmed.length > 0 && onSubmit(trimmed)}
             disabled={trimmed.length === 0}
-            className="inline-flex items-center gap-1 rounded-sm bg-foreground px-2 py-0.5 text-[10px] font-medium text-background hover:opacity-80 disabled:opacity-30"
+            className="inline-flex items-center gap-1 rounded-sm bg-foreground px-2 py-0.5 text-3xs font-medium text-background hover:opacity-80 disabled:opacity-30"
           >
             Add draft
           </button>

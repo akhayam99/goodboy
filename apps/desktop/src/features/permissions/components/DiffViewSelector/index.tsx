@@ -365,7 +365,7 @@ export const DiffViewSelector = ({
                           return (
                             <span
                               key={`${section.label}-${row.label}`}
-                              className="px-1.5 py-1 text-[11px] italic text-muted-foreground/50"
+                              className="px-1.5 py-1 text-2xs italic text-muted-foreground/50"
                             >
                               {row.label}
                             </span>
@@ -412,11 +412,11 @@ export const DiffViewSelector = ({
                                   {row.commit.subject}
                                 </span>
                                 {row.commit.pushed && (
-                                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground">
                                     pushed
                                   </span>
                                 )}
-                                <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+                                <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">
                                   {relativeTime({ timestamp: row.commit.timestamp })}
                                 </span>
                               </>

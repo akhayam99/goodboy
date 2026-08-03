@@ -100,7 +100,7 @@ export const PlanReadySuggestion = ({ task }: Props) => {
         <Sparkles size={11} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+        <span className="flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-wide text-primary">
           <span>plan ready</span>
           <span aria-hidden className="opacity-40">
             ·

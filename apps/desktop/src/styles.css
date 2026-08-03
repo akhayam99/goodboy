@@ -83,6 +83,7 @@
   --color-syntax-tag: oklch(0.73 0.13 25);
   --color-syntax-regex: oklch(0.77 0.11 120);
 
+  --text-3xs: 10px;
   --text-2xs: 11px;
   --text-xs: 12px;
   --text-sm: 14px;

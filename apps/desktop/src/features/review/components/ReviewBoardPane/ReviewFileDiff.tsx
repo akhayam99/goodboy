@@ -114,7 +114,7 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
           </button>
           <span
             className={cn(
-              'w-3 shrink-0 text-center font-mono text-[11px] font-bold',
+              'w-3 shrink-0 text-center font-mono text-2xs font-bold',
               STATUS_COLOR[file.status],
             )}
             title={file.status}
@@ -130,11 +130,11 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
             {file.path}
           </button>
           {drafts.length > 0 ? (
-            <span className="shrink-0 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
+            <span className="shrink-0 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-3xs font-medium text-indigo-600">
               {drafts.length} {drafts.length === 1 ? 'draft' : 'drafts'}
             </span>
           ) : null}
-          <span className="shrink-0 text-[10px] tabular-nums">
+          <span className="shrink-0 text-3xs tabular-nums">
             {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
             {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
             {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
@@ -162,7 +162,7 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
                         <tr key={`hunk-${row.hi}`}>
                           <td
                             colSpan={4}
-                            className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-[10px] font-medium tabular-nums text-muted-foreground/70"
+                            className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70"
                           >
                             {row.header}
                           </td>
@@ -236,10 +236,10 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
                               </span>
                             ) : null}
                           </td>
-                          <td className="w-9 select-none px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50">
+                          <td className="w-9 select-none px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50">
                             {line.oldLine ?? ''}
                           </td>
-                          <td className="w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50">
+                          <td className="w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50">
                             {line.newLine ?? ''}
                           </td>
                           <td className="whitespace-pre px-2.5 text-foreground/80">

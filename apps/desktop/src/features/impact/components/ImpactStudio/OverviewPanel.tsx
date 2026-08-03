@@ -66,10 +66,6 @@ export const OverviewPanel = ({
       ) : null}
       {data !== null && data.sessionCount > 0 ? (
         <>
-          <div className="rounded-lg border border-success/30 bg-success/10 px-5 py-4 text-sm text-foreground">
-            Orchestration shaped {data.orchestratedSessions} of {data.sessionCount} sessions (
-            {Math.round(share)}%) in this window.
-          </div>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <TrendStatCard
               label="orchestrated"

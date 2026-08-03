@@ -40,16 +40,14 @@ export const CommentItem = ({
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-[9px] font-semibold uppercase text-muted-foreground"
+          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-3xs font-semibold uppercase text-muted-foreground"
         >
           ME
         </span>
-        <span className="text-[11px] font-medium text-foreground">you</span>
-        <span className="text-[10px] text-muted-foreground/70">
-          {relativeTime(comment.createdAt)}
-        </span>
+        <span className="text-2xs font-medium text-foreground">you</span>
+        <span className="text-3xs text-muted-foreground/70">{relativeTime(comment.createdAt)}</span>
         {statusPill ? (
-          <span className={cn('rounded-full px-1.5 py-0.5 text-[9px] font-medium', statusPill.cls)}>
+          <span className={cn('rounded-full px-1.5 py-0.5 text-3xs font-medium', statusPill.cls)}>
             {statusPill.label}
           </span>
         ) : null}
@@ -95,7 +93,7 @@ export const CommentItem = ({
         )}
       </p>
       {comment.status === 'consumed' && (
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-3xs text-muted-foreground">
           {agentName && comment.consumedByAgentId ? (
             <>
               <span>consumed by</span>

@@ -55,7 +55,7 @@ export const TreeNodeView = ({
           ) : (
             <span
               className={cn(
-                'w-3 shrink-0 text-center text-[10px] font-bold',
+                'w-3 shrink-0 text-center text-3xs font-bold',
                 STATUS_COLOR[file.status],
               )}
             >
@@ -65,18 +65,18 @@ export const TreeNodeView = ({
           <span className="min-w-0 flex-1 truncate">{node.name}</span>
           {reviewState === 'stale' ? (
             <span
-              className="shrink-0 rounded-full bg-muted px-1 text-[9px] font-medium text-muted-foreground"
+              className="shrink-0 rounded-full bg-muted px-1 text-3xs font-medium text-muted-foreground"
               title="previously reviewed, changed since"
             >
               ↻
             </span>
           ) : null}
           {noteCount > 0 && (
-            <span className="shrink-0 rounded-full bg-warning/15 px-1 text-[9px] font-medium text-warning">
+            <span className="shrink-0 rounded-full bg-warning/15 px-1 text-3xs font-medium text-warning">
               {noteCount}
             </span>
           )}
-          <span className="shrink-0 text-[10px] tabular-nums">
+          <span className="shrink-0 text-3xs tabular-nums">
             {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
             {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
             {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
@@ -111,7 +111,7 @@ export const TreeNodeView = ({
         />
         <span className="min-w-0 flex-1 truncate font-mono">{node.name}</span>
         {!expanded && (node.additions > 0 || node.deletions > 0) ? (
-          <span className="shrink-0 text-[10px] tabular-nums">
+          <span className="shrink-0 text-3xs tabular-nums">
             {node.additions > 0 && <span className="text-success/70">+{node.additions}</span>}
             {node.additions > 0 && node.deletions > 0 && <span className="opacity-40"> </span>}
             {node.deletions > 0 && <span className="text-danger/70">−{node.deletions}</span>}

@@ -21,7 +21,7 @@ export const ShowMoreBar = ({ step, rendered, total, onShowMore }: Props) => {
           <ChevronsDown size={12} aria-hidden />
           Show {step.toLocaleString()} more lines
         </button>
-        <span className="text-[10px] text-muted-foreground/60">
+        <span className="text-3xs text-muted-foreground/60">
           showing {rendered.toLocaleString()} of {total.toLocaleString()} lines
         </span>
       </div>

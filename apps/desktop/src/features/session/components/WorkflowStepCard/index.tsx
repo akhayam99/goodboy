@@ -49,7 +49,7 @@ type Props = {
 };
 
 const FieldLabel = ({ children }: { readonly children: ReactNode }) => (
-  <span className="px-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/50">
+  <span className="px-0.5 text-3xs font-medium uppercase tracking-wide text-muted-foreground/50">
     {children}
   </span>
 );
@@ -149,7 +149,7 @@ export const WorkflowStepCard = ({
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="min-w-0 truncate text-xs font-medium text-foreground">{displayName}</span>
         {onRole == null ? (
-          <span className={cn('shrink-0 text-[10px] font-medium uppercase tracking-wide', pal.fg)}>
+          <span className={cn('shrink-0 text-3xs font-medium uppercase tracking-wide', pal.fg)}>
             {ROLE_LABEL[role]}
           </span>
         ) : null}
@@ -206,7 +206,7 @@ export const WorkflowStepCard = ({
             )}
             <span
               className={cn(
-                'line-clamp-1 pl-[1.625rem] text-[11px] leading-relaxed',
+                'line-clamp-1 pl-[1.625rem] text-2xs leading-relaxed',
                 promptPrefix.trim() ? 'text-muted-foreground' : 'italic text-muted-foreground',
               )}
             >
@@ -237,7 +237,7 @@ export const WorkflowStepCard = ({
                 minRows={2}
                 maxRows={8}
                 disabled={disabled}
-                className="pr-8 text-[11px] leading-relaxed"
+                className="pr-8 text-2xs leading-relaxed"
               />
               {onPolish != null ? (
                 <button
@@ -267,7 +267,7 @@ export const WorkflowStepCard = ({
                   maxRows={4}
                   disabled={disabled}
                   aria-label="expected output"
-                  className="text-[11px] leading-relaxed"
+                  className="text-2xs leading-relaxed"
                 />
               </div>
             ) : null}

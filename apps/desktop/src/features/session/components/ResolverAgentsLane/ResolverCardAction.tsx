@@ -25,7 +25,7 @@ const ROLE_CLASS: Record<ResolverActionRole, string> = {
 };
 
 const BUTTON_CLASS =
-  'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-3xs font-semibold motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60';
 
 export const ResolverCardAction = ({
   agent,

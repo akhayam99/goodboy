@@ -40,7 +40,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         </span>
         <span
           className={cn(
-            'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+            'shrink-0 rounded-full px-1.5 py-0.5 text-3xs font-medium',
             draft.origin === 'agent'
               ? 'bg-indigo-400/15 text-indigo-600'
               : 'bg-muted text-muted-foreground',
@@ -51,7 +51,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         {draft.stale ? (
           <span
             title="the diff changed under this comment; it will be skipped on publish"
-            className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+            className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning"
           >
             Stale
           </span>
@@ -92,7 +92,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-sm px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Cancel
             </button>
@@ -100,7 +100,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
               type="button"
               onClick={save}
               disabled={trimmed.length === 0}
-              className="rounded-sm bg-foreground px-2 py-0.5 text-[10px] font-medium text-background hover:opacity-80 disabled:opacity-30"
+              className="rounded-sm bg-foreground px-2 py-0.5 text-3xs font-medium text-background hover:opacity-80 disabled:opacity-30"
             >
               Save
             </button>

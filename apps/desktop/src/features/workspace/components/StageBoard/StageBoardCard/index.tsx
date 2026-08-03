@@ -184,7 +184,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             </Tooltip>
           )}
           {reviewDraftCount > 0 && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-3xs font-medium text-indigo-600">
               <MessageSquareDiff size={10} aria-hidden />
               <span className="tabular-nums">{reviewDraftCount}</span>
               <span>draft {reviewDraftCount === 1 ? 'comment' : 'comments'}</span>

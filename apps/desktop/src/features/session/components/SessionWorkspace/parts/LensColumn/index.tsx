@@ -281,7 +281,7 @@ export const LensColumn = ({
             </span>
             <span
               className={cn(
-                'min-w-0 flex-1 truncate pr-12 text-[13px]',
+                'min-w-0 flex-1 truncate pr-12 text-sm',
                 activeLens === null && 'font-medium',
               )}
             >
@@ -289,7 +289,7 @@ export const LensColumn = ({
             </span>
             <KbdPill
               aria-hidden
-              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
+              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-3xs opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
             >
               {shortcutGlyphs('lens.overview')}
             </KbdPill>
@@ -298,7 +298,7 @@ export const LensColumn = ({
             <div key={group.label} className="flex flex-col gap-0.5">
               <span
                 className={cn(
-                  'px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] transition-colors',
+                  'px-2 pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
                   groupWantsAttention({ rows: group.rows })
                     ? 'text-foreground/80'
                     : 'text-muted-foreground/60',
@@ -372,7 +372,7 @@ export const LensColumn = ({
                       ) : null}
                       <span
                         className={cn(
-                          'min-w-0 flex-1 truncate text-[13px]',
+                          'min-w-0 flex-1 truncate text-sm',
                           !hasBadge && 'pr-12',
                           active && 'font-medium',
                         )}
@@ -438,7 +438,7 @@ export const LensColumn = ({
                       ) : null}
                       <KbdPill
                         aria-hidden
-                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
+                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-3xs opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
                       >
                         {shortcut}
                       </KbdPill>

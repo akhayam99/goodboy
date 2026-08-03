@@ -257,11 +257,12 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
           title={`Edit ${skill.name}`}
           className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         >
-          <span className="truncate text-sm font-medium text-foreground">/{skill.name}</span>
+          <span className="truncate text-sm font-medium text-foreground" title={skill.filePath}>
+            /{skill.name}
+          </span>
           {skill.description !== '' ? (
             <span className="truncate text-xs text-muted-foreground">{skill.description}</span>
           ) : null}
-          <span className="truncate text-2xs text-muted-foreground/60">{skill.filePath}</span>
         </button>
         <div className="col-start-2 row-start-1 flex items-start gap-1 px-2 py-1.5">
           <CardActionSlot label="Skill lifecycle actions">

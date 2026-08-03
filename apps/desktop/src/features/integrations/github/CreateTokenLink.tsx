@@ -5,7 +5,7 @@ const TOKEN_LIST_URL = 'https://github.com/settings/tokens';
 
 export const CreateTokenLink = () => {
   return (
-    <p className="text-[10px] leading-relaxed text-muted-foreground">
+    <p className="text-3xs leading-relaxed text-muted-foreground">
       <a
         href={TOKEN_CREATE_URL}
         target="_blank"

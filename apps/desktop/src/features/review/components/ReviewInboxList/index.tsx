@@ -156,12 +156,12 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
                       </span>
                       <span className="flex-1" />
                       {scope === 'all' && pr.mine ? (
-                        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground">
                           Mine
                         </span>
                       ) : null}
                       {pr.reviewRequested ? (
-                        <span className="shrink-0 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 ring-1 ring-indigo-400/30">
+                        <span className="shrink-0 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-3xs font-semibold text-indigo-600 ring-1 ring-indigo-400/30">
                           Review requested
                         </span>
                       ) : null}

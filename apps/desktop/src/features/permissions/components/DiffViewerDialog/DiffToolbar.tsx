@@ -53,7 +53,7 @@ export const DiffToolbar = ({
             ) : null)}
           {openCommentsCount > 0 ? (
             <span
-              className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+              className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning"
               title={`${openCommentsCount} open ${openCommentsCount === 1 ? 'note' : 'notes'}`}
             >
               {openCommentsCount} {openCommentsCount === 1 ? 'note' : 'notes'}
@@ -62,7 +62,7 @@ export const DiffToolbar = ({
           {reviewedCount !== null && filesCount > 0 ? (
             <span
               className={cn(
-                'shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                'shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium',
                 reviewedCount === filesCount
                   ? 'bg-success/15 text-success'
                   : 'bg-muted text-muted-foreground',

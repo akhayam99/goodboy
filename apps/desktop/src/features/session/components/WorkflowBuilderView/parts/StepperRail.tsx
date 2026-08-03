@@ -49,7 +49,7 @@ export const StepperRail = ({ current, canReach, disabled, onJump }: Props) => (
           >
             <span
               className={cn(
-                'flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums',
+                'flex size-5 shrink-0 items-center justify-center rounded-full text-3xs font-semibold tabular-nums',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : done

@@ -233,7 +233,7 @@ export const FileDiffCard = ({
           </button>
           <span
             className={cn(
-              'w-3 shrink-0 text-center font-mono text-[11px] font-bold',
+              'w-3 shrink-0 text-center font-mono text-2xs font-bold',
               STATUS_COLOR[file.status],
             )}
             title={file.status}
@@ -250,18 +250,18 @@ export const FileDiffCard = ({
           </button>
           {reviewState === 'stale' ? (
             <span
-              className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground"
               title="this file changed since you last reviewed it"
             >
               previously reviewed
             </span>
           ) : null}
           {noteCount > 0 ? (
-            <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+            <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning">
               {noteCount} {noteCount === 1 ? 'note' : 'notes'}
             </span>
           ) : null}
-          <span className="shrink-0 text-[10px] tabular-nums">
+          <span className="shrink-0 text-3xs tabular-nums">
             {file.additions > 0 && <span className="text-success">+{file.additions}</span>}
             {file.additions > 0 && file.deletions > 0 && <span className="opacity-40"> </span>}
             {file.deletions > 0 && <span className="text-danger">−{file.deletions}</span>}
@@ -307,7 +307,7 @@ export const FileDiffCard = ({
               onClick={handleToggleReviewed}
               title={isReviewed ? 'mark as not reviewed' : 'mark as reviewed'}
               className={cn(
-                'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] font-medium transition-colors',
+                'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-3xs font-medium transition-colors',
                 isReviewed
                   ? 'border-success/40 bg-success/10 text-success'
                   : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -336,7 +336,7 @@ export const FileDiffCard = ({
               <button
                 type="button"
                 onClick={() => setShowResolved((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <ChevronRight
                   size={10}
@@ -353,7 +353,7 @@ export const FileDiffCard = ({
           ) : null}
           {fileLevelComments.length > 0 || fileLevelComposerOpen ? (
             <div className="mb-3 flex flex-col gap-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="text-3xs font-semibold uppercase tracking-wide text-muted-foreground">
                 file notes
               </span>
               {fileLevelComments.map((c) => (
@@ -400,7 +400,7 @@ export const FileDiffCard = ({
                             <div
                               className={cn(
                                 DIFF_SCROLL_CONTENT_CLASS,
-                                'px-2.5 py-1 text-[10px] font-medium tabular-nums text-muted-foreground/70',
+                                'px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70',
                               )}
                             >
                               {row.header}
@@ -492,7 +492,7 @@ export const FileDiffCard = ({
                                 : undefined
                             }
                             className={cn(
-                              'w-9 select-none border-l-2 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50',
+                              'w-9 select-none border-l-2 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50',
                               canComment &&
                                 oldAnchor !== null &&
                                 'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
@@ -539,7 +539,7 @@ export const FileDiffCard = ({
                                 : undefined
                             }
                             className={cn(
-                              'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-[10px] tabular-nums text-muted-foreground/50',
+                              'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50',
                               canComment &&
                                 newAnchor !== null &&
                                 'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
@@ -587,7 +587,7 @@ export const FileDiffCard = ({
                                 {lineComments.map((c) => (
                                   <div key={c.id} className="flex flex-col gap-0.5">
                                     {c.anchor?.endLineNumber ? (
-                                      <span className="text-[10px] font-medium text-muted-foreground">
+                                      <span className="text-3xs font-medium text-muted-foreground">
                                         lines {c.anchor.lineNumber}–{c.anchor.endLineNumber}
                                       </span>
                                     ) : null}

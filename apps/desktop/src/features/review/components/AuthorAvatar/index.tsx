@@ -13,7 +13,7 @@ export const AuthorAvatar = ({ author, avatarUrl }: Props) => {
     return (
       <span
         aria-hidden
-        className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-semibold text-muted-foreground"
+        className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-3xs font-semibold text-muted-foreground"
       >
         {initial !== '' ? initial : '?'}
       </span>
