@@ -70,6 +70,50 @@ afterEach(() => {
 });
 
 describe('AgentBreadcrumb', () => {
+  it('orders switcher entries newest first by ordinal', () => {
+    const newest = buildAgent({ id: 'agent-newest' as AgentId, name: 'newest four', ordinal: 5 });
+    h.state.sessionPhaseRuns = { [SESSION_ID]: [scout, implementer, newest] };
+    renderCrumb(scout.id, 'agents');
+
+    fireEvent.click(screen.getByRole('button', { name: 'scout one' }));
+
+    const items = screen.getAllByRole('menuitem').map((el) => el.textContent ?? '');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toContain('newest four');
+    expect(items[1]).toContain('implement two');
+    expect(items[2]).toContain('scout one');
+  });
+
+  it('splits active and done siblings into labelled groups, done last', () => {
+    const done = buildAgent({
+      id: 'agent-done' as AgentId,
+      name: 'wrap third',
+      ordinal: 9,
+      doneAt: '2024-01-01T00:00:00.000Z' as never,
+    });
+    h.state.sessionPhaseRuns = { [SESSION_ID]: [scout, implementer, done] };
+    renderCrumb(scout.id, 'agents');
+
+    fireEvent.click(screen.getByRole('button', { name: 'scout one' }));
+
+    expect(screen.getByText('Active')).toBeTruthy();
+    expect(screen.getByText('Done')).toBeTruthy();
+    const items = screen.getAllByRole('menuitem').map((el) => el.textContent ?? '');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toContain('implement two');
+    expect(items[1]).toContain('scout one');
+    expect(items[2]).toContain('wrap third');
+  });
+
+  it('omits group labels when every sibling is active', () => {
+    renderCrumb(scout.id, 'agents');
+
+    fireEvent.click(screen.getByRole('button', { name: 'scout one' }));
+
+    expect(screen.queryByText('Active')).toBeNull();
+    expect(screen.queryByText('Done')).toBeNull();
+  });
+
   it('exposes one back affordance as the home crumb', () => {
     renderCrumb(scout.id, 'agents');
 

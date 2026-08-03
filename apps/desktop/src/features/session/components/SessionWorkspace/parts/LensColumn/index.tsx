@@ -197,7 +197,7 @@ export const LensColumn = ({
       glyph: 'github',
       tone: CONCEPT_TONE.pr,
       count: githubCount,
-      dot: hasGithubPr ? 'running' : undefined,
+      secondaryDot: hasGithubPr,
       isConnected: githubConnection.isConnected,
     },
     {
@@ -206,7 +206,7 @@ export const LensColumn = ({
       glyph: 'gitlab',
       tone: CONCEPT_TONE.gitlab,
       count: gitlabCount,
-      dot: hasGitlabMr ? 'running' : undefined,
+      secondaryDot: hasGitlabMr,
       isConnected: gitlabConnection.isConnected,
     },
     {

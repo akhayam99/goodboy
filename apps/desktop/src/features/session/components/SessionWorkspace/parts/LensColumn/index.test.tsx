@@ -562,6 +562,55 @@ describe('LensColumn', () => {
     expect(screen.getByRole('button', { name: 'GitHub 1' })).toBeDefined();
   });
 
+  it('marks an open PR or MR with a static indicator, never a pulsing running dot', () => {
+    store.sessionGithub = { 'session-1': { pr: { number: 42 } } };
+    store.sessionGitlabMr = { 'session-1': { mr: { iid: 7 } } };
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const github = screen.getByRole('button', { name: 'GitHub 1' });
+    expect(github.querySelector('[class*="bg-accent"]')).not.toBeNull();
+    expect(github.querySelector('[class*="animate-pulse"]')).toBeNull();
+    expect(github.querySelector('[class*="bg-info"]')).toBeNull();
+
+    const gitlab = screen.getByRole('button', { name: 'GitLab' });
+    expect(gitlab.querySelector('[class*="bg-accent"]')).not.toBeNull();
+    expect(gitlab.querySelector('[class*="animate-pulse"]')).toBeNull();
+    expect(gitlab.querySelector('[class*="bg-info"]')).toBeNull();
+  });
+
+  it('gives Linear and Sentry no dot, matching the shared integrations badge grammar', () => {
+    store.sessionExternalTasks = {
+      'session-1': [{ provider: 'linear' }, { provider: 'sentry' }],
+    };
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const linear = screen.getByRole('button', { name: 'Linear 1' });
+    const sentry = screen.getByRole('button', { name: 'Sentry 1' });
+    for (const row of [linear, sentry]) {
+      expect(row.querySelector('[class*="bg-accent"]')).toBeNull();
+      expect(row.querySelector('[class*="bg-info"]')).toBeNull();
+      expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
+    }
+  });
+
   it.each([
     ['GitHub', 'pr', 'goodboy:open-github-studio'],
     ['GitLab', 'gitlab_issues', 'goodboy:open-gitlab-studio'],
