@@ -20,6 +20,7 @@ mod workflows;
 mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
+mod releases;
 mod repo;
 mod scripts;
 mod secrets;
@@ -111,6 +112,7 @@ pub fn run() {
       editor::open_in_editor,
       editor::open_file_in_workspace,
       editor::open_url,
+      releases::releases_list,
       explore::explore_list,
       explore::explore_read,
       explore::explore_open,

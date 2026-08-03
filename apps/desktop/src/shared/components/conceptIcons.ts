@@ -13,6 +13,7 @@ import {
   FolderPlus,
   FolderTree,
   GitCommit,
+  History,
   LifeBuoy,
   Link2,
   ListChecks,
@@ -36,6 +37,7 @@ import { GithubIcon, GitlabIcon, LinearIcon, SentryIcon } from './brand-icons';
 export const CONCEPT_ICONS = {
   agents: Bot,
   budget: Wallet,
+  changelog: History,
   commits: GitCommit,
   decisions: CheckCheck,
   errors: CircleAlert,
@@ -75,6 +77,7 @@ type Concept = keyof typeof CONCEPT_ICONS;
 export const CONCEPT_TONE = {
   agents: 'primary',
   budget: 'warning',
+  changelog: 'neutral',
   commits: 'info',
   decisions: 'success',
   errors: 'danger',

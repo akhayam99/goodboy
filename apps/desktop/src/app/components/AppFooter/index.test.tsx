@@ -38,6 +38,7 @@ describe('AppFooter', () => {
     const onOpenProviders = vi.fn();
     const onOpenBudget = vi.fn();
     const onOpenImpact = vi.fn();
+    const onOpenChangelog = vi.fn();
     render(
       <AppFooter
         activeStudio={null}
@@ -45,6 +46,7 @@ describe('AppFooter', () => {
         onOpenProviders={onOpenProviders}
         onOpenBudget={onOpenBudget}
         onOpenImpact={onOpenImpact}
+        onOpenChangelog={onOpenChangelog}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
@@ -75,6 +77,7 @@ describe('AppFooter', () => {
         name: 'see how orchestration changed the way this workspace works',
       }),
     );
+    fireEvent.click(screen.getByRole('button', { name: 'see what changed, release by release' }));
 
     const { container } = render(<BetaPill className={BETA_CENTERING} />);
     expect(beta.className).toBe(container.firstElementChild?.className);
@@ -82,6 +85,7 @@ describe('AppFooter', () => {
     expect(onOpenProviders).toHaveBeenCalledOnce();
     expect(onOpenBudget).toHaveBeenCalledOnce();
     expect(onOpenImpact).toHaveBeenCalledOnce();
+    expect(onOpenChangelog).toHaveBeenCalledOnce();
   });
 
   it('keeps studio buttons muted at rest and gives the active one a subtle surface', () => {
@@ -92,6 +96,7 @@ describe('AppFooter', () => {
         onOpenProviders={vi.fn()}
         onOpenBudget={vi.fn()}
         onOpenImpact={vi.fn()}
+        onOpenChangelog={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
@@ -126,6 +131,7 @@ describe('AppFooter', () => {
         onOpenProviders={vi.fn()}
         onOpenBudget={vi.fn()}
         onOpenImpact={vi.fn()}
+        onOpenChangelog={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
@@ -165,6 +171,7 @@ describe('AppFooter', () => {
         onOpenProviders={vi.fn()}
         onOpenBudget={vi.fn()}
         onOpenImpact={vi.fn()}
+        onOpenChangelog={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
@@ -204,6 +211,7 @@ describe('AppFooter', () => {
         onOpenProviders={vi.fn()}
         onOpenBudget={vi.fn()}
         onOpenImpact={vi.fn()}
+        onOpenChangelog={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
         onOpenSentry={vi.fn()}
