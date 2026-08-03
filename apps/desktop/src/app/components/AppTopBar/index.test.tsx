@@ -73,12 +73,14 @@ beforeEach(() => {
   hooks.attention = {};
   store.setCurrentSession.mockClear();
   store.setActiveLens.mockClear();
+  useThemeStore.setState({ theme: 'dark' });
 });
 
 afterEach(cleanup);
 
 import { AppTopBar } from './index';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { useThemeStore } from '../../../shared/lib/theme';
 
 const ATTENTION_SESSION_ID = 'session-1' as SessionId;
 const ATTENTION_SESSION = {
@@ -121,12 +123,23 @@ describe('AppTopBar', () => {
     expect(screen.getByRole('button', { name: 'open settings' })).toBeDefined();
   });
 
-  it('keeps set-once preferences out of the bar', () => {
+  it('keeps set-once preferences out of the bar, except theme', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
 
-    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).not.toBeNull();
     expect(screen.queryByRole('button', { name: /pair your iphone/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /getting started/i })).toBeNull();
+  });
+
+  it('flips the real theme state from the top bar', () => {
+    useThemeStore.setState({ theme: 'dark' });
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
+
+    const toggle = screen.getByRole('button', { name: 'Switch to light mode' });
+    fireEvent.click(toggle);
+
+    expect(useThemeStore.getState().theme).toBe('light');
+    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeDefined();
   });
 
   it('carries workspace identity whatever the column is doing', () => {
