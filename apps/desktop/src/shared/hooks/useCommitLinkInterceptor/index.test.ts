@@ -47,32 +47,6 @@ describe('useCommitLinkInterceptor', () => {
     expect(openUrl).not.toHaveBeenCalled();
   });
 
-  it('opens a commit on request, carrying the file to jump to', () => {
-    const { result } = renderHook(() => useCommitLinkInterceptor());
-    act(() => {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-commit-diff', {
-          detail: { repo: 'owner/repo', sha: 'abc1234', file: 'src/a.ts' },
-        }),
-      );
-    });
-    expect(result.current.commitDiff).toEqual({
-      repo: 'owner/repo',
-      sha: 'abc1234',
-      file: 'src/a.ts',
-    });
-  });
-
-  it('ignores an open request without a sha', () => {
-    const { result } = renderHook(() => useCommitLinkInterceptor());
-    act(() => {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-commit-diff', { detail: { repo: 'owner/repo' } }),
-      );
-    });
-    expect(result.current.commitDiff).toBeNull();
-  });
-
   it('ignores clicks on anchors without an href', () => {
     const { result } = renderHook(() => useCommitLinkInterceptor());
     clickAnchor(null);

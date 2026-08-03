@@ -8,14 +8,15 @@ export type ResolverActionKind =
   | 'dequeue'
   | 'explain'
   | 'proceed'
-  | 'continue'
+  | 'answer'
   | 'run'
+  | 'rerun'
   | 'forceClose'
   | 'forceResolve';
 
 export type ResolverActionRole = 'primary' | 'alert' | 'danger' | 'neutral';
 
-type ResolverActionReason = 'required' | 'optional';
+export type ResolverActionExplanation = 'required' | 'optional';
 
 type ResolverActionConfirm = {
   readonly role: 'primary' | 'alert' | 'danger';
@@ -30,7 +31,14 @@ export type ResolverAction = {
   readonly role: ResolverActionRole;
   readonly isEnabled: boolean;
   readonly confirm: ResolverActionConfirm | null;
-  readonly reason: ResolverActionReason | null;
+  readonly explanation: ResolverActionExplanation | null;
+};
+
+export type ResolverActionPlan = {
+  readonly primary: ResolverAction | null;
+  readonly secondary: ResolverAction | null;
+  readonly overflow: ReadonlyArray<ResolverAction>;
+  readonly note: string | null;
 };
 
 type Params = {
@@ -40,7 +48,142 @@ type Params = {
   readonly commitSha: string | null;
   readonly queuedThreadIds: ReadonlyArray<string>;
   readonly prNumber: number | null;
+  readonly isQueueStalled: boolean;
+  readonly hasOtherActiveResolvers: boolean;
 };
+
+type Block = {
+  readonly primary: ResolverAction | null;
+  readonly secondary: ResolverAction | null;
+  readonly note: string | null;
+};
+
+export const resolverActionOpensPanel = ({ action }: { action: ResolverAction }): boolean =>
+  action.explanation === 'required';
+
+const IDLE: Block = { primary: null, secondary: null, note: null };
+
+const RUN_NOW: ResolverAction = {
+  kind: 'run',
+  label: 'Run now',
+  role: 'primary',
+  isEnabled: true,
+  confirm: null,
+  explanation: null,
+};
+
+const RUN_AGAIN: ResolverAction = {
+  kind: 'rerun',
+  label: 'Run again',
+  role: 'primary',
+  isEnabled: true,
+  confirm: null,
+  explanation: null,
+};
+
+const PROCEED: ResolverAction = {
+  kind: 'proceed',
+  label: 'Proceed with fix',
+  role: 'primary',
+  isEnabled: true,
+  confirm: null,
+  explanation: null,
+};
+
+const ANSWER: ResolverAction = {
+  kind: 'answer',
+  label: 'Answer in chat',
+  role: 'primary',
+  isEnabled: true,
+  confirm: null,
+  explanation: null,
+};
+
+const DEQUEUE: ResolverAction = {
+  kind: 'dequeue',
+  label: 'Remove from batch',
+  role: 'neutral',
+  isEnabled: true,
+  confirm: null,
+  explanation: null,
+};
+
+const FORCE_CLOSE: ResolverAction = {
+  kind: 'forceClose',
+  label: 'Force close',
+  role: 'danger',
+  isEnabled: true,
+  confirm: {
+    role: 'danger',
+    title: 'Force close this resolver?',
+    description: 'Stops it now and lets the next queued resolver run.',
+    confirmLabel: 'Force close',
+  },
+  explanation: null,
+};
+
+const MARK_RESOLVED: ResolverAction = {
+  kind: 'forceResolve',
+  label: 'Mark resolved',
+  role: 'alert',
+  isEnabled: true,
+  confirm: {
+    role: 'alert',
+    title: 'Mark thread resolved?',
+    description: 'Resolves the review thread on GitHub without waiting for the resolver agent.',
+    confirmLabel: 'Mark resolved',
+  },
+  explanation: 'optional',
+};
+
+const pushAction = ({
+  label,
+  isEnabled,
+}: {
+  readonly label: string;
+  readonly isEnabled: boolean;
+}): ResolverAction => ({
+  kind: 'push',
+  label,
+  role: 'primary',
+  isEnabled,
+  confirm: {
+    role: 'primary',
+    title: `${label}?`,
+    description: 'Posts the resolution to GitHub and marks the review thread resolved.',
+    confirmLabel: label,
+  },
+  explanation: null,
+});
+
+const queueAction = ({ isEnabled }: { readonly isEnabled: boolean }): ResolverAction => ({
+  kind: 'queue',
+  label: 'Add to push batch',
+  role: 'neutral',
+  isEnabled,
+  confirm: null,
+  explanation: null,
+});
+
+const explainAction = ({
+  label,
+  isEnabled,
+}: {
+  readonly label: string;
+  readonly isEnabled: boolean;
+}): ResolverAction => ({
+  kind: 'explain',
+  label,
+  role: 'alert',
+  isEnabled,
+  confirm: {
+    role: 'alert',
+    title: 'Post explanation and close?',
+    description: 'Publishes the explanation on GitHub and closes the review thread without a fix.',
+    confirmLabel: 'Post & close',
+  },
+  explanation: 'required',
+});
 
 const canForceClose = ({ agent, status }: Pick<Params, 'agent' | 'status'>): boolean =>
   status === 'running' || agent.status === 'running';
@@ -59,147 +202,85 @@ const canForceResolve = ({
   return status === 'awaiting' || status === 'failed' || status === 'done' || status === 'stopped';
 };
 
-const statusActions = ({
+const committedBlock = ({
   agent,
-  status,
   commitSha,
   queuedThreadIds,
   prNumber,
-}: Omit<Params, 'turnState'>): ReadonlyArray<ResolverAction> => {
-  const threadIds = agentThreadIds(agent);
-  if (status === 'committed') {
-    const isQueued = queuedThreadIds.length > 0;
-    const label = isQueued ? 'Push now' : 'Push & resolve';
-    const push: ResolverAction = {
-      kind: 'push',
-      label,
-      role: 'primary',
-      isEnabled: isQueued || (threadIds.length > 0 && commitSha !== null),
-      confirm: {
-        role: 'primary',
-        title: `${label}?`,
-        description: 'Posts the resolution to GitHub and marks the review thread resolved.',
-        confirmLabel: label,
-      },
-      reason: null,
+  hasOtherActiveResolvers,
+}: Pick<
+  Params,
+  'agent' | 'commitSha' | 'queuedThreadIds' | 'prNumber' | 'hasOtherActiveResolvers'
+>): Block => {
+  if (queuedThreadIds.length > 0) {
+    return { primary: null, secondary: DEQUEUE, note: 'In the push batch' };
+  }
+  const canPush = agentThreadIds(agent).length > 0 && commitSha !== null;
+  const queue = queueAction({ isEnabled: prNumber !== null && canPush });
+  if (hasOtherActiveResolvers) {
+    return {
+      primary: queue,
+      secondary: pushAction({ label: 'Push now', isEnabled: canPush }),
+      note: null,
     };
-    if (isQueued) {
-      return [
-        {
-          kind: 'dequeue',
-          label: 'Remove from batch',
-          role: 'neutral',
-          isEnabled: true,
-          confirm: null,
-          reason: null,
-        },
-        push,
-      ];
-    }
-    return [
-      push,
-      {
-        kind: 'queue',
-        label: 'Queue for batch push',
-        role: 'neutral',
-        isEnabled: prNumber !== null && threadIds.length > 0 && commitSha !== null,
-        confirm: null,
-        reason: null,
-      },
-    ];
   }
-
-  if (status === 'wontfix' || status === 'analyzed') {
-    const explain: ResolverAction = {
-      kind: 'explain',
-      label: 'Post explanation & close',
-      role: 'alert',
-      isEnabled: threadIds.length > 0,
-      confirm: {
-        role: 'alert',
-        title: 'Post explanation and close?',
-        description:
-          'Publishes the explanation on GitHub and closes the review thread without a fix.',
-        confirmLabel: 'Post & close',
-      },
-      reason: 'required',
-    };
-    if (status === 'analyzed') {
-      return [
-        {
-          kind: 'proceed',
-          label: 'Proceed with fix',
-          role: 'neutral',
-          isEnabled: true,
-          confirm: null,
-          reason: null,
-        },
-        explain,
-      ];
-    }
-    return [explain];
-  }
-
-  if (status === 'awaiting') {
-    return [
-      {
-        kind: 'continue',
-        label: 'Continue working',
-        role: 'neutral',
-        isEnabled: true,
-        confirm: null,
-        reason: null,
-      },
-    ];
-  }
-
-  if (status === 'pending') {
-    return [
-      {
-        kind: 'run',
-        label: 'Run now',
-        role: 'neutral',
-        isEnabled: true,
-        confirm: null,
-        reason: null,
-      },
-    ];
-  }
-
-  return [];
+  return {
+    primary: pushAction({ label: 'Push & resolve', isEnabled: canPush }),
+    secondary: queue,
+    note: null,
+  };
 };
 
-export const resolverActions = (params: Params): ReadonlyArray<ResolverAction> => {
-  const forced: Array<ResolverAction> = [];
+const blockFor = (params: Params): Block => {
+  const threadCount = agentThreadIds(params.agent).length;
+  switch (params.status) {
+    case 'pending':
+      return params.isQueueStalled ? { primary: RUN_NOW, secondary: null, note: null } : IDLE;
+    case 'running':
+    case 'resolved':
+      return IDLE;
+    case 'committed':
+      return committedBlock(params);
+    case 'analyzed':
+      return {
+        primary: PROCEED,
+        secondary: explainAction({ label: 'Post & close', isEnabled: threadCount > 0 }),
+        note: null,
+      };
+    case 'wontfix':
+      return {
+        primary: explainAction({
+          label: 'Post explanation & close',
+          isEnabled: threadCount > 0,
+        }),
+        secondary: null,
+        note: null,
+      };
+    case 'awaiting':
+      return { primary: ANSWER, secondary: null, note: null };
+    case 'failed':
+    case 'stopped':
+    case 'done':
+      return {
+        primary: RUN_AGAIN,
+        secondary: canForceResolve(params) ? MARK_RESOLVED : null,
+        note: null,
+      };
+    default: {
+      const exhaustive: never = params.status;
+      return exhaustive;
+    }
+  }
+};
+
+export const resolverActionPlan = (params: Params): ResolverActionPlan => {
+  const block = blockFor(params);
+  const overflow: Array<ResolverAction> = [];
   if (canForceClose(params)) {
-    forced.push({
-      kind: 'forceClose',
-      label: 'Force close',
-      role: 'danger',
-      isEnabled: true,
-      confirm: {
-        role: 'danger',
-        title: 'Force close this resolver?',
-        description: 'Stops it now and lets the next queued resolver run.',
-        confirmLabel: 'Force close',
-      },
-      reason: null,
-    });
+    overflow.push(FORCE_CLOSE);
   }
-  if (canForceResolve(params)) {
-    forced.push({
-      kind: 'forceResolve',
-      label: 'Mark resolved',
-      role: 'alert',
-      isEnabled: true,
-      confirm: {
-        role: 'alert',
-        title: 'Mark thread resolved?',
-        description: 'Resolves the review thread on GitHub without waiting for the resolver agent.',
-        confirmLabel: 'Mark resolved',
-      },
-      reason: 'optional',
-    });
+  if (canForceResolve(params) && block.secondary?.kind !== 'forceResolve') {
+    overflow.push(MARK_RESOLVED);
   }
-  return [...statusActions(params), ...forced];
+  return { ...block, overflow };
 };

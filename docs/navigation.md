@@ -299,13 +299,21 @@ then the sha attributed on the branch, then the sha the resolver reported in its
 outcome. `ResolverActions` uses it to decide whether a push is possible, and
 `ResolverSections` uses it to make the resolver Changes section navigable.
 
-In that section every reported commit opens its own diff, and every file the
-resolver edited opens the same diff scrolled to that file. Both dispatch
-`goodboy:open-commit-diff` with `{ repo, sha, file }`; `useCommitLinkInterceptor`
-turns it into the `DiffViewerDialog` target, the same one a `github.com/.../commit/`
-link in the transcript produces. File rows stay inert while no commit is known,
-since there would be nothing to filter. The dialog loads the diff from the session
-worktree and falls back to `gh` only when the repo slug is known.
+In that section every reported commit opens the session diff lens at that commit,
+and every file the resolver edited opens the same lens scrolled to that file. Both
+call `setDiffFocus(sessionId, { sha, path })` and then `setActiveLens(sessionId,
+'files')`, the same pair the workflows lens uses with `setFocusedWorkflowRun`.
+`FilesPane` reads `diffFocus` off the store and hands it to the diff pane, which
+switches its `DiffView` to `{ kind: 'commit', sha }` and scrolls to the file.
+`setActiveLens` drops the focus on any lens other than `files`, so it never
+survives into an unrelated surface. File rows stay inert while no commit is known,
+since there would be nothing to filter, and file paths render relative to the
+session worktree with the absolute path kept as the `title`.
+
+A sha reported but absent from the branch is still clickable: the lens loads
+`git show` for it and surfaces the git error when the worktree does not carry it.
+That is the honest answer, since nothing else in the app can resolve a commit the
+branch never received.
 
 ## One answer per review thread
 

@@ -94,7 +94,7 @@ import { createSidebarSlice } from './slices/sidebar';
 import type { PanelSection } from './slices/sidebar/types';
 import { createSessionViewSlice } from './slices/session-view';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
-import type { LensKind, SessionStudio } from './slices/session-view';
+import type { DiffFocus, LensKind, SessionStudio } from './slices/session-view';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { createPermissionsSlice } from './slices/permissions';
@@ -627,6 +627,7 @@ export type AppActions = {
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
   closeTerminal(sessionId: SessionId): Promise<void>;
   addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;

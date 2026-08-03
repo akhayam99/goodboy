@@ -5,6 +5,7 @@ import { setSessionSort } from './setSessionSort';
 import {
   lensGo,
   setActiveLens,
+  setDiffFocus,
   setFocusedPlanId,
   setFocusedWorkflowRun,
   setSessionStudio,
@@ -18,7 +19,7 @@ export { isPrReviewSession } from './isPrReviewSession';
 export { readPersistedLens } from './workSurfaceStorage';
 export { LENS_KINDS } from './types';
 export type { GroupedSessions, SessionViewSlice } from './types';
-export type { SessionStudio, LensKind, LensHistory } from './types';
+export type { SessionStudio, LensKind, LensHistory, DiffFocus } from './types';
 
 export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice => {
   return {
@@ -32,5 +33,6 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedPlanId: setFocusedPlanId(set),
     setSessionStudio: setSessionStudio(set),
+    setDiffFocus: setDiffFocus(set),
   };
 };

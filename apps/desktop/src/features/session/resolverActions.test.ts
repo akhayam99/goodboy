@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { resolverActions } from './resolverActions';
+import { resolverActionOpensPanel, resolverActionPlan } from './resolverActions';
 
 const SESSION_ID = 'session-1' as SessionId;
 
@@ -21,79 +21,122 @@ const base = {
   commitSha: 'abc1234',
   queuedThreadIds: [] as ReadonlyArray<string>,
   prNumber: 7,
+  isQueueStalled: false,
+  hasOtherActiveResolvers: false,
 };
 
-describe('resolverActions', () => {
-  it('offers push then queue for a committed resolver', () => {
-    const actions = resolverActions({ ...base, status: 'committed' });
+describe('resolverActionPlan', () => {
+  it('pushes and resolves when it is the last resolver standing', () => {
+    const plan = resolverActionPlan({ ...base, status: 'committed' });
 
-    expect(actions.map((action) => action.kind)).toEqual(['push', 'queue']);
-    expect(actions[0]?.label).toBe('Push & resolve');
-    expect(actions.every((action) => action.isEnabled)).toBe(true);
+    expect(plan.primary?.label).toBe('Push & resolve');
+    expect(plan.secondary?.label).toBe('Add to push batch');
+    expect(plan.primary?.confirm).not.toBeNull();
   });
 
-  it('turns push into an immediate push and offers dequeue once queued', () => {
-    const actions = resolverActions({
+  it('prefers the batch while other resolvers are still active', () => {
+    const plan = resolverActionPlan({
+      ...base,
+      status: 'committed',
+      hasOtherActiveResolvers: true,
+    });
+
+    expect(plan.primary?.label).toBe('Add to push batch');
+    expect(plan.primary?.confirm).toBeNull();
+    expect(plan.secondary?.label).toBe('Push now');
+  });
+
+  it('states the batch membership and leaves only a way out', () => {
+    const plan = resolverActionPlan({
       ...base,
       status: 'committed',
       queuedThreadIds: ['PRRT_1'],
     });
 
-    expect(actions.map((action) => action.kind)).toEqual(['dequeue', 'push']);
-    expect(actions[1]?.label).toBe('Push now');
+    expect(plan.note).toBe('In the push batch');
+    expect(plan.primary).toBeNull();
+    expect(plan.secondary?.label).toBe('Remove from batch');
   });
 
   it('keeps push disabled without a commit to push', () => {
-    const actions = resolverActions({ ...base, status: 'committed', commitSha: null });
+    const plan = resolverActionPlan({ ...base, status: 'committed', commitSha: null });
 
-    expect(actions.find((action) => action.kind === 'push')?.isEnabled).toBe(false);
-    expect(actions.find((action) => action.kind === 'queue')?.isEnabled).toBe(false);
+    expect(plan.primary?.isEnabled).toBe(false);
+    expect(plan.secondary?.isEnabled).toBe(false);
   });
 
   it('requires an explanation to close a thread without a fix', () => {
-    const wontfix = resolverActions({ ...base, status: 'wontfix' });
-    const analyzed = resolverActions({ ...base, status: 'analyzed' });
+    const wontfix = resolverActionPlan({ ...base, status: 'wontfix' });
+    const analyzed = resolverActionPlan({ ...base, status: 'analyzed' });
 
-    expect(wontfix.map((action) => action.kind)).toEqual(['explain']);
-    expect(wontfix[0]?.reason).toBe('required');
-    expect(analyzed.map((action) => action.kind)).toEqual(['proceed', 'explain']);
+    expect(wontfix.primary?.label).toBe('Post explanation & close');
+    expect(wontfix.primary?.explanation).toBe('required');
+    expect(wontfix.secondary).toBeNull();
+    expect(analyzed.primary?.label).toBe('Proceed with fix');
+    expect(analyzed.secondary?.label).toBe('Post & close');
   });
 
-  it('exposes force close while the resolver runs', () => {
-    const actions = resolverActions({
+  it('sends an action needing typed input to the panel', () => {
+    const wontfix = resolverActionPlan({ ...base, status: 'wontfix' });
+    const committed = resolverActionPlan({ ...base, status: 'committed' });
+
+    expect(resolverActionOpensPanel({ action: wontfix.primary! })).toBe(true);
+    expect(resolverActionOpensPanel({ action: committed.primary! })).toBe(false);
+  });
+
+  it('offers no forward action while working or once resolved', () => {
+    const working = resolverActionPlan({
       ...base,
       agent: agentWith({ status: 'running' }),
       status: 'running',
     });
+    const resolved = resolverActionPlan({ ...base, status: 'resolved' });
 
-    expect(actions.map((action) => action.kind)).toEqual(['forceClose']);
-    expect(actions[0]?.role).toBe('danger');
+    expect(working.primary).toBeNull();
+    expect(working.secondary).toBeNull();
+    expect(working.overflow.map((action) => action.kind)).toEqual(['forceClose']);
+    expect(resolved.primary).toBeNull();
+    expect(resolved.overflow).toEqual([]);
   });
 
-  it('exposes a manual resolve on a stuck resolver but not mid turn', () => {
-    const stuck = resolverActions({ ...base, status: 'awaiting' });
-    const busy = resolverActions({
+  it('runs a queued resolver only once the queue is stalled', () => {
+    expect(resolverActionPlan({ ...base, status: 'pending' }).primary).toBeNull();
+    expect(
+      resolverActionPlan({ ...base, status: 'pending', isQueueStalled: true }).primary?.label,
+    ).toBe('Run now');
+  });
+
+  it('offers a rerun and a manual resolve on a dead end', () => {
+    const failed = resolverActionPlan({ ...base, status: 'failed' });
+    const done = resolverActionPlan({ ...base, status: 'done' });
+
+    expect(failed.primary?.label).toBe('Run again');
+    expect(failed.secondary?.label).toBe('Mark resolved');
+    expect(failed.overflow).toEqual([]);
+    expect(done.primary?.label).toBe('Run again');
+  });
+
+  it('keeps the manual resolve in the overflow while the resolver awaits an answer', () => {
+    const awaiting = resolverActionPlan({ ...base, status: 'awaiting' });
+    const busy = resolverActionPlan({
       ...base,
       status: 'awaiting',
       turnState: { kind: 'running' } as never,
     });
 
-    expect(stuck.map((action) => action.kind)).toEqual(['continue', 'forceResolve']);
-    expect(stuck[1]?.reason).toBe('optional');
-    expect(busy.map((action) => action.kind)).toEqual(['continue']);
-  });
-
-  it('offers nothing once the thread is resolved', () => {
-    expect(resolverActions({ ...base, status: 'resolved' })).toEqual([]);
+    expect(awaiting.primary?.label).toBe('Answer in chat');
+    expect(awaiting.overflow.map((action) => action.kind)).toEqual(['forceResolve']);
+    expect(busy.overflow).toEqual([]);
   });
 
   it('never offers a manual resolve without a thread to resolve', () => {
-    const actions = resolverActions({
+    const plan = resolverActionPlan({
       ...base,
       agent: agentWith({ sourceThreadId: undefined }),
       status: 'done',
     });
 
-    expect(actions).toEqual([]);
+    expect(plan.secondary).toBeNull();
+    expect(plan.overflow).toEqual([]);
   });
 });

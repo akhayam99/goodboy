@@ -10,7 +10,7 @@ import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { resolverBadgeState } from '../ResolverStateBadge';
 import { ResolverStateIcon } from '../ResolverStateBadge/ResolverStateIcon';
-import { ResolverActions } from '../ResolverActions';
+import { ResolverCardAction } from './ResolverCardAction';
 import { resolverOrigin } from '../../resolver-origin';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
@@ -28,6 +28,8 @@ type Props = {
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly reportedCommitSha: string | null;
+  readonly isQueueStalled: boolean;
+  readonly hasOtherActiveResolvers: boolean;
   readonly isSelected: boolean;
   readonly isTaskActive: boolean;
   readonly isInspected: boolean;
@@ -49,6 +51,8 @@ export const ResolverCard = ({
   turns,
   turnsLoading,
   reportedCommitSha,
+  isQueueStalled,
+  hasOtherActiveResolvers,
   isSelected,
   isTaskActive,
   isInspected,
@@ -123,12 +127,14 @@ export const ResolverCard = ({
         </span>
       }
       footer={
-        <ResolverActions
+        <ResolverCardAction
           agent={agent}
           sessionId={agent.sessionId}
           status={status}
           commitSha={reportedCommitSha}
-          density="compact"
+          isQueueStalled={isQueueStalled}
+          hasOtherActiveResolvers={hasOtherActiveResolvers}
+          onOpenPanel={onInspect}
         />
       }
     >

@@ -16,6 +16,8 @@ const { hooks, remote, store } = vi.hoisted(() => {
       questionCount: 0,
       liveTerminals: 0,
       summarizerStatus: 'idle' as 'idle' | 'running' | 'error',
+      attachedRuns: [] as ReadonlyArray<unknown>,
+      resolverLinks: [] as ReadonlyArray<unknown>,
     },
     remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
     store: {
@@ -76,6 +78,14 @@ vi.mock('../../../../../../store', () => ({
   useSummarizerStatus: () => ({ status: hooks.summarizerStatus }),
 }));
 
+vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
+  useAttachedWorkflowRuns: () => hooks.attachedRuns,
+}));
+
+vi.mock('../../../../hooks/useResolverIndex', () => ({
+  useResolverIndex: () => ({ links: hooks.resolverLinks, byThreadId: new Map() }),
+}));
+
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return {
@@ -125,6 +135,8 @@ beforeEach(() => {
   hooks.questionCount = 0;
   hooks.liveTerminals = 0;
   hooks.summarizerStatus = 'idle';
+  hooks.attachedRuns = [];
+  hooks.resolverLinks = [];
   store.sessionPhaseRuns = {};
   store.reviewDrafts = {};
   store.sessionGithub = {};
@@ -292,6 +304,52 @@ describe('LensColumn', () => {
     expect(screen.getByRole('button', { name: 'Explore' })).toBeDefined();
     expect(screen.getByRole('button', { name: /File versions/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Terminal' })).toBeNull();
+  });
+
+  it('counts the workflows that are still running, not the ones already done', () => {
+    hooks.attachedRuns = [
+      {
+        run: { id: 'run-done', executionMode: 'dynamic', orchestrationOutcome: 'done' },
+        workflow: { id: 'wf-1', steps: [] },
+      },
+      {
+        run: { id: 'run-live', executionMode: 'dynamic' },
+        workflow: { id: 'wf-2', steps: [] },
+      },
+    ];
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const workflows = screen.getByRole('button', { name: /Workflows/ });
+
+    expect(workflows.textContent).toContain('1');
+  });
+
+  it('leaves the workflow count off when every workflow is done', () => {
+    hooks.attachedRuns = [
+      {
+        run: { id: 'run-done', executionMode: 'dynamic', orchestrationOutcome: 'done' },
+        workflow: { id: 'wf-1', steps: [] },
+      },
+    ];
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Workflows/ }).textContent).not.toMatch(/\d/);
   });
 
   it('shows a registry shortcut on every row', () => {

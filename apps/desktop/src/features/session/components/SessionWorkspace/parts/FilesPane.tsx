@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
+import { useAppStore } from '../../../../../store';
 import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
 import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
 import { FileVersionsPane } from './FileVersionsPane';
@@ -21,6 +22,8 @@ export const FilesPane = ({
   isBranchless,
   onClose,
 }: FilesPaneProps) => {
+  const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
+
   if (isBranchless) {
     if (sessionDir == null) {
       return (
@@ -60,6 +63,7 @@ export const FilesPane = ({
       sessionId={sessionId}
       workingDir={sessionDir ?? undefined}
       worktreePath={worktreePath}
+      diffFocus={diffFocus}
       onClose={onClose}
     />
   );

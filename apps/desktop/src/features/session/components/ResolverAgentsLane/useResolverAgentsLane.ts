@@ -20,7 +20,11 @@ import { agentThreadIds } from '../../agentThreadIds';
 import { attributeResolverCommits } from '../../resolver-commits';
 import { resolverReportedShas } from '../../resolver-reported-shas';
 import { listBranchCommits } from '../../../worktree/worktree';
-import { resolverLaneEntries } from './resolverLaneEntries';
+import {
+  activeResolverIds,
+  isResolverQueueStalled,
+  resolverLaneEntries,
+} from './resolverLaneEntries';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
 type Params = {
@@ -143,8 +147,8 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   }, [diffComments]);
 
   const queuedCount = resolverIndex.links.filter(({ agent }) => agent.status === 'pending').length;
-  const isStalled =
-    queuedCount > 0 && !resolverIndex.links.some(({ agent }) => agent.status === 'running');
+  const isStalled = isResolverQueueStalled({ links: resolverIndex.links });
+  const activeIds = activeResolverIds({ links: resolverIndex.links });
 
   const onOpenChat = useCallback(
     (agentId: AgentId) => {
@@ -184,6 +188,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
 
   return {
     activeEntries: entries.active,
+    activeIds,
     commentByThreadId,
     completedEntries: entries.completed,
     diffCommentByAgentId,

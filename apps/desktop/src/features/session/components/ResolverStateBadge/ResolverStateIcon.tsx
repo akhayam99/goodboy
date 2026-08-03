@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StatusDot } from '@goodboy/ui';
-import { AlertTriangle, Ban, Check, CheckCheck, CircleStop, Clock, GitCommit } from 'lucide-react';
+import { AlertTriangle, CheckCheck, Clock } from 'lucide-react';
 import type { ResolverBadgeState } from '.';
 
 type Props = {
@@ -8,30 +8,22 @@ type Props = {
 };
 
 const TITLE: Record<ResolverBadgeState, string> = {
-  none: 'done',
-  running: 'running',
   queued: 'queued',
-  committed: 'committed',
-  analyzed: 'analyzed',
-  resolved: 'resolved',
-  wontfix: 'wontfix',
-  awaiting: 'awaiting',
-  stopped: 'stopped',
+  working: 'working',
+  needsYou: 'needs you',
   failed: 'failed',
+  resolved: 'resolved',
 };
 
 export const ResolverStateIcon = ({ state }: Props) => {
   let icon: ReactNode;
 
   switch (state) {
-    case 'running':
+    case 'working':
       icon = <StatusDot tone="info" size="sm" pulsing />;
       break;
     case 'failed':
       icon = <span className="size-1.5 rounded-full bg-danger" aria-hidden />;
-      break;
-    case 'stopped':
-      icon = <CircleStop size={10} className="text-danger" aria-hidden />;
       break;
     case 'queued':
       icon = <Clock size={10} className="text-muted-foreground/60" aria-hidden />;
@@ -39,18 +31,8 @@ export const ResolverStateIcon = ({ state }: Props) => {
     case 'resolved':
       icon = <CheckCheck size={10} className="text-success" aria-hidden />;
       break;
-    case 'committed':
-      icon = <GitCommit size={10} className="text-warning" aria-hidden />;
-      break;
-    case 'wontfix':
-      icon = <Ban size={10} className="text-muted-foreground/70" aria-hidden />;
-      break;
-    case 'awaiting':
-    case 'analyzed':
+    case 'needsYou':
       icon = <AlertTriangle size={10} className="text-warning" aria-hidden />;
-      break;
-    case 'none':
-      icon = <Check size={10} className="text-muted-foreground/70" aria-hidden />;
       break;
     default: {
       const unreachable: never = state;

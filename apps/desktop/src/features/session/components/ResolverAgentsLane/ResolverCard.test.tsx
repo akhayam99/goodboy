@@ -13,6 +13,14 @@ vi.mock('../../../../store', () => ({
       sessionGithub: { 'sess-1': { pr: { number: 7 } } },
       sessionPendingResolutions: {},
       resolverThreadOutcomes: {},
+      resolveGithubThread: vi.fn(),
+      resolveAgentThreads: vi.fn(),
+      queueResolution: vi.fn(),
+      dequeueResolution: vi.fn(),
+      activateNextResolver: vi.fn(),
+      forceCloseResolver: vi.fn(),
+      sendTurn: vi.fn(),
+      selectAgent: vi.fn(),
     }),
 }));
 
@@ -55,6 +63,7 @@ type Params = {
     readonly contextTokens?: number;
   }>;
   readonly reportedCommitSha?: string | null;
+  readonly hasOtherActiveResolvers?: boolean;
   readonly onOpenChat?: () => void;
   readonly onInspect?: () => void;
 };
@@ -73,6 +82,7 @@ const renderCard = ({
     },
   ],
   reportedCommitSha = null,
+  hasOtherActiveResolvers = false,
   onOpenChat = () => undefined,
   onInspect = () => undefined,
 }: Params = {}) =>
@@ -88,6 +98,8 @@ const renderCard = ({
       turns={2}
       turnsLoading={false}
       reportedCommitSha={reportedCommitSha}
+      isQueueStalled={false}
+      hasOtherActiveResolvers={hasOtherActiveResolvers}
       isSelected={false}
       isTaskActive
       isInspected={false}
@@ -121,15 +133,34 @@ describe('ResolverCard', () => {
     expect(screen.queryByText('no model yet')).toBeNull();
   });
 
-  it('enables commit actions from the reported resolver sha', () => {
+  it('mirrors exactly one action, enabled from the reported resolver sha', () => {
     renderCard({ status: 'committed', reportedCommitSha: 'abcdef1234567890' });
 
     expect(screen.getByRole('button', { name: 'Push & resolve' }).hasAttribute('disabled')).toBe(
       false,
     );
-    expect(
-      screen.getByRole('button', { name: 'Queue for batch push' }).hasAttribute('disabled'),
-    ).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Add to push batch' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Force close' })).toBeNull();
+  });
+
+  it('mirrors the batch action instead while other resolvers are still active', () => {
+    renderCard({
+      status: 'committed',
+      reportedCommitSha: 'abcdef1234567890',
+      hasOtherActiveResolvers: true,
+    });
+
+    expect(screen.getByRole('button', { name: 'Add to push batch' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Push now' })).toBeNull();
+  });
+
+  it('opens the panel rather than executing an action that needs typed input', () => {
+    const onInspect = vi.fn();
+    renderCard({ status: 'wontfix', onInspect });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Post explanation & close' }));
+
+    expect(onInspect).toHaveBeenCalledOnce();
   });
 
   it('shows the token split, duration and context gauge without being selected', () => {
@@ -145,7 +176,7 @@ describe('ResolverCard', () => {
     renderCard();
     expect(
       screen.getByText('resolve comment 12').previousElementSibling?.getAttribute('title'),
-    ).toBe('done');
+    ).toBe('needs you');
     expect(screen.queryByText(/^\d+\/\d+$/)).toBeNull();
     expect(screen.getByText('Review comment')).toBeTruthy();
   });

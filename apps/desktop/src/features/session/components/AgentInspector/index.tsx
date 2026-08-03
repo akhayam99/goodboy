@@ -7,7 +7,7 @@ import { InspectorHeader } from '../SessionWorkspace/parts/InspectorSplit/Inspec
 import { ActionsSection } from './ActionsSection';
 import { CostsSection } from './CostsSection';
 import { IdentitySection } from './IdentitySection';
-import { ResolverSections } from './ResolverSections';
+import { ResolverInspector } from './ResolverInspector';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -41,6 +41,20 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
   const telemetry = metrics.latestTelemetryByAgentId.get(agentId) ?? null;
   const kind = classifyAgent(agent, kindOverride);
 
+  if (kind === 'resolver') {
+    return (
+      <ResolverInspector
+        sessionId={sessionId}
+        agent={agent}
+        model={telemetry?.model ?? modelOverride}
+        aggregate={metrics.aggregatesByAgentId.get(agentId) ?? null}
+        contextUsage={metrics.providerUsageByAgentId.get(agentId) ?? EMPTY_ARRAY}
+        turns={metrics.turnsByAgentId.get(agentId) ?? 0}
+        onClose={onClose}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <InspectorHeader title={agent.name} closeLabel="close agent inspector" onClose={onClose} />
@@ -54,12 +68,6 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
             effort={effortOverride}
           />
           <Divider />
-          {kind === 'resolver' ? (
-            <>
-              <ResolverSections sessionId={sessionId} agent={agent} />
-              <Divider />
-            </>
-          ) : null}
           <CostsSection
             aggregate={metrics.aggregatesByAgentId.get(agentId) ?? null}
             contextUsage={metrics.providerUsageByAgentId.get(agentId) ?? EMPTY_ARRAY}

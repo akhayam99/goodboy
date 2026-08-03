@@ -651,6 +651,15 @@ describe('store contract', () => {
       expect(store.getState().sessionStudio[SESSION_ID]).toBeNull();
     });
 
+    it('setDiffFocus survives the switch to the files lens and dies on any other', async () => {
+      const store = await getStore();
+      store.getState().setDiffFocus(SESSION_ID, { sha: 'abc1234', path: 'src/a.ts' });
+      store.getState().setActiveLens(SESSION_ID, 'files');
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({ sha: 'abc1234', path: 'src/a.ts' });
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
+    });
+
     it('setSessionStudio(non-null) clears the selected agent', async () => {
       const store = await getStore();
       store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);

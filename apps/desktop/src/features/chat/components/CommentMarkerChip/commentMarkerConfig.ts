@@ -1,21 +1,21 @@
 import type { CommentMarker } from './commentMarker';
 
 type Config = {
-  readonly manageTestId: string;
-  readonly dismissLabel: string;
+  readonly openTestId: string;
+  readonly openLabel: string;
 };
 
 export const COMMENT_MARKER_CONFIG = {
   analysis: {
-    manageTestId: 'comment-analysis-manage',
-    dismissLabel: 'dismiss this recommendation',
+    openTestId: 'comment-analysis-open',
+    openLabel: 'Open the chat of this resolver',
   },
   resolved: {
-    manageTestId: 'comment-resolved-manage',
-    dismissLabel: 'dismiss resolver status',
+    openTestId: 'comment-resolved-open',
+    openLabel: 'Open the chat of this resolver',
   },
   wontfix: {
-    manageTestId: 'comment-wontfix-manage',
-    dismissLabel: 'dismiss resolver status',
+    openTestId: 'comment-wontfix-open',
+    openLabel: 'Open the chat of this resolver',
   },
 } satisfies Record<CommentMarker['kind'], Config>;
