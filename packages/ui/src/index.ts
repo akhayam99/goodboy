@@ -17,6 +17,8 @@ export { Checkbox } from './components/Checkbox';
 export type { CheckboxProps } from './components/Checkbox';
 export { Chip } from './components/Chip';
 export type { ChipProps } from './components/Chip';
+export { ClampedProse } from './components/ClampedProse';
+export type { ClampLines, ClampedProseProps } from './components/ClampedProse';
 export { Collapsible } from './components/Collapsible';
 export type { CollapsibleProps } from './components/Collapsible';
 export { CopyButton } from './components/CopyButton';

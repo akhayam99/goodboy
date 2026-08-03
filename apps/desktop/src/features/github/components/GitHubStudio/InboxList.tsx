@@ -72,7 +72,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
                     )}
                     <span className="min-w-0 flex-1 truncate text-xs">{row.session.goal}</span>
                     {row.pr ? (
-                      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/50">
+                      <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/50">
                         #{row.pr.number}
                       </span>
                     ) : null}

@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PrComment, PullRequestState } from '@goodboy/types';
-import { Button, Divider, EmptyState, Markdown, cn } from '@goodboy/ui';
-import { CheckCheck, ExternalLink } from 'lucide-react';
-import { type CommentThread, groupThreads, isBot, threadPriority } from '../../comment-threads';
-import {
-  ResolverStateBadge,
-  resolverBadgeState,
-} from '../../../session/components/ResolverStateBadge';
+import { Button, EmptyState, cn } from '@goodboy/ui';
+import { ExternalLink } from 'lucide-react';
+import { type CommentThread, groupThreads, threadPriority } from '../../comment-threads';
 import type { ResolverLink } from '../../../session/resolver-linkage';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { ConversationThread } from './ConversationThread';
 
 type Props = {
   readonly comments: ReadonlyArray<PrComment>;
@@ -110,123 +106,3 @@ export const PrConversation = ({
     </div>
   );
 };
-
-function ConversationThread({
-  thread,
-  link,
-  onOpenUrl,
-}: {
-  thread: CommentThread;
-  link?: ResolverLink;
-  onOpenUrl: (url: string) => void;
-}) {
-  const { head, replies } = thread;
-  const isReview = head.source === 'review';
-  const resolved = isReview && head.resolved === true;
-  const open = isReview && head.resolved === false;
-
-  return (
-    <div
-      className={
-        resolved
-          ? 'rounded-lg border border-border-soft bg-muted/5 p-3'
-          : 'rounded-lg border border-border-soft bg-muted/10 p-3'
-      }
-    >
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Avatar url={head.authorAvatarUrl} alt={head.author} />
-        <span className="font-medium text-foreground">{head.author}</span>
-        {isBot(head.author) ? (
-          <span className="rounded bg-info/10 px-1 text-[9px] uppercase tracking-wide text-info">
-            bot
-          </span>
-        ) : null}
-        <span className="opacity-50">·</span>
-        <span>{formatRelativeAge({ fromIso: head.createdAt })}</span>
-        {open ? (
-          <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
-            open
-          </span>
-        ) : null}
-        {resolved ? (
-          <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-success/15 px-1.5 py-0.5 text-[10px] font-medium text-success">
-            <CheckCheck size={11} aria-hidden />
-            resolved
-          </span>
-        ) : null}
-        {link && !resolved ? (
-          <ResolverStateBadge state={resolverBadgeState(link.status)} className="ml-1" />
-        ) : null}
-        <button
-          type="button"
-          onClick={() => onOpenUrl(head.url)}
-          title="open in browser"
-          aria-label="open in browser"
-          className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <ExternalLink size={12} aria-hidden />
-        </button>
-      </div>
-
-      {head.path ? (
-        <button
-          type="button"
-          onClick={() => onOpenUrl(head.url)}
-          title={`${head.path}${head.line ? ':' + head.line : ''}`}
-          className="mt-1.5 block max-w-full truncate rounded bg-background/60 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          {head.path}
-          {head.line ? `:${head.line}` : ''}
-        </button>
-      ) : null}
-
-      <div className="mt-1.5 [overflow-wrap:anywhere]">
-        {head.body.trim() ? (
-          <Markdown text={head.body.trim()} className="text-sm leading-relaxed" />
-        ) : (
-          <p className="text-sm italic text-muted-foreground/70">(empty)</p>
-        )}
-      </div>
-
-      {replies.length > 0 && (
-        <div className="ml-3 mt-2 flex gap-2">
-          <Divider orientation="vertical" />
-          <ul className="flex flex-1 flex-col gap-2">
-            {replies.map((r) => (
-              <li key={r.id} className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Avatar url={r.authorAvatarUrl} alt={r.author} />
-                  <span className="font-medium text-foreground">{r.author}</span>
-                  <span className="opacity-50">·</span>
-                  <span>{formatRelativeAge({ fromIso: r.createdAt })}</span>
-                </div>
-                <div className="[overflow-wrap:anywhere]">
-                  {r.body.trim() ? (
-                    <Markdown text={r.body.trim()} className="text-sm leading-relaxed" />
-                  ) : (
-                    <p className="text-sm italic text-muted-foreground/70">(empty)</p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Avatar({ url, alt }: { url: string | null; alt: string }) {
-  if (!url) {
-    return (
-      <span
-        aria-hidden
-        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-semibold text-muted-foreground"
-      >
-        {alt.slice(0, 1).toUpperCase()}
-      </span>
-    );
-  }
-  return <img src={url} alt={alt} className="h-5 w-5 shrink-0 rounded-full" loading="lazy" />;
-}

@@ -91,7 +91,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
                 onClick={() => setEditing('title')}
                 title="edit title"
                 aria-label="edit title"
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit
@@ -137,7 +137,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
           label="Description"
           action={
             editing === 'body' ? (
-              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
+              <span className="inline-flex items-center gap-1 text-3xs text-muted-foreground/60">
                 <ImagePlus size={11} aria-hidden />
                 paste an image url to embed it
               </span>
@@ -145,7 +145,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               <button
                 type="button"
                 onClick={() => setEditing('body')}
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit

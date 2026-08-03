@@ -40,11 +40,11 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-1 text-3xs text-muted-foreground">
           <Avatar url={head.authorAvatarUrl} alt={head.author} />
           <span className="truncate font-medium text-foreground">{head.author}</span>
           {bot ? (
-            <span className="rounded bg-info/10 px-1 text-[8px] uppercase tracking-wide text-info">
+            <span className="rounded bg-info/10 px-1 text-3xs uppercase tracking-wide text-info">
               bot
             </span>
           ) : null}
@@ -62,7 +62,7 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
                 onClick={onSpawn}
                 title="create agent to resolve this comment"
                 aria-label="create agent to resolve this comment"
-                className="inline-flex items-center gap-0.5 rounded border border-accent/30 bg-accent/5 px-1.5 py-px text-[10px] font-medium text-accent transition-colors hover:bg-accent/15"
+                className="inline-flex items-center gap-0.5 rounded border border-accent/30 bg-accent/5 px-1.5 py-px text-3xs font-medium text-accent transition-colors hover:bg-accent/15"
               >
                 <Sparkles size={9} aria-hidden />
                 resolve
@@ -84,7 +84,7 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
             type="button"
             onClick={() => onOpenUrl(head.url)}
             title={`${head.path}${head.line ? ':' + head.line : ''}`}
-            className="self-start truncate rounded bg-background/60 px-1 py-px font-mono text-[9px] text-muted-foreground hover:text-foreground"
+            className="self-start truncate rounded bg-background/60 px-1 py-px font-mono text-3xs text-muted-foreground hover:text-foreground"
           >
             {head.path}
             {head.line ? `:${head.line}` : ''}
@@ -94,7 +94,7 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
           type="button"
           onClick={onToggle}
           className={cn(
-            'text-left text-[11px] text-foreground/90 hover:text-foreground',
+            'text-left text-2xs text-foreground/90 hover:text-foreground',
             expanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
           )}
           title={expanded ? 'collapse' : 'expand'}
@@ -105,18 +105,18 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
           <ul className="ml-2 mt-1 flex flex-col gap-1 border-l border-border-soft pl-2">
             {replies.map((r) => (
               <li key={r.id} className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-1 text-3xs text-muted-foreground">
                   <Avatar url={r.authorAvatarUrl} alt={r.author} />
                   <span className="truncate font-medium text-foreground">{r.author}</span>
                   <span className="opacity-50">·</span>
                   <span>{formatRelativeAge({ fromIso: r.createdAt })}</span>
                 </div>
                 {r.body.trim() ? (
-                  <div className="text-[11px] text-foreground/90 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
-                    <Markdown text={r.body.trim()} className="text-[11px] leading-relaxed" />
+                  <div className="text-2xs text-foreground/90 [overflow-wrap:anywhere] [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all">
+                    <Markdown text={r.body.trim()} className="text-2xs leading-relaxed" />
                   </div>
                 ) : (
-                  <p className="text-[11px] italic text-muted-foreground/70">(empty)</p>
+                  <p className="text-2xs italic text-muted-foreground/70">(empty)</p>
                 )}
               </li>
             ))}

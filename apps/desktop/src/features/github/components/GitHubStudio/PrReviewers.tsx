@@ -69,9 +69,7 @@ export const PrReviewers = ({
               <CircleDashed size={12} aria-hidden className="shrink-0 text-info" />
               <Avatar url={request.avatarUrl} alt={request.login} />
               <span className="min-w-0 flex-1 truncate">{request.login}</span>
-              <span className="shrink-0 text-[9px] uppercase tracking-wide opacity-60">
-                awaiting
-              </span>
+              <span className="shrink-0 text-3xs uppercase tracking-wide opacity-60">awaiting</span>
             </li>
           ))}
         </ul>

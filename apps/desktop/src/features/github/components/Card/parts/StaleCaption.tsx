@@ -16,7 +16,7 @@ export const StaleCaption = ({ fetchedAt }: Props) => {
   }
   return (
     <span
-      className="text-[9px] text-muted-foreground/60"
+      className="text-3xs text-muted-foreground/60"
       title={`fetched at ${new Date(fetchedAt).toLocaleString()}`}
     >
       updated {formatRelativeAge({ fromIso: fetchedAt, nowMs: now })}

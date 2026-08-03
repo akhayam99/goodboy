@@ -22,7 +22,7 @@ export type ChipProps = {
 };
 
 const sizeClasses: Record<'xs' | 'sm' | 'md', string> = {
-  xs: 'px-1.5 py-0.5 text-[11px]',
+  xs: 'px-1.5 py-0.5 text-2xs',
   sm: 'text-2xs px-2 py-0.5',
   md: 'text-xs px-2 py-1',
 };

@@ -49,7 +49,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
       <button
         type="button"
         onClick={() => onOpenUrl(pr.url)}
-        className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/70 hover:text-foreground"
+        className="inline-flex items-center gap-0.5 text-3xs text-muted-foreground/70 hover:text-foreground"
         title="open general comments on GitHub"
       >
         {generalCount} general comment{generalCount === 1 ? '' : 's'}
@@ -82,7 +82,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
               <button
                 type="button"
                 onClick={() => setShowResolved(true)}
-                className="text-[10px] underline-offset-2 hover:text-foreground hover:underline"
+                className="text-3xs underline-offset-2 hover:text-foreground hover:underline"
               >
                 show {resolvedCount}
               </button>
@@ -127,7 +127,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
           <button
             type="button"
             onClick={() => setShowAll(true)}
-            className="text-[10px] text-muted-foreground hover:text-foreground"
+            className="text-3xs text-muted-foreground hover:text-foreground"
           >
             +{hidden} more
           </button>
@@ -138,7 +138,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
           <button
             type="button"
             onClick={() => setShowResolved((v) => !v)}
-            className="text-[10px] text-muted-foreground/70 hover:text-foreground"
+            className="text-3xs text-muted-foreground/70 hover:text-foreground"
           >
             {showResolved ? `hide ${resolvedCount} resolved` : `show ${resolvedCount} resolved`}
           </button>

@@ -61,7 +61,7 @@ export const ResolveCard = ({
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{head.author}</span>
             <span className="opacity-50">·</span>
-            <span className="min-w-0 truncate font-mono text-[11px]">{loc}</span>
+            <span className="min-w-0 truncate font-mono text-2xs">{loc}</span>
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {link ? <ResolverStateBadge state={resolverBadgeState(link.status)} /> : null}
               {onOpenThread ? (
@@ -77,7 +77,7 @@ export const ResolveCard = ({
               ) : null}
             </div>
           </div>
-          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-[13px] leading-snug text-foreground [overflow-wrap:anywhere]">
+          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm leading-snug text-foreground [overflow-wrap:anywhere]">
             {head.body.trim() || '(empty)'}
           </p>
 
@@ -85,8 +85,8 @@ export const ResolveCard = ({
             <div className="mt-2 flex flex-col gap-1.5 border-l border-border-soft pl-2.5">
               {replies.map((r) => (
                 <div key={r.id} className="flex flex-col gap-0.5">
-                  <span className="text-[11px] font-medium text-muted-foreground">{r.author}</span>
-                  <p className="line-clamp-2 whitespace-pre-wrap text-[12px] leading-snug text-muted-foreground/80 [overflow-wrap:anywhere]">
+                  <span className="text-2xs font-medium text-muted-foreground">{r.author}</span>
+                  <p className="line-clamp-2 whitespace-pre-wrap text-xs leading-snug text-muted-foreground/80 [overflow-wrap:anywhere]">
                     {r.body.trim() || '(empty)'}
                   </p>
                 </div>

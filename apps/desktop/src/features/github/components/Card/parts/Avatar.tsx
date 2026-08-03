@@ -8,7 +8,7 @@ export const Avatar = ({ url, alt }: Props) => {
     return (
       <span
         aria-hidden
-        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-semibold text-muted-foreground"
+        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-3xs font-semibold text-muted-foreground"
       >
         {alt.slice(0, 1).toUpperCase()}
       </span>

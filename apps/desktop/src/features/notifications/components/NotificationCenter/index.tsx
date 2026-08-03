@@ -143,7 +143,7 @@ export const NotificationCenter = () => {
             <span
               className={cn(
                 'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-warning-foreground tabular-nums',
-                unread > 9 ? 'text-[9px]' : 'text-2xs',
+                unread > 9 ? 'text-3xs' : 'text-2xs',
               )}
             >
               {unread > 99 ? '99+' : unread}
@@ -269,7 +269,10 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-xs font-medium leading-snug text-foreground">{n.title}</span>
         {n.body != null && n.body !== '' ? (
-          <span className="whitespace-pre-wrap break-words text-xs leading-snug text-muted-foreground">
+          <span
+            title={n.body}
+            className="line-clamp-2 whitespace-pre-wrap break-words text-xs leading-snug text-muted-foreground"
+          >
             {n.body}
           </span>
         ) : null}
