@@ -1,4 +1,6 @@
 export { cn } from './cn';
+export { escapeLayerCount, registerEscapeLayer } from './escape';
+export { useEscapeLayer } from './useEscapeLayer';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export {
   AppShell,

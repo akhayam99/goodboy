@@ -1,5 +1,13 @@
-import { useId, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
+import {
+  useId,
+  useEffect,
+  useRef,
+  type MouseEvent,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react';
 import { cn } from '../cn';
+import { useEscapeLayer } from '../useEscapeLayer';
 import { Divider } from './Divider';
 import { ScrollFade } from './ScrollFade';
 
@@ -77,6 +85,12 @@ export const Dialog = ({
 
   const programmaticCloseRef = useRef(false);
 
+  useEscapeLayer(() => onCloseRef.current(), open);
+
+  const onCancel = (event: SyntheticEvent<HTMLDialogElement>) => {
+    event.preventDefault();
+  };
+
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) {
@@ -132,11 +146,7 @@ export const Dialog = ({
     <dialog
       ref={ref}
       onClick={onBackdropClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          e.stopPropagation();
-        }
-      }}
+      onCancel={onCancel}
       aria-labelledby={titleId}
       aria-describedby={descId}
       className={cn(
