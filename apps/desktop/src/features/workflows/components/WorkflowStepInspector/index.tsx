@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Divider, EmptyState, Markdown, ScrollFade } from '@goodboy/ui';
+import { Divider, EmptyState, Markdown, ScrollFade, SectionHeader } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { stripControlMarkers } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -13,7 +13,6 @@ import { classifyAgent } from '../../../session/agent-kind';
 import { useAgentMetrics } from '../../../session/hooks/useAgentMetrics';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { AgentStatusBadge } from '../../../workspace/components/WorkspacesSidebar/parts/AgentStatusBadge';
-import { InspectorSection } from '../../../session/components/InspectorSection';
 import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 import { CostsSection } from '../../../session/components/AgentInspector/CostsSection';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
@@ -111,7 +110,8 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
       <InspectorHeader title={step.name} />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
         <div className="flex flex-col gap-4">
-          <InspectorSection question="What it is">
+          <section className="flex flex-col gap-2">
+            <SectionHeader label="Identity" />
             <div className="flex flex-wrap items-center gap-1.5">
               <AgentKindChip kind={kind} />
               <AgentStatusBadge status={agent.status} />
@@ -131,22 +131,24 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
                   : formatAbsoluteDateTime({ iso: agent.completedAt })}
               </dd>
             </dl>
-          </InspectorSection>
+          </section>
           {childItems.length > 0 ? (
             <>
               <Divider />
-              <InspectorSection question="What it spawned">
+              <section className="flex flex-col gap-2">
+                <SectionHeader label="Spawned" />
                 <SpawnedAgentList
                   items={childItems}
                   selectedAgentId={undefined}
                   onSelect={onSelectChild}
                   variant="inline"
                 />
-              </InspectorSection>
+              </section>
             </>
           ) : null}
           <Divider />
-          <InspectorSection question="Instructions">
+          <section className="flex flex-col gap-2">
+            <SectionHeader label="Instructions" />
             {instructions === '' ? (
               <EmptyState
                 icon={CONCEPT_ICONS.workflows}
@@ -157,9 +159,10 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
             ) : (
               <Markdown text={instructions} className="text-xs text-foreground/90" />
             )}
-          </InspectorSection>
+          </section>
           <Divider />
-          <InspectorSection question="Expected output">
+          <section className="flex flex-col gap-2">
+            <SectionHeader label="Expected output" />
             {expectedOutput === '' ? (
               <EmptyState
                 icon={CONCEPT_ICONS.workflows}
@@ -170,9 +173,10 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
             ) : (
               <Markdown text={expectedOutput} className="text-xs text-foreground/90" />
             )}
-          </InspectorSection>
+          </section>
           <Divider />
-          <InspectorSection question="Where it came from">
+          <section className="flex flex-col gap-2">
+            <SectionHeader label="Origin" />
             <dl className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 text-2xs">
               <dt className="text-muted-foreground/60">Source</dt>
               <dd className="text-foreground/80">
@@ -185,9 +189,10 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
                 </>
               ) : null}
             </dl>
-          </InspectorSection>
+          </section>
           <Divider />
-          <InspectorSection question="What it produced">
+          <section className="flex flex-col gap-2">
+            <SectionHeader label="Summary" />
             {outputSummary === '' ? (
               <EmptyState
                 icon={CONCEPT_ICONS.sessionSummary}
@@ -201,7 +206,7 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
                 className="text-xs text-foreground/90"
               />
             )}
-          </InspectorSection>
+          </section>
           <Divider />
           <CostsSection
             aggregate={metrics.aggregatesByAgentId.get(agentId) ?? null}

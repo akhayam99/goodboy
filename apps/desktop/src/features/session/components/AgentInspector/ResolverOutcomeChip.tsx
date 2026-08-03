@@ -39,7 +39,7 @@ export const ResolverOutcomeChip = ({ kind, isClosed }: Props) => {
   return (
     <span
       className={cn(
-        'inline-flex min-w-24 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+        'inline-flex min-w-24 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide',
         tint.bgSoft,
         tint.text,
       )}

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
-import { InlineConfirm, cn } from '@goodboy/ui';
+import { InlineConfirm, SectionHeader } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { INSPECTOR_ACTION_CLASS, InspectorSection } from '../InspectorSection';
+import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
 
 type Props = {
   readonly agent: Agent;
@@ -26,46 +26,36 @@ export const ActionsSection = ({ agent, sessionId, onDeleted }: Props) => {
   };
 
   return (
-    <InspectorSection question="What you can do">
+    <section className="flex flex-col gap-2">
+      <SectionHeader label="Actions" />
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           {agent.doneAt == null ? (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={CircleCheck}
+              label="Mark done"
               onClick={() => void setAgentDone(sessionId, agent.id)}
-              className={INSPECTOR_ACTION_CLASS}
-            >
-              <CircleCheck size={10} aria-hidden />
-              Mark done
-            </button>
+            />
           ) : (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={CircleDot}
+              label="Reopen"
               onClick={() => void clearAgentDone(sessionId, agent.id)}
-              className={INSPECTOR_ACTION_CLASS}
-            >
-              <CircleDot size={10} aria-hidden />
-              Reopen
-            </button>
+            />
           )}
           {isTurnRunning ? (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={OctagonX}
+              label="Interrupt"
               onClick={() => void cancelCurrentTurn(sessionId, agent.id)}
-              className={INSPECTOR_ACTION_CLASS}
-            >
-              <OctagonX size={10} aria-hidden />
-              Interrupt
-            </button>
+            />
           ) : null}
-          <button
-            type="button"
+          <GhostActionButton
+            icon={Trash2}
+            label="Delete"
+            tone="danger"
             onClick={() => setIsConfirmingDelete(true)}
-            className={cn(INSPECTOR_ACTION_CLASS, 'text-danger hover:text-danger')}
-          >
-            <Trash2 size={10} aria-hidden />
-            Delete
-          </button>
+          />
         </div>
         {isConfirmingDelete && (
           <InlineConfirm
@@ -79,6 +69,6 @@ export const ActionsSection = ({ agent, sessionId, onDeleted }: Props) => {
           />
         )}
       </div>
-    </InspectorSection>
+    </section>
   );
 };

@@ -39,6 +39,7 @@ const h = vi.hoisted(() => {
     squashSessionCommits: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
     setActiveLens: vi.fn(),
     setDiffFocus: vi.fn(),
+    setResolverThreadReply: vi.fn(),
   };
 });
 
@@ -170,6 +171,7 @@ const reset = ({
     squashSessionCommits: h.squashSessionCommits,
     setActiveLens: h.setActiveLens,
     setDiffFocus: h.setDiffFocus,
+    setResolverThreadReply: h.setResolverThreadReply,
   });
 };
 
@@ -284,10 +286,10 @@ describe('AgentInspector (resolver)', () => {
 
     expect(screen.getByText('working')).toBeDefined();
     expect(screen.getByText('Comment')).toBeDefined();
-    expect(screen.queryByText('What it is')).toBeNull();
-    expect(screen.queryByText('What it costs')).toBeNull();
+    expect(screen.queryByText('Identity')).toBeNull();
+    expect(screen.queryByText('Cost')).toBeNull();
     expect(screen.queryByText('What state it is in')).toBeNull();
-    expect(screen.queryByText('What you can do')).toBeNull();
+    expect(screen.queryByText('Actions')).toBeNull();
     expect(screen.queryByText('not blocked')).toBeNull();
   });
 
@@ -366,10 +368,10 @@ describe('AgentInspector (resolver)', () => {
 
     expect(screen.getByText('Thread')).toBeDefined();
     expect(screen.getByText('no change')).toBeDefined();
-    expect((screen.getByLabelText('reply for thread 1') as HTMLTextAreaElement).value).toBe(
-      'covered by the follow up',
-    );
+    expect(screen.getByText('Closing reason')).toBeDefined();
+    expect(screen.getByText('covered by the follow up')).toBeDefined();
     expect(screen.getByText('Already guarded')).toBeDefined();
+    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
   });
 
   it('gives every owned thread its own outcome, its own reply and its own action', () => {
@@ -388,12 +390,8 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getByText('Threads')).toBeDefined();
     expect(screen.getByText('fixed')).toBeDefined();
     expect(screen.getByText('no change')).toBeDefined();
-    expect((screen.getByLabelText('reply for thread 1') as HTMLTextAreaElement).value).toBe(
-      'guarded the null case',
-    );
-    expect((screen.getByLabelText('reply for thread 2') as HTMLTextAreaElement).value).toBe(
-      'the branch is unreachable',
-    );
+    expect(screen.getByText('guarded the null case')).toBeDefined();
+    expect(screen.getByText('the branch is unreachable')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add to batch' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Post & close' })).toBeDefined();
   });
@@ -430,6 +428,7 @@ describe('AgentInspector (resolver)', () => {
     const post = screen.getByRole('button', { name: 'Post & close' }) as HTMLButtonElement;
     expect(post.disabled).toBe(true);
 
+    fireEvent.click(screen.getByLabelText('edit reply for thread 1'));
     fireEvent.change(screen.getByLabelText('reply for thread 1'), {
       target: { value: 'the check already covers it' },
     });
@@ -437,6 +436,108 @@ describe('AgentInspector (resolver)', () => {
     expect(
       (screen.getByRole('button', { name: 'Post & close' }) as HTMLButtonElement).disabled,
     ).toBe(false);
+  });
+
+  it('renders the drafted reply and only swaps in the editor on demand', () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'analyzed' },
+      outcomes: {
+        [SETTLED_ID]: { PRRT_3: { kind: 'analyzed', reply: 'The `guard` already covers it' } },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText('Reply')).toBeDefined();
+    expect(screen.getByText('guard')).toBeDefined();
+    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('edit reply for thread 1'));
+    const editor = screen.getByLabelText('reply for thread 1') as HTMLTextAreaElement;
+    expect(editor.value).toBe('The `guard` already covers it');
+
+    fireEvent.change(editor, { target: { value: 'Covered by the new guard' } });
+    fireEvent.blur(editor);
+
+    expect(h.setResolverThreadReply).toHaveBeenCalledWith({
+      agentId: SETTLED_ID,
+      threadId: 'PRRT_3',
+      reply: 'Covered by the new guard',
+    });
+    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
+  });
+
+  it('collapses a closed thread to its header and a one-line summary', () => {
+    reset({
+      resolvedThreadIds: ['PRRT_3'],
+      resolverState: { [SETTLED_ID]: 'analyzed' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'analyzed', reply: 'Already guarded. The second sentence stays hidden.' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText('Already guarded.')).toBeDefined();
+    expect(screen.queryByText('Reviewer')).toBeNull();
+    expect(screen.queryByText('this one too')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'thread 1 details' }));
+
+    expect(screen.getByText('Reviewer')).toBeDefined();
+    expect(screen.getByText('this one too')).toBeDefined();
+    expect(screen.queryByLabelText('edit reply for thread 1')).toBeNull();
+  });
+
+  it('shows the running action on the button that started it and freezes its siblings', async () => {
+    let release: () => void = () => undefined;
+    h.queueResolution.mockImplementation(
+      () =>
+        new Promise<undefined>((resolve) => {
+          release = () => resolve(undefined);
+        }),
+    );
+    reset({
+      settledThreadIds: ['PRRT_3', 'PRRT_4'],
+      resolverState: { [SETTLED_ID]: 'committed' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'resolved', commitSha: 'abc1234def', reply: 'guarded the null case' },
+          PRRT_4: { kind: 'resolved', commitSha: 'other12345', reply: 'covered elsewhere' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add to batch' })[0]!);
+
+    const busy = await screen.findByRole('button', { name: 'Adding...' });
+    expect(busy.getAttribute('aria-busy')).toBe('true');
+    expect(
+      (screen.getByRole('button', { name: 'Add to batch' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    release();
+  });
+
+  it('offers a way out of a no-change verdict and sends it back to the resolver', async () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'wontfix' },
+      outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'wontfix', reason: 'the branch is dead' } } },
+    });
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix it anyway' }));
+
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, SETTLED_ID);
+    expect(h.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        agentId: SETTLED_ID,
+        content: expect.stringContaining('PRRT_3'),
+      }),
+    );
   });
 
   it('hides the changes section entirely when there is no commit', () => {
@@ -584,7 +685,6 @@ describe('AgentInspector (resolver)', () => {
     const reword = await screen.findByRole('button', { name: 'Reword' });
 
     expect(reword.hasAttribute('disabled')).toBe(true);
-    expect(reword.getAttribute('title')).toBe('Only the branch HEAD commit can be reworded');
     expect(screen.getByRole('button', { name: 'Squash through HEAD' })).toBeDefined();
   });
 

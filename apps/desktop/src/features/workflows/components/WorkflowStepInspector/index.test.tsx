@@ -186,7 +186,7 @@ describe('WorkflowStepInspector', () => {
 
   it('omits the spawned section for a step that never fanned out', () => {
     render(<WorkflowStepInspector session={session} agentId={AGENT_ID} />);
-    expect(screen.queryByText('What it spawned')).toBeNull();
+    expect(screen.queryByText('Spawned')).toBeNull();
   });
 
   it('lists the children with their live status and jumps to the one clicked', () => {
@@ -200,7 +200,7 @@ describe('WorkflowStepInspector', () => {
 
     render(<WorkflowStepInspector session={session} agentId={AGENT_ID} />);
 
-    expect(screen.getByText('What it spawned')).toBeDefined();
+    expect(screen.getByText('Spawned')).toBeDefined();
     expect(screen.getByText('running…')).toBeDefined();
     expect(screen.getByText('done')).toBeDefined();
 

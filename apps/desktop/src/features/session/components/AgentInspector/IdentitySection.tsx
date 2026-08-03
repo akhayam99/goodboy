@@ -1,11 +1,11 @@
 import type { Agent } from '@goodboy/types';
+import { SectionHeader } from '@goodboy/ui';
 import type { AgentKind } from '../../agent-kind';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentDuration } from '../AgentMetrics/AgentDuration';
 import { AgentStatusBadge } from '../../../workspace/components/WorkspacesSidebar/parts/AgentStatusBadge';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
-import { InspectorSection } from '../InspectorSection';
 
 type Props = {
   readonly agent: Agent;
@@ -16,7 +16,8 @@ type Props = {
 };
 
 export const IdentitySection = ({ agent, kind, provider, model, effort }: Props) => (
-  <InspectorSection question="What it is">
+  <section className="flex flex-col gap-2">
+    <SectionHeader label="Identity" />
     <div className="flex flex-wrap items-center gap-1.5">
       <AgentKindChip kind={kind} />
       <AgentStatusBadge status={agent.status} />
@@ -32,5 +33,5 @@ export const IdentitySection = ({ agent, kind, provider, model, effort }: Props)
         <AgentDuration run={agent} />
       </dd>
     </dl>
-  </InspectorSection>
+  </section>
 );

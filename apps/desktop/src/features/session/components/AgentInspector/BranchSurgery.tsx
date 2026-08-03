@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { GitCommit } from 'lucide-react';
+import { Check, GitCommit, GitMerge, Pencil, X } from 'lucide-react';
 import { InlineConfirm, Input, cn } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
-import { INSPECTOR_ACTION_CLASS } from '../InspectorSection';
+import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
 
 type Mode = 'amend' | 'squash';
 
@@ -82,29 +82,19 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
             ) : (
               <div className="flex flex-wrap items-center gap-1 pl-5">
                 {index === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => start(commit, 'amend')}
+                  <GhostActionButton
+                    icon={Pencil}
+                    label="Reword"
                     disabled={commit.sha !== headSha}
-                    title={
-                      commit.sha === headSha
-                        ? 'Reword the branch HEAD commit'
-                        : 'Only the branch HEAD commit can be reworded'
-                    }
-                    className={INSPECTOR_ACTION_CLASS}
-                  >
-                    Reword
-                  </button>
+                    onClick={() => start(commit, 'amend')}
+                  />
                 )}
                 {commit.sha !== headSha && (
-                  <button
-                    type="button"
+                  <GhostActionButton
+                    icon={GitMerge}
+                    label="Squash through HEAD"
                     onClick={() => start(commit, 'squash')}
-                    title="Folds every commit from this one through branch HEAD, including later commits not listed here"
-                    className={INSPECTOR_ACTION_CLASS}
-                  >
-                    Squash through HEAD
-                  </button>
+                  />
                 )}
               </div>
             )}
@@ -141,22 +131,18 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
                       className="h-7 text-xs"
                     />
                     <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => void submit()}
+                      <GhostActionButton
+                        icon={Check}
+                        label="Save message"
                         disabled={isBusy || draft.message.trim().length === 0}
-                        className={INSPECTOR_ACTION_CLASS}
-                      >
-                        Save message
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDraft(null)}
+                        onClick={() => void submit()}
+                      />
+                      <GhostActionButton
+                        icon={X}
+                        label="Cancel"
                         disabled={isBusy}
-                        className={INSPECTOR_ACTION_CLASS}
-                      >
-                        Cancel
-                      </button>
+                        onClick={() => setDraft(null)}
+                      />
                     </div>
                   </>
                 )}

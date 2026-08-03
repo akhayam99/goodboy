@@ -214,6 +214,7 @@ export const ResolverInspector = ({
             prNumber={prNumber}
             isBusy={actions.isBusy}
             canAct={status !== 'pending' && status !== 'running' && status !== 'resolved'}
+            runningThreadAction={actions.runningThreadAction}
             onRun={actions.runThread}
             onReplyChange={({ threadId, reply }) =>
               setResolverThreadReply({ agentId: agent.id, threadId, reply })
