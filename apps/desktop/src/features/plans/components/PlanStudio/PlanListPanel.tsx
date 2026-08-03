@@ -61,7 +61,7 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
                       </span>
                       <span
                         className={cn(
-                          'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] lowercase tracking-wide',
+                          'inline-flex w-20 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-2xs lowercase tracking-wide',
                           badge.className,
                         )}
                       >
@@ -69,7 +69,7 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
                       </span>
                     </div>
                     <span className="line-clamp-2 text-xs text-foreground">{plan.title}</span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-2xs text-muted-foreground">
                       {fmtTimestamp(plan.createdAt)}
                     </span>
                   </SelectableRow>

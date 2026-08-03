@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo } from 'react';
-import { Bot } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Bot, Check } from 'lucide-react';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import type {
   Agent,
@@ -32,6 +32,7 @@ import {
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { WorkflowRailSectionToggle } from './WorkflowRailSectionToggle';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
 
@@ -212,11 +213,6 @@ const AnsweredHistory = ({ clusters, sessionId }: AnsweredHistoryProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <div className="h-px flex-1 bg-border-soft" />
-        <span className="text-2xs text-muted-foreground">answered</span>
-        <div className="h-px flex-1 bg-border-soft" />
-      </div>
       {clusters.map((cluster) => (
         <div key={cluster.agentId ?? '__none__'} className="flex flex-col gap-2">
           <AnsweredClusterHeader
@@ -254,6 +250,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const restoreDismissedOpenQuestion = useAppStore((s) => s.restoreDismissedOpenQuestion);
+  const [showAnswered, setShowAnswered] = useState(false);
 
   useEffect(() => {
     void loadSessionAnsweredQuestions(sessionId);
@@ -331,8 +328,22 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (open.length === 0 && pendingUndoQuestion === null) {
     return (
-      <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
-        <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
+      <PaneShell
+        title="Questions"
+        description="Decisions agents need from you to keep going."
+        actions={
+          <WorkflowRailSectionToggle
+            label="Answered"
+            count={answered.length}
+            isShown={showAnswered}
+            icon={Check}
+            onChange={setShowAnswered}
+          />
+        }
+      >
+        {showAnswered ? (
+          <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
+        ) : null}
       </PaneShell>
     );
   }
@@ -344,6 +355,15 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         open.length > 0
           ? `${open.length} open ${open.length === 1 ? 'question' : 'questions'} waiting on you.`
           : 'Decisions agents need from you to keep going.'
+      }
+      actions={
+        <WorkflowRailSectionToggle
+          label="Answered"
+          count={answered.length}
+          isShown={showAnswered}
+          icon={Check}
+          onChange={setShowAnswered}
+        />
       }
     >
       <div className="flex flex-col gap-4">
@@ -365,7 +385,9 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
             onSubmit={(pairs, ownerAgentId) => void handleSubmit(pairs, ownerAgentId)}
           />
         ))}
-        <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
+        {showAnswered ? (
+          <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
+        ) : null}
       </div>
     </PaneShell>
   );
