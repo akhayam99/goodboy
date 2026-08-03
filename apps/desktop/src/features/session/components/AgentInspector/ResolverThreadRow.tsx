@@ -63,8 +63,9 @@ export const ResolverThreadRow = ({
   const [edited, setEdited] = useState<string | null>(null);
   const [armed, setArmed] = useState<ResolverActionKind | null>(null);
   const text = edited ?? initial;
+  const isEditable = canAct && !settlement.isClosed;
   const plan = resolverThreadActions({ settlement, prNumber, isBusy });
-  const buttons = (canAct ? [plan.primary, ...plan.overflow] : []).filter(
+  const buttons = (isEditable ? [plan.primary, ...plan.overflow] : []).filter(
     (action): action is ResolverAction =>
       action !== null && (canForceResolve || action.kind !== 'forceResolve'),
   );
@@ -75,7 +76,7 @@ export const ResolverThreadRow = ({
   return (
     <li className="flex flex-col gap-2 rounded-md bg-muted/20 p-2.5">
       <div className="flex min-w-0 items-center gap-2">
-        <ResolverOutcomeChip kind={settlement.kind} />
+        <ResolverOutcomeChip kind={settlement.kind} isClosed={settlement.isClosed} />
         <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground/70">
           thread {position}
         </span>
@@ -100,7 +101,10 @@ export const ResolverThreadRow = ({
       {settlement.reply !== null && settlement.reply !== initial && (
         <p className="text-2xs leading-relaxed text-muted-foreground">{settlement.reply}</p>
       )}
-      {canAct && (
+      {settlement.isClosed && initial !== '' && (
+        <p className="text-2xs leading-relaxed text-muted-foreground">{initial}</p>
+      )}
+      {isEditable && (
         <Textarea
           value={text}
           onChange={(event) => setEdited(event.target.value)}

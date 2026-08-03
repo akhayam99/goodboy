@@ -16,6 +16,7 @@ import {
   type ResolverThreadSettlement,
 } from '../../resolverThreadSettlements';
 import { resolverThreadTally, type ResolverThreadTally } from '../../resolverThreadTally';
+import { useClosedThreadIds } from '../useClosedThreadIds';
 
 const EMPTY_PENDING: ReadonlyArray<PendingResolution> = [];
 const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
@@ -89,12 +90,14 @@ export const useResolverActions = ({
   const pending =
     useAppStore((state) => state.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
   const outcomes = useAppStore((state) => state.resolverThreadOutcomes[agent.id]) ?? EMPTY_OUTCOMES;
+  const closedThreadIds = useClosedThreadIds({ sessionId });
 
   const threadIds = agentThreadIds(agent);
   const settlements = resolverThreadSettlements({
     threadIds,
     outcomes,
     pendingResolutions: pending,
+    closedThreadIds,
   });
   const tally = resolverThreadTally({ settlements });
 
@@ -136,6 +139,9 @@ export const useResolverActions = ({
   };
 
   const queueTargets = settlements.flatMap((settlement) => {
+    if (settlement.isClosed) {
+      return [];
+    }
     if (settlement.kind === 'resolved' && settlement.commitSha !== null && !settlement.isQueued) {
       return [
         { threadId: settlement.threadId, sha: settlement.commitSha, reply: settlement.reply },
@@ -190,7 +196,7 @@ export const useResolverActions = ({
 
   const closeSettled = async ({ includeOpen }: { readonly includeOpen: boolean }) => {
     for (const settlement of settlements) {
-      if (settlement.kind === 'resolved') {
+      if (settlement.kind === 'resolved' || settlement.isClosed) {
         continue;
       }
       if (settlement.kind === 'open' && !includeOpen) {

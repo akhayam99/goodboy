@@ -222,7 +222,7 @@ const canForceResolve = ({
 };
 
 const canPush = ({ tally, commitSha }: Pick<Params, 'tally' | 'commitSha'>): boolean =>
-  tally.resolved > 0 || (tally.total === 1 && tally.settled === 0 && commitSha !== null);
+  tally.pushable > 0 || (tally.total === 1 && tally.settled === 0 && commitSha !== null);
 
 const openNote = ({ tally }: Pick<Params, 'tally'>): string | null =>
   tally.open === 0
@@ -269,18 +269,18 @@ const mixedBlock = (params: Params): Block => {
     return { primary: REVIEW_THREADS, secondary: null, note: null };
   }
   const { tally, queuedThreadIds, prNumber } = params;
-  const primary = pushAction({
-    label: `Push & resolve ${tally.settled}`,
-    isEnabled: true,
-  });
+  const primary =
+    tally.closable > 0
+      ? pushAction({ label: `Push & resolve ${tally.closable}`, isEnabled: true })
+      : null;
   if (queuedThreadIds.length > 0) {
     return { primary, secondary: DEQUEUE, note: openNote({ tally }) };
   }
   return {
     primary,
     secondary:
-      tally.resolved > 0
-        ? queueAction({ label: `Add ${tally.resolved} to batch`, isEnabled: prNumber !== null })
+      tally.pushable > 0
+        ? queueAction({ label: `Add ${tally.pushable} to batch`, isEnabled: prNumber !== null })
         : null,
     note: openNote({ tally }),
   };

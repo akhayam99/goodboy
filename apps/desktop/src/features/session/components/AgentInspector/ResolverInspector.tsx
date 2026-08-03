@@ -10,6 +10,7 @@ import { useResolverChanges } from '../../hooks/useResolverChanges';
 import { useResolverActions } from '../../hooks/useResolverActions';
 import { resolverOrigin } from '../../resolver-origin';
 import { resolverCommitSha } from '../../resolverCommitSha';
+import { resolverThreadCommitShas } from '../../resolverThreadCommitShas';
 import { agentThreadIds } from '../../agentThreadIds';
 import type { AgentAggregate } from '../AgentMetrics';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
@@ -72,7 +73,16 @@ export const ResolverInspector = ({
   const link = resolverIndex.links[position] ?? null;
   const status = link?.status ?? 'done';
   const threadIds = agentThreadIds(agent);
-  const changes = useResolverChanges({ agent, worktreePath });
+  const shaByThreadId = useMemo(
+    () =>
+      resolverThreadCommitShas({
+        threadIds: agentThreadIds(agent),
+        outcomes,
+        pendingResolutions,
+      }),
+    [agent, outcomes, pendingResolutions],
+  );
+  const changes = useResolverChanges({ agent, worktreePath, shaByThreadId });
   const diffComment = useMemo(
     () => diffComments.find((comment) => comment.consumedByAgentId === agent.id) ?? null,
     [diffComments, agent.id],
@@ -220,7 +230,11 @@ export const ResolverInspector = ({
             onOpenFile={
               commitSha === null
                 ? undefined
-                : (path) => openDiffLens({ sha: commitSha, path: displayPath(path, worktreePath) })
+                : (path) =>
+                    openDiffLens({
+                      sha: changes.commitShaByFile[path] ?? commitSha,
+                      path: displayPath(path, worktreePath),
+                    })
             }
           />
           <Divider />

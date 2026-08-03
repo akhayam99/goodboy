@@ -5,6 +5,7 @@ import { agentThreadIds } from '../../agentThreadIds';
 import { resolverTallySentence } from '../../resolverTallySentence';
 import { resolverThreadSettlements } from '../../resolverThreadSettlements';
 import { resolverThreadTally } from '../../resolverThreadTally';
+import { useClosedThreadIds } from '../../hooks/useClosedThreadIds';
 
 type Props = {
   readonly agent: Agent;
@@ -18,6 +19,7 @@ export const ResolverCardTally = ({ agent, sessionId }: Props) => {
   const pending =
     useAppStore((state) => state.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
   const outcomes = useAppStore((state) => state.resolverThreadOutcomes[agent.id]) ?? EMPTY_OUTCOMES;
+  const closedThreadIds = useClosedThreadIds({ sessionId });
 
   const threadIds = agentThreadIds(agent);
   if (threadIds.length < 2) {
@@ -29,6 +31,7 @@ export const ResolverCardTally = ({ agent, sessionId }: Props) => {
         threadIds,
         outcomes,
         pendingResolutions: pending,
+        closedThreadIds,
       }),
     }),
   });

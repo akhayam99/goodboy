@@ -1,15 +1,10 @@
 import type { BranchCommit } from '@goodboy/types';
+import { branchShaMatches } from './branchShaMatches';
 
 export type AttributedCommits = {
   readonly reported: ReadonlyArray<BranchCommit>;
   readonly reportedMissingShas: ReadonlyArray<string>;
   readonly withinRunWindow: ReadonlyArray<BranchCommit>;
-};
-
-const shaMatches = ({ sha, candidate }: { readonly sha: string; readonly candidate: string }) => {
-  const a = sha.toLowerCase();
-  const b = candidate.toLowerCase();
-  return a.startsWith(b) || b.startsWith(a);
 };
 
 const toEpoch = ({ iso }: { readonly iso: string | undefined }): number | null => {
@@ -39,7 +34,7 @@ export const attributeResolverCommits = ({
   const reportedMissingShas: string[] = [];
   const matchedShas = new Set<string>();
   for (const sha of reportedShas) {
-    const found = commits.find((commit) => shaMatches({ sha: commit.sha, candidate: sha }));
+    const found = commits.find((commit) => branchShaMatches({ sha: commit.sha, candidate: sha }));
     if (found === undefined) {
       reportedMissingShas.push(sha);
       continue;

@@ -6,10 +6,12 @@ import { tauriDatabase } from '../../../../shared/lib/db';
 import { useTranscript } from '../../../../store/transcript';
 import { listBranchCommits } from '../../../worktree/worktree';
 import { attributeResolverCommits, type AttributedCommits } from '../../resolver-commits';
+import { resolverFileCommits } from '../../resolverFileCommits';
 import { resolverReportedShas } from '../../resolver-reported-shas';
 
 export type ResolverChanges = AttributedCommits & {
   readonly files: ReadonlyArray<string>;
+  readonly commitShaByFile: Readonly<Record<string, string>>;
   readonly headSha: string | null;
   readonly isLoading: boolean;
   readonly reload: () => void;
@@ -21,9 +23,14 @@ const EMPTY_COMMITS: ReadonlyArray<BranchCommit> = [];
 type Params = {
   readonly agent: Agent | null;
   readonly worktreePath: string | null;
+  readonly shaByThreadId: Readonly<Record<string, string>>;
 };
 
-export const useResolverChanges = ({ agent, worktreePath }: Params): ResolverChanges => {
+export const useResolverChanges = ({
+  agent,
+  worktreePath,
+  shaByThreadId,
+}: Params): ResolverChanges => {
   const liveEvents = useTranscript(agent?.id ?? null);
   const [storedEvents, setStoredEvents] = useState<ReadonlyArray<TurnEvent>>(EMPTY_EVENTS);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>(EMPTY_COMMITS);
@@ -88,9 +95,14 @@ export const useResolverChanges = ({ agent, worktreePath }: Params): ResolverCha
     return {
       ...attributed,
       files: extractFilesTouched(events),
+      commitShaByFile: resolverFileCommits({
+        events,
+        commits: attributed.reported,
+        shaByThreadId,
+      }),
       headSha: commits[0]?.sha ?? null,
       isLoading,
       reload,
     };
-  }, [events, commits, agent?.startedAt, agent?.completedAt, isLoading, reload]);
+  }, [events, commits, agent?.startedAt, agent?.completedAt, shaByThreadId, isLoading, reload]);
 };

@@ -1,6 +1,7 @@
 import { deletePendingResolution, listPendingResolutionsForSession } from '@goodboy/db';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
+import { closedThreadIds } from '../../../features/session/closedThreadIds';
 import { resolverThreadSettlements } from '../../../features/session/resolverThreadSettlements';
 import type { ResolverThreadSettlement } from '../../../features/session/resolverThreadSettlements';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -72,9 +73,13 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
       threadIds,
       outcomes,
       pendingResolutions: persisted,
+      closedThreadIds: closedThreadIds({
+        comments: get().sessionGithub[sessionId]?.detail?.comments ?? [],
+        ledger: get().sessionResolvedThreads[sessionId] ?? [],
+      }),
     });
     const targets = settlements.flatMap((settlement): ReadonlyArray<Target> => {
-      if (settlement.kind === 'open') {
+      if (settlement.isClosed || settlement.kind === 'open') {
         return [];
       }
       const closure = settlementClosure({ settlement });
@@ -85,13 +90,16 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
         { threadId: settlement.threadId, closure, shouldPush: settlement.kind === 'resolved' },
       ];
     });
-    const skipped = threadIds.length - targets.length;
+    const alreadyClosed = settlements.filter((settlement) => settlement.isClosed).length;
+    const skipped = threadIds.length - targets.length - alreadyClosed;
     if (targets.length === 0) {
       void get().emitNotification(
         'error',
         'error',
         'nothing to resolve',
-        'no thread of this resolver carries a resolution yet, so nothing was closed on GitHub',
+        skipped === 0
+          ? 'every thread of this resolver is already closed on GitHub'
+          : 'no thread of this resolver carries a resolution yet, so nothing was closed on GitHub',
         notifyTarget,
       );
       return false;

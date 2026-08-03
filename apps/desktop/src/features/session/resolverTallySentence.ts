@@ -12,6 +12,7 @@ export const resolverTallySentence = ({ tally }: Params): string | null => {
     tally.resolved > 0 ? `${tally.resolved} fixed` : null,
     tally.wontfix > 0 ? `${tally.wontfix} no change` : null,
     tally.analyzed > 0 ? `${tally.analyzed} explained` : null,
+    tally.closed > 0 ? `${tally.closed} closed` : null,
     tally.open > 0 ? `${tally.open} needs you` : null,
   ].filter((part): part is string => part !== null);
   if (parts.length === 0) {
