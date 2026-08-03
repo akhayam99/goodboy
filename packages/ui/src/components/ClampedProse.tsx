@@ -35,13 +35,13 @@ export const ClampedProse = ({ text, lines = 3, className }: ClampedProseProps) 
   const overflows = estimateRenderedLines({ text }) > lines;
 
   if (!overflows) {
-    return <Markdown text={text} className={className} />;
+    return <Markdown text={text} variant="preview" className={className} />;
   }
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <div className={cn('min-w-0', !expanded && CLAMP_CLASS[lines])}>
-        <Markdown text={text} className={className} />
+        <Markdown text={text} variant="preview" className={className} />
       </div>
       <button
         type="button"

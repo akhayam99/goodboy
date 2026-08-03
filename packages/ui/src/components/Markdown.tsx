@@ -88,9 +88,12 @@ function ctxStyleForTag(tag: string): CtxTagStyle {
   return { ...CTX_DEFAULT, label: stripped || tag };
 }
 
+type MarkdownVariant = 'document' | 'preview';
+
 type MarkdownProps = {
   readonly text: string;
   readonly className?: string;
+  readonly variant?: MarkdownVariant;
 };
 
 type CellAlign = 'left' | 'center' | 'right';
@@ -172,6 +175,67 @@ function parseAlign(divider: string): ReadonlyArray<CellAlign> {
     return 'left';
   });
 }
+
+type RawListItem = {
+  readonly indent: number;
+  readonly ordered: boolean;
+  readonly content: string;
+};
+
+const matchListLine = (line: string): RawListItem | null => {
+  const ulist = line.match(ULIST_RE);
+  if (ulist) {
+    return { indent: (ulist[1] ?? '').length, ordered: false, content: (ulist[2] ?? '').trim() };
+  }
+  const olist = line.match(OLIST_RE);
+  if (olist) {
+    return { indent: (olist[1] ?? '').length, ordered: true, content: (olist[2] ?? '').trim() };
+  }
+  return null;
+};
+
+type CollectParams = {
+  readonly raws: ReadonlyArray<RawListItem>;
+  readonly cursor: { index: number };
+  readonly indent: number;
+  readonly ordered: boolean;
+};
+
+const collectListItems = ({ raws, cursor, indent, ordered }: CollectParams): ListItem[] => {
+  const items: ListItem[] = [];
+
+  while (cursor.index < raws.length) {
+    const raw = raws[cursor.index]!;
+    if (raw.indent < indent) {
+      break;
+    }
+    if (raw.indent > indent) {
+      const nested = collectListItems({
+        raws,
+        cursor,
+        indent: raw.indent,
+        ordered: raw.ordered,
+      });
+      const last = items[items.length - 1];
+      if (last === undefined) {
+        items.push(...nested);
+        continue;
+      }
+      items[items.length - 1] = {
+        content: last.content,
+        children: [...last.children, { kind: 'list', ordered: raw.ordered, items: nested }],
+      };
+      continue;
+    }
+    if (raw.ordered !== ordered) {
+      break;
+    }
+    items.push({ content: raw.content, children: [] });
+    cursor.index++;
+  }
+
+  return items;
+};
 
 const isTagNameStart = (ch: string | undefined): boolean =>
   ch !== undefined && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'));
@@ -350,21 +414,42 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
-    const ulist = line.match(ULIST_RE);
-    const olist = line.match(OLIST_RE);
-    if (ulist || olist) {
-      const ordered = !!olist;
-      const re = ordered ? OLIST_RE : ULIST_RE;
-      const items: ListItem[] = [];
+    const listStart = matchListLine(line);
+    if (listStart) {
+      const raws: RawListItem[] = [];
       while (i < lines.length) {
-        const m = (lines[i] ?? '').match(re);
-        if (!m) {
-          break;
+        const current = lines[i] ?? '';
+        const raw = matchListLine(current);
+        if (raw) {
+          raws.push(raw);
+          i++;
+          continue;
         }
-        items.push({ content: m[2]!.trim(), children: [] });
-        i++;
+        if (current.trim().length === 0) {
+          let ahead = i + 1;
+          while (ahead < lines.length && (lines[ahead] ?? '').trim().length === 0) {
+            ahead++;
+          }
+          const next = ahead < lines.length ? matchListLine(lines[ahead] ?? '') : null;
+          if (next && next.indent >= listStart.indent) {
+            i = ahead;
+            continue;
+          }
+        }
+        break;
       }
-      blocks.push({ kind: 'list', ordered, items });
+
+      const cursor = { index: 0 };
+      while (cursor.index < raws.length) {
+        const head = raws[cursor.index]!;
+        const items = collectListItems({
+          raws,
+          cursor,
+          indent: head.indent,
+          ordered: head.ordered,
+        });
+        blocks.push({ kind: 'list', ordered: head.ordered, items });
+      }
       continue;
     }
 
@@ -401,7 +486,16 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
   return blocks;
 }
 
-function renderInline(input: string, keyPrefix: string): ReactNode {
+const CHIP_CLASS =
+  'mx-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide';
+
+const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
+  document:
+    'rounded-md bg-muted/50 px-1 py-0 font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
+  preview: 'font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
+};
+
+function renderInline(input: string, keyPrefix: string, variant: MarkdownVariant): ReactNode {
   const out: ReactNode[] = [];
   let buf = '';
   let i = 0;
@@ -427,13 +521,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
           const Icon = style.icon;
           const label = style.label || inner.replace(/^ctx-?/i, '') || inner;
           out.push(
-            <span
-              key={nextKey()}
-              className={cn(
-                'mx-0.5 inline-flex items-center gap-2 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide',
-                style.chipClass,
-              )}
-            >
+            <span key={nextKey()} className={cn(CHIP_CLASS, style.chipClass)}>
               <Icon size={10} aria-hidden />
               {label}
             </span>,
@@ -456,13 +544,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
           const Icon = style.icon;
           const label = style.label || tag.replace(/^ctx-?/i, '') || tag;
           out.push(
-            <span
-              key={nextKey()}
-              className={cn(
-                'mx-0.5 inline-flex items-center gap-2 rounded px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-wide',
-                style.chipClass,
-              )}
-            >
+            <span key={nextKey()} className={cn(CHIP_CLASS, style.chipClass)}>
               <Icon size={10} aria-hidden />
               {label}
             </span>,
@@ -472,10 +554,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
         }
         flush();
         out.push(
-          <code
-            key={nextKey()}
-            className="rounded bg-muted px-1 py-0.5 font-mono text-[0.875em] text-foreground wrap-anywhere"
-          >
+          <code key={nextKey()} className={INLINE_CODE_CLASS[variant]}>
             {inner}
           </code>,
         );
@@ -491,7 +570,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
         flush();
         out.push(
           <strong key={nextKey()} className="font-semibold">
-            {renderInline(input.slice(i + 2, end), `${keyPrefix}-b${keyN}`)}
+            {renderInline(input.slice(i + 2, end), `${keyPrefix}-b${keyN}`, variant)}
           </strong>,
         );
         i = end + 2;
@@ -508,7 +587,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
           flush();
           out.push(
             <em key={nextKey()}>
-              {renderInline(input.slice(i + 1, end), `${keyPrefix}-i${keyN}`)}
+              {renderInline(input.slice(i + 1, end), `${keyPrefix}-i${keyN}`, variant)}
             </em>,
           );
           i = end + 1;
@@ -563,7 +642,7 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
                 rel="noreferrer noopener"
                 className="text-primary underline-offset-2 hover:underline"
               >
-                {renderInline(label, `${keyPrefix}-l${keyN}`)}
+                {renderInline(label, `${keyPrefix}-l${keyN}`, variant)}
               </a>,
             );
           } else {
@@ -583,10 +662,61 @@ function renderInline(input: string, keyPrefix: string): ReactNode {
   return out.length === 1 ? out[0] : <>{out}</>;
 }
 
-function renderBlock(block: Block, idx: number): ReactNode {
-  const key = `b-${idx}`;
+const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
+  1: 'text-lg font-semibold leading-snug text-foreground',
+  2: 'text-base font-semibold leading-snug text-foreground',
+  3: 'text-sm font-semibold leading-snug text-foreground',
+  4: 'text-xs font-semibold uppercase leading-snug tracking-eyebrow text-muted-foreground',
+  5: 'text-2xs font-semibold uppercase leading-snug tracking-eyebrow text-muted-foreground',
+  6: 'text-2xs font-semibold uppercase leading-snug tracking-eyebrow text-muted-foreground',
+};
+
+const PREVIEW_LINE_CLASS = 'truncate font-mono text-xs text-muted-foreground';
+
+const alignClass = (align: CellAlign | undefined): string => {
+  if (align === 'right') {
+    return 'text-right';
+  }
+  if (align === 'center') {
+    return 'text-center';
+  }
+  return 'text-left';
+};
+
+const firstMeaningfulLine = (value: string): string => {
+  const line = value.split('\n').find((candidate) => candidate.trim().length > 0);
+  return line === undefined ? '' : line.trim();
+};
+
+type RenderParams = {
+  readonly block: Block;
+  readonly id: string;
+  readonly variant: MarkdownVariant;
+  readonly depth: number;
+};
+
+const listClass = (variant: MarkdownVariant, depth: number): string => {
+  if (variant === 'preview') {
+    return 'flex flex-col gap-0.5 pl-4 marker:text-muted-foreground';
+  }
+  if (depth > 0) {
+    return 'flex flex-col gap-1 pl-5 marker:text-muted-foreground/70';
+  }
+  return 'flex flex-col gap-1 pl-5 marker:text-muted-foreground';
+};
+
+const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => {
+  const key = id;
   switch (block.kind) {
-    case 'code':
+    case 'code': {
+      if (variant === 'preview') {
+        const line = firstMeaningfulLine(block.content);
+        return (
+          <div key={key} className={PREVIEW_LINE_CLASS}>
+            {line.length > 0 ? line : (block.lang ?? 'code')}
+          </div>
+        );
+      }
       return (
         <pre
           key={key}
@@ -595,19 +725,14 @@ function renderBlock(block: Block, idx: number): ReactNode {
           <code>{block.content}</code>
         </pre>
       );
+    }
     case 'heading': {
-      const sizes: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
-        1: 'text-lg font-semibold text-foreground',
-        2: 'text-base font-semibold text-foreground',
-        3: 'text-base font-medium text-foreground',
-        4: 'text-sm font-medium text-foreground',
-        5: 'text-sm font-medium text-foreground',
-        6: 'text-sm font-medium text-foreground',
-      };
       const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+      const headingClass =
+        variant === 'preview' ? 'font-semibold text-foreground' : HEADING_CLASS[block.level];
       return (
-        <Tag key={key} className={cn(sizes[block.level], 'wrap-anywhere')}>
-          {renderInline(block.content, key)}
+        <Tag key={key} className={cn(headingClass, 'wrap-anywhere')}>
+          {renderInline(block.content, key, variant)}
         </Tag>
       );
     }
@@ -616,51 +741,57 @@ function renderBlock(block: Block, idx: number): ReactNode {
         <div
           key={key}
           role="separator"
-          className="my-2 h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
+          className="h-px w-full bg-gradient-to-r from-transparent via-border-soft to-transparent"
         />
       );
-    case 'list':
-      if (block.ordered) {
-        return (
-          <ol key={key} className="flex list-decimal flex-col gap-1.5 pl-5">
-            {block.items.map((item, j) => (
-              <li key={`${key}-${j}`} className="leading-relaxed wrap-anywhere">
-                {renderInline(item.content, `${key}-${j}`)}
-              </li>
-            ))}
-          </ol>
-        );
-      }
+    case 'list': {
+      const Tag = block.ordered ? 'ol' : 'ul';
       return (
-        <ul key={key} className="flex list-disc flex-col gap-1.5 pl-5">
+        <Tag
+          key={key}
+          className={cn(block.ordered ? 'list-decimal' : 'list-disc', listClass(variant, depth))}
+        >
           {block.items.map((item, j) => (
             <li key={`${key}-${j}`} className="leading-relaxed wrap-anywhere">
-              {renderInline(item.content, `${key}-${j}`)}
+              {item.children.length === 0 ? (
+                renderInline(item.content, `${key}-${j}`, variant)
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <div>{renderInline(item.content, `${key}-${j}`, variant)}</div>
+                  {item.children.map((child, ci) =>
+                    renderBlock({
+                      block: child,
+                      id: `${key}-${j}-c${ci}`,
+                      variant,
+                      depth: depth + 1,
+                    }),
+                  )}
+                </div>
+              )}
             </li>
           ))}
-        </ul>
+        </Tag>
       );
+    }
     case 'quote':
       return (
         <blockquote
           key={key}
-          className="border-l-2 border-border pl-3 text-muted-foreground wrap-anywhere"
+          className="flex flex-col gap-1.5 border-l-2 border-border-soft pl-3 text-sm leading-relaxed text-muted-foreground wrap-anywhere"
         >
           {block.lines.map((ln, j) => (
-            <p key={`${key}-${j}`}>{renderInline(ln, `${key}-${j}`)}</p>
+            <p key={`${key}-${j}`}>{renderInline(ln, `${key}-${j}`, variant)}</p>
           ))}
         </blockquote>
       );
     case 'table': {
-      const alignClass = (a: CellAlign | undefined): string => {
-        if (a === 'right') {
-          return 'text-right';
-        }
-        if (a === 'center') {
-          return 'text-center';
-        }
-        return 'text-left';
-      };
+      if (variant === 'preview') {
+        return (
+          <div key={key} className={PREVIEW_LINE_CLASS}>
+            {block.headers.join(' | ')}
+          </div>
+        );
+      }
       return (
         <div key={key} className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
@@ -670,11 +801,11 @@ function renderBlock(block: Block, idx: number): ReactNode {
                   <th
                     key={`${key}-h-${j}`}
                     className={cn(
-                      'px-3 py-1.5 font-medium text-foreground/75 wrap-anywhere',
+                      'px-3 py-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground wrap-anywhere',
                       alignClass(block.align[j]),
                     )}
                   >
-                    {renderInline(h, `${key}-h-${j}`)}
+                    {renderInline(h, `${key}-h-${j}`, variant)}
                   </th>
                 ))}
               </tr>
@@ -689,11 +820,11 @@ function renderBlock(block: Block, idx: number): ReactNode {
                     <td
                       key={`${key}-r-${ri}-c-${ci}`}
                       className={cn(
-                        'px-3 py-1.5 align-top wrap-anywhere',
+                        'px-3 py-1.5 align-top text-sm wrap-anywhere',
                         alignClass(block.align[ci]),
                       )}
                     >
-                      {renderInline(cell, `${key}-r-${ri}-c-${ci}`)}
+                      {renderInline(cell, `${key}-r-${ri}-c-${ci}`, variant)}
                     </td>
                   ))}
                 </tr>
@@ -707,11 +838,27 @@ function renderBlock(block: Block, idx: number): ReactNode {
       const style = ctxStyleForTag(block.tag);
       const Icon = style.icon;
       const label = style.label || block.tag.replace(/^ctx-?/i, '') || block.tag;
+      if (variant === 'preview') {
+        return (
+          <div key={key} className="flex min-w-0 items-center gap-1.5 text-sm">
+            <span className={cn(CHIP_CLASS, style.chipClass)}>
+              <Icon size={10} aria-hidden />
+              {label}
+            </span>
+            <span className="min-w-0 truncate text-muted-foreground">
+              {firstMeaningfulLine(block.content)}
+            </span>
+          </div>
+        );
+      }
       return (
-        <div key={key} className={cn('rounded-md border p-3 text-sm', style.calloutClass)}>
+        <div
+          key={key}
+          className={cn('flex flex-col gap-1.5 rounded-md border p-3 text-sm', style.calloutClass)}
+        >
           <div
             className={cn(
-              'mb-1 inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide',
+              'inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-eyebrow',
               style.calloutLabelClass,
             )}
           >
@@ -719,7 +866,7 @@ function renderBlock(block: Block, idx: number): ReactNode {
             {label}
           </div>
           <div className="whitespace-pre-wrap leading-relaxed text-foreground/90 wrap-anywhere">
-            {renderInline(block.content, key)}
+            {renderInline(block.content, key, variant)}
           </div>
         </div>
       );
@@ -735,10 +882,10 @@ function renderBlock(block: Block, idx: number): ReactNode {
           )}
         >
           {block.isTree
-            ? renderInline(block.content, key)
+            ? renderInline(block.content, key, variant)
             : block.content.split('\n').map((line, lineIndex, lines) => (
                 <Fragment key={`${key}-${lineIndex}`}>
-                  {renderInline(line, `${key}-${lineIndex}`)}
+                  {renderInline(line, `${key}-${lineIndex}`, variant)}
                   {lineIndex < lines.length - 1 && <br />}
                 </Fragment>
               ))}
@@ -746,13 +893,52 @@ function renderBlock(block: Block, idx: number): ReactNode {
       );
     }
   }
-}
+};
 
-export const Markdown = ({ text, className }: MarkdownProps) => {
+const toSections = (blocks: ReadonlyArray<Block>): ReadonlyArray<ReadonlyArray<Block>> => {
+  const sections: Block[][] = [];
+  let current: Block[] = [];
+
+  for (const block of blocks) {
+    const opensSection = block.kind === 'heading' || block.kind === 'hr';
+    if (opensSection && current.length > 0) {
+      sections.push(current);
+      current = [];
+    }
+    current.push(block);
+    if (block.kind === 'hr') {
+      sections.push(current);
+      current = [];
+    }
+  }
+
+  if (current.length > 0) {
+    sections.push(current);
+  }
+
+  return sections;
+};
+
+export const Markdown = ({ text, className, variant = 'document' }: MarkdownProps) => {
   const blocks = parseBlocks(stripHtml(text));
+
+  if (variant === 'preview') {
+    return (
+      <div className={cn('flex flex-col gap-1 text-sm text-foreground/85', className)}>
+        {blocks.map((block, idx) => renderBlock({ block, id: `b-${idx}`, variant, depth: 0 }))}
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('flex flex-col gap-2 text-sm text-foreground/85', className)}>
-      {blocks.map(renderBlock)}
+    <div className={cn('flex flex-col gap-5 text-sm text-foreground/85', className)}>
+      {toSections(blocks).map((section, si) => (
+        <div key={`s-${si}`} className="flex flex-col gap-2.5">
+          {section.map((block, bi) =>
+            renderBlock({ block, id: `b-${si}-${bi}`, variant, depth: 0 }),
+          )}
+        </div>
+      ))}
     </div>
   );
 };

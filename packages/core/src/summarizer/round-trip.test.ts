@@ -208,24 +208,32 @@ describe('synthetic context engine round-trip', () => {
     const engine = new ContextEngine({ db });
 
     const prev = [
-      '**Problem:** auth middleware rejects valid tokens.',
+      '#### Problem',
+      'auth middleware rejects valid tokens.',
       '',
-      '**Learned:** clock skew between issuer and verifier.',
+      '#### Learned',
+      '- clock skew between issuer and verifier.',
       '',
-      '**State:** patch drafted.',
+      '#### State',
+      '- patch drafted.',
       '',
-      '**Next:** add regression test.',
+      '#### Next',
+      '- add regression test.',
     ].join('\n');
     await engine.upsert(sessionId, 'last_output_summary', prev);
 
     const merged = [
-      '**Problem:** auth middleware rejects valid tokens.',
+      '#### Problem',
+      'auth middleware rejects valid tokens.',
       '',
-      '**Learned:** clock skew between issuer and verifier; tolerance now configurable.',
+      '#### Learned',
+      '- clock skew between issuer and verifier; tolerance now configurable.',
       '',
-      '**State:** patch merged, regression test green.',
+      '#### State',
+      '- patch merged, regression test green.',
       '',
-      '**Next:** monitor staging for false rejects.',
+      '#### Next',
+      '- monitor staging for false rejects.',
     ].join('\n');
     const invokeFn = makeInvokeFnWithOutput(
       JSON.stringify({ upserts: [{ key: 'last_output_summary', value: merged }] }),
@@ -242,13 +250,13 @@ describe('synthetic context engine round-trip', () => {
 
     const after = await engine.load(sessionId);
     const value = after.find((s) => s.key === 'last_output_summary')?.value ?? '';
-    expect(value).toContain('**Problem:** auth middleware rejects valid tokens.');
-    expect(value).toContain('**Learned:**');
-    expect(value).toContain('**State:** patch merged, regression test green.');
-    expect(value).toContain('**Next:** monitor staging for false rejects.');
-    expect(value.indexOf('**Problem:**')).toBeLessThan(value.indexOf('**Learned:**'));
-    expect(value.indexOf('**Learned:**')).toBeLessThan(value.indexOf('**State:**'));
-    expect(value.indexOf('**State:**')).toBeLessThan(value.indexOf('**Next:**'));
+    expect(value).toContain('#### Problem\nauth middleware rejects valid tokens.');
+    expect(value).toContain('#### Learned');
+    expect(value).toContain('#### State\n- patch merged, regression test green.');
+    expect(value).toContain('#### Next\n- monitor staging for false rejects.');
+    expect(value.indexOf('#### Problem')).toBeLessThan(value.indexOf('#### Learned'));
+    expect(value.indexOf('#### Learned')).toBeLessThan(value.indexOf('#### State'));
+    expect(value.indexOf('#### State')).toBeLessThan(value.indexOf('#### Next'));
   });
 
   it('replaces decisions with the consolidated full set', async () => {

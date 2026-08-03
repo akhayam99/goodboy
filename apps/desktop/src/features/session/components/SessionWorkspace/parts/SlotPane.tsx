@@ -191,7 +191,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
           </>
         }
       >
-        <>
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
           {slot === undefined && loading.slots ? (
             <div className="flex flex-col gap-2">
               <div className="h-4 w-full rounded bg-muted/50" />
@@ -245,11 +245,11 @@ export const SlotPane = ({ session, slotKey }: Props) => {
                 }
               }}
               className={cn(
-                'rounded-lg leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all',
+                'rounded-lg leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_pre]:whitespace-pre-wrap',
                 isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.02]',
               )}
             >
-              <Markdown text={value} className="text-sm text-foreground" />
+              <Markdown text={value} />
             </div>
           ) : (
             <button
@@ -268,7 +268,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
           {slotKey === 'goal' ? (
             <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
           ) : null}
-        </>
+        </div>
       </PaneShell>
     </InspectorSplit>
   );

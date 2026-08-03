@@ -36,7 +36,7 @@ describe('Summarizer client prompt', () => {
       '- goal: 280\n- files_touched: 1600\n- decisions: 1200\n- open_questions: 800\n- last_output_summary: 2000\n\nIf a current or updated slot exceeds its budget, emit a compacted full value within the budget. Merge semantic duplicates, replace superseded decisions with the final decision, and keep the most recent and most relevant facts.',
     );
     expect(systemPrompt).toContain(
-      'For last_output_summary, compaction MUST preserve all four bold section labels; compress the content within each section, never drop a section.',
+      'For last_output_summary, compaction MUST preserve all four section headings; compress the content within each section, never drop a section.',
     );
     expect(systemPrompt).toContain(
       'Per-slot format rules override these general rules: last_output_summary follows its four-section format above, and its Problem section is sentences, not bullets.',
@@ -48,19 +48,22 @@ describe('Summarizer client prompt', () => {
       'when this slot changes, emit the ENTIRE set rewritten compactly, one line per decision',
     );
     expect(systemPrompt).toContain(
-      'a standard structured object with four fixed sections, in this exact order, each introduced by a bold label: `**Problem:**`, `**Learned:**`, `**State:**`, `**Next:**`',
+      'a standard structured document with four fixed sections, in this exact order, each opened by a level-4 markdown heading on its own line: `#### Problem`, `#### Learned`, `#### State`, `#### Next`',
     );
     expect(systemPrompt).toContain(
-      '**Problem:** why the session exists, the original problem or request, in one or two sentences. Sticky: write it once, then only sharpen or compress it.',
+      'Problem: why the session exists, the original problem or request, in one or two sentences. Sticky: write it once, then only sharpen or compress it.',
     );
     expect(systemPrompt).toContain(
-      '**Learned:** durable discoveries that changed the understanding or approach',
+      'Learned: durable discoveries that changed the understanding or approach',
     );
     expect(systemPrompt).toContain(
-      '**State:** where the work is right now. Fully rewritten every pass.',
+      'State: where the work is right now. Fully rewritten every pass.',
     );
     expect(systemPrompt).toContain(
-      '**Next:** what remains and what is in flight. Fully rewritten every pass.',
+      'Next: what remains and what is in flight. Fully rewritten every pass.',
+    );
+    expect(systemPrompt).toContain(
+      'The only exception is last_output_summary, which MUST open each of its four sections with the mandated `####` heading.',
     );
     expect(systemPrompt).toContain(
       'Never exceed two sentences. If the current value exceeds two sentences, rewrite it down to two sentences or fewer.',
