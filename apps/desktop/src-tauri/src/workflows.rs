@@ -103,6 +103,10 @@ pub struct WorkflowRow {
     // session runs without being saved to the preset library.
     #[serde(rename = "isPreset")]
     pub is_preset: bool,
+    // How the workflow came to exist: 'library' (shipped), 'custom' (built by
+    // hand) or 'orchestrated' (born from a dynamic run). None on rows written
+    // before the column existed.
+    pub origin: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -143,6 +147,7 @@ pub struct PhaseTemplateUpsertInput {
     // Defaults to true when omitted so existing callers keep producing presets.
     #[serde(rename = "isPreset", default = "default_true")]
     pub is_preset: bool,
+    pub origin: Option<String>,
 }
 
 fn default_true() -> bool {
@@ -344,6 +349,7 @@ fn row_to_template(
     updated_at: String,
     deleted_at: Option<i64>,
     is_preset: bool,
+    origin: Option<String>,
 ) -> Result<WorkflowRow, rusqlite::Error> {
     let steps = load_steps(conn, &id)?;
     Ok(WorkflowRow {
@@ -358,6 +364,7 @@ fn row_to_template(
         updated_at,
         deleted_at,
         is_preset,
+        origin,
     })
 }
 
@@ -373,7 +380,7 @@ pub fn workflow_list(
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, goal, process_text, created_at, updated_at,
-                deleted_at, is_preset
+                deleted_at, is_preset, origin
          FROM workflows
          WHERE workspace_id = ?1 AND deleted_at IS NULL AND is_preset = 1
          ORDER BY created_at ASC",
@@ -389,6 +396,7 @@ pub fn workflow_list(
         String,
         Option<i64>,
         i64,
+        Option<String>,
     )> = stmt
         .query_map(rusqlite::params![workspace_id], |row| {
             Ok((
@@ -402,15 +410,19 @@ pub fn workflow_list(
                 row.get(7)?,
                 row.get(8)?,
                 row.get(9)?,
+                row.get(10)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()
         .map_err(PhaseError::Db)?;
 
     let mut result = Vec::with_capacity(template_ids.len());
-    for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset) in template_ids {
+    for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset, origin) in
+        template_ids
+    {
         let template = row_to_template(
             &conn, id, ws, name, desc, goal, process, created, updated, deleted, is_preset != 0,
+            origin,
         )
         .map_err(PhaseError::Db)?;
         result.push(template);
@@ -426,7 +438,7 @@ pub fn workflow_get(
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, goal, process_text, created_at, updated_at,
-                deleted_at, is_preset
+                deleted_at, is_preset, origin
          FROM workflows
          WHERE id = ?1
          LIMIT 1",
@@ -443,15 +455,16 @@ pub fn workflow_get(
             row.get::<_, String>(7)?,
             row.get::<_, Option<i64>>(8)?,
             row.get::<_, i64>(9)?,
+            row.get::<_, Option<String>>(10)?,
         ))
     })?;
     match rows.next() {
         Some(r) => {
-            let (rid, ws, name, desc, goal, process, created, updated, deleted, is_preset) =
+            let (rid, ws, name, desc, goal, process, created, updated, deleted, is_preset, origin) =
                 r.map_err(PhaseError::Db)?;
             let template = row_to_template(
                 &conn, rid, ws, name, desc, goal, process, created, updated, deleted,
-                is_preset != 0,
+                is_preset != 0, origin,
             )
             .map_err(PhaseError::Db)?;
             Ok(Some(template))
@@ -536,8 +549,8 @@ pub fn workflow_upsert(
     };
 
     conn.execute(
-        "INSERT INTO workflows (id, workspace_id, name, description, goal, process_text, created_at, updated_at, is_preset)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+        "INSERT INTO workflows (id, workspace_id, name, description, goal, process_text, created_at, updated_at, is_preset, origin)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
          ON CONFLICT(id) DO UPDATE SET
            name         = excluded.name,
            description  = excluded.description,
@@ -545,6 +558,7 @@ pub fn workflow_upsert(
            process_text = excluded.process_text,
            updated_at   = excluded.updated_at,
            is_preset    = excluded.is_preset,
+           origin       = COALESCE(workflows.origin, excluded.origin),
            deleted_at   = NULL",
         rusqlite::params![
             id,
@@ -556,6 +570,7 @@ pub fn workflow_upsert(
             created_at,
             now,
             input.is_preset as i32,
+            input.origin.clone(),
         ],
     )?;
 
@@ -660,6 +675,7 @@ pub fn workflow_upsert(
         updated_at: now,
         deleted_at: None,
         is_preset: input.is_preset,
+        origin: input.origin,
     })
 }
 
@@ -726,7 +742,7 @@ pub fn workflows_for_session(
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT w.id, w.workspace_id, w.name, w.description, w.goal, w.process_text, w.created_at,
-                w.updated_at, w.deleted_at, w.is_preset
+                w.updated_at, w.deleted_at, w.is_preset, w.origin
          FROM workflows w
          JOIN session_workflows sw ON sw.workflow_id = w.id
          WHERE sw.session_id = ?1
@@ -743,6 +759,7 @@ pub fn workflows_for_session(
         String,
         Option<i64>,
         i64,
+        Option<String>,
     )> = stmt
         .query_map(rusqlite::params![session_id], |row| {
             Ok((
@@ -756,15 +773,17 @@ pub fn workflows_for_session(
                 row.get(7)?,
                 row.get(8)?,
                 row.get(9)?,
+                row.get(10)?,
             ))
         })?
         .collect::<Result<Vec<_>, _>>()
         .map_err(PhaseError::Db)?;
 
     let mut result = Vec::with_capacity(rows.len());
-    for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset) in rows {
+    for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset, origin) in rows {
         let template = row_to_template(
             &conn, id, ws, name, desc, goal, process, created, updated, deleted, is_preset != 0,
+            origin,
         )
         .map_err(PhaseError::Db)?;
         result.push(template);
@@ -1233,6 +1252,7 @@ mod tests {
             "CREATE TABLE workflows (
                 id TEXT PRIMARY KEY, workspace_id TEXT, name TEXT, description TEXT,
                 created_at TEXT, updated_at TEXT, deleted_at INTEGER, is_preset INTEGER,
+                origin TEXT,
                 goal TEXT, process_text TEXT
             );
             CREATE UNIQUE INDEX idx_workflows_workspace_name_live

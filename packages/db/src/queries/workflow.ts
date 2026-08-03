@@ -9,8 +9,10 @@ import type {
   VerbosityLevel,
   Workflow,
   WorkflowId,
+  WorkflowOrigin,
   WorkspaceId,
 } from '@goodboy/types';
+import { WORKFLOW_ORIGINS } from '@goodboy/types';
 import type { Database } from '../client';
 
 type WorkflowRow = {
@@ -23,6 +25,7 @@ type WorkflowRow = {
   created_at: string;
   updated_at: string;
   is_preset: number | null;
+  origin: string | null;
   deleted_at: number | null;
 };
 
@@ -64,6 +67,9 @@ function toStep(row: StepRow): Step {
   };
 }
 
+const isWorkflowOrigin = (value: string | null | undefined): value is WorkflowOrigin =>
+  value != null && (WORKFLOW_ORIGINS as ReadonlyArray<string>).includes(value);
+
 function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
   return {
     id: row.id as WorkflowId,
@@ -74,6 +80,7 @@ function toWorkflow(row: WorkflowRow, steps: ReadonlyArray<Step>): Workflow {
     ...(row.process_text != null && row.process_text !== '' && { processText: row.process_text }),
     steps,
     isPreset: row.is_preset == null ? true : row.is_preset !== 0,
+    ...(isWorkflowOrigin(row.origin) && { origin: row.origin }),
     ...(row.deleted_at != null && {
       deletedAt: new Date(row.deleted_at * 1000).toISOString() as IsoDateTime,
     }),
@@ -121,15 +128,17 @@ export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflo
 export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
   await db.execute(
     `INSERT INTO workflows
-      (id, workspace_id, name, description, goal, process_text, created_at, updated_at, is_preset)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, workspace_id, name, description, goal, process_text, created_at, updated_at, is_preset,
+       origin)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
        description = excluded.description,
        goal = excluded.goal,
        process_text = excluded.process_text,
        updated_at = excluded.updated_at,
-       is_preset = excluded.is_preset`,
+       is_preset = excluded.is_preset,
+       origin = COALESCE(workflows.origin, excluded.origin)`,
     [
       workflow.id,
       workflow.workspaceId,
@@ -140,6 +149,7 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
       workflow.createdAt,
       workflow.updatedAt,
       workflow.isPreset === false ? 0 : 1,
+      workflow.origin ?? null,
     ],
   );
 

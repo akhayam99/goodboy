@@ -1,11 +1,12 @@
 import { ChevronRight } from 'lucide-react';
-import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
+import type { Agent, Workflow, WorkflowOrigin, WorkflowRun } from '@goodboy/types';
 import { cn, formatUsdPrecise } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunStatus } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowRunStatus';
 import { formatRelativeDuration } from '../../../../../shared/utils/relativeDate';
 import { CostBadge } from '../../../../providers/components/CostBadge';
+import { WorkflowOriginTag } from '../../../../workflows/components/WorkflowOriginTag';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -56,6 +57,8 @@ export const WorkflowRailCard = ({
     isCompleted && startedAt != null && completedAt != null
       ? formatRelativeDuration(startedAt, completedAt)
       : null;
+  const origin: WorkflowOrigin | null =
+    run.executionMode === 'dynamic' ? 'orchestrated' : (workflow.origin ?? null);
   const stepCount =
     run.executionMode === 'dynamic'
       ? `${ranAgents.length} ${ranAgents.length === 1 ? 'step' : 'steps'} run`
@@ -72,8 +75,11 @@ export const WorkflowRailCard = ({
         )}
       >
         <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className="line-clamp-2 text-sm font-medium text-foreground">
-            {workflowKindName(workflow)}
+          <span className="flex items-center gap-2">
+            <span className="line-clamp-2 text-sm font-medium text-foreground">
+              {workflowKindName(workflow)}
+            </span>
+            {origin != null ? <WorkflowOriginTag origin={origin} /> : null}
           </span>
           <span className="flex flex-wrap items-center gap-2">
             <WorkflowRunStatus

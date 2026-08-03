@@ -83,6 +83,22 @@ describe('workflow queries', () => {
     expect(live[0]!.name).toBe('Refactor');
   });
 
+  it('round-trips the origin and keeps it when the workflow is saved again', async () => {
+    await upsertWorkflow(db, { ...buildWorkflow(), origin: 'orchestrated' });
+    await upsertWorkflow(db, { ...buildWorkflow(), name: 'Refactor', description: 'edited' });
+
+    const stored = await getWorkflow(db, workflowId);
+
+    expect(stored!.origin).toBe('orchestrated');
+    expect(stored!.description).toBe('edited');
+  });
+
+  it('leaves the origin unset on a workflow written without one', async () => {
+    await upsertWorkflow(db, buildWorkflow());
+
+    expect((await getWorkflow(db, workflowId))!.origin).toBeUndefined();
+  });
+
   it('still rejects a duplicate name among live workflows', async () => {
     await upsertWorkflow(db, buildWorkflow());
 

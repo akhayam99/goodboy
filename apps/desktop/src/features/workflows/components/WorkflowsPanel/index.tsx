@@ -238,6 +238,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
       ...(snapshot.goal.trim() ? { goal: snapshot.goal.trim() } : {}),
       steps: defs,
       isPreset: approvedRef.current,
+      origin: 'custom',
     };
 
     isSavingRef.current = true;

@@ -689,6 +689,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         ...(process.length > 0 && { processText: process }),
         steps: mode === 'dynamic' ? [] : buildSteps(workflowId),
         isPreset: mode === 'dynamic' ? false : saveAsPreset,
+        origin: mode === 'dynamic' ? 'orchestrated' : 'custom',
         createdAt: now,
         updatedAt: now,
       };

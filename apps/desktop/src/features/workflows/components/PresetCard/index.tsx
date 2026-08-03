@@ -4,6 +4,7 @@ import { Check, Trash2, X } from 'lucide-react';
 import type { Workflow } from '@goodboy/types';
 import { inferAgentKindFromName, ROLE_TO_KIND } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { WorkflowOriginTag } from '../WorkflowOriginTag';
 
 type Props = {
   readonly template: Workflow;
@@ -27,6 +28,7 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
       >
         <div className="flex items-center gap-2">
           <span className="truncate text-xs font-medium text-foreground">{template.name}</span>
+          {template.origin != null ? <WorkflowOriginTag origin={template.origin} /> : null}
           {!approved ? (
             <span className="shrink-0 rounded bg-warning/15 px-1 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow text-warning">
               draft

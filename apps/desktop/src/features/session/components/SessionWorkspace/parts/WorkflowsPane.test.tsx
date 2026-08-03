@@ -45,6 +45,7 @@ vi.mock('../../../../../store', () => ({
 }));
 
 vi.mock('@goodboy/ui', () => ({
+  Chip: ({ label }: { label?: React.ReactNode }) => <span>{label}</span>,
   Button: ({ children, onClick, className }: ButtonMockProps) => (
     <button type="button" onClick={onClick} className={className}>
       {children}
