@@ -116,6 +116,13 @@ export const setDiffFocus = (set: SetFn) => {
   };
 };
 
+export const openDiffLens = (get: GetFn) => {
+  return (sessionId: SessionId, focus: DiffFocus): void => {
+    get().setDiffFocus(sessionId, focus);
+    get().setActiveLens(sessionId, 'files');
+  };
+};
+
 export const setFocusedPlanId = (set: SetFn) => {
   return (sessionId: SessionId, planId: PlanId | null): void => {
     set((s) => ({ focusedPlanId: { ...s.focusedPlanId, [sessionId]: planId } }));

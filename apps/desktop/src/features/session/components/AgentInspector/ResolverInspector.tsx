@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Divider, ScrollFade } from '@goodboy/ui';
 import type { Agent, PendingResolution, PrComment, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useDiffComments, type DiffFocus } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
 import { openUrl } from '../../../../shared/lib/editor';
 import { displayPath } from '../../../../shared/utils/display-path';
@@ -60,8 +60,7 @@ export const ResolverInspector = ({
   );
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
   const worktreePath = useSessionRepo({ sessionId })?.worktreePath ?? null;
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const setDiffFocus = useAppStore((s) => s.setDiffFocus);
+  const openDiffLens = useAppStore((s) => s.openDiffLens);
   const setResolverThreadReply = useAppStore((s) => s.setResolverThreadReply);
   const hasKickoff = useAppStore((s) => s.pendingResolverKickoff[agent.id] !== undefined);
   const pendingResolutions =
@@ -131,10 +130,6 @@ export const ResolverInspector = ({
   }
 
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
-  const openDiffLens = (focus: DiffFocus) => {
-    setDiffFocus(sessionId, focus);
-    setActiveLens(sessionId, 'files');
-  };
   const openThread = (threadId: string) => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-github-session', {
@@ -226,12 +221,13 @@ export const ResolverInspector = ({
             reportedMissingShas={changes.reportedMissingShas}
             withinRunWindow={changes.withinRunWindow}
             worktreePath={worktreePath}
-            onOpenCommit={(sha) => openDiffLens({ sha, path: null })}
+            onOpenCommit={(sha) => openDiffLens(sessionId, { kind: 'commit', sha, path: null })}
             onOpenFile={
               commitSha === null
                 ? undefined
                 : (path) =>
-                    openDiffLens({
+                    openDiffLens(sessionId, {
+                      kind: 'commit',
                       sha: changes.commitShaByFile[path] ?? commitSha,
                       path: displayPath(path, worktreePath),
                     })

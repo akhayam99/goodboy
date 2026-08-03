@@ -64,9 +64,12 @@ type Params = {
     readonly contextTokens?: number;
   }>;
   readonly reportedCommitSha?: string | null;
+  readonly diffCommitSha?: string | null;
+  readonly canOpenDiff?: boolean;
   readonly hasOtherActiveResolvers?: boolean;
   readonly onOpenChat?: () => void;
   readonly onInspect?: () => void;
+  readonly onOpenDiff?: () => void;
 };
 
 const renderCard = ({
@@ -83,9 +86,12 @@ const renderCard = ({
     },
   ],
   reportedCommitSha = null,
+  diffCommitSha = null,
+  canOpenDiff = true,
   hasOtherActiveResolvers = false,
   onOpenChat = () => undefined,
   onInspect = () => undefined,
+  onOpenDiff = () => undefined,
 }: Params = {}) =>
   render(
     <ResolverCard
@@ -99,6 +105,8 @@ const renderCard = ({
       turns={2}
       turnsLoading={false}
       reportedCommitSha={reportedCommitSha}
+      diffCommitSha={diffCommitSha}
+      canOpenDiff={canOpenDiff}
       isQueueStalled={false}
       hasOtherActiveResolvers={hasOtherActiveResolvers}
       isSelected={false}
@@ -109,6 +117,7 @@ const renderCard = ({
       onOpenChat={onOpenChat}
       onInspect={onInspect}
       onJump={() => undefined}
+      onOpenDiff={onOpenDiff}
     />,
   );
 
@@ -184,6 +193,36 @@ describe('ResolverCard', () => {
     expect(name.className).toContain('text-sm');
     expect(screen.queryByText(/^\d+\/\d+$/)).toBeNull();
     expect(screen.getByText('Review comment')).toBeTruthy();
+  });
+
+  it('names the commit the diff shortcut will open, and reaches it without the inspector', () => {
+    const onOpenDiff = vi.fn();
+    const onInspect = vi.fn();
+    renderCard({ diffCommitSha: 'abcdef1234567890', onOpenDiff, onInspect });
+
+    const shortcut = screen.getByRole('button', { name: 'Open the diff of commit abcdef1' });
+    const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
+    expect(navigationSlot.contains(shortcut)).toBe(true);
+
+    fireEvent.click(shortcut);
+
+    expect(onOpenDiff).toHaveBeenCalledOnce();
+    expect(onInspect).not.toHaveBeenCalled();
+  });
+
+  it('says it will open the uncommitted changes while the resolver has no commit', () => {
+    renderCard({ diffCommitSha: null });
+
+    expect(
+      screen.getByRole('button', { name: 'Open the diff of the uncommitted changes' }),
+    ).toBeTruthy();
+  });
+
+  it('drops the diff shortcut when the session has no worktree to diff', () => {
+    renderCard({ diffCommitSha: 'abcdef1234567890', canOpenDiff: false });
+
+    expect(screen.queryByRole('button', { name: /Open the diff/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Toggle resolver details' })).toBeTruthy();
   });
 
   it('opens the chat from the card body and keeps details behind an explicit action', () => {

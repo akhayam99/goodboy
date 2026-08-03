@@ -641,6 +641,7 @@ export type AppActions = {
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
+  openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
   beginSessionCreation(
     sessionId: SessionId,
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },

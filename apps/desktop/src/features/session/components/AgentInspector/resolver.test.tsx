@@ -38,7 +38,7 @@ const h = vi.hoisted(() => {
     amendSessionCommit: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
     squashSessionCommits: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
     setActiveLens: vi.fn(),
-    setDiffFocus: vi.fn(),
+    openDiffLens: vi.fn(),
     setResolverThreadReply: vi.fn(),
   };
 });
@@ -170,7 +170,7 @@ const reset = ({
     amendSessionCommit: h.amendSessionCommit,
     squashSessionCommits: h.squashSessionCommits,
     setActiveLens: h.setActiveLens,
-    setDiffFocus: h.setDiffFocus,
+    openDiffLens: h.openDiffLens,
     setResolverThreadReply: h.setResolverThreadReply,
   });
 };
@@ -566,11 +566,11 @@ describe('AgentInspector (resolver)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'src/auth/guard.ts' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
       sha: 'abc1234def',
       path: 'src/auth/guard.ts',
     });
-    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'files');
   });
 
   it('opens each file at the commit its own thread was fixed in', async () => {
@@ -603,14 +603,16 @@ describe('AgentInspector (resolver)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'src/second.ts' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
       sha: 'other12345',
       path: 'src/second.ts',
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'src/first.ts' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
       sha: 'abc1234def',
       path: 'src/first.ts',
     });
@@ -643,8 +645,11 @@ describe('AgentInspector (resolver)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'deadbee' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, { sha: 'deadbee', path: null });
-    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'files');
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
+      sha: 'deadbee',
+      path: null,
+    });
   });
 
   it('keeps force close behind the header overflow, off the card', () => {

@@ -4,6 +4,7 @@ import { setSessionGroup } from './setSessionGroup';
 import { setSessionSort } from './setSessionSort';
 import {
   lensGo,
+  openDiffLens,
   setActiveLens,
   setDiffFocus,
   setFocusedPlanId,
@@ -43,6 +44,7 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setFocusedPlanId: setFocusedPlanId(set),
     setSessionStudio: setSessionStudio(set),
     setDiffFocus: setDiffFocus(set),
+    openDiffLens: openDiffLens(get),
     beginSessionCreation: beginSessionCreation(set),
     endSessionCreation: endSessionCreation(set),
   };

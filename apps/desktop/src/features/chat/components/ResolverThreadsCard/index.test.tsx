@@ -11,8 +11,7 @@ const h = vi.hoisted(() => ({
   comments: [] as Array<{ threadId: string; resolved: boolean }>,
   pending: [] as Array<{ threadId: string }>,
   selectAgent: vi.fn(async () => undefined),
-  setDiffFocus: vi.fn(),
-  setActiveLens: vi.fn(),
+  openDiffLens: vi.fn(),
 }));
 
 vi.mock('@goodboy/core', () => ({
@@ -29,16 +28,14 @@ vi.mock('../../../../store', () => ({
       sessionGithub: Record<string, { detail: { comments: typeof h.comments } | null }>;
       sessionPendingResolutions: Record<string, typeof h.pending>;
       selectAgent: typeof h.selectAgent;
-      setDiffFocus: typeof h.setDiffFocus;
-      setActiveLens: typeof h.setActiveLens;
+      openDiffLens: typeof h.openDiffLens;
     }) => T,
   ) =>
     selector({
       sessionGithub: { s: { detail: { comments: h.comments } } },
       sessionPendingResolutions: { s: h.pending },
       selectAgent: h.selectAgent,
-      setDiffFocus: h.setDiffFocus,
-      setActiveLens: h.setActiveLens,
+      openDiffLens: h.openDiffLens,
     }),
 }));
 
@@ -57,8 +54,7 @@ describe('ResolverThreadsCard', () => {
     h.comments = [];
     h.pending = [];
     h.selectAgent.mockClear();
-    h.setDiffFocus.mockClear();
-    h.setActiveLens.mockClear();
+    h.openDiffLens.mockClear();
   });
 
   afterEach(cleanup);
@@ -117,8 +113,11 @@ describe('ResolverThreadsCard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'open commit abcdef1' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith('s', { sha: 'abcdef1234567890', path: null });
-    expect(h.setActiveLens).toHaveBeenCalledWith('s', 'files');
+    expect(h.openDiffLens).toHaveBeenCalledWith('s', {
+      kind: 'commit',
+      sha: 'abcdef1234567890',
+      path: null,
+    });
   });
 
   it('renders the thread reply as markdown once the row is expanded', () => {

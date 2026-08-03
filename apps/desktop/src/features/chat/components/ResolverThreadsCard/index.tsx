@@ -71,8 +71,7 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
     (state) => state.sessionPendingResolutions[sessionId] ?? EMPTY_PENDING,
   );
   const selectAgent = useAppStore((state) => state.selectAgent);
-  const setDiffFocus = useAppStore((state) => state.setDiffFocus);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
+  const openDiffLens = useAppStore((state) => state.openDiffLens);
 
   const resolvedOnGithub = useMemo(
     () =>
@@ -124,8 +123,7 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
         };
 
   const onOpenCommit = (sha: string) => {
-    setDiffFocus(sessionId, { sha, path: null });
-    setActiveLens(sessionId, 'files');
+    openDiffLens(sessionId, { kind: 'commit', sha, path: null });
   };
 
   const [onlyVerdict] = verdicts;

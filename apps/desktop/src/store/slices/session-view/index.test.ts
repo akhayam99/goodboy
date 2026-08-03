@@ -699,11 +699,38 @@ describe('store contract', () => {
 
     it('setDiffFocus survives the switch to the files lens and dies on any other', async () => {
       const store = await getStore();
-      store.getState().setDiffFocus(SESSION_ID, { sha: 'abc1234', path: 'src/a.ts' });
+      store
+        .getState()
+        .setDiffFocus(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: 'src/a.ts' });
       store.getState().setActiveLens(SESSION_ID, 'files');
-      expect(store.getState().diffFocus[SESSION_ID]).toEqual({ sha: 'abc1234', path: 'src/a.ts' });
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({
+        kind: 'commit',
+        sha: 'abc1234',
+        path: 'src/a.ts',
+      });
       store.getState().setActiveLens(SESSION_ID, 'agents');
       expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
+    });
+
+    it('openDiffLens lands on the files lens with the commit focus still set', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
+      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({
+        kind: 'commit',
+        sha: 'abc1234',
+        path: null,
+      });
+    });
+
+    it('openDiffLens carries a working-tree focus and leaves a step to go back to', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'resolve');
+      store.getState().openDiffLens(SESSION_ID, { kind: 'working', path: null });
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
+      store.getState().lensGo(SESSION_ID, -1);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('resolve');
     });
 
     it('setSessionStudio(non-null) clears the selected agent', async () => {

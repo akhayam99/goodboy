@@ -5,6 +5,7 @@ import type {
   AgentId,
   BranchCommit,
   DiffComment,
+  PendingResolution,
   PrComment,
   ProviderRunId,
   Session,
@@ -12,12 +13,14 @@ import type {
   TurnEvent,
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useDiffComments, useSessionLoading } from '../../../../store';
+import type { ResolverThreadOutcome } from '../../../../store/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { agentThreadIds } from '../../agentThreadIds';
 import { attributeResolverCommits } from '../../resolver-commits';
+import { resolverCommitSha } from '../../resolverCommitSha';
 import { resolverReportedShas } from '../../resolver-reported-shas';
 import { listBranchCommits } from '../../../worktree/worktree';
 import {
@@ -33,6 +36,8 @@ type Params = {
 
 const EMPTY_EVENTS: ReadonlyArray<TurnEvent> = [];
 const EMPTY_COMMITS: ReadonlyArray<BranchCommit> = [];
+const EMPTY_PENDING: ReadonlyArray<PendingResolution> = [];
+const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
 
 export const useResolverAgentsLane = ({ session }: Params) => {
   const sessionId = session.id as SessionId;
@@ -45,7 +50,12 @@ export const useResolverAgentsLane = ({ session }: Params) => {
       state.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
   );
   const diffComments = useDiffComments(sessionId);
+  const pendingResolutions = useAppStore(
+    (state) => state.sessionPendingResolutions[sessionId] ?? EMPTY_PENDING,
+  );
+  const outcomesByAgentId = useAppStore((state) => state.resolverThreadOutcomes);
   const selectAgent = useAppStore((state) => state.selectAgent);
+  const openDiffLens = useAppStore((state) => state.openDiffLens);
   const activateNextResolver = useAppStore((state) => state.activateNextResolver);
   const transcripts = useAppStore((state) => state.transcripts);
   const agentRunHistory = useAppStore((state) => state.agentRunHistory);
@@ -121,6 +131,33 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     return result;
   }, [agentRunHistory, commits, resolverIndex.links, storedEvents, transcripts]);
 
+  const diffCommitShaByAgentId = useMemo(() => {
+    const map = new Map<AgentId, string>();
+    for (const { agent } of resolverIndex.links) {
+      const sha = resolverCommitSha({
+        threadIds: agentThreadIds(agent),
+        outcomes: outcomesByAgentId[agent.id] ?? EMPTY_OUTCOMES,
+        pendingResolutions,
+        reportedSha: reportedCommitShaByAgentId.get(agent.id) ?? null,
+      });
+      if (sha !== null) {
+        map.set(agent.id, sha);
+      }
+    }
+    return map;
+  }, [outcomesByAgentId, pendingResolutions, reportedCommitShaByAgentId, resolverIndex.links]);
+
+  const onOpenDiff = useCallback(
+    (agentId: AgentId) => {
+      const sha = diffCommitShaByAgentId.get(agentId) ?? null;
+      openDiffLens(
+        sessionId,
+        sha === null ? { kind: 'working', path: null } : { kind: 'commit', sha, path: null },
+      );
+    },
+    [diffCommitShaByAgentId, openDiffLens, sessionId],
+  );
+
   const commentByThreadId = useMemo(() => {
     const map = new Map<string, PrComment>();
     for (const comment of prComments) {
@@ -189,9 +226,11 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   return {
     activeEntries: entries.active,
     activeIds,
+    canOpenDiff: worktreePath !== null,
     commentByThreadId,
     completedEntries: entries.completed,
     diffCommentByAgentId,
+    diffCommitShaByAgentId,
     isStalled,
     isTaskActive,
     isTranscriptLoading: loading.transcript,
@@ -199,6 +238,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     onForceNext,
     onJump,
     onOpenChat,
+    onOpenDiff,
     onOpenResolveBoard,
     queuedCount,
     reportedCommitShaByAgentId,

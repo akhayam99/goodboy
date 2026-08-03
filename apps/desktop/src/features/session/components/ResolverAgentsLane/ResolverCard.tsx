@@ -1,4 +1,4 @@
-import { MessageSquareReply, PanelRight } from 'lucide-react';
+import { FileDiff, GitCommitHorizontal, MessageSquareReply, PanelRight } from 'lucide-react';
 import { Chip } from '@goodboy/ui';
 import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../store';
@@ -15,6 +15,7 @@ import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { ResolverCardTally } from './ResolverCardTally';
 import { resolverCardTone } from './resolverCardTone';
+import { resolverDiffActionLabel } from './resolverDiffActionLabel';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 
 type Props = {
@@ -28,6 +29,8 @@ type Props = {
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly reportedCommitSha: string | null;
+  readonly diffCommitSha: string | null;
+  readonly canOpenDiff: boolean;
   readonly isQueueStalled: boolean;
   readonly hasOtherActiveResolvers: boolean;
   readonly isSelected: boolean;
@@ -38,6 +41,7 @@ type Props = {
   readonly onOpenChat: () => void;
   readonly onInspect: () => void;
   readonly onJump: () => void;
+  readonly onOpenDiff: () => void;
 };
 
 export const ResolverCard = ({
@@ -51,6 +55,8 @@ export const ResolverCard = ({
   turns,
   turnsLoading,
   reportedCommitSha,
+  diffCommitSha,
+  canOpenDiff,
   isQueueStalled,
   hasOtherActiveResolvers,
   isSelected,
@@ -61,6 +67,7 @@ export const ResolverCard = ({
   onOpenChat,
   onInspect,
   onJump,
+  onOpenDiff,
 }: Props) => {
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
   const hoverMarkViewed = useHoverMarkViewed({
@@ -96,6 +103,16 @@ export const ResolverCard = ({
       }
       navigationAction={
         <>
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            {canOpenDiff && (
+              <AgentCardAction
+                icon={diffCommitSha === null ? FileDiff : GitCommitHorizontal}
+                label={resolverDiffActionLabel({ commitSha: diffCommitSha })}
+                reveal
+                onClick={onOpenDiff}
+              />
+            )}
+          </span>
           <span className="flex size-6 shrink-0 items-center justify-center">
             {canJump && (
               <AgentCardAction

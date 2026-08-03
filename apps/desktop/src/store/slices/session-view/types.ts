@@ -53,10 +53,9 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'gitlab_issues',
 ]);
 
-export type DiffFocus = {
-  readonly sha: string | null;
-  readonly path: string | null;
-};
+export type DiffFocus =
+  | { readonly kind: 'commit'; readonly sha: string; readonly path: string | null }
+  | { readonly kind: 'working'; readonly path: string | null };
 
 export type SessionStudio =
   | { readonly kind: 'workflow' }
@@ -131,6 +130,7 @@ type SessionViewSliceActions = {
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
+  openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
   beginSessionCreation(
     sessionId: SessionId,
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },

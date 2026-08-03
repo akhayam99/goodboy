@@ -289,7 +289,7 @@ describe('DiffViewerPane', () => {
       <DiffViewerPane
         sessionId={SID}
         worktreePath="/tmp/worktree"
-        diffFocus={{ sha: 'abc1234def', path: 'src/a.ts' }}
+        diffFocus={{ kind: 'commit', sha: 'abc1234def', path: 'src/a.ts' }}
         onClose={vi.fn()}
       />,
     );
@@ -298,6 +298,35 @@ describe('DiffViewerPane', () => {
       expect(worktreeDiffCommit).toHaveBeenCalledWith('/tmp/worktree', 'abc1234def'),
     );
     await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalled());
+  });
+
+  it('loads every uncommitted change when the diff focus names the working tree', async () => {
+    fixtures.files = fileFixture();
+    const { worktreeDiffWorking } = await import('../../../../features/worktree/worktree');
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        diffFocus={{ kind: 'working', path: null }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(worktreeDiffWorking).toHaveBeenCalledWith('/tmp/worktree', 'all'));
+  });
+
+  it('keeps a pane action next to the diff toolbar', async () => {
+    fixtures.files = fileFixture();
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        paneActions={<button type="button">Back</button>}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Back' })).toBeDefined();
   });
 });
 
