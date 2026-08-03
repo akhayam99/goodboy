@@ -4,9 +4,12 @@ import type { AgentMetrics } from '../../hooks/useAgentMetrics';
 import { agentThreadIds } from '../../agentThreadIds';
 import type { ResolverLink } from '../../resolver-linkage';
 import { ResolverCard } from './ResolverCard';
+import { hasOtherActiveResolver } from './resolverLaneEntries';
 
 type Props = {
   readonly entries: ReadonlyArray<ResolverLink>;
+  readonly activeIds: ReadonlySet<AgentId>;
+  readonly isQueueStalled: boolean;
   readonly isTaskActive: boolean;
   readonly isTranscriptLoading: boolean;
   readonly isMuted: boolean;
@@ -23,6 +26,8 @@ type Props = {
 
 export const ResolverRows = ({
   entries,
+  activeIds,
+  isQueueStalled,
   isTaskActive,
   isTranscriptLoading,
   isMuted,
@@ -58,6 +63,8 @@ export const ResolverRows = ({
           turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
           turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
           reportedCommitSha={reportedCommitShaByAgentId.get(agent.id) ?? null}
+          isQueueStalled={isQueueStalled}
+          hasOtherActiveResolvers={hasOtherActiveResolver({ activeIds, agentId: agent.id })}
           isSelected={agent.id === selectedAgentId}
           isTaskActive={isTaskActive}
           isInspected={agent.id === inspectedAgentId}

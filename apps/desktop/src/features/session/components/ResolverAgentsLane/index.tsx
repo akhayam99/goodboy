@@ -72,6 +72,8 @@ export const ResolverAgentsLane = ({
           {hasActiveEntries ? (
             <ResolverRows
               entries={lane.activeEntries}
+              activeIds={lane.activeIds}
+              isQueueStalled={lane.isStalled}
               isTaskActive={lane.isTaskActive}
               isTranscriptLoading={lane.isTranscriptLoading}
               isMuted={false}
@@ -89,6 +91,8 @@ export const ResolverAgentsLane = ({
           {showCompleted && lane.completedEntries.length > 0 ? (
             <ResolverRows
               entries={lane.completedEntries}
+              activeIds={lane.activeIds}
+              isQueueStalled={lane.isStalled}
               isTaskActive={lane.isTaskActive}
               isTranscriptLoading={lane.isTranscriptLoading}
               isMuted

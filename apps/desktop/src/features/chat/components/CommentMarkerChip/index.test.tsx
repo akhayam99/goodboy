@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   wontfix: vi.fn<(text: string) => ReadonlyArray<unknown>>(() => []),
   replies: vi.fn<(text: string) => ReadonlyArray<{ threadId: string; body: string }>>(() => []),
   pending: [] as Array<{ threadId: string }>,
+  selectAgent: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/core', () => ({
@@ -24,11 +25,13 @@ vi.mock('../../../../store', () => ({
     selector: (state: {
       sessionGithub: Record<string, { detail: null }>;
       sessionPendingResolutions: Record<string, Array<{ threadId: string }>>;
+      selectAgent: typeof h.selectAgent;
     }) => T,
   ) =>
     selector({
       sessionGithub: { s: { detail: null } },
       sessionPendingResolutions: { s: h.pending },
+      selectAgent: h.selectAgent,
     }),
 }));
 
@@ -45,7 +48,7 @@ describe('CommentMarkerChip', () => {
     h.replies.mockReset();
     h.replies.mockReturnValue([]);
     h.pending = [];
-    localStorage.clear();
+    h.selectAgent.mockClear();
   });
 
   afterEach(cleanup);
@@ -78,10 +81,10 @@ describe('CommentMarkerChip', () => {
     expect(screen.getByText('fix recommended')).toBeDefined();
     expect(screen.getByText('Use the shared helper')).toBeDefined();
     expect(screen.queryByText('Proceed with fix')).toBeNull();
-    expect(screen.getByText('Manage in panel')).toBeDefined();
+    expect(screen.getAllByRole('button')).toEqual([screen.getByTestId('comment-analysis-open')]);
   });
 
-  it('opens the resolver inspector from the analysis manage link', () => {
+  it('selects the resolver and reveals its chat when the chip is clicked', () => {
     h.analysis.mockReturnValue([
       {
         threadId: 'PRRT_1',
@@ -89,8 +92,8 @@ describe('CommentMarkerChip', () => {
         summary: 'No change',
       },
     ]);
-    const onOpen = vi.fn();
-    window.addEventListener('goodboy:open-resolver-inspector', onOpen);
+    const reveal = vi.fn();
+    window.addEventListener('goodboy:reveal-chat', reveal);
     render(
       <CommentMarkerChip
         kind="analysis"
@@ -100,11 +103,18 @@ describe('CommentMarkerChip', () => {
       />,
     );
 
-    fireEvent.click(screen.getByTestId('comment-analysis-manage'));
+    fireEvent.click(screen.getByTestId('comment-analysis-open'));
 
-    const event = onOpen.mock.calls[0]?.[0] as CustomEvent;
-    expect(event.detail).toEqual({ sessionId: 's', agentId: 'agent-1' });
-    window.removeEventListener('goodboy:open-resolver-inspector', onOpen);
+    expect(h.selectAgent).toHaveBeenCalledWith('s', 'agent-1');
+    expect(reveal).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:reveal-chat', reveal);
+  });
+
+  it('stays inert without a resolver to navigate to', () => {
+    h.analysis.mockReturnValue([{ threadId: 'PRRT_1', verdict: 'fix', summary: 'Fix this' }]);
+    render(<CommentMarkerChip kind="analysis" assistantText="x" sessionId={'s' as never} />);
+
+    expect(screen.queryByTestId('comment-analysis-open')).toBeNull();
   });
 
   it('renders every analysis with its matching reply preview', () => {
@@ -146,13 +156,11 @@ describe('CommentMarkerChip', () => {
 
     expect(screen.getByText(/pending push/i)).toBeDefined();
     expect(screen.queryByText('Push now')).toBeNull();
-    expect(screen.getByText('Manage in panel')).toBeDefined();
+    expect(screen.getAllByRole('button')).toEqual([screen.getByTestId('comment-resolved-open')]);
   });
 
-  it('opens the resolver inspector from the resolved manage link', () => {
+  it('navigates to the resolver from a resolved chip', () => {
     h.resolved.mockReturnValue([{ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' }]);
-    const onOpen = vi.fn();
-    window.addEventListener('goodboy:open-resolver-inspector', onOpen);
     render(
       <CommentMarkerChip
         kind="resolved"
@@ -162,12 +170,9 @@ describe('CommentMarkerChip', () => {
       />,
     );
 
-    fireEvent.click(screen.getByTestId('comment-resolved-manage'));
+    fireEvent.click(screen.getByTestId('comment-resolved-open'));
 
-    expect(onOpen).toHaveBeenCalledOnce();
-    const event = onOpen.mock.calls[0]?.[0] as CustomEvent;
-    expect(event.detail).toEqual({ sessionId: 's', agentId: 'agent-1' });
-    window.removeEventListener('goodboy:open-resolver-inspector', onOpen);
+    expect(h.selectAgent).toHaveBeenCalledWith('s', 'agent-1');
   });
 
   it('renders every resolved thread with its matching reply preview', () => {
@@ -199,7 +204,7 @@ describe('CommentMarkerChip', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('keeps the wontfix status reason and replaces actions with a manage link', () => {
+  it('keeps the wontfix status reason and executes nothing', () => {
     h.wontfix.mockReturnValue([{ threadId: 'PRRT_1', reason: 'already covered upstream' }]);
     render(
       <CommentMarkerChip
@@ -212,13 +217,11 @@ describe('CommentMarkerChip', () => {
 
     expect(screen.getByText('already covered upstream')).toBeDefined();
     expect(screen.queryByRole('textbox')).toBeNull();
-    expect(screen.getByText('Manage in panel')).toBeDefined();
+    expect(screen.getAllByRole('button')).toEqual([screen.getByTestId('comment-wontfix-open')]);
   });
 
-  it('opens the resolver inspector from the wontfix manage link', () => {
+  it('navigates to the resolver from a wontfix chip', () => {
     h.wontfix.mockReturnValue([{ threadId: 'PRRT_1', reason: 'no change' }]);
-    const onOpen = vi.fn();
-    window.addEventListener('goodboy:open-resolver-inspector', onOpen);
     render(
       <CommentMarkerChip
         kind="wontfix"
@@ -228,11 +231,9 @@ describe('CommentMarkerChip', () => {
       />,
     );
 
-    fireEvent.click(screen.getByTestId('comment-wontfix-manage'));
+    fireEvent.click(screen.getByTestId('comment-wontfix-open'));
 
-    const event = onOpen.mock.calls[0]?.[0] as CustomEvent;
-    expect(event.detail).toEqual({ sessionId: 's', agentId: 'agent-1' });
-    window.removeEventListener('goodboy:open-resolver-inspector', onOpen);
+    expect(h.selectAgent).toHaveBeenCalledWith('s', 'agent-1');
   });
 
   it('renders every wontfix marker with its matching reply preview', () => {
@@ -247,20 +248,5 @@ describe('CommentMarkerChip', () => {
     expect(screen.getByText('PRRT_1')).toBeDefined();
     expect(screen.getByText('PRRT_2')).toBeDefined();
     expect(screen.getByTitle('The earlier commit covers this')).toBeDefined();
-  });
-
-  it('keeps a dismissed wontfix chip hidden after remount', () => {
-    h.wontfix.mockReturnValue([{ threadId: 'PRRT_1', reason: 'Already fixed' }]);
-    const firstRender = render(
-      <CommentMarkerChip kind="wontfix" assistantText="x" sessionId={'s' as never} />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'dismiss resolver status' }));
-    expect(screen.queryByText('Already fixed')).toBeNull();
-    firstRender.unmount();
-
-    render(<CommentMarkerChip kind="wontfix" assistantText="x" sessionId={'s' as never} />);
-
-    expect(screen.queryByText('Already fixed')).toBeNull();
   });
 });

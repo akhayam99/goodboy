@@ -1,3 +1,4 @@
+import type { AgentId } from '@goodboy/types';
 import type { ResolverLink, ResolverStatus } from '../../resolver-linkage';
 
 const SETTLED_STATUSES: ReadonlyArray<ResolverStatus> = ['resolved', 'stopped'];
@@ -16,3 +17,18 @@ export const resolverLaneEntries = ({ links }: Params) => {
     completed: newestFirst.filter(isResolverSettled),
   };
 };
+
+export const activeResolverIds = ({ links }: Params): ReadonlySet<AgentId> =>
+  new Set(links.filter((link) => !isResolverSettled(link)).map((link) => link.agent.id));
+
+export const hasOtherActiveResolver = ({
+  activeIds,
+  agentId,
+}: {
+  readonly activeIds: ReadonlySet<AgentId>;
+  readonly agentId: AgentId;
+}): boolean => activeIds.size > (activeIds.has(agentId) ? 1 : 0);
+
+export const isResolverQueueStalled = ({ links }: Params): boolean =>
+  links.some(({ agent }) => agent.status === 'pending') &&
+  !links.some(({ agent }) => agent.status === 'running');

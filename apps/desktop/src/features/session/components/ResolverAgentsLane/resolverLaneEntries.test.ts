@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import type { ResolverLink, ResolverStatus } from '../../resolver-linkage';
-import { resolverLaneEntries } from './resolverLaneEntries';
+import {
+  activeResolverIds,
+  hasOtherActiveResolver,
+  isResolverQueueStalled,
+  resolverLaneEntries,
+} from './resolverLaneEntries';
 
 const SESSION_ID = 'session-1' as SessionId;
 
@@ -10,13 +15,14 @@ const link = (
   ordinal: number,
   status: ResolverStatus,
   doneAt?: string,
+  agentStatus: Agent['status'] = 'completed',
 ): ResolverLink => ({
   agent: {
     id: id as AgentId,
     sessionId: SESSION_ID,
     ordinal,
     name: id,
-    status: 'completed',
+    status: agentStatus,
     ...(doneAt != null && { doneAt }),
   } as Agent,
   status,
@@ -67,5 +73,23 @@ describe('resolverLaneEntries', () => {
     });
 
     expect(entries.active.map(({ agent }) => agent.id)).toEqual(['new', 'old']);
+  });
+
+  it('tells one resolver whether anyone else is still working', () => {
+    const activeIds = activeResolverIds({
+      links: [link('a', 0, 'committed'), link('b', 1, 'resolved')],
+    });
+
+    expect(hasOtherActiveResolver({ activeIds, agentId: 'a' as AgentId })).toBe(false);
+    expect(hasOtherActiveResolver({ activeIds, agentId: 'b' as AgentId })).toBe(true);
+  });
+
+  it('calls the queue stalled only when something waits and nothing runs', () => {
+    const queued = link('queued', 0, 'pending', undefined, 'pending');
+    const running = link('running', 1, 'running', undefined, 'running');
+
+    expect(isResolverQueueStalled({ links: [queued] })).toBe(true);
+    expect(isResolverQueueStalled({ links: [queued, running] })).toBe(false);
+    expect(isResolverQueueStalled({ links: [running] })).toBe(false);
   });
 });
