@@ -33,6 +33,33 @@ export function useInView<T extends Element = HTMLDivElement>() {
   return { ref, inView };
 }
 
+/* Toggling variant for looping mockups: reports every intersection change so a
+   beat machine can hold its state while scrolled away instead of burning
+   timers. Defaults to visible when IntersectionObserver is unavailable. */
+export function useToggleInView<T extends Element = HTMLDivElement>() {
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(true);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      return undefined;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          setInView(entry.isIntersecting);
+        }
+      },
+      { threshold: 0.12 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return { ref, inView };
+}
+
 /* Self-contained single-block reveal. Use for one-shot blocks; for multi-part
    layouts drive `useInView` on the section and tag children `.reveal`. */
 export function Reveal({

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Eyebrow, SectionTitle } from '../components/ui';
 import { useInView } from '../components/Reveal';
+import { StageBoard } from '../mockups/StageBoard';
 
 type Card = {
   icon: ReactNode;
@@ -84,8 +85,8 @@ const CARDS: ReadonlyArray<Card> = [
     title: 'Hand off the whole job',
     body: (
       <>
-        <B>Compose once, run it again</B>. Each step takes the right model and effort, scouts fan
-        out on huge repos, and a big plan splits into clusters.
+        Give it the outcome and a <B>step budget</B>. After each result the orchestrator decides the
+        step that follows. The run <B>draws itself as a graph</B> and flags you when it blocks.
       </>
     ),
   },
@@ -94,8 +95,8 @@ const CARDS: ReadonlyArray<Card> = [
     title: 'Use every agent you pay for',
     body: (
       <>
-        Claude, Cursor, Codex, Gemini, OpenCode, and OpenRouter in <B>one session</B>, on your own
-        logins and keys. Set a budget cap and routing falls back when you hit it.
+        Six providers in <B>one session</B>, on your own logins and plans. Set a spending cap and
+        routing falls back when you hit it.
       </>
     ),
   },
@@ -107,15 +108,15 @@ export const Solutions = () => {
     <section
       id="solutions"
       ref={ref}
-      className={`reveal-group relative py-24 sm:py-28 ${inView ? 'is-visible' : ''}`}
+      className={`scene reveal-group relative ${inView ? 'is-visible' : ''}`}
     >
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto w-full max-w-5xl px-6">
         <div className="reveal max-w-2xl">
           <Eyebrow>Why it matters</Eyebrow>
           <SectionTitle>Three things you stop fighting</SectionTitle>
         </div>
 
-        <div className="reveal mt-12 grid gap-4 md:grid-cols-3" style={{ animationDelay: '120ms' }}>
+        <div className="reveal mt-10 grid gap-4 md:grid-cols-3" style={{ animationDelay: '120ms' }}>
           {CARDS.map((card) => (
             <div
               key={card.title}
@@ -130,6 +131,10 @@ export const Solutions = () => {
               <p className="text-[14.5px] leading-[1.6] text-muted-foreground">{card.body}</p>
             </div>
           ))}
+        </div>
+
+        <div className="reveal mx-auto mt-6 max-w-4xl" style={{ animationDelay: '220ms' }}>
+          <StageBoard />
         </div>
       </div>
     </section>

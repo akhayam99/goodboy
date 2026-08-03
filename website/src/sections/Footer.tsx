@@ -2,7 +2,7 @@ import { Logo } from '../components/Logo';
 
 export function Footer() {
   return (
-    <footer className="mt-8 border-t border-border-soft/60 bg-background py-10">
+    <footer className="border-t border-border-soft/60 bg-background py-10">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 px-6 sm:flex-row">
         <div className="flex flex-col items-center gap-1.5 sm:items-start sm:gap-4">
           <Logo size={22} />

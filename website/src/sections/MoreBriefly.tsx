@@ -10,27 +10,11 @@ const B = ({ children }: { children: ReactNode }) => (
 
 const ITEMS: ReadonlyArray<Item> = [
   {
-    k: 'Scout fan-out',
-    v: (
-      <>
-        On a huge repo, a scout splits into <B>parallel child scouts</B> to survey more at once.
-      </>
-    ),
-  },
-  {
-    k: 'Plan clusters',
-    v: (
-      <>
-        When a plan splits into clusters, the implementer runs <B>one agent per cluster</B>.
-      </>
-    ),
-  },
-  {
     k: 'Stage board',
     v: (
       <>
-        The home sorts every session by <B>what it needs</B>: attention, running, in review,
-        building, done.
+        The home sorts every session by <B>what it needs</B>: building, running, needs you, in
+        review, done.
       </>
     ),
   },
@@ -43,44 +27,37 @@ const ITEMS: ReadonlyArray<Item> = [
     ),
   },
   {
-    k: 'Budget register',
+    k: 'Impact Studio',
     v: (
       <>
-        One dashboard totals your spend <B>per provider</B>, against the caps you set.
+        Outcome and flow analytics on the work you <B>shipped</B>, last 30 days or all time.
       </>
     ),
   },
   {
-    k: 'GPU terminal',
+    k: 'Model picker',
     v: (
       <>
-        A real <B>login shell</B> on xterm 6, GPU-rendered, multi-tab, spawned on demand.
+        Every provider's catalog in one picker: <B>families, versions, and an effort ladder</B>,
+        each model under its authored name.
       </>
     ),
   },
   {
-    k: 'Composite workspaces',
+    k: 'Workspaces, plain or composite',
     v: (
       <>
-        Run one session across <B>many repos</B>, one chat, a branch checked out per repo.
+        Start <B>without a repo</B> and convert later, run one session across many repos, or pop a
+        workspace into its own window.
       </>
     ),
   },
   {
-    k: 'Mobile companion',
+    k: 'Tool permissions',
     v: (
       <>
-        Spawn a workflow or merge a PR <B>from your phone</B>. A companion, not a full app.
-      </>
-    ),
-  },
-  {
-    k: 'Integrations',
-    v: (
-      <>
-        GitHub, GitLab, Linear and Sentry issues turn into a session with the{' '}
-        <B>goal and branch already written</B>. Pull requests and merge requests feed a review inbox
-        instead.
+        <B>Allow, deny, or ask</B> per tool, scoped global, workspace, or session. Enforced on
+        Claude sessions first.
       </>
     ),
   },
@@ -92,16 +69,16 @@ export const MoreBriefly = () => {
     <section
       id="more"
       ref={ref}
-      className={`reveal-group relative py-24 sm:py-28 ${inView ? 'is-visible' : ''}`}
+      className={`scene reveal-group relative ${inView ? 'is-visible' : ''}`}
     >
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto w-full max-w-5xl px-6">
         <div className="reveal max-w-2xl">
           <Eyebrow>Everything else</Eyebrow>
           <SectionTitle>The rest, briefly</SectionTitle>
         </div>
 
         <dl
-          className="reveal mt-12 grid gap-x-10 gap-y-7 sm:grid-cols-2"
+          className="reveal mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3"
           style={{ animationDelay: '100ms' }}
         >
           {ITEMS.map((it) => (

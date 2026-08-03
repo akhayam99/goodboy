@@ -5,10 +5,6 @@ import { useInView } from '../components/Reveal';
 const RELEASES_LATEST = 'https://github.com/akhayam99/goodboy/releases/latest';
 const LATEST_RELEASE_API = 'https://api.github.com/repos/akhayam99/goodboy/releases/latest';
 
-// The .dmg asset is version-stamped (Goodboy_<version>_universal.dmg), so no
-// static URL points at it. Resolve the latest release's dmg asset at runtime
-// and hand back its direct download link; fall back to the releases page if the
-// GitHub API is unreachable or rate-limited.
 function useLatestDmgUrl(): { href: string; direct: boolean } {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -58,9 +54,9 @@ export function CTA() {
     <section
       id="cta"
       ref={ref}
-      className={`reveal-group relative py-28 sm:py-36 ${inView ? 'is-visible' : ''}`}
+      className={`scene reveal-group relative ${inView ? 'is-visible' : ''}`}
     >
-      <div className="reveal mx-auto max-w-3xl px-6 text-center">
+      <div className="reveal mx-auto w-full max-w-3xl px-6 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.10em] text-muted-foreground">
           Open source, MIT
         </p>
@@ -72,7 +68,7 @@ export function CTA() {
           Connect a command-line tool you already use and you&apos;re running in a minute.
         </p>
 
-        <div className="mx-auto mt-11 max-w-lg pointer-fine:hidden">
+        <div className="mx-auto mt-12 max-w-lg pointer-fine:hidden">
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             When you&apos;re on your Mac
           </p>
@@ -108,9 +104,7 @@ export function CTA() {
           </div>
         </div>
 
-        <div className="mx-auto mt-11 hidden max-w-lg pointer-fine:block">
-          {/* macOS: the primary path. dmg.direct → straight to the file; the
-              fallback releases page opens in a new tab. */}
+        <div className="mx-auto mt-12 hidden max-w-lg pointer-fine:block">
           <LinkButton
             href={dmg.href}
             target={dmg.direct ? undefined : '_blank'}
@@ -134,7 +128,6 @@ export function CTA() {
             </code>
           </div>
 
-          {/* Linux & Windows: build from source */}
           <div className="mt-9 text-left">
             <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Linux &amp; Windows &middot; from source
@@ -148,12 +141,12 @@ export function CTA() {
               ))}
             </TerminalFrame>
             <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
-              Needs a Rust toolchain &middot; prebuilt binaries coming soon
+              Needs a Rust toolchain. Prebuilt binaries for Linux and Windows coming.
             </p>
           </div>
         </div>
 
-        <div className="mt-11 hidden flex-col items-center justify-center gap-3 pointer-fine:flex sm:flex-row">
+        <div className="mt-10 hidden flex-col items-center justify-center gap-3 pointer-fine:flex sm:flex-row">
           <LinkButton
             href="https://github.com/akhayam99/goodboy"
             target="_blank"

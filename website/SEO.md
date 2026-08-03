@@ -21,9 +21,9 @@ Questo file descrive tutto ciò che serve a un agente (o a te) per mantenere, ag
 
 ## Dominio di produzione
 
-Placeholder attuale: `https://goodboy.dev/`
+Dominio reale: `https://goodboy-ai.dev/`
 
-Quando il dominio cambia, cerca e sostituisci `goodboy.dev` in:
+Se il dominio cambia di nuovo, cerca e sostituisci `goodboy-ai.dev` in:
 
 - `public/robots.txt` (Sitemap:)
 - `public/sitemap.xml` (<loc>)
@@ -31,7 +31,7 @@ Quando il dominio cambia, cerca e sostituisci `goodboy.dev` in:
 
 ```bash
 # find & replace rapido
-grep -rn "goodboy.dev" website/public/ website/index.html
+grep -rn "goodboy-ai.dev" website/public/ website/index.html
 ```
 
 ---
@@ -40,7 +40,7 @@ grep -rn "goodboy.dev" website/public/ website/index.html
 
 ### Problema attuale
 
-`og:image` punta a `https://goodboy.dev/og-image.png`. Il file PNG non esiste ancora . c'è solo `og-image.svg` (placeholder usabile in sviluppo, non valido per crawler che richiedono PNG/JPG).
+`og:image` punta a `https://goodboy-ai.dev/og-image.png`. Il file PNG non esiste ancora . c'è solo `og-image.svg` (placeholder usabile in sviluppo, non valido per crawler che richiedono PNG/JPG).
 
 ### Come generare il PNG
 
@@ -86,14 +86,14 @@ Tutti i meta risiedono in `website/index.html` (app SPA . unico HTML). Non ci so
 2. meta description  . 120–160 char, include differenziator principale
 3. og:title/desc     . può essere leggermente più lungo del <title>
 4. twitter:*         . stessa copia di OG (summary_large_image)
-5. canonical         . https://goodboy.dev/ sempre con trailing slash
+5. canonical         . https://goodboy-ai.dev/ sempre con trailing slash
 6. JSON-LD           . SoftwareApplication schema
 ```
 
 ### Regole di copy SEO
 
 - keyword primaria nella prima frase: "AI workspace orchestrator"
-- keyword secondarie: "local-first", "multi-agent", "Claude Cursor Codex Gemini", "developer tools"
+- keyword secondarie: "local-first", "multi-agent", "Claude Cursor Codex Antigravity", "developer tools"
 - niente keyword stuffing: le parole chiave vanno nei testi del sito, non solo nei meta
 - `<title>` format: `[Product] . [tagline corta]` (es. "Goodboy . AI workspace orchestrator")
 
@@ -151,7 +151,7 @@ Non bloccare mai `/` o le risorse statiche (CSS/JS/immagini) . penalizza il rend
 
 ## Checklist pre-deploy
 
-- [ ] Sostituire `goodboy.dev` con il dominio reale
+- [x] Sostituire `goodboy.dev` con il dominio reale (`goodboy-ai.dev`)
 - [ ] Generare `public/og-image.png` (1200×630 px, < 8 MB)
 - [ ] Verificare JSON-LD con Google Rich Results Test
 - [ ] Aggiornare `<lastmod>` in `sitemap.xml` con la data di deploy
@@ -196,9 +196,9 @@ Se si aggiungono immagini reali (screenshots dell'app):
 
 Il sito è English-only. Se si aggiunge l'italiano:
 
-- aggiungere `<link rel="alternate" hreflang="it" href="https://goodboy.dev/it/" />`
-- aggiungere `<link rel="alternate" hreflang="en" href="https://goodboy.dev/" />`
-- aggiungere `<link rel="alternate" hreflang="x-default" href="https://goodboy.dev/" />`
+- aggiungere `<link rel="alternate" hreflang="it" href="https://goodboy-ai.dev/it/" />`
+- aggiungere `<link rel="alternate" hreflang="en" href="https://goodboy-ai.dev/" />`
+- aggiungere `<link rel="alternate" hreflang="x-default" href="https://goodboy-ai.dev/" />`
 
 ---
 

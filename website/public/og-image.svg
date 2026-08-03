@@ -23,10 +23,10 @@
   <rect x="80" y="58" width="58" height="58" fill="url(#teal)" mask="url(#dog)"/>
   <text x="152" y="98" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="31" font-weight="600" fill="#eef3f7" letter-spacing="-0.5">Goodboy</text>
 
-  <text x="78" y="322" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="84" font-weight="700" fill="#f1f5f9" letter-spacing="-3.2">Every AI agent,</text>
-  <text x="78" y="416" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="84" font-weight="700" fill="url(#teal)" letter-spacing="-3.2">one shared brain.</text>
+  <text x="78" y="322" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="84" font-weight="700" fill="#f1f5f9" letter-spacing="-3.2">Goodboy remembers,</text>
+  <text x="78" y="416" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="84" font-weight="700" fill="url(#teal)" letter-spacing="-3.2">so you don&#8217;t have to.</text>
 
-  <text x="80" y="482" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="25" font-weight="400" fill="#9aa6b4" letter-spacing="-0.2">One session for Claude, Cursor, Codex and Gemini. Shared context, plans, live cost.</text>
+  <text x="80" y="482" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="25" font-weight="400" fill="#9aa6b4" letter-spacing="-0.2">One session for Claude, Cursor, Codex and Antigravity. Shared context, plans, live cost.</text>
 
   <text x="80" y="566" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="23" font-weight="600" fill="#cfe8ea" letter-spacing="-0.1">goodboy-ai.dev</text>
   <text x="248" y="566" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="23" font-weight="400" fill="#6b7585" letter-spacing="-0.1">open source &#183; local-first</text>
