@@ -158,13 +158,15 @@ export const CommentMarkerChipItem = ({ marker, reply, sessionId, agentId }: Pro
     <TranscriptShell
       tone="warning"
       variant="boxed"
-      className="flex flex-wrap items-center gap-1.5 text-xs"
+      className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs"
     >
       <Ban size={12} aria-hidden className={tintClasses('warning').icon} />
       <span className="font-medium text-foreground">not worth a change</span>
-      <span className="font-mono text-2xs text-muted-foreground">{threadId}</span>
-      <span className="min-w-0 flex-1 text-muted-foreground">{marker.value.reason}</span>
-      <div className="flex items-center justify-end gap-1">{actions}</div>
+      <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">{threadId}</span>
+      <div className="ml-auto flex shrink-0 items-center gap-1">{actions}</div>
+      <span className="basis-full text-2xs leading-relaxed text-muted-foreground">
+        {marker.value.reason}
+      </span>
       {reply === null ? null : <CommentReplyPreview body={reply} />}
     </TranscriptShell>
   );

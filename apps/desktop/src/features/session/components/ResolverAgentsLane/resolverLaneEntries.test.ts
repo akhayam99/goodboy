@@ -5,13 +5,19 @@ import { resolverLaneEntries } from './resolverLaneEntries';
 
 const SESSION_ID = 'session-1' as SessionId;
 
-const link = (id: string, ordinal: number, status: ResolverStatus): ResolverLink => ({
+const link = (
+  id: string,
+  ordinal: number,
+  status: ResolverStatus,
+  doneAt?: string,
+): ResolverLink => ({
   agent: {
     id: id as AgentId,
     sessionId: SESSION_ID,
     ordinal,
     name: id,
     status: 'completed',
+    ...(doneAt != null && { doneAt }),
   } as Agent,
   status,
 });
@@ -26,7 +32,7 @@ describe('resolverLaneEntries', () => {
     expect(entries.completed.map(({ agent }) => agent.id)).toEqual(['resolved']);
   });
 
-  it('counts wontfix, stopped and done as completed', () => {
+  it('keeps a resolver active until its thread is settled or the operator says so', () => {
     const entries = resolverLaneEntries({
       links: [
         link('wontfix', 0, 'wontfix'),
@@ -37,8 +43,22 @@ describe('resolverLaneEntries', () => {
       ],
     });
 
-    expect(entries.completed.map(({ agent }) => agent.id)).toEqual(['done', 'stopped', 'wontfix']);
-    expect(entries.active.map(({ agent }) => agent.id)).toEqual(['committed', 'awaiting']);
+    expect(entries.completed.map(({ agent }) => agent.id)).toEqual(['stopped']);
+    expect(entries.active.map(({ agent }) => agent.id)).toEqual([
+      'committed',
+      'awaiting',
+      'done',
+      'wontfix',
+    ]);
+  });
+
+  it('takes the operator marking one done as the final word', () => {
+    const entries = resolverLaneEntries({
+      links: [link('explained', 0, 'wontfix', '2026-08-03T10:00:00.000Z')],
+    });
+
+    expect(entries.completed.map(({ agent }) => agent.id)).toEqual(['explained']);
+    expect(entries.active).toEqual([]);
   });
 
   it('orders each side newest first', () => {

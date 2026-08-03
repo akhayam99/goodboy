@@ -17,6 +17,7 @@ const AGENT = {
 
 const h = vi.hoisted(() => ({
   pending: [] as Array<{ threadId: string; commitSha: string }>,
+  outcomes: {} as Record<string, Record<string, unknown>>,
   resolveGithubThread: vi.fn(async () => true),
   resolveAgentThreads: vi.fn(async () => true),
   queueResolution: vi.fn(async () => undefined),
@@ -41,7 +42,7 @@ vi.mock('../../../../store', () => ({
       agentTurnState: {},
       sessionGithub: { [SESSION_ID]: { pr: { number: 7 } } },
       sessionPendingResolutions: { [SESSION_ID]: h.pending },
-      resolverThreadOutcomes: {},
+      resolverThreadOutcomes: h.outcomes,
     }),
 }));
 
@@ -68,6 +69,7 @@ describe('ResolverActions', () => {
   afterEach(() => {
     cleanup();
     h.pending = [];
+    h.outcomes = {};
     vi.clearAllMocks();
   });
 
@@ -128,6 +130,23 @@ describe('ResolverActions', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'resolution explanation' }), {
       target: { value: 'covered by the follow up' },
     });
+    expect(screen.getByRole('button', { name: 'Post & close' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+  });
+
+  it('opens the explanation on what the resolver already wrote', () => {
+    h.outcomes = {
+      [AGENT.id]: { PRRT_1: { kind: 'wontfix', reason: 'deferred to the next chapter' } },
+    };
+    renderActions({ status: 'wontfix' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Post explanation & close' }));
+
+    expect(
+      (screen.getByRole('textbox', { name: 'resolution explanation' }) as HTMLTextAreaElement)
+        .value,
+    ).toBe('deferred to the next chapter');
     expect(screen.getByRole('button', { name: 'Post & close' }).hasAttribute('disabled')).toBe(
       false,
     );

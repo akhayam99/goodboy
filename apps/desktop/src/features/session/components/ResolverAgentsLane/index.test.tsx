@@ -78,6 +78,7 @@ import { ResolverAgentsLane } from './index';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;
+const DONE_AT = '2026-08-03T10:00:00.000Z' as Agent['doneAt'];
 
 const session = {
   id: SESSION_ID,
@@ -190,6 +191,7 @@ describe('ResolverAgentsLane', () => {
         name: 'done old',
         ordinal: 1,
         status: 'completed',
+        doneAt: DONE_AT,
       }),
       buildResolver({ id: 'active-new' as AgentId, name: 'active new', ordinal: 2 }),
       buildResolver({
@@ -197,6 +199,7 @@ describe('ResolverAgentsLane', () => {
         name: 'done new',
         ordinal: 3,
         status: 'completed',
+        doneAt: DONE_AT,
       }),
     ]);
     renderLane({ showCompleted: true });
@@ -212,14 +215,33 @@ describe('ResolverAgentsLane', () => {
     ).toEqual(['false', 'false', 'true', 'true']);
   });
 
-  it('shows the active empty state when its last resolver finishes', () => {
+  it('keeps a resolver active while its thread is still open', () => {
+    setResolvers([
+      buildResolver({
+        id: 'explained' as AgentId,
+        name: 'explained resolver',
+        status: 'completed',
+      }),
+    ]);
+    renderLane();
+
+    expect(screen.getByTestId('resolver-row').textContent).toBe('explained resolver');
+    expect(screen.queryByText('No active resolvers')).toBeNull();
+  });
+
+  it('shows the active empty state once its last resolver is marked done', () => {
     setResolvers([buildResolver({ id: 'solo' as AgentId, name: 'solo resolver' })]);
     const view = renderLane();
 
     expect(screen.getByTestId('resolver-row').textContent).toBe('solo resolver');
 
     setResolvers([
-      buildResolver({ id: 'solo' as AgentId, name: 'solo resolver', status: 'completed' }),
+      buildResolver({
+        id: 'solo' as AgentId,
+        name: 'solo resolver',
+        status: 'completed',
+        doneAt: DONE_AT,
+      }),
     ]);
     view.rerender(
       <ResolverAgentsLane
@@ -234,7 +256,12 @@ describe('ResolverAgentsLane', () => {
 
   it('hides completed resolvers by default', () => {
     setResolvers([
-      buildResolver({ id: 'done' as AgentId, name: 'done resolver', status: 'completed' }),
+      buildResolver({
+        id: 'done' as AgentId,
+        name: 'done resolver',
+        status: 'completed',
+        doneAt: DONE_AT,
+      }),
     ]);
     renderLane();
 

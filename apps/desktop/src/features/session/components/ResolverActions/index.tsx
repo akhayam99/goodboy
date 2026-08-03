@@ -89,15 +89,23 @@ export const ResolverActions = ({
   const pending =
     useAppStore((state) => state.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
   const outcomes = useAppStore((state) => state.resolverThreadOutcomes[agent.id]) ?? EMPTY_OUTCOMES;
-  const [reason, setReason] = useState('');
+  const [edited, setEdited] = useState<string | null>(null);
   const [armed, setArmed] = useState<ResolverActionKind | null>(null);
 
   useEffect(() => {
-    setReason('');
+    setEdited(null);
     setArmed(null);
   }, [agent.id]);
 
   const threadIds = agentThreadIds(agent);
+  const explanationFromAgent = threadIds
+    .map((id) => {
+      const outcome = outcomes[id];
+      return outcome?.kind === 'wontfix' ? outcome.reason : null;
+    })
+    .find((value) => value != null && value.trim() !== '');
+  const reason = edited ?? explanationFromAgent ?? '';
+
   const threadId = threadIds[0] ?? null;
   const pendingResolutions = pending.filter((resolution) =>
     threadIds.includes(resolution.threadId),
@@ -165,7 +173,7 @@ export const ResolverActions = ({
           trimmed !== '' ? { reason: trimmed } : {},
         );
       }
-      setReason('');
+      setEdited(null);
       return;
     }
     if (kind === 'proceed') {
@@ -189,7 +197,7 @@ export const ResolverActions = ({
       void run(action.kind);
       return;
     }
-    setReason('');
+    setEdited(null);
     setArmed(action.kind);
   };
 
@@ -248,7 +256,7 @@ export const ResolverActions = ({
             armedAction.reason === null ? undefined : (
               <Textarea
                 value={reason}
-                onChange={(event) => setReason(event.target.value)}
+                onChange={(event) => setEdited(event.target.value)}
                 aria-label={
                   threadIds.length > 1
                     ? `resolution explanation for all ${threadIds.length} threads`
