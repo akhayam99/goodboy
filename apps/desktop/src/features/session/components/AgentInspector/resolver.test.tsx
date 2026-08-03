@@ -472,6 +472,70 @@ describe('AgentInspector (resolver)', () => {
     expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'files');
   });
 
+  it('opens each file at the commit its own thread was fixed in', async () => {
+    reset({
+      settledThreadIds: ['PRRT_3', 'PRRT_4'],
+      resolverState: { [SETTLED_ID]: 'committed' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'resolved', commitSha: 'abc1234def' },
+          PRRT_4: { kind: 'resolved', commitSha: 'other12345' },
+        },
+      },
+    });
+    h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT, OTHER_AGENT_HEAD]);
+    h.runtime.events = [
+      { ...fileEdit, path: 'src/first.ts', at: '2026-07-25T09:01:00.000Z' as IsoDateTime },
+      {
+        ...resolvedMarker,
+        delta: '<<comment-resolved threadId="PRRT_3" commitSha="abc1234def" />>',
+        at: '2026-07-25T09:02:00.000Z' as IsoDateTime,
+      },
+      { ...fileEdit, path: 'src/second.ts', at: '2026-07-25T09:03:00.000Z' as IsoDateTime },
+      {
+        ...resolvedMarker,
+        delta: '<<comment-resolved threadId="PRRT_4" commitSha="other12345" />>',
+        at: '2026-07-25T09:04:00.000Z' as IsoDateTime,
+      },
+    ];
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'src/second.ts' }));
+
+    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+      sha: 'other12345',
+      path: 'src/second.ts',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'src/first.ts' }));
+
+    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+      sha: 'abc1234def',
+      path: 'src/first.ts',
+    });
+  });
+
+  it('reads a thread github already closed as closed and offers nothing on it', () => {
+    reset({
+      settledThreadIds: ['PRRT_3', 'PRRT_4'],
+      resolvedThreadIds: ['PRRT_3'],
+      resolverState: { [SETTLED_ID]: 'awaiting' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'resolved', commitSha: 'abc1234def', reply: 'guarded the null case' },
+          PRRT_4: { kind: 'wontfix', reason: 'the branch is unreachable' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText('closed')).toBeDefined();
+    expect(screen.queryByText('fixed')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add to batch' })).toBeNull();
+    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Post & close' })).toBeDefined();
+  });
+
   it('opens the diff lens at a reported sha the branch does not carry', () => {
     h.runtime.events = [resolvedMarker];
     renderInspector(RUNNING_ID);

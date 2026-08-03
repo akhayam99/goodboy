@@ -11,6 +11,7 @@ vi.mock('../../../../store', () => ({
     selector({
       agentTurnState: {},
       sessionGithub: { 'sess-1': { pr: { number: 7 } } },
+      sessionResolvedThreads: {},
       sessionPendingResolutions: {},
       resolverThreadOutcomes: {},
       resolveGithubThread: vi.fn(),

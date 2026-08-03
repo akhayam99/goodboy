@@ -6,7 +6,10 @@ export type ResolverThreadTally = {
   readonly wontfix: number;
   readonly analyzed: number;
   readonly open: number;
+  readonly closed: number;
   readonly settled: number;
+  readonly closable: number;
+  readonly pushable: number;
   readonly isMixed: boolean;
 };
 
@@ -20,7 +23,12 @@ export const resolverThreadTally = ({ settlements }: Params): ResolverThreadTall
   const resolved = countOf('resolved');
   const wontfix = countOf('wontfix');
   const analyzed = countOf('analyzed');
-  const open = countOf('open');
+  const open = settlements.filter(
+    (settlement) => settlement.kind === 'open' && !settlement.isClosed,
+  ).length;
+  const closed = settlements.filter(
+    (settlement) => settlement.kind === 'open' && settlement.isClosed,
+  ).length;
   const buckets = [resolved, wontfix, analyzed, open].filter((count) => count > 0).length;
   return {
     total: settlements.length,
@@ -28,7 +36,13 @@ export const resolverThreadTally = ({ settlements }: Params): ResolverThreadTall
     wontfix,
     analyzed,
     open,
+    closed,
     settled: resolved + wontfix + analyzed,
+    closable: settlements.filter((settlement) => settlement.kind !== 'open' && !settlement.isClosed)
+      .length,
+    pushable: settlements.filter(
+      (settlement) => settlement.kind === 'resolved' && !settlement.isClosed,
+    ).length,
     isMixed: settlements.length > 1 && buckets > 1,
   };
 };

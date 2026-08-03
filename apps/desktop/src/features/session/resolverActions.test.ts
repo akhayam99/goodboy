@@ -31,6 +31,7 @@ const settlement = (
   reason: kind === 'wontfix' ? 'intentional' : null,
   reply: null,
   isQueued: false,
+  isClosed: false,
 });
 
 const tallyOf = (...kinds: ReadonlyArray<ResolverThreadSettlement['kind']>) =>
@@ -151,6 +152,42 @@ describe('resolverActionPlan', () => {
 
     expect(inspector.primary?.label).toBe('Push & resolve 2');
     expect(inspector.secondary?.label).toBe('Add 1 to batch');
+    expect(inspector.note).toBe('1 thread still needs you');
+  });
+
+  it('counts a thread github already closed out of the push and the batch', () => {
+    const inspector = resolverActionPlan({
+      ...base,
+      status: 'committed',
+      tally: resolverThreadTally({
+        settlements: [
+          { ...settlement('PRRT_1', 'resolved'), isClosed: true },
+          settlement('PRRT_2', 'resolved'),
+          { ...settlement('PRRT_3', 'open'), isClosed: true },
+          settlement('PRRT_4', 'open'),
+        ],
+      }),
+    });
+
+    expect(inspector.primary?.label).toBe('Push & resolve 1');
+    expect(inspector.secondary?.label).toBe('Add 1 to batch');
+    expect(inspector.note).toBe('1 thread still needs you');
+  });
+
+  it('offers no push when every fix it recorded is already closed', () => {
+    const inspector = resolverActionPlan({
+      ...base,
+      status: 'committed',
+      tally: resolverThreadTally({
+        settlements: [
+          { ...settlement('PRRT_1', 'resolved'), isClosed: true },
+          settlement('PRRT_2', 'open'),
+        ],
+      }),
+    });
+
+    expect(inspector.primary).toBeNull();
+    expect(inspector.secondary).toBeNull();
     expect(inspector.note).toBe('1 thread still needs you');
   });
 

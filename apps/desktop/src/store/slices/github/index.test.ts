@@ -511,6 +511,7 @@ describe('store contract', () => {
         sidebarProviderFilter: [],
         githubStatus: null,
         sessionGithub: {},
+        sessionResolvedThreads: {},
         sessionGithubPrs: {},
         sessionSelectedPrNumber: {},
         volatilePermissionAllows: new Set<string>(),
@@ -1086,6 +1087,117 @@ describe('store contract', () => {
         .sort();
       expect(closedThreadIds).toEqual(['PRRT_1', 'PRRT_2']);
       expect(store.getState().notifications[0]?.title).toBe('1 thread left open');
+    });
+
+    it('resolveAgentThreads never posts a second reply on a thread already closed', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        notifications: [],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1', 'PRRT_2'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+            PRRT_2: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+          },
+        },
+        sessionResolvedThreads: { [SESSION_ID]: ['PRRT_1'] },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValue([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(addReplySpy).toHaveBeenCalledOnce();
+      expect(resolveThreadSpy).toHaveBeenCalledOnce();
+      const closedFirst = (resolveThreadSpy.mock.calls as ReadonlyArray<ReadonlyArray<unknown>>)[0];
+      expect(String(closedFirst?.[1])).toBe('PRRT_2');
+      expect(store.getState().notifications).toEqual([]);
+    });
+
+    it('resolveAgentThreads leaves a thread github already closed out of the push', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        notifications: [],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1', 'PRRT_2'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+            PRRT_2: { kind: 'wontfix', reason: 'the behavior is intentional' },
+          },
+        },
+        sessionGithub: {
+          [SESSION_ID]: {
+            pr: null,
+            linkedIssues: [],
+            fetchedAt: null,
+            loading: false,
+            error: null,
+            detail: {
+              prNumber: 1,
+              comments: [
+                {
+                  id: 'c1',
+                  author: 'reviewer',
+                  authorAvatarUrl: null,
+                  body: 'already handled',
+                  createdAt: NOW,
+                  url: 'https://github.com/x/y/pull/1#discussion_r1',
+                  source: 'review',
+                  threadId: 'PRRT_2',
+                  resolved: true,
+                },
+              ],
+              reviews: [],
+              reviewRequests: [],
+              checks: [],
+            },
+            detailFetchedAt: null,
+            detailLoading: false,
+            detailError: null,
+          },
+        },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValue([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(true);
+      expect(resolveThreadSpy).toHaveBeenCalledOnce();
+      const closedOnly = (resolveThreadSpy.mock.calls as ReadonlyArray<ReadonlyArray<unknown>>)[0];
+      expect(String(closedOnly?.[1])).toBe('PRRT_1');
+      expect(store.getState().notifications).toEqual([]);
     });
 
     it('resolveAgentThreads never closes a thread without a reply to post', async () => {

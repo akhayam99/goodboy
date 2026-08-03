@@ -10,6 +10,7 @@ import {
   type ResolverState,
   type ResolverStatus,
 } from '../../resolver-linkage';
+import { useClosedThreadIds } from '../useClosedThreadIds';
 
 export const useResolverIndex = (sessionId: SessionId): ResolverIndex => {
   const phaseRuns = useAppStore(
@@ -31,17 +32,7 @@ export const useResolverIndex = (sessionId: SessionId): ResolverIndex => {
       return out;
     }),
   );
-  const resolvedThreadIds = useAppStore(
-    useShallow(
-      (s) =>
-        new Set([
-          ...(s.sessionGithub[sessionId]?.detail?.comments ?? [])
-            .filter((c) => c.resolved === true && c.threadId != null)
-            .map((c) => c.threadId as string),
-          ...(s.sessionResolvedThreads[sessionId] ?? []),
-        ]),
-    ),
-  );
+  const resolvedThreadIds = useClosedThreadIds({ sessionId });
   const pendingThreadIds = useAppStore(
     useShallow(
       (s) => new Set((s.sessionPendingResolutions[sessionId] ?? []).map((r) => r.threadId)),

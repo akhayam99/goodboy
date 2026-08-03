@@ -72,6 +72,9 @@ export const resolverThreadActions = ({
   prNumber,
   isBusy,
 }: Params): ResolverThreadActionPlan => {
+  if (settlement.isClosed) {
+    return { primary: null, overflow: [] };
+  }
   if (settlement.kind === 'resolved') {
     return {
       primary: settlement.isQueued ? DEQUEUE : queueAction({ isEnabled: prNumber !== null }),

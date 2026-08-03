@@ -1,9 +1,10 @@
-import { Ban, CheckCheck, CircleHelp, Search } from 'lucide-react';
+import { Ban, CheckCheck, CircleHelp, Lock, Search } from 'lucide-react';
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import type { ResolverThreadSettlementKind } from '../../resolverThreadSettlements';
 
 type Props = {
   readonly kind: ResolverThreadSettlementKind;
+  readonly isClosed: boolean;
 };
 
 const COPY: Record<ResolverThreadSettlementKind, string> = {
@@ -27,9 +28,13 @@ const ICON = {
   open: CircleHelp,
 } satisfies Record<ResolverThreadSettlementKind, typeof CheckCheck>;
 
-export const ResolverOutcomeChip = ({ kind }: Props) => {
-  const tint = tintClasses(TONE[kind]);
-  const Icon = ICON[kind];
+const CLOSED_COPY = 'closed';
+
+const CLOSED_TONE: Tone = 'success';
+
+export const ResolverOutcomeChip = ({ kind, isClosed }: Props) => {
+  const tint = tintClasses(isClosed ? CLOSED_TONE : TONE[kind]);
+  const Icon = isClosed ? Lock : ICON[kind];
 
   return (
     <span
@@ -40,7 +45,7 @@ export const ResolverOutcomeChip = ({ kind }: Props) => {
       )}
     >
       <Icon size={10} aria-hidden />
-      {COPY[kind]}
+      {isClosed ? CLOSED_COPY : COPY[kind]}
     </span>
   );
 };
