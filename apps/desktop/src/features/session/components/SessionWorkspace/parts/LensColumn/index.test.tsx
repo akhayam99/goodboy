@@ -44,6 +44,7 @@ const { hooks, remote, store } = vi.hoisted(() => {
       archiveTask: vi.fn(async () => undefined),
       deleteTask: vi.fn(async () => undefined),
       unarchiveTask: vi.fn(async () => undefined),
+      setCurrentSession: vi.fn(async () => undefined),
     },
   };
 });
@@ -120,6 +121,7 @@ vi.mock('../SessionGitActions', () => ({
 
 import { LensColumn } from './index';
 import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
+import { SessionSidebarCollapsedContext } from '../../../../../workspace/hooks/useSessionSidebarVisibility/collapsed';
 
 const SESSION = {
   id: 'session-1',
@@ -152,6 +154,7 @@ beforeEach(() => {
   store.archiveTask.mockClear();
   store.deleteTask.mockClear();
   store.unarchiveTask.mockClear();
+  store.setCurrentSession.mockClear();
 });
 
 afterEach(cleanup);
@@ -762,6 +765,39 @@ describe('LensColumn', () => {
       expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
     }
     expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
+  });
+
+  it('hides the icon-only board escape hatch when the sidebar is not collapsed', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'back to board' })).toBeNull();
+  });
+
+  it('shows an icon-only board escape hatch next to Overview when the sidebar is collapsed, and it navigates back to the board', () => {
+    render(
+      <SessionSidebarCollapsedContext value>
+        <LensColumn
+          session={SESSION}
+          activeLens={null}
+          onSelectOverview={vi.fn()}
+          onSelect={vi.fn()}
+          filesCount={0}
+        />
+      </SessionSidebarCollapsedContext>,
+    );
+
+    const backToBoard = screen.getByRole('button', { name: 'back to board' });
+    expect(backToBoard.className).toContain('shrink-0');
+    fireEvent.click(backToBoard);
+    expect(store.setCurrentSession).toHaveBeenCalledWith(null);
   });
 });
 
