@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Unlink } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
-import { Button, Divider, EmptyState, InlineConfirm } from '@goodboy/ui';
+import { Button, Divider, InlineConfirm } from '@goodboy/ui';
+import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { openUrl } from '../../../../../../shared/lib/editor';
@@ -117,24 +118,20 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
           )
         ) : null}
         {connection.isConnected && !hasTasks ? (
-          <EmptyState
-            icon={CONCEPT_ICONS.integrations}
-            tone={CONCEPT_TONE.integrations}
-            bordered
-            className="px-6 py-8"
-            title={`No ${meta.label} issues linked`}
-            description={`Search your assigned ${meta.label} issues or paste a URL to link one to this session.`}
-            action={
-              <div className="flex w-full max-w-md flex-col gap-3 text-left">
-                <LinkIssueForm
-                  sessionId={sessionId}
-                  workspaceId={workspaceId}
-                  provider={provider}
-                  providerLabel={meta.label}
-                />
-              </div>
-            }
-          />
+          <div className="flex flex-col gap-3">
+            <LensEmptyState
+              icon={CONCEPT_ICONS.integrations}
+              tone={CONCEPT_TONE.integrations}
+              title={`No ${meta.label} issues linked`}
+              description={`Search your assigned ${meta.label} issues or paste a URL to link one to this session.`}
+            />
+            <LinkIssueForm
+              sessionId={sessionId}
+              workspaceId={workspaceId}
+              provider={provider}
+              providerLabel={meta.label}
+            />
+          </div>
         ) : null}
         {hasTasks ? (
           <div className="flex flex-col gap-5">

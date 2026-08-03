@@ -4,6 +4,7 @@ import { AdHocRow } from '../../../workspace/components/WorkspacesSidebar/parts/
 import { AgentLane } from '../AgentLane';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
 import { AgentLaneNote } from '../AgentLane/AgentLaneNote';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { AgentListSkeleton } from './AgentListSkeleton';
@@ -106,13 +107,11 @@ export const StandaloneAgentsLane = ({
         isLoadingEmpty ? (
           <AgentListSkeleton />
         ) : (
-          <EmptyState
-            bordered
+          <LensEmptyState
             tone={CONCEPT_TONE.agents}
             icon={CONCEPT_ICONS.agents}
             title={hasNoAgents ? 'No agents yet' : 'No active agents'}
             description={hasNoAgents ? NO_AGENTS_DESCRIPTION : ALL_DONE_DESCRIPTION}
-            size="inline"
           />
         )
       }

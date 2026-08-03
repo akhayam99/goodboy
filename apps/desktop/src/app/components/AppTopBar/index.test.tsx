@@ -3,7 +3,11 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 
 const { currentWorkspace, hooks, store } = vi.hoisted(() => {
-  const workspace = { id: 'ws-1' as WorkspaceId, name: 'Test WS' } as Workspace;
+  const workspace = {
+    id: 'ws-1' as WorkspaceId,
+    name: 'Test WS',
+    rootPath: '/code/test-ws',
+  } as Workspace;
   return {
     currentWorkspace: workspace,
     hooks: {
@@ -14,6 +18,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       }>,
       rollup: { attentionCount: 0, runningCount: 0, todaySpend: 0 },
       reasons: {} as Record<string, string>,
+      attention: {} as Record<string, string | undefined>,
     },
     store: {
       setCurrentSession: vi.fn(async () => undefined),
@@ -28,23 +33,16 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
 
 vi.mock('../../../store', () => ({
   useCurrentWorkspace: () => currentWorkspace,
+  useHasUnreadElsewhere: () => false,
   useSessions: () => hooks.sessions,
   useWorkspaceRollup: () => hooks.rollup,
   useStageGroupedSessions: () => hooks.groups,
   useSessionStageInfo: (session: Session) => ({
     stage: 'attention',
     reason: hooks.reasons[session.id] ?? 'Needs attention',
+    attention: hooks.attention[session.id],
   }),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-}));
-
-vi.mock('../../../shared/lib/theme', () => ({
-  useThemeStore: <T,>(selector: (s: { theme: string; toggleTheme: () => void }) => T) =>
-    selector({ theme: 'light', toggleTheme: vi.fn() }),
-}));
-
-vi.mock('../../../features/companion/bridge', () => ({
-  bridgeStatus: () => Promise.resolve({ running: false, enrolledCount: 0 }),
 }));
 
 vi.mock('../../../features/updater/components/UpdateIndicator', () => ({
@@ -63,11 +61,16 @@ vi.mock('../../../shared/components/DogMascot', () => ({
   DogMascot: () => null,
 }));
 
+vi.mock('../../../features/session/components/SessionStripCrumbs', () => ({
+  SessionStripCrumbs: () => <span>session crumbs</span>,
+}));
+
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
   hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 0 };
   hooks.reasons = {};
+  hooks.attention = {};
   store.setCurrentSession.mockClear();
   store.setActiveLens.mockClear();
 });
@@ -75,6 +78,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 import { AppTopBar } from './index';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
 const ATTENTION_SESSION_ID = 'session-1' as SessionId;
 const ATTENTION_SESSION = {
@@ -82,38 +86,159 @@ const ATTENTION_SESSION = {
   goal: 'Review the failing checks',
 } as unknown as Session;
 
+type BarOverrides = {
+  readonly onOpenSettings?: () => void;
+  readonly onOpenBudget?: () => void;
+  readonly activeStudio?: string | null;
+  readonly hasWorkspace?: boolean;
+  readonly hasActiveSession?: boolean;
+  readonly isSessionSidebarCollapsed?: boolean;
+  readonly isSessionSidebarPeeking?: boolean;
+  readonly onToggleSessionSidebar?: () => void;
+  readonly onSessionSidebarAnchorEnter?: () => void;
+  readonly onSessionSidebarAnchorLeave?: () => void;
+};
+
+const renderBar = (overrides: BarOverrides = {}) =>
+  render(
+    <AppTopBar
+      onOpenSettings={overrides.onOpenSettings ?? vi.fn()}
+      onOpenBudget={overrides.onOpenBudget ?? vi.fn()}
+      activeStudio={overrides.activeStudio ?? null}
+      hasWorkspace={overrides.hasWorkspace ?? true}
+      hasActiveSession={overrides.hasActiveSession ?? false}
+      isSessionSidebarCollapsed={overrides.isSessionSidebarCollapsed ?? false}
+      isSessionSidebarPeeking={overrides.isSessionSidebarPeeking ?? false}
+      onToggleSessionSidebar={overrides.onToggleSessionSidebar ?? vi.fn()}
+      onSessionSidebarAnchorEnter={overrides.onSessionSidebarAnchorEnter ?? vi.fn()}
+      onSessionSidebarAnchorLeave={overrides.onSessionSidebarAnchorLeave ?? vi.fn()}
+    />,
+  );
+
 describe('AppTopBar', () => {
   it('renders settings button', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
     expect(screen.getByRole('button', { name: 'open settings' })).toBeDefined();
   });
 
+  it('keeps set-once preferences out of the bar', () => {
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
+
+    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /pair your iphone/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /getting started/i })).toBeNull();
+  });
+
+  it('carries workspace identity whatever the column is doing', () => {
+    const { rerender } = renderBar({ hasActiveSession: false });
+    expect(screen.getByLabelText('Switch or open a workspace')).toBeDefined();
+
+    rerender(
+      <AppTopBar
+        onOpenSettings={vi.fn()}
+        onOpenBudget={vi.fn()}
+        activeStudio={null}
+        hasWorkspace
+        hasActiveSession
+        isSessionSidebarCollapsed={false}
+        isSessionSidebarPeeking={false}
+        onToggleSessionSidebar={vi.fn()}
+        onSessionSidebarAnchorEnter={vi.fn()}
+        onSessionSidebarAnchorLeave={vi.fn()}
+      />,
+    );
+    expect(screen.getByLabelText('Switch or open a workspace')).toBeDefined();
+  });
+
+  it('falls back to the wordmark before any workspace exists', () => {
+    renderBar({ hasWorkspace: false });
+
+    expect(screen.getByText('Goodboy')).toBeDefined();
+    expect(screen.queryByLabelText('Switch or open a workspace')).toBeNull();
+  });
+
+  it('holds the column control pressed while the peek is open', () => {
+    const { rerender } = renderBar({ hasActiveSession: true, isSessionSidebarCollapsed: true });
+    expect(
+      screen.getByRole('button', { name: /show sessions column/i }).getAttribute('aria-pressed'),
+    ).toBe('false');
+
+    rerender(
+      <AppTopBar
+        onOpenSettings={vi.fn()}
+        onOpenBudget={vi.fn()}
+        activeStudio={null}
+        hasWorkspace
+        hasActiveSession
+        isSessionSidebarCollapsed
+        isSessionSidebarPeeking
+        onToggleSessionSidebar={vi.fn()}
+        onSessionSidebarAnchorEnter={vi.fn()}
+        onSessionSidebarAnchorLeave={vi.fn()}
+      />,
+    );
+    const toggle = screen.getByRole('button', { name: /show sessions column/i });
+    expect(toggle.className).toContain('bg-muted text-foreground');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('shows the column control only inside a session', () => {
+    const onToggleSessionSidebar = vi.fn();
+    const { rerender } = renderBar({ hasActiveSession: false });
+    expect(screen.queryByRole('button', { name: /sessions column/i })).toBeNull();
+
+    rerender(
+      <AppTopBar
+        onOpenSettings={vi.fn()}
+        onOpenBudget={vi.fn()}
+        activeStudio={null}
+        hasWorkspace
+        hasActiveSession
+        isSessionSidebarCollapsed
+        isSessionSidebarPeeking={false}
+        onToggleSessionSidebar={onToggleSessionSidebar}
+        onSessionSidebarAnchorEnter={vi.fn()}
+        onSessionSidebarAnchorLeave={vi.fn()}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: `Show sessions column (${shortcutGlyphs('column.toggle')})`,
+      }),
+    );
+    expect(onToggleSessionSidebar).toHaveBeenCalledOnce();
+  });
+
   it('settings button has active state when settings studio is open', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio="settings" />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: 'settings' });
     const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).toContain('bg-foreground');
   });
 
   it('settings button is normal when a different studio is open', () => {
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio="workflow" />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: 'workflow' });
     const btn = screen.getByRole('button', { name: 'open settings' });
     expect(btn.className).not.toContain('bg-foreground');
   });
 
-  it('centers the update indicator in flow, between two spacers', () => {
-    const { container } = render(
-      <AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />,
-    );
+  it('gives the middle to the session and keeps the update pip on the right', () => {
+    const { container } = renderBar({ hasActiveSession: true });
     const update = screen.getByText('Update to 0.2.0');
+    const crumbs = screen.getByText('session crumbs');
     const bar = container.querySelector('[data-tauri-drag-region]');
     const children = Array.from(bar?.children ?? []);
+    const crumbIndex = children.findIndex((child) => child.contains(crumbs));
     const updateIndex = children.findIndex((child) => child.contains(update));
 
-    expect(updateIndex).toBeGreaterThan(0);
-    expect(children[updateIndex - 1]?.className).toContain('flex-1');
-    expect(children[updateIndex + 1]?.className).toContain('flex-1');
+    expect(children[crumbIndex]?.className).toContain('flex-1');
+    expect(updateIndex).toBeGreaterThan(crumbIndex);
     expect(children.some((child) => child.className.includes('absolute'))).toBe(false);
     expect(update.closest('button')).not.toBeNull();
+  });
+
+  it('leaves the middle empty on the board', () => {
+    renderBar({ hasActiveSession: false });
+    expect(screen.queryByText('session crumbs')).toBeNull();
   });
 
   it('opens budget only from the spend target and omits the beta chip', () => {
@@ -121,7 +246,7 @@ describe('AppTopBar', () => {
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 2.5 };
     const onOpenBudget = vi.fn();
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={onOpenBudget} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: onOpenBudget, activeStudio: null });
 
     fireEvent.click(screen.getByTitle("Today's spend across providers, open budget"));
     expect(onOpenBudget).toHaveBeenCalledOnce();
@@ -136,7 +261,7 @@ describe('AppTopBar', () => {
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
     hooks.reasons = { [ATTENTION_SESSION_ID]: 'PR #42: CI failed' };
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
 
@@ -151,11 +276,27 @@ describe('AppTopBar', () => {
     expect(screen.queryByText('PR #42: CI failed')).toBeNull();
   });
 
+  it('marks each row with the icon of its own reason, not a repeated dot', () => {
+    hooks.sessions = [ATTENTION_SESSION];
+    hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
+    hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
+    hooks.reasons = { [ATTENTION_SESSION_ID]: 'PR #42: CI failed' };
+    hooks.attention = { [ATTENTION_SESSION_ID]: 'ci-failed' };
+    renderBar();
+
+    fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
+
+    const row = screen.getByTitle('Review the failing checks · PR #42: CI failed');
+    const icon = row.querySelector('svg');
+    expect(icon?.getAttribute('class')).toContain('text-danger');
+    expect(row.querySelector('[class*="bg-warning"]')).toBeNull();
+  });
+
   it('closes the needs-you dialog on Escape', () => {
     hooks.sessions = [ATTENTION_SESSION];
     hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
-    render(<AppTopBar onOpenSettings={vi.fn()} onOpenBudget={vi.fn()} activeStudio={null} />);
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
     expect(screen.getByRole('dialog', { name: 'Sessions needing attention' })).toBeDefined();

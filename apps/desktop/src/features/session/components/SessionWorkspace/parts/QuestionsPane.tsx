@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { Bot } from 'lucide-react';
-import { EmptyState } from '@goodboy/ui';
+import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import type {
   Agent,
   AgentId,
@@ -319,8 +319,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   if (open.length === 0 && answeredClusters.length === 0 && pendingUndoQuestion === null) {
     return (
       <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
-        <EmptyState
-          bordered
+        <LensEmptyState
           tone={CONCEPT_TONE.questions}
           icon={CONCEPT_ICONS.questions}
           title="No open questions"

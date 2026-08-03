@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
-import { EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -15,8 +15,7 @@ export const WorkflowStartButton = ({ sessionId }: Props) => {
   };
 
   return (
-    <EmptyState
-      bordered
+    <LensEmptyState
       tone={CONCEPT_TONE.workflows}
       icon={CONCEPT_ICONS.workflows}
       title="No workflows yet"

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Divider, ScrollArea } from '@goodboy/ui';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Divider, ScrollArea, cn } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
-import type { ReviewState } from '../lib';
+import { TOOLBAR_ICON_BTN, type ReviewState } from '../lib';
 import { buildTree } from './tree';
 import { TreeNodeView } from './TreeNodeView';
 
@@ -11,6 +12,8 @@ type Props = {
   onSelect: (path: string) => void;
   reviewStateByPath: Map<string, ReviewState>;
   commentCounts: Map<string, number>;
+  collapsed: boolean;
+  onToggle: () => void;
 };
 
 export const FileRail = ({
@@ -19,33 +22,53 @@ export const FileRail = ({
   onSelect,
   reviewStateByPath,
   commentCounts,
+  collapsed,
+  onToggle,
 }: Props) => {
   const selectedRef = useRef<HTMLButtonElement>(null);
   const tree = useMemo(() => buildTree(files), [files]);
 
   useEffect(() => {
-    selectedRef.current?.scrollIntoView({ block: 'nearest' });
-  }, [activePath]);
+    if (!collapsed) {
+      selectedRef.current?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activePath, collapsed]);
 
   return (
-    <div className="flex min-h-0 w-[26%] shrink-0">
-      <ScrollArea className="min-w-0 flex-1 bg-muted/10">
-        <div className="py-1">
-          {tree.kind === 'dir' &&
-            tree.children.map((child, i) => (
-              <TreeNodeView
-                key={`${child.kind}-${child.name}-${i}`}
-                node={child}
-                depth={0}
-                activePath={activePath}
-                onSelect={onSelect}
-                selectedRef={selectedRef}
-                reviewStateByPath={reviewStateByPath}
-                commentCounts={commentCounts}
-              />
-            ))}
+    <div className={cn('flex min-h-0 shrink-0', collapsed ? 'w-9' : 'w-[26%]')}>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-center justify-end px-1.5 pt-1.5">
+          <button
+            type="button"
+            onClick={onToggle}
+            className={TOOLBAR_ICON_BTN}
+            title={collapsed ? 'show file list' : 'hide file list'}
+            aria-label={collapsed ? 'show file list' : 'hide file list'}
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
+          </button>
         </div>
-      </ScrollArea>
+        {collapsed ? null : (
+          <ScrollArea className="min-w-0 flex-1">
+            <div className="pb-1">
+              {tree.kind === 'dir' &&
+                tree.children.map((child, i) => (
+                  <TreeNodeView
+                    key={`${child.kind}-${child.name}-${i}`}
+                    node={child}
+                    depth={0}
+                    activePath={activePath}
+                    onSelect={onSelect}
+                    selectedRef={selectedRef}
+                    reviewStateByPath={reviewStateByPath}
+                    commentCounts={commentCounts}
+                  />
+                ))}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
       <Divider orientation="vertical" />
     </div>
   );

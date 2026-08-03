@@ -8,7 +8,9 @@ import {
 } from '@goodboy/ui';
 import { SidebarPeekHoldContext, type SidebarPeekHold } from './hold';
 
-const readWidth = (): number => {
+const PEEK_WIDTH_FACTOR = 1.5;
+
+const pinnedWidth = (): number => {
   if (typeof localStorage === 'undefined') {
     return LEFT_SIDEBAR_DEFAULT;
   }
@@ -22,6 +24,9 @@ const readWidth = (): number => {
   }
   return Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, parsed));
 };
+
+const readWidth = (): number =>
+  Math.min(LEFT_SIDEBAR_MAX, Math.round(pinnedWidth() * PEEK_WIDTH_FACTOR));
 
 type Props = {
   readonly isPeeking: boolean;
@@ -78,12 +83,16 @@ export const SidebarPeekOverlay = ({
             style={{ width: readWidth() }}
             className={cn(
               'pointer-events-auto absolute inset-y-0 left-0 flex min-h-0 flex-col overflow-hidden',
-              'border-r border-border bg-background shadow-[8px_0_24px_-10px_rgba(0,0,0,0.75)]',
+              'bg-background shadow-[16px_0_40px_-24px_rgba(0,0,0,0.5)]',
               'motion-safe:transition-transform duration-200 ease-out',
               hasEntered ? 'translate-x-0' : '-translate-x-full',
             )}
           >
             {children}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-border-soft to-transparent"
+            />
           </div>
         </SidebarPeekHoldContext>
       ) : null}

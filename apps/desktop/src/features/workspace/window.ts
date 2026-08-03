@@ -107,13 +107,24 @@ const returnToMainWindowSpace = async (): Promise<void> => {
   await settleAfterSpaceSwitch();
 };
 
+const sourceOwnsItsSpace = async (): Promise<boolean> => {
+  return getCurrentWindow()
+    .isFullscreen()
+    .catch(() => false);
+};
+
 export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Promise<void> => {
   if (!inTauri()) {
     return;
   }
-  await returnToMainWindowSpace();
+  const ownsItsSpace = await sourceOwnsItsSpace();
+  if (!ownsItsSpace) {
+    await returnToMainWindowSpace();
+  }
   const openWindows = await getAllWebviewWindows().catch(() => []);
-  const placement = await placementOnPrimaryMonitor({ openWindowCount: openWindows.length });
+  const placement = ownsItsSpace
+    ? null
+    : await placementOnPrimaryMonitor({ openWindowCount: openWindows.length });
   const win = new WebviewWindow(freshWindowLabel(), {
     url: `index.html#${WORKSPACE_HASH_KEY}=${id}`,
     title: brandTitle(title),
@@ -127,6 +138,9 @@ export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Prom
     void win.once('tauri://created', () => resolve());
     void win.once('tauri://error', (event) => reject(new Error(String(event.payload))));
   });
+  if (ownsItsSpace) {
+    await win.setFullscreen(true).catch(() => undefined);
+  }
 };
 
 export const setWindowTitle = async (title: string): Promise<void> => {

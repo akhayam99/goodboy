@@ -176,16 +176,43 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PrPane', () => {
-  it('uses neutral code host copy for title and description on GitLab sessions', () => {
+  it('names the host it is actually pointed at', () => {
     h.remoteKind = 'gitlab';
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'Code host work' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'GitLab' })).toBeDefined();
     expect(
       screen.getByText('Linked issues and pull or merge request for this session.'),
     ).toBeDefined();
     expect(screen.queryByText('GitHub')).toBeNull();
+  });
+
+  it('names GitHub when that is the host', () => {
+    h.remoteKind = 'github';
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByRole('heading', { name: 'GitHub' })).toBeDefined();
+  });
+
+  it('falls back to neutral copy when both hosts carry work', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionGitlabMr = {
+      [SESSION_ID]: { mr: { iid: 7, title: 'MR', state: 'open', draft: false } },
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByRole('heading', { name: 'Code host work' })).toBeDefined();
   });
 
   it('never offers create-PR actions inside a PR review session', () => {
@@ -465,7 +492,7 @@ describe('PrPane', () => {
     expect(githubEvents[0]?.detail).toEqual({ sessionId: SESSION_ID });
     expect(gitlabEvents).toHaveLength(0);
     expect(
-      screen.getByText('No issues or external tasks are linked to this session yet.'),
+      screen.getByText(/No issues or external tasks are linked to this session yet/),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Quick draft' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Draft with agent' })).toBeNull();

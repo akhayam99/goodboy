@@ -1,17 +1,23 @@
 import type { ReactNode } from 'react';
-import { ScrollFade } from '@goodboy/ui';
+import { ScrollFade, cn } from '@goodboy/ui';
 
 type Props = {
   readonly title: string;
   readonly description?: string;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
+  readonly wide?: boolean;
   readonly children: ReactNode;
 };
 
-export const PaneShell = ({ title, description, meta, actions, children }: Props) => (
+export const PaneShell = ({ title, description, meta, actions, wide, children }: Props) => (
   <ScrollFade className="h-full" viewportClassName="px-6 py-5" fadeSize={24}>
-    <div className="mx-auto flex max-w-5xl flex-col gap-5 motion-safe:animate-studio-in">
+    <div
+      className={cn(
+        'mx-auto flex w-full flex-col gap-5 motion-safe:animate-studio-in',
+        wide === true ? 'max-w-none' : 'max-w-5xl',
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex items-baseline gap-2">

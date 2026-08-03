@@ -213,6 +213,7 @@ export type {
 } from './plan';
 export type {
   PersistedSessionViewPrefs,
+  SessionAttentionReason,
   SessionGroupKey,
   SessionPrGroup,
   SessionSortKey,

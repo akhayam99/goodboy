@@ -109,6 +109,7 @@ vi.mock('../SessionGitActions', () => ({
 }));
 
 import { LensColumn } from './index';
+import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
 
 const SESSION = {
   id: 'session-1',
@@ -293,7 +294,7 @@ describe('LensColumn', () => {
     expect(screen.queryByRole('button', { name: 'Terminal' })).toBeNull();
   });
 
-  it('shows shortcuts on bound rows only', () => {
+  it('shows a registry shortcut on every row', () => {
     render(
       <LensColumn
         session={SESSION}
@@ -305,9 +306,14 @@ describe('LensColumn', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Diff' }).querySelector('kbd')?.textContent).toBe(
-      '⌘⇧D',
+      shortcutGlyphs('lens.files'),
     );
-    expect(screen.getByRole('button', { name: 'Linear' }).querySelector('kbd')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Linear' }).querySelector('kbd')?.textContent).toBe(
+      shortcutGlyphs('lens.linear'),
+    );
+    expect(screen.getByRole('button', { name: 'Agents' }).querySelector('kbd')?.textContent).toBe(
+      shortcutGlyphs('lens.agents'),
+    );
   });
 
   it('reserves loading badges while keeping rows selectable', () => {

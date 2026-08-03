@@ -29,6 +29,7 @@ import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanListPanel } from './PlanListPanel';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -162,8 +163,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
             }
           >
             {plans.length === 0 ? (
-              <EmptyState
-                bordered
+              <LensEmptyState
                 tone={CONCEPT_TONE.plans}
                 icon={CONCEPT_ICONS.plans}
                 title="No plans yet"
@@ -400,14 +400,11 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                 )}
               </div>
             ) : (
-              <EmptyState
-                bordered
+              <LensEmptyState
                 tone={CONCEPT_TONE.plans}
                 icon={CONCEPT_ICONS.plans}
                 title="No plan selected"
                 description="Pick a plan from the list to preview, edit, or run it."
-                size="lg"
-                headingLevel={2}
               />
             )}
           </PaneShell>

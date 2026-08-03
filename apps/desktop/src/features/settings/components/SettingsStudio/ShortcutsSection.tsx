@@ -1,46 +1,25 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { KbdPill, SectionHeader } from '@goodboy/ui';
+import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import type { ShortcutId, ShortcutPlane } from '../../../../shared/keyboard/registry';
 
 type Props = {
   readonly initiallyExpanded: boolean;
 };
 
-const SHORTCUTS: ReadonlyArray<{ readonly combo: readonly string[]; readonly label: string }> = [
-  { combo: ['⌘', 'K'], label: 'command palette' },
-  { combo: ['⌘', 'O'], label: 'open workspace switcher' },
-  { combo: ['⌘', 'N'], label: 'new session' },
-  { combo: ['⌘', 'B'], label: 'toggle sessions column' },
-  { combo: ['⌘', '1', '..', '9'], label: 'jump to workspace 1 to 9' },
-  { combo: ['⌘', '['], label: 'back (lens history)' },
-  { combo: ['⌘', ']'], label: 'forward (lens history)' },
-  { combo: ['⌘', '⇧', '['], label: 'previous session' },
-  { combo: ['⌘', '⇧', ']'], label: 'next session' },
-  { combo: ['⌘', '⇧', 'K'], label: 'open model picker' },
-  { combo: ['⌘', '⇧', 'P'], label: 'open permission picker' },
-  { combo: ['⌘', 'J'], label: 'toggle terminal' },
-  { combo: ['⌘', 'T'], label: 'new terminal tab' },
-  { combo: ['⌘', 'W'], label: 'close terminal tab' },
-  { combo: ['⌘', '⇧', 'G'], label: 'jump to goal' },
-  { combo: ['⌘', '⇧', 'W'], label: 'jump to workflows' },
-  { combo: ['⌘', '⇧', 'B'], label: 'jump to agents' },
-  { combo: ['⌘', '⇧', 'R'], label: 'jump to resolve' },
-  { combo: ['⌘', '⇧', 'D'], label: 'jump to diff' },
-  { combo: ['⌘', '⇧', 'L'], label: 'jump to plans' },
-  { combo: ['⌘', '⇧', 'S'], label: 'jump to scripts' },
-  { combo: ['⌘', '⇧', 'Q'], label: 'jump to questions' },
-  { combo: ['⌘', '⇧', 'O'], label: 'jump to overview' },
-  { combo: ['⌘', '⇧', 'H'], label: 'jump to GitHub or GitLab' },
-  { combo: ['⌘', '⇧', 'E'], label: 'jump to decisions' },
-  { combo: ['⌘', '⇧', 'U'], label: 'jump to session summary' },
-  { combo: ['⌘', '⇧', '⎋'], label: 'back to board' },
-  { combo: ['⌘', '↵'], label: 'send message (queue if running)' },
-  { combo: ['⌘', '⇧', 'A'], label: 'archive current session' },
-  { combo: ['⌘', '.'], label: 'delete current session' },
-  { combo: ['⌘', ','], label: 'open settings' },
-  { combo: ['⌘', '/'], label: 'keyboard shortcuts' },
-  { combo: ['Esc'], label: 'close dialog or cancel' },
-];
+const PLANE_ORDER: ReadonlyArray<ShortcutPlane> = ['app', 'session', 'lens'];
+
+const PLANE_LABELS: Record<ShortcutPlane, string> = {
+  app: 'App',
+  session: 'Session',
+  lens: 'Lens',
+};
+
+const SHORTCUT_IDS = Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>;
+
+const idsInPlane = (plane: ShortcutPlane): ReadonlyArray<ShortcutId> =>
+  SHORTCUT_IDS.filter((id) => SHORTCUTS[id].plane === plane);
 
 export const ShortcutsSection = ({ initiallyExpanded }: Props) => {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
@@ -64,7 +43,9 @@ export const ShortcutsSection = ({ initiallyExpanded }: Props) => {
             aria-label={isExpanded ? 'Collapse keyboard shortcuts' : 'Expand keyboard shortcuts'}
             className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
-            <span className="rounded-full bg-muted px-2 py-0.5">{SHORTCUTS.length} shortcuts</span>
+            <span className="rounded-full bg-muted px-2 py-0.5">
+              {SHORTCUT_IDS.length} shortcuts
+            </span>
             {isExpanded ? (
               <ChevronDown size={13} aria-hidden />
             ) : (
@@ -74,18 +55,25 @@ export const ShortcutsSection = ({ initiallyExpanded }: Props) => {
         }
       />
       {isExpanded ? (
-        <ul id="keyboard-shortcuts-list" className="grid grid-cols-2 gap-x-10 gap-y-3">
-          {SHORTCUTS.map((shortcut) => (
-            <li key={shortcut.label} className="flex items-center justify-between gap-4 text-xs">
-              <span className="text-muted-foreground">{shortcut.label}</span>
-              <span className="flex items-center gap-0.5">
-                {shortcut.combo.map((key) => (
-                  <KbdPill key={key}>{key}</KbdPill>
-                ))}
+        <div id="keyboard-shortcuts-list" className="flex flex-col gap-5">
+          {PLANE_ORDER.map((plane) => (
+            <div key={plane} className="flex flex-col gap-2">
+              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
+                {PLANE_LABELS[plane]}
               </span>
-            </li>
+              <ul className="grid grid-cols-2 gap-x-10 gap-y-3">
+                {idsInPlane(plane).map((id) => (
+                  <li key={id} className="flex items-center justify-between gap-4 text-xs">
+                    <span className="min-w-0 truncate text-muted-foreground">
+                      {SHORTCUTS[id].label}
+                    </span>
+                    <KbdPill className="shrink-0">{shortcutGlyphs(id)}</KbdPill>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : null}
     </div>
   );

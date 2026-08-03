@@ -74,7 +74,7 @@ describe('StageColumn selection', () => {
     const { container } = renderColumn([]);
     expect(screen.getByText('nothing building')).toBeDefined();
     expect(container.querySelector('.size-12')).toBeNull();
-    expect(container.querySelector('.mt-0\\.5')).not.toBeNull();
+    expect(container.querySelector('.text-foreground')).toBeNull();
   });
 
   it('shows no bulk bar until a card is selected', () => {
@@ -96,7 +96,6 @@ describe('StageColumn selection', () => {
 
   it('offers Restore for the archived column', () => {
     renderColumn([makeSession('s-1', 'one')], { kind: 'archived' });
-    fireEvent.click(screen.getByTitle('expand archived'));
     fireEvent.click(screen.getByRole('checkbox', { name: 'select one' }));
     expect(screen.getByRole('button', { name: /^Restore \(1\)$/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Archive/ })).toBeNull();

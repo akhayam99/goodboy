@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import type { Agent, Session } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 
@@ -198,6 +198,7 @@ vi.mock('../AgentInspector', () => ({
 }));
 
 import { SessionWorkspace } from './index';
+import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 
 const SESSION_ID = 'session-1';
 const selectedAgent = {
@@ -742,9 +743,13 @@ describe('SessionWorkspace breadcrumb visibility', () => {
       ],
     } as unknown as Session;
 
-    render(<SessionWorkspace session={workflowSession} isActive />);
+    const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
 
-    expect(screen.getByTestId('breadcrumb').textContent).toBe('Overview / Workflows / refactor');
+    expect(result.current.map((crumb) => crumb.label)).toEqual([
+      'Overview',
+      'Workflows',
+      'refactor',
+    ]);
   });
 });
 

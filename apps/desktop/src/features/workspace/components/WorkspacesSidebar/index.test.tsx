@@ -10,13 +10,18 @@ const { state, currentWorkspace, currentSessionRef } = vi.hoisted(() => ({
     setCurrentSession: vi.fn(),
     loadArchivedSessions: vi.fn(),
   },
-  currentWorkspace: { id: 'ws-1' as WorkspaceId, name: 'Test WS' } as Workspace,
+  currentWorkspace: {
+    id: 'ws-1' as WorkspaceId,
+    name: 'Test WS',
+    rootPath: '/code/test-ws',
+  } as Workspace,
   currentSessionRef: { value: null as Session | null },
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useCurrentWorkspace: () => currentWorkspace,
+  useHasUnreadElsewhere: () => false,
   useCurrentSession: () => currentSessionRef.value,
   useSessions: () => [],
   useWorkspaces: () => [currentWorkspace],
@@ -35,11 +40,13 @@ afterEach(cleanup);
 import { WorkspacesSidebar } from './index';
 
 describe('WorkspacesSidebar', () => {
-  it('keeps the back-to-board button on the primary tone', () => {
+  it('carries the primary tone without going solid', () => {
     currentSessionRef.value = { id: 'session-1' } as Session;
     render(<WorkspacesSidebar />);
     const back = screen.getByRole('button', { name: 'back to board' });
-    expect(back.className).toContain('bg-primary text-primary-foreground');
+    expect(back.className).toContain('bg-primary/10');
+    expect(back.className).toContain('text-primary');
+    expect(back.className).not.toContain('text-primary-foreground');
     expect(back.className).not.toContain('text-accent');
     currentSessionRef.value = null;
   });

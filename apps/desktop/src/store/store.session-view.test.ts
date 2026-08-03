@@ -260,13 +260,21 @@ describe('deriveSessionStage', () => {
   it('CI failure on live PR → attention', () => {
     const pr = { ...makePr(), checks: 'failure' as const };
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({ stage: 'attention', reason: 'PR #1: CI failed' });
+    expect(info).toEqual({
+      stage: 'attention',
+      reason: 'PR #1: CI failed',
+      attention: 'ci-failed',
+    });
   });
 
   it('changes requested → attention', () => {
     const pr = makePr({ reviewDecision: 'changes_requested' });
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({ stage: 'attention', reason: 'PR #1: changes requested' });
+    expect(info).toEqual({
+      stage: 'attention',
+      reason: 'PR #1: changes requested',
+      attention: 'changes-requested',
+    });
   });
 
   it('open questions → attention with count', () => {
@@ -276,13 +284,21 @@ describe('deriveSessionStage', () => {
       hasUnread: false,
       openQuestionCount: 3,
     });
-    expect(info).toEqual({ stage: 'attention', reason: '3 open questions' });
+    expect(info).toEqual({
+      stage: 'attention',
+      reason: '3 open questions',
+      attention: 'open-question',
+    });
   });
 
   it('approved live PR → attention, ready to merge', () => {
     const pr = makePr({ state: 'approved', reviewDecision: 'approved' });
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({ stage: 'attention', reason: 'PR #1 approved, ready to merge' });
+    expect(info).toEqual({
+      stage: 'attention',
+      reason: 'PR #1 approved, ready to merge',
+      attention: 'pr-approved',
+    });
   });
 
   it('unread reply → attention', () => {
@@ -292,7 +308,11 @@ describe('deriveSessionStage', () => {
       hasUnread: true,
       openQuestionCount: 0,
     });
-    expect(info).toEqual({ stage: 'attention', reason: 'unread agent reply' });
+    expect(info).toEqual({
+      stage: 'attention',
+      reason: 'unread agent reply',
+      attention: 'unread-reply',
+    });
   });
 
   it('no PR and quiet → building', () => {
@@ -406,8 +426,16 @@ describe('deriveSessionStage', () => {
       openQuestionCount: 0,
       isBranchless: true,
     });
-    expect(questions).toEqual({ stage: 'attention', reason: '2 open questions' });
-    expect(unread).toEqual({ stage: 'attention', reason: 'unread agent reply' });
+    expect(questions).toEqual({
+      stage: 'attention',
+      reason: '2 open questions',
+      attention: 'open-question',
+    });
+    expect(unread).toEqual({
+      stage: 'attention',
+      reason: 'unread agent reply',
+      attention: 'unread-reply',
+    });
   });
 
   it('branchless sessions stay building when agent signals are quiet', () => {

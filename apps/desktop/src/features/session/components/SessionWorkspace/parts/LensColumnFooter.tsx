@@ -9,6 +9,10 @@ import { EditorMenu } from '../../SessionOverviewPane/EditorMenu';
 import { SessionGitActions } from './SessionGitActions';
 import { ProjectSwitcher } from '../../ProjectSwitcher';
 import type { Density } from '../../../density';
+import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
+
+const ARCHIVE_TITLE = `Archive session (${shortcutGlyphs('session.archive')})`;
+const DELETE_TITLE = `Delete session (${shortcutGlyphs('session.delete')})`;
 
 const ICON_BUTTON =
   'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
@@ -100,7 +104,7 @@ export const LensColumnFooter = ({ session }: Props) => {
           <button
             type="button"
             onClick={() => setArmed('archive')}
-            title="Archive session"
+            title={ARCHIVE_TITLE}
             aria-label="archive session"
             className={ICON_BUTTON}
           >
@@ -120,7 +124,7 @@ export const LensColumnFooter = ({ session }: Props) => {
           <button
             type="button"
             onClick={() => setArmed('delete')}
-            title="Delete session"
+            title={DELETE_TITLE}
             aria-label="delete session"
             className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >

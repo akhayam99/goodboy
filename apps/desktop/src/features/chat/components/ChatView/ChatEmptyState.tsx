@@ -1,5 +1,5 @@
 import { useCallback, useMemo, type ReactElement, type ReactNode } from 'react';
-import { Button, Eyebrow } from '@goodboy/ui';
+import { Button, Eyebrow, KbdPill } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
@@ -10,6 +10,9 @@ import {
 } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
 import { getAgentVisual } from '../../../../shared/components/AgentAvatar';
+import { formatCombo } from '../../../../shared/keyboard/registry';
+
+const HINT_KBD = 'h-4 min-w-4 border-border-soft px-1 text-2xs leading-none';
 
 type EmptyScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent' | 'agent_focus';
 
@@ -80,8 +83,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
           hints: [
             example ? <span key="example">{example}</span> : null,
             <span key="send" className="inline-flex items-center gap-1">
-              <Kbd>⌘</Kbd>
-              <Kbd>↵</Kbd>
+              <KbdPill className={HINT_KBD}>{formatCombo('Enter')}</KbdPill>
               to send
             </span>,
           ].filter((x): x is ReactElement => x !== null),
@@ -183,11 +185,3 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
     </div>
   );
 };
-
-function Kbd({ children }: { children: ReactNode }) {
-  return (
-    <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded border border-border-soft bg-muted px-1 font-mono text-2xs leading-none text-muted-foreground">
-      {children}
-    </kbd>
-  );
-}

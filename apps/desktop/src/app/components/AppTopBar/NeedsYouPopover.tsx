@@ -117,6 +117,9 @@ export const NeedsYouPopover = ({ sessions, count }: Props) => {
                 <header className="flex items-center gap-2 px-3 py-2">
                   <StatusDot tone="warning" size="sm" />
                   <span className="text-xs font-semibold text-foreground">Needs you</span>
+                  <span className="ml-auto text-2xs tabular-nums text-muted-foreground">
+                    {count}
+                  </span>
                 </header>
                 <Divider />
                 <ScrollFade className="max-h-80" fadeSize={16}>

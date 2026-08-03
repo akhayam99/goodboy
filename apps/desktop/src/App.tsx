@@ -21,14 +21,12 @@ import { GuideStudio } from './features/settings/components/GuideStudio';
 import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
 import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
-import { WorkspaceHeader } from './features/workspace/components/WorkspaceHeader';
 import { WorkspacesSidebar } from './features/workspace/components/WorkspacesSidebar';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { WorkspaceLinkDialog } from './features/workspace/components/WorkspaceLinkDialog';
 import { ConvertWorkspaceDialog } from './features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from './features/workspace/components/WorkspaceLauncher';
-import { WorkspaceSwitcher } from './features/workspace/components/WorkspaceSwitcher';
 import { isMainWindow } from './features/workspace/window';
 import { WorkflowStudio } from './features/workflows/components/WorkflowStudio';
 import { NewSessionView } from './features/session/components/NewSessionView';
@@ -48,8 +46,7 @@ import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
 import { CompanionStudio } from './features/companion/CompanionStudio';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { markStepComplete } from './features/onboarding/onboarding-store';
-import { disposeTerminalPty } from './features/terminal/closeTab';
-import { useKeyboardShortcut } from './shared/hooks/useKeyboardShortcut';
+import { useShortcut } from './shared/keyboard/useShortcut';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
 import { useEscapeToCloseDialog } from './shared/hooks/useEscapeToCloseDialog';
@@ -114,7 +111,6 @@ export const App = () => {
   const [palettePrefix, setPalettePrefix] = useState('');
   const [addWorkspaceOpen, setAddWorkspaceOpen] = useState(false);
   const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [workflowStudioOpen, setWorkflowStudioOpen] = useState(false);
   const [linearStudioOpen, setLinearStudioOpen] = useState(false);
   const [linearStudioFocus, setLinearStudioFocus] = useState<string | null>(null);
@@ -175,7 +171,6 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setAppSettingsFocus(detail?.section);
       setAppSettingsOpen(true);
     };
@@ -189,7 +184,6 @@ export const App = () => {
       setGitlabStudioOpen(false);
       setAppSettingsOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setGuideStudioOpen(true);
     };
     const onOpenGithubStudio = (event: Event) => {
@@ -210,7 +204,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setGithubStudioSession(detail?.sessionId ?? null);
       setGithubStudioPrNumber(detail?.prNumber ?? null);
       setGithubStudioThreadId(detail?.threadId ?? null);
@@ -252,7 +245,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setProviderStudioFocus(detail?.providerId ?? null);
       setProviderStudioAction(detail?.action ?? null);
       setProviderStudioOpen(true);
@@ -269,7 +261,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setBudgetStudioScope(detail?.scope);
       setBudgetStudioOpen(true);
     };
@@ -284,7 +275,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setLinearStudioFocus(detail?.issueExternalId ?? null);
       setLinearStudioOpen(true);
     };
@@ -299,7 +289,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setSentryStudioFocus(detail?.issueExternalId ?? null);
       setSentryStudioOpen(true);
     };
@@ -314,7 +303,6 @@ export const App = () => {
       setAppSettingsOpen(false);
       setGuideStudioOpen(false);
       setAddWorkspaceOpen(false);
-      setSwitcherOpen(false);
       setGitlabStudioFocus(detail?.issueExternalId ?? null);
       setGitlabStudioOpen(true);
     };
@@ -329,7 +317,6 @@ export const App = () => {
       }
     };
     const onAddWorkspace = () => setAddWorkspaceOpen(true);
-    const onOpenSwitcher = () => setSwitcherOpen(true);
     const onPairDevice = () => setCompanionOpen(true);
 
     window.addEventListener('goodboy:open-settings', onOpenSettings);
@@ -344,7 +331,6 @@ export const App = () => {
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
-    window.addEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
     window.addEventListener('goodboy:open-pair-device', onPairDevice);
     return () => {
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
@@ -359,7 +345,6 @@ export const App = () => {
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
-      window.removeEventListener('goodboy:open-workspace-switcher', onOpenSwitcher);
       window.removeEventListener('goodboy:open-pair-device', onPairDevice);
     };
   }, []);
@@ -498,7 +483,6 @@ export const App = () => {
     setAppSettingsOpen(false);
     setGuideStudioOpen(false);
     setAddWorkspaceOpen(false);
-    setSwitcherOpen(false);
   }, []);
 
   const activeStudio: string | null = workflowStudioOpen
@@ -609,62 +593,28 @@ export const App = () => {
 
   const goToLens = useCallback((kind: LensKind | null) => {
     const s = useAppStore.getState();
-    if (!s.currentSessionId) {
-      return;
-    }
-    s.setActiveLens(s.currentSessionId, kind);
-  }, []);
-
-  const goToDiffOrExploreLens = useCallback(() => {
-    const store = useAppStore.getState();
-    const sessionId = store.currentSessionId;
-    if (sessionId == null) {
-      return;
-    }
-    const session = store.sessions.find((candidate) => candidate.id === sessionId);
-    if (session == null) {
-      store.setActiveLens(sessionId, 'files');
-      return;
-    }
-    const workspace = store.workspaces.find((candidate) => candidate.id === session.workspaceId);
-    const isBranchless = isBranchlessSession({
-      workspaceKind: workspace?.kind,
-      branch: store.sessionBranches[sessionId],
-    });
-    store.setActiveLens(sessionId, isBranchless ? 'explore' : 'files');
-  }, []);
-
-  const toggleTerminalLens = useCallback(() => {
-    const s = useAppStore.getState();
     const id = s.currentSessionId;
     if (!id) {
       return;
     }
-    s.setActiveLens(id, s.activeLens[id] === 'terminal' ? null : 'terminal');
+    s.setActiveLens(id, kind != null && s.activeLens[id] === kind ? null : kind);
   }, []);
 
-  const openNewTerminalTab = useCallback(() => {
-    const s = useAppStore.getState();
-    const id = s.currentSessionId;
-    if (!id || s.activeLens[id] !== 'terminal') {
-      return;
+  const isExploreSession = useAppStore((s) => {
+    const sessionId = s.currentSessionId;
+    if (sessionId == null) {
+      return false;
     }
-    s.addTerminalTab(id, s.sessionWorktrees[id]?.[0] ?? null);
-  }, []);
-
-  const closeActiveTerminalTab = useCallback(() => {
-    const s = useAppStore.getState();
-    const id = s.currentSessionId;
-    if (!id || s.activeLens[id] !== 'terminal') {
-      return;
+    const session = s.sessions.find((candidate) => candidate.id === sessionId);
+    if (session == null) {
+      return false;
     }
-    const tabId = s.activeTerminalTab[id];
-    if (!tabId) {
-      return;
-    }
-    disposeTerminalPty(tabId);
-    s.closeTerminalTab(id, tabId);
-  }, []);
+    const workspace = s.workspaces.find((candidate) => candidate.id === session.workspaceId);
+    return isBranchlessSession({
+      workspaceKind: workspace?.kind,
+      branch: s.sessionBranches[sessionId],
+    });
+  });
 
   const openNewSession = useCallback(() => {
     if (!currentWorkspace) {
@@ -704,53 +654,52 @@ export const App = () => {
     return ghCommitDiff(commitDiff.repo, commitDiff.sha);
   }, [commitDiff, currentSessionWorktree]);
 
-  useKeyboardShortcut('cmd+,', openSettings);
-  useKeyboardShortcut('cmd+/', openShortcutHelp);
-  useKeyboardShortcut('cmd+.', openDeleteSession);
-  useKeyboardShortcut('cmd+shift+a', openArchiveSession);
-  useKeyboardShortcut('cmd+k', () => openPalette());
-  useKeyboardShortcut('cmd+o', () => setSwitcherOpen(true));
-  useKeyboardShortcut('cmd+n', openNewSession, { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+b', sessionSidebar.toggle, { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+[', () => navigateLens(-1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+]', () => navigateLens(1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+[', () => navigateSession(-1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+]', () => navigateSession(1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+k', openModelPicker);
-  useKeyboardShortcut('cmd+shift+p', openPermissionPicker);
-  useKeyboardShortcut('cmd+j', toggleTerminalLens, { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+t', openNewTerminalTab, { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+w', closeActiveTerminalTab, { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+g', () => goToLens('goal'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+w', () => goToLens('workflows'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+b', () => goToLens('agents'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+r', () => goToLens('resolve'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+d', goToDiffOrExploreLens, { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+l', () => goToLens('plans'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+s', () => goToLens('scripts'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+q', () => goToLens('questions'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+o', () => goToLens(null), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+h', () => goToLens('pr'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+e', () => goToLens('decisions'), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+shift+u', () => goToLens('last_output_summary'), {
-    ignoreInInputs: false,
-  });
-  useKeyboardShortcut('cmd+shift+escape', () => void setCurrentSession(null), {
-    ignoreInInputs: false,
-  });
-  useKeyboardShortcut('cmd+1', () => selectWorkspaceByIndex(0), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+2', () => selectWorkspaceByIndex(1), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+3', () => selectWorkspaceByIndex(2), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+4', () => selectWorkspaceByIndex(3), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+5', () => selectWorkspaceByIndex(4), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+6', () => selectWorkspaceByIndex(5), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+7', () => selectWorkspaceByIndex(6), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+8', () => selectWorkspaceByIndex(7), { ignoreInInputs: false });
-  useKeyboardShortcut('cmd+9', () => selectWorkspaceByIndex(8), { ignoreInInputs: false });
-  // Hidden pairing surface — undocumented on purpose, no menu/help entry.
-  useKeyboardShortcut('cmd+ctrl+shift+m', () => setCompanionOpen((v) => !v), {
-    ignoreInInputs: false,
-  });
+  useShortcut('settings.open', openSettings);
+  useShortcut('settings.shortcuts', openShortcutHelp);
+  useShortcut('palette.open', () => openPalette());
+  useShortcut('session.new', openNewSession);
+  useShortcut('workspace.switcher', () =>
+    window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),
+  );
+  useShortcut('column.toggle', sessionSidebar.toggle);
+  useShortcut('lens.back', () => navigateLens(-1));
+  useShortcut('lens.forward', () => navigateLens(1));
+  useShortcut('workspace.1', () => selectWorkspaceByIndex(0));
+  useShortcut('workspace.2', () => selectWorkspaceByIndex(1));
+  useShortcut('workspace.3', () => selectWorkspaceByIndex(2));
+  useShortcut('workspace.4', () => selectWorkspaceByIndex(3));
+  useShortcut('workspace.5', () => selectWorkspaceByIndex(4));
+  useShortcut('workspace.6', () => selectWorkspaceByIndex(5));
+  useShortcut('workspace.7', () => selectWorkspaceByIndex(6));
+  useShortcut('workspace.8', () => selectWorkspaceByIndex(7));
+  useShortcut('workspace.9', () => selectWorkspaceByIndex(8));
+
+  useShortcut('session.delete', openDeleteSession);
+  useShortcut('session.archive', openArchiveSession);
+  useShortcut('session.model', openModelPicker);
+  useShortcut('session.permissions', openPermissionPicker);
+  useShortcut('session.prev', () => navigateSession(-1));
+  useShortcut('session.next', () => navigateSession(1));
+  useShortcut('session.board', () => void setCurrentSession(null));
+
+  useShortcut('lens.overview', () => goToLens(null));
+  useShortcut('lens.goal', () => goToLens('goal'));
+  useShortcut('lens.decisions', () => goToLens('decisions'));
+  useShortcut('lens.summary', () => goToLens('last_output_summary'));
+  useShortcut('lens.workflows', () => goToLens('workflows'));
+  useShortcut('lens.agents', () => goToLens('agents'));
+  useShortcut('lens.resolve', () => goToLens('resolve'));
+  useShortcut('lens.review', () => goToLens('review'));
+  useShortcut('lens.questions', () => goToLens('questions'));
+  useShortcut('lens.files', () => goToLens('files'), !isExploreSession);
+  useShortcut('lens.explore', () => goToLens('explore'), isExploreSession);
+  useShortcut('lens.plans', () => goToLens('plans'));
+  useShortcut('lens.scripts', () => goToLens('scripts'));
+  useShortcut('lens.terminal', () => goToLens('terminal'));
+  useShortcut('lens.pr', () => goToLens('pr'));
+  useShortcut('lens.linear', () => goToLens('linear'));
+  useShortcut('lens.sentry', () => goToLens('sentry'));
+  useShortcut('lens.gitlab_issues', () => goToLens('gitlab_issues'));
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
@@ -783,7 +732,6 @@ export const App = () => {
       <ToastProvider>
         <NotificationToastBridge />
         <WorkspaceLauncher />
-        {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
       </ToastProvider>
     );
   }
@@ -797,23 +745,19 @@ export const App = () => {
             onOpenSettings={openSettings}
             onOpenBudget={openBudget}
             activeStudio={activeStudio}
+            hasWorkspace={currentWorkspace != null}
+            hasActiveSession={hasActiveSession}
+            isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
+            isSessionSidebarPeeking={sessionSidebar.isPeeking}
+            onToggleSessionSidebar={
+              sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
+            }
+            onSessionSidebarAnchorEnter={() => sessionSidebar.requestPeek({ source: 'anchor' })}
+            onSessionSidebarAnchorLeave={() => {
+              sessionSidebar.cancelPeek();
+              sessionSidebar.scheduleClose();
+            }}
           />
-        }
-        workspaceBar={
-          currentWorkspace ? (
-            <WorkspaceHeader
-              hasActiveSession={hasActiveSession}
-              isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
-              onToggleSessionSidebar={
-                sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
-              }
-              onSessionSidebarAnchorEnter={() => sessionSidebar.requestPeek({ source: 'anchor' })}
-              onSessionSidebarAnchorLeave={() => {
-                sessionSidebar.cancelPeek();
-                sessionSidebar.scheduleClose();
-              }}
-            />
-          ) : undefined
         }
         footer={
           currentWorkspace ? (
@@ -1056,7 +1000,6 @@ export const App = () => {
           <ArchiveSessionConfirm session={currentSession} onClose={() => setArchiveOpen(false)} />
         </div>
       ) : null}
-      {switcherOpen ? <WorkspaceSwitcher onClose={() => setSwitcherOpen(false)} /> : null}
 
       {companionOpen ? <CompanionStudio onClose={() => setCompanionOpen(false)} /> : null}
 

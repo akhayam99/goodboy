@@ -12,6 +12,7 @@ import {
 import { WorkspaceLinkDialog } from '../WorkspaceLinkDialog';
 import { SessionActivityBar } from '../SessionActivityBar';
 import { NoWorkspaceEmpty } from './parts/NoWorkspaceEmpty';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 type Props = {
   readonly onNavigate?: () => void;
@@ -54,11 +55,14 @@ export const WorkspacesSidebar = ({ onNavigate }: Props) => {
               onNavigate?.();
             }}
             aria-label="back to board"
+            title={`back to board (${shortcutGlyphs('session.board')})`}
             className={cn(
-              'group relative flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold',
-              'bg-primary text-primary-foreground ring-1',
+              'group relative flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium',
+              'ring-1 motion-safe:transition-colors',
+              primaryTint.bg,
+              primaryTint.text,
               primaryTint.ring,
-              'motion-safe:transition-opacity hover:opacity-90',
+              primaryTint.hoverBg,
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             )}
           >
@@ -68,7 +72,7 @@ export const WorkspacesSidebar = ({ onNavigate }: Props) => {
               aria-hidden
               className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
             >
-              ⌘⇧⎋
+              {shortcutGlyphs('session.board')}
             </KbdPill>
           </button>
         </div>

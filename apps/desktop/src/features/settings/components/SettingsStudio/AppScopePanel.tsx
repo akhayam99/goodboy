@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Smartphone } from 'lucide-react';
 import { Button, cn, Divider, FieldRow, ScrollFade, SectionHeader, Select } from '@goodboy/ui';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
@@ -12,6 +12,8 @@ import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
+import { useThemeStore } from '../../../../shared/lib/theme';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ShortcutsSection } from './ShortcutsSection';
 
 type Props = {
@@ -20,6 +22,8 @@ type Props = {
 };
 
 export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const exportConfig = useAppStore((s) => s.exportConfig);
@@ -117,6 +121,25 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
     <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-col gap-6">
+          <section id="appearance" ref={anchor('appearance')} className="flex flex-col gap-4">
+            <SectionHeader label="Appearance" hint="How the app looks on this Mac." />
+            <div className="flex flex-col">
+              <FieldRow label="Theme" help="Applies to every window.">
+                <Select
+                  size="sm"
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value === 'light' ? 'light' : 'dark')}
+                  aria-label="theme"
+                >
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                </Select>
+              </FieldRow>
+            </div>
+          </section>
+
+          <Divider />
+
           <section id="editor" ref={anchor('editor')} className="flex flex-col gap-4">
             <SectionHeader label="Editor" hint="Default tools and first-run preferences." />
             <div className="flex flex-col">
@@ -145,6 +168,32 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   }}
                 >
                   <RotateCcw size={14} aria-hidden /> Run setup again
+                </Button>
+              </FieldRow>
+
+              <FieldRow label="Getting started" help="Open the guide.">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    requestClose();
+                    window.dispatchEvent(new CustomEvent('goodboy:open-guide'));
+                  }}
+                >
+                  <CONCEPT_ICONS.guide size={14} aria-hidden /> Open guide
+                </Button>
+              </FieldRow>
+
+              <FieldRow label="iPhone" help="Follow your sessions from your phone.">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    requestClose();
+                    window.dispatchEvent(new CustomEvent('goodboy:open-pair-device'));
+                  }}
+                >
+                  <Smartphone size={14} aria-hidden /> Pair your iPhone
                 </Button>
               </FieldRow>
             </div>

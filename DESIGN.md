@@ -32,19 +32,35 @@ functional. One register per surface; let the other supply only texture.
 
 ## Layout & navigation
 
-- **App chrome**: a single top bar (`AppTopBar`) holds the logo (left) and
-  global controls (right): cost rollup, theme toggle, notifications, guide,
-  pair-device, settings. A persistent footer (`AppFooter`) holds integration
-  tools (GitHub/GitLab/Linear/Sentry, gated) on the left and studio launchers
-  (workflows, providers, budget) on the right. No breadcrumb renders in the
-  top bar. Navigation context is surfaced contextually: a "Back to board"
-  action in the session sidebar, and an in-content breadcrumb inside session
-  lenses. See [docs/navigation.md](docs/navigation.md) for the full IA and
-  breadcrumb derivation rules.
+- **App chrome**: a single top bar (`AppTopBar`), one 36px row closed by a
+  hairline, holds context on the left (mascot, the sessions-column control,
+  workspace identity, the session breadcrumb) and state plus global controls on
+  the right (cost rollup, running scripts, notifications, onboarding,
+  settings). Theme, the guide, and pair-device are not in it: they live in the
+  app settings studio and the command palette. A persistent footer
+  (`AppFooter`) holds integration tools (GitHub/GitLab/Linear/Sentry, gated) on
+  the left and studio launchers (workflows, providers, budget, impact) on the
+  right. The top bar is context, never content: every control in it opens
+  something elsewhere, none of them edits a record in place. See
+  [docs/design.md](docs/design.md) for what each surface is made of and
+  [docs/navigation.md](docs/navigation.md) for the full IA and breadcrumb
+  derivation rules.
+- **The session title is the breadcrumb.** Inside a session the top bar carries
+  the stage dot, the session goal as the root crumb, and the lens trail behind
+  it. The root is read-only: clicking it returns to the overview, it never
+  opens an edit field. Rename lives once, on the overview header. No second
+  in-content trail is drawn under it, and "Back to board" stays the sidebar's
+  one primary action.
+- **Workspace identity has one mount.** The workspace name lives in the top
+  bar and nowhere else, because it must be readable on the board, where there
+  is no sessions column at all. Clicking it opens an anchored popover that
+  switches workspace, creates one, and opens workspace settings; ⌘O and the
+  palette open that same popover instead of building a second one.
 - **Shell layout**: top bar (always visible) · left sidebar (sessions and
   agents; hidden at Overview, revealed on session entry) · main (workspace
-  board or session work surface) · right pane (session detail and artifacts)
-  · footer (always visible). Each pane owns one job. The sidebar is
+  board, or a session's lens rail plus pane) · footer (always visible). Each
+  pane owns one job. There is no right pane: session detail is the pane itself,
+  and artifacts (plans, diff, terminal) are lenses in the rail. The sidebar is
   session-scoped: at Overview only the board renders, with no left panel
   alongside it.
 - **The board is home; chat is a destination.** With a workspace open and no
@@ -54,32 +70,54 @@ functional. One register per surface; let the other supply only texture.
   open-in-IDE are destinations reached from cards, never the landing surface.
   Every capability stays one navigation away; zero capability is lost.
 - **Top bar is chrome, footer is access, sidebar is presence, palette is
-  transit.** The top bar holds global controls (cost, notifications, settings).
-  The footer holds integration shortcuts and studio launchers. The sidebar
-  answers "where am I" (session list, agents). The command palette (⌘K)
-  answers "where do I want to be". Each has one job; they must not compete.
-- **Navigation chrome is neutral at rest.** Footer launchers, session lens
-  rows, and the back-to-board action stay muted until selected. The selected
-  item uses the same inverted treatment (`bg-foreground text-background`), and
-  the lens rail keeps `aria-current` on the selected row.
-- **Pin the structure, flex the density.** Nothing appears or disappears at a
-  count threshold. A control's position is fixed so it can be learned. The
-  sidebar has no collapse rail. Overview stays board-only. Inside a session,
-  the sessions column can be hidden or shown from the workspace header or with
-  ⌘B, and that choice persists.
+  transit.** The top bar answers "where am I and what is it costing" (identity,
+  crumbs, cost, notifications, settings). The footer holds integration
+  shortcuts and studio launchers. The sidebar answers "what else is going on"
+  (session list, agents). The command palette (⌘K) answers "where do I want to
+  be". Each has one job; they must not compete.
+- **Navigation chrome is neutral at rest.** Footer launchers and session lens
+  rows stay muted until selected, and the selected one takes a muted fill
+  (`bg-muted text-foreground`) rather than a full inversion: only the settings
+  toggle in the top bar still inverts. The lens rail keeps `aria-current` on
+  the selected row. One deliberate exception: "Back to board" is tinted
+  `primary`, the single action in the sidebar that leaves the session.
+- **Pin the structure, flex the density.** A control's position is fixed so it
+  can be learned, and no control appears or disappears at a count threshold.
+  Counts themselves may: the attention and running chips render only above
+  zero, because a chip reading zero is noise, not structure. Overview
+  stays board-only. Inside a session, the sessions column is hidden or shown
+  from one control in the top bar, or with ⌘B, and that choice persists. The
+  sidebar has no collapse rail: a rail is a second, narrower copy of the
+  column, and peek already serves the case it was for.
+- **A shortcut is taught where it is used.** Bindings live in one registry
+  (`shared/keyboard/registry.ts`) on three modifier planes: bare ⌘ for the app,
+  ⌘⇧ for the session, ⌘⌥ for the lens rail. A control that has a binding shows
+  it, because a shortcut nobody sees is a shortcut nobody learns. Dense rows
+  reveal a pill on hover in the badge's place; tooltips and titles carry the
+  glyph in parentheses. The hint never earns its place by truncating the label
+  beside it: where the row is too tight, the tooltip is the mount.
+- **Hidden is not gone: the column peeks.** With the sessions column collapsed,
+  pointing at the window edge or resting on the top bar's control slides the
+  same sidebar back over main, and it withdraws on its own when the pointer
+  leaves. Peek floats the one sidebar rather than laying it out, so nothing
+  needs a second, thinner variant of it. Navigating from a peeked panel closes
+  it; only the control changes what is pinned.
 - **Settings match the scope they edit.** Configuration splits into two
   surfaces by ownership: application settings is a full-page studio; workspace
   settings is a lightweight scoped pane. Each surface edits only
   what belongs to its scope. Changes save instantly: no Save/Cancel footer, no
   stacking one settings surface on another. The scope of a setting matches the
   scope of the surface it's edited on.
-- **One overlay slot.** Full-surface editors (new session, workflow builder,
-  scoped settings, plan studio, diff viewer) share a single overlay spanning
-  the main and right panes. Only one occupies it at a time, by strict
-  precedence; they never stack as competing dialogs. Scope decides the pattern:
-  session- and workspace-scoped editors take the overlay slot so the workspaces
-  sidebar stays visible; app-level studios are full-page; transient
-  confirmations are dialogs.
+- **One overlay slot.** Workspace-scoped editors (new session, workspace
+  settings) share a single overlay over the main pane, so the sessions column
+  stays visible. Only one occupies it at a time, by strict precedence; they
+  never stack as competing dialogs. Scope decides the pattern: session-scoped
+  editors (the workflow builder, the PR studio) layer over the session pane
+  instead, app-level studios are full-page, and what became a lens stays a lens
+  (plans, diff). Confirmations are none of the above: an anchored popover is
+  the default and `InlineConfirm` is the destructive case, with `Dialog` left
+  to the three jobs an anchor cannot do. See
+  [docs/styling.md](docs/styling.md).
 
 ### Register taxonomy
 
@@ -101,7 +139,8 @@ Four named grades, driven by tokens
 (`--density-{compact,cozy,comfortable,scan}`):
 
 - **Compact**: the sidebar. Maximum information, minimum chrome.
-- **Cozy**: the context panel, the composer, tool/system transcript rows.
+- **Cozy**: the strips inside a pane, the composer, tool/system transcript
+  rows.
 - **Comfortable**: human and assistant prose in the transcript. Built for
   reading, not scanning.
 - **Scan**: the stage board and other card grids. Tuned for sweeping a column
@@ -110,11 +149,16 @@ Four named grades, driven by tokens
 Conversation reads as conversation; tool calls read as a devtool. Never let
 the two collapse into the same texture.
 
+**Chrome pays rent.** Above a session pane there is one 36px row and a
+hairline: no workspace bar, no pane header band, no lens toolbar. A band that
+only restates what the pane already says gets cut, so the work starts at the
+top of the window.
+
 ## Color & theme
 
-- **Dark by default** (developer-tool convention), light fully supported via the
-  top-bar toggle. There is no system-preference state: the choice is explicit and
-  persisted.
+- **Dark by default** (developer-tool convention), light fully supported and
+  switched from app settings or the command palette. There is no
+  system-preference state: the choice is explicit and persisted.
 - Color comes from **semantic tokens**: `success`, `warning`, `danger`,
   `info`, `merged`, the surface-elevation ramp, per-provider accents. A raw hex
   or `oklch` in a component is a bug (the xterm terminal palette is the only
@@ -123,6 +167,11 @@ the two collapse into the same texture.
   shared `tintClasses(tone)`; stage colors resolve through a single
   `STAGE_TONE` map. No per-file tone maps: a kind of tone reads the same
   everywhere because it has exactly one source.
+- **The stage palette tracks the life of the work**, not its mood: attention is
+  `warning`, running is `info`, in review is `success`, done is `merged`,
+  building is neutral because nothing is asked of anyone yet. Done borrows the
+  merged purple on purpose: a finished session is almost always a merged pull
+  request, and the two should not be two different colors for one outcome.
 - Elevation is a four-step ramp: canvas < panel < rail/chip < floating. Lift a
   surface by stepping the ramp, not by inventing a shade.
 
@@ -158,8 +207,9 @@ footer. Numbers are always `tabular-nums`. Money shows intent: a live estimate
 before sending, a running total after.
 
 - **The rollup lives in the top bar.** A glanceable workspace rollup
-  (attention count, running count, today's spend, all `tabular-nums`) sits in
-  the always-visible top bar, so workspace health reads without entering a
+  (attention count, which opens the needs-you list; running count; today's
+  spend, which opens the budget studio; all `tabular-nums`) sits in the
+  always-visible top bar, so workspace health reads without entering a
   session.
 - **Caps are authored where they are shown.** A budget cap is edited on the
   same surface that displays it; you don't hunt for a separate settings screen
@@ -169,9 +219,10 @@ before sending, a running total after.
 ## Components & interaction
 
 - **Tabs when you return, accordion when you'd forget.** Tabs reward "I came
-  back to find this"; accordions reward discovery. The right pane is tabs.
+  back to find this"; accordions reward discovery. Studio detail panels are
+  tabs (`StudioDetailTabs`).
 - **Read inline, edit on a focused surface.** Plans and PR bodies render in
-  place; editing opens a focused surface (a modal or an overlay pane). The
+  place; editing opens a focused surface (an overlay pane or its own lens). The
   transcript is for reading.
 - **One creation grammar.** Every surface that creates something (new session,
   launch from an issue, open a pull request, the workflow builder) lays out the
@@ -189,6 +240,11 @@ before sending, a running total after.
   thing is, why it matters, and offers one action to create it. And it teaches
   the board, not the chat: set your first goal, what needs you, where spend
   goes. Never a dead end, never a "start chatting" prompt.
+- **One layout for every lens empty state.** A lens with nothing to show
+  renders `LensEmptyState`: a bordered inline row, the concept icon in its
+  tone, title, description, at most one action. Never a centred hero inside a
+  lens, the pane already carries the title. See
+  [docs/design.md](docs/design.md) section 4.
 - **Empty-state hierarchy follows the surface.** A surface's main empty state
   uses the large size and an `h2`. Inline and secondary empty states use the
   compact default or inline size and do not add a heading to the document
@@ -203,7 +259,9 @@ before sending, a running total after.
   layout, update the skeleton in the same change. All of it stays motion-safe
   and reduced-motion gated.
 - **Confirm what is destructive, nothing else.** Two-step confirms are for
-  irreversible actions only; they must not tax routine clicks.
+  irreversible actions only; they must not tax routine clicks. The confirm
+  happens in place: the row or button being acted on swaps itself for it, so
+  the thing under threat stays on screen.
 - **One card action grammar.** Every card declares two stable action slots:
   navigation at the top right, and lifecycle plus destructive actions at the
   bottom right. The navigation action is always visible. Hover reveal may
@@ -236,11 +294,16 @@ before sending, a running total after.
 5. **Cost is always one glance away**: no surprises, ever.
 6. **Read inline, edit deliberately**: a transcript is a destination, not the
    home.
-7. **Every pixel is intentional**: if it carries no meaning, cut it.
+7. **One home per thing**: workspace identity, the session title, the rename,
+   the collapse control each have exactly one mount. A second copy is a bug.
+8. **Hidden is not gone**: a collapsed column peeks back on approach, so
+   nothing needs a narrower copy of itself to stay reachable.
+9. **Every pixel is intentional**: if it carries no meaning, cut it.
 
 ---
 
 See [VISION.md](./VISION.md) for what Goodboy is,
+[docs/design.md](./docs/design.md) for screen anatomy and surface ownership,
 [docs/styling.md](./docs/styling.md) for the spacing / radius / scroll
-mechanics, and [AGENTS.md](./AGENTS.md) + [CLAUDE.md](./CLAUDE.md) for code
-rules.
+mechanics, [docs/navigation.md](./docs/navigation.md) for the IA, and
+[AGENTS.md](./AGENTS.md) + [CLAUDE.md](./CLAUDE.md) for code rules.

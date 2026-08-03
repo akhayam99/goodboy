@@ -1,4 +1,4 @@
-import { Check, GitBranch, PanelLeftClose, PanelLeftOpen, RefreshCw, X } from 'lucide-react';
+import { Check, GitBranch, RefreshCw, X } from 'lucide-react';
 import { cn, Divider } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
 import { TOOLBAR_ICON_BTN } from './lib';
@@ -9,8 +9,6 @@ type Props = {
   openCommentsCount: number;
   reviewedCount: number | null;
   filesCount: number;
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
   status: WorktreeStatus | null;
   onRefresh?: () => void;
   refreshing: boolean;
@@ -26,8 +24,6 @@ export const DiffToolbar = ({
   openCommentsCount,
   reviewedCount,
   filesCount,
-  sidebarCollapsed,
-  onToggleSidebar,
   status,
   onRefresh,
   refreshing,
@@ -48,16 +44,6 @@ export const DiffToolbar = ({
           presentation === 'bar' ? 'shrink-0 px-2.5 py-1.5' : 'flex-wrap justify-end',
         )}
       >
-        <button
-          type="button"
-          onClick={onToggleSidebar}
-          className={TOOLBAR_ICON_BTN}
-          title={sidebarCollapsed ? 'show file list' : 'hide file list'}
-          aria-label={sidebarCollapsed ? 'show file list' : 'hide file list'}
-        >
-          {sidebarCollapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
-        </button>
-
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {viewSelector ??
             (presentation === 'bar' ? (

@@ -1,28 +1,46 @@
-import { useEffect, useState } from 'react';
-import { Moon, Smartphone, Sun } from 'lucide-react';
-import { cn, Divider, StatusDot, Tooltip } from '@goodboy/ui';
+import { PanelLeft, PanelLeftClose } from 'lucide-react';
+import { cn, Divider, Tooltip } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
-import { bridgeStatus } from '../../../features/companion/bridge';
-import { useThemeStore } from '../../../shared/lib/theme';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { RunningScriptsIndicator } from '../../../features/scripts/components/RunningScriptsIndicator';
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
+import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
+import { SessionStripCrumbs } from '../../../features/session/components/SessionStripCrumbs';
 import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
-const TOPBAR_ICON_BTN =
-  'flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50' as const;
+const SHOW_COLUMN_LABEL = `Show sessions column (${shortcutGlyphs('column.toggle')})`;
+const HIDE_COLUMN_LABEL = `Hide sessions column (${shortcutGlyphs('column.toggle')})`;
+const SETTINGS_LABEL = `settings (${shortcutGlyphs('settings.open')})`;
 
 export type AppTopBarProps = {
   onOpenSettings: () => void;
   onOpenBudget: () => void;
   activeStudio: string | null;
+  hasWorkspace: boolean;
+  hasActiveSession: boolean;
+  isSessionSidebarCollapsed: boolean;
+  isSessionSidebarPeeking: boolean;
+  onToggleSessionSidebar: () => void;
+  onSessionSidebarAnchorEnter: () => void;
+  onSessionSidebarAnchorLeave: () => void;
 };
 
-export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTopBarProps) => {
-  const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+export const AppTopBar = ({
+  onOpenSettings,
+  onOpenBudget,
+  activeStudio,
+  hasWorkspace,
+  hasActiveSession,
+  isSessionSidebarCollapsed,
+  isSessionSidebarPeeking,
+  onToggleSessionSidebar,
+  onSessionSidebarAnchorEnter,
+  onSessionSidebarAnchorLeave,
+}: AppTopBarProps) => {
+  const columnActionLabel = isSessionSidebarCollapsed ? SHOW_COLUMN_LABEL : HIDE_COLUMN_LABEL;
 
   return (
     <>
@@ -30,16 +48,47 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
         data-tauri-drag-region
         className="relative flex h-9 shrink-0 items-center gap-2 bg-background px-3"
       >
-        <div className="flex shrink-0 items-center gap-1.5">
-          <DogMascot size={15} className="shrink-0 text-foreground" />
-          <span className="text-xs font-semibold tracking-tight text-foreground">Goodboy</span>
+        <DogMascot size={15} className="shrink-0 text-foreground" />
+
+        {hasActiveSession ? (
+          <Tooltip content={columnActionLabel}>
+            <button
+              type="button"
+              onClick={onToggleSessionSidebar}
+              onPointerEnter={onSessionSidebarAnchorEnter}
+              onPointerLeave={onSessionSidebarAnchorLeave}
+              data-tauri-drag-region="false"
+              aria-label={columnActionLabel}
+              aria-pressed={isSessionSidebarPeeking}
+              className={cn(
+                'flex shrink-0 items-center justify-center rounded p-1.5 transition-colors',
+                isSessionSidebarPeeking
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+              )}
+            >
+              {isSessionSidebarCollapsed ? (
+                <PanelLeft size={14} aria-hidden />
+              ) : (
+                <PanelLeftClose size={14} aria-hidden />
+              )}
+            </button>
+          </Tooltip>
+        ) : null}
+
+        {hasWorkspace ? (
+          <WorkspaceIdentityRow />
+        ) : (
+          <span className="shrink-0 text-xs font-semibold tracking-tight text-foreground">
+            Goodboy
+          </span>
+        )}
+
+        <div className="flex min-w-0 flex-1 items-center overflow-hidden pl-1">
+          {hasActiveSession ? <SessionStripCrumbs /> : null}
         </div>
 
-        <div className="min-w-0 flex-1" />
-
         <UpdateIndicator variant="pip" />
-
-        <div className="min-w-0 flex-1" />
 
         <WorkspaceRollupStrip onOpenBudget={onOpenBudget} />
 
@@ -48,29 +97,8 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
         <div className="flex shrink-0 items-center gap-0.5">
           <RunningScriptsIndicator />
           <NotificationCenter />
-          <Tooltip content={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'switch to light mode' : 'switch to dark mode'}
-              className={TOPBAR_ICON_BTN}
-            >
-              {theme === 'dark' ? <Sun size={14} aria-hidden /> : <Moon size={14} aria-hidden />}
-            </button>
-          </Tooltip>
-          <PairDeviceCta />
-          <Tooltip content="getting started">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-guide'))}
-              aria-label="open getting started guide"
-              className={TOPBAR_ICON_BTN}
-            >
-              <CONCEPT_ICONS.guide size={14} aria-hidden />
-            </button>
-          </Tooltip>
           <OnboardingChip />
-          <Tooltip content="settings (⌘,)">
+          <Tooltip content={SETTINGS_LABEL}>
             <button
               type="button"
               onClick={onOpenSettings}
@@ -89,45 +117,5 @@ export const AppTopBar = ({ onOpenSettings, onOpenBudget, activeStudio }: AppTop
       </div>
       <Divider />
     </>
-  );
-};
-
-const PairDeviceCta = () => {
-  const [linked, setLinked] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    const refresh = () => {
-      bridgeStatus()
-        .then((s) => {
-          if (active) setLinked(s.running && s.enrolledCount > 0);
-        })
-        .catch(() => {});
-    };
-    refresh();
-    const id = window.setInterval(refresh, 5000);
-    const onChanged = () => refresh();
-    window.addEventListener('goodboy:bridge-paired-changed', onChanged);
-    return () => {
-      active = false;
-      window.clearInterval(id);
-      window.removeEventListener('goodboy:bridge-paired-changed', onChanged);
-    };
-  }, []);
-
-  const label = linked ? 'iPhone linked, manage' : 'Pair your iPhone';
-
-  return (
-    <button
-      type="button"
-      onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-pair-device'))}
-      title={label}
-      aria-label={label}
-      className="group/pair relative inline-flex shrink-0 items-center gap-1 rounded-full border border-border-soft/70 bg-gradient-to-b from-muted/40 to-muted/10 px-2 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm motion-safe:transition-all hover:border-primary/40 hover:from-primary/15 hover:to-primary/5 hover:text-primary hover:shadow-md"
-    >
-      <Smartphone size={11} aria-hidden />
-      <span>Pair</span>
-      {linked ? <StatusDot tone="success" size="sm" /> : null}
-    </button>
   );
 };

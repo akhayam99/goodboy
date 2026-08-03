@@ -30,21 +30,25 @@ export const deriveSessionStage = ({
       return { stage: 'running', reason: 'agent running' };
     }
     if (session.state.kind === 'error') {
-      return { stage: 'attention', reason: 'agent errored' };
+      return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
     }
     if (openQuestionCount === 1) {
-      return { stage: 'attention', reason: '1 open question' };
+      return { stage: 'attention', reason: '1 open question', attention: 'open-question' };
     }
     if (openQuestionCount > 1) {
-      return { stage: 'attention', reason: `${openQuestionCount} open questions` };
+      return {
+        stage: 'attention',
+        reason: `${openQuestionCount} open questions`,
+        attention: 'open-question',
+      };
     }
     if (hasUnread) {
-      return { stage: 'attention', reason: 'unread agent reply' };
+      return { stage: 'attention', reason: 'unread agent reply', attention: 'unread-reply' };
     }
     return { stage: 'building', reason: 'ready for work' };
   }
   if (session.state.kind === 'error') {
-    return { stage: 'attention', reason: 'agent errored' };
+    return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
   }
   if (session.state.kind === 'running' || session.state.kind === 'starting') {
     return { stage: 'running', reason: 'agent running' };
@@ -53,22 +57,34 @@ export const deriveSessionStage = ({
     return { stage: 'running', reason: 'agent running' };
   }
   if (isPrLive(pr) && pr.checks === 'failure') {
-    return { stage: 'attention', reason: `PR #${pr.number}: CI failed` };
+    return { stage: 'attention', reason: `PR #${pr.number}: CI failed`, attention: 'ci-failed' };
   }
   if (isPrLive(pr) && pr.reviewDecision === 'changes_requested') {
-    return { stage: 'attention', reason: `PR #${pr.number}: changes requested` };
+    return {
+      stage: 'attention',
+      reason: `PR #${pr.number}: changes requested`,
+      attention: 'changes-requested',
+    };
   }
   if (openQuestionCount === 1) {
-    return { stage: 'attention', reason: '1 open question' };
+    return { stage: 'attention', reason: '1 open question', attention: 'open-question' };
   }
   if (openQuestionCount > 1) {
-    return { stage: 'attention', reason: `${openQuestionCount} open questions` };
+    return {
+      stage: 'attention',
+      reason: `${openQuestionCount} open questions`,
+      attention: 'open-question',
+    };
   }
   if (isPrLive(pr) && isPrApproved(pr)) {
-    return { stage: 'attention', reason: `PR #${pr.number} approved, ready to merge` };
+    return {
+      stage: 'attention',
+      reason: `PR #${pr.number} approved, ready to merge`,
+      attention: 'pr-approved',
+    };
   }
   if (hasUnread) {
-    return { stage: 'attention', reason: 'unread agent reply' };
+    return { stage: 'attention', reason: 'unread agent reply', attention: 'unread-reply' };
   }
   if (isPrReview && pr === null) {
     return { stage: 'review', reason: 'reviewing an external PR' };

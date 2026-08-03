@@ -15,9 +15,18 @@ export type PersistedSessionViewPrefs = Readonly<{
 
 export type SessionStage = 'attention' | 'running' | 'review' | 'building' | 'done';
 
+export type SessionAttentionReason =
+  | 'agent-error'
+  | 'open-question'
+  | 'unread-reply'
+  | 'ci-failed'
+  | 'changes-requested'
+  | 'pr-approved';
+
 export type SessionStageInfo = Readonly<{
   stage: SessionStage;
   reason: string;
+  attention?: SessionAttentionReason;
 }>;
 
 export type SessionPrGroup =

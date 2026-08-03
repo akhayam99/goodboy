@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, EmptyState, SectionHeader } from '@goodboy/ui';
+import { Button, SectionHeader } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import { Plus } from 'lucide-react';
 import { formatError } from '../../../../shared/lib/errors';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
 import { useAppStore } from '../../../../store';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { NewScriptCard } from './NewScriptCard';
@@ -316,8 +317,7 @@ export const ScriptsPanel = ({
           />
         ) : null}
         {list.length === 0 && newDraft == null ? (
-          <EmptyState
-            bordered
+          <LensEmptyState
             tone={CONCEPT_TONE.scripts}
             icon={CONCEPT_ICONS.scripts}
             title="No scripts yet"
