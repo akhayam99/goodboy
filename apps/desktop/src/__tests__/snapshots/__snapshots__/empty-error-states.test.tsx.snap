@@ -394,7 +394,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                 >
                   <button
                     aria-selected="true"
-                    class="relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] gap-1.5 px-2 py-0.5 text-xs bg-background text-foreground shadow-sm"
+                    class="relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] px-2.5 py-1 text-xs bg-background text-foreground shadow-sm"
                     role="tab"
                     tabindex="0"
                     type="button"
@@ -411,7 +411,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                   </button>
                   <button
                     aria-selected="false"
-                    class="relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] gap-1.5 px-2 py-0.5 text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+                    class="relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] px-2.5 py-1 text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
                     role="tab"
                     tabindex="-1"
                     type="button"
@@ -1437,7 +1437,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                 >
                   <button
                     aria-selected="true"
-                    class="relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] gap-1.5 px-2 py-0.5 text-xs bg-background text-foreground shadow-sm"
+                    class="relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] px-2.5 py-1 text-xs bg-background text-foreground shadow-sm"
                     role="tab"
                     tabindex="0"
                     type="button"
@@ -1454,7 +1454,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                   </button>
                   <button
                     aria-selected="false"
-                    class="relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] gap-1.5 px-2 py-0.5 text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+                    class="relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] px-2.5 py-1 text-xs text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
                     role="tab"
                     tabindex="-1"
                     type="button"
