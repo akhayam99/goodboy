@@ -178,6 +178,62 @@ describe('spawn-from-comment', () => {
     );
   });
 
+  it('gives the reply block a shape contract in the single-thread prompt', () => {
+    const prompt = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR).initialPrompt;
+    expect(prompt).toContain('<<comment-reply id="PRRT_7">>your answer<</comment-reply>>');
+    expect(prompt).toContain('Every <<comment-reply>> block follows this contract.');
+    expect(prompt).toContain('Start with a verdict line');
+    expect(prompt).toContain('Never go past 120 words');
+    expect(prompt).toContain('- `apps/web/src/routes/` uses camelCase folders');
+  });
+
+  it('gives the reply block the same shape contract in the combined prompt', () => {
+    const single = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR).initialPrompt;
+    const combined = buildCombinedCommentAgentArgs(
+      [
+        { head: makeComment({ threadId: 'PRRT_1' }), replies: [] },
+        { head: makeComment({ id: 'review-2', threadId: 'PRRT_2' }), replies: [] },
+      ],
+      PR,
+    ).initialPrompt;
+    const contract = single.slice(single.indexOf('Every <<comment-reply>> block follows'));
+    expect(contract.length).toBeGreaterThan(0);
+    expect(combined).toContain(contract);
+  });
+
+  it('keeps the marker instructions verbatim alongside the reply contract', () => {
+    const combined = buildCombinedCommentAgentArgs(
+      [{ head: makeComment({ threadId: 'PRRT_1' }), replies: [] }],
+      PR,
+    ).initialPrompt;
+    expect(combined).toContain('<<comment-resolved threadId="PRRT_..." commitSha="...">>');
+    expect(combined).toContain('<<comment-wontfix threadId="PRRT_..." reason="...">>');
+    expect(combined).toContain(
+      '<<comment-analysis threadId="PRRT_..." verdict="fix" summary="...">>',
+    );
+    expect(combined).toContain(
+      '<<comment-reply id="PRRT_...">>your answer for that thread<</comment-reply>>',
+    );
+    expect(combined).toContain(
+      'A block is posted only on the thread whose id it names, so never reuse one answer for several ids.',
+    );
+  });
+
+  it('scopes the plain-text summary rule to the analysis marker only', () => {
+    const single = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
+      mode: 'analyze',
+    }).initialPrompt;
+    const combined = buildCombinedCommentAgentArgs(
+      [{ head: makeComment({ threadId: 'PRRT_1' }), replies: [] }],
+      PR,
+      { mode: 'analyze' },
+    ).initialPrompt;
+    const scope =
+      'That plain-text rule covers the summary attribute only: the <<comment-reply>> block stays markdown and keeps the reply contract above.';
+    expect(single).toContain(scope);
+    expect(combined).toContain(scope);
+  });
+
   it('builds one combined resolver with every source thread', () => {
     const first = makeComment({ id: 'review-1', threadId: 'PRRT_1' });
     const second = makeComment({
