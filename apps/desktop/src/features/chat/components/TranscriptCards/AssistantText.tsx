@@ -2,11 +2,9 @@ import { CopyButton, Markdown } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import { ClustersCard } from '../ClustersCard';
-import { CommentAnalysisChip } from '../CommentAnalysisChip';
-import { CommentResolvedChip } from '../CommentResolvedChip';
-import { CommentWontfixChip } from '../CommentWontfixChip';
 import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
+import { ResolverThreadsCard } from '../ResolverThreadsCard';
 
 type Props = {
   text: string;
@@ -32,9 +30,7 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
           <PlanChip assistantText={text} sessionId={sessionId} />
           <ClustersCard assistantText={text} sessionId={sessionId} />
           <HandoffChip assistantText={text} sessionId={sessionId} />
-          <CommentAnalysisChip assistantText={text} sessionId={sessionId} agentId={agentId} />
-          <CommentResolvedChip assistantText={text} sessionId={sessionId} agentId={agentId} />
-          <CommentWontfixChip assistantText={text} sessionId={sessionId} agentId={agentId} />
+          <ResolverThreadsCard assistantText={text} sessionId={sessionId} agentId={agentId} />
         </div>
       ) : null}
     </div>

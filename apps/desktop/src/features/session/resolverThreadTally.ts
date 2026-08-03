@@ -13,8 +13,10 @@ export type ResolverThreadTally = {
   readonly isMixed: boolean;
 };
 
+type Countable = Pick<ResolverThreadSettlement, 'kind' | 'isClosed'>;
+
 type Params = {
-  readonly settlements: ReadonlyArray<ResolverThreadSettlement>;
+  readonly settlements: ReadonlyArray<Countable>;
 };
 
 export const resolverThreadTally = ({ settlements }: Params): ResolverThreadTally => {
