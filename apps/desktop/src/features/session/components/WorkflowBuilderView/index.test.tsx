@@ -470,7 +470,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     );
   });
 
-  it('attaches one routing policy for every runtime-decided step', async () => {
+  it('offers no run-wide model for the runtime-decided steps', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     goToApproach();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
@@ -479,22 +479,21 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     });
     fireEvent.click(continueBtn());
 
-    fireEvent.click(screen.getByRole('button', { name: /^provider:anthropic$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^model:auto$/i }));
+    expect(screen.queryByRole('button', { name: /step agent routing/i })).toBeNull();
+    expect(screen.getByText(/model configured for its role/i)).toBeDefined();
+
     fireEvent.click(startBtn());
 
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
     expect(mockAttach).toHaveBeenCalledWith(
       'sess-1',
       expect.any(String),
-      expect.objectContaining({
-        executionMode: 'dynamic',
-        stepRouting: {
-          providerId: 'cursor',
-          model: 'claude-opus-4-6',
-          effort: 'medium',
-        },
-      }),
+      expect.objectContaining({ executionMode: 'dynamic' }),
+    );
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.not.objectContaining({ stepRouting: expect.anything() }),
     );
   });
 });

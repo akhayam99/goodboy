@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { TaskModelPreferences } from '@goodboy/types';
+import { PROVIDER_IDS, type TaskModelPreferences } from '@goodboy/types';
+import { PROVIDER_CAPABILITIES } from './capabilities';
+import { getCheapModel } from './cli-defaults';
 import { resolveTaskModel } from './task-models';
 
 describe('resolveTaskModel', () => {
@@ -63,5 +65,26 @@ describe('resolveTaskModel', () => {
       providerId: 'codex',
       model: 'gpt-5.6',
     });
+  });
+
+  it('decides orchestration on a mid model, never on the cheap one', () => {
+    const anthropic = resolveTaskModel('workflow_orchestrator', null, 'anthropic');
+    const codex = resolveTaskModel('workflow_orchestrator', null, 'codex');
+
+    expect(anthropic).toEqual({ providerId: 'anthropic', model: 'sonnet-5' });
+    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-5.4' });
+    expect(anthropic.model).not.toBe(getCheapModel('anthropic'));
+    expect(codex.model).not.toBe(getCheapModel('codex'));
+  });
+
+  it('picks a mid model for every provider', () => {
+    for (const providerId of PROVIDER_IDS) {
+      const resolved = resolveTaskModel('workflow_orchestrator', null, providerId);
+      const descriptor = PROVIDER_CAPABILITIES[providerId].models.find(
+        (model) => model.id === resolved.model,
+      );
+
+      expect(descriptor?.costTier).toBe('mid');
+    }
   });
 });

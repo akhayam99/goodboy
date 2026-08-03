@@ -47,7 +47,6 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import type {
   AgentEffort,
   AgentRole,
-  OrchestratorRouting,
   ProviderId,
   RoleModelPreferences,
   Session,
@@ -84,7 +83,6 @@ import { LaunchToggleRow } from './parts/LaunchToggleRow';
 import { StageHeading } from './parts/StageHeading';
 import { StepperRail } from './parts/StepperRail';
 import { TriggerButton } from './parts/TriggerButton';
-import { WorkflowStepRoutingPicker } from '../../../workflows/components/WorkflowStepRoutingPicker';
 
 type Props = {
   readonly session: Session;
@@ -261,7 +259,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [plannerProviderOverride, setPlannerProviderOverride] = useState<ProviderId | ''>('');
   const [plannerModelOverride, setPlannerModelOverride] = useState('');
   const [plannerEffortOverride, setPlannerEffortOverride] = useState<EffortLevel>(PLANNER_EFFORT);
-  const [stepRouting, setStepRouting] = useState<OrchestratorRouting | null>(null);
 
   const providerId =
     providers.find((p) => p.id === session.providerOverride)?.id ??
@@ -386,7 +383,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSteps([]);
     setSaveAsPreset(false);
     setAutoRun(false);
-    setStepRouting(null);
     setError(null);
     setStage(0);
     setExpandedKey(null);
@@ -571,7 +567,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       ...(triggerMode === 'after_run' && after && { chainAfterId: after }),
       ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
       ...(mode === 'dynamic' && { executionMode: 'dynamic' as const }),
-      ...(mode === 'dynamic' && stepRouting != null && { stepRouting }),
     };
   };
 
@@ -1169,16 +1164,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           your process, prior outputs, and open questions before choosing what comes
                           next.
                         </p>
-                        <div className="flex flex-col gap-1">
-                          <span className={SECTION_LABEL_CLS}>Step agent policy</span>
-                          <WorkflowStepRoutingPicker
-                            connectedProviders={connectedProviders}
-                            defaultProvider={providerId}
-                            routing={stepRouting}
-                            disabled={blocked}
-                            onChange={setStepRouting}
-                          />
-                        </div>
+                        <p className="text-2xs leading-relaxed text-muted-foreground">
+                          Each step runs on the model configured for its role.
+                        </p>
                       </div>
                     ) : showSteps ? (
                       <div className="flex flex-col gap-3">

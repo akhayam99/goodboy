@@ -35,7 +35,6 @@ beforeEach(() => {
     continueWorkflowRun: vi.fn(async () => undefined),
     setWorkflowOrchestratorHints: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
-    setWorkflowStepRouting: vi.fn(async () => undefined),
     sessions: [],
     workspaceOverrides: {},
     providers: [
@@ -135,22 +134,19 @@ describe('OrchestratorPanel', () => {
     expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
-  it('shows the run-wide routing policy for decided step agents', () => {
+  it('offers no run-wide model for the decided step agents', () => {
     render(
       <OrchestratorPanel
         sessionId={SESSION_ID}
-        run={run({
-          stepRouting: { providerId: 'anthropic', model: 'opus-5', effort: 'high' },
-        })}
+        run={run()}
         agents={EMPTY_AGENTS}
         isOrchestrating={false}
       />,
     );
 
-    expect(screen.getByTestId('step-routing').textContent).toContain('steps run on');
-    expect(
-      screen.getByRole('button', { name: /step agent routing/i }).getAttribute('aria-label'),
-    ).toContain('Opus 5');
+    expect(screen.queryByTestId('step-routing')).toBeNull();
+    expect(screen.queryByRole('button', { name: /step agent routing/i })).toBeNull();
+    expect(screen.getByTestId('orchestrator-routing').textContent).toContain('decided by');
   });
 
   it('drops the next step control once the run is complete', () => {

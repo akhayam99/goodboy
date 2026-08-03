@@ -5,8 +5,18 @@ import type {
   TaskModelPreferences,
 } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
-import { getCheapModel } from './cli-defaults';
+import { getCheapModel, getMidModel } from './cli-defaults';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+
+const automaticModelForTask = (task: AuxTaskId, providerId: ProviderId): string => {
+  if (task === 'rebase') {
+    return providerId === 'anthropic' ? 'sonnet-5' : getDefaultTurnModel({ id: providerId });
+  }
+  if (task === 'workflow_orchestrator') {
+    return getMidModel(providerId);
+  }
+  return getCheapModel(providerId);
+};
 
 export const resolveTaskModel = (
   task: AuxTaskId,
@@ -29,11 +39,6 @@ export const resolveTaskModel = (
   }
   return {
     providerId: defaultProviderId,
-    model:
-      task === 'rebase'
-        ? defaultProviderId === 'anthropic'
-          ? 'sonnet-5'
-          : getDefaultTurnModel({ id: defaultProviderId })
-        : getCheapModel(defaultProviderId),
+    model: automaticModelForTask(task, defaultProviderId),
   };
 };

@@ -1,7 +1,6 @@
 import type {
   Agent,
   ModelEffort,
-  OrchestratorRouting,
   ProviderId,
   RoleModelPreferences,
   SessionId,
@@ -9,12 +8,9 @@ import type {
   VerbosityLevel,
   WorkflowRunId,
 } from '@goodboy/types';
-import { recommendedModelForRole, resolveModelForProvider } from '@goodboy/core';
-import {
-  ROLE_TO_KIND,
-  inferAgentKindFromName,
-  kindRouting,
-} from '../../../features/session/agent-kind';
+import { resolveModelForProvider } from '@goodboy/core';
+import { ROLE_TO_KIND, inferAgentKindFromName } from '../../../features/session/agent-kind';
+import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 
 type Params = {
@@ -25,7 +21,6 @@ type Params = {
   readonly defaultProvider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
   readonly defaultVerbosity?: VerbosityLevel;
-  readonly routingOverride?: OrchestratorRouting;
 };
 
 type PreSpawnWorkflowAgentsResult = {
@@ -44,7 +39,6 @@ export const preSpawnWorkflowAgents = async ({
   defaultProvider,
   roleModels,
   defaultVerbosity,
-  routingOverride,
 }: Params): Promise<PreSpawnWorkflowAgentsResult> => {
   const agents: Agent[] = [];
   const modelOverrides: Record<string, string> = {};
@@ -55,20 +49,14 @@ export const preSpawnWorkflowAgents = async ({
 
   for (const [index, step] of sortedSteps.entries()) {
     const kind = step.role ? ROLE_TO_KIND[step.role] : inferAgentKindFromName(step.name);
-    const provider = routingOverride?.providerId ?? step.providerOverride ?? defaultProvider;
-    const model = resolveModelForProvider({
-      provider,
-      modelId:
-        routingOverride?.model ??
-        step.modelOverride ??
-        (step.role != null
-          ? recommendedModelForRole({
-              role: step.role,
-              provider,
-              prefs: roleModels,
-            })
-          : kindRouting({ kind, roleModels }).model),
+    const routing = resolveStepRouting({
+      step,
+      kind,
+      roleModels,
+      agentProvider: defaultProvider,
     });
+    const provider = routing.provider;
+    const model = resolveModelForProvider({ provider, modelId: routing.model });
     const agent = await invokeAgentInsert({
       sessionId,
       stepId: step.id,
@@ -80,16 +68,12 @@ export const preSpawnWorkflowAgents = async ({
       ...(defaultVerbosity != null && { verbosity: defaultVerbosity }),
       providerOverride: provider,
       modelOverride: model,
-      ...(routingOverride?.effort != null && { effort: routingOverride.effort }),
-      ...(routingOverride == null && step.effort != null && { effort: step.effort }),
+      effort: routing.effort,
     });
     providerOverrides[agent.id] = provider;
     modelOverrides[agent.id] = model;
     kindOverrides[agent.id] = kind;
-    const effort = routingOverride == null ? step.effort : routingOverride.effort;
-    if (effort != null) {
-      effortOverrides[agent.id] = effort;
-    }
+    effortOverrides[agent.id] = routing.effort;
     agents.push(agent);
   }
 

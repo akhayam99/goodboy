@@ -255,7 +255,6 @@ export type AppActions = {
       chainAfterId?: WorkflowRunId;
       attachmentInputs?: ReadonlyArray<AttachmentInput>;
       executionMode?: WorkflowExecutionMode;
-      stepRouting?: OrchestratorRouting;
     },
   ): Promise<void>;
   detachWorkflowFromSession(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
@@ -308,11 +307,6 @@ export type AppActions = {
     hints: string,
   ): Promise<void>;
   setWorkflowOrchestratorRouting(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    routing: OrchestratorRouting | null,
-  ): Promise<void>;
-  setWorkflowStepRouting(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     routing: OrchestratorRouting | null,
