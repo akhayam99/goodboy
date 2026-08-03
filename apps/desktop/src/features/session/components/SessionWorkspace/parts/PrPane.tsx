@@ -27,7 +27,7 @@ import { BranchPair } from '../../../../../shared/components/BranchPair';
 import { workspaceMountName } from '../../../../../shared/utils/workspaceMountName';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { PrListRow } from './PrListRow';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';

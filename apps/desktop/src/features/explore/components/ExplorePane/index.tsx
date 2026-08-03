@@ -12,7 +12,7 @@ import {
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
-import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
 import { ExplorePreviewPanel } from './ExplorePreviewPanel';
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';

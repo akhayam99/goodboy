@@ -84,7 +84,7 @@ vi.mock('./SentryTaskDetail', () => ({
   ),
 }));
 
-vi.mock('../PaneShell', () => ({
+vi.mock('../../../../../../shared/components/PaneShell', () => ({
   PaneShell: ({ children, actions }: Props) => (
     <div>
       {actions}

@@ -174,7 +174,7 @@ vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/SlotPane', () => ({ SlotPane: () => null }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
-vi.mock('./parts/PaneShell', () => ({
+vi.mock('../../../../shared/components/PaneShell', () => ({
   PaneShell: ({ title, meta, children }: PaneShellMockProps) => (
     <div>
       <h1>{title}</h1>

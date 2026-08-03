@@ -13,7 +13,7 @@ import { GithubConnectionEmptyState } from '../../../../../github/components/Git
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
-import { PaneShell } from '../PaneShell';
+import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { LinearTaskDetail } from './LinearTaskDetail';
 import { LinkIssueForm } from './LinkIssueForm';
 import { LinkTicketPopover } from './LinkTicketPopover';

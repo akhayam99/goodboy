@@ -5,7 +5,7 @@ import { CreateAgentPopover } from '../../CreateAgentPopover';
 import { ShowCompletedToggle } from '../../AgentLane/ShowCompletedToggle';
 import { StandaloneAgentsLane } from '../../StandaloneAgentsLane';
 import { InspectorSplit } from './InspectorSplit';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 
 type Props = {
   readonly session: Session;

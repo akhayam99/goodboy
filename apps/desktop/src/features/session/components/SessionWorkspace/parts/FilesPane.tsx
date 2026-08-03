@@ -5,7 +5,7 @@ import { useAppStore } from '../../../../../store';
 import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
 import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
 import { FileVersionsPane } from './FileVersionsPane';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 
 type FilesPaneProps = {
   readonly sessionId: SessionId;

@@ -13,7 +13,7 @@ import {
 } from '../../../../../store';
 import { GoalAttachmentsStrip } from '../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { InspectorSplit } from './InspectorSplit';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { SlotHistoryPanel } from './SlotHistoryPanel';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '../../../../../shared/components/CopyButton';

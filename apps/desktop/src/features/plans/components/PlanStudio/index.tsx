@@ -24,7 +24,7 @@ import {
 import type { Agent, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanListPanel } from './PlanListPanel';

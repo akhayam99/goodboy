@@ -19,6 +19,7 @@ type Store = {
 type ButtonMockProps = React.ComponentProps<'button'>;
 type DividerMockProps = { readonly orientation?: string };
 type ResizeHandleMockProps = { readonly ariaLabel: string };
+type MetaRowMockProps = { readonly items: ReadonlyArray<React.ReactNode> };
 type ChildrenMockProps = { readonly children: React.ReactNode };
 type AgentsSectionMockProps = { readonly workflowRunId?: string };
 type BuildWorkflowParams = { readonly id: string; readonly name: string };
@@ -66,6 +67,7 @@ vi.mock('@goodboy/ui', () => ({
       {action}
     </div>
   ),
+  MetaRow: ({ items }: MetaRowMockProps) => <span>{items}</span>,
   ResizeHandle: ({ ariaLabel }: ResizeHandleMockProps) => (
     <div role="separator" aria-label={ariaLabel} />
   ),

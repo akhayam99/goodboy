@@ -30,7 +30,7 @@ import {
   useOpenQuestions,
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };

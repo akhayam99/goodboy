@@ -25,6 +25,7 @@ import { GoalAttachmentsStrip } from '../../../../../features/context/components
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { CardAction } from '../../../../../shared/components/CardAction';
 import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
+import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { workflowKindName } from '../lib';
@@ -515,41 +516,30 @@ export const WorkflowRow = ({
           className={cn('col-start-2 self-end', expanded ? 'row-start-3' : 'row-start-2')}
         >
           {isQueuedManual ? (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={Play}
+              label="Start"
+              tone="success"
               onClick={() => void startWorkflowRun(task.id, run.id)}
-              className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-success transition-colors hover:bg-success/15"
-            >
-              <Play size={14} aria-hidden />
-              Start
-            </button>
+            />
           ) : null}
           {!isDiscarded && !isCompleted ? (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={run.autoRun ? Zap : ZapOff}
+              label="Autorun"
+              tone={run.autoRun ? 'primary' : 'neutral'}
+              pressed={run.autoRun}
+              highlighted={run.autoRun}
+              ariaLabel={run.autoRun ? 'autorun on' : 'autorun off'}
               onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-              aria-label={run.autoRun ? 'autorun on' : 'autorun off'}
-              aria-pressed={run.autoRun}
-              className={cn(
-                'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold transition-colors',
-                run.autoRun
-                  ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                  : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
-              )}
-            >
-              {run.autoRun ? <Zap size={14} aria-hidden /> : <ZapOff size={14} aria-hidden />}
-              Autorun
-            </button>
+            />
           ) : null}
           {isDiscarded ? (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={Undo2}
+              label="Restore"
               onClick={() => void restoreWorkflow(task.id, run.id)}
-              className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
-            >
-              <Undo2 size={14} aria-hidden />
-              Restore
-            </button>
+            />
           ) : (
             <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
           )}

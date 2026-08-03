@@ -72,7 +72,7 @@ vi.mock('../../../../context/components/QuestionsTab/QuestionCard', () => ({
   ),
 }));
 
-vi.mock('./PaneShell', () => ({
+vi.mock('../../../../../shared/components/PaneShell', () => ({
   PaneShell: (props: { title: string; description?: string; children: React.ReactNode }) => (
     <div data-testid="pane-shell" data-title={props.title} data-description={props.description}>
       {props.children}

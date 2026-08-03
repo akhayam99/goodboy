@@ -4,7 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
-import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import {
   GenericTerminalPanel,
   type TerminalDriver,

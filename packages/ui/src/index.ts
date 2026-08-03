@@ -40,6 +40,8 @@ export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';
 export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
+export { MetaRow } from './components/MetaRow';
+export type { MetaRowProps } from './components/MetaRow';
 export { Popover } from './components/Popover';
 export type { PopoverProps } from './components/Popover';
 export { ResizeHandle } from './components/ResizeHandle';

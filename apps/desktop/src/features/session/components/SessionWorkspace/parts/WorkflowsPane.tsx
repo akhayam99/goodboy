@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Ban, Check } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
-import { Divider } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
@@ -14,7 +13,8 @@ import { workflowKindName } from '../../../../workspace/components/WorkspacesSid
 import { WorkflowRailCard } from './WorkflowRailCard';
 import { WorkflowRunDetail } from './WorkflowRunDetail';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { FocusedPane } from '../../../../../shared/components/PaneShell/FocusedPane';
 
 type Props = {
   readonly session: Session;
@@ -74,25 +74,17 @@ export const WorkflowsPane = ({ session }: Props) => {
 
   if (focusedRun != null) {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-background">
-        <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-3">
-          <div className="flex items-baseline gap-2">
-            <h1 className="text-2xs font-semibold uppercase tracking-wide text-muted-foreground/70">
-              Workflows
-            </h1>
-            <span className="text-2xs tabular-nums text-muted-foreground/70">
-              {attachedRuns.length}
-            </span>
-          </div>
-          {shouldShowHeaderAttach ? (
+      <FocusedPane
+        lens="Workflows"
+        count={attachedRuns.length}
+        actions={
+          shouldShowHeaderAttach ? (
             <WorkflowAttachButton sessionId={sessionId} placement="header" />
-          ) : null}
-        </div>
-        <Divider />
-        <div className="flex min-h-0 flex-1">
-          <WorkflowRunDetail session={session} workflowRunId={focusedRun.run.id} />
-        </div>
-      </div>
+          ) : null
+        }
+      >
+        <WorkflowRunDetail session={session} workflowRunId={focusedRun.run.id} />
+      </FocusedPane>
     );
   }
 

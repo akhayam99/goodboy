@@ -7,7 +7,7 @@ import { useAppStore } from '../../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
-import { PaneShell } from '../PaneShell';
+import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { fileVersionGroups } from './fileVersionGroups';
 import { PathSummaryList } from './pathSummaryList';
 import { VersionHistoryList } from './versionHistoryList';

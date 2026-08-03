@@ -4,7 +4,7 @@ import { ShowCompletedToggle } from '../../AgentLane/ShowCompletedToggle';
 import { ResolverAgentsLane } from '../../ResolverAgentsLane';
 import { AgentInspector } from '../../AgentInspector';
 import { InspectorSplit } from './InspectorSplit';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 
 type Props = {
   readonly session: Session;
