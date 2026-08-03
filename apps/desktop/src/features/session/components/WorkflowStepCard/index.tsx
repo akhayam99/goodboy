@@ -198,6 +198,7 @@ export const WorkflowStepCard = ({
             {headerRow(
               <RoutingBadge
                 className="shrink-0"
+                glyphPlacement="trailing"
                 provider={provider}
                 model={resolvedModel}
                 effort={effort}

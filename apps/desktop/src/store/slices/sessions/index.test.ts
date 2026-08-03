@@ -1084,8 +1084,10 @@ describe('store contract', () => {
     });
   });
 
-  describe('createSession workflow builder intent', () => {
-    async function primeCreate() {
+  describe('createSession lands on Overview', () => {
+    it('opens no studio and no lens for a newly created session', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
       const { listWorkspaces } = await import('@goodboy/db');
       (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
         buildWorkspace(),
@@ -1096,29 +1098,6 @@ describe('store contract', () => {
         slug: 'setup-workflow',
         reused: false,
       });
-    }
-
-    it('leaves the new session on the workflow builder after the mount lens guard runs', async () => {
-      const store = await getStore();
-      store.setState({ currentWorkspaceId: WS_ID });
-      await primeCreate();
-
-      const { session } = await store
-        .getState()
-        .createSession({ workspaceId: WS_ID, goal: 'ship it', openWorkflowBuilder: true });
-
-      const seeded = store.getState();
-      expect(seeded.activeLens[session.id]).toBeNull();
-      if (seeded.activeLens[session.id] === undefined) {
-        seeded.setActiveLens(session.id, null);
-      }
-      expect(store.getState().sessionStudio[session.id]).toEqual({ kind: 'workflow' });
-    });
-
-    it('keeps the builder closed when the intent is absent', async () => {
-      const store = await getStore();
-      store.setState({ currentWorkspaceId: WS_ID });
-      await primeCreate();
 
       const { session } = await store
         .getState()

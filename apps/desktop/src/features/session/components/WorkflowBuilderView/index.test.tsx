@@ -8,6 +8,7 @@ import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDraf
 const {
   mockSavePhaseTemplate,
   mockAttach,
+  mockSetActiveLens,
   mockPlan,
   mockPolish,
   mockPolishStep,
@@ -16,6 +17,7 @@ const {
 } = vi.hoisted(() => ({
   mockSavePhaseTemplate: vi.fn(async (_workflow: Workflow) => undefined),
   mockAttach: vi.fn(async () => undefined),
+  mockSetActiveLens: vi.fn(),
   mockPlan: vi.fn(),
   mockPolish: vi.fn(),
   mockPolishStep: vi.fn(),
@@ -48,6 +50,7 @@ vi.mock('../../../../store', () => {
     sessionBranches: { [session.id]: 'ak/workflow' },
     savePhaseTemplate: mockSavePhaseTemplate,
     attachWorkflowToSession: mockAttach,
+    setActiveLens: mockSetActiveLens,
     phaseTemplates: storeState.phaseTemplates,
     sessionPhaseRuns: storeState.sessionPhaseRuns,
     workspaceOverrides: storeState.workspaceOverrides,
@@ -410,6 +413,17 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expect(continueBtn().disabled).toBe(true);
   });
 
+  it('lands on the new run detail after starting a custom workflow', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    await waitFor(() => expect(mockSetActiveLens).toHaveBeenCalledWith('sess-1', 'workflows'));
+    const attachOrder = mockAttach.mock.invocationCallOrder[0]!;
+    const lensOrder = mockSetActiveLens.mock.invocationCallOrder[0]!;
+    expect(attachOrder).toBeLessThan(lensOrder);
+  });
+
   it('closes via the header close button', async () => {
     const onClose = vi.fn();
     render(<WorkflowBuilderView session={session} onClose={onClose} />);
@@ -521,6 +535,19 @@ describe('WorkflowBuilderView (preset mode)', () => {
     expect(mockSavePhaseTemplate).not.toHaveBeenCalled();
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(toastMock).toHaveBeenCalledWith('success', 'workflow started: Ship It');
+  });
+
+  it('lands on the new run detail after starting a preset as-is', async () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    await waitFor(() => expect(mockSetActiveLens).toHaveBeenCalledWith('sess-1', 'workflows'));
+    const attachOrder = mockAttach.mock.invocationCallOrder[0]!;
+    const lensOrder = mockSetActiveLens.mock.invocationCallOrder[0]!;
+    expect(attachOrder).toBeLessThan(lensOrder);
   });
 
   it('switches to custom mode via the segment', () => {

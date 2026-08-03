@@ -54,12 +54,9 @@ export const WorkflowsPane = ({ session }: Props) => {
   const active = live.filter((entry) => !completed.includes(entry));
   const focusedRun = attachedRuns.find(({ run }) => run.id === focusedWorkflowRunId) ?? null;
   const hasRuns = attachedRuns.length > 0;
-  const hasVisibleRuns =
-    active.length > 0 ||
-    (showCompleted && completed.length > 0) ||
-    (showDiscarded && discarded.length > 0);
-  const shouldShowHeaderAttach = hasRuns && (focusedRun != null || hasVisibleRuns);
-  const shouldShowEmptyCard = hasRuns && focusedRun == null && !hasVisibleRuns;
+  const hasActiveRuns = active.length > 0;
+  const shouldShowHeaderAttach = hasRuns && (focusedRun != null || hasActiveRuns);
+  const shouldShowEmptyCard = hasRuns && focusedRun == null && !hasActiveRuns;
 
   const renderCard = ({ run, workflow }: { run: WorkflowRun; workflow: Workflow }) => {
     const agents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;

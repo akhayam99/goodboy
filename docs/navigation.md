@@ -251,11 +251,8 @@ is hidden when none of them is connected. Picking an issue fills the goal from
 the issue and the branch slug from its identifier, and counts as a manual slug
 edit, so later goal typing no longer re-slugs it.
 
-The footer carries a "Set up workflow next" checkbox
-(`SetupWorkflowToggle`). It defaults to on, persists in `localStorage` under
-`goodboy:session-setup-workflow` (not in the DB), and is passed to
-`createSession` as `openWorkflowBuilder`, which opens the new session with the
-workflow studio focused instead of the chat.
+Creating a session always lands on Overview; there is no workflow-setup toggle
+in the footer. The operator decides whether to start a workflow from there.
 
 ## Sessions list: archived toggle
 

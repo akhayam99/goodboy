@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Agent, AgentId, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
 import { resolveStepRouting } from '../../resolveStepRouting';
@@ -34,7 +33,6 @@ export const WorkflowStepGraphBranch = ({
   onSelect,
 }: Props) => {
   const children = childrenByParentId.get(run.id) ?? [];
-  const [isBranchOpen, setIsBranchOpen] = useState(false);
   const kind = agentKindOverride[run.id] ?? inferAgentKindFromName(run.name);
   const routing = resolveStepRouting({
     step,
@@ -46,8 +44,7 @@ export const WorkflowStepGraphBranch = ({
   const doneChildCount = children.filter(
     (child) => child.status === 'completed' || child.status === 'skipped',
   ).length;
-  const canBranch = children.length > 0 && depth < MAX_DEPTH;
-  const showBranch = isBranchOpen && canBranch;
+  const showBranch = children.length > 0 && depth < MAX_DEPTH;
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
@@ -57,11 +54,9 @@ export const WorkflowStepGraphBranch = ({
         provider={routing.provider}
         model={routing.model}
         marker={marker}
-        childCount={canBranch ? children.length : 0}
+        childCount={showBranch ? children.length : 0}
         doneChildCount={doneChildCount}
-        isBranchOpen={isBranchOpen}
         isSelected={selectedAgentId === run.id}
-        onToggleBranch={() => setIsBranchOpen((open) => !open)}
         onSelect={() => onSelect(run.id)}
       />
       {showBranch ? (

@@ -91,7 +91,8 @@ export const TurnsTable = ({ turns, showSession, onOpenSession }: Props) => {
                           size="xs"
                           shape="badge"
                           label={record.kind}
-                          className="min-w-[5.5rem] justify-center uppercase"
+                          width="md"
+                    className="uppercase"
                         />
                       </span>
                     </td>

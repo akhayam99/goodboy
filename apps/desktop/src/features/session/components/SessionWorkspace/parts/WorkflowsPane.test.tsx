@@ -303,8 +303,9 @@ describe('WorkflowsPane', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Completed (2)' }));
 
-    expect(screen.queryByTestId('workflow-empty')).toBeNull();
+    expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
     expect(screen.getByText('First workflow')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
   });
 
   it('files a discarded run under its own toggle instead of the active list', () => {

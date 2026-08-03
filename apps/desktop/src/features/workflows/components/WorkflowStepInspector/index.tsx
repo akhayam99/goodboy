@@ -1,7 +1,14 @@
+import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Divider, EmptyState, Markdown, ScrollFade } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { stripControlMarkers } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import {
+  SpawnedAgentList,
+  type SpawnedAgentItem,
+} from '../../../../shared/components/SpawnedAgentList';
+import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { classifyAgent } from '../../../session/agent-kind';
 import { useAgentMetrics } from '../../../session/hooks/useAgentMetrics';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
@@ -39,10 +46,37 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
   const attachedRuns = useAttachedWorkflowRuns({ session });
   const roleModels = useAppStore((state) => roleModelsForSession({ state, sessionId: session.id }));
   const metrics = useAgentMetrics({ sessionId: session.id });
+  const phaseRuns = useAppStore(
+    (state) => state.sessionPhaseRuns[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
+  );
+  const turnStates = useAppStore(useShallow((state) => state.agentTurnState));
+  const selectAgent = useAppStore((state) => state.selectAgent);
+  const spawnedChildren = useMemo(
+    () => selectSpawnedChildren({ runs: phaseRuns, parentAgentId: agentId, turnStates }),
+    [phaseRuns, agentId, turnStates],
+  );
+  const childItems = useMemo<ReadonlyArray<SpawnedAgentItem>>(
+    () =>
+      spawnedChildren.map((child) => ({
+        key: child.agent.id,
+        index: child.index,
+        total: child.total,
+        name: child.agent.name,
+        body: null,
+        status: child.status,
+        agentId: child.agent.id,
+      })),
+    [spawnedChildren],
+  );
 
   if (agent == null || !isWorkflowStepAgent({ agent })) {
     return null;
   }
+
+  const onSelectChild = (childAgentId: AgentId) => {
+    void selectAgent(session.id, childAgentId);
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+  };
 
   const attached = attachedRuns.find(({ run }) => run.id === agent.workflowRunId) ?? null;
   const step = attached?.workflow.steps.find((candidate) => candidate.id === agent.stepId) ?? null;
@@ -98,6 +132,19 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
               </dd>
             </dl>
           </InspectorSection>
+          {childItems.length > 0 ? (
+            <>
+              <Divider />
+              <InspectorSection question="What it spawned">
+                <SpawnedAgentList
+                  items={childItems}
+                  selectedAgentId={undefined}
+                  onSelect={onSelectChild}
+                  variant="inline"
+                />
+              </InspectorSection>
+            </>
+          ) : null}
           <Divider />
           <InspectorSection question="Instructions">
             {instructions === '' ? (

@@ -100,23 +100,21 @@ const renderGraph = (
 afterEach(cleanup);
 
 describe('WorkflowStepGraph', () => {
-  it('numbers the steps down the spine and keeps a fan-out folded', () => {
+  it('numbers the steps down the spine and shows a fan-out without asking', () => {
     renderGraph(new Map([[scout.id, [subScout(1, 'completed'), subScout(2, 'running')]]]));
 
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByText('2')).toBeDefined();
-    expect(screen.queryByText('Scout area 1')).toBeNull();
-    expect(screen.getByText('1/2')).toBeDefined();
-  });
-
-  it('opens a fan-out into numbered children under their parent', () => {
-    renderGraph(new Map([[scout.id, [subScout(1, 'completed'), subScout(2, 'running')]]]));
-
-    fireEvent.click(screen.getByRole('button', { name: /show the 2 agents under Scout/i }));
-
     expect(screen.getByText('Scout area 1')).toBeDefined();
     expect(screen.getByText('1.1')).toBeDefined();
     expect(screen.getByText('1.2')).toBeDefined();
+  });
+
+  it('counts the children without offering a way to fold them away', () => {
+    renderGraph(new Map([[scout.id, [subScout(1, 'completed'), subScout(2, 'running')]]]));
+
+    expect(screen.getByText('1/2')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /agents under Scout/i })).toBeNull();
   });
 
   it('keeps showing the status of a node that has children', () => {

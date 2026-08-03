@@ -48,8 +48,9 @@ import { DiffViewerDialog } from '../../../../features/permissions/components/Di
 import { worktreeDiff } from '../../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { ChatEmptyState } from './ChatEmptyState';
-import { ClusterProgressDashboard } from './ClusterProgressDashboard';
-import { selectClusterDashboard } from './clusterDashboard';
+import { selectSpawnRecord } from './spawnRecord';
+import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
+import { selectClustersPlan } from '../../../../store/slices/workflows/clusterImplementation';
 import { ParallelColumn } from './ParallelColumn';
 import { TranscriptRows } from './TranscriptRows';
 import { useScrollPin } from './useScrollPin';
@@ -248,18 +249,28 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   const agentTurnState = useAppStore(useShallow((s) => s.agentTurnState));
   const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY);
 
-  const clusterDashboard = useMemo(() => {
-    const base = selectClusterDashboard(phaseRuns, selectedAgentId ?? undefined, sessionPlans);
-    if (!base) {
-      return null;
-    }
-    const items = base.items.map((item) =>
-      agentTurnState[item.agent.id]?.kind === 'running' && item.agent.status !== 'running'
-        ? { ...item, agent: { ...item.agent, status: 'running' as const } }
-        : item,
-    );
-    return { ...base, items };
-  }, [phaseRuns, selectedAgentId, sessionPlans, agentTurnState]);
+  const selectedRun = useMemo(
+    () => phaseRuns.find((run) => run.id === selectedAgentId) ?? null,
+    [phaseRuns, selectedAgentId],
+  );
+  const clustersPlan = useMemo(
+    () => selectClustersPlan(sessionPlans, selectedRun?.workflowRunId),
+    [sessionPlans, selectedRun],
+  );
+  const spawnRecord = useMemo(
+    () => selectSpawnRecord({ items: deferredItems, plan: clustersPlan }),
+    [deferredItems, clustersPlan],
+  );
+  const spawnedChildren = useMemo(
+    () =>
+      selectSpawnedChildren({
+        runs: phaseRuns,
+        parentAgentId: selectedAgentId,
+        turnStates: agentTurnState,
+        assignments: spawnRecord.assignments,
+      }),
+    [phaseRuns, selectedAgentId, agentTurnState, spawnRecord],
+  );
   const rawMergeConflicts = useAppStore((s) => s.sessionMergeConflicts[session.id] ?? EMPTY_ARRAY);
   const resolveMergeConflicts = useAppStore((s) => s.resolveMergeConflicts);
 
@@ -564,39 +575,27 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         >
           {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
             <TranscriptSkeleton />
-          ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 ? (
-            isProviderDisconnected ? (
-              <div className="flex h-full items-center justify-center">
-                <div className="mx-auto w-full max-w-[880px]">
-                  <AuthRequiredCallout
-                    providerId={provider}
-                    identity={providerIdentity}
-                    onRefresh={() => void refreshProviders()}
-                  />
-                </div>
-              </div>
-            ) : clusterDashboard ? (
-              <ClusterProgressDashboard
-                sessionId={session.id}
-                items={clusterDashboard.items}
-                completed={clusterDashboard.completed}
-                total={clusterDashboard.total}
-                selectedAgentId={selectedAgentId ?? undefined}
-                onSelect={(id) => void selectAgent(session.id, id)}
-                onAdvance={(id) =>
-                  void advanceClusterImplementation(session.id, id, '', { force: true })
-                }
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <ChatEmptyState
-                  sessionId={session.id}
-                  selectedAgentId={selectedAgentId}
-                  phaseRuns={phaseRuns}
-                  hasWorkflow={session.workflowRuns.length > 0}
+          ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 && isProviderDisconnected ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="mx-auto w-full max-w-[880px]">
+                <AuthRequiredCallout
+                  providerId={provider}
+                  identity={providerIdentity}
+                  onRefresh={() => void refreshProviders()}
                 />
               </div>
-            )
+            </div>
+          ) : deferredItems.length === 0 &&
+            oqByTurnOrdinal.size === 0 &&
+            spawnedChildren.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <ChatEmptyState
+                sessionId={session.id}
+                selectedAgentId={selectedAgentId}
+                phaseRuns={phaseRuns}
+                hasWorkflow={session.workflowRuns.length > 0}
+              />
+            </div>
           ) : (
             <ul
               className="mx-auto flex w-full max-w-[880px] flex-col gap-2.5"
@@ -615,6 +614,13 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
                 thinkingContext={thinkingContext}
                 onRetryError={(item) => void handleRetryError({ item })}
                 retryingErrorRunId={retryingErrorRunId}
+                spawned={spawnedChildren}
+                spawnAnchorKey={spawnRecord.anchorKey}
+                onAdvanceSpawn={
+                  clustersPlan != null
+                    ? (id) => void advanceClusterImplementation(session.id, id, '', { force: true })
+                    : undefined
+                }
               />
             </ul>
           )}

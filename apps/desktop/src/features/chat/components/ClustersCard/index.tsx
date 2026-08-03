@@ -5,9 +5,12 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
-import { SpawnedAgentList, type SpawnedAgentItem } from '../SpawnedAgentList';
-import { clusterBody } from '../SpawnedAgentList/clusterBody';
-import { selectInlineClusterRuns } from '../ChatView/clusterDashboard';
+import {
+  SpawnedAgentList,
+  type SpawnedAgentItem,
+} from '../../../../shared/components/SpawnedAgentList';
+import { clusterBody } from './clusterBody';
+import { selectInlineClusterRuns } from './selectInlineClusterRuns';
 
 type Props = {
   readonly assistantText: string;

@@ -20,6 +20,7 @@ type Props = {
   readonly model?: string | null;
   readonly effort?: string | null;
   readonly variant?: 'compact' | 'full';
+  readonly glyphPlacement?: 'leading' | 'trailing';
   readonly missingLabel?: string;
   readonly muted?: boolean;
   readonly className?: string;
@@ -33,6 +34,7 @@ export const RoutingBadge = ({
   model = null,
   effort = null,
   variant = 'compact',
+  glyphPlacement = 'leading',
   missingLabel = 'not resolved',
   muted = false,
   className,
@@ -81,6 +83,16 @@ export const RoutingBadge = ({
     );
   }
 
+  const glyph =
+    Glyph != null && resolvedProvider != null ? (
+      <Glyph
+        size={glyphSize}
+        className="shrink-0"
+        style={{ color: brandColor(resolvedProvider) }}
+        aria-hidden
+      />
+    ) : null;
+
   return (
     <span
       className={cn(
@@ -89,14 +101,7 @@ export const RoutingBadge = ({
         className,
       )}
     >
-      {Glyph != null && resolvedProvider != null && (
-        <Glyph
-          size={glyphSize}
-          className="shrink-0"
-          style={{ color: brandColor(resolvedProvider) }}
-          aria-hidden
-        />
-      )}
+      {glyphPlacement === 'leading' ? glyph : null}
       {model != null ? (
         <span
           className={cn('min-w-0 truncate font-medium', TIER_TEXT[modelTier(model)])}
@@ -112,6 +117,7 @@ export const RoutingBadge = ({
           {EFFORT_LABEL[resolvedEffort]}
         </span>
       )}
+      {glyphPlacement === 'trailing' ? glyph : null}
     </span>
   );
 };

@@ -30,7 +30,6 @@ import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../../shared/ut
 import { buildSimpleSessionDirectoryPath } from '../../../../shared/utils/buildSimpleSessionDirectoryPath';
 import { sessionDirectoryNameValidationMessage } from '../../../../shared/utils/sessionDirectoryNameValidationMessage';
 import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/providerOrder';
-import { useSetupWorkflowPreference } from '../../hooks/useSetupWorkflowPreference';
 import { EMPTY_NEW_SESSION_DRAFT } from '../../../../store/slices/newSessionDrafts/emptyNewSessionDraft';
 import { generateBranchSlug } from './generateBranchSlug';
 import { GoalEditor } from './GoalEditor';
@@ -85,7 +84,6 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const [goalEditorDraft, setGoalEditorDraft] = useState('');
   const [goalPolishing, setGoalPolishing] = useState(false);
   const goalPolishRequestId = useRef(0);
-  const [setupWorkflow, setSetupWorkflow] = useSetupWorkflowPreference();
 
   const {
     attachments,
@@ -374,7 +372,6 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             }
           : {}),
         ...(attachments.length > 0 ? { attachmentInputs: attachments.map(toAttachmentInput) } : {}),
-        openWorkflowBuilder: setupWorkflow,
       });
       clearNewSessionDraft({ workspaceId });
       onClose();
@@ -468,8 +465,6 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
             <NewSessionFooter
               isSimple={isSimple}
               error={error}
-              setupWorkflow={setupWorkflow}
-              onSetupWorkflowChange={setSetupWorkflow}
               busy={busy}
               onClose={onCancel}
               conflictSessionId={conflictSessionId}

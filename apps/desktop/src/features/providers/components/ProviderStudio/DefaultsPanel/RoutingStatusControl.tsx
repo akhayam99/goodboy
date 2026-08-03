@@ -12,9 +12,10 @@ export const RoutingStatusControl = ({ label, isCustom, disabled, onReset }: Pro
   const status = isCustom ? 'custom' : 'default';
 
   return (
-    <div className="flex w-24 shrink-0 items-center justify-end">
+    <div className="flex shrink-0 items-center justify-end">
       <Chip
         tone={isCustom ? 'primary' : 'neutral'}
+        width="md"
         label={status.toUpperCase()}
         ariaLabel={`${label} routing status: ${status}`}
         bordered={false}

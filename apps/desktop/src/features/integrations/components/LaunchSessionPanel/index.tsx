@@ -24,8 +24,6 @@ import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../../shared/ut
 import { buildSimpleSessionDirectoryPath } from '../../../../shared/utils/buildSimpleSessionDirectoryPath';
 import { sessionDirectoryNameValidationMessage } from '../../../../shared/utils/sessionDirectoryNameValidationMessage';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
-import { SetupWorkflowToggle } from '../../../session/components/SetupWorkflowToggle';
-import { useSetupWorkflowPreference } from '../../../session/hooks/useSetupWorkflowPreference';
 import { removeWorktree } from '../../../worktree/worktree';
 import { useBranchConflict } from '../../../worktree/useBranchConflict';
 import { useSimpleSessionDirectoryConflict } from '../../../worktree/useSimpleSessionDirectoryConflict';
@@ -78,7 +76,6 @@ export const LaunchSessionPanel = ({
   );
   const adoptable = isBranchless ? null : adoptableInput;
   const { showToast } = useToast();
-  const [setupWorkflow, setSetupWorkflow] = useSetupWorkflowPreference();
   const [goal, setGoal] = useState(goalSeed);
   const [branchSlug, setBranchSlug] = useState(branchSlugSeed);
   const [folderName, setFolderName] = useState(() =>
@@ -168,7 +165,6 @@ export const LaunchSessionPanel = ({
           : { branchPrefix: prefix, branchSlug: branchSlug.trim() || undefined }),
         ...(adoptedBranch != null ? { existingBranch: adoptedBranch } : {}),
         externalTask,
-        openWorkflowBuilder: setupWorkflow,
       });
       showToast('success', `Session created: ${session.goal}`);
       onClose();
@@ -203,16 +199,7 @@ export const LaunchSessionPanel = ({
 
   return (
     <section className="flex flex-col gap-4">
-      <SectionHeader
-        label="launch session"
-        action={
-          <SetupWorkflowToggle
-            checked={setupWorkflow}
-            disabled={busy}
-            onChange={setSetupWorkflow}
-          />
-        }
-      />
+      <SectionHeader label="launch session" />
 
       <FieldRow label="Goal" layout="stacked">
         <Textarea

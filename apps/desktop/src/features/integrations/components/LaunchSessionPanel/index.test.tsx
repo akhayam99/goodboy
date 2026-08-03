@@ -76,30 +76,17 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('LaunchSessionPanel', () => {
-  it('carries the workflow intent into session creation instead of a deferred event', async () => {
-    const events: Array<Event> = [];
-    const listener = (event: Event) => events.push(event);
-    window.addEventListener('goodboy:open-workflow-builder', listener);
-
+  it('has no workflow setup option and creates the session without a workflow-builder intent', async () => {
     renderPanel();
+
+    expect(screen.queryByRole('checkbox', { name: /Set up workflow next/i })).toBeNull();
+
     fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
 
     await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
-    window.removeEventListener('goodboy:open-workflow-builder', listener);
-    expect(h.createSession.mock.calls[0]?.[0]).toMatchObject({
-      openWorkflowBuilder: true,
-      externalTask: EXTERNAL_TASK,
-    });
-    expect(events).toHaveLength(0);
-  });
-
-  it('drops the workflow intent when the operator turns it off', async () => {
-    renderPanel();
-    fireEvent.click(screen.getByRole('checkbox', { name: /Set up workflow next/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
-
-    await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
-    expect(h.createSession.mock.calls[0]?.[0]).toMatchObject({ openWorkflowBuilder: false });
+    const payload = h.createSession.mock.calls[0]?.[0] ?? {};
+    expect(payload['openWorkflowBuilder']).toBeUndefined();
+    expect(payload).toMatchObject({ externalTask: EXTERNAL_TASK });
   });
 
   it('offers the adopt-or-fresh branch choice only when a branch can be adopted', () => {

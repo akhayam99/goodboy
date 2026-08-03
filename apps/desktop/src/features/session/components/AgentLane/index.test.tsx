@@ -6,9 +6,10 @@ import { AgentLane } from './index';
 
 type HarnessProps = {
   readonly isEmpty: boolean;
+  readonly hasRows?: boolean;
 };
 
-const Harness = ({ isEmpty }: HarnessProps) => {
+const Harness = ({ isEmpty, hasRows = true }: HarnessProps) => {
   return (
     <AgentLane
       toolbar={<div data-testid="toolbar" />}
@@ -16,7 +17,7 @@ const Harness = ({ isEmpty }: HarnessProps) => {
       isEmpty={isEmpty}
       empty={<p>nothing queued</p>}
     >
-      <ul data-testid="items" />
+      {hasRows ? <ul data-testid="items" /> : null}
     </AgentLane>
   );
 };
@@ -33,10 +34,17 @@ describe('AgentLane', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
-  it('renders the active empty state without list content', () => {
-    render(<Harness isEmpty />);
+  it('renders the empty state alone when the lane has no rows to show', () => {
+    render(<Harness isEmpty hasRows={false} />);
 
     expect(screen.getByText('nothing queued')).toBeTruthy();
     expect(screen.queryByTestId('items')).toBeNull();
+  });
+
+  it('keeps the empty state above rows revealed from a completed group', () => {
+    render(<Harness isEmpty />);
+
+    expect(screen.getByText('nothing queued')).toBeTruthy();
+    expect(screen.getByTestId('items')).toBeTruthy();
   });
 });

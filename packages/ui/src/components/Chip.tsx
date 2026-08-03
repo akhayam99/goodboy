@@ -8,6 +8,7 @@ export type ChipProps = {
   readonly icon?: ReactNode;
   readonly trailing?: ReactNode;
   readonly size?: 'xs' | 'sm' | 'md';
+  readonly width?: 'auto' | 'sm' | 'md' | 'lg';
   readonly shape?: 'pill' | 'badge';
   readonly bordered?: boolean;
   readonly emphasis?: 'soft' | 'strong';
@@ -24,6 +25,12 @@ const sizeClasses: Record<'xs' | 'sm' | 'md', string> = {
   xs: 'px-1.5 py-0.5 text-[11px]',
   sm: 'text-2xs px-2 py-0.5',
   md: 'text-xs px-2 py-1',
+};
+
+const widthClasses: Record<'sm' | 'md' | 'lg', string> = {
+  sm: 'min-w-16 justify-center',
+  md: 'min-w-24 justify-center',
+  lg: 'min-w-32 justify-center',
 };
 
 const strongRing: Record<Tone, string> = {
@@ -44,6 +51,7 @@ export const Chip = ({
   icon,
   trailing,
   size = 'xs',
+  width = 'auto',
   shape = 'pill',
   bordered = true,
   emphasis = 'soft',
@@ -62,6 +70,7 @@ export const Chip = ({
     tint.bg,
     tint.text,
     sizeClasses[size],
+    width === 'auto' ? '' : widthClasses[width],
     bordered ? 'ring-1' : '',
     bordered ? (emphasis === 'strong' ? strongRing[tone] : tint.ring) : '',
     className,
