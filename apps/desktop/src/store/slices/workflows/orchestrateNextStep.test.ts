@@ -58,6 +58,7 @@ import {
   ORCHESTRATOR_STEP_BUDGET,
   ORCHESTRATOR_STEP_HARD_CAP,
   OrchestratorClient,
+  ROLE_DEFAULTS,
 } from '@goodboy/core';
 import { orchestrateNextStep } from './orchestrateNextStep';
 
@@ -242,11 +243,37 @@ describe('orchestrateNextStep', () => {
     expect(invokeWorkflowUpsertSpy.mock.calls[0]![0].steps[1].name).toBe('Scout 2');
   });
 
-  it('spawns every decided step on the routing policy pinned to the run', async () => {
+  it('spawns a decided scout step on the scout role model, not on an expensive one', async () => {
     decideSpy.mockResolvedValue({
       decision: {
         action: 'next',
-        reason: 'Implement it.',
+        reason: 'Survey first.',
+        step: {
+          name: 'Survey the routing code',
+          role: 'scout',
+          promptPrefix: 'Survey the routing code.',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'scout',
+        modelOverride: ROLE_DEFAULTS.scout.model,
+        effort: ROLE_DEFAULTS.scout.effort,
+      }),
+    );
+  });
+
+  it('still spawns a decided step on the model the orchestrator picked for it', async () => {
+    decideSpy.mockResolvedValue({
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
         step: {
           name: 'Implement',
           role: 'implementer',
@@ -257,25 +284,14 @@ describe('orchestrateNextStep', () => {
       },
     });
     const state = baseState();
-    const current = (state['sessions'] as ReadonlyArray<Session>)[0]!;
-    state['sessions'] = [
-      {
-        ...current,
-        workflowRuns: current.workflowRuns.map((run) => ({
-          ...run,
-          stepRouting: { providerId: 'codex', model: 'gpt-5.5', effort: 'high' },
-        })),
-      },
-    ];
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
     expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        providerOverride: 'codex',
-        modelOverride: 'gpt-5.5',
-        effort: 'high',
+        modelOverride: 'opus-5',
+        effort: 'max',
       }),
     );
   });

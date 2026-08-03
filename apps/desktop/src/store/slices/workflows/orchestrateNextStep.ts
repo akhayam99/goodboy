@@ -261,10 +261,6 @@ const appendStep = async ({
   if (session == null) {
     throw new Error(`session not found: ${sessionId}`);
   }
-  const run = session.workflowRuns.find((candidate) => candidate.id === workflowRunId);
-  if (run == null) {
-    throw new Error(`workflow run not found: ${workflowRunId}`);
-  }
   const existingAgents = get().sessionPhaseRuns[sessionId] ?? [];
   const baseOrdinal =
     existingAgents.reduce((max, current) => Math.max(max, current.ordinal), -1) + 1;
@@ -276,7 +272,6 @@ const appendStep = async ({
     defaultProvider: (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId,
     roleModels: roleModelsForSession({ state: get(), sessionId }),
-    ...(run.stepRouting != null && { routingOverride: run.stepRouting }),
   });
   const agent = spawned.agents[0];
   if (agent == null) {

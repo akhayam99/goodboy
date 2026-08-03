@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ROLE_DEFAULTS } from '@goodboy/core';
 import type { AgentId, SessionId, Step, StepId, WorkflowId, WorkflowRunId } from '@goodboy/types';
 
 const { invokeAgentInsertSpy } = vi.hoisted(() => ({
@@ -70,46 +71,56 @@ describe('preSpawnWorkflowAgents', () => {
     expect(insert['providerOverride']).toBe('anthropic');
   });
 
-  it('gives a run policy precedence over the decided step routing', async () => {
+  it('runs a scout step decided mid-run on the scout role model, never on an expensive one', async () => {
     const result = await preSpawnWorkflowAgents({
       sessionId: SESSION_ID,
       workflowRunId: RUN_ID,
+      steps: [step({ role: 'scout', name: 'Survey the routing code' })],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['modelOverride']).toBe(ROLE_DEFAULTS.scout.model);
+    expect(insert['modelOverride']).not.toBe('opus-5');
+    expect(insert['effort']).toBe(ROLE_DEFAULTS.scout.effort);
+    expect(result.modelOverrides['agent-1']).toBe(ROLE_DEFAULTS.scout.model);
+  });
+
+  it('keeps each step on its own role model when a run mixes roles', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
       steps: [
-        step({
-          providerOverride: 'anthropic',
-          modelOverride: 'opus-5',
-          effort: 'max',
-        }),
+        step({ id: 'step-1' as StepId, ordinal: 0, role: 'scout', name: 'Survey' }),
+        step({ id: 'step-2' as StepId, ordinal: 1, role: 'planner', name: 'Plan' }),
       ],
       baseOrdinal: 0,
       defaultProvider: 'anthropic',
       roleModels: null,
-      routingOverride: { providerId: 'codex', model: 'gpt-5.5', effort: 'high' },
     });
 
-    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
-    expect(insert).toMatchObject({
-      providerOverride: 'codex',
-      modelOverride: 'gpt-5.5',
-      effort: 'high',
-    });
-    expect(result.effortOverrides['agent-1']).toBe('high');
+    const [scoutInsert, plannerInsert] = invokeAgentInsertSpy.mock.calls.map(
+      (call) => call[0] as Record<string, unknown>,
+    );
+    expect(scoutInsert!['modelOverride']).toBe(ROLE_DEFAULTS.scout.model);
+    expect(plannerInsert!['modelOverride']).toBe(ROLE_DEFAULTS.planner.model);
+    expect(scoutInsert!['modelOverride']).not.toBe(plannerInsert!['modelOverride']);
   });
 
-  it('does not carry a decided effort into a policy model with no effort', async () => {
-    const result = await preSpawnWorkflowAgents({
+  it('still honours a per-step model the orchestrator picked for one unusual step', async () => {
+    await preSpawnWorkflowAgents({
       sessionId: SESSION_ID,
       workflowRunId: RUN_ID,
-      steps: [step({ modelOverride: 'opus-5', effort: 'max' })],
+      steps: [step({ role: 'scout', modelOverride: 'opus-5', effort: 'high' })],
       baseOrdinal: 0,
       defaultProvider: 'anthropic',
       roleModels: null,
-      routingOverride: { providerId: 'anthropic', model: 'haiku-4.5' },
     });
 
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
-    expect(insert['modelOverride']).toBe('haiku-4.5');
-    expect(insert['effort']).toBeUndefined();
-    expect(result.effortOverrides['agent-1']).toBeUndefined();
+    expect(insert['modelOverride']).toBe('opus-5');
+    expect(insert['effort']).toBe('high');
   });
 });

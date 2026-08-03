@@ -2,7 +2,6 @@ import type {
   Agent,
   AttachmentInput,
   IsoDateTime,
-  OrchestratorRouting,
   ProviderId,
   SessionId,
   WorkflowId,
@@ -25,7 +24,6 @@ type Options = {
   chainAfterId?: WorkflowRunId;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   executionMode?: WorkflowExecutionMode;
-  stepRouting?: OrchestratorRouting;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -79,7 +77,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       triggerMode,
       chainAfterId,
       executionMode,
-      options?.stepRouting,
     );
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
@@ -114,7 +111,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       autoRun,
       triggerMode,
       executionMode,
-      ...(options?.stepRouting != null && { stepRouting: options.stepRouting }),
       ...(chainAfterId && { chainAfterId }),
       ...(goal && { goal }),
     };
