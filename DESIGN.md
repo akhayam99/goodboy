@@ -188,6 +188,14 @@ top of the window.
 - **Chips carry a word.** Status chips (PR state, CI, agent kind) pair an
   icon with a label. Icon-only is allowed only where space is truly gone, and
   then the label survives as a tooltip.
+- **A column holds its width.** A chip repeated down a list takes a fixed
+  width, so short and long labels start at the same edge; and in a
+  right-aligned cluster the variable text comes first with the glyphs last, so
+  provider marks and status icons form a column instead of wandering row to
+  row. See [docs/design.md](docs/design.md) for the widths and the call sites.
+- **Empty means no active item.** A lens with nothing running keeps its empty
+  state even once a completed group is revealed underneath it, and its primary
+  action moves into the header only when there is live work.
 - **Control markers render, never leak.** In-band control signals (tool calls,
   clusters, plans) surface as structured cards and chips drawn from one shared
   accent mapping, so a kind of signal reads the same wherever it appears. A raw
