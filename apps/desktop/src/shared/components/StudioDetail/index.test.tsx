@@ -92,7 +92,46 @@ describe('StudioDetailLayout', () => {
     expect(screen.queryByTestId('detail-properties')).toBeNull();
   });
 
-  it('scrolls the rail as one region that carries the action and the properties', () => {
+  it('docks the action below the body, outside every scroll region', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        dock={<button type="button">Launch session</button>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const action = screen.getByRole('button', { name: 'Launch session' });
+    const dock = screen.getByTestId('detail-dock');
+    const scroller = screen.getByText('Main slot').closest('.overflow-y-auto');
+
+    expect(scrollAncestors({ node: action })).toEqual([]);
+    expect(dock.contains(action)).toBe(true);
+    expect(scroller).not.toBeNull();
+    expect((dock.parentElement as HTMLElement).contains(scroller as HTMLElement)).toBe(true);
+  });
+
+  it('leaves the rail to the properties when the action is docked', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        dock={<button type="button">Launch session</button>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const properties = screen.getByTestId('detail-properties');
+    const railStack = properties.parentElement as HTMLElement;
+
+    expect(railStack.contains(screen.getByRole('button', { name: 'Launch session' }))).toBe(false);
+    expect(railStack.querySelector('[role="separator"]')).toBeNull();
+  });
+
+  it('scrolls the rail as one region that carries every rail block', () => {
     render(
       <StudioDetailLayout
         header={<span>Header slot</span>}

@@ -71,7 +71,7 @@ export const GithubIssueDetailPanel = ({ issue, sessionId, workspaceId, onClose 
           actions={<ExternalRefActions url={issue.url} label="issue" hostLabel="GitHub" />}
         />
       }
-      rail={launchCard}
+      dock={launchCard}
       properties={resolveDetailFields({ registry: githubIssueFields, entity: issue })}
     >
       <DetailSection label="description" variant="frameless">

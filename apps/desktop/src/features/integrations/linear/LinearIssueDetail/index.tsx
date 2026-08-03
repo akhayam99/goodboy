@@ -21,7 +21,7 @@ type Fit = 'fill' | 'bleed' | 'flow';
 type Props = {
   readonly issue: LinearIssue;
   readonly workspaceId: WorkspaceId;
-  readonly rail?: ReactNode;
+  readonly dock?: ReactNode;
   readonly headerActions?: ReactNode;
   readonly fit?: Fit;
 };
@@ -29,7 +29,7 @@ type Props = {
 export const LinearIssueDetail = ({
   issue,
   workspaceId,
-  rail,
+  dock,
   headerActions,
   fit = 'fill',
 }: Props) => {
@@ -77,7 +77,7 @@ export const LinearIssueDetail = ({
           ]}
         />
       }
-      rail={rail}
+      dock={dock}
       properties={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
     >
       {section === 'overview' ? (

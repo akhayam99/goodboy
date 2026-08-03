@@ -89,8 +89,30 @@ describe('LaunchSessionPanel', () => {
     expect(payload).toMatchObject({ externalTask: EXTERNAL_TASK });
   });
 
+  it('launches on the keyboard submit shortcut', async () => {
+    renderPanel();
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Session goal' }), {
+      key: 'Enter',
+      metaKey: true,
+    });
+
+    await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
+  });
+
+  it('keeps the branch configuration behind the seeded setup chip', () => {
+    renderPanel();
+
+    expect(screen.queryByLabelText('Branch slug')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
+
+    expect(screen.getByLabelText('Branch slug').getAttribute('value')).toBe('7-fix-the-flake');
+  });
+
   it('offers the adopt-or-fresh branch choice only when a branch can be adopted', () => {
     const { rerender } = renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
     expect(screen.queryByRole('tab', { name: /Continue on PR #12/ })).toBeNull();
 
     rerender(
@@ -112,13 +134,14 @@ describe('LaunchSessionPanel', () => {
     );
 
     expect(screen.getByRole('tab', { name: /Continue on PR #12/ })).toBeDefined();
-    expect(screen.getByText('ak/fix-the-flake')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Session setup: ak/fix-the-flake' })).toBeDefined();
   });
 
   it('blocks launch for invalid folder names in a repo-less workspace', () => {
     h.store.workspaces = [{ id: 'workspace-1', rootPath: '/notes', kind: 'simple' }];
 
     renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
     fireEvent.change(screen.getByLabelText('Folder name'), { target: { value: 'bad/name' } });
 
     expect(screen.queryByLabelText('Branch slug')).toBeNull();
@@ -133,6 +156,7 @@ describe('LaunchSessionPanel', () => {
     h.simpleSessionDirExists.mockResolvedValueOnce(true);
 
     renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
     fireEvent.change(screen.getByLabelText('Folder name'), {
       target: { value: 'Existing folder' },
     });
@@ -172,6 +196,8 @@ describe('LaunchSessionPanel', () => {
         onClose={vi.fn()}
       />,
     );
+
+    fireEvent.click(screen.getByRole('button', { name: /Session setup/ }));
 
     expect(screen.queryByLabelText('Branch slug')).toBeNull();
     expect(screen.queryByRole('tab', { name: /Continue on PR #12/ })).toBeNull();
