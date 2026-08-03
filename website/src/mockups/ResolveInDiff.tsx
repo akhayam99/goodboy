@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BRAND_PATH } from '../components/BrandIcons';
 import { useToggleInView } from '../components/Reveal';
+import { usePrefersReducedMotion } from './motion';
 
 type Spot = { x: number; y: number };
 
@@ -15,18 +16,6 @@ const DUR: Record<Beat, number> = {
   committed: 1500,
   reply: 1400,
   hold: 2600,
-};
-
-const usePrefersReducedMotion = () => {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduced(mq.matches);
-    const onChange = () => setReduced(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return reduced;
 };
 
 type Token = { text: string; kind?: 'keyword' | 'string' | 'number' | 'function' | 'property' };

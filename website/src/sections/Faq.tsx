@@ -55,8 +55,8 @@ const ITEMS: ReadonlyArray<Qa> = [
     a: (
       <>
         Yes. Tool rules let you <B>allow, deny, or ask</B> for each tool, at global, workspace, or
-        session scope. A blocked call surfaces in the transcript and you can approve it inline. The
-        feature is in beta, enforced on Claude sessions first.
+        session scope. A blocked call surfaces in the transcript and you can approve it inline.
+        Enforcement lands on Claude sessions first.
       </>
     ),
   },
@@ -73,7 +73,7 @@ const ITEMS: ReadonlyArray<Qa> = [
     q: 'Is there a mobile app?',
     a: (
       <>
-        Not a separate app. A <B>beta companion</B> pairs your phone with the desktop through a
+        Not a separate app. An <B>early companion</B> pairs your phone with the desktop through a
         bridge: enough to spawn a workflow or merge a PR while you&apos;re away.
       </>
     ),
@@ -105,9 +105,9 @@ export const Faq = () => {
     <section
       id="faq"
       ref={ref}
-      className={`reveal-group relative py-24 sm:py-28 ${inView ? 'is-visible' : ''}`}
+      className={`scene reveal-group relative ${inView ? 'is-visible' : ''}`}
     >
-      <div className="mx-auto max-w-2xl px-6">
+      <div className="mx-auto w-full max-w-2xl px-6">
         <div className="reveal max-w-2xl">
           <Eyebrow>Questions</Eyebrow>
           <SectionTitle>Before you install</SectionTitle>

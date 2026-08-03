@@ -13,11 +13,10 @@ const B = ({ children }: { children: ReactNode }) => (
   <strong className="font-semibold text-foreground">{children}</strong>
 );
 
-const IssueIcon = () => (
+const DraftIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
-    <circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth="1.6" />
-    <circle cx="12" cy="12" r="0.5" fill="currentColor" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M6 4h9l3 3v13H6V4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M9 11h6M9 15h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
   </svg>
 );
 
@@ -58,23 +57,22 @@ const ResolveIcon = () => (
 
 const CARDS: ReadonlyArray<Card> = [
   {
-    icon: <IssueIcon />,
-    title: 'Issues become sessions',
-    body: (
-      <>
-        GitHub, GitLab, Linear, and Sentry each get a dashboard inside the app. Pick an issue and
-        the <B>goal is written</B>, the <B>branch is named</B>. A Sentry error brings its stack
-        trace along.
-      </>
-    ),
-  },
-  {
     icon: <InboxIcon />,
     title: 'One review inbox',
     body: (
       <>
         Pull requests and merge requests, <B>yours and the ones waiting on you</B>, for GitHub and
-        GitLab. Comments stay drafts until you publish the batch.
+        GitLab, kept fresh while you work.
+      </>
+    ),
+  },
+  {
+    icon: <DraftIcon />,
+    title: 'Comments stay drafts',
+    body: (
+      <>
+        Write review comments in the app. They wait as drafts and go out as <B>one batch</B> when
+        you say publish.
       </>
     ),
   },
@@ -96,12 +94,12 @@ export const Ship = () => {
     <section
       id="ship"
       ref={ref}
-      className={`reveal-group edge-t relative py-24 sm:py-28 ${inView ? 'is-visible' : ''}`}
+      className={`scene reveal-group edge-t relative ${inView ? 'is-visible' : ''}`}
     >
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto w-full max-w-5xl px-6">
         <div className="reveal max-w-2xl">
-          <Eyebrow>Integrations</Eyebrow>
-          <SectionTitle>Pick up the issue, land the merge</SectionTitle>
+          <Eyebrow>Pull requests</Eyebrow>
+          <SectionTitle>Land the merge from the same window</SectionTitle>
         </div>
 
         <div className="reveal mt-12 grid gap-4 md:grid-cols-3" style={{ animationDelay: '120ms' }}>
@@ -121,17 +119,35 @@ export const Ship = () => {
           ))}
         </div>
 
-        <div className="reveal mx-auto mt-10 max-w-4xl" style={{ animationDelay: '160ms' }}>
-          <ResolveInDiff />
-        </div>
-
         <p
-          className="reveal mt-8 max-w-2xl text-[13.5px] leading-[1.6] text-muted-foreground"
+          className="reveal mt-10 max-w-2xl text-[13.5px] leading-[1.6] text-muted-foreground"
           style={{ animationDelay: '200ms' }}
         >
-          Reading is ahead of acting for now: commenting, assigning, and transitioning an issue
-          still happen in the browser.
+          Issues read ahead of acting for now: commenting on a ticket, assigning it, or moving its
+          status still happens in the browser.
         </p>
+      </div>
+    </section>
+  );
+};
+
+export const Resolve = () => {
+  const { ref, inView } = useInView<HTMLElement>();
+  return (
+    <section
+      id="resolve"
+      ref={ref}
+      className={`scene reveal-group relative ${inView ? 'is-visible' : ''}`}
+    >
+      <div className="mx-auto w-full max-w-4xl px-6">
+        <div className="reveal max-w-2xl">
+          <Eyebrow>Review</Eyebrow>
+          <SectionTitle>Hand a comment to an agent</SectionTitle>
+        </div>
+
+        <div className="reveal mt-10" style={{ animationDelay: '140ms' }}>
+          <ResolveInDiff />
+        </div>
       </div>
     </section>
   );

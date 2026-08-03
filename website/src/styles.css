@@ -73,10 +73,40 @@
   --color-syntax-property: oklch(0.85 0.025 230);
 }
 
-/* Anchors resolve under the sticky nav (h-14). */
+/* Anchors and snap points resolve under the sticky nav (h-14). */
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 3.5rem;
+}
+
+/* One section, one screen. Content is centred in what the nav leaves, so a
+   snap point always lands on a whole composed view instead of mid-paragraph. */
+.scene {
+  display: flex;
+  align-items: center;
+  min-height: calc(100svh - 3.5rem);
+  padding-block: 3rem;
+}
+
+@media (min-width: 640px) and (min-height: 860px) {
+  .scene {
+    padding-block: 4rem;
+  }
+}
+
+/* Snapping only where a scene actually fits: a mouse or trackpad, and a
+   window tall enough that a screenful is worth landing on. Coarse pointers
+   and short windows scroll freely. */
+@media (pointer: fine) and (min-height: 780px) {
+  html {
+    scroll-snap-type: y mandatory;
+  }
+  main > section {
+    scroll-snap-align: start;
+  }
+  footer {
+    scroll-snap-align: end;
+  }
 }
 
 html,
@@ -323,6 +353,18 @@ body,
 }
 .tg-fade {
   animation: tg-fade 0.45s ease-out both;
+}
+
+@keyframes cycle-fill {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+.cycle-fill {
+  animation: cycle-fill linear both;
 }
 
 @keyframes press-ring {

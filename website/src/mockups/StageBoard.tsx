@@ -1,6 +1,8 @@
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BRAND_PATH, type Brand } from '../components/BrandIcons';
 import { useToggleInView } from '../components/Reveal';
+import { CycleBar } from './CycleBar';
+import { usePrefersReducedMotion } from './motion';
 
 type Beat = 'idle' | 'reroute' | 'prchip' | 'move' | 'hold';
 
@@ -12,18 +14,6 @@ const DUR: Record<Beat, number> = {
   prchip: 1400,
   move: 1000,
   hold: 4000,
-};
-
-const usePrefersReducedMotion = () => {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduced(mq.matches);
-    const onChange = () => setReduced(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-  return reduced;
 };
 
 type ColumnKey = 'building' | 'running' | 'attention' | 'review' | 'done';
@@ -214,6 +204,7 @@ export const StageBoard = () => {
           1 needs you · {runningCount} running · {rerouted ? '$4.31' : '$4.12'} today
         </span>
       </div>
+      <CycleBar beat={beatIndex} ms={DUR[BEATS[beatIndex]]} active={inView && !reduced} />
 
       <div className="mt-2 sm:overflow-x-auto sm:pb-1">
         <div className="flex flex-col gap-4 sm:grid sm:min-w-[720px] sm:grid-cols-5 sm:gap-3">

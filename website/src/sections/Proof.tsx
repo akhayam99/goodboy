@@ -46,9 +46,9 @@ export const Proof = () => {
     <section
       id="proof"
       ref={ref}
-      className={`reveal-group relative py-24 sm:py-28 ${inView ? 'is-visible' : ''}`}
+      className={`scene reveal-group relative ${inView ? 'is-visible' : ''}`}
     >
-      <div className="mx-auto max-w-3xl px-6">
+      <div className="mx-auto w-full max-w-3xl px-6">
         <div className="reveal max-w-2xl">
           <Eyebrow>No pitch</Eyebrow>
           <SectionTitle>The tool I use every day</SectionTitle>

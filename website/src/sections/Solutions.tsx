@@ -108,15 +108,15 @@ export const Solutions = () => {
     <section
       id="solutions"
       ref={ref}
-      className={`reveal-group relative py-24 sm:py-28 ${inView ? 'is-visible' : ''}`}
+      className={`scene reveal-group relative ${inView ? 'is-visible' : ''}`}
     >
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto w-full max-w-5xl px-6">
         <div className="reveal max-w-2xl">
           <Eyebrow>Why it matters</Eyebrow>
           <SectionTitle>Three things you stop fighting</SectionTitle>
         </div>
 
-        <div className="reveal mt-12 grid gap-4 md:grid-cols-3" style={{ animationDelay: '120ms' }}>
+        <div className="reveal mt-10 grid gap-4 md:grid-cols-3" style={{ animationDelay: '120ms' }}>
           {CARDS.map((card) => (
             <div
               key={card.title}
@@ -133,7 +133,7 @@ export const Solutions = () => {
           ))}
         </div>
 
-        <div className="reveal mx-auto mt-10 max-w-4xl" style={{ animationDelay: '220ms' }}>
+        <div className="reveal mx-auto mt-6 max-w-4xl" style={{ animationDelay: '220ms' }}>
           <StageBoard />
         </div>
       </div>
