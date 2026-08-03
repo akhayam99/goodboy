@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { LEFT_SIDEBAR_STORAGE_KEY } from '@goodboy/ui';
 import { SidebarPeekOverlay } from './index';
 import { useSidebarPeekHold } from './hold';
 
@@ -83,6 +84,13 @@ describe('SidebarPeekOverlay', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'release' }));
     expect(onRelease).toHaveBeenCalledOnce();
+  });
+
+  it('opens a little wider than the pinned sidebar, not half again', () => {
+    localStorage.setItem(LEFT_SIDEBAR_STORAGE_KEY, '300');
+    renderOverlay(true);
+
+    expect(screen.getByRole('region', { name: 'Sessions' }).style.width).toBe('360px');
   });
 
   it('does nothing when nobody provides a hold', () => {
