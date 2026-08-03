@@ -99,6 +99,7 @@ const reset = ({
     resolverState,
     resolverThreadOutcomes: outcomes,
     sessionPendingResolutions: { [SESSION_ID]: pending },
+    sessionResolvedThreads: {},
     diffComments: { [SESSION_ID]: [] },
     sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
     sessionMounts: {},

@@ -67,6 +67,15 @@ describe('resolverLaneEntries', () => {
     expect(entries.active).toEqual([]);
   });
 
+  it('settles a resolver marked done while its turn is still running', () => {
+    const entries = resolverLaneEntries({
+      links: [link('working', 0, 'running', '2026-08-03T10:00:00.000Z', 'running')],
+    });
+
+    expect(entries.completed.map(({ agent }) => agent.id)).toEqual(['working']);
+    expect(entries.active).toEqual([]);
+  });
+
   it('orders each side newest first', () => {
     const entries = resolverLaneEntries({
       links: [link('old', 0, 'pending'), link('new', 5, 'pending')],
@@ -91,5 +100,11 @@ describe('resolverLaneEntries', () => {
     expect(isResolverQueueStalled({ links: [queued] })).toBe(true);
     expect(isResolverQueueStalled({ links: [queued, running] })).toBe(false);
     expect(isResolverQueueStalled({ links: [running] })).toBe(false);
+  });
+
+  it('does not call the queue stalled over a resolver the operator settled', () => {
+    const settled = link('settled', 0, 'pending', '2026-08-03T10:00:00.000Z', 'pending');
+
+    expect(isResolverQueueStalled({ links: [settled] })).toBe(false);
   });
 });

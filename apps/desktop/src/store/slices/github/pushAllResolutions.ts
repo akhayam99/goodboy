@@ -58,19 +58,19 @@ export const pushAllResolutions = (set: SetFn, get: GetFn) => {
         const inMemoryOutcome = inMemoryOutcomes[index];
         const outcome = inMemoryOutcome?.kind ?? resolution.outcome ?? 'resolved';
         if (outcome === 'resolved') {
-          await markThreadResolvedNoPush(get, sessionId, resolution.threadId, {
+          await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
             commitSha: resolution.commitSha,
             reply: resolution.reply ?? undefined,
           });
         }
         if (outcome === 'wontfix') {
-          await markThreadResolvedNoPush(get, sessionId, resolution.threadId, {
+          await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
             reason: inMemoryOutcome?.kind === 'wontfix' ? inMemoryOutcome.reason : undefined,
             reply: resolution.reply ?? undefined,
           });
         }
         if (outcome === 'analyzed') {
-          await markThreadResolvedNoPush(get, sessionId, resolution.threadId, {
+          await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
             reply: resolution.reply ?? undefined,
           });
         }

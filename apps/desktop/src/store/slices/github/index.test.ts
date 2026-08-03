@@ -963,6 +963,49 @@ describe('store contract', () => {
       expect(resolveThreadSpy).toHaveBeenCalledOnce();
     });
 
+    it('resolveGithubThread records the thread as resolved without waiting for github to echo it', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionResolvedThreads: {},
+      });
+
+      const ok = await store
+        .getState()
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { reason: 'not applicable' });
+
+      expect(ok).toBe(true);
+      expect(store.getState().sessionResolvedThreads[SESSION_ID]).toEqual(['PRT_1']);
+    });
+
+    it('resolveAgentThreads reports a resolver that owns no thread instead of failing quietly', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        notifications: [],
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'threadless resolver',
+              status: 'completed',
+            },
+          ],
+        },
+      });
+      listPendingResolutionsForSessionSpy.mockResolvedValueOnce([]);
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(false);
+      expect(resolveThreadSpy).not.toHaveBeenCalled();
+      expect(store.getState().notifications[0]?.title).toBe('nothing to resolve');
+    });
+
     it('resolveAgentThreads skips the branch push when no outcome is resolved', async () => {
       const store = await getStore();
       store.setState({

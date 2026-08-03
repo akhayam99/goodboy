@@ -135,6 +135,7 @@ beforeEach(() => {
     selectedAgentId: {},
     sessionGithub: {},
     sessionPendingResolutions: {},
+    sessionResolvedThreads: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
     transcripts: {},
     agentRunHistory: {},
@@ -251,6 +252,22 @@ describe('ResolverAgentsLane', () => {
       />,
     );
 
+    expect(screen.getByText('No active resolvers')).toBeTruthy();
+  });
+
+  it('settles a resolver on a thread this session closed, before github echoes it', () => {
+    h.state.sessionResolvedThreads = { [SESSION_ID]: ['PRRT_1'] };
+    setResolvers([
+      buildResolver({
+        id: 'closed' as AgentId,
+        name: 'closed resolver',
+        status: 'completed',
+        sourceThreadId: 'PRRT_1',
+      }),
+    ]);
+    renderLane();
+
+    expect(screen.queryByTestId('resolver-row')).toBeNull();
     expect(screen.getByText('No active resolvers')).toBeTruthy();
   });
 

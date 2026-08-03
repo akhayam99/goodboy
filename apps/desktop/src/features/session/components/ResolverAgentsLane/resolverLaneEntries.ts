@@ -29,6 +29,10 @@ export const hasOtherActiveResolver = ({
   readonly agentId: AgentId;
 }): boolean => activeIds.size > (activeIds.has(agentId) ? 1 : 0);
 
-export const isResolverQueueStalled = ({ links }: Params): boolean =>
-  links.some(({ agent }) => agent.status === 'pending') &&
-  !links.some(({ agent }) => agent.status === 'running');
+export const isResolverQueueStalled = ({ links }: Params): boolean => {
+  const unsettled = links.filter((link) => !isResolverSettled(link));
+  return (
+    unsettled.some(({ agent }) => agent.status === 'pending') &&
+    !unsettled.some(({ agent }) => agent.status === 'running')
+  );
+};

@@ -1,21 +1,27 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { invokeAgentSetDone } from '../../../features/workflows/workflows';
-import type { SetFn } from './types';
+import { formatError } from '../../../shared/lib/errors';
+import { applyAgentDone } from './applyAgentDone';
+import type { GetFn, SetFn } from './types';
 
-export const clearAgentDone = (set: SetFn) => {
+export const clearAgentDone = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
-    set((state) => ({
-      sessionPhaseRuns: {
-        ...state.sessionPhaseRuns,
-        [sessionId]: (state.sessionPhaseRuns[sessionId] ?? []).map((agent) => {
-          if (agent.id !== agentId || agent.doneAt == null) {
-            return agent;
-          }
-          const { doneAt: _, ...reopenedAgent } = agent;
-          return reopenedAgent;
-        }),
-      },
-    }));
-    await invokeAgentSetDone(agentId, false, null);
+    const previousDoneAt =
+      get().sessionPhaseRuns[sessionId]?.find((agent) => agent.id === agentId)?.doneAt ?? null;
+    applyAgentDone({ set, sessionId, agentId, doneAt: null });
+    try {
+      await invokeAgentSetDone(agentId, false, null);
+    } catch (error) {
+      applyAgentDone({ set, sessionId, agentId, doneAt: previousDoneAt });
+      void get().emitNotification(
+        'error',
+        'error',
+        'could not reopen this agent',
+        formatError(error),
+        { sessionId },
+      );
+      return;
+    }
+    applyAgentDone({ set, sessionId, agentId, doneAt: null });
   };
 };

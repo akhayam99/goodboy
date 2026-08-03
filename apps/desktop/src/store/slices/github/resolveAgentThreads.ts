@@ -54,6 +54,13 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId): Promise<boolean> => {
     const agent = get().sessionPhaseRuns[sessionId]?.find((candidate) => candidate.id === agentId);
     if (agent === undefined) {
+      void get().emitNotification(
+        'error',
+        'error',
+        'resolve threads failed',
+        'the resolver is no longer loaded, so its threads were left open',
+        { sessionId },
+      );
       return false;
     }
     const session = get().sessions.find((candidate) => candidate.id === sessionId);
@@ -95,6 +102,13 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
       };
     });
     if (targets.length === 0) {
+      void get().emitNotification(
+        'error',
+        'error',
+        'nothing to resolve',
+        'this resolver owns no review thread, so nothing was closed on GitHub',
+        notifyTarget,
+      );
       return false;
     }
     const shouldPush = targets.some((target) => target.shouldPush);
@@ -113,7 +127,7 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
     }
     try {
       for (const target of targets) {
-        await markThreadResolvedNoPush(get, sessionId, target.threadId, target.closure);
+        await markThreadResolvedNoPush(set, get, sessionId, target.threadId, target.closure);
         await deletePendingResolution({
           db: tauriDatabase,
           sessionId,

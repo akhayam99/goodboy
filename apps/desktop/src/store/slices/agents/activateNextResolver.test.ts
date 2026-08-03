@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 import { activateNextResolver } from './activateNextResolver';
 
@@ -84,6 +84,22 @@ describe('activateNextResolver', () => {
     await activateNextResolver(set, get)(SID);
 
     expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('leaves a queued resolver the operator marked done out of the rotation', async () => {
+    const { get, set, sendTurn } = makeStore({
+      agents: [
+        resolver({ id: FIRST, ordinal: 1, doneAt: '2026-08-03T10:00:00.000Z' as IsoDateTime }),
+        resolver({ id: SECOND, ordinal: 2 }),
+      ],
+      pendingResolverKickoff: { [FIRST]: 'fix comment one', [SECOND]: 'fix comment two' },
+    });
+
+    await activateNextResolver(set, get)(SID);
+
+    expect(sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: SECOND, content: 'fix comment two' }),
+    );
   });
 
   it('ignores a force closed resolver when picking the next one', async () => {
