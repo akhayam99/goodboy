@@ -8,7 +8,7 @@ import {
 } from '@goodboy/ui';
 import { SidebarPeekHoldContext, type SidebarPeekHold } from './hold';
 
-const PEEK_WIDTH_FACTOR = 1.5;
+const PEEK_WIDTH_FACTOR = 1.2;
 
 const pinnedWidth = (): number => {
   if (typeof localStorage === 'undefined') {
