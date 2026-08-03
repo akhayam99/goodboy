@@ -34,11 +34,12 @@ export const useResolverIndex = (sessionId: SessionId): ResolverIndex => {
   const resolvedThreadIds = useAppStore(
     useShallow(
       (s) =>
-        new Set(
-          (s.sessionGithub[sessionId]?.detail?.comments ?? [])
+        new Set([
+          ...(s.sessionGithub[sessionId]?.detail?.comments ?? [])
             .filter((c) => c.resolved === true && c.threadId != null)
             .map((c) => c.threadId as string),
-        ),
+          ...(s.sessionResolvedThreads[sessionId] ?? []),
+        ]),
     ),
   );
   const pendingThreadIds = useAppStore(

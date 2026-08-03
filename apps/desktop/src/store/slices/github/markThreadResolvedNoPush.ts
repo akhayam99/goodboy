@@ -4,11 +4,12 @@ import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { buildResolutionReplyBody } from './buildResolutionReplyBody';
 import { resolverReplyForThread } from './resolverReplyForThread';
-import type { GetFn } from './types';
+import type { GetFn, SetFn } from './types';
 
 type Closure = { commitSha?: string; reason?: string; reply?: string };
 
 export const markThreadResolvedNoPush = async (
+  set: SetFn,
   get: GetFn,
   sessionId: SessionId,
   threadId: string,
@@ -41,4 +42,16 @@ export const markThreadResolvedNoPush = async (
     await addReviewThreadReply(tauriGhRunner, threadId, replyBody, ghOpts);
   }
   await resolveReviewThread(tauriGhRunner, threadId, ghOpts);
+  set((state) => {
+    const known = state.sessionResolvedThreads[sessionId] ?? [];
+    if (known.includes(threadId)) {
+      return {};
+    }
+    return {
+      sessionResolvedThreads: {
+        ...state.sessionResolvedThreads,
+        [sessionId]: [...known, threadId],
+      },
+    };
+  });
 };

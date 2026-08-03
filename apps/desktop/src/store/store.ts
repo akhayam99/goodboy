@@ -716,6 +716,7 @@ export const initialState: AppState = {
   reviewPrs: {},
   reviewDrafts: {},
   sessionPendingResolutions: {},
+  sessionResolvedThreads: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
   agentProviderOverride: {},

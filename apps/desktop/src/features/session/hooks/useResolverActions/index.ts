@@ -131,14 +131,18 @@ export const useResolverActions = ({
       if (kind === 'explain' && trimmed === '') {
         return;
       }
+      let allResolved = threadIds.length > 0;
       for (const targetThreadId of threadIds) {
-        await resolveGithubThread(
+        const didResolve = await resolveGithubThread(
           sessionId,
           targetThreadId,
           trimmed !== '' ? { reason: trimmed } : {},
         );
+        allResolved = allResolved && didResolve;
       }
-      setEdited(null);
+      if (allResolved) {
+        setEdited(null);
+      }
       return;
     }
     if (kind === 'proceed') {

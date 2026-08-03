@@ -14,7 +14,7 @@ export const activateNextResolver = (set: SetFn, get: GetFn) => {
       return;
     }
     const next = resolvers
-      .filter((a) => a.status === 'pending' && pending[a.id] !== undefined)
+      .filter((a) => a.status === 'pending' && a.doneAt == null && pending[a.id] !== undefined)
       .sort((a, b) => a.ordinal - b.ordinal)[0];
     if (!next) {
       return;

@@ -6,10 +6,17 @@ import type { GetFn, SetFn } from './types';
 
 type Params = { commitSha?: string; reason?: string };
 
-export const resolveGithubThread = (_set: SetFn, get: GetFn) => {
+export const resolveGithubThread = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, threadId: string, closure?: Params): Promise<boolean> => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) {
+      void get().emitNotification(
+        'error',
+        'error',
+        'resolve thread failed',
+        'the session is no longer loaded, so the thread was left open',
+        { sessionId },
+      );
       return false;
     }
     const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
@@ -28,7 +35,7 @@ export const resolveGithubThread = (_set: SetFn, get: GetFn) => {
           return false;
         }
       }
-      await markThreadResolvedNoPush(get, sessionId, threadId, closure);
+      await markThreadResolvedNoPush(set, get, sessionId, threadId, closure);
       await get().refreshSessionPrDetail(sessionId, { force: true });
       return true;
     } catch (err) {

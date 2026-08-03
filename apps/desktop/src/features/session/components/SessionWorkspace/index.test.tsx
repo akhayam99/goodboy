@@ -23,6 +23,7 @@ type Store = {
   focusedPlanId: Record<string, string | null>;
   sessionGithub: Record<string, unknown>;
   sessionPendingResolutions: Record<string, ReadonlyArray<{ threadId: string }>>;
+  sessionResolvedThreads: Record<string, ReadonlyArray<string>>;
   resolverState: Record<string, 'awaiting' | 'committed' | 'wontfix' | 'analyzed'>;
   agentTurnState: Record<string, unknown>;
   agentKindOverride: Record<string, unknown>;
@@ -62,6 +63,7 @@ const { store, hooks } = vi.hoisted(() => ({
     focusedPlanId: {},
     sessionGithub: {},
     sessionPendingResolutions: {},
+    sessionResolvedThreads: {},
     resolverState: {},
     agentTurnState: {},
     agentKindOverride: {},
@@ -232,6 +234,7 @@ beforeEach(() => {
   store.focusedPlanId = {};
   store.sessionGithub = {};
   store.sessionPendingResolutions = {};
+  store.sessionResolvedThreads = {};
   store.resolverState = {};
   store.agentTurnState = {};
   store.agentKindOverride = {};

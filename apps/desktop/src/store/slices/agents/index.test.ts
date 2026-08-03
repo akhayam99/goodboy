@@ -590,6 +590,31 @@ describe('store contract', () => {
       expect(invokeAgentSetDoneSpy).toHaveBeenCalledWith(AGENT_ID, false, null);
     });
 
+    it('keeps the agent done when an agent list reload lands while the write is in flight', async () => {
+      const store = await getStore();
+      const agent = buildAgent({ id: AGENT_ID, status: 'running' });
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
+      invokeAgentSetDoneSpy.mockImplementationOnce(async () => {
+        store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] } });
+      });
+
+      await store.getState().setAgentDone(SESSION_ID, AGENT_ID);
+
+      expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeDefined();
+    });
+
+    it('reopens the agent and reports it when the done write fails', async () => {
+      const store = await getStore();
+      const agent = buildAgent({ id: AGENT_ID });
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [agent] }, notifications: [] });
+      invokeAgentSetDoneSpy.mockRejectedValueOnce(new Error('agent row is gone'));
+
+      await store.getState().setAgentDone(SESSION_ID, AGENT_ID);
+
+      expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeUndefined();
+      expect(store.getState().notifications[0]?.title).toBe('could not mark this agent done');
+    });
+
     it('markAgentViewed stamps lastViewedAt and invokes persist when finished is newer than viewed', async () => {
       const store = await getStore();
       const finishedAt = '2026-05-28T01:00:00.000Z' as IsoDateTime;
