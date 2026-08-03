@@ -217,8 +217,9 @@ more children inside a `map()` is a review flag.
 ### Terminal state hides behind a count
 
 Completed, answered, resolved, dismissed, and discarded items never render inline by
-default. They sit behind a header toggle with a count (the `WorkflowRailSectionToggle`
-pattern) or a collapsed disclosure row.
+default. They sit behind a header toggle with a count (the `CountToggle` primitive from
+`@goodboy/ui`, which takes the noun as an `itemsLabel` prop so each caller states its own)
+or a collapsed disclosure row.
 
 ### One visible action per row
 
