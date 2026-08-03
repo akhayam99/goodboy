@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Button, Divider, Markdown, ScrollFade, Skeleton } from '@goodboy/ui';
+import { Button, CopyButton, Divider, Markdown, ScrollFade, Skeleton } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreContent, type ExploreEntry } from '../../explore';
@@ -25,6 +25,7 @@ type PreviewState =
 type Props = {
   readonly entry: ExploreEntry;
   readonly previewState: PreviewState;
+  readonly absolutePath: string;
   readonly onClose: () => void;
   readonly onOpenOutside: () => void;
 };
@@ -88,7 +89,13 @@ const formatByteSize = ({ bytes }: { readonly bytes: number }): string => {
   return `${size.toFixed(precision)} ${units[index]}`;
 };
 
-export const ExplorePreviewPanel = ({ entry, previewState, onClose, onOpenOutside }: Props) => {
+export const ExplorePreviewPanel = ({
+  entry,
+  previewState,
+  absolutePath,
+  onClose,
+  onOpenOutside,
+}: Props) => {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const previewKind = useMemo(() => previewKindOf({ entry, previewState }), [entry, previewState]);
   const modifiedLabel =
@@ -205,6 +212,7 @@ export const ExplorePreviewPanel = ({ entry, previewState, onClose, onOpenOutsid
               <ExternalLink size={13} aria-hidden />
               Open outside
             </Button>
+            <CopyButton value={absolutePath} label={`path for ${entry.name}`} />
           </div>
           <Divider />
           {renderPreviewBody()}
