@@ -22,6 +22,10 @@ import { IntegrationGlyph } from '../../../../../integrations/components/Integra
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { resolveAttentionLens, selectOpenQuestions } from '../../../SessionOverviewPane/lib';
 import { LensColumnFooter } from '../LensColumnFooter';
+import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
+import { splitWorkflowRuns } from '../../../../../workflows/activeWorkflowRuns';
+import { useResolverIndex } from '../../../../hooks/useResolverIndex';
+import { resolverLaneEntries } from '../../../ResolverAgentsLane/resolverLaneEntries';
 import { LENS_SHORTCUTS, buildLensGroups } from './groups';
 import type { LensDot, LensRow } from './groups';
 import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
@@ -104,10 +108,12 @@ export const LensColumn = ({
     [activeNonResolverStandalone],
   );
 
-  const activeWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
+  const attachedRuns = useAttachedWorkflowRuns({ session });
+  const liveWorkflows = session.workflowRuns.filter((r) => r.discardedAt == null).length;
+  const activeWorkflows = splitWorkflowRuns({ attachedRuns, agents: phaseRuns }).active.length;
   const attentionLens = resolveAttentionLens(useSessionStageInfo(session), {
     hasNonResolverStandalone,
-    hasWorkflow: activeWorkflows > 0,
+    hasWorkflow: liveWorkflows > 0,
     hasResolver: hasResolverAgent,
     unreadLens,
   });
@@ -140,20 +146,8 @@ export const LensColumn = ({
   }, [isBranchless, loadSessionFileVersions, sessionId]);
   const hasGithubPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr != null);
   const hasGitlabMr = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr != null);
-  const openResolvers = useMemo(
-    () =>
-      phaseRuns.reduce(
-        (n, r) =>
-          n +
-          (isStandaloneAgent(r) &&
-          isResolver(r) &&
-          (r.status === 'pending' || r.status === 'running')
-            ? 1
-            : 0),
-        0,
-      ),
-    [phaseRuns, isResolver],
-  );
+  const resolverIndex = useResolverIndex(sessionId);
+  const openResolvers = resolverLaneEntries({ links: resolverIndex.links }).active.length;
   const hasPendingBatch = useAppStore(
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
   );

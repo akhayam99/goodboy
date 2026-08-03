@@ -5,7 +5,7 @@ import { Divider } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
-import { isWorkflowRunComplete } from '../../../../workflows/isWorkflowRunComplete';
+import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowRailSectionToggle } from './WorkflowRailSectionToggle';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
@@ -34,24 +34,13 @@ export const WorkflowsPane = ({ session }: Props) => {
   const restoreWorkflow = useAppStore((state) => state.restoreWorkflow);
   const [showCompleted, setShowCompleted] = useState(false);
   const [showDiscarded, setShowDiscarded] = useState(false);
-  const agentsByRunId = new Map<string, Agent[]>();
-  for (const agent of phaseRuns) {
-    if (agent.workflowRunId == null || agent.stepId == null || agent.parentAgentId != null) {
-      continue;
-    }
-    const agents = agentsByRunId.get(agent.workflowRunId) ?? [];
-    agents.push(agent);
-    agentsByRunId.set(agent.workflowRunId, agents);
-  }
+  const { agentsByRunId, discarded, completed, active } = splitWorkflowRuns({
+    attachedRuns,
+    agents: phaseRuns,
+  });
   const workflowNameByRunId = new Map(
     attachedRuns.map(({ run, workflow }) => [run.id, workflowKindName(workflow)]),
   );
-  const discarded = attachedRuns.filter(({ run }) => run.discardedAt != null);
-  const live = attachedRuns.filter(({ run }) => run.discardedAt == null);
-  const completed = live.filter(({ run, workflow }) =>
-    isWorkflowRunComplete({ run, workflow, agents: agentsByRunId.get(run.id) ?? EMPTY_ARRAY }),
-  );
-  const active = live.filter((entry) => !completed.includes(entry));
   const focusedRun = attachedRuns.find(({ run }) => run.id === focusedWorkflowRunId) ?? null;
   const hasRuns = attachedRuns.length > 0;
   const hasActiveRuns = active.length > 0;
