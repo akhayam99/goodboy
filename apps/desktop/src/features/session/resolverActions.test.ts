@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { resolverActionOpensPanel, resolverActionPlan } from './resolverActions';
+import {
+  resolverActionOpensPanel,
+  resolverActionPlan,
+  type ResolverActionSurface,
+} from './resolverActions';
+import { resolverThreadTally } from './resolverThreadTally';
+import type { ResolverThreadSettlement } from './resolverThreadSettlements';
 
 const SESSION_ID = 'session-1' as SessionId;
 
@@ -15,10 +21,29 @@ const agentWith = (overrides: Partial<Agent> = {}): Agent =>
     ...overrides,
   }) as Agent;
 
+const settlement = (
+  threadId: string,
+  kind: ResolverThreadSettlement['kind'],
+): ResolverThreadSettlement => ({
+  threadId,
+  kind,
+  commitSha: kind === 'resolved' ? 'abc1234' : null,
+  reason: kind === 'wontfix' ? 'intentional' : null,
+  reply: null,
+  isQueued: false,
+});
+
+const tallyOf = (...kinds: ReadonlyArray<ResolverThreadSettlement['kind']>) =>
+  resolverThreadTally({
+    settlements: kinds.map((kind, index) => settlement(`PRRT_${index + 1}`, kind)),
+  });
+
 const base = {
   agent: agentWith(),
   turnState: undefined,
   commitSha: 'abc1234',
+  tally: tallyOf('resolved'),
+  surface: 'inspector' as ResolverActionSurface,
   queuedThreadIds: [] as ReadonlyArray<string>,
   prNumber: 7,
   isQueueStalled: false,
@@ -59,21 +84,74 @@ describe('resolverActionPlan', () => {
   });
 
   it('keeps push disabled without a commit to push', () => {
-    const plan = resolverActionPlan({ ...base, status: 'committed', commitSha: null });
+    const plan = resolverActionPlan({
+      ...base,
+      status: 'committed',
+      commitSha: null,
+      tally: tallyOf('open'),
+    });
 
     expect(plan.primary?.isEnabled).toBe(false);
     expect(plan.secondary?.isEnabled).toBe(false);
+    expect(plan.note).toBe('no fix recorded on any thread yet');
+  });
+
+  it('enables push from a resolved outcome, never from a sha shared across threads', () => {
+    const oneFixed = resolverActionPlan({
+      ...base,
+      status: 'committed',
+      commitSha: null,
+      tally: tallyOf('resolved', 'resolved'),
+    });
+    const noneFixed = resolverActionPlan({
+      ...base,
+      status: 'committed',
+      commitSha: 'abc1234',
+      tally: tallyOf('wontfix', 'wontfix'),
+    });
+
+    expect(oneFixed.primary?.isEnabled).toBe(true);
+    expect(noneFixed.primary?.isEnabled).toBe(false);
   });
 
   it('requires an explanation to close a thread without a fix', () => {
-    const wontfix = resolverActionPlan({ ...base, status: 'wontfix' });
-    const analyzed = resolverActionPlan({ ...base, status: 'analyzed' });
+    const wontfix = resolverActionPlan({ ...base, status: 'wontfix', tally: tallyOf('wontfix') });
+    const analyzed = resolverActionPlan({
+      ...base,
+      status: 'analyzed',
+      tally: tallyOf('analyzed'),
+    });
 
     expect(wontfix.primary?.label).toBe('Post explanation & close');
-    expect(wontfix.primary?.explanation).toBe('required');
+    expect(wontfix.primary?.opensInspector).toBe(true);
     expect(wontfix.secondary).toBeNull();
     expect(analyzed.primary?.label).toBe('Proceed with fix');
     expect(analyzed.secondary?.label).toBe('Post & close');
+  });
+
+  it('sends a lane card of disagreeing threads to the inspector instead of one CTA', () => {
+    const lane = resolverActionPlan({
+      ...base,
+      status: 'committed',
+      surface: 'lane',
+      tally: tallyOf('resolved', 'resolved', 'open'),
+    });
+
+    expect(lane.primary?.label).toBe('Review threads');
+    expect(resolverActionOpensPanel({ action: lane.primary! })).toBe(true);
+    expect(lane.secondary).toBeNull();
+  });
+
+  it('counts the settled threads in the inspector block and names what is left open', () => {
+    const inspector = resolverActionPlan({
+      ...base,
+      status: 'committed',
+      tally: tallyOf('resolved', 'wontfix', 'open'),
+    });
+
+    expect(inspector.primary?.label).toBe('Push & resolve 2');
+    expect(inspector.secondary?.label).toBe('Add 1 to batch');
+    expect(inspector.note).toBe('1 thread still needs you');
   });
 
   it('sends an action needing typed input to the panel', () => {

@@ -44,6 +44,11 @@ export const CommentMarkerChipItem = ({ marker, reply, sessionId, agentId }: Pro
       : () => {
           void selectAgent(sessionId, agentId);
           window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+          window.dispatchEvent(
+            new CustomEvent('goodboy:open-resolver-inspector', {
+              detail: { sessionId, agentId },
+            }),
+          );
         };
 
   if (resolvedOnGithub) {

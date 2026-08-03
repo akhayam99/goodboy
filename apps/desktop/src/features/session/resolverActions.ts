@@ -1,6 +1,7 @@
 import type { Agent, TurnState } from '@goodboy/types';
 import type { ResolverStatus } from './resolver-linkage';
 import { agentThreadIds } from './agentThreadIds';
+import type { ResolverThreadTally } from './resolverThreadTally';
 
 export type ResolverActionKind =
   | 'push'
@@ -9,6 +10,7 @@ export type ResolverActionKind =
   | 'explain'
   | 'proceed'
   | 'answer'
+  | 'review'
   | 'run'
   | 'rerun'
   | 'forceClose'
@@ -16,7 +18,7 @@ export type ResolverActionKind =
 
 export type ResolverActionRole = 'primary' | 'alert' | 'danger' | 'neutral';
 
-export type ResolverActionExplanation = 'required' | 'optional';
+export type ResolverActionSurface = 'lane' | 'inspector';
 
 type ResolverActionConfirm = {
   readonly role: 'primary' | 'alert' | 'danger';
@@ -31,7 +33,7 @@ export type ResolverAction = {
   readonly role: ResolverActionRole;
   readonly isEnabled: boolean;
   readonly confirm: ResolverActionConfirm | null;
-  readonly explanation: ResolverActionExplanation | null;
+  readonly opensInspector: boolean;
 };
 
 export type ResolverActionPlan = {
@@ -46,6 +48,8 @@ type Params = {
   readonly status: ResolverStatus;
   readonly turnState: TurnState | undefined;
   readonly commitSha: string | null;
+  readonly tally: ResolverThreadTally;
+  readonly surface: ResolverActionSurface;
   readonly queuedThreadIds: ReadonlyArray<string>;
   readonly prNumber: number | null;
   readonly isQueueStalled: boolean;
@@ -59,7 +63,7 @@ type Block = {
 };
 
 export const resolverActionOpensPanel = ({ action }: { action: ResolverAction }): boolean =>
-  action.explanation === 'required';
+  action.opensInspector;
 
 const IDLE: Block = { primary: null, secondary: null, note: null };
 
@@ -69,7 +73,7 @@ const RUN_NOW: ResolverAction = {
   role: 'primary',
   isEnabled: true,
   confirm: null,
-  explanation: null,
+  opensInspector: false,
 };
 
 const RUN_AGAIN: ResolverAction = {
@@ -78,7 +82,7 @@ const RUN_AGAIN: ResolverAction = {
   role: 'primary',
   isEnabled: true,
   confirm: null,
-  explanation: null,
+  opensInspector: false,
 };
 
 const PROCEED: ResolverAction = {
@@ -87,7 +91,7 @@ const PROCEED: ResolverAction = {
   role: 'primary',
   isEnabled: true,
   confirm: null,
-  explanation: null,
+  opensInspector: false,
 };
 
 const ANSWER: ResolverAction = {
@@ -96,7 +100,16 @@ const ANSWER: ResolverAction = {
   role: 'primary',
   isEnabled: true,
   confirm: null,
-  explanation: null,
+  opensInspector: false,
+};
+
+const REVIEW_THREADS: ResolverAction = {
+  kind: 'review',
+  label: 'Review threads',
+  role: 'primary',
+  isEnabled: true,
+  confirm: null,
+  opensInspector: true,
 };
 
 const DEQUEUE: ResolverAction = {
@@ -105,7 +118,7 @@ const DEQUEUE: ResolverAction = {
   role: 'neutral',
   isEnabled: true,
   confirm: null,
-  explanation: null,
+  opensInspector: false,
 };
 
 const FORCE_CLOSE: ResolverAction = {
@@ -119,7 +132,7 @@ const FORCE_CLOSE: ResolverAction = {
     description: 'Stops it now and lets the next queued resolver run.',
     confirmLabel: 'Force close',
   },
-  explanation: null,
+  opensInspector: false,
 };
 
 const MARK_RESOLVED: ResolverAction = {
@@ -133,7 +146,7 @@ const MARK_RESOLVED: ResolverAction = {
     description: 'Resolves the review thread on GitHub without waiting for the resolver agent.',
     confirmLabel: 'Mark resolved',
   },
-  explanation: 'optional',
+  opensInspector: false,
 };
 
 const pushAction = ({
@@ -153,16 +166,22 @@ const pushAction = ({
     description: 'Posts the resolution to GitHub and marks the review thread resolved.',
     confirmLabel: label,
   },
-  explanation: null,
+  opensInspector: false,
 });
 
-const queueAction = ({ isEnabled }: { readonly isEnabled: boolean }): ResolverAction => ({
+const queueAction = ({
+  label,
+  isEnabled,
+}: {
+  readonly label: string;
+  readonly isEnabled: boolean;
+}): ResolverAction => ({
   kind: 'queue',
-  label: 'Add to push batch',
+  label,
   role: 'neutral',
   isEnabled,
   confirm: null,
-  explanation: null,
+  opensInspector: false,
 });
 
 const explainAction = ({
@@ -179,10 +198,10 @@ const explainAction = ({
   confirm: {
     role: 'alert',
     title: 'Post explanation and close?',
-    description: 'Publishes the explanation on GitHub and closes the review thread without a fix.',
+    description: 'Publishes each thread explanation on GitHub and closes it without a fix.',
     confirmLabel: 'Post & close',
   },
-  explanation: 'required',
+  opensInspector: true,
 });
 
 const canForceClose = ({ agent, status }: Pick<Params, 'agent' | 'status'>): boolean =>
@@ -202,36 +221,72 @@ const canForceResolve = ({
   return status === 'awaiting' || status === 'failed' || status === 'done' || status === 'stopped';
 };
 
+const canPush = ({ tally, commitSha }: Pick<Params, 'tally' | 'commitSha'>): boolean =>
+  tally.resolved > 0 || (tally.total === 1 && tally.settled === 0 && commitSha !== null);
+
+const openNote = ({ tally }: Pick<Params, 'tally'>): string | null =>
+  tally.open === 0
+    ? null
+    : tally.open === 1
+      ? '1 thread still needs you'
+      : `${tally.open} threads still need you`;
+
 const committedBlock = ({
-  agent,
   commitSha,
+  tally,
   queuedThreadIds,
   prNumber,
   hasOtherActiveResolvers,
 }: Pick<
   Params,
-  'agent' | 'commitSha' | 'queuedThreadIds' | 'prNumber' | 'hasOtherActiveResolvers'
+  'commitSha' | 'tally' | 'queuedThreadIds' | 'prNumber' | 'hasOtherActiveResolvers'
 >): Block => {
   if (queuedThreadIds.length > 0) {
     return { primary: null, secondary: DEQUEUE, note: 'In the push batch' };
   }
-  const canPush = agentThreadIds(agent).length > 0 && commitSha !== null;
-  const queue = queueAction({ isEnabled: prNumber !== null && canPush });
+  const isPushable = canPush({ tally, commitSha });
+  const queue = queueAction({
+    label: 'Add to push batch',
+    isEnabled: prNumber !== null && isPushable,
+  });
+  const note = isPushable ? null : 'no fix recorded on any thread yet';
   if (hasOtherActiveResolvers) {
     return {
       primary: queue,
-      secondary: pushAction({ label: 'Push now', isEnabled: canPush }),
-      note: null,
+      secondary: pushAction({ label: 'Push now', isEnabled: isPushable }),
+      note,
     };
   }
   return {
-    primary: pushAction({ label: 'Push & resolve', isEnabled: canPush }),
+    primary: pushAction({ label: 'Push & resolve', isEnabled: isPushable }),
     secondary: queue,
-    note: null,
+    note,
   };
 };
 
-const blockFor = (params: Params): Block => {
+const mixedBlock = (params: Params): Block => {
+  if (params.surface === 'lane') {
+    return { primary: REVIEW_THREADS, secondary: null, note: null };
+  }
+  const { tally, queuedThreadIds, prNumber } = params;
+  const primary = pushAction({
+    label: `Push & resolve ${tally.settled}`,
+    isEnabled: true,
+  });
+  if (queuedThreadIds.length > 0) {
+    return { primary, secondary: DEQUEUE, note: openNote({ tally }) };
+  }
+  return {
+    primary,
+    secondary:
+      tally.resolved > 0
+        ? queueAction({ label: `Add ${tally.resolved} to batch`, isEnabled: prNumber !== null })
+        : null,
+    note: openNote({ tally }),
+  };
+};
+
+const statusBlock = (params: Params): Block => {
   const threadCount = agentThreadIds(params.agent).length;
   switch (params.status) {
     case 'pending':
@@ -271,6 +326,16 @@ const blockFor = (params: Params): Block => {
       return exhaustive;
     }
   }
+};
+
+const isSettledStatus = ({ status }: Pick<Params, 'status'>): boolean =>
+  status !== 'pending' && status !== 'running' && status !== 'resolved';
+
+const blockFor = (params: Params): Block => {
+  if (params.tally.isMixed && isSettledStatus(params)) {
+    return mixedBlock(params);
+  }
+  return statusBlock(params);
 };
 
 export const resolverActionPlan = (params: Params): ResolverActionPlan => {

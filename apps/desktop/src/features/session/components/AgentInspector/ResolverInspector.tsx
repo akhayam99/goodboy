@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Divider, ScrollFade } from '@goodboy/ui';
-import type { Agent, PrComment, SessionId } from '@goodboy/types';
+import type { Agent, PendingResolution, PrComment, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useDiffComments, type DiffFocus } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -10,7 +10,6 @@ import { useResolverChanges } from '../../hooks/useResolverChanges';
 import { useResolverActions } from '../../hooks/useResolverActions';
 import { resolverOrigin } from '../../resolver-origin';
 import { resolverCommitSha } from '../../resolverCommitSha';
-import { resolverVerdicts } from '../../resolverVerdicts';
 import { agentThreadIds } from '../../agentThreadIds';
 import type { AgentAggregate } from '../AgentMetrics';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
@@ -26,7 +25,7 @@ import { ResolverCommentSection, type ResolverCommentLink } from './ResolverComm
 import { ResolverMetaLine } from './ResolverMetaLine';
 import { ResolverOverflowMenu } from './ResolverOverflowMenu';
 import { ResolverStateLine } from './ResolverStateLine';
-import { ResolverVerdictSection } from './ResolverVerdictSection';
+import { ResolverThreadList } from './ResolverThreadList';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
 type Props = {
@@ -39,7 +38,7 @@ type Props = {
   readonly onClose?: () => void;
 };
 
-const EMPTY_PENDING: ReadonlyArray<never> = [];
+const EMPTY_PENDING: ReadonlyArray<PendingResolution> = [];
 const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
 
 export const ResolverInspector = ({
@@ -61,6 +60,7 @@ export const ResolverInspector = ({
   const worktreePath = useSessionRepo({ sessionId })?.worktreePath ?? null;
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const setDiffFocus = useAppStore((s) => s.setDiffFocus);
+  const setResolverThreadReply = useAppStore((s) => s.setResolverThreadReply);
   const hasKickoff = useAppStore((s) => s.pendingResolverKickoff[agent.id] !== undefined);
   const pendingResolutions =
     useAppStore((s) => s.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
@@ -77,16 +77,16 @@ export const ResolverInspector = ({
     () => diffComments.find((comment) => comment.consumedByAgentId === agent.id) ?? null,
     [diffComments, agent.id],
   );
-  const threadComment = useMemo(() => {
-    const threadId = threadIds[0] ?? null;
-    if (threadId === null) {
-      return null;
+  const commentByThreadId = useMemo(() => {
+    const map = new Map<string, PrComment>();
+    for (const comment of prComments) {
+      if (comment.threadId == null || comment.inReplyToId != null || map.has(comment.threadId)) {
+        continue;
+      }
+      map.set(comment.threadId, comment);
     }
-    return (
-      prComments.find((comment) => comment.threadId === threadId && comment.inReplyToId == null) ??
-      null
-    );
-  }, [prComments, threadIds]);
+    return map;
+  }, [prComments]);
   const runningResolverName = useMemo(
     () => resolverIndex.links.find(({ status: other }) => other === 'running')?.agent.name ?? null,
     [resolverIndex],
@@ -107,6 +107,7 @@ export const ResolverInspector = ({
     sessionId,
     status,
     commitSha: changes.reported[0]?.sha ?? null,
+    surface: 'inspector',
     isQueueStalled: isResolverQueueStalled({ links: resolverIndex.links }),
     hasOtherActiveResolvers: hasOtherActiveResolver({
       activeIds: activeResolverIds({ links: resolverIndex.links }),
@@ -124,9 +125,6 @@ export const ResolverInspector = ({
     setActiveLens(sessionId, 'files');
   };
   const openThread = (threadId: string) => {
-    if (prNumber === null) {
-      return;
-    }
     window.dispatchEvent(
       new CustomEvent('goodboy:open-github-session', {
         detail: { sessionId, prNumber, threadId },
@@ -151,14 +149,7 @@ export const ResolverInspector = ({
         },
       ];
     }
-    if (threadIds.length > 0 && prNumber !== null) {
-      return threadIds.map((threadId, index) => ({
-        key: threadId,
-        label: threadIds.length > 1 ? `Open thread ${index + 1} on GitHub` : 'Open on GitHub',
-        onOpen: () => openThread(threadId),
-      }));
-    }
-    if (agent.sourceCommentUrl != null) {
+    if (threadIds.length === 0 && agent.sourceCommentUrl != null) {
       const url = agent.sourceCommentUrl;
       return [{ key: 'url', label: 'Open on GitHub', onOpen: () => void openUrl(url) }];
     }
@@ -200,23 +191,24 @@ export const ResolverInspector = ({
         <div className="flex flex-col gap-4">
           <ResolverStateLine
             status={status}
+            tally={actions.tally}
             queuePosition={position + 1}
             queueTotal={resolverIndex.links.length}
             blockedBy={blockedBy}
           />
           <ResolverActionBlock actions={actions} />
-          <ResolverCommentSection
-            origin={origin}
-            threadComment={threadComment}
-            diffComment={diffComment}
-            links={commentLinks}
-          />
-          <ResolverVerdictSection
-            verdicts={
-              status === 'pending' || status === 'running'
-                ? []
-                : resolverVerdicts({ threadIds, outcomes })
+          <ResolverCommentSection origin={origin} diffComment={diffComment} links={commentLinks} />
+          <ResolverThreadList
+            settlements={actions.settlements}
+            commentByThreadId={commentByThreadId}
+            prNumber={prNumber}
+            isBusy={actions.isBusy}
+            canAct={status !== 'pending' && status !== 'running' && status !== 'resolved'}
+            onRun={actions.runThread}
+            onReplyChange={({ threadId, reply }) =>
+              setResolverThreadReply({ agentId: agent.id, threadId, reply })
             }
+            onOpenThread={prNumber === null ? null : openThread}
           />
           <ChangesSection
             files={changes.files}

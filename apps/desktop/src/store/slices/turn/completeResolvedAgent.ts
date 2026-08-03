@@ -11,6 +11,7 @@ import {
 } from '@goodboy/core';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import {
   inferAgentKindFromName,
   KIND_TO_ROLE,
@@ -120,14 +121,21 @@ export const completeResolvedAgent = async ({
     }
   }
   const markerCount = resolvedMarkers.length + wontfixMarkers.length + analysisMarkers.length;
+  const ownedThreadIds = ranAgent ? agentThreadIds(ranAgent) : [];
+  const settledThreadIds = ownedThreadIds.length > 0 ? ownedThreadIds : Object.keys(outcomes);
+  const kinds = settledThreadIds.flatMap((threadId) => {
+    const outcome = outcomes[threadId];
+    return outcome === undefined ? [] : [outcome.kind];
+  });
+  const hasOpenThread = kinds.length < settledThreadIds.length;
   const nextState =
-    resolvedMarkers.length > 0
-      ? 'committed'
-      : markerCount > 0 && wontfixMarkers.length === markerCount
-        ? 'wontfix'
-        : analysisMarkers.length > 0
-          ? 'analyzed'
-          : 'awaiting';
+    hasOpenThread || kinds.length === 0
+      ? 'awaiting'
+      : kinds.includes('resolved')
+        ? 'committed'
+        : kinds.every((kind) => kind === 'wontfix')
+          ? 'wontfix'
+          : 'analyzed';
   set((state) => ({
     resolverState: { ...state.resolverState, [resolvedAgentId]: nextState },
     resolverThreadOutcomes: {

@@ -4,7 +4,7 @@ import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
 import type { GetFn, SetFn } from './types';
 
-type Params = { commitSha?: string; reason?: string };
+type Params = { commitSha?: string; reason?: string; reply?: string };
 
 export const resolveGithubThread = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, threadId: string, closure?: Params): Promise<boolean> => {
