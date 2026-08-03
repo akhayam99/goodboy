@@ -18,11 +18,9 @@ vi.mock('@goodboy/ui', () => ({
 }));
 
 vi.mock('../ClustersCard', () => ({ ClustersCard: () => null }));
-vi.mock('../CommentAnalysisChip', () => ({ CommentAnalysisChip: () => null }));
-vi.mock('../CommentResolvedChip', () => ({ CommentResolvedChip: () => null }));
-vi.mock('../CommentWontfixChip', () => ({ CommentWontfixChip: () => null }));
 vi.mock('../HandoffChip', () => ({ HandoffChip: () => null }));
 vi.mock('../PlanChip', () => ({ PlanChip: () => null }));
+vi.mock('../ResolverThreadsCard', () => ({ ResolverThreadsCard: () => null }));
 import { AssistantText } from './AssistantText';
 
 afterEach(cleanup);
