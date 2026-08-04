@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Skeleton } from '@goodboy/ui';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { HeaderBand, StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
@@ -8,24 +7,16 @@ import { useLinearIssue } from '../../../../../integrations/linear/useLinearIssu
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly task: SessionExternalTask;
-  readonly headerActions: ReactNode;
 };
 
-export const LinearTaskDetail = ({ workspaceId, task, headerActions }: Props) => {
+export const LinearTaskDetail = ({ workspaceId, task }: Props) => {
   const { issue, isLoading, error } = useLinearIssue({
     workspaceId,
     issueId: task.externalId,
   });
 
   if (issue != null) {
-    return (
-      <LinearIssueDetail
-        issue={issue}
-        workspaceId={workspaceId}
-        fit="fill"
-        headerActions={headerActions}
-      />
-    );
+    return <LinearIssueDetail issue={issue} workspaceId={workspaceId} fit="fill" />;
   }
 
   return (
@@ -39,7 +30,6 @@ export const LinearTaskDetail = ({ workspaceId, task, headerActions }: Props) =>
             </span>
           }
           title={task.title}
-          actions={headerActions}
         />
       }
     >

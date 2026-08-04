@@ -240,4 +240,19 @@ describe('ReviewBoardPane', () => {
     expect(screen.getByRole('tab', { name: 'Split' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByLabelText('Draft a comment on new line 4')).toBeDefined();
   });
+
+  it('states its section title with the reviewed record below it', () => {
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.getByRole('heading', { name: 'Review board' })).toBeDefined();
+    expect(screen.getByText('acme/web #41')).toBeDefined();
+  });
+
+  it('states its section title with no reviewed record', () => {
+    h.diff.target = null;
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.getByRole('heading', { name: 'Review board' })).toBeDefined();
+    expect(screen.queryByText('acme/web #41')).toBeNull();
+  });
 });

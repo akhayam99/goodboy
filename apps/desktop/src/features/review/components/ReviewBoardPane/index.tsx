@@ -115,11 +115,12 @@ export const ReviewBoardPane = ({ session }: Props) => {
 
   const header = (
     <div className="flex items-center gap-2">
-      <span className="min-w-0 truncate text-sm font-medium text-foreground">
-        {target == null
-          ? 'Review board'
-          : `${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
-      </span>
+      <h2 className="min-w-0 truncate text-sm font-medium text-foreground">Review board</h2>
+      {target != null ? (
+        <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">
+          {`${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
+        </span>
+      ) : null}
       <span className="text-2xs tabular-nums text-muted-foreground/60">
         {loading ? '' : `${files.length} files`}
       </span>

@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Skeleton } from '@goodboy/ui';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '../../../../../../shared/components/ErrorStrip';
@@ -10,10 +9,9 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string | null;
   readonly task: SessionExternalTask;
-  readonly headerActions: ReactNode;
 };
 
-export const GithubTaskDetail = ({ workspaceId, rootPath, task, headerActions }: Props) => {
+export const GithubTaskDetail = ({ workspaceId, rootPath, task }: Props) => {
   const { issue, isLoading, error, refetch } = useGithubIssue({
     workspaceId,
     rootPath,
@@ -21,7 +19,7 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, headerActions }:
   });
 
   if (issue != null) {
-    return <GithubIssueDetail issue={issue} fit="fill" headerActions={headerActions} />;
+    return <GithubIssueDetail issue={issue} fit="fill" />;
   }
 
   return (
@@ -35,7 +33,6 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, headerActions }:
             </span>
           }
           title={task.title}
-          actions={headerActions}
         />
       }
     >

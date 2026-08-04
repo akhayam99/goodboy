@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
@@ -20,40 +19,27 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly task: SessionExternalTask;
   readonly isConnected: boolean;
-  readonly headerActions: ReactNode;
 };
 
-export const FocusedTaskBody = ({
-  provider,
-  sessionId,
-  workspaceId,
-  task,
-  isConnected,
-  headerActions,
-}: Props) => {
+export const FocusedTaskBody = ({ provider, sessionId, workspaceId, task, isConnected }: Props) => {
   const repo = useSessionRepo({ sessionId });
 
   if (isConnected && provider === 'linear') {
-    return <LinearTaskDetail workspaceId={workspaceId} task={task} headerActions={headerActions} />;
+    return <LinearTaskDetail workspaceId={workspaceId} task={task} />;
   }
 
   if (isConnected && provider === 'sentry') {
-    return <SentryTaskDetail workspaceId={workspaceId} task={task} headerActions={headerActions} />;
+    return <SentryTaskDetail workspaceId={workspaceId} task={task} />;
   }
 
   if (isConnected && provider === 'github') {
     return (
-      <GithubTaskDetail
-        workspaceId={workspaceId}
-        rootPath={repo?.repoRoot ?? null}
-        task={task}
-        headerActions={headerActions}
-      />
+      <GithubTaskDetail workspaceId={workspaceId} rootPath={repo?.repoRoot ?? null} task={task} />
     );
   }
 
   if (isConnected && provider === 'gitlab') {
-    return <GitlabTaskDetail workspaceId={workspaceId} task={task} headerActions={headerActions} />;
+    return <GitlabTaskDetail workspaceId={workspaceId} task={task} />;
   }
 
   return (
@@ -67,7 +53,6 @@ export const FocusedTaskBody = ({
             </span>
           }
           title={task.title}
-          actions={headerActions}
         />
       }
     >

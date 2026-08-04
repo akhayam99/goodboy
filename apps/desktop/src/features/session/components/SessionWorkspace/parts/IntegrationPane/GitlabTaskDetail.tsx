@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Skeleton } from '@goodboy/ui';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '../../../../../../shared/components/ErrorStrip';
@@ -9,17 +8,16 @@ import { useGitlabIssue } from '../../../../../integrations/gitlab/useGitlabIssu
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly task: SessionExternalTask;
-  readonly headerActions: ReactNode;
 };
 
-export const GitlabTaskDetail = ({ workspaceId, task, headerActions }: Props) => {
+export const GitlabTaskDetail = ({ workspaceId, task }: Props) => {
   const { issue, isLoading, error, refetch } = useGitlabIssue({
     workspaceId,
     identifier: task.identifier,
   });
 
   if (issue != null) {
-    return <GitlabIssueDetail issue={issue} fit="fill" headerActions={headerActions} />;
+    return <GitlabIssueDetail issue={issue} fit="fill" />;
   }
 
   return (
@@ -33,7 +31,6 @@ export const GitlabTaskDetail = ({ workspaceId, task, headerActions }: Props) =>
             </span>
           }
           title={task.title}
-          actions={headerActions}
         />
       }
     >

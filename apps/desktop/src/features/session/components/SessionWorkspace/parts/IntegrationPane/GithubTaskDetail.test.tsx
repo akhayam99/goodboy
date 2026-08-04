@@ -48,14 +48,7 @@ describe('GithubTaskDetail', () => {
       refetch: vi.fn(),
     });
 
-    render(
-      <GithubTaskDetail
-        workspaceId={WORKSPACE_ID}
-        rootPath="/repo"
-        task={TASK}
-        headerActions={null}
-      />,
-    );
+    render(<GithubTaskDetail workspaceId={WORKSPACE_ID} rootPath="/repo" task={TASK} />);
 
     expect(screen.getByRole('status', { name: 'Loading GitHub issue' })).toBeDefined();
   });
@@ -69,14 +62,7 @@ describe('GithubTaskDetail', () => {
       refetch,
     });
 
-    render(
-      <GithubTaskDetail
-        workspaceId={WORKSPACE_ID}
-        rootPath="/repo"
-        task={TASK}
-        headerActions={null}
-      />,
-    );
+    render(<GithubTaskDetail workspaceId={WORKSPACE_ID} rootPath="/repo" task={TASK} />);
 
     expect(screen.getByRole('alert')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -91,14 +77,7 @@ describe('GithubTaskDetail', () => {
       refetch: vi.fn(),
     });
 
-    render(
-      <GithubTaskDetail
-        workspaceId={WORKSPACE_ID}
-        rootPath="/repo"
-        task={TASK}
-        headerActions={null}
-      />,
-    );
+    render(<GithubTaskDetail workspaceId={WORKSPACE_ID} rootPath="/repo" task={TASK} />);
 
     expect(screen.getByText('Add issue dashboard')).toBeDefined();
     expect(screen.getByText('Show assigned issues in GitHub Studio.')).toBeDefined();

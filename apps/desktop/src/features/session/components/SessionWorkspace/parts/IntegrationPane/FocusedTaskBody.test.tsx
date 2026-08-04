@@ -61,7 +61,6 @@ describe('FocusedTaskBody', () => {
         workspaceId={WORKSPACE_ID}
         task={makeTask(provider)}
         isConnected
-        headerActions={null}
       />,
     );
 
@@ -78,7 +77,6 @@ describe('FocusedTaskBody', () => {
           workspaceId={WORKSPACE_ID}
           task={makeTask(provider)}
           isConnected={false}
-          headerActions={null}
         />,
       );
 

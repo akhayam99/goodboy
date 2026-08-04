@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { SentryIssueDetail } from '../../../../../integrations/sentry/SentryIssueDetail';
 import { useSentryIssueDetail } from '../../../../../integrations/sentry/useSentryIssueDetail';
@@ -6,10 +5,9 @@ import { useSentryIssueDetail } from '../../../../../integrations/sentry/useSent
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly task: SessionExternalTask;
-  readonly headerActions: ReactNode;
 };
 
-export const SentryTaskDetail = ({ workspaceId, task, headerActions }: Props) => {
+export const SentryTaskDetail = ({ workspaceId, task }: Props) => {
   const { detail, isLoading, error } = useSentryIssueDetail({
     workspaceId,
     issueId: task.externalId,
@@ -27,7 +25,6 @@ export const SentryTaskDetail = ({ workspaceId, task, headerActions }: Props) =>
       isLoading={isLoading}
       error={error}
       fit="fill"
-      headerActions={headerActions}
     />
   );
 };
