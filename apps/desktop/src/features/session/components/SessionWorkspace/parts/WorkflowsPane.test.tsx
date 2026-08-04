@@ -16,6 +16,7 @@ type Store = {
   lensGo: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   restoreWorkflow: ReturnType<typeof vi.fn>;
+  makeWorkflowPreset: ReturnType<typeof vi.fn>;
 };
 
 type ButtonMockProps = React.ComponentProps<'button'>;
@@ -48,6 +49,7 @@ const store: Store = {
   lensGo: vi.fn(),
   setFocusedWorkflowRun: vi.fn(),
   restoreWorkflow: vi.fn(),
+  makeWorkflowPreset: vi.fn(),
 };
 
 vi.mock('../../../../../store', () => ({
@@ -90,6 +92,14 @@ vi.mock('@goodboy/ui', () => ({
   ScrollFade: ({ children }: ChildrenMockProps) => <div>{children}</div>,
   StatusDot: () => <span data-testid="status-dot" />,
   cn: (...values: ReadonlyArray<unknown>) => values.filter(Boolean).join(' '),
+  tintClasses: () => ({
+    text: '',
+    icon: '',
+    border: '',
+    ring: '',
+    bg: '',
+    hover: '',
+  }),
   formatUsd: (value: number) => `$${value.toFixed(2)}`,
   formatUsdPrecise: (value: number) => `$${value.toFixed(2)}`,
 }));
@@ -146,6 +156,7 @@ beforeEach(() => {
   store.agentRunHistory = {};
   store.focusedWorkflowRunId = {};
   store.setFocusedWorkflowRun.mockReset();
+  store.makeWorkflowPreset.mockReset();
   store.restoreWorkflow.mockReset();
 });
 
@@ -284,6 +295,33 @@ describe('WorkflowsPane', () => {
 
     expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-2');
     expect(screen.queryByText('First workflow')).toBeNull();
+  });
+
+  it('offers make preset only for a workflow the user declined to save', () => {
+    store.phaseTemplates = {
+      [WORKSPACE_ID]: [
+        { ...firstWorkflow, isPreset: false } as Workflow,
+        { ...secondWorkflow, isPreset: true } as Workflow,
+      ],
+    };
+    store.focusedWorkflowRunId = { [SESSION_ID]: 'run-1' };
+    render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Make preset' }));
+    expect(store.makeWorkflowPreset).toHaveBeenCalledWith(WORKSPACE_ID, 'workflow-1');
+  });
+
+  it('hides make preset for a workflow that already is one', () => {
+    store.phaseTemplates = {
+      [WORKSPACE_ID]: [
+        { ...firstWorkflow, isPreset: false } as Workflow,
+        { ...secondWorkflow, isPreset: true } as Workflow,
+      ],
+    };
+    store.focusedWorkflowRunId = { [SESSION_ID]: 'run-2' };
+    render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
+
+    expect(screen.queryByRole('button', { name: 'Make preset' })).toBeNull();
   });
 
   it('focuses a run when its card is clicked', () => {

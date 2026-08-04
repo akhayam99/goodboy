@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { BookmarkPlus, Check } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -16,6 +16,7 @@ import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../shared/components/PaneShell/FocusedPane';
 import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
 import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
+import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
 
 type Props = {
   readonly session: Session;
@@ -24,6 +25,7 @@ type Props = {
 export const WorkflowsPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
   const attachedRuns = useAttachedWorkflowRuns({ session });
+  const makeWorkflowPreset = useAppStore((s) => s.makeWorkflowPreset);
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -80,6 +82,16 @@ export const WorkflowsPane = ({ session }: Props) => {
         actions={
           <>
             <WorkSurfaceBackButton sessionId={sessionId} />
+            {focusedRun.workflow != null && focusedRun.workflow.isPreset === false ? (
+              <GhostActionButton
+                icon={BookmarkPlus}
+                label="Make preset"
+                title="Keep this configuration in the workspace presets"
+                onClick={() =>
+                  void makeWorkflowPreset(session.workspaceId, focusedRun.workflow!.id)
+                }
+              />
+            ) : null}
             {shouldShowHeaderAttach ? (
               <WorkflowAttachButton sessionId={sessionId} placement="header" />
             ) : null}

@@ -105,7 +105,7 @@ describe('WorkflowsPanel', () => {
     expect(screen.queryByText('Deleted workflow')).toBeNull();
   });
 
-  it('lists draft workflows (isPreset=false) alongside approved ones', () => {
+  it('keeps a workflow the user declined to save out of the preset rail', () => {
     state.phaseTemplates = {
       'ws-1': [
         makeWorkflow({ name: 'Approved preset' }),
@@ -114,8 +114,7 @@ describe('WorkflowsPanel', () => {
     };
     renderPanel();
     expect(screen.getByText('Approved preset')).toBeDefined();
-    // drafts now appear with a status pill rather than being hidden
-    expect(screen.getByText('Draft workflow')).toBeDefined();
+    expect(screen.queryByText('Draft workflow')).toBeNull();
   });
 
   it('shows empty state when every template is soft-deleted', () => {

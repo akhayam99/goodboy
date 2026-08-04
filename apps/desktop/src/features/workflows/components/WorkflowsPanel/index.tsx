@@ -60,7 +60,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const [formatOpen, setFormatOpen] = useState(false);
   const [preview, setPreview] = useState<FormattedWorkflow | null>(null);
 
-  const presets = templates.filter((t) => !t.deletedAt);
+  const presets = templates.filter((t) => !t.deletedAt && t.isPreset !== false);
 
   const editingIdRef = useRef<WorkflowId | null>(null);
   const approvedRef = useRef(approved);
