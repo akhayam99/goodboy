@@ -6,6 +6,7 @@ import type {
   ProviderId,
   Session,
   SessionId,
+  TurnState,
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -119,7 +120,19 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const workflowExpanded = useAppStore((s) => s.sessionPanelExpanded[task.id]?.workflow ?? true);
   const tree = useSessionAgentTree({ phaseRuns, selectedAgentId, isTaskActive });
-  const agentTurnState = useAppStore((s) => s.agentTurnState);
+  const agentTurnState = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, TurnState> = {};
+      for (const run of phaseRuns) {
+        const turn = s.agentTurnState[run.id];
+        if (turn === undefined) {
+          continue;
+        }
+        out[run.id] = turn;
+      }
+      return out;
+    }),
+  );
 
   const actionableStepIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();

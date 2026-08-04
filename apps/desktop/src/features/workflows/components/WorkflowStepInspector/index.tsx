@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Divider, EmptyState, Markdown, ScrollFade, SectionHeader } from '@goodboy/ui';
-import type { Agent, AgentId, Session } from '@goodboy/types';
+import type { Agent, AgentId, Session, TurnState } from '@goodboy/types';
 import { stripControlMarkers } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import {
@@ -48,7 +48,19 @@ export const WorkflowStepInspector = ({ session, agentId }: Props) => {
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
-  const turnStates = useAppStore(useShallow((state) => state.agentTurnState));
+  const turnStates = useAppStore(
+    useShallow((state) => {
+      const out: Record<string, TurnState> = {};
+      for (const run of phaseRuns) {
+        const turn = state.agentTurnState[run.id];
+        if (turn === undefined) {
+          continue;
+        }
+        out[run.id] = turn;
+      }
+      return out;
+    }),
+  );
   const selectAgent = useAppStore((state) => state.selectAgent);
   const spawnedChildren = useMemo(
     () => selectSpawnedChildren({ runs: phaseRuns, parentAgentId: agentId, turnStates }),

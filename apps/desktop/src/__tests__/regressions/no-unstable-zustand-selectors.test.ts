@@ -57,6 +57,7 @@ const UNSTABLE_TAIL_PATTERNS: ReadonlyArray<RegExp> = [
 
 const HOT_SLICE_KEYS: ReadonlySet<string> = new Set([
   'transcripts',
+  'agentTurnState',
   'agentRunHistory',
   'unknownPayloadCounts',
 ]);
@@ -140,7 +141,7 @@ describe('no unstable useAppStore selectors without useShallow', () => {
       const lines = bad.map((b) => `  - ${b.file}:${b.line}\n      ${b.snippet}`);
       throw new Error(
         `Found ${bad.length} useAppStore selector(s) subscribing to a whole slice that is ` +
-          `rewritten on every stream chunk (${[...HOT_SLICE_KEYS].join(', ')}). Every consumer ` +
+          `rewritten while a turn streams (${[...HOT_SLICE_KEYS].join(', ')}). Every consumer ` +
           `then re-renders for every agent of every session. Select the keys the component ` +
           `needs instead, or add a "useShallow not needed: ..." comment if you have proof the ` +
           `component really needs the whole map.\n\n${lines.join('\n')}`,

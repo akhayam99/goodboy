@@ -21,6 +21,7 @@ import type {
   Session,
   TurnEvent,
   TurnProviderOverride,
+  TurnState,
 } from '@goodboy/types';
 import { Button, Divider, ScrollFade, cn } from '@goodboy/ui';
 import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
@@ -247,7 +248,19 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
 
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const sessionPlans = useAppStore((s) => s.sessionPlans[session.id] ?? EMPTY_ARRAY);
-  const agentTurnState = useAppStore(useShallow((s) => s.agentTurnState));
+  const agentTurnState = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, TurnState> = {};
+      for (const run of phaseRuns) {
+        const turn = s.agentTurnState[run.id];
+        if (turn === undefined) {
+          continue;
+        }
+        out[run.id] = turn;
+      }
+      return out;
+    }),
+  );
   const sessionWorkflows = useAppStore((s) => s.sessionWorkflows[session.id] ?? EMPTY_ARRAY);
 
   const selectedRun = useMemo(
