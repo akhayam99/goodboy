@@ -315,6 +315,7 @@ export {
   resolvePrForBranch,
   resolveReviewThread,
   runJson as ghRunJson,
+  updateIssueBody,
   type GetPrInput,
   type GhDetectResult,
   type GhResult,

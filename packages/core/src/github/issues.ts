@@ -24,6 +24,33 @@ type RawGithubIssue = {
   updatedAt: string;
 };
 
+type UpdateIssueBodyParams = {
+  readonly runner: GhRunner;
+  readonly repoSlug: string;
+  readonly issueNumber: number;
+  readonly body: string;
+  readonly opts?: GhRunOptions;
+};
+
+type RawUpdatedIssue = {
+  body: string | null;
+};
+
+export const updateIssueBody = async ({
+  runner,
+  repoSlug,
+  issueNumber,
+  body,
+  opts = {},
+}: UpdateIssueBodyParams): Promise<string> => {
+  const updated = await runJson<RawUpdatedIssue>(
+    runner,
+    ['api', `repos/${repoSlug}/issues/${issueNumber}`, '-X', 'PATCH', '-f', `body=${body}`],
+    opts,
+  );
+  return updated.body ?? '';
+};
+
 export const listAssignedIssues = async (
   runner: GhRunner,
   repoSlug: string,
