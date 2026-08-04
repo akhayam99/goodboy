@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Ban, Check } from 'lucide-react';
-import { CountToggle } from '@goodboy/ui';
+import { Check } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -16,6 +15,7 @@ import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../shared/components/PaneShell/FocusedPane';
 import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
+import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
 
 type Props = {
   readonly session: Session;
@@ -33,8 +33,7 @@ export const WorkflowsPane = ({ session }: Props) => {
   );
   const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);
   const restoreWorkflow = useAppStore((state) => state.restoreWorkflow);
-  const [showCompleted, setShowCompleted] = useState(false);
-  const [showDiscarded, setShowDiscarded] = useState(false);
+  const [showFiled, setShowFiled] = useState(false);
   const { agentsByRunId, discarded, completed, active } = splitWorkflowRuns({
     attachedRuns,
     agents: phaseRuns,
@@ -98,27 +97,9 @@ export const WorkflowsPane = ({ session }: Props) => {
       description="Sequences of agents this session runs toward its goal."
       meta={hasRuns ? attachedRuns.length : undefined}
       actions={
-        <>
-          <CountToggle
-            label="Completed"
-            count={completed.length}
-            isShown={showCompleted}
-            icon={Check}
-            itemsLabel="workflows"
-            onChange={setShowCompleted}
-          />
-          <CountToggle
-            label="Discarded"
-            count={discarded.length}
-            isShown={showDiscarded}
-            icon={Ban}
-            itemsLabel="workflows"
-            onChange={setShowDiscarded}
-          />
-          {shouldShowHeaderAttach ? (
-            <WorkflowAttachButton sessionId={sessionId} placement="header" />
-          ) : null}
-        </>
+        shouldShowHeaderAttach ? (
+          <WorkflowAttachButton sessionId={sessionId} placement="header" />
+        ) : null
       }
     >
       {!hasRuns ? <WorkflowStartButton sessionId={sessionId} /> : null}
@@ -136,10 +117,18 @@ export const WorkflowsPane = ({ session }: Props) => {
         />
       ) : null}
       {active.length > 0 ? <ul className="flex flex-col gap-2">{active.map(renderCard)}</ul> : null}
-      {showCompleted && completed.length > 0 ? (
+      <FiledItemsToggle
+        noun="completed"
+        items="workflows"
+        count={completed.length + discarded.length}
+        isShown={showFiled}
+        icon={Check}
+        onChange={setShowFiled}
+      />
+      {showFiled && completed.length > 0 ? (
         <ul className="flex flex-col gap-2">{completed.map(renderCard)}</ul>
       ) : null}
-      {showDiscarded && discarded.length > 0 ? (
+      {showFiled && discarded.length > 0 ? (
         <ul className="flex flex-col gap-2">{discarded.map(renderCard)}</ul>
       ) : null}
     </PaneShell>

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Bot, Check } from 'lucide-react';
-import { CountToggle } from '@goodboy/ui';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import type {
   Agent,
@@ -32,6 +31,7 @@ import {
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
@@ -328,23 +328,8 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
 
   if (open.length === 0 && pendingUndoQuestion === null) {
     return (
-      <PaneShell
-        title="Questions"
-        description="Decisions agents need from you to keep going."
-        actions={
-          <CountToggle
-            label="Answered"
-            count={answered.length}
-            isShown={showAnswered}
-            icon={Check}
-            itemsLabel="questions"
-            onChange={setShowAnswered}
-          />
-        }
-      >
-        {showAnswered ? (
-          <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
-        ) : (
+      <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
+        {showAnswered ? null : (
           <LensEmptyState
             tone={CONCEPT_TONE.questions}
             icon={CONCEPT_ICONS.questions}
@@ -352,6 +337,17 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
             description={`Every question on this session is answered. Reveal the ${answered.length} answered ${answered.length === 1 ? 'one' : 'ones'} to reread them.`}
           />
         )}
+        <FiledItemsToggle
+          noun="answered"
+          items="questions"
+          count={answered.length}
+          isShown={showAnswered}
+          icon={Check}
+          onChange={setShowAnswered}
+        />
+        {showAnswered ? (
+          <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
+        ) : null}
       </PaneShell>
     );
   }
@@ -363,16 +359,6 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         open.length > 0
           ? `${open.length} open ${open.length === 1 ? 'question' : 'questions'} waiting on you.`
           : 'Decisions agents need from you to keep going.'
-      }
-      actions={
-        <CountToggle
-          label="Answered"
-          count={answered.length}
-          isShown={showAnswered}
-          icon={Check}
-          itemsLabel="questions"
-          onChange={setShowAnswered}
-        />
       }
     >
       <div className="flex flex-col gap-4">
@@ -394,6 +380,14 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
             onSubmit={(pairs, ownerAgentId) => void handleSubmit(pairs, ownerAgentId)}
           />
         ))}
+        <FiledItemsToggle
+          noun="answered"
+          items="questions"
+          count={answered.length}
+          isShown={showAnswered}
+          icon={Check}
+          onChange={setShowAnswered}
+        />
         {showAnswered ? (
           <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
         ) : null}

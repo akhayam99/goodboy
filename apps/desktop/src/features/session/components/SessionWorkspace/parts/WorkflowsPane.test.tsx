@@ -237,7 +237,7 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed (1)' }));
 
     expect(screen.getByText('2 of 2 steps run')).toBeDefined();
     expect(screen.getByText('3m')).toBeDefined();
@@ -272,7 +272,7 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed (1)' }));
 
     expect(screen.getByText('1 step run')).toBeDefined();
     expect(screen.queryByText('1 of 2 steps run')).toBeNull();
@@ -319,7 +319,7 @@ describe('WorkflowsPane', () => {
     expect(screen.queryByText('First workflow')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (2)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed (2)' }));
 
     expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
     expect(screen.getByText('First workflow')).toBeDefined();
@@ -339,7 +339,7 @@ describe('WorkflowsPane', () => {
     expect(screen.queryByText('First workflow')).toBeNull();
     expect(screen.getByText('Second workflow')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed (1)' }));
 
     expect(screen.getByText('First workflow')).toBeDefined();
   });
@@ -356,7 +356,7 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed (1)' }));
     rerender(
       <WorkflowsPane
         session={buildSession({
@@ -380,7 +380,7 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Discarded (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed (1)' }));
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     expect(store.restoreWorkflow).toHaveBeenCalledWith(SESSION_ID, 'run-1');
@@ -400,7 +400,7 @@ describe('WorkflowsPane', () => {
 
     expect(screen.queryByText('First workflow')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Completed (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show completed (1)' }));
 
     expect(screen.getByText('First workflow')).toBeDefined();
   });
