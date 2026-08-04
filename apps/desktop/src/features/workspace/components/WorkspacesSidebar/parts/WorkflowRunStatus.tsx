@@ -83,7 +83,7 @@ export const WorkflowRunStatus = ({
       </span>
     );
   }
-  if (isRunning) {
+  if (isRunning && !hasOrchestratorStrip) {
     return (
       <span className={cn(baseClass, 'bg-info/10 text-info')}>
         <StatusDot tone="info" size="sm" pulsing />
@@ -117,6 +117,9 @@ export const WorkflowRunStatus = ({
         After {predecessorName}
       </span>
     );
+  }
+  if (hasOrchestratorStrip) {
+    return null;
   }
   return <span className={cn(baseClass, 'bg-accent/10 text-accent')}>Ready</span>;
 };

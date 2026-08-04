@@ -41,15 +41,22 @@ const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 
 type RenderParams = {
   readonly runOverride: WorkflowRun;
+  readonly hasOrchestratorStrip?: boolean;
+  readonly predecessorName?: string;
 };
 
-const renderStatus = ({ runOverride }: RenderParams) =>
+const renderStatus = ({
+  runOverride,
+  hasOrchestratorStrip = false,
+  predecessorName = '',
+}: RenderParams) =>
   render(
     <WorkflowRunStatus
       run={runOverride}
       workflow={workflow}
       agents={EMPTY_AGENTS}
-      predecessorName=""
+      predecessorName={predecessorName}
+      hasOrchestratorStrip={hasOrchestratorStrip}
     />,
   );
 
@@ -76,5 +83,42 @@ describe('WorkflowRunStatus', () => {
       'usage limit',
     );
     expect(screen.queryByTestId('workflow-orchestrator-budget-paused')).toBeNull();
+  });
+
+  it('never calls a paused run ready when the strip already owns the phase', () => {
+    const { container } = renderStatus({
+      runOverride: { ...run, orchestrationStop: { kind: 'budget', message: 'any wording' } },
+      hasOrchestratorStrip: true,
+    });
+
+    expect(container.textContent).toBe('');
+  });
+
+  it('never calls a failed run ready when the strip already owns the phase', () => {
+    const { container } = renderStatus({
+      runOverride: { ...run, orchestrationStop: { kind: 'failure', message: 'usage limit' } },
+      hasOrchestratorStrip: true,
+    });
+
+    expect(container.textContent).toBe('');
+  });
+
+  it('keeps the run outcome next to the strip', () => {
+    renderStatus({
+      runOverride: { ...run, orchestrationOutcome: 'done' },
+      hasOrchestratorStrip: true,
+    });
+
+    expect(screen.getByText('Completed')).toBeDefined();
+  });
+
+  it('keeps the chained gate the strip cannot show', () => {
+    renderStatus({
+      runOverride: { ...run, triggerMode: 'after_run' },
+      hasOrchestratorStrip: true,
+      predecessorName: 'Scout',
+    });
+
+    expect(screen.getByTitle('After Scout')).toBeDefined();
   });
 });
