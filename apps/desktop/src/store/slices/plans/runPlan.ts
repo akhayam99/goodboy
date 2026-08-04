@@ -13,6 +13,7 @@ export const runPlan = (get: GetFn) => {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
+        focus: 'agent',
       });
       return;
     }
@@ -24,6 +25,7 @@ export const runPlan = (get: GetFn) => {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
+        focus: 'agent',
       });
       return;
     }
@@ -42,6 +44,7 @@ export const runPlan = (get: GetFn) => {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
+        focus: 'agent',
       });
       return;
     }
@@ -52,6 +55,7 @@ export const runPlan = (get: GetFn) => {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
+        focus: 'agent',
       });
       return;
     }
@@ -61,6 +65,7 @@ export const runPlan = (get: GetFn) => {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
+        focus: 'agent',
       });
       return;
     }
@@ -70,9 +75,10 @@ export const runPlan = (get: GetFn) => {
       await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
+        focus: 'agent',
       });
       return;
     }
-    await get().activateWorkflowAgent(sessionId, stepAgent.id, planId);
+    await get().activateWorkflowAgent(sessionId, stepAgent.id, planId, 'agent');
   };
 };

@@ -40,12 +40,12 @@ export const CiPane = ({ checks, pr, onOpenUrl }: Props) => {
           <button
             type="button"
             onClick={() => (c.detailsUrl ? onOpenUrl(c.detailsUrl) : onOpenUrl(pr.url))}
-            className="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-[11px] text-left hover:bg-background"
+            className="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-2xs text-left hover:bg-background"
             title={c.detailsUrl ?? c.name}
           >
             <CheckConclusionIcon conclusion={c.conclusion} />
             <span className="min-w-0 flex-1 truncate text-foreground">{c.name}</span>
-            <span className="shrink-0 text-[10px] text-muted-foreground/70">
+            <span className="shrink-0 text-3xs text-muted-foreground/70">
               {formatDuration(c.durationMs)}
             </span>
           </button>

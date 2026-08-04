@@ -145,12 +145,12 @@ function ConflictRow({ conflict, runMeta, pick, onPick }: ConflictRowProps) {
                       {meta?.agentName ?? `run ${idx + 1}`}
                     </span>
                     {meta?.stepName ? (
-                      <span className="rounded bg-primary/10 px-1 py-px text-[10px] font-medium text-primary">
+                      <span className="rounded bg-primary/10 px-1 py-px text-3xs font-medium text-primary">
                         {meta.stepName}
                       </span>
                     ) : null}
                   </span>
-                  <span className="font-mono text-[10px] text-muted-foreground/70">
+                  <span className="font-mono text-3xs text-muted-foreground/70">
                     run …{shortRunId(runId)}
                   </span>
                 </span>

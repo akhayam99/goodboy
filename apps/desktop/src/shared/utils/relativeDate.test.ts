@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { formatAbsoluteDateTime, formatRelativeDuration } from './relativeDate';
 
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -58,5 +58,21 @@ describe('formatAbsoluteDateTime', () => {
 
   it('returns an empty string for an invalid timestamp', () => {
     expect(formatAbsoluteDateTime({ iso: 'not-a-date', locale: 'en-GB' })).toBe('');
+  });
+
+  it('defaults to en-US when no locale is given', () => {
+    expect(formatAbsoluteDateTime({ iso: '2026-07-29T11:49:00' })).toBe('Jul 29, 2026, 11:49');
+  });
+
+  it('pins the Intl locale to en-US when the caller omits it', () => {
+    const original = Intl.DateTimeFormat;
+    const spy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function (
+      ...args: ConstructorParameters<typeof Intl.DateTimeFormat>
+    ) {
+      return new original(...args);
+    } as never);
+    formatAbsoluteDateTime({ iso: '2026-07-29T11:49:00' });
+    expect(spy.mock.calls[0]?.[0]).toBe('en-US');
+    spy.mockRestore();
   });
 });

@@ -1,40 +1,31 @@
 import { useEffect, useState } from 'react';
 import { Dialog } from '@goodboy/ui';
-import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 import { ProviderConnectDialog } from './ProviderConnectDialog';
 
 type Props = {
   readonly providerId: ProviderId | null;
-  readonly initialAction: ProviderLifecycleAction;
   readonly onClose: () => void;
 };
 
-export const ProviderConnectModal = ({ providerId, initialAction, onClose }: Props) => {
+export const ProviderConnectModal = ({ providerId, onClose }: Props) => {
   const open = providerId !== null;
   const [pinned, setPinned] = useState<ProviderId | null>(null);
-  const [pinnedAction, setPinnedAction] = useState<ProviderLifecycleAction>(initialAction);
 
   useEffect(() => {
-    if (providerId) {
-      setPinned(providerId);
-      setPinnedAction(initialAction);
+    if (providerId === null) {
+      return;
     }
-  }, [providerId, initialAction]);
+    setPinned(providerId);
+  }, [providerId]);
 
   const target = providerId ?? pinned;
-  if (!target) {
+  if (target === null) {
     return (
-      <Dialog open={false} onClose={onClose} size="xl">
+      <Dialog open={false} onClose={onClose} size="lg">
         {null}
       </Dialog>
     );
   }
-  return (
-    <ProviderConnectDialog
-      providerId={target}
-      action={pinnedAction}
-      open={open}
-      onClose={onClose}
-    />
-  );
+  return <ProviderConnectDialog providerId={target} open={open} onClose={onClose} />;
 };

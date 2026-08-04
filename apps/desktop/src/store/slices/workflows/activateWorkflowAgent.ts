@@ -16,6 +16,7 @@ import {
   composePlanSection,
   composeStepBoundary,
 } from '../../kickoff';
+import type { SpawnFocus } from '../session-view/spawnFocus';
 import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
 import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
 import type { GetFn, SetFn } from './types';
@@ -25,7 +26,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     agentId: AgentId,
     explicitPlanId?: PlanId,
-    navigate = true,
+    focus: SpawnFocus = 'none',
   ) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
@@ -53,7 +54,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
           lastActivityAt: new Date().toISOString() as IsoDateTime,
         },
       },
-      ...(navigate && !isWatchingWorkflowLens({ state: s, sessionId })
+      ...(focus === 'agent' && !isWatchingWorkflowLens({ state: s, sessionId })
         ? { selectedAgentId: { ...s.selectedAgentId, [sessionId]: agentId } }
         : {}),
     }));

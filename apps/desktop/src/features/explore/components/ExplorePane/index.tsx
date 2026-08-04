@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
-import { Button, CopyButton, EmptyState, Skeleton, cn } from '@goodboy/ui';
+import { Button, EmptyState, Skeleton, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import {
   exploreList,
@@ -12,7 +12,7 @@ import {
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
-import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
 import { ExplorePreviewPanel } from './ExplorePreviewPanel';
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';
@@ -261,62 +261,52 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
           entry.modifiedAt == null ? '' : formatRelativeAge({ fromIso: entry.modifiedAt });
         const ageLabel = age === '' ? 'unknown age' : age;
         const sizeLabel = formatByteSize({ bytes: entry.sizeBytes });
-        const absolutePath =
-          sessionDir == null || sessionDir.trim() === ''
-            ? entry.relPath
-            : resolveAbsolutePath({ sessionDir, relPath: entry.relPath });
 
         return (
-          <div
-            key={entry.relPath}
-            className={cn(
-              'group/explore-row flex flex-col gap-2 rounded-md px-2 py-1.5 transition-colors',
-              isSelectedFile ? 'bg-muted text-foreground' : 'hover:bg-muted/40',
-            )}
-          >
-            <div className="flex items-start gap-2">
+          <div key={entry.relPath} className="flex flex-col gap-0.5">
+            <div
+              title={`${sizeLabel} · ${ageLabel}`}
+              className={cn(
+                'group/explore-row flex items-center gap-1.5 rounded-md py-1 pl-1 pr-2 transition-colors',
+                isSelectedFile ? 'bg-muted text-foreground' : 'hover:bg-muted/40',
+              )}
+            >
               {entry.isDir ? (
                 <button
                   type="button"
                   onClick={() => void toggleDirectory({ entry })}
                   aria-label={isExpanded ? `Collapse ${entry.name}` : `Expand ${entry.name}`}
-                  className="flex h-5 w-5 self-start items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+                  aria-expanded={isExpanded}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {isExpanded ? (
-                    <ChevronDown size={14} aria-hidden />
-                  ) : (
-                    <ChevronRight size={14} aria-hidden />
-                  )}
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                    {isExpanded ? (
+                      <ChevronDown size={14} aria-hidden />
+                    ) : (
+                      <ChevronRight size={14} aria-hidden />
+                    )}
+                  </span>
+                  <Folder size={14} aria-hidden className="shrink-0" />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                    {entry.name}
+                  </span>
                 </button>
               ) : (
-                <span className="flex h-5 w-5 self-start items-center justify-center text-muted-foreground">
-                  <File size={14} aria-hidden />
-                </span>
+                <button
+                  type="button"
+                  onClick={() => selectFile({ entry })}
+                  aria-label={`Preview ${entry.name}`}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left underline-offset-2 hover:underline"
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">
+                    <File size={14} aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                    {entry.name}
+                  </span>
+                </button>
               )}
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex min-w-0 items-center gap-2">
-                  {entry.isDir ? (
-                    <Folder size={14} aria-hidden className="shrink-0 text-muted-foreground" />
-                  ) : null}
-                  {entry.isDir ? (
-                    <p className="truncate text-sm font-medium text-foreground">{entry.name}</p>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => selectFile({ entry })}
-                      aria-label={`Preview ${entry.name}`}
-                      className="truncate text-left text-sm font-medium text-foreground underline-offset-2 hover:underline"
-                    >
-                      {entry.name}
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-2xs text-muted-foreground">
-                  <span>{sizeLabel}</span>
-                  <span>{ageLabel}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/explore-row:opacity-100 group-focus-within/explore-row:opacity-100">
                 {entry.isDir ? null : <ExploreSpawnPopover sessionId={sessionId} entry={entry} />}
                 <button
                   type="button"
@@ -334,23 +324,35 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                 >
                   <FolderSearch size={14} aria-hidden />
                 </button>
-                <CopyButton value={absolutePath} label={`path for ${entry.name}`} />
               </div>
             </div>
-            {actionError != null ? <p className="text-xs text-danger">{actionError}</p> : null}
+            {actionError != null ? <p className="pl-8 text-xs text-danger">{actionError}</p> : null}
             {entry.isDir && isExpanded ? (
-              <div className="flex flex-col gap-2 pl-5">
+              <div className="flex flex-col gap-0.5 pl-5">
                 {isLoadingChildren ? (
                   <>
-                    <Skeleton className="h-8 w-full rounded-md" />
-                    <Skeleton className="h-8 w-10/12 rounded-md" />
+                    <Skeleton className="h-6 w-full rounded-md" />
+                    <Skeleton className="h-6 w-10/12 rounded-md" />
                   </>
                 ) : childError != null ? (
-                  <p className="text-xs text-danger">Could not read this folder. {childError}</p>
+                  <EmptyState
+                    icon={CONCEPT_ICONS.errors}
+                    tone={CONCEPT_TONE.errors}
+                    title="Could not read this folder"
+                    description={childError}
+                    size="inline"
+                  />
                 ) : children.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">This folder is empty.</p>
+                  <EmptyState
+                    icon={CONCEPT_ICONS.explore}
+                    tone={CONCEPT_TONE.explore}
+                    title="This folder is empty"
+                    size="inline"
+                  />
                 ) : (
-                  <div className="flex flex-col gap-2">{renderEntries({ entries: children })}</div>
+                  <div className="flex flex-col gap-0.5">
+                    {renderEntries({ entries: children })}
+                  </div>
                 )}
               </div>
             ) : null}
@@ -368,7 +370,6 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
       runOpenAction,
       selectFile,
       sessionId,
-      sessionDir,
       toggleDirectory,
     ],
   );
@@ -382,6 +383,15 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
     }
     return previewByPath[selectedFile.relPath] ?? { status: 'loading' };
   }, [previewByPath, selectedFile]);
+  const selectedAbsolutePath = useMemo(() => {
+    if (selectedFile == null) {
+      return '';
+    }
+    if (sessionDir == null || sessionDir.trim() === '') {
+      return selectedFile.relPath;
+    }
+    return resolveAbsolutePath({ sessionDir, relPath: selectedFile.relPath });
+  }, [selectedFile, sessionDir]);
 
   return (
     <InspectorSplit
@@ -391,6 +401,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
           <ExplorePreviewPanel
             entry={selectedFile}
             previewState={selectedPreview}
+            absolutePath={selectedAbsolutePath}
             onClose={() => setSelectedFile(null)}
             onOpenOutside={() => void runOpenAction({ entry: selectedFile, reveal: false })}
           />
@@ -401,9 +412,9 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
         <div className="flex flex-col gap-3">
           {rootLoading ? (
             <>
-              <Skeleton className="h-10 w-full rounded-md" />
-              <Skeleton className="h-10 w-11/12 rounded-md" />
-              <Skeleton className="h-10 w-10/12 rounded-md" />
+              <Skeleton className="h-6 w-full rounded-md" />
+              <Skeleton className="h-6 w-11/12 rounded-md" />
+              <Skeleton className="h-6 w-10/12 rounded-md" />
             </>
           ) : rootError != null ? (
             <LensEmptyState
@@ -429,7 +440,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
               description="Files created while you work on this session appear here. Add one from your editor or terminal and refresh."
             />
           ) : (
-            <div className="flex flex-col gap-2">{renderEntries({ entries: rootEntries })}</div>
+            <div className="flex flex-col gap-0.5">{renderEntries({ entries: rootEntries })}</div>
           )}
         </div>
       </PaneShell>

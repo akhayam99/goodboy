@@ -16,7 +16,7 @@ export const PublishBar = ({ provider, draftCount, publishing, onPublish }: Prop
   const canPublish = !publishing && (draftCount > 0 || body.trim() !== '');
 
   return (
-    <div className="flex shrink-0 flex-col gap-1.5 px-4 py-3">
+    <div className="flex shrink-0 flex-col gap-1.5">
       <div className="flex items-end gap-2">
         <Textarea
           value={body}

@@ -15,18 +15,20 @@ type Style = CSSProperties & {
   readonly '--studio-detail-rail-width': string;
 };
 
+const RAIL_INSET = 'px-6 py-4 lg:p-4';
+
 export const RailStack = ({ rail, properties, isScrollable }: Props) => {
   const [width, setWidth] = useColumnWidth(STORAGE_KEYS.studioDetailRailWidth, 320);
   const hasProperties = properties != null && properties.length > 0;
   const style: Style = {
     '--studio-detail-rail-width': `${width}px`,
   };
-  const extras = isScrollable ? (
-    <ScrollFade className="order-3 max-h-64 lg:order-1 lg:max-h-none lg:flex-1" fadeSize={24}>
-      {rail}
-    </ScrollFade>
-  ) : (
-    <div className="order-3 lg:order-1">{rail}</div>
+  const stack = (
+    <div className="flex flex-col gap-4">
+      {rail != null ? <div className="min-w-0">{rail}</div> : null}
+      {rail != null && hasProperties ? <Divider /> : null}
+      {hasProperties ? <DetailProperties entries={properties} /> : null}
+    </div>
   );
 
   return (
@@ -39,23 +41,22 @@ export const RailStack = ({ rail, properties, isScrollable }: Props) => {
           onChange={setWidth}
           onReset={() => setWidth(320)}
           side="right"
-          ariaLabel="resize studio detail rail"
+          ariaLabel="Resize studio detail rail"
         />
       </div>
-      <div
-        className={cn(
-          'flex w-full flex-col gap-4 px-6 py-4 lg:w-[var(--studio-detail-rail-width)] lg:p-4',
-          isScrollable && 'lg:h-full lg:min-h-0',
-        )}
-      >
-        {rail != null ? extras : null}
-        {rail != null && hasProperties ? <Divider className="order-2" /> : null}
-        {hasProperties ? (
-          <div className="order-1 shrink-0 lg:order-3">
-            <DetailProperties entries={properties} />
-          </div>
-        ) : null}
-      </div>
+      {isScrollable ? (
+        <ScrollFade
+          className="w-full max-h-64 lg:max-h-none lg:w-[var(--studio-detail-rail-width)]"
+          viewportClassName={RAIL_INSET}
+          fadeSize={24}
+        >
+          {stack}
+        </ScrollFade>
+      ) : (
+        <div className={cn('w-full lg:w-[var(--studio-detail-rail-width)]', RAIL_INSET)}>
+          {stack}
+        </div>
+      )}
     </div>
   );
 };

@@ -37,7 +37,7 @@ export const IssueSourceField = ({
     <div className="flex flex-col gap-2">
       {sources.length > 1 && (
         <SegmentedTabs
-          ariaLabel="issue source"
+          ariaLabel="Issue source"
           options={sources.map((source) => ({
             value: source.provider,
             label: source.label,

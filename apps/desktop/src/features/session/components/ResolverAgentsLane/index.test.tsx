@@ -1,13 +1,15 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Agent, AgentId, BranchCommit, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
+  worktreePath: '/tmp/wt' as string | null,
   listTurnEventsForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
   listBranchCommits: vi.fn(async () => [] as ReadonlyArray<BranchCommit>),
+  openDiffLens: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -38,7 +40,7 @@ vi.mock('../../../worktree/worktree', () => ({ listBranchCommits: h.listBranchCo
 vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
   useSessionRepo: () => ({
     repoRoot: '/tmp/repo',
-    worktreePath: '/tmp/wt',
+    worktreePath: h.worktreePath,
     branch: 'ak/resolver',
     mountName: null,
     workspaceId: 'ws-1',
@@ -53,23 +55,44 @@ vi.mock('./ResolverRows', () => ({
   ResolverRows: ({
     entries,
     isMuted,
+    canOpenDiff,
     reportedCommitShaByAgentId,
+    diffTargetByAgentId,
+    onOpenDiff,
   }: {
     entries: ReadonlyArray<{ agent: Agent }>;
     isMuted: boolean;
+    canOpenDiff: boolean;
     reportedCommitShaByAgentId: ReadonlyMap<AgentId, string>;
+    diffTargetByAgentId: ReadonlyMap<
+      AgentId,
+      { kind: 'unknown' } | { kind: 'commit'; sha: string } | { kind: 'working' }
+    >;
+    onOpenDiff: (agentId: AgentId) => void;
   }) => (
     <ul data-muted={String(isMuted)}>
-      {entries.map(({ agent }) => (
-        <li
-          key={agent.id}
-          data-testid="resolver-row"
-          data-muted={String(isMuted)}
-          data-reported-sha={reportedCommitShaByAgentId.get(agent.id) ?? ''}
-        >
-          {agent.name}
-        </li>
-      ))}
+      {entries.map(({ agent }) => {
+        const target = diffTargetByAgentId.get(agent.id) ?? { kind: 'unknown' as const };
+        return (
+          <li
+            key={agent.id}
+            data-testid="resolver-row"
+            data-muted={String(isMuted)}
+            data-reported-sha={reportedCommitShaByAgentId.get(agent.id) ?? ''}
+            data-diff-kind={target.kind}
+            data-diff-sha={target.kind === 'commit' ? target.sha : ''}
+          >
+            {agent.name}
+            {canOpenDiff && (
+              <button
+                type="button"
+                aria-label={`open diff ${agent.name}`}
+                onClick={() => onOpenDiff(agent.id)}
+              />
+            )}
+          </li>
+        );
+      })}
     </ul>
   ),
 }));
@@ -117,6 +140,8 @@ const renderLane = ({ showCompleted = false, onCompletedCountChange }: RenderLan
   );
 
 beforeEach(() => {
+  h.worktreePath = '/tmp/wt';
+  h.openDiffLens.mockClear();
   h.listTurnEventsForSession.mockReset();
   h.listTurnEventsForSession.mockResolvedValue([]);
   h.listBranchCommits.mockReset();
@@ -136,10 +161,12 @@ beforeEach(() => {
     sessionGithub: {},
     sessionPendingResolutions: {},
     sessionResolvedThreads: {},
+    resolverThreadOutcomes: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
     transcripts: {},
     agentRunHistory: {},
     selectAgent: vi.fn(),
+    openDiffLens: h.openDiffLens,
     activateNextResolver: vi.fn(),
     resolveGithubThread: vi.fn(),
     resolveAgentThreads: vi.fn(),
@@ -355,5 +382,65 @@ describe('ResolverAgentsLane', () => {
 
     await waitFor(() => expect(h.listBranchCommits).toHaveBeenCalledOnce());
     expect(screen.getByTestId('resolver-row').getAttribute('data-reported-sha')).toBe('');
+  });
+
+  it('opens the diff at the commit of the resolver whose shortcut was clicked', () => {
+    h.state.resolverThreadOutcomes = {
+      'resolver-a': { PRRT_1: { kind: 'resolved', commitSha: 'aaaaaaa1111' } },
+      'resolver-b': { PRRT_2: { kind: 'resolved', commitSha: 'bbbbbbb2222' } },
+    };
+    setResolvers([
+      buildResolver({ id: 'resolver-a' as AgentId, name: 'first', sourceThreadId: 'PRRT_1' }),
+      buildResolver({
+        id: 'resolver-b' as AgentId,
+        name: 'second',
+        ordinal: 1,
+        sourceThreadId: 'PRRT_2',
+      }),
+    ]);
+    renderLane();
+
+    fireEvent.click(screen.getByRole('button', { name: 'open diff second' }));
+
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
+      sha: 'bbbbbbb2222',
+      path: null,
+    });
+  });
+
+  it('opens the uncommitted changes when the resolver has no commit yet', () => {
+    setResolvers([
+      buildResolver({ id: 'resolver-a' as AgentId, name: 'first', sourceThreadId: 'PRRT_1' }),
+    ]);
+    renderLane();
+
+    expect(screen.getByTestId('resolver-row').getAttribute('data-diff-sha')).toBe('');
+    fireEvent.click(screen.getByRole('button', { name: 'open diff first' }));
+
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, { kind: 'working', path: null });
+  });
+
+  it('does not claim the working tree diff until the event read and branch commits both settle', async () => {
+    setResolvers([
+      buildResolver({ id: 'resolver-a' as AgentId, name: 'first', sourceThreadId: 'PRRT_1' }),
+    ]);
+    renderLane();
+
+    expect(screen.getByTestId('resolver-row').getAttribute('data-diff-kind')).toBe('unknown');
+
+    await waitFor(() =>
+      expect(screen.getByTestId('resolver-row').getAttribute('data-diff-kind')).toBe('working'),
+    );
+  });
+
+  it('offers no diff shortcut when the session has no worktree', () => {
+    h.worktreePath = null;
+    setResolvers([
+      buildResolver({ id: 'resolver-a' as AgentId, name: 'first', sourceThreadId: 'PRRT_1' }),
+    ]);
+    renderLane();
+
+    expect(screen.queryByRole('button', { name: 'open diff first' })).toBeNull();
   });
 });

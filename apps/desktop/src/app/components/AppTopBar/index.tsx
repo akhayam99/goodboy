@@ -1,4 +1,4 @@
-import { PanelLeft, PanelLeftClose } from 'lucide-react';
+import { Moon, PanelLeft, PanelLeftClose, Sun } from 'lucide-react';
 import { cn, Divider, Tooltip } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -10,6 +10,7 @@ import { WorkspaceIdentityRow } from '../../../features/workspace/components/Wor
 import { SessionStripCrumbs } from '../../../features/session/components/SessionStripCrumbs';
 import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { useThemeStore } from '../../../shared/lib/theme';
 
 const SHOW_COLUMN_LABEL = `Show sessions column (${shortcutGlyphs('column.toggle')})`;
 const HIDE_COLUMN_LABEL = `Hide sessions column (${shortcutGlyphs('column.toggle')})`;
@@ -41,6 +42,9 @@ export const AppTopBar = ({
   onSessionSidebarAnchorLeave,
 }: AppTopBarProps) => {
   const columnActionLabel = isSessionSidebarCollapsed ? SHOW_COLUMN_LABEL : HIDE_COLUMN_LABEL;
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const themeActionLabel = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
 
   return (
     <>
@@ -97,12 +101,22 @@ export const AppTopBar = ({
         <div className="flex shrink-0 items-center gap-0.5">
           <RunningScriptsIndicator />
           <NotificationCenter />
+          <Tooltip content={themeActionLabel}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={themeActionLabel}
+              className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            >
+              {theme === 'dark' ? <Moon size={14} aria-hidden /> : <Sun size={14} aria-hidden />}
+            </button>
+          </Tooltip>
           <OnboardingChip />
           <Tooltip content={SETTINGS_LABEL}>
             <button
               type="button"
               onClick={onOpenSettings}
-              aria-label="open settings"
+              aria-label="Open settings"
               className={cn(
                 'flex items-center justify-center rounded p-1.5 transition-colors',
                 activeStudio === 'settings'

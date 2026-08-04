@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ResolverStatus } from '../../resolver-linkage';
 
@@ -26,6 +26,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 import { ResolverCard } from './ResolverCard';
+import type { ResolverDiffTarget } from './resolverDiffActionLabel';
 
 const SID = 'sess-1' as SessionId;
 
@@ -64,9 +65,12 @@ type Params = {
     readonly contextTokens?: number;
   }>;
   readonly reportedCommitSha?: string | null;
+  readonly diffTarget?: ResolverDiffTarget;
+  readonly canOpenDiff?: boolean;
   readonly hasOtherActiveResolvers?: boolean;
   readonly onOpenChat?: () => void;
   readonly onInspect?: () => void;
+  readonly onOpenDiff?: () => void;
 };
 
 const renderCard = ({
@@ -83,9 +87,12 @@ const renderCard = ({
     },
   ],
   reportedCommitSha = null,
+  diffTarget = { kind: 'working' },
+  canOpenDiff = true,
   hasOtherActiveResolvers = false,
   onOpenChat = () => undefined,
   onInspect = () => undefined,
+  onOpenDiff = () => undefined,
 }: Params = {}) =>
   render(
     <ResolverCard
@@ -99,6 +106,8 @@ const renderCard = ({
       turns={2}
       turnsLoading={false}
       reportedCommitSha={reportedCommitSha}
+      diffTarget={diffTarget}
+      canOpenDiff={canOpenDiff}
       isQueueStalled={false}
       hasOtherActiveResolvers={hasOtherActiveResolvers}
       isSelected={false}
@@ -109,6 +118,7 @@ const renderCard = ({
       onOpenChat={onOpenChat}
       onInspect={onInspect}
       onJump={() => undefined}
+      onOpenDiff={onOpenDiff}
     />,
   );
 
@@ -164,22 +174,70 @@ describe('ResolverCard', () => {
     expect(onInspect).toHaveBeenCalledOnce();
   });
 
-  it('shows the token split, duration and context gauge without being selected', () => {
+  it('keeps duration and last update on the one fact line', () => {
+    const meta = within(renderCard().getByTestId('agent-metrics-inline'));
+    expect(meta.getByTitle(/^Started .+2026/)).toBeTruthy();
+    expect(meta.getByText(/^updated /)).toBeTruthy();
+  });
+
+  it('leaves the token split and the context gauge to the inspector', () => {
     const { container } = renderCard();
-    expect(screen.getByTestId('agent-metrics-block')).toBeTruthy();
-    expect(screen.getByTitle('in: 400 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle('out: 40 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle(/^started .+2026/)).toBeTruthy();
-    expect(container.querySelectorAll('[title*="context:"]').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
+    expect(screen.queryByTitle('in: 400 tokens (cumulative)')).toBeNull();
+    expect(container.querySelector('[title*="last turn context:"]')).toBeNull();
   });
 
   it('keeps the resolver name and its origin readable alongside the metrics', () => {
     renderCard();
-    expect(
-      screen.getByText('resolve comment 12').previousElementSibling?.getAttribute('title'),
-    ).toBe('needs you');
+    const name = screen.getByText('resolve comment 12');
+    expect(name.previousElementSibling?.getAttribute('title')).toBe('needs you');
+    expect(name.className).toContain('text-sm');
     expect(screen.queryByText(/^\d+\/\d+$/)).toBeNull();
     expect(screen.getByText('Review comment')).toBeTruthy();
+  });
+
+  it('names the commit the diff shortcut will open, and reaches it without the inspector', () => {
+    const onOpenDiff = vi.fn();
+    const onInspect = vi.fn();
+    renderCard({
+      diffTarget: { kind: 'commit', sha: 'abcdef1234567890' },
+      onOpenDiff,
+      onInspect,
+    });
+
+    const shortcut = screen.getByRole('button', { name: 'Open the diff of commit abcdef1' });
+    const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
+    expect(navigationSlot.contains(shortcut)).toBe(true);
+
+    fireEvent.click(shortcut);
+
+    expect(onOpenDiff).toHaveBeenCalledOnce();
+    expect(onInspect).not.toHaveBeenCalled();
+  });
+
+  it('says it will open the uncommitted changes once confirmed the resolver has no commit', () => {
+    renderCard({ diffTarget: { kind: 'working' } });
+
+    expect(
+      screen.getByRole('button', { name: 'Open the diff of the uncommitted changes' }),
+    ).toBeTruthy();
+  });
+
+  it('never claims working tree or a commit while the diff metadata is still loading', () => {
+    renderCard({ diffTarget: { kind: 'unknown' } });
+
+    expect(screen.getByRole('button', { name: 'Open the diff' })).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Open the diff of the uncommitted changes' }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /Open the diff of commit/ })).toBeNull();
+  });
+
+  it('drops the diff shortcut when the session has no worktree to diff', () => {
+    renderCard({ diffTarget: { kind: 'commit', sha: 'abcdef1234567890' }, canOpenDiff: false });
+
+    expect(screen.queryByRole('button', { name: /Open the diff/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Toggle resolver details' })).toBeTruthy();
   });
 
   it('opens the chat from the card body and keeps details behind an explicit action', () => {

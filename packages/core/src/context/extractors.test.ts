@@ -886,6 +886,31 @@ world`;
     expect(stripControlMarkers('done.\n<<clus')).toBe('done.');
   });
 
+  it('strips a comment-reply block while it stays extractable from the raw text', () => {
+    const text =
+      'Here is what I did.\n<<comment-reply id="PRRT_1">>Extracted the guard into a helper.<</comment-reply>>\nAll four threads are covered.';
+
+    expect(stripControlMarkers(text)).toBe('Here is what I did.\n\nAll four threads are covered.');
+    expect(extractAllCommentReplies(text)).toEqual([
+      { threadId: 'PRRT_1', body: 'Extracted the guard into a helper.' },
+    ]);
+  });
+
+  it('strips several comment-reply blocks from one turn', () => {
+    const text = [
+      '<<comment-reply id="PRRT_1">>first answer<</comment-reply>>',
+      'keep this',
+      '<<comment-reply id="PRRT_2">>second answer<</comment-reply>>',
+    ].join('\n');
+
+    expect(stripControlMarkers(text)).toBe('keep this');
+  });
+
+  it('strips a half-streamed comment-reply opening tag', () => {
+    const text = 'Done with the first thread.\n<<comment-reply id="PRRT_1">>Extracted the gu';
+    expect(stripControlMarkers(text)).toBe('Done with the first thread.');
+  });
+
   it('strips a lone trailing angle bracket from a streaming marker', () => {
     expect(stripControlMarkers('che serve?<')).toBe('che serve?');
     expect(stripControlMarkers('che serve?</')).toBe('che serve?');

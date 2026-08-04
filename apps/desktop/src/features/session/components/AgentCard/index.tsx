@@ -1,12 +1,23 @@
 import type { ReactNode } from 'react';
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import { CardActionSlot } from '../../../../shared/components/CardActionSlot';
+import type { AgentCardDensity } from './agentCardDensity';
 import type { AgentCardTone } from './agentCardTone';
 
 const AGENT_CARD_TONE: Record<Exclude<AgentCardTone, 'default'>, Tone> = {
   running: 'info',
   attention: 'warning',
   success: 'success',
+};
+
+const DENSITY_PADDING: Record<AgentCardDensity, string> = {
+  lane: 'px-3 py-2.5',
+  sidebar: 'px-2 py-1.5',
+};
+
+const DENSITY_BODY_GAP: Record<AgentCardDensity, string> = {
+  lane: 'gap-1.5',
+  sidebar: 'gap-1',
 };
 
 const agentCardBorderClass = (tone: AgentCardTone): string => {
@@ -18,6 +29,7 @@ const agentCardBorderClass = (tone: AgentCardTone): string => {
 
 type Props = {
   readonly tone?: AgentCardTone;
+  readonly density?: AgentCardDensity;
   readonly ariaLabel?: string;
   readonly isSelected: boolean;
   readonly isInspected?: boolean;
@@ -28,7 +40,8 @@ type Props = {
   readonly title: ReactNode;
   readonly navigationAction: ReactNode;
   readonly lifecycleActions?: ReactNode;
-  readonly headline?: ReactNode;
+  readonly status?: ReactNode;
+  readonly meta?: ReactNode;
   readonly footer?: ReactNode;
   readonly children?: ReactNode;
   readonly confirmation?: ReactNode;
@@ -40,6 +53,7 @@ type Props = {
 
 export const AgentCard = ({
   tone = 'default',
+  density = 'sidebar',
   ariaLabel,
   isSelected,
   isInspected = false,
@@ -50,7 +64,8 @@ export const AgentCard = ({
   title,
   navigationAction,
   lifecycleActions,
-  headline,
+  status,
+  meta,
   footer,
   children,
   confirmation,
@@ -78,7 +93,8 @@ export const AgentCard = ({
         onOpen();
       }}
       className={cn(
-        'group/agent-card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-lg border px-2 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        'group/agent-card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        DENSITY_PADDING[density],
         isInert ? '' : 'cursor-pointer',
         isMuted && 'opacity-60',
         isSelected ? 'bg-elevated' : 'bg-muted/40 hover:bg-muted/60',
@@ -97,16 +113,18 @@ export const AgentCard = ({
       >
         {navigationAction}
       </CardActionSlot>
-      {headline != null || children != null || footer != null ? (
+      {status != null || meta != null || children != null || footer != null ? (
         <div
           className={cn(
-            'row-start-2 flex min-w-0 flex-col gap-1',
+            'row-start-2 flex min-w-0 flex-col',
+            DENSITY_BODY_GAP[density],
             lifecycleActions == null ? 'col-span-2' : 'col-start-1',
           )}
         >
-          {headline != null && <div>{headline}</div>}
-          {children != null && <div>{children}</div>}
-          {footer != null && <div>{footer}</div>}
+          {status != null && <div className="flex flex-wrap items-center gap-1.5">{status}</div>}
+          {meta}
+          {children}
+          {footer}
         </div>
       ) : null}
       {lifecycleActions != null && (

@@ -3,6 +3,7 @@ import {
   CheckCheck,
   CircleStop,
   Clock,
+  Hammer,
   ListChecks,
   MessageSquareReply,
   Play,
@@ -23,6 +24,7 @@ export const RESOLVER_ACTION_ICON: Record<ResolverActionKind, LucideIcon> = {
   review: ListChecks,
   run: Play,
   rerun: RotateCcw,
+  fix: Hammer,
   forceClose: CircleStop,
   forceResolve: CheckCheck,
 };

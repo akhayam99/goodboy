@@ -88,7 +88,7 @@ export const ReviewPane = ({
     <div className="flex flex-col gap-1.5">
       <div
         className={cn(
-          'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+          'inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-3xs font-medium',
           summaryTint.bg,
           summaryTint.text,
         )}
@@ -100,8 +100,8 @@ export const ReviewPane = ({
         <button
           type="button"
           onClick={onSpawnFromReviewChanges}
-          className="inline-flex w-fit items-center gap-1 rounded border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/10"
-          title="create agent to resolve all requested changes"
+          className="inline-flex w-fit items-center gap-1 rounded border border-accent/30 bg-accent/5 px-2 py-0.5 text-3xs font-medium text-accent hover:bg-accent/10"
+          title="Create agent to resolve all requested changes"
         >
           <Sparkles size={10} aria-hidden />
           resolve all requested changes
@@ -112,17 +112,17 @@ export const ReviewPane = ({
           {perReviewer.map((r) => (
             <li
               key={r.author}
-              className="flex items-center gap-1.5 rounded px-1 py-0.5 text-[10px] text-foreground hover:bg-background"
+              className="flex items-center gap-1.5 rounded px-1 py-0.5 text-3xs text-foreground hover:bg-background"
             >
               <ReviewStateIcon state={r.state} />
               <Avatar url={r.authorAvatarUrl} alt={r.author} />
               <span className="truncate font-medium">{r.author}</span>
               {isBot(r.author) ? (
-                <span className="rounded bg-info/10 px-1 text-[8px] uppercase tracking-wide text-info">
+                <span className="rounded bg-info/10 px-1 text-3xs uppercase tracking-wide text-info">
                   bot
                 </span>
               ) : null}
-              <span className="ml-auto shrink-0 text-[9px] text-muted-foreground/70">
+              <span className="ml-auto shrink-0 text-3xs text-muted-foreground/70">
                 {r.submittedAt ? formatRelativeAge({ fromIso: r.submittedAt }) : ''}
               </span>
             </li>
@@ -131,11 +131,11 @@ export const ReviewPane = ({
       )}
       {requests.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
-          <span className="text-[10px] text-muted-foreground">awaiting:</span>
+          <span className="text-3xs text-muted-foreground">awaiting:</span>
           {requests.map((r) => (
             <span
               key={`${r.kind}-${r.login}`}
-              className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-1.5 py-0.5 text-[10px] text-foreground"
+              className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-1.5 py-0.5 text-3xs text-foreground"
             >
               <CircleDashed size={9} aria-hidden className="text-info" />
               <Avatar url={r.avatarUrl} alt={r.login} />
@@ -148,7 +148,7 @@ export const ReviewPane = ({
         <button
           type="button"
           onClick={() => onOpenUrl(pr.url)}
-          className="inline-flex w-fit items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+          className="inline-flex w-fit items-center gap-1 text-3xs text-muted-foreground hover:text-foreground"
         >
           view on GitHub
           <ExternalLink size={9} aria-hidden />

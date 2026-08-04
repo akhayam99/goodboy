@@ -6,6 +6,29 @@ import type { EffortLevel } from './utils/chat-constants';
 
 const TITLE_MAX = 60;
 
+const REPLY_CONTRACT: ReadonlyArray<string> = [
+  'Every <<comment-reply>> block follows this contract.',
+  'Write GitHub-flavored markdown addressed to the reviewer.',
+  'Start with a verdict line: one short sentence, alone as its own paragraph, stating the outcome and nothing else. Register to aim for: "Fixed in `abc1234`.", "Not applying this one.", "Already handled before this review.", "Applied, with one caveat below."',
+  'Add reasoning only when the verdict line leaves something unsaid: two to four sentences, or two to four `-` bullets when there is more than one independent point, one claim per bullet. Skip it entirely when the verdict already says everything.',
+  'Put identifiers, paths, symbols and commit shas in backticks. No headings, no bold runs, no block quotes, no nested lists, no tables.',
+  'Stay under 40 words on a straightforward thread. Never go past 120 words, and only get near it when the reasoning genuinely matters.',
+  'Summarize a long enumeration with a count instead of listing it, as in "about 50 other routes follow the same convention".',
+  "Past tense for what you did, present tense for what is true of the code. No praise openers, no apologies, no hedging, no restating the reviewer's own words.",
+  'Leave out the investigation narrative and the list of everything you checked.',
+  'A good reply reads like this:',
+  'Not applying this one.',
+  '',
+  '- `apps/web/src/routes/` uses camelCase folders that mirror the URL slug.',
+  '- Renaming this one alone would break the convention in about 50 sibling routes.',
+];
+
+const ANALYSIS_SUMMARY_PLAIN_TEXT =
+  'The summary must be one paragraph of plain text with no double quotes.';
+
+const ANALYSIS_SUMMARY_SCOPE =
+  'That plain-text rule covers the summary attribute only: the <<comment-reply>> block stays markdown and keeps the reply contract above.';
+
 export type ResolveMode = 'fix' | 'analyze';
 
 function shortPath(path: string): string {
@@ -62,13 +85,16 @@ const buildCommentAgentPrompt = ({
   }
   lines.push('');
   lines.push(`Comment URL: ${c.url}`);
-  if (c.source === 'review' && c.threadId) {
+  const hasReplyBlock = c.source === 'review' && c.threadId != null && c.threadId.length > 0;
+  if (hasReplyBlock) {
     lines.push('');
     lines.push(`Review thread id (for the resolution marker): ${c.threadId}`);
     lines.push('');
     lines.push('Write the answer the reviewer will read in this block:');
     lines.push(`<<comment-reply id="${c.threadId}">>your answer<</comment-reply>>`);
     lines.push('It is posted on that thread, and only on that thread, when the thread closes.');
+    lines.push('');
+    lines.push(...REPLY_CONTRACT);
   }
   if (mode === 'analyze') {
     lines.push('');
@@ -79,7 +105,10 @@ const buildCommentAgentPrompt = ({
       `End with exactly one marker in this form: <<comment-analysis threadId="${c.threadId ?? ''}" verdict="fix" summary="...">>.`,
     );
     lines.push('Use verdict="wontfix" instead when the comment is not worth fixing.');
-    lines.push('The summary must be one paragraph of plain text with no double quotes.');
+    lines.push(ANALYSIS_SUMMARY_PLAIN_TEXT);
+    if (hasReplyBlock) {
+      lines.push(ANALYSIS_SUMMARY_SCOPE);
+    }
   }
   const operatorNotes = hint.trim();
   if (operatorNotes.length > 0) {
@@ -147,6 +176,8 @@ export const buildCombinedCommentAgentPrompt = (
     'Also write the answer each reviewer will read, one block per thread:',
     '<<comment-reply id="PRRT_...">>your answer for that thread<</comment-reply>>',
     'A block is posted only on the thread whose id it names, so never reuse one answer for several ids.',
+    '',
+    ...REPLY_CONTRACT,
   );
   if (mode === 'analyze') {
     lines.push('');
@@ -157,7 +188,8 @@ export const buildCombinedCommentAgentPrompt = (
       'Use the <<comment-analysis threadId="PRRT_..." verdict="fix" summary="...">> marker for every thread, never <<comment-resolved>>.',
     );
     lines.push('Use verdict="wontfix" instead when a thread is not worth fixing.');
-    lines.push('The summary must be one paragraph of plain text with no double quotes.');
+    lines.push(ANALYSIS_SUMMARY_PLAIN_TEXT);
+    lines.push(ANALYSIS_SUMMARY_SCOPE);
   }
   const operatorNotes = (choice.hint ?? '').trim();
   if (operatorNotes.length > 0) {

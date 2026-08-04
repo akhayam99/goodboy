@@ -25,6 +25,18 @@ type Entity = {
 
 const PROPERTY_ENTITY: Entity = { state: 'open', author: 'ada', milestone: null };
 
+const scrollAncestors = ({ node }: { readonly node: HTMLElement }) => {
+  const found: Array<HTMLElement> = [];
+  let current: HTMLElement | null = node;
+  while (current != null) {
+    if (current.className.includes('overflow-y-auto')) {
+      found.push(current);
+    }
+    current = current.parentElement;
+  }
+  return found;
+};
+
 const PROPERTY_REGISTRY: DetailFieldRegistry<Entity> = [
   { kind: 'field', key: 'state', label: 'State', render: ({ entity }) => entity.state },
   { kind: 'field', key: 'author', label: 'Author', render: ({ entity }) => entity.author },
@@ -80,21 +92,66 @@ describe('StudioDetailLayout', () => {
     expect(screen.queryByTestId('detail-properties')).toBeNull();
   });
 
-  it('bounds the rail extras below lg and keeps the properties out of the scroll region', () => {
+  it('docks the action below the body, outside every scroll region', () => {
     render(
       <StudioDetailLayout
         header={<span>Header slot</span>}
-        rail={<span>Rail slot</span>}
+        dock={<button type="button">Launch session</button>}
         properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
       >
         <span>Main slot</span>
       </StudioDetailLayout>,
     );
 
-    const extras = screen.getByText('Rail slot').closest('div.max-h-64');
-    expect(extras).not.toBeNull();
-    expect((extras as HTMLElement).className).toContain('lg:max-h-none');
-    expect(screen.getByTestId('detail-properties').closest('div.max-h-64')).toBeNull();
+    const action = screen.getByRole('button', { name: 'Launch session' });
+    const dock = screen.getByTestId('detail-dock');
+    const scroller = screen.getByText('Main slot').closest('.overflow-y-auto');
+
+    expect(scrollAncestors({ node: action })).toEqual([]);
+    expect(dock.contains(action)).toBe(true);
+    expect(scroller).not.toBeNull();
+    expect((dock.parentElement as HTMLElement).contains(scroller as HTMLElement)).toBe(true);
+  });
+
+  it('leaves the rail to the properties when the action is docked', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        dock={<button type="button">Launch session</button>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const properties = screen.getByTestId('detail-properties');
+    const railStack = properties.parentElement as HTMLElement;
+
+    expect(railStack.contains(screen.getByRole('button', { name: 'Launch session' }))).toBe(false);
+    expect(railStack.querySelector('[role="separator"]')).toBeNull();
+  });
+
+  it('scrolls the rail as one region that carries every rail block', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        rail={<button type="button">Launch session</button>}
+        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const viewport = screen
+      .getByRole('button', { name: 'Launch session' })
+      .closest('.overflow-y-auto');
+    expect(viewport).not.toBeNull();
+    expect(viewport).toBe(screen.getByTestId('detail-properties').closest('.overflow-y-auto'));
+
+    const bounds = (viewport as HTMLElement).parentElement as HTMLElement;
+    expect(bounds.className).toContain('max-h-64');
+    expect(bounds.className).toContain('lg:max-h-none');
+    expect(scrollAncestors({ node: viewport as HTMLElement })).toHaveLength(1);
   });
 
   it('pins the header band while a flow body scrolls', () => {
@@ -182,7 +239,7 @@ describe('StudioDetailLayout', () => {
       </StudioDetailLayout>,
     );
 
-    const handle = screen.getByRole('separator', { name: 'resize studio detail rail' });
+    const handle = screen.getByRole('separator', { name: 'Resize studio detail rail' });
     expect(handle.getAttribute('aria-valuenow')).toBe('420');
 
     fireEvent.keyDown(handle, { key: 'ArrowLeft' });

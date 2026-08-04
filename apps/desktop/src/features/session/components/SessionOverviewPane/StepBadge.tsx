@@ -40,7 +40,7 @@ export const StepBadge = ({ step, onAdvance }: Props) => {
           e.stopPropagation();
           onAdvance();
         }}
-        title={`start ${step.name || 'this step'}`}
+        title={`Start ${step.name || 'this step'}`}
         className="-mx-1 -my-0.5 inline-flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 ring-1 ring-border-soft transition-colors hover:bg-muted/60"
       >
         {inner}

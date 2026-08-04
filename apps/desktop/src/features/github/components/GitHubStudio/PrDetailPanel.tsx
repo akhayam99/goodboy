@@ -33,6 +33,7 @@ import { ResolveBoard } from './ResolveBoard';
 import { PrOverview } from './PrOverview';
 import { PrReviewers } from './PrReviewers';
 import { PrSwitcher } from './PrSwitcher';
+import { ResolverSpawnStatus } from './ResolverSpawnStatus';
 import { SectionBody } from './SectionBody';
 import type { PrSection } from './prSection';
 import { prSectionOptions } from './prSectionOptions';
@@ -92,6 +93,7 @@ export const PrDetailPanel = ({
   const [createOpen, setCreateOpen] = useState(false);
   const [section, setSection] = useState<PrSection>('overview');
   const [jumpThreadId, setJumpThreadId] = useState<string | null>(null);
+  const [spawnedResolverIds, setSpawnedResolverIds] = useState<ReadonlyArray<AgentId>>([]);
   const requestedPrRef = useRef<string | null>(null);
 
   const primary = github?.pr ?? null;
@@ -114,6 +116,7 @@ export const PrDetailPanel = ({
   useEffect(() => {
     setCreateOpen(false);
     setSection('overview');
+    setSpawnedResolverIds([]);
   }, [sessionId]);
 
   useEffect(() => {
@@ -196,12 +199,14 @@ export const PrDetailPanel = ({
       sourceCommentUrl: args.sourceCommentUrl,
       sourceKind: args.sourceKind,
       ...(deferKickoff && { deferKickoff: true }),
+      focus: 'none',
     });
     await setAgentConfig(sessionId, agentId, {
       ...(choice.provider !== undefined && { providerOverride: choice.provider }),
       ...(choice.model !== undefined && { modelOverride: choice.model }),
       effort: args.effort,
     });
+    setSpawnedResolverIds((prev) => [...prev, agentId]);
     return agentId;
   };
 
@@ -214,6 +219,23 @@ export const PrDetailPanel = ({
     })();
   };
 
+  const openResolveLane = () => {
+    void (async () => {
+      await setCurrentSession(sessionId);
+      setActiveLens(sessionId, 'resolve');
+      onClose();
+    })();
+  };
+
+  const onViewSpawned = () => {
+    const only = spawnedResolverIds.length === 1 ? spawnedResolverIds[0] : undefined;
+    if (only !== undefined) {
+      openResolver(only);
+      return;
+    }
+    openResolveLane();
+  };
+
   const onSpawnOne = (thread: CommentThread, choice: ResolveModelChoice) => {
     if (activePr == null) {
       return;
@@ -223,17 +245,11 @@ export const PrDetailPanel = ({
       openResolver(existing.agent.id as AgentId);
       return;
     }
-    void (async () => {
-      const agentId = await spawnResolver(
-        buildCommentAgentArgs(thread.head, activePr, choice, thread.replies),
-        choice,
-        false,
-      );
-      await setCurrentSession(sessionId);
-      setActiveLens(sessionId, 'resolve');
-      await selectAgent(sessionId, agentId);
-      onClose();
-    })();
+    void spawnResolver(
+      buildCommentAgentArgs(thread.head, activePr, choice, thread.replies),
+      choice,
+      false,
+    );
   };
 
   const onSpawnBatch = (
@@ -248,10 +264,6 @@ export const PrDetailPanel = ({
       return existing == null || existing.status === 'failed';
     });
     if (fresh.length === 0) {
-      void (async () => {
-        await setCurrentSession(sessionId);
-        onClose();
-      })();
       return;
     }
     void (async () => {
@@ -263,10 +275,7 @@ export const PrDetailPanel = ({
           true,
         );
       }
-      await setCurrentSession(sessionId);
-      setActiveLens(sessionId, 'resolve');
       await activateNextResolver(sessionId);
-      onClose();
     })();
   };
 
@@ -283,10 +292,7 @@ export const PrDetailPanel = ({
     }
     void (async () => {
       await spawnResolver(buildCombinedCommentAgentArgs(fresh, activePr, choice), choice, true);
-      await setCurrentSession(sessionId);
-      setActiveLens(sessionId, 'resolve');
       await activateNextResolver(sessionId);
-      onClose();
     })();
   };
 
@@ -374,7 +380,7 @@ export const PrDetailPanel = ({
               hostLabel="GitHub"
             />
             <RefreshIconButton
-              label="refresh"
+              label="Refresh"
               iconSize={14}
               isLoading={detailLoading}
               onClick={refreshActive}
@@ -448,21 +454,28 @@ export const PrDetailPanel = ({
           onRetry={refreshActive}
         >
           {section === 'resolve' ? (
-            <ResolveBoard
-              threads={groupThreads(detail?.comments ?? []).filter(
-                (thread) => thread.head.source === 'review' && thread.head.resolved === false,
-              )}
-              resolverFor={resolverFor}
-              onSpawnOne={onSpawnOne}
-              onSpawnBatch={onSpawnBatch}
-              onSpawnCombined={onSpawnCombined}
-              onOpenResolver={openResolver}
-              roleModels={roleModels}
-              onOpenThread={(threadId) => {
-                setJumpThreadId(threadId);
-                setSection('comments');
-              }}
-            />
+            <div className="flex flex-col gap-3">
+              <ResolverSpawnStatus
+                sessionId={sessionId}
+                spawnedIds={spawnedResolverIds}
+                onView={onViewSpawned}
+              />
+              <ResolveBoard
+                threads={groupThreads(detail?.comments ?? []).filter(
+                  (thread) => thread.head.source === 'review' && thread.head.resolved === false,
+                )}
+                resolverFor={resolverFor}
+                onSpawnOne={onSpawnOne}
+                onSpawnBatch={onSpawnBatch}
+                onSpawnCombined={onSpawnCombined}
+                onOpenResolver={openResolver}
+                roleModels={roleModels}
+                onOpenThread={(threadId) => {
+                  setJumpThreadId(threadId);
+                  setSection('comments');
+                }}
+              />
+            </div>
           ) : section === 'comments' ? (
             <PrConversation
               comments={detail?.comments ?? []}

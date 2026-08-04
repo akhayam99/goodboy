@@ -94,8 +94,8 @@ const INSTALL_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
         body: 'After install, restart Goodboy if `agy` does not show up. Some shells need a new session before the new PATH takes effect.',
       },
       {
-        title: 'Then connect',
-        body: 'Goodboy moves to the connect step. You sign in with `agy login` or paste a Gemini API key, whichever you prefer.',
+        title: 'Then connect it outside Goodboy',
+        body: 'Antigravity ships no auth subcommand, so Goodboy cannot sign you in. Sign in from the Antigravity app, or set a Gemini API key as a credential.',
       },
     ],
     docsUrl: GEMINI_DOCS,
@@ -173,8 +173,8 @@ const LOGIN_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
     subscription: 'Your Google account, or a Gemini API key.',
     steps: [
       {
-        title: 'Browser handoff',
-        body: '`agy login` opens Google in the browser. Sign in, grant the scopes, and Antigravity writes the session to `~/.gemini/antigravity-cli/`.',
+        title: 'Sign in from the Antigravity app',
+        body: '`agy` has no login command, so there is nothing Goodboy can run. The app writes the session to `~/.gemini/antigravity-cli/`, which Goodboy reads as ground truth.',
       },
       {
         title: 'API-key alternative',
@@ -209,7 +209,7 @@ const LOGOUT_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
     steps: [
       {
         title: 'Local-only',
-        body: '`claude /logout` clears the token from your machine. Your Anthropic account is untouched.',
+        body: '`claude auth logout` clears the token from your machine. Your Anthropic account is untouched.',
       },
     ],
     docsUrl: ANTHROPIC_DOCS,

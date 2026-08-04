@@ -35,9 +35,11 @@ functional. One register per surface; let the other supply only texture.
 - **App chrome**: a single top bar (`AppTopBar`), one 36px row closed by a
   hairline, holds context on the left (mascot, the sessions-column control,
   workspace identity, the session breadcrumb) and state plus global controls on
-  the right (cost rollup, running scripts, notifications, onboarding,
-  settings). Theme, the guide, and pair-device are not in it: they live in the
-  app settings studio and the command palette. A persistent footer
+  the right (cost rollup, running scripts, notifications, theme, onboarding,
+  settings). Theme is the one set-once preference exposed there, next to
+  notifications, because it is reached often enough to earn the rent; the
+  guide and pair-device stay out and live in the app settings studio and the
+  command palette. A persistent footer
   (`AppFooter`) holds integration tools (GitHub/GitLab/Linear/Sentry, gated) on
   the left and studio launchers (workflows, providers, budget, impact) on the
   right. The top bar is context, never content: every control in it opens
@@ -71,7 +73,7 @@ functional. One register per surface; let the other supply only texture.
   Every capability stays one navigation away; zero capability is lost.
 - **Top bar is chrome, footer is access, sidebar is presence, palette is
   transit.** The top bar answers "where am I and what is it costing" (identity,
-  crumbs, cost, notifications, settings). The footer holds integration
+  crumbs, cost, notifications, theme, settings). The footer holds integration
   shortcuts and studio launchers. The sidebar answers "what else is going on"
   (session list, agents). The command palette (⌘K) answers "where do I want to
   be". Each has one job; they must not compete.
@@ -153,6 +155,38 @@ the two collapse into the same texture.
 hairline: no workspace bar, no pane header band, no lens toolbar. A band that
 only restates what the pane already says gets cut, so the work starts at the
 top of the window.
+
+## Readability
+
+**Every text in the app is written and set to be read.** Density is about
+chrome and metadata, never about prose. A screen that holds words the user has
+to understand owes them a readable setting, and the same bar applies whether a
+human or a model wrote them.
+
+- **Measure beats width.** Prose sits in a column of roughly 45 to 75
+  characters. A pane is not a measure: text that runs the full width of a wide
+  window is unreadable no matter how good the words are. Constrain the column,
+  do not stretch the paragraph.
+- **Structure is not decoration.** A body longer than a few lines carries
+  headings, short paragraphs and lists that mirror the shape of what it says.
+  A wall of bold labels followed by run-on clauses is boilerplate, not
+  structure.
+- **Prose is rendered, never dumped.** Markdown is rendered as markdown.
+  Source syntax (fences, heading hashes, HTML comments, marker tags) never
+  reaches the screen as text, in a card, a preview, a panel or a transcript.
+- **Line height and rhythm follow the register.** Reading text gets the
+  comfortable grade and relaxed leading; scanning text gets compact. Prose set
+  at scanning density is a defect.
+- **Generated text has a contract.** Anything a model writes for the user to
+  read (session summaries, decisions, resolver replies, plans) is instructed on
+  shape and length in its prompt, not left to chance. An unbounded paragraph is
+  a prompt bug, not a rendering problem.
+- **Truncation is honest.** A clamp always says there is more and always offers
+  a way to it. Silent cutting hides information the user was told they had.
+
+The one exception is the artifact the user navigated to: a diff, a terminal, a
+plan body, a stack trace. Those are shown whole. See `docs/styling.md` →
+Compaction for the full exemption list.
 
 ## Color & theme
 

@@ -23,7 +23,7 @@ describe('Dialog', () => {
       </Dialog>,
     );
 
-    expect(screen.getByRole('button', { name: 'close' })).not.toBe(document.activeElement);
+    expect(screen.getByRole('button', { name: 'Close' })).not.toBe(document.activeElement);
     expect(screen.getByLabelText('Workspace path')).toBe(document.activeElement);
   });
 

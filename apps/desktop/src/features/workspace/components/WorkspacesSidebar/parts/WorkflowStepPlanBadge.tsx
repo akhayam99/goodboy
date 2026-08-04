@@ -58,7 +58,7 @@ export const WorkflowStepPlanBadge = ({ run, kind }: Props) => {
       onDoubleClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
       title={plan.title}
-      aria-label={`open ${label.toLowerCase()}: ${plan.title}`}
+      aria-label={`Open ${label.toLowerCase()}: ${plan.title}`}
       className="flex max-w-full shrink-0 items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       <CONCEPT_ICONS.plans size={12} aria-hidden className="shrink-0" />

@@ -103,8 +103,8 @@ describe('ChangelogStudio', () => {
 
     renderStudio();
 
-    expect(screen.getByText("couldn't load releases")).toBeDefined();
-    expect(screen.getByText('check your connection and retry')).toBeDefined();
+    expect(screen.getByText("Couldn't load releases")).toBeDefined();
+    expect(screen.getByText('Check your connection and retry')).toBeDefined();
     expect(screen.queryByRole('navigation', { name: 'Releases' })?.textContent).toBe('');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(mocks.reloadChangelog).toHaveBeenCalledOnce();
@@ -135,6 +135,6 @@ describe('ChangelogStudio', () => {
 
     renderStudio();
 
-    expect(screen.getByText('no published releases yet')).toBeDefined();
+    expect(screen.getByText('No published releases yet')).toBeDefined();
   });
 });

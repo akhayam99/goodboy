@@ -69,8 +69,8 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
                   setConfirming(false);
                   onDelete();
                 }}
-                aria-label={`confirm delete ${def.name}`}
-                className="rounded p-0.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
+                aria-label={`Confirm delete ${def.name}`}
+                className="rounded-md p-0.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
               >
                 <Check size={12} aria-hidden />
               </button>
@@ -79,8 +79,8 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
-                aria-label="cancel delete"
-                className="rounded p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+                aria-label="Cancel delete"
+                className="rounded-md p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
               >
                 <X size={12} aria-hidden />
               </button>
@@ -93,8 +93,8 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
                 type="button"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onEdit}
-                aria-label={`edit ${def.name}`}
-                className="rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+                aria-label={`Edit ${def.name}`}
+                className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
               >
                 <Pencil size={12} aria-hidden />
               </button>
@@ -105,8 +105,8 @@ export const LibraryCard = ({ def, dragDisabled, onStartDrag, onEdit, onDelete }
                   type="button"
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => setConfirming(true)}
-                  aria-label={`delete ${def.name}`}
-                  className="rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
+                  aria-label={`Delete ${def.name}`}
+                  className="rounded-md p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 hover:text-danger"
                 >
                   <Trash2 size={12} aria-hidden />
                 </button>

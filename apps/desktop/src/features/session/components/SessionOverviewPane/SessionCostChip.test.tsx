@@ -181,7 +181,7 @@ describe('SessionCostChip', () => {
     window.addEventListener('goodboy:open-budget-studio', handler);
     render(<SessionCostChip sessionId={SID} />);
     fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('dialog', { name: 'session budget details' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Session budget details' })).toBeDefined();
     expect(screen.getByText('session soft cap')).toBeDefined();
     expect(store.loadSessionTelemetry).toHaveBeenCalledWith(SID);
     expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
@@ -202,7 +202,7 @@ describe('SessionCostChip', () => {
       scope?: { kind?: string; sessionId?: SessionId };
     }>;
     expect(event.detail.scope).toEqual({ kind: 'session', sessionId: SID });
-    expect(screen.queryByRole('dialog', { name: 'session budget details' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Session budget details' })).toBeNull();
     window.removeEventListener('goodboy:open-budget-studio', handler);
   });
 
@@ -215,7 +215,7 @@ describe('SessionCostChip', () => {
     expect(screen.getByLabelText('session soft cap')).toBe(document.activeElement);
     fireEvent.keyDown(window, { key: 'Escape' });
 
-    expect(screen.queryByRole('dialog', { name: 'session budget details' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Session budget details' })).toBeNull();
     expect(trigger).toBe(document.activeElement);
   });
 });

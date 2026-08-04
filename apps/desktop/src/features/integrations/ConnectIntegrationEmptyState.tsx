@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { IntegrationConnectPanel } from './components/IntegrationConnectPanel';
 import { GitlabFormBody } from './gitlab/GitlabFormBody';
@@ -8,6 +9,8 @@ type Props = {
   readonly provider: 'linear' | 'sentry' | 'gitlab';
   readonly workspaceId: WorkspaceId;
   readonly compact?: boolean;
+  readonly shouldAutoFocus?: boolean;
+  readonly wrapped?: boolean;
 };
 
 const PROVIDER_DESCRIPTIONS: Record<Props['provider'], string> = {
@@ -16,49 +19,77 @@ const PROVIDER_DESCRIPTIONS: Record<Props['provider'], string> = {
   gitlab: 'Connect GitLab to review merge requests from this workspace',
 };
 
-export const ConnectIntegrationEmptyState = ({ provider, workspaceId, compact = false }: Props) => {
-  const className = compact ? 'flex justify-center py-5' : 'flex justify-center';
-
-  if (provider === 'linear') {
-    return (
-      <div className={className}>
-        <IntegrationConnectPanel
-          provider={provider}
-          description={PROVIDER_DESCRIPTIONS[provider]}
-          size={compact ? 'sm' : 'lg'}
-          headingLevel={compact ? undefined : 2}
-        >
-          <LinearFormBody workspaceId={workspaceId} />
-        </IntegrationConnectPanel>
-      </div>
-    );
-  }
-
-  if (provider === 'sentry') {
-    return (
-      <div className={className}>
-        <IntegrationConnectPanel
-          provider={provider}
-          description={PROVIDER_DESCRIPTIONS[provider]}
-          size={compact ? 'sm' : 'lg'}
-          headingLevel={compact ? undefined : 2}
-        >
-          <SentryFormBody workspaceId={workspaceId} />
-        </IntegrationConnectPanel>
-      </div>
-    );
+const renderWrapped = ({
+  panel,
+  compact,
+  wrapped,
+}: {
+  readonly panel: ReactNode;
+  readonly compact: boolean;
+  readonly wrapped: boolean;
+}) => {
+  if (!wrapped) {
+    return panel;
   }
 
   return (
-    <div className={className}>
+    <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>{panel}</div>
+  );
+};
+
+export const ConnectIntegrationEmptyState = ({
+  provider,
+  workspaceId,
+  compact = false,
+  shouldAutoFocus = false,
+  wrapped = true,
+}: Props) => {
+  if (provider === 'linear') {
+    return renderWrapped({
+      compact,
+      wrapped,
+      panel: (
+        <IntegrationConnectPanel
+          provider={provider}
+          description={PROVIDER_DESCRIPTIONS[provider]}
+          size={compact ? 'sm' : 'lg'}
+          headingLevel={compact ? undefined : 2}
+        >
+          <LinearFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
+        </IntegrationConnectPanel>
+      ),
+    });
+  }
+
+  if (provider === 'sentry') {
+    return renderWrapped({
+      compact,
+      wrapped,
+      panel: (
+        <IntegrationConnectPanel
+          provider={provider}
+          description={PROVIDER_DESCRIPTIONS[provider]}
+          size={compact ? 'sm' : 'lg'}
+          headingLevel={compact ? undefined : 2}
+        >
+          <SentryFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
+        </IntegrationConnectPanel>
+      ),
+    });
+  }
+
+  return renderWrapped({
+    compact,
+    wrapped,
+    panel: (
       <IntegrationConnectPanel
         provider={provider}
         description={PROVIDER_DESCRIPTIONS[provider]}
         size={compact ? 'sm' : 'lg'}
         headingLevel={compact ? undefined : 2}
       >
-        <GitlabFormBody workspaceId={workspaceId} />
+        <GitlabFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
       </IntegrationConnectPanel>
-    </div>
-  );
+    ),
+  });
 };

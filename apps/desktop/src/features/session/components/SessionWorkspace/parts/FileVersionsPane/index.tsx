@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Divider } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
@@ -7,7 +8,7 @@ import { useAppStore } from '../../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
-import { PaneShell } from '../PaneShell';
+import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { fileVersionGroups } from './fileVersionGroups';
 import { PathSummaryList } from './pathSummaryList';
 import { VersionHistoryList } from './versionHistoryList';
@@ -16,11 +17,12 @@ type Props = {
   sessionId: SessionId;
   sessionDir: string;
   onClose: () => void;
+  actions?: ReactNode;
 };
 
 const EMPTY_VERSIONS: ReadonlyArray<FileVersion> = [];
 
-export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
+export const FileVersionsPane = ({ sessionId, sessionDir, onClose, actions = null }: Props) => {
   const versions = useAppStore(
     useShallow((state) => state.sessionFileVersions[sessionId] ?? EMPTY_VERSIONS),
   );
@@ -90,68 +92,69 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
     <PaneShell
       title="File versions"
       description="Before an agent changes a file in this session, Goodboy stores the previous copy here so you can bring it back."
-      wide={loading || groups.length > 0}
+      measure={loading || groups.length > 0 ? 'full' : 'pane'}
       actions={
-        deleteAllArmed ? (
-          <>
+        <>
+          {actions}
+          {deleteAllArmed ? (
+            <>
+              <button
+                type="button"
+                onClick={() => void onDeleteAll()}
+                disabled={deletingAll}
+                className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 size={12} aria-hidden />
+                {deletingAll ? 'Deleting' : 'Confirm delete all'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteAllArmed(false)}
+                disabled={deletingAll}
+                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              onClick={() => void onDeleteAll()}
-              disabled={deletingAll}
-              className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => setDeleteAllArmed(true)}
+              disabled={versions.length === 0 || loading}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={12} aria-hidden />
-              {deletingAll ? 'Deleting' : 'Confirm delete all'}
+              Delete all
             </button>
-            <button
-              type="button"
-              onClick={() => setDeleteAllArmed(false)}
-              disabled={deletingAll}
-              className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Cancel
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setDeleteAllArmed(true)}
-            disabled={versions.length === 0 || loading}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Trash2 size={12} aria-hidden />
-            Delete all
-          </button>
-        )
+          )}
+        </>
       }
     >
       {loading || groups.length > 0 ? (
-        <div className="flex min-h-[460px] flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-3">
-          <div className="flex min-h-0 flex-1 items-stretch gap-3">
-            <div className="flex min-h-0 w-80 shrink-0 flex-col gap-2">
-              <h2 className="text-sm font-semibold text-foreground">Files</h2>
-              <PathSummaryList
-                groups={groups}
-                selectedPath={selectedGroup?.relativePath ?? null}
-                loading={loading}
-                onSelectPath={(relativePath) =>
-                  selectSessionFileVersionPath({ sessionId, relativePath })
-                }
-              />
-            </div>
-            <Divider orientation="vertical" />
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-              <h2 className="text-sm font-semibold text-foreground">
-                {selectedGroup?.relativePath ?? 'History'}
-              </h2>
-              <VersionHistoryList
-                versions={selectedGroup?.versions ?? []}
-                restoringVersionId={restoringVersionId}
-                deletingVersionId={deletingVersionId}
-                onRestoreVersion={onRestoreVersion}
-                onDeleteVersion={onDeleteVersion}
-              />
-            </div>
+        <div className="flex items-stretch gap-3">
+          <div className="flex w-80 shrink-0 flex-col gap-2">
+            <h2 className="text-sm font-semibold text-foreground">Files</h2>
+            <PathSummaryList
+              groups={groups}
+              selectedPath={selectedGroup?.relativePath ?? null}
+              loading={loading}
+              onSelectPath={(relativePath) =>
+                selectSessionFileVersionPath({ sessionId, relativePath })
+              }
+            />
+          </div>
+          <Divider orientation="vertical" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <h2 className="text-sm font-semibold text-foreground">
+              {selectedGroup?.relativePath ?? 'History'}
+            </h2>
+            <VersionHistoryList
+              versions={selectedGroup?.versions ?? []}
+              restoringVersionId={restoringVersionId}
+              deletingVersionId={deletingVersionId}
+              onRestoreVersion={onRestoreVersion}
+              onDeleteVersion={onDeleteVersion}
+            />
           </div>
         </div>
       ) : (
@@ -166,7 +169,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
               onClick={onClose}
               className="inline-flex rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
             >
-              Back
+              Close
             </button>
           }
         />

@@ -56,6 +56,6 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
     if (!nextAgent) {
       return;
     }
-    await get().activateWorkflowAgent(sessionId, nextAgent.id);
+    await get().activateWorkflowAgent(sessionId, nextAgent.id, undefined, 'agent');
   };
 };

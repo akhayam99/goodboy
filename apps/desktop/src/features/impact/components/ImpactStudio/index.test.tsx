@@ -129,7 +129,8 @@ describe('ImpactStudio', () => {
       />,
     );
 
-    expect(screen.getByText(/orchestration shaped 3 of 4 sessions/i)).toBeDefined();
+    expect(screen.getByText('orchestrated')).toBeDefined();
+    expect(screen.getByText('75%')).toBeDefined();
     expect(screen.getByText(/longest session wall-clock/i)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /ship impact studio/i }));
     expect(mocks.setCurrentSession).toHaveBeenCalledWith('session-1');

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { SegmentedTabOption } from '@goodboy/ui';
 import { Footprints, ListTree } from 'lucide-react';
 import type { SentryIssueDetail as Detail } from '../client';
@@ -16,6 +16,7 @@ import { SentryStackTrace } from '../SentryStackTrace';
 import { sentryIssueView } from '../sentryIssueView';
 
 type IssueSection = 'stack' | 'breadcrumbs';
+type Fit = 'fill' | 'bleed' | 'flow';
 
 type Props = {
   readonly identifier: string;
@@ -27,6 +28,8 @@ type Props = {
   readonly detail: Detail | null;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly headerActions?: ReactNode;
+  readonly fit?: Fit;
 };
 
 export const SentryIssueDetail = ({
@@ -39,6 +42,8 @@ export const SentryIssueDetail = ({
   detail,
   isLoading,
   error,
+  headerActions,
+  fit = 'fill',
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('stack');
   const view = sentryIssueView({
@@ -70,7 +75,7 @@ export const SentryIssueDetail = ({
 
   return (
     <StudioDetailLayout
-      fit="flow"
+      fit={fit}
       header={
         <HeaderBand
           meta={
@@ -83,9 +88,12 @@ export const SentryIssueDetail = ({
           }
           title={view.title}
           actions={
-            view.permalink != null && view.permalink !== '' ? (
-              <ExternalRefActions url={view.permalink} label="issue" hostLabel="Sentry" />
-            ) : undefined
+            <>
+              {headerActions}
+              {view.permalink != null && view.permalink !== '' ? (
+                <ExternalRefActions url={view.permalink} label="issue" hostLabel="Sentry" />
+              ) : null}
+            </>
           }
         />
       }

@@ -174,7 +174,12 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
       expect(state.spawnAgent).not.toHaveBeenCalled();
       expect(state.activateWorkflowAgent).toHaveBeenCalledTimes(1);
-      expect(state.activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID);
+      expect(state.activateWorkflowAgent).toHaveBeenCalledWith(
+        SESSION_ID,
+        IMPL_AGENT_ID,
+        PLAN_ID,
+        'agent',
+      );
     });
 
     it('does not insert a duplicate agent for a step that already has a pending slot', async () => {
@@ -209,7 +214,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
         expect(
           state.activateWorkflowAgent,
           `alias "${name}" should activate the slot`,
-        ).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID);
+        ).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID, 'agent');
       }
     });
 
@@ -235,6 +240,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
           SESSION_ID,
           IMPL_AGENT_ID,
           PLAN_ID,
+          'agent',
         );
       },
     );
@@ -251,7 +257,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
       expect(state.spawnAgent).toHaveBeenCalledTimes(1);
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
       expect(args).not.toHaveProperty('stepId');
     });
 
@@ -262,7 +272,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
   });
 
@@ -293,7 +307,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
 
     it('free-spawns when the plan itself is missing (stale planId)', async () => {
@@ -305,7 +323,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
 
     it("free-spawns when the plan's creator agent is not in sessionPhaseRuns", async () => {
@@ -327,7 +349,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
   });
 
@@ -339,7 +365,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
 
     it('free-spawns when the workspace has no phaseTemplates entry at all', async () => {
@@ -349,7 +379,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
   });
 
@@ -380,7 +414,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
 
     it('free-spawns when an earlier step is not yet done (next step blocked)', async () => {
@@ -423,7 +461,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
   });
 
@@ -459,7 +501,11 @@ describe('runPlan, workflow-aware spawn routing', () => {
       await slice.runPlan(SESSION_ID, PLAN_ID);
 
       const [, args] = state.spawnAgent.mock.calls[0]!;
-      expect(args).toEqual({ triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
+      expect(args).toEqual({
+        triggeredPlanId: PLAN_ID,
+        kindOverride: 'implementer',
+        focus: 'agent',
+      });
     });
 
     it.each([
@@ -502,6 +548,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args, `next step "${name}" must trigger free-spawn`).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
+        focus: 'agent',
       });
     });
   });

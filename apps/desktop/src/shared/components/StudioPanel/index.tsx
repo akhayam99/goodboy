@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Divider, ScrollFade, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../paneRhythm';
 
 type Props = {
   readonly icon?: ReactNode;
@@ -15,29 +16,31 @@ export const StudioPanel = ({
   title,
   subtitle,
   action,
-  maxWidthClass = 'max-w-3xl',
+  maxWidthClass = PANE_RHYTHM.measure.pane,
   children,
 }: Props) => {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 px-8 py-4">
-        {icon ?? null}
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-base font-semibold text-foreground">{title}</span>
-          {subtitle != null ? (
-            <span className="text-2xs text-muted-foreground">{subtitle}</span>
-          ) : null}
+      <div className={cn('flex flex-col', PANE_RHYTHM.header)}>
+        <div className={cn('flex items-center gap-3', PANE_RHYTHM.column, maxWidthClass)}>
+          {icon ?? null}
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h2 className="text-base font-semibold text-foreground">{title}</h2>
+            {subtitle != null ? (
+              <span className="text-2xs text-muted-foreground">{subtitle}</span>
+            ) : null}
+          </div>
+          {action != null ? <div className="ml-auto shrink-0">{action}</div> : null}
         </div>
-        {action != null ? <div className="ml-auto shrink-0">{action}</div> : null}
       </div>
       <Divider />
       <div className="min-h-0 flex-1">
-        <ScrollFade
-          className={cn('mx-auto h-full', maxWidthClass)}
-          viewportClassName="px-10 py-8"
-          fadeSize={24}
-        >
-          <div className="flex flex-col gap-6">{children}</div>
+        <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
+          <div
+            className={cn('flex flex-col', PANE_RHYTHM.column, PANE_RHYTHM.stack, maxWidthClass)}
+          >
+            {children}
+          </div>
         </ScrollFade>
       </div>
     </div>

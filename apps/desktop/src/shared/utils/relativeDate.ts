@@ -1,3 +1,5 @@
+import { APP_LOCALE } from './appLocale';
+
 export const formatRelativeDuration = (fromIso: string, toIso?: string): string => {
   const fromMs = Date.parse(fromIso);
   if (Number.isNaN(fromMs)) {
@@ -28,7 +30,10 @@ type AbsoluteDateTimeParams = {
   readonly locale?: Intl.LocalesArgument;
 };
 
-export const formatAbsoluteDateTime = ({ iso, locale }: AbsoluteDateTimeParams): string => {
+export const formatAbsoluteDateTime = ({
+  iso,
+  locale = APP_LOCALE,
+}: AbsoluteDateTimeParams): string => {
   const timestamp = Date.parse(iso);
   if (Number.isNaN(timestamp)) {
     return '';

@@ -128,6 +128,38 @@ describe('completeResolvedAgent', () => {
     expect(state.resolverState[AGENT_ID]).toBe('committed');
   });
 
+  it('lets a later marker supersede a settled thread without wiping its siblings', async () => {
+    const { state, set, get } = createHarness({});
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ ...agent, sourceThreadIds: ['PRRT_1', 'PRRT_2'] }],
+    };
+    state.resolverThreadOutcomes = {
+      [AGENT_ID]: {
+        PRRT_1: { kind: 'wontfix', reason: 'the branch is unreachable' },
+        PRRT_2: { kind: 'analyzed', reply: 'already covered' },
+      },
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: '<<comment-resolved threadId="PRRT_1" commitSha="abcdef1234567890">>',
+      now: () => NOW,
+    });
+
+    expect(state.resolverThreadOutcomes[AGENT_ID]?.PRRT_1).toEqual({
+      kind: 'resolved',
+      commitSha: 'abcdef1234567890',
+    });
+    expect(state.resolverThreadOutcomes[AGENT_ID]?.PRRT_2).toEqual({
+      kind: 'analyzed',
+      reply: 'already covered',
+    });
+    expect(state.resolverState[AGENT_ID]).toBe('committed');
+  });
+
   it('does not downgrade a resolved marker for the same thread', async () => {
     const { state, set, get } = createHarness({});
 

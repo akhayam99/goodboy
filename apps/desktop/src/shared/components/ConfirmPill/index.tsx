@@ -30,8 +30,8 @@ export const ConfirmPill = ({ label, confirmAria, danger, busy, onConfirm, onCan
       type="button"
       onClick={onCancel}
       disabled={busy}
-      title="cancel"
-      aria-label="cancel"
+      title="Cancel"
+      aria-label="Cancel"
       className="rounded p-0.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
     >
       <X size={12} aria-hidden />

@@ -73,12 +73,14 @@ beforeEach(() => {
   hooks.attention = {};
   store.setCurrentSession.mockClear();
   store.setActiveLens.mockClear();
+  useThemeStore.setState({ theme: 'dark' });
 });
 
 afterEach(cleanup);
 
 import { AppTopBar } from './index';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { useThemeStore } from '../../../shared/lib/theme';
 
 const ATTENTION_SESSION_ID = 'session-1' as SessionId;
 const ATTENTION_SESSION = {
@@ -118,15 +120,26 @@ const renderBar = (overrides: BarOverrides = {}) =>
 describe('AppTopBar', () => {
   it('renders settings button', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
-    expect(screen.getByRole('button', { name: 'open settings' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open settings' })).toBeDefined();
   });
 
-  it('keeps set-once preferences out of the bar', () => {
+  it('keeps set-once preferences out of the bar, except theme', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
 
-    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).not.toBeNull();
     expect(screen.queryByRole('button', { name: /pair your iphone/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /getting started/i })).toBeNull();
+  });
+
+  it('flips the real theme state from the top bar', () => {
+    useThemeStore.setState({ theme: 'dark' });
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
+
+    const toggle = screen.getByRole('button', { name: 'Switch to light mode' });
+    fireEvent.click(toggle);
+
+    expect(useThemeStore.getState().theme).toBe('light');
+    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeDefined();
   });
 
   it('carries workspace identity whatever the column is doing', () => {
@@ -211,13 +224,13 @@ describe('AppTopBar', () => {
 
   it('settings button has active state when settings studio is open', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: 'settings' });
-    const btn = screen.getByRole('button', { name: 'open settings' });
+    const btn = screen.getByRole('button', { name: 'Open settings' });
     expect(btn.className).toContain('bg-foreground');
   });
 
   it('settings button is normal when a different studio is open', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: 'workflow' });
-    const btn = screen.getByRole('button', { name: 'open settings' });
+    const btn = screen.getByRole('button', { name: 'Open settings' });
     expect(btn.className).not.toContain('bg-foreground');
   });
 

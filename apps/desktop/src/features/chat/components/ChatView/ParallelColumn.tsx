@@ -71,7 +71,7 @@ export const ParallelColumn = ({
         <AgentAvatar kind={kind} size="sm" title={label} />
         <span className="min-w-0 truncate text-foreground/80">{label}</span>
         {isRunning ? (
-          <StatusDot tone="info" size="sm" pulsing ariaLabel="running" className="ml-auto" />
+          <StatusDot tone="info" size="sm" pulsing ariaLabel="Running" className="ml-auto" />
         ) : null}
       </div>
       <Divider />
@@ -120,8 +120,8 @@ export const ParallelColumn = ({
         {!pinned && (
           <button
             type="button"
-            aria-label="jump to latest"
-            title="jump to latest"
+            aria-label="Jump to latest"
+            title="Jump to latest"
             className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
               const el = scrollerRef.current;

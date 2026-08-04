@@ -56,7 +56,7 @@ describe('ConvertWorkspaceDialog', () => {
     render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
 
     await waitFor(() => screen.getByRole('option', { name: 'acme/widgets' }));
-    fireEvent.change(screen.getByLabelText('repository'), { target: { value: 'acme/widgets' } });
+    fireEvent.change(screen.getByLabelText('Repository'), { target: { value: 'acme/widgets' } });
     fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
 
     await waitFor(() =>
@@ -101,7 +101,7 @@ describe('ConvertWorkspaceDialog', () => {
     render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
 
     await waitFor(() => screen.getByRole('option', { name: 'acme/widgets' }));
-    fireEvent.change(screen.getByLabelText('repository'), { target: { value: 'acme/widgets' } });
+    fireEvent.change(screen.getByLabelText('Repository'), { target: { value: 'acme/widgets' } });
     fireEvent.click(screen.getByRole('tab', { name: 'GitLab' }));
 
     expect(

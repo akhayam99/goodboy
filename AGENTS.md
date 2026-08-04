@@ -89,6 +89,7 @@ Full rules in [docs/styling.md](./docs/styling.md). The hard ones:
 - Radius family is `rounded-lg` (8px); `rounded-md` for small controls, `rounded-full` for pills. No `rounded-xl` or larger.
 - Separators between regions (panes, sidebar sections, toolbar groups, dialog blocks) use the `<Divider>` component from `@goodboy/ui`, rendered as a sibling. Never a `border-t/-r/-b/-l` on a container to act as a divider. Borders that define a control's own shape (buttons, inputs, popovers, chips) are fine.
 - Scroll regions use the `<ScrollFade>` primitive from `@goodboy/ui`, never a bare `overflow-y-auto`. The header sits outside the fade, and the fade needs a bounded height (`min-h-0 flex-1` or a `max-h-*` on its root).
+- Lists and cards stay dense: clamp prose, cap list items at three tiers, hide terminal state behind a count, one visible action per row, collapse empty sections. Never compress the artifact the user navigated to (plan body, diffs, terminal, PR description, stack traces). Full rules in [docs/styling.md](./docs/styling.md) → Compaction.
 
 ---
 

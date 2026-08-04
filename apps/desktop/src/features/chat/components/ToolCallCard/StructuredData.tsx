@@ -43,7 +43,7 @@ export const StructuredData = ({ data, depth = 0, label }: Props) => {
           {data.map((v, i) => (
             <span
               key={i}
-              className="inline-block rounded bg-muted/50 px-1.5 py-0.5 text-foreground/80"
+              className="inline-block rounded-md bg-muted/50 px-1.5 py-0.5 text-foreground/80"
             >
               {String(v)}
             </span>

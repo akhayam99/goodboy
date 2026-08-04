@@ -28,7 +28,7 @@ import { SlotPane } from './parts/SlotPane';
 import { ResolvePane } from './parts/ResolvePane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
-import { PaneShell } from './parts/PaneShell';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 import { resolveOverlayHome } from './resolveOverlayHome';
 import { WorkflowsPane } from './parts/WorkflowsPane';
@@ -302,7 +302,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           max={400}
           onChange={setLensColumnWidth}
           onReset={() => setLensColumnWidth(240)}
-          ariaLabel="resize lens column"
+          ariaLabel="Resize lens column"
         />
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div className="relative min-h-0 flex-1">

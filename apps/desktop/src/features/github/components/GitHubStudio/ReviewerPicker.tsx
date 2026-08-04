@@ -59,9 +59,9 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
       <button
         type="button"
         onClick={() => setIsOpen((value) => value === false)}
-        title="request review"
-        aria-label="request review"
-        className="inline-flex items-center gap-0.5 rounded-md border border-border-soft px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+        title="Request review"
+        aria-label="Request review"
+        className="inline-flex items-center gap-0.5 rounded-md border border-border-soft px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
       >
         <Plus size={11} aria-hidden />
         Add

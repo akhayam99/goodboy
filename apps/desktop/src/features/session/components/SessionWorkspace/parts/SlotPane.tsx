@@ -13,7 +13,7 @@ import {
 } from '../../../../../store';
 import { GoalAttachmentsStrip } from '../../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { InspectorSplit } from './InspectorSplit';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { SlotHistoryPanel } from './SlotHistoryPanel';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '../../../../../shared/components/CopyButton';
@@ -164,6 +164,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
       <PaneShell
         title={SLOT_TITLE[slotKey]}
         description={SLOT_DESCRIPTION[slotKey]}
+        measure="reading"
         actions={
           <>
             {hasValue ? (
@@ -178,8 +179,8 @@ export const SlotPane = ({ session, slotKey }: Props) => {
               <button
                 type="button"
                 onClick={toggleHistory}
-                title="view history"
-                aria-label={`view history for ${SLOT_TITLE[slotKey]}`}
+                title={`View history for ${SLOT_TITLE[slotKey]}`}
+                aria-label={`View history for ${SLOT_TITLE[slotKey]}`}
                 className={cn(
                   'rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
                   historyOpen && 'bg-foreground/5 text-foreground',
@@ -245,11 +246,11 @@ export const SlotPane = ({ session, slotKey }: Props) => {
                 }
               }}
               className={cn(
-                'rounded-lg leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_code]:break-all [&_pre]:whitespace-pre-wrap [&_pre]:break-all',
+                'rounded-lg leading-relaxed transition-colors [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/15 [&_pre]:whitespace-pre-wrap',
                 isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-foreground/[0.02]',
               )}
             >
-              <Markdown text={value} className="text-sm text-foreground" />
+              <Markdown text={value} />
             </div>
           ) : (
             <button

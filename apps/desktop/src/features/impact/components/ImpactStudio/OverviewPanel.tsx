@@ -45,7 +45,6 @@ export const OverviewPanel = ({
     <StudioPanel
       title="Overview"
       subtitle="What orchestration shipped and how quickly work reached done"
-      maxWidthClass="max-w-5xl"
     >
       <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
       <ErrorStrip
@@ -62,14 +61,12 @@ export const OverviewPanel = ({
           title="No activity in this window"
           description="Run sessions to see shipped outcomes, flow time, and efficiency."
           bordered
+          size="lg"
+          headingLevel={2}
         />
       ) : null}
       {data !== null && data.sessionCount > 0 ? (
         <>
-          <div className="rounded-lg border border-success/30 bg-success/10 px-5 py-4 text-sm text-foreground">
-            Orchestration shaped {data.orchestratedSessions} of {data.sessionCount} sessions (
-            {Math.round(share)}%) in this window.
-          </div>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <TrendStatCard
               label="orchestrated"

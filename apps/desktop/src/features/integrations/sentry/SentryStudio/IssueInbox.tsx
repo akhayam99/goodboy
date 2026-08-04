@@ -63,7 +63,11 @@ export const IssueInbox = ({
       </div>
 
       {loading && rows.length === 0 ? (
-        <div role="status" aria-label="Loading issues" className="flex flex-col gap-0.5 px-3 pb-3">
+        <div
+          role="status"
+          aria-label="Loading issues"
+          className="flex min-h-0 flex-1 flex-col gap-0.5 px-3 pb-3"
+        >
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1 px-2.5 py-2">
               <div className="flex items-center gap-2">
@@ -111,24 +115,13 @@ export const IssueInbox = ({
                     onClick={() => onSelect(row.issue)}
                     title={row.issue.title}
                     ariaCurrent={active}
-                    className="flex-col gap-1 px-2.5 py-2"
+                    className="flex-col items-stretch gap-1 px-2.5 py-2"
                   >
                     <div className="flex items-center gap-2">
                       <SentryLevelBadge level={row.issue.level} density="compact" />
                       <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
                         {row.issue.title}
                       </span>
-                      <InboxStatusIcons
-                        sessionIcon={
-                          row.sessionId != null ? (
-                            <MessagesSquare
-                              size={11}
-                              aria-label="session launched"
-                              className="text-success"
-                            />
-                          ) : null
-                        }
-                      />
                     </div>
                     {row.issue.culprit ? (
                       <span className="truncate font-mono text-2xs text-muted-foreground/70">
@@ -143,7 +136,19 @@ export const IssueInbox = ({
                           {row.issue.userCount}
                         </span>
                       ) : null}
-                      {lastSeen ? <span className="ml-auto">{lastSeen}</span> : null}
+                      {lastSeen ? <span>{lastSeen}</span> : null}
+                      <InboxStatusIcons
+                        className="ml-auto"
+                        sessionIcon={
+                          row.sessionId != null ? (
+                            <MessagesSquare
+                              size={11}
+                              aria-label="Session launched"
+                              className="text-success"
+                            />
+                          ) : null
+                        }
+                      />
                     </div>
                   </SelectableRow>
                 </li>

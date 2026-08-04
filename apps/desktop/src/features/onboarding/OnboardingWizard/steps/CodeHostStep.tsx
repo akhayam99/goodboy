@@ -75,7 +75,7 @@ export const CodeHostStep = ({
         </div>
       ) : (
         <div className="flex w-full flex-col gap-4 text-left">
-          <Segmented ariaLabel="code host" options={options} value={host} onChange={setHost} />
+          <Segmented ariaLabel="Code host" options={options} value={host} onChange={setHost} />
           <div className="rounded-lg border border-border-soft/40 bg-subtle/20 p-4">
             {host === 'github' ? (
               <GithubFormBody workspaceId={workspaceId} onConnected={onConnected} />

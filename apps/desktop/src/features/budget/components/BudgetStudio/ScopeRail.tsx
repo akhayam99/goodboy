@@ -87,7 +87,7 @@ export const ScopeRail = ({ scope, onSelect, providers, sessions }: Props) => {
                   >
                     {s.isCurrent ? (
                       <span
-                        aria-label="current session"
+                        aria-label="Current session"
                         className="size-1.5 shrink-0 rounded-full bg-success"
                       />
                     ) : (

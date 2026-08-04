@@ -1,4 +1,5 @@
 import type { Agent, PendingResolution, SessionId } from '@goodboy/types';
+import { Chip } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
 import { agentThreadIds } from '../../agentThreadIds';
@@ -25,19 +26,25 @@ export const ResolverCardTally = ({ agent, sessionId }: Props) => {
   if (threadIds.length < 2) {
     return null;
   }
-  const sentence = resolverTallySentence({
-    tally: resolverThreadTally({
-      settlements: resolverThreadSettlements({
-        threadIds,
-        outcomes,
-        pendingResolutions: pending,
-        closedThreadIds,
-      }),
+  const tally = resolverThreadTally({
+    settlements: resolverThreadSettlements({
+      threadIds,
+      outcomes,
+      pendingResolutions: pending,
+      closedThreadIds,
     }),
   });
+  const sentence = resolverTallySentence({ tally });
   if (sentence === null) {
     return null;
   }
 
-  return <span className="text-2xs tabular-nums text-muted-foreground/80">{sentence}</span>;
+  return (
+    <Chip
+      tone={tally.open > 0 ? 'warning' : 'neutral'}
+      size="sm"
+      label={sentence}
+      className="tabular-nums"
+    />
+  );
 };

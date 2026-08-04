@@ -166,7 +166,7 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
                 disabled={busy}
                 maxLength={16}
                 size={12}
-                aria-label="branch prefix"
+                aria-label="Branch prefix"
                 className={cn(
                   'h-8 rounded-md border border-border bg-background px-2 font-mono text-sm text-foreground motion-safe:transition-colors',
                   'placeholder:text-muted-foreground/40',

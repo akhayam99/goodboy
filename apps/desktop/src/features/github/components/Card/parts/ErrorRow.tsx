@@ -8,7 +8,7 @@ type Props = {
 
 export const ErrorRow = ({ message, onRetry }: Props) => {
   return (
-    <div className="flex items-center gap-1.5 text-[11px] text-danger">
+    <div className="flex items-center gap-1.5 text-2xs text-danger">
       <AlertCircle size={11} aria-hidden />
       <span className="min-w-0 flex-1 truncate" title={message}>
         {message}
@@ -16,8 +16,8 @@ export const ErrorRow = ({ message, onRetry }: Props) => {
       <button
         type="button"
         onClick={onRetry}
-        title="retry"
-        aria-label="retry"
+        title="Retry"
+        aria-label="Retry"
         className={TAB_ICON_BTN}
       >
         <RefreshCw size={10} aria-hidden />

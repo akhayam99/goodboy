@@ -184,7 +184,7 @@ export const Dialog = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="close"
+                  aria-label="Close"
                   className="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <span aria-hidden className="text-base leading-none">

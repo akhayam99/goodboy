@@ -58,7 +58,7 @@ export const ShortcutsSection = ({ initiallyExpanded }: Props) => {
         <div id="keyboard-shortcuts-list" className="flex flex-col gap-5">
           {PLANE_ORDER.map((plane) => (
             <div key={plane} className="flex flex-col gap-2">
-              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
+              <span className="text-3xs font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
                 {PLANE_LABELS[plane]}
               </span>
               <ul className="grid grid-cols-2 gap-x-10 gap-y-3">

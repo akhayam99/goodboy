@@ -73,6 +73,7 @@ export const ResolverAgentsLane = ({
             <ResolverRows
               entries={lane.activeEntries}
               activeIds={lane.activeIds}
+              canOpenDiff={lane.canOpenDiff}
               isQueueStalled={lane.isStalled}
               isTaskActive={lane.isTaskActive}
               isTranscriptLoading={lane.isTranscriptLoading}
@@ -83,15 +84,18 @@ export const ResolverAgentsLane = ({
               diffCommentByAgentId={lane.diffCommentByAgentId}
               metrics={lane.metrics}
               reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+              diffTargetByAgentId={lane.diffTargetByAgentId}
               onOpenChat={lane.onOpenChat}
               onInspect={onInspectResolver}
               onJump={lane.onJump}
+              onOpenDiff={lane.onOpenDiff}
             />
           ) : null}
           {showCompleted && lane.completedEntries.length > 0 ? (
             <ResolverRows
               entries={lane.completedEntries}
               activeIds={lane.activeIds}
+              canOpenDiff={lane.canOpenDiff}
               isQueueStalled={lane.isStalled}
               isTaskActive={lane.isTaskActive}
               isTranscriptLoading={lane.isTranscriptLoading}
@@ -102,9 +106,11 @@ export const ResolverAgentsLane = ({
               diffCommentByAgentId={lane.diffCommentByAgentId}
               metrics={lane.metrics}
               reportedCommitShaByAgentId={lane.reportedCommitShaByAgentId}
+              diffTargetByAgentId={lane.diffTargetByAgentId}
               onOpenChat={lane.onOpenChat}
               onInspect={onInspectResolver}
               onJump={lane.onJump}
+              onOpenDiff={lane.onOpenDiff}
             />
           ) : null}
         </div>

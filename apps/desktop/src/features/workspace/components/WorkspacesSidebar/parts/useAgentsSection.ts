@@ -5,6 +5,7 @@ import type {
   AgentId,
   ProviderId,
   Session,
+  SessionId,
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -99,6 +100,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
   const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
   const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
+  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const workflowNameByRunId = useMemo(() => {
     const map = new Map<string, string>();
     for (const { run, workflow } of attachedRuns) {
@@ -231,17 +233,23 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     try {
       if (agent.status === 'pending') {
-        await activateWorkflowAgent(task.id, agent.id);
+        await activateWorkflowAgent(task.id, agent.id, undefined, 'agent');
         return;
       }
       await spawnAgent(task.id, {
         ...(agent.stepId != null && { stepId: agent.stepId }),
         ...(agent.workflowRunId != null && { workflowRunId: agent.workflowRunId }),
         ...(model !== undefined && { model }),
+        focus: 'agent',
       });
     } catch (err) {
       setSpawnError(formatError(err));
     }
+  };
+
+  const onStartWorkflowRun = async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
+    await startWorkflowRun(sessionId, workflowRunId);
+    setActiveLens(sessionId, 'workflows');
   };
 
   const onRenameCommit = async (id: AgentId, name: string) => {
@@ -290,7 +298,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     setWorkflowRunAutoRun,
     spawnError,
     standaloneAgentCount,
-    startWorkflowRun,
+    startWorkflowRun: onStartWorkflowRun,
     toggleClusterExpand: tree.toggleClusterExpand,
     toggleWorkflowExpand,
     visibleWorkflowRuns,

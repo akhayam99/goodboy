@@ -54,22 +54,22 @@ export const ResolveCard = ({
           checked={checked && !claimed}
           disabled={claimed}
           onChange={onToggle}
-          ariaLabel={`include comment by ${head.author}`}
+          ariaLabel={`Include comment by ${head.author}`}
           className="mt-0.5"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{head.author}</span>
             <span className="opacity-50">·</span>
-            <span className="min-w-0 truncate font-mono text-[11px]">{loc}</span>
+            <span className="min-w-0 truncate font-mono text-2xs">{loc}</span>
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {link ? <ResolverStateBadge state={resolverBadgeState(link.status)} /> : null}
               {onOpenThread ? (
                 <button
                   type="button"
                   onClick={onOpenThread}
-                  title="open the full thread"
-                  aria-label="open the full thread"
+                  title="Open the full thread"
+                  aria-label="Open the full thread"
                   className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <ExternalLink size={12} aria-hidden />
@@ -77,7 +77,7 @@ export const ResolveCard = ({
               ) : null}
             </div>
           </div>
-          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-[13px] leading-snug text-foreground [overflow-wrap:anywhere]">
+          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm leading-snug text-foreground [overflow-wrap:anywhere]">
             {head.body.trim() || '(empty)'}
           </p>
 
@@ -85,8 +85,8 @@ export const ResolveCard = ({
             <div className="mt-2 flex flex-col gap-1.5 border-l border-border-soft pl-2.5">
               {replies.map((r) => (
                 <div key={r.id} className="flex flex-col gap-0.5">
-                  <span className="text-[11px] font-medium text-muted-foreground">{r.author}</span>
-                  <p className="line-clamp-2 whitespace-pre-wrap text-[12px] leading-snug text-muted-foreground/80 [overflow-wrap:anywhere]">
+                  <span className="text-2xs font-medium text-muted-foreground">{r.author}</span>
+                  <p className="line-clamp-2 whitespace-pre-wrap text-xs leading-snug text-muted-foreground/80 [overflow-wrap:anywhere]">
                     {r.body.trim() || '(empty)'}
                   </p>
                 </div>
@@ -99,7 +99,7 @@ export const ResolveCard = ({
               <button
                 type="button"
                 onClick={() => onOpenResolver?.(link.agent.id as AgentId)}
-                title="open the resolver working on this comment"
+                title="Open the resolver working on this comment"
                 className="inline-flex items-center gap-1 rounded-md border border-info/40 bg-info/10 px-2 py-1 text-2xs font-semibold text-info transition-colors hover:bg-info/20"
               >
                 Open resolver
@@ -108,7 +108,7 @@ export const ResolveCard = ({
             ) : (
               <>
                 <ResolveConfigPopover
-                  ariaLabel="configure resolver"
+                  ariaLabel="Configure resolver"
                   config={config}
                   connectedProviders={connectedProviders}
                   primaryLabel="Resolve comment"
@@ -136,8 +136,8 @@ export const ResolveCard = ({
                   onClick={onResolve}
                   title={
                     failed
-                      ? 'retry the resolver for this comment'
-                      : 'spawn a resolver for this comment now'
+                      ? 'Retry the resolver for this comment'
+                      : 'Spawn a resolver for this comment now'
                   }
                   className={cn(
                     'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-semibold transition-colors',

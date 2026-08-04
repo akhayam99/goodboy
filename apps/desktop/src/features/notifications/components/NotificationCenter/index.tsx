@@ -124,7 +124,7 @@ export const NotificationCenter = () => {
   const unread = notifications.filter((n) => !n.read).length;
 
   return (
-    <div role="region" aria-label="notifications" aria-live="polite">
+    <div role="region" aria-label="Notifications" aria-live="polite">
       <Tooltip content="notifications" side="top">
         <button
           ref={triggerRef}
@@ -136,14 +136,14 @@ export const NotificationCenter = () => {
               ? 'bg-muted text-foreground'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
           )}
-          aria-label={`notifications${unread > 0 ? `, ${unread} unread` : ''}`}
+          aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
         >
           <Bell size={14} aria-hidden />
           {unread > 0 && (
             <span
               className={cn(
                 'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-warning-foreground tabular-nums',
-                unread > 9 ? 'text-[9px]' : 'text-2xs',
+                unread > 9 ? 'text-3xs' : 'text-2xs',
               )}
             >
               {unread > 99 ? '99+' : unread}
@@ -170,7 +170,7 @@ export const NotificationCenter = () => {
                       type="button"
                       onClick={() => void clearNotifications()}
                       className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
-                      aria-label="clear all notifications"
+                      aria-label="Clear all notifications"
                       title="Clear all notifications"
                     >
                       <Trash2 size={11} aria-hidden />
@@ -269,7 +269,10 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-xs font-medium leading-snug text-foreground">{n.title}</span>
         {n.body != null && n.body !== '' ? (
-          <span className="whitespace-pre-wrap break-words text-xs leading-snug text-muted-foreground">
+          <span
+            title={n.body}
+            className="line-clamp-2 whitespace-pre-wrap break-words text-xs leading-snug text-muted-foreground"
+          >
             {n.body}
           </span>
         ) : null}
@@ -406,7 +409,7 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
     <div className="flex items-center gap-1.5 pt-1.5">
       <div className="min-w-0 flex-1">
         <RoutingPicker
-          ariaLabel="retry routing"
+          ariaLabel="Retry routing"
           connectedProviders={availableProviderIds}
           provider={providerId}
           model={model}
@@ -427,7 +430,7 @@ function RetryWithPicker({ action, onDone }: RetryWithPickerProps) {
         type="button"
         className="rounded px-1.5 py-0.5 text-2xs font-medium text-foreground/80 ring-1 ring-inset ring-foreground/20 hover:bg-muted hover:text-foreground"
         onClick={dispatch}
-        aria-label="confirm retry with selected model"
+        aria-label="Confirm retry with selected model"
       >
         Retry
       </button>

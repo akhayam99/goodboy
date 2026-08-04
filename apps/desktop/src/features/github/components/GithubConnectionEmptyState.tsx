@@ -8,6 +8,7 @@ type Props = {
   readonly compact?: boolean;
   readonly onConnected: () => void;
   readonly shouldAutoFocus?: boolean;
+  readonly wrapped?: boolean;
 };
 
 export const GithubConnectionEmptyState = ({
@@ -16,9 +17,10 @@ export const GithubConnectionEmptyState = ({
   compact = false,
   onConnected,
   shouldAutoFocus = false,
+  wrapped = true,
 }: Props) => {
   if (hasGithubRemote === false) {
-    return <MissingGithubRemoteEmptyState compact={compact} />;
+    return <MissingGithubRemoteEmptyState compact={compact} wrapped={wrapped} />;
   }
 
   return (
@@ -27,6 +29,7 @@ export const GithubConnectionEmptyState = ({
       compact={compact}
       onConnected={onConnected}
       shouldAutoFocus={shouldAutoFocus}
+      wrapped={wrapped}
     />
   );
 };

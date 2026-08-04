@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Layers } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, MetaRow, tintClasses } from '@goodboy/ui';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatDuration } from '../../utils/format-duration';
@@ -70,7 +70,7 @@ export const OperationsCluster = ({
     return [...counts.entries()].map(([name, count]) => `${count} ${name}`).join(' · ');
   }, [items]);
 
-  const ariaLabel = `operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
+  const ariaLabel = `Operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
     running != null
       ? `, running ${running.toolName}`
       : showError
@@ -122,13 +122,17 @@ export const OperationsCluster = ({
                 )}
               </span>
             ) : showError ? (
-              <span className="flex items-center gap-1.5 text-2xs tabular-nums">
-                <span className={successTint.text}>{successCount} success</span>
-                <span aria-hidden className="text-muted-foreground/40">
-                  ·
-                </span>
-                <span className={dangerTint.text}>{errorCount} failed</span>
-              </span>
+              <MetaRow
+                className="tabular-nums"
+                items={[
+                  <span key="success" className={successTint.text}>
+                    {successCount} success
+                  </span>,
+                  <span key="failed" className={dangerTint.text}>
+                    {errorCount} failed
+                  </span>,
+                ]}
+              />
             ) : summary.length > 0 ? (
               <span className="truncate text-2xs text-muted-foreground/60">{summary}</span>
             ) : undefined

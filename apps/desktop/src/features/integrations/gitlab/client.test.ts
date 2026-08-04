@@ -1,5 +1,15 @@
-import { describe, expect, it } from 'vitest';
-import { humanizeMergeStatus, issueIdentifier, type GitlabIssue } from './client';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
+import type { WorkspaceId } from '@goodboy/types';
+import { gitlabFetchIssue, humanizeMergeStatus, issueIdentifier, type GitlabIssue } from './client';
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+
+const mockInvoke = vi.mocked(invoke);
+
+afterEach(() => {
+  mockInvoke.mockReset();
+});
 
 function makeIssue(overrides: Partial<GitlabIssue> = {}): GitlabIssue {
   return {
@@ -30,6 +40,28 @@ describe('issueIdentifier', () => {
     const issue = makeIssue();
     (issue as { references: { full: string | null } }).references.full = null;
     expect(issueIdentifier(issue)).toBe('#7');
+  });
+});
+
+describe('gitlabFetchIssue', () => {
+  it('forwards the project path and issue iid to the fetch command', async () => {
+    const issue = makeIssue();
+    mockInvoke.mockResolvedValueOnce(issue);
+
+    const result = await gitlabFetchIssue(
+      'workspace-1' as WorkspaceId,
+      'https://gitlab.com',
+      'acme/web',
+      7,
+    );
+
+    expect(result).toEqual(issue);
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_fetch_issue', {
+      workspaceId: 'workspace-1',
+      host: 'https://gitlab.com',
+      projectPath: 'acme/web',
+      issueIid: 7,
+    });
   });
 });
 

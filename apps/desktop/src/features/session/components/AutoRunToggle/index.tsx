@@ -12,15 +12,15 @@ export const AutoRunToggle = ({ session }: Props) => {
   const hasWorkflow = session.workflowRuns.length > 0;
   const anyRunAuto = session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
   const tooltip = !hasWorkflow
-    ? 'no workflow configured, auto-run unavailable'
+    ? 'No workflow configured, auto-run unavailable'
     : anyRunAuto
-      ? 'autorun on, click to pause'
-      : 'autorun off, click to enable';
+      ? 'Autorun on, click to pause'
+      : 'Autorun off, click to enable';
   const ariaLabel = !hasWorkflow
-    ? 'autorun unavailable'
+    ? 'Autorun unavailable'
     : anyRunAuto
-      ? 'autorun on'
-      : 'autorun off';
+      ? 'Autorun on'
+      : 'Autorun off';
   const on = hasWorkflow && anyRunAuto;
   const cls = !hasWorkflow
     ? 'text-muted-foreground/25 cursor-not-allowed'
@@ -50,7 +50,7 @@ export const AutoRunToggle = ({ session }: Props) => {
           <span
             aria-hidden
             className={cn(
-              'overflow-hidden whitespace-nowrap text-[10px] font-semibold tracking-wide',
+              'overflow-hidden whitespace-nowrap text-3xs font-semibold tracking-wide',
               'transition-[max-width,opacity,margin] duration-200 ease-out',
               on ? 'mr-1 max-w-[2.5rem] opacity-100' : 'mr-0 max-w-0 opacity-0',
             )}

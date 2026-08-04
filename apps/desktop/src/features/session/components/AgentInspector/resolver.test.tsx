@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -38,7 +38,8 @@ const h = vi.hoisted(() => {
     amendSessionCommit: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
     squashSessionCommits: vi.fn(async () => ({ sha: 'new1234', shortSha: 'new1234' })),
     setActiveLens: vi.fn(),
-    setDiffFocus: vi.fn(),
+    openDiffLens: vi.fn(),
+    setResolverThreadReply: vi.fn(),
   };
 });
 
@@ -169,7 +170,8 @@ const reset = ({
     amendSessionCommit: h.amendSessionCommit,
     squashSessionCommits: h.squashSessionCommits,
     setActiveLens: h.setActiveLens,
-    setDiffFocus: h.setDiffFocus,
+    openDiffLens: h.openDiffLens,
+    setResolverThreadReply: h.setResolverThreadReply,
   });
 };
 
@@ -266,7 +268,7 @@ const renderInspector = (agentId: AgentId) =>
   render(<AgentInspector sessionId={SESSION_ID} agentId={agentId} onClose={() => undefined} />);
 
 const openOverflow = () =>
-  fireEvent.click(screen.getByRole('button', { name: 'more resolver actions' }));
+  fireEvent.click(screen.getByRole('button', { name: 'More resolver actions' }));
 
 describe('AgentInspector (resolver)', () => {
   beforeEach(() => {
@@ -284,10 +286,10 @@ describe('AgentInspector (resolver)', () => {
 
     expect(screen.getByText('working')).toBeDefined();
     expect(screen.getByText('Comment')).toBeDefined();
-    expect(screen.queryByText('What it is')).toBeNull();
-    expect(screen.queryByText('What it costs')).toBeNull();
+    expect(screen.queryByText('Identity')).toBeNull();
+    expect(screen.queryByText('Cost')).toBeNull();
     expect(screen.queryByText('What state it is in')).toBeNull();
-    expect(screen.queryByText('What you can do')).toBeNull();
+    expect(screen.queryByText('Actions')).toBeNull();
     expect(screen.queryByText('not blocked')).toBeNull();
   });
 
@@ -366,10 +368,10 @@ describe('AgentInspector (resolver)', () => {
 
     expect(screen.getByText('Thread')).toBeDefined();
     expect(screen.getByText('no change')).toBeDefined();
-    expect((screen.getByLabelText('reply for thread 1') as HTMLTextAreaElement).value).toBe(
-      'covered by the follow up',
-    );
+    expect(screen.getByText('Closing reason')).toBeDefined();
+    expect(screen.getByText('covered by the follow up')).toBeDefined();
     expect(screen.getByText('Already guarded')).toBeDefined();
+    expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
   });
 
   it('gives every owned thread its own outcome, its own reply and its own action', () => {
@@ -388,12 +390,8 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getByText('Threads')).toBeDefined();
     expect(screen.getByText('fixed')).toBeDefined();
     expect(screen.getByText('no change')).toBeDefined();
-    expect((screen.getByLabelText('reply for thread 1') as HTMLTextAreaElement).value).toBe(
-      'guarded the null case',
-    );
-    expect((screen.getByLabelText('reply for thread 2') as HTMLTextAreaElement).value).toBe(
-      'the branch is unreachable',
-    );
+    expect(screen.getByText('guarded the null case')).toBeDefined();
+    expect(screen.getByText('the branch is unreachable')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add to batch' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Post & close' })).toBeDefined();
   });
@@ -430,13 +428,116 @@ describe('AgentInspector (resolver)', () => {
     const post = screen.getByRole('button', { name: 'Post & close' }) as HTMLButtonElement;
     expect(post.disabled).toBe(true);
 
-    fireEvent.change(screen.getByLabelText('reply for thread 1'), {
+    fireEvent.click(screen.getByLabelText('Edit reply for thread 1'));
+    fireEvent.change(screen.getByLabelText('Reply for thread 1'), {
       target: { value: 'the check already covers it' },
     });
 
     expect(
       (screen.getByRole('button', { name: 'Post & close' }) as HTMLButtonElement).disabled,
     ).toBe(false);
+  });
+
+  it('renders the drafted reply and only swaps in the editor on demand', () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'analyzed' },
+      outcomes: {
+        [SETTLED_ID]: { PRRT_3: { kind: 'analyzed', reply: 'The `guard` already covers it' } },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText('Reply')).toBeDefined();
+    expect(screen.getByText('guard')).toBeDefined();
+    expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Edit reply for thread 1'));
+    const editor = screen.getByLabelText('Reply for thread 1') as HTMLTextAreaElement;
+    expect(editor.value).toBe('The `guard` already covers it');
+
+    fireEvent.change(editor, { target: { value: 'Covered by the new guard' } });
+    fireEvent.blur(editor);
+
+    expect(h.setResolverThreadReply).toHaveBeenCalledWith({
+      agentId: SETTLED_ID,
+      threadId: 'PRRT_3',
+      reply: 'Covered by the new guard',
+    });
+    expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
+  });
+
+  it('collapses a closed thread to its header and a one-line summary', () => {
+    reset({
+      resolvedThreadIds: ['PRRT_3'],
+      resolverState: { [SETTLED_ID]: 'analyzed' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'analyzed', reply: 'Already guarded. The second sentence stays hidden.' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText('Already guarded.')).toBeDefined();
+    expect(screen.queryByText('Reviewer')).toBeNull();
+    expect(screen.queryByText('this one too')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thread 1 details' }));
+
+    expect(screen.getByText('Reviewer')).toBeDefined();
+    expect(screen.getByText('this one too')).toBeDefined();
+    expect(screen.queryByLabelText('Edit reply for thread 1')).toBeNull();
+  });
+
+  it('shows the running action on the button that started it and freezes its siblings', async () => {
+    let release: () => void = () => undefined;
+    h.queueResolution.mockImplementation(
+      () =>
+        new Promise<undefined>((resolve) => {
+          release = () => resolve(undefined);
+        }),
+    );
+    reset({
+      settledThreadIds: ['PRRT_3', 'PRRT_4'],
+      resolverState: { [SETTLED_ID]: 'committed' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'resolved', commitSha: 'abc1234def', reply: 'guarded the null case' },
+          PRRT_4: { kind: 'resolved', commitSha: 'other12345', reply: 'covered elsewhere' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add to batch' })[0]!);
+
+    const busy = await screen.findByRole('button', { name: 'Adding...' });
+    expect(busy.getAttribute('aria-busy')).toBe('true');
+    expect(
+      (screen.getByRole('button', { name: 'Add to batch' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    release();
+  });
+
+  it('offers a way out of a no-change verdict and sends it back to the resolver', async () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'wontfix' },
+      outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'wontfix', reason: 'the branch is dead' } } },
+    });
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix it anyway' }));
+
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, SETTLED_ID);
+    expect(h.sendTurn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        agentId: SETTLED_ID,
+        content: expect.stringContaining('PRRT_3'),
+      }),
+    );
   });
 
   it('hides the changes section entirely when there is no commit', () => {
@@ -465,11 +566,11 @@ describe('AgentInspector (resolver)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'src/auth/guard.ts' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
       sha: 'abc1234def',
       path: 'src/auth/guard.ts',
     });
-    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'files');
   });
 
   it('opens each file at the commit its own thread was fixed in', async () => {
@@ -502,14 +603,16 @@ describe('AgentInspector (resolver)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'src/second.ts' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
       sha: 'other12345',
       path: 'src/second.ts',
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'src/first.ts' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, {
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
       sha: 'abc1234def',
       path: 'src/first.ts',
     });
@@ -532,7 +635,7 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getByText('closed')).toBeDefined();
     expect(screen.queryByText('fixed')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add to batch' })).toBeNull();
-    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
+    expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
     expect(screen.getByRole('button', { name: 'Post & close' })).toBeDefined();
   });
 
@@ -542,11 +645,14 @@ describe('AgentInspector (resolver)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'deadbee' }));
 
-    expect(h.setDiffFocus).toHaveBeenCalledWith(SESSION_ID, { sha: 'deadbee', path: null });
-    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'files');
+    expect(h.openDiffLens).toHaveBeenCalledWith(SESSION_ID, {
+      kind: 'commit',
+      sha: 'deadbee',
+      path: null,
+    });
   });
 
-  it('keeps force close, mark done and delete behind the header overflow', () => {
+  it('keeps force close behind the header overflow, off the card', () => {
     renderInspector(RUNNING_ID);
 
     expect(screen.queryByRole('menuitem', { name: 'Force close' })).toBeNull();
@@ -554,8 +660,29 @@ describe('AgentInspector (resolver)', () => {
     openOverflow();
 
     expect(screen.getByRole('menuitem', { name: 'Force close' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Mark done' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Delete' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Mark done' })).toBeNull();
+  });
+
+  it('puts mark done, reopen and delete in the footer at the bottom of the panel, not the header', () => {
+    renderInspector(RUNNING_ID);
+
+    expect(screen.getByRole('button', { name: 'Mark done' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Reopen' })).toBeNull();
+  });
+
+  it('marks a resolver done from the footer and deletes it after confirming', async () => {
+    renderInspector(RUNNING_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+    expect(h.setAgentDone).toHaveBeenCalledWith(SESSION_ID, RUNNING_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    const panel = screen.getByRole('group', { name: 'Delete this resolver?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
+
+    await vi.waitFor(() => expect(h.deleteAgent).toHaveBeenCalledWith(SESSION_ID, RUNNING_ID));
   });
 
   it('rewords the newest local commit from the overflow', async () => {
@@ -584,7 +711,6 @@ describe('AgentInspector (resolver)', () => {
     const reword = await screen.findByRole('button', { name: 'Reword' });
 
     expect(reword.hasAttribute('disabled')).toBe(true);
-    expect(reword.getAttribute('title')).toBe('Only the branch HEAD commit can be reworded');
     expect(screen.getByRole('button', { name: 'Squash through HEAD' })).toBeDefined();
   });
 

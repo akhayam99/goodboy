@@ -44,6 +44,7 @@ const { hooks, remote, store } = vi.hoisted(() => {
       archiveTask: vi.fn(async () => undefined),
       deleteTask: vi.fn(async () => undefined),
       unarchiveTask: vi.fn(async () => undefined),
+      setCurrentSession: vi.fn(async () => undefined),
     },
   };
 });
@@ -120,6 +121,7 @@ vi.mock('../SessionGitActions', () => ({
 
 import { LensColumn } from './index';
 import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
+import { SessionSidebarCollapsedContext } from '../../../../../workspace/hooks/useSessionSidebarVisibility/collapsed';
 
 const SESSION = {
   id: 'session-1',
@@ -152,6 +154,7 @@ beforeEach(() => {
   store.archiveTask.mockClear();
   store.deleteTask.mockClear();
   store.unarchiveTask.mockClear();
+  store.setCurrentSession.mockClear();
 });
 
 afterEach(cleanup);
@@ -562,6 +565,55 @@ describe('LensColumn', () => {
     expect(screen.getByRole('button', { name: 'GitHub 1' })).toBeDefined();
   });
 
+  it('marks an open PR or MR with a static indicator, never a pulsing running dot', () => {
+    store.sessionGithub = { 'session-1': { pr: { number: 42 } } };
+    store.sessionGitlabMr = { 'session-1': { mr: { iid: 7 } } };
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const github = screen.getByRole('button', { name: 'GitHub 1' });
+    expect(github.querySelector('[class*="bg-accent"]')).not.toBeNull();
+    expect(github.querySelector('[class*="animate-pulse"]')).toBeNull();
+    expect(github.querySelector('[class*="bg-info"]')).toBeNull();
+
+    const gitlab = screen.getByRole('button', { name: 'GitLab' });
+    expect(gitlab.querySelector('[class*="bg-accent"]')).not.toBeNull();
+    expect(gitlab.querySelector('[class*="animate-pulse"]')).toBeNull();
+    expect(gitlab.querySelector('[class*="bg-info"]')).toBeNull();
+  });
+
+  it('gives Linear and Sentry no dot, matching the shared integrations badge grammar', () => {
+    store.sessionExternalTasks = {
+      'session-1': [{ provider: 'linear' }, { provider: 'sentry' }],
+    };
+
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    const linear = screen.getByRole('button', { name: 'Linear 1' });
+    const sentry = screen.getByRole('button', { name: 'Sentry 1' });
+    for (const row of [linear, sentry]) {
+      expect(row.querySelector('[class*="bg-accent"]')).toBeNull();
+      expect(row.querySelector('[class*="bg-info"]')).toBeNull();
+      expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
+    }
+  });
+
   it.each([
     ['GitHub', 'pr', 'goodboy:open-github-studio'],
     ['GitLab', 'gitlab_issues', 'goodboy:open-gitlab-studio'],
@@ -713,6 +765,39 @@ describe('LensColumn', () => {
       expect(row.querySelector('[class*="animate-pulse"]')).toBeNull();
     }
     expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
+  });
+
+  it('hides the icon-only board escape hatch when the sidebar is not collapsed', () => {
+    render(
+      <LensColumn
+        session={SESSION}
+        activeLens={null}
+        onSelectOverview={vi.fn()}
+        onSelect={vi.fn()}
+        filesCount={0}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Back to board' })).toBeNull();
+  });
+
+  it('shows an icon-only board escape hatch next to Overview when the sidebar is collapsed, and it navigates back to the board', () => {
+    render(
+      <SessionSidebarCollapsedContext value>
+        <LensColumn
+          session={SESSION}
+          activeLens={null}
+          onSelectOverview={vi.fn()}
+          onSelect={vi.fn()}
+          filesCount={0}
+        />
+      </SessionSidebarCollapsedContext>,
+    );
+
+    const backToBoard = screen.getByRole('button', { name: 'Back to board' });
+    expect(backToBoard.className).toContain('shrink-0');
+    fireEvent.click(backToBoard);
+    expect(store.setCurrentSession).toHaveBeenCalledWith(null);
   });
 });
 

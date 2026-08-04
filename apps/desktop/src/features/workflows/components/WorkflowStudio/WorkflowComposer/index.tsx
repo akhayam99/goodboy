@@ -123,7 +123,7 @@ export const WorkflowComposer = ({
               {title}
               <span
                 className={cn(
-                  'shrink-0 rounded px-1.5 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow',
+                  'shrink-0 rounded-md px-1.5 py-px text-2xs font-semibold uppercase leading-none tracking-eyebrow',
                   approved ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning',
                 )}
               >
@@ -162,7 +162,7 @@ export const WorkflowComposer = ({
               <Check size={13} aria-hidden />
               {approved ? 'Move to draft' : 'Approve'}
             </Button>
-            <Button variant="ghost" size="sm" onClick={onClose} aria-label="close workflow editor">
+            <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close workflow editor">
               <X size={13} aria-hidden />
               Close
             </Button>

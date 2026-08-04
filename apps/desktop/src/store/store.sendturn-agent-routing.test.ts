@@ -1154,6 +1154,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       agentProviderOverride: {},
       agentModelOverride: {},
       resolverState: {},
+      resolverThreadOutcomes: {},
       pendingResolverKickoff: { [AGENT_B]: 'kick B' },
       providers: [
         {
@@ -1268,6 +1269,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       agentProviderOverride: {},
       agentModelOverride: {},
       resolverState: {},
+      resolverThreadOutcomes: {},
       pendingResolverKickoff: { [AGENT_B]: 'kick B' },
       providers: [
         {
@@ -1321,6 +1323,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       agentProviderOverride: {},
       agentModelOverride: {},
       resolverState: {},
+      resolverThreadOutcomes: {},
       pendingResolverKickoff: { [AGENT_B]: 'kick B' },
       providers: [
         {

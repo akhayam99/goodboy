@@ -2,12 +2,13 @@
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
 
 type Store = {
   readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
+  readonly sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
   readonly linkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly unlinkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly connectLinear: ReturnType<typeof vi.fn>;
@@ -19,18 +20,16 @@ type Props = {
   readonly actions?: ReactNode;
 };
 
-type LinearDetailProps = {
-  readonly issueId: string;
-};
-
-type SentryDetailProps = {
+type TaskDetailProps = {
   readonly task: SessionExternalTask;
+  readonly headerActions: ReactNode;
 };
 
 const h = vi.hoisted(() => ({
   store: {
     sessionExternalTasks: {},
     workspaceIntegrations: {},
+    sessions: [],
     linkSessionExternalTask: vi.fn(async () => undefined),
     unlinkSessionExternalTask: vi.fn(async () => undefined),
     connectLinear: vi.fn(async () => undefined),
@@ -63,10 +62,11 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
 }));
 
 vi.mock('./LinearTaskDetail', () => ({
-  LinearTaskDetail: ({ issueId }: LinearDetailProps) => (
-    <div>
+  LinearTaskDetail: ({ task, headerActions }: TaskDetailProps) => (
+    <div data-testid="task-detail">
+      {headerActions}
       <a href="https://linear.app/GB-42" aria-label="Open in Linear">
-        Linear detail {issueId}
+        Linear detail {task.externalId}
       </a>
       <button type="button" aria-label="Copy issue link" />
     </div>
@@ -74,8 +74,9 @@ vi.mock('./LinearTaskDetail', () => ({
 }));
 
 vi.mock('./SentryTaskDetail', () => ({
-  SentryTaskDetail: ({ task }: SentryDetailProps) => (
-    <div>
+  SentryTaskDetail: ({ task, headerActions }: TaskDetailProps) => (
+    <div data-testid="task-detail">
+      {headerActions}
       <a href="https://sentry.io/issues/12345" aria-label="Open in Sentry">
         Sentry detail {task.externalId}
       </a>
@@ -84,7 +85,7 @@ vi.mock('./SentryTaskDetail', () => ({
   ),
 }));
 
-vi.mock('../PaneShell', () => ({
+vi.mock('../../../../../../shared/components/PaneShell', () => ({
   PaneShell: ({ children, actions }: Props) => (
     <div>
       {actions}
@@ -116,6 +117,15 @@ const TASK: SessionExternalTask = {
   identifier: 'GB-42',
   title: 'Refactor integration storage',
   url: 'https://linear.app/goodboy/issue/GB-42/refactor-integration-storage',
+  createdAt: CREATED_AT,
+};
+const SECOND_TASK: SessionExternalTask = {
+  sessionId: SESSION_ID,
+  provider: 'linear',
+  externalId: 'GB-43',
+  identifier: 'GB-43',
+  title: 'Trim the integration pane',
+  url: 'https://linear.app/goodboy/issue/GB-43/trim-the-integration-pane',
   createdAt: CREATED_AT,
 };
 const SENTRY_TASK: SessionExternalTask = {
@@ -193,14 +203,44 @@ describe('IntegrationPane', () => {
     },
   );
 
-  it('opens and confirms before unlinking every provider task shown for the session', async () => {
+  it('auto-focuses the only linked task instead of listing it', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    expect(screen.getByText('Refactor integration storage')).toBeDefined();
     expect(screen.getByText('Linear detail GB-42')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'open GB-42' }));
-    expect(h.openUrl).toHaveBeenCalledWith(TASK.url);
-    fireEvent.click(screen.getByRole('button', { name: 'unlink GB-42' }));
+    expect(screen.queryByRole('button', { name: 'View GB-42' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
+  });
+
+  it('hands the focused actions to the detail header instead of stacking a pane header', () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    const detail = screen.getByTestId('task-detail');
+
+    expect(within(detail).getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
+    expect(within(detail).getByRole('button', { name: 'Link issue' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Unlink GB-42' })).toHaveLength(1);
+  });
+
+  it('lists every linked task as a card and focuses the clicked one', () => {
+    h.store.sessionExternalTasks = { [SESSION_ID]: [TASK, SECOND_TASK] };
+
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    expect(screen.getAllByRole('button', { name: /^View GB-/ })).toHaveLength(2);
+    expect(screen.getByText('Trim the integration pane')).toBeDefined();
+    expect(screen.queryByText('Linear detail GB-42')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-43' }));
+
+    expect(screen.getByText('Linear detail GB-43')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+  });
+
+  it('opens and confirms before unlinking the focused task', async () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
     expect(h.store.unlinkSessionExternalTask).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
     await waitFor(() =>
@@ -208,14 +248,14 @@ describe('IntegrationPane', () => {
     );
   });
 
-  it('links a pasted provider URL from the Link ticket popover and closes it', async () => {
+  it('links a pasted provider URL from the picker and closes the popover', async () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link ticket' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Or paste a Linear issue URL' }), {
+    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Link an issue' }), {
       target: { value: 'https://linear.app/goodboy/issue/GB-99/new-link' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Link' }));
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'Link GB-99' }));
 
     await waitFor(() => expect(h.store.linkSessionExternalTask).toHaveBeenCalledOnce());
     expect(h.store.linkSessionExternalTask).toHaveBeenCalledWith(SESSION_ID, {
@@ -227,34 +267,24 @@ describe('IntegrationPane', () => {
       createdAt: expect.any(String),
     });
     await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: 'link Linear ticket' })).toBeNull(),
+      expect(screen.queryByRole('dialog', { name: 'link Linear issue' })).toBeNull(),
     );
   });
 
-  it('shows the Link ticket action only when a task is already linked', () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    expect(screen.queryByRole('textbox', { name: 'Or paste a Linear issue URL' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Link ticket' }));
-    expect(screen.getByRole('dialog', { name: 'link Linear ticket' })).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Or paste a Linear issue URL' })).toBeDefined();
-
-    cleanup();
-    h.store.sessionExternalTasks = {};
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-    expect(screen.queryByRole('button', { name: 'Link ticket' })).toBeNull();
-  });
-
-  it('integrates only the link form into the connected empty state', () => {
+  it('keeps the connected empty state to a single link affordance', () => {
     h.store.sessionExternalTasks = {};
     const listener = vi.fn();
     window.addEventListener('goodboy:open-sentry-studio', listener);
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="sentry" />);
 
     expect(screen.getByText('No Sentry issues linked')).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Or paste a Sentry issue URL' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Link ticket' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Link an issue' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open Sentry studio' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
+
+    expect(screen.getByRole('dialog', { name: 'Link Sentry issue' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Link an issue' })).toBeDefined();
     expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-sentry-studio', listener);
   });
@@ -268,7 +298,7 @@ describe('IntegrationPane', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     expect(screen.getByText('Linear')).toBeDefined();
-    expect(screen.queryByRole('textbox', { name: 'Or paste a Linear issue URL' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Link an issue' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Personal access token'), {
       target: { value: 'lin_api_test' },
     });
@@ -303,7 +333,7 @@ describe('IntegrationPane', () => {
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link ticket' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
     fireEvent.focus(screen.getByRole('combobox', { name: 'Link an issue' }));
     fireEvent.mouseDown(screen.getByText('Ship the issue picker'));
 
@@ -320,9 +350,9 @@ describe('IntegrationPane', () => {
     );
   });
 
-  it('does not submit the URL form when Enter is pressed in a closed issue picker', () => {
+  it('links nothing when Enter is pressed in a closed issue picker', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Link ticket' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
     const picker = screen.getByRole('combobox', { name: 'Link an issue' });
 
     fireEvent.focus(picker);
@@ -330,6 +360,5 @@ describe('IntegrationPane', () => {
     fireEvent.keyDown(picker, { key: 'Enter' });
 
     expect(h.store.linkSessionExternalTask).not.toHaveBeenCalled();
-    expect(screen.queryByText('Paste an issue URL to link it.')).toBeNull();
   });
 });

@@ -63,21 +63,21 @@ describe('AppFooter', () => {
     const beta = screen.getByText('Beta');
     fireEvent.click(
       screen.getByRole('button', {
-        name: 'open the workflow library for this workspace',
+        name: 'Open the workflow library for this workspace',
       }),
     );
     fireEvent.click(
       screen.getByRole('button', {
-        name: 'connect and manage your provider accounts',
+        name: 'Connect and manage your provider accounts',
       }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'open budget studio' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open budget studio' }));
     fireEvent.click(
       screen.getByRole('button', {
-        name: 'see how orchestration changed the way this workspace works',
+        name: 'See how orchestration changed the way this workspace works',
       }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'see what changed, release by release' }));
+    fireEvent.click(screen.getByRole('button', { name: 'See what changed, release by release' }));
 
     const { container } = render(<BetaPill className={BETA_CENTERING} />);
     expect(beta.className).toBe(container.firstElementChild?.className);
@@ -110,9 +110,9 @@ describe('AppFooter', () => {
       />,
     );
 
-    const budget = screen.getByRole('button', { name: 'open budget studio' });
+    const budget = screen.getByRole('button', { name: 'Open budget studio' });
     const impact = screen.getByRole('button', {
-      name: 'see how orchestration changed the way this workspace works',
+      name: 'See how orchestration changed the way this workspace works',
     });
 
     expect(budget.className).toContain('text-muted-foreground');
@@ -190,12 +190,12 @@ describe('AppFooter', () => {
     expect(screen.queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
     expect(
-      screen.getByRole('button', { name: 'open the workflow library for this workspace' }),
+      screen.getByRole('button', { name: 'Open the workflow library for this workspace' }),
     ).toBeDefined();
 
     fireEvent.click(
       screen.getByRole('button', {
-        name: 'turn this workspace into a dev project backed by a git repository',
+        name: 'Turn this workspace into a dev project backed by a git repository',
       }),
     );
 
@@ -225,7 +225,11 @@ describe('AppFooter', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'launch a session from a GitLab issue' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Review merge requests and launch a session from a GitLab issue',
+      }),
+    );
 
     expect(onOpenGitlab).toHaveBeenCalledOnce();
   });

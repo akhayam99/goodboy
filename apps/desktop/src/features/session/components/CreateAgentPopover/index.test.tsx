@@ -16,10 +16,10 @@ type Store = {
   readonly providers: ReadonlyArray<{ readonly id: ProviderId; readonly connection: string }>;
   readonly sessions: ReadonlyArray<Session>;
   readonly workspaceOverrides: Record<string, unknown>;
-  readonly providerLifecycle: Readonly<Record<string, unknown>>;
-  readonly installProvider: ReturnType<typeof vi.fn>;
-  readonly loginProvider: ReturnType<typeof vi.fn>;
-  readonly cancelProviderLifecycle: ReturnType<typeof vi.fn>;
+  readonly providerConnect: Readonly<Record<string, unknown>>;
+  readonly connectProvider: ReturnType<typeof vi.fn>;
+  readonly cancelProviderConnect: ReturnType<typeof vi.fn>;
+  readonly dismissProviderConnect: ReturnType<typeof vi.fn>;
 };
 
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
@@ -46,21 +46,21 @@ const h = vi.hoisted(() => ({
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
   workspaceKind: 'repo' as WorkspaceKind,
   sessions: [] as ReadonlyArray<unknown>,
-  providerLifecycle: {
+  providerConnect: {
     codex: {
       phase: 'idle',
+      step: null,
       runId: null,
-      action: null,
       command: null,
-      exitCode: null,
-      startedAt: null,
+      authUrl: null,
+      identity: null,
       errorTail: null,
-      detectedAuthUrl: null,
+      startedAt: null,
     },
   },
-  installProvider: vi.fn(async () => undefined),
-  loginProvider: vi.fn(async () => undefined),
-  cancelProviderLifecycle: vi.fn(async () => undefined),
+  connectProvider: vi.fn(async () => undefined),
+  cancelProviderConnect: vi.fn(async () => undefined),
+  dismissProviderConnect: vi.fn(() => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -70,10 +70,10 @@ vi.mock('../../../../store', () => ({
       providers: h.providers,
       sessions: h.sessions as ReadonlyArray<Session>,
       workspaceOverrides: {},
-      providerLifecycle: h.providerLifecycle,
-      installProvider: h.installProvider,
-      loginProvider: h.loginProvider,
-      cancelProviderLifecycle: h.cancelProviderLifecycle,
+      providerConnect: h.providerConnect,
+      connectProvider: h.connectProvider,
+      cancelProviderConnect: h.cancelProviderConnect,
+      dismissProviderConnect: h.dismissProviderConnect,
     }),
   useCurrentWorkspace: () => ({ id: 'workspace-1' as WorkspaceId, kind: h.workspaceKind }),
 }));
@@ -108,10 +108,10 @@ describe('CreateAgentPopover', () => {
     const trigger = screen.getByRole('button', { name: 'Create agent' });
 
     expect(trigger.className).toContain('rounded-lg');
-    expect(screen.queryByRole('dialog', { name: 'create agent' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Create agent' })).toBeNull();
 
     openPopover();
-    const dialog = screen.getByRole('dialog', { name: 'create agent' });
+    const dialog = screen.getByRole('dialog', { name: 'Create agent' });
     expect(dialog).toBeTruthy();
     expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
     expect(dialog.className).toContain('fixed');
@@ -133,6 +133,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'haiku-4.5',
       effort: 'low',
+      focus: 'agent',
     });
   });
 
@@ -156,6 +157,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'claude-opus-5',
       effort: 'high',
+      focus: 'agent',
     });
   });
 
@@ -181,6 +183,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'haiku-4.5',
       effort: 'low',
+      focus: 'agent',
     });
   });
 
@@ -210,6 +213,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'claude-opus-5',
       effort: 'low',
+      focus: 'agent',
     });
   });
 
@@ -240,6 +244,7 @@ describe('CreateAgentPopover', () => {
       provider: 'codex',
       model: 'gpt-5.6-terra',
       effort: 'high',
+      focus: 'agent',
     });
   });
 
@@ -273,9 +278,9 @@ describe('CreateAgentPopover', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
     fireEvent.click(screen.getByRole('button', { name: 'Connect Codex' }));
 
-    expect(screen.getByRole('dialog', { name: 'create agent' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Create agent' })).toBeDefined();
     expect(screen.getByText(/Connect codex/i)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Install' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect' })).toBeDefined();
     expect(studioListener).not.toHaveBeenCalled();
 
     window.removeEventListener('goodboy:open-provider-studio', studioListener);
@@ -293,6 +298,7 @@ describe('CreateAgentPopover', () => {
       provider: 'anthropic',
       model: 'haiku-4.5',
       effort: 'low',
+      focus: 'agent',
     });
   });
 

@@ -58,8 +58,7 @@ export const ProviderPanel = ({
     <StudioPanel
       icon={<ProviderIcon provider={provider} size={20} />}
       title={providerLabel(provider)}
-      subtitle={`${formatUsdPrecise(spent)} total spend`}
-      maxWidthClass="max-w-5xl"
+      subtitle={`${formatUsd(spent)} total spend`}
     >
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip
@@ -72,14 +71,18 @@ export const ProviderPanel = ({
         <section className="flex items-center gap-6 rounded-lg border border-border-soft bg-muted/20 p-5">
           <CostRing pct={pct} centerLabel={`${Math.round(pct * 100)}%`} subLabel="of cap" />
           <div className="grid flex-1 grid-cols-3 gap-3">
-            <StatCard label="spent" value={formatUsdPrecise(spent)} />
+            <div title={formatUsdPrecise(spent)}>
+              <StatCard label="spent" value={formatUsd(spent)} />
+            </div>
             <StatCard label="cap" value={formatUsd(capUsd)} />
             <StatCard label="remaining" value={formatUsd(remaining ?? 0)} />
           </div>
         </section>
       ) : (
         <section className="grid grid-cols-3 gap-3">
-          <StatCard label="spent" value={formatUsdPrecise(spent)} />
+          <div title={formatUsdPrecise(spent)}>
+            <StatCard label="spent" value={formatUsd(spent)} />
+          </div>
           <StatCard label="turns" value={String(filtered.length)} />
           <StatCard label="models" value={String(models.length)} />
         </section>

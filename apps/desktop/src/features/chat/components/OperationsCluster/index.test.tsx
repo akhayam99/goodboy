@@ -69,12 +69,12 @@ describe('OperationsCluster', () => {
 
   it('aria-label uses singular "item" for single item', () => {
     render(<OperationsCluster items={[tool('a')]} />);
-    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('operations, 1 item');
+    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('Operations, 1 item');
   });
 
   it('aria-label uses plural "items" for multiple items', () => {
     render(<OperationsCluster items={[tool('a'), tool('b')]} />);
-    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('operations, 2 items');
+    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('Operations, 2 items');
   });
 
   it('aria-label includes running tool info', () => {

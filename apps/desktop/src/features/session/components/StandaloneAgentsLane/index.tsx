@@ -81,6 +81,7 @@ export const StandaloneAgentsLane = ({
           onInspectAgent={onInspectAgent}
           onMarkDone={lane.onMarkDone}
           isMuted={muted}
+          density={isLens ? 'lane' : 'sidebar'}
         />
       ))}
     </ul>

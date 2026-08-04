@@ -1,5 +1,6 @@
 import type { PrComment } from '@goodboy/types';
 import type { ResolverActionKind } from '../../resolverActions';
+import type { ResolverRunningThreadAction } from '../../hooks/useResolverActions';
 import type { ResolverThreadSettlement } from '../../resolverThreadSettlements';
 import { ResolverPanelSection } from './ResolverPanelSection';
 import { ResolverThreadRow } from './ResolverThreadRow';
@@ -10,6 +11,7 @@ type Props = {
   readonly prNumber: number | null;
   readonly isBusy: boolean;
   readonly canAct: boolean;
+  readonly runningThreadAction: ResolverRunningThreadAction | null;
   readonly onRun: (params: {
     readonly threadId: string;
     readonly kind: ResolverActionKind;
@@ -25,6 +27,7 @@ export const ResolverThreadList = ({
   prNumber,
   isBusy,
   canAct,
+  runningThreadAction,
   onRun,
   onReplyChange,
   onOpenThread,
@@ -46,6 +49,7 @@ export const ResolverThreadList = ({
             isBusy={isBusy}
             canAct={canAct}
             canForceResolve={settlements.length > 1}
+            runningThreadAction={runningThreadAction}
             onRun={onRun}
             onReplyChange={onReplyChange}
             onOpenThread={onOpenThread}

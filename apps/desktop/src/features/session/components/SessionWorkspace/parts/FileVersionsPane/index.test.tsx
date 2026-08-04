@@ -108,11 +108,31 @@ describe('FileVersionsPane', () => {
       <FileVersionsPane sessionId={SESSION_ID} sessionDir="/tmp/session-1" onClose={vi.fn()} />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'restore this version' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore this version' }));
     expect(store.restoreSessionFileVersion).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       versionId: 'v-1' as FileVersionId,
       sessionDir: '/tmp/session-1',
     });
+  });
+
+  it('closes to the overview from the empty state, keeping the passed-in back action separate', () => {
+    store.sessionFileVersions = {} as Record<SessionId, ReadonlyArray<FileVersion>>;
+    const onClose = vi.fn();
+
+    render(
+      <FileVersionsPane
+        sessionId={SESSION_ID}
+        sessionDir="/tmp/session-1"
+        onClose={onClose}
+        actions={<button type="button">Back</button>}
+      />,
+    );
+
+    expect(screen.getByText('No versions yet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

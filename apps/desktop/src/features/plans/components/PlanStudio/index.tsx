@@ -1,18 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ArchiveRestore,
-  CheckCircle2,
-  Eye,
-  List,
-  Pencil,
-  Play,
-  RotateCw,
-  Sparkles,
-  Trash2,
-} from 'lucide-react';
+import { ArchiveRestore, Eye, List, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
 import {
   Divider,
-  EmptyState,
   InlineConfirm,
   Markdown,
   ScrollFade,
@@ -24,10 +13,10 @@ import {
 import type { Agent, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { PaneShell } from '../../../session/components/SessionWorkspace/parts/PaneShell';
-import { fmtTimestamp } from './fmtTimestamp';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanListPanel } from './PlanListPanel';
+import { PlanProvenance } from './PlanProvenance';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
 
@@ -138,6 +127,14 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const creatorDeleted = selected ? !creatorAgent : false;
   const selectedAgentName = selected ? (creatorAgent?.name ?? 'unknown agent') : '';
 
+  const handleAgentClick = (agentId: Agent['id'], name: string, deleted: boolean) => {
+    if (deleted) {
+      showToast('info', `agent "${name}" was deleted and can no longer be opened`);
+      return;
+    }
+    openAgent(agentId);
+  };
+
   return (
     <div className="relative flex h-full min-h-0 w-full bg-background">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -150,7 +147,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                 <button
                   type="button"
                   onClick={() => setListOpen((open) => !open)}
-                  title="browse the other plans in this session"
+                  title="Browse the other plans in this session"
                   className={cn(
                     'inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground',
                     listOpen && 'bg-foreground/5 text-foreground',
@@ -179,88 +176,22 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                       </h2>
                       <span
                         className={cn(
-                          'inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] lowercase tracking-wide',
+                          'inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-2xs lowercase tracking-wide',
                           planStatusBadge({ status: selected.status }).className,
                         )}
                       >
                         {planStatusBadge({ status: selected.status }).label}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Sparkles size={11} aria-hidden className="shrink-0 text-warning" />
-                      <span>Created by</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (creatorDeleted) {
-                            showToast(
-                              'info',
-                              `agent "${selectedAgentName}" was deleted and can no longer be opened`,
-                            );
-                            return;
-                          }
-                          openAgent(selected.agentId);
-                        }}
-                        className={cn(
-                          'truncate font-medium underline-offset-2',
-                          creatorDeleted
-                            ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
-                            : 'text-foreground hover:underline',
-                        )}
-                        title={
-                          creatorDeleted ? 'Agent deleted, click for details' : 'Open creator agent'
-                        }
-                      >
-                        {selectedAgentName}
-                      </button>
-                      {creatorDeleted ? (
-                        <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
-                          Deleted
-                        </span>
-                      ) : null}
-                      <span aria-hidden>·</span>
-                      <span className="shrink-0">{fmtTimestamp(selected.createdAt)}</span>
-                    </div>
-                    {consumptions.map((c) => {
-                      const ag = agents.find((a) => a.id === c.agentId);
-                      const isDeleted = !ag;
-                      const displayName = ag?.name ?? c.agentName ?? c.agentId.substring(0, 8);
-                      return (
-                        <div key={c.id} className="flex items-center gap-1.5">
-                          <CheckCircle2 size={11} aria-hidden className="shrink-0 text-info" />
-                          <span>Consumed by</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isDeleted) {
-                                showToast(
-                                  'info',
-                                  `agent "${displayName}" was deleted and can no longer be opened`,
-                                );
-                                return;
-                              }
-                              openAgent(c.agentId);
-                            }}
-                            className={cn(
-                              'truncate font-medium underline-offset-2',
-                              isDeleted
-                                ? 'cursor-help text-muted-foreground line-through hover:text-foreground'
-                                : 'text-foreground hover:underline',
-                            )}
-                            title={isDeleted ? 'Agent deleted, click for details' : 'Open agent'}
-                          >
-                            {displayName}
-                          </button>
-                          {isDeleted ? (
-                            <span className="shrink-0 rounded-sm bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
-                              Deleted
-                            </span>
-                          ) : null}
-                          <span aria-hidden>·</span>
-                          <span className="shrink-0">{fmtTimestamp(c.consumedAt)}</span>
-                        </div>
-                      );
-                    })}
+                    <PlanProvenance
+                      creatorName={selectedAgentName}
+                      creatorAgentId={selected.agentId}
+                      creatorDeleted={creatorDeleted}
+                      createdAt={selected.createdAt}
+                      consumptions={consumptions}
+                      agents={agents}
+                      onAgentClick={handleAgentClick}
+                    />
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <SegmentedTabs

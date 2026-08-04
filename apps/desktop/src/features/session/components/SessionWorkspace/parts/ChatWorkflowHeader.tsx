@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import { Divider } from '@goodboy/ui';
+import { Divider, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
@@ -33,7 +34,12 @@ export const ChatWorkflowHeader = ({
 
   return (
     <>
-      <div className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-3 px-3">
+      <div
+        className={cn(
+          'flex h-[var(--chat-header-h)] shrink-0 items-center gap-3',
+          PANE_RHYTHM.inset,
+        )}
+      >
         <WorkflowBreadcrumb
           sessionId={sessionId}
           session={session}

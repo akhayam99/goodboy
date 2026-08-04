@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Textarea, cn } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
+import { ComposerActionRow } from './ComposerActionRow';
 
 type Props = {
   readonly draft: PrReviewDraft;
@@ -40,7 +41,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         </span>
         <span
           className={cn(
-            'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+            'shrink-0 rounded-full px-1.5 py-0.5 text-3xs font-medium',
             draft.origin === 'agent'
               ? 'bg-indigo-400/15 text-indigo-600'
               : 'bg-muted text-muted-foreground',
@@ -50,8 +51,8 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         </span>
         {draft.stale ? (
           <span
-            title="the diff changed under this comment; it will be skipped on publish"
-            className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+            title="The diff changed under this comment; it will be skipped on publish"
+            className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning"
           >
             Stale
           </span>
@@ -60,8 +61,8 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         <button
           type="button"
           onClick={onDiscard}
-          title="discard draft"
-          aria-label={`discard draft on ${draft.path}:${draft.line}`}
+          title="Discard draft"
+          aria-label={`Discard draft on ${draft.path}:${draft.line}`}
           className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-danger"
         >
           <Trash2 size={11} aria-hidden />
@@ -88,29 +89,18 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
               }
             }}
           />
-          <div className="flex items-center justify-end gap-1">
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="rounded-sm px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={save}
-              disabled={trimmed.length === 0}
-              className="rounded-sm bg-foreground px-2 py-0.5 text-[10px] font-medium text-background hover:opacity-80 disabled:opacity-30"
-            >
-              Save
-            </button>
-          </div>
+          <ComposerActionRow
+            saveLabel="Save"
+            disabled={trimmed.length === 0}
+            onCancel={() => setEditing(false)}
+            onSave={save}
+          />
         </div>
       ) : (
         <button
           type="button"
           onClick={startEditing}
-          title="edit draft"
+          title="Edit draft"
           className="whitespace-pre-wrap rounded-sm text-left text-xs leading-relaxed text-foreground/85 transition-colors hover:bg-muted/40"
         >
           {draft.body}

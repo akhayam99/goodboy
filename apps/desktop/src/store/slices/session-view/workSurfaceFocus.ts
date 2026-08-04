@@ -9,6 +9,12 @@ type Focus =
       readonly kind: 'session-created';
       readonly studio: SessionStudio | null;
       readonly agentId: AgentId | null;
+    }
+  | {
+      readonly kind: 'restore';
+      readonly lens: LensKind | null;
+      readonly studio: SessionStudio | null;
+      readonly agentId: AgentId | null;
     };
 
 type Surface = {
@@ -53,6 +59,15 @@ export const workSurfaceFocus = ({
     case 'session-created':
       return {
         activeLens: { ...activeLens, [sessionId]: null },
+        sessionStudio: { ...sessionStudio, [sessionId]: focus.studio },
+        selectedAgentId: {
+          ...selectedAgentId,
+          [sessionId]: focus.studio === null ? focus.agentId : null,
+        },
+      };
+    case 'restore':
+      return {
+        activeLens: { ...activeLens, [sessionId]: focus.lens },
         sessionStudio: { ...sessionStudio, [sessionId]: focus.studio },
         selectedAgentId: {
           ...selectedAgentId,

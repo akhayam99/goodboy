@@ -13,6 +13,7 @@ export type ResolverActionKind =
   | 'review'
   | 'run'
   | 'rerun'
+  | 'fix'
   | 'forceClose'
   | 'forceResolve';
 

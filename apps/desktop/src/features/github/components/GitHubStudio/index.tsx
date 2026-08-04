@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, IconButton, ScrollFade, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { cn, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { GithubIssue, ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { InboxList } from './InboxList';
@@ -163,6 +163,7 @@ export const GitHubStudio = ({
               hasGithubRemote={remoteKind === 'github'}
               onConnected={() => void githubConnection.refresh()}
               shouldAutoFocus
+              wrapped={false}
             />
           </div>
         ) : tab === 'pull-requests' ? (
@@ -182,9 +183,7 @@ export const GitHubStudio = ({
                   />
                 </div>
                 {reviewScope === 'mine' ? (
-                  <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-                    <InboxList groups={groups} focusedSessionId={focused} onSelect={setFocused} />
-                  </ScrollFade>
+                  <InboxList groups={groups} focusedSessionId={focused} onSelect={setFocused} />
                 ) : (
                   <ReviewInboxList
                     workspaceId={workspaceId}

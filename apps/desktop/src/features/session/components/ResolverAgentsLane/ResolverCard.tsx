@@ -1,13 +1,12 @@
-import { MessageSquareReply, PanelRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { FileDiff, GitCommitHorizontal, MessageSquareReply, PanelRight } from 'lucide-react';
+import { Chip } from '@goodboy/ui';
 import type { Agent, DiffComment, PrComment, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../store';
-import { ContextWindowBar } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
+import { agentCardTitleClass } from '../AgentCard/agentCardTitleClass';
 import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
-import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { resolverBadgeState } from '../ResolverStateBadge';
 import { ResolverStateIcon } from '../ResolverStateBadge/ResolverStateIcon';
 import { ResolverCardAction } from './ResolverCardAction';
@@ -16,6 +15,7 @@ import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverCardSnippet } from './ResolverCardSnippet';
 import { ResolverCardTally } from './ResolverCardTally';
 import { resolverCardTone } from './resolverCardTone';
+import { resolverDiffActionLabel, type ResolverDiffTarget } from './resolverDiffActionLabel';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 
 type Props = {
@@ -29,6 +29,8 @@ type Props = {
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly reportedCommitSha: string | null;
+  readonly diffTarget: ResolverDiffTarget;
+  readonly canOpenDiff: boolean;
   readonly isQueueStalled: boolean;
   readonly hasOtherActiveResolvers: boolean;
   readonly isSelected: boolean;
@@ -39,6 +41,7 @@ type Props = {
   readonly onOpenChat: () => void;
   readonly onInspect: () => void;
   readonly onJump: () => void;
+  readonly onOpenDiff: () => void;
 };
 
 export const ResolverCard = ({
@@ -52,6 +55,8 @@ export const ResolverCard = ({
   turns,
   turnsLoading,
   reportedCommitSha,
+  diffTarget,
+  canOpenDiff,
   isQueueStalled,
   hasOtherActiveResolvers,
   isSelected,
@@ -62,6 +67,7 @@ export const ResolverCard = ({
   onOpenChat,
   onInspect,
   onJump,
+  onOpenDiff,
 }: Props) => {
   const hasUnread = agentHasUnread(agent, isSelected && isTaskActive);
   const hoverMarkViewed = useHoverMarkViewed({
@@ -75,13 +81,14 @@ export const ResolverCard = ({
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
   const rowTitle = [
     agent.name,
-    `origin: ${origin.label}`,
-    isSelected ? 'selected: chat shows this resolver' : 'click to open its chat',
+    `Origin: ${origin.label}`,
+    isSelected ? 'Selected: chat shows this resolver' : 'Click to open its chat',
   ].join('\n');
 
   return (
     <AgentCard
       tone={resolverCardTone({ status, hasUnread })}
+      density="lane"
       ariaLabel={agent.name}
       isSelected={isSelected}
       isInspected={isInspected}
@@ -92,17 +99,20 @@ export const ResolverCard = ({
       onMouseLeave={hoverMarkViewed.onMouseLeave}
       leading={<ResolverStateIcon state={resolverBadgeState(status)} />}
       title={
-        <span
-          className={cn(
-            'min-w-0 flex-1 truncate text-left text-2xs font-medium',
-            isSelected ? 'text-foreground' : 'text-muted-foreground',
-          )}
-        >
-          {agent.name}
-        </span>
+        <span className={agentCardTitleClass({ density: 'lane', isSelected })}>{agent.name}</span>
       }
       navigationAction={
         <>
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            {canOpenDiff && (
+              <AgentCardAction
+                icon={diffTarget.kind === 'commit' ? GitCommitHorizontal : FileDiff}
+                label={resolverDiffActionLabel({ target: diffTarget })}
+                reveal
+                onClick={onOpenDiff}
+              />
+            )}
+          </span>
           <span className="flex size-6 shrink-0 items-center justify-center">
             {canJump && (
               <AgentCardAction
@@ -122,10 +132,23 @@ export const ResolverCard = ({
           />
         </>
       }
-      headline={
-        <span className="inline-flex w-fit items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-          {origin.label}
-        </span>
+      status={
+        <>
+          <Chip tone="neutral" size="sm" label={origin.label} />
+          <ResolverCardTally agent={agent} sessionId={agent.sessionId} />
+        </>
+      }
+      meta={
+        <AgentMetrics
+          run={agent}
+          telemetry={telemetry}
+          aggregate={aggregate}
+          contextUsage={contextUsage}
+          turns={turns}
+          turnsLoading={turnsLoading}
+          density="lane"
+          plannedModel={plannedModel}
+        />
       }
       footer={
         <ResolverCardAction
@@ -139,24 +162,7 @@ export const ResolverCard = ({
         />
       }
     >
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-col gap-0.5">
-          <AgentMetrics
-            run={agent}
-            telemetry={telemetry}
-            aggregate={aggregate}
-            contextUsage={contextUsage}
-            turns={turns}
-            turnsLoading={turnsLoading}
-            density="full"
-            plannedModel={plannedModel}
-          />
-          <AgentLastUpdate agent={agent} />
-          <ContextWindowBar usage={contextUsage} />
-          <ResolverCardTally agent={agent} sessionId={agent.sessionId} />
-        </div>
-        <ResolverCardSnippet threadComment={threadComment} diffComment={diffComment} />
-      </div>
+      <ResolverCardSnippet threadComment={threadComment} diffComment={diffComment} />
     </AgentCard>
   );
 };

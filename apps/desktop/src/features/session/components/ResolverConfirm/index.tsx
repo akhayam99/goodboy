@@ -1,15 +1,23 @@
 import { InlineConfirm } from '@goodboy/ui';
 import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
+import { RESOLVER_ACTION_BUSY_LABEL } from '../../resolverActionBusyLabel';
 import type { ResolverAction } from '../../resolverActions';
 
 type Props = {
   readonly action: ResolverAction;
   readonly className?: string;
+  readonly isBusy?: boolean;
   readonly onConfirm: () => Promise<void>;
   readonly onCancel: () => void;
 };
 
-export const ResolverConfirm = ({ action, className, onConfirm, onCancel }: Props) => {
+export const ResolverConfirm = ({
+  action,
+  className,
+  isBusy = false,
+  onConfirm,
+  onCancel,
+}: Props) => {
   if (action.confirm === null) {
     return null;
   }
@@ -21,7 +29,8 @@ export const ResolverConfirm = ({ action, className, onConfirm, onCancel }: Prop
       icon={<Icon size={12} aria-hidden />}
       title={action.confirm.title}
       description={action.confirm.description}
-      confirmLabel={action.confirm.confirmLabel}
+      confirmLabel={isBusy ? RESOLVER_ACTION_BUSY_LABEL[action.kind] : action.confirm.confirmLabel}
+      isBusy={isBusy}
       className={className}
       onConfirm={onConfirm}
       onCancel={onCancel}

@@ -29,6 +29,6 @@ describe('InspectorSplit', () => {
     );
 
     expect(screen.getByText('Inspector content').parentElement?.style.width).toBe('320px');
-    expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
+    expect(screen.getByRole('separator', { name: 'Resize inspector panel' })).toBeDefined();
   });
 });

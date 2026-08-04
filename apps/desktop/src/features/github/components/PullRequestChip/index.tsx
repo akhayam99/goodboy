@@ -122,7 +122,7 @@ export const PullRequestChip = ({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em]',
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium uppercase tracking-[0.06em]',
         meta.textClass,
         meta.bgClass,
         className,

@@ -15,7 +15,7 @@ export const WorkflowRunAsk = ({ goal, processText }: Props) => {
   }
 
   return (
-    <section aria-label="what you asked for" className="flex flex-col gap-2">
+    <section aria-label="What you asked for" className="flex flex-col gap-2">
       <SectionHeader label="Goal" />
       {goal !== '' ? (
         <Markdown text={goal} className="text-xs leading-relaxed text-foreground" />
@@ -30,7 +30,7 @@ export const WorkflowRunAsk = ({ goal, processText }: Props) => {
             type="button"
             onClick={() => setProcessOpen((open) => !open)}
             aria-expanded={processOpen}
-            className="flex items-center gap-1 self-start rounded text-2xs text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-1 self-start rounded-md text-2xs text-muted-foreground transition-colors hover:text-foreground"
           >
             {processOpen ? (
               <ChevronDown size={11} aria-hidden className="shrink-0" />

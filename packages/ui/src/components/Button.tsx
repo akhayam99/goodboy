@@ -1,4 +1,5 @@
 import type { ComponentProps } from 'react';
+import { Loader2 } from 'lucide-react';
 import { cn } from '../cn';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'warning';
@@ -8,6 +9,8 @@ export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   type?: 'button' | 'submit' | 'reset';
+  isBusy?: boolean;
+  busyLabel?: string;
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -23,16 +26,27 @@ const sizeClasses: Record<ButtonSize, string> = {
   md: 'h-8 px-3 text-sm',
 };
 
+const spinnerSize: Record<ButtonSize, number> = {
+  sm: 11,
+  md: 13,
+};
+
 export const Button = ({
   variant = 'primary',
   size = 'md',
   type = 'button',
+  isBusy = false,
+  busyLabel,
+  disabled = false,
   className,
+  children,
   ...rest
 }: ButtonProps) => {
   return (
     <button
       type={type}
+      disabled={disabled || isBusy}
+      aria-busy={isBusy ? true : undefined}
       className={cn(
         'inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
         variantClasses[variant],
@@ -40,6 +54,19 @@ export const Button = ({
         className,
       )}
       {...rest}
-    />
+    >
+      {isBusy ? (
+        <>
+          <Loader2
+            size={spinnerSize[size]}
+            aria-hidden
+            className="motion-safe:animate-spin opacity-80"
+          />
+          {busyLabel ?? children}
+        </>
+      ) : (
+        children
+      )}
+    </button>
   );
 };

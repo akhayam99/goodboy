@@ -66,8 +66,8 @@ function AttachmentChip({
     <button
       type="button"
       onClick={onRemove}
-      title={`remove ${attachment.fileName}`}
-      aria-label={`remove ${attachment.fileName}`}
+      title={`Remove ${attachment.fileName}`}
+      aria-label={`Remove ${attachment.fileName}`}
       className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity hover:bg-foreground group-hover:opacity-100"
     >
       <X size={10} aria-hidden />
@@ -147,8 +147,8 @@ function ImageThumb({
       <button
         type="button"
         onClick={() => setPreviewOpen(true)}
-        title={`preview ${attachment.fileName}`}
-        aria-label={`preview ${attachment.fileName}`}
+        title={`Preview ${attachment.fileName}`}
+        aria-label={`Preview ${attachment.fileName}`}
         className="block h-full w-full cursor-zoom-in"
       >
         <img src={src} alt={attachment.fileName} className="h-full w-full object-cover" />

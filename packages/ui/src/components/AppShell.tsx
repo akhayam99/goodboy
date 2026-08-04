@@ -201,7 +201,7 @@ export const AppShell = ({
                 max={LEFT_SIDEBAR_MAX}
                 onChange={setLeftWidth}
                 onReset={() => setLeftWidth(LEFT_SIDEBAR_DEFAULT)}
-                ariaLabel="resize left sidebar"
+                ariaLabel="Resize left sidebar"
               />
             )}
           </div>
@@ -222,7 +222,7 @@ export const AppShell = ({
                 onChange={setRightWidth}
                 onReset={() => setRightWidth(RIGHT_SIDEBAR_DEFAULT)}
                 side="right"
-                ariaLabel="resize right sidebar"
+                ariaLabel="Resize right sidebar"
               />
             )}
           </div>

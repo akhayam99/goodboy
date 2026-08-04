@@ -174,7 +174,7 @@ vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/SlotPane', () => ({ SlotPane: () => null }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
-vi.mock('./parts/PaneShell', () => ({
+vi.mock('../../../../shared/components/PaneShell', () => ({
   PaneShell: ({ title, meta, children }: PaneShellMockProps) => (
     <div>
       <h1>{title}</h1>
@@ -257,7 +257,7 @@ describe('SessionWorkspace agent overlay', () => {
     ).toBe(true);
     expect(screen.queryByTestId('agents-lane')).toBeNull();
     expect(screen.queryByTestId('agents-section')).toBeNull();
-    expect(screen.queryByRole('separator', { name: 'resize agent inspector' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
 
   it('keeps workflow chat full-width when an ad-hoc agent is selected', () => {
@@ -274,7 +274,7 @@ describe('SessionWorkspace agent overlay', () => {
 
     expect(screen.getByTestId('chat-view')).toBeDefined();
     expect(screen.queryByTestId('workflow-step-inspector')).toBeNull();
-    expect(screen.queryByRole('separator', { name: 'resize workflow step inspector' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize workflow step inspector' })).toBeNull();
   });
 
   it('hides the workflow breadcrumb for a standalone resolver', () => {
@@ -375,7 +375,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByTestId('agents-lane')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Agents' })).toHaveLength(1);
     expect(screen.getByTestId('agent-inspector').textContent).toBe(standaloneAgent.id);
-    expect(screen.getByRole('separator', { name: 'resize agent inspector' })).toBeDefined();
+    expect(screen.getByRole('separator', { name: 'Resize agent inspector' })).toBeDefined();
   });
 
   it('keeps the selected inspector open across the resolve chat overlay', () => {
@@ -445,12 +445,12 @@ describe('SessionWorkspace agent overlay', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [resolver] };
     const view = render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
+    expect(screen.getByRole('separator', { name: 'Resize inspector panel' })).toBeDefined();
 
     store.sessionPhaseRuns = { [SESSION_ID]: [] };
     view.rerender(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.queryByRole('separator', { name: 'resize inspector panel' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
   });
 });
 
@@ -546,20 +546,20 @@ describe('SessionWorkspace agents inspector', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [lastAgent] };
     const view = render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByRole('separator', { name: 'resize inspector panel' })).toBeDefined();
+    expect(screen.getByRole('separator', { name: 'Resize inspector panel' })).toBeDefined();
 
     store.activeLens = { [SESSION_ID]: 'questions' };
     store.sessionPhaseRuns = { [SESSION_ID]: [] };
     view.rerender(<SessionWorkspace session={session} isActive />);
 
     expect(
-      screen.queryByRole('separator', { name: 'resize inspector panel', hidden: true }),
+      screen.queryByRole('separator', { name: 'Resize inspector panel', hidden: true }),
     ).toBeNull();
 
     store.activeLens = { [SESSION_ID]: 'agents' };
     view.rerender(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.queryByRole('separator', { name: 'resize inspector panel' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
   });
 });
 

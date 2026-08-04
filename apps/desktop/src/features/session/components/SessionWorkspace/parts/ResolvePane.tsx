@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { CircleCheck } from 'lucide-react';
+import { CountToggle } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { ShowCompletedToggle } from '../../AgentLane/ShowCompletedToggle';
 import { ResolverAgentsLane } from '../../ResolverAgentsLane';
 import { AgentInspector } from '../../AgentInspector';
 import { InspectorSplit } from './InspectorSplit';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
 
 type Props = {
   readonly session: Session;
@@ -44,11 +46,17 @@ export const ResolvePane = ({
         description="Resolver agents spawned from pull request comments and diff selections."
         meta={meta}
         actions={
-          <ShowCompletedToggle
-            completedCount={completedCount}
-            isShown={showCompleted}
-            onChange={onShowCompletedChange}
-          />
+          <>
+            <WorkSurfaceBackButton sessionId={sessionId} />
+            <CountToggle
+              label="Completed"
+              count={completedCount}
+              isShown={showCompleted}
+              icon={CircleCheck}
+              itemsLabel="agents"
+              onChange={onShowCompletedChange}
+            />
+          </>
         }
       >
         <ResolverAgentsLane

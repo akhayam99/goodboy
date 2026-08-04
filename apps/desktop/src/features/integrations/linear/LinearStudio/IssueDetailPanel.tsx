@@ -139,7 +139,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
       key={issue.id}
       issue={issue}
       workspaceId={workspaceId}
-      rail={launch}
+      dock={launch}
       fit="fill"
     />
   );

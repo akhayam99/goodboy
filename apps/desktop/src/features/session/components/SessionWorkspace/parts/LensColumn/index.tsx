@@ -1,8 +1,10 @@
 import { useEffect, useMemo } from 'react';
-import { LayoutDashboard, Unplug } from 'lucide-react';
+import { Kanban, LayoutDashboard, Unplug } from 'lucide-react';
 import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
+import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
 import { classifyAgent, isStandaloneAgent } from '../../../../agent-kind';
+import { isAgentFinished } from '../../../../agent-lifecycle';
 import { isPrReviewSession } from '../../../../../../store/slices/session-view';
 import {
   EMPTY_ARRAY,
@@ -17,6 +19,7 @@ import {
 } from '../../../../../../store';
 import type { LensKind } from '../../../../../../store';
 import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
+import { useSessionSidebarCollapsed } from '../../../../../workspace/hooks/useSessionSidebarVisibility/collapsed';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
@@ -48,6 +51,9 @@ type AttentionParams = {
   readonly rows: ReadonlyArray<LensRow>;
 };
 
+const BOARD_ICON_BUTTON =
+  'inline-flex shrink-0 items-center justify-center rounded-md p-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+
 const groupWantsAttention = ({ rows }: AttentionParams): boolean => {
   return rows.some((row) => {
     if (row.dot != null || row.secondaryDot === true) {
@@ -70,6 +76,8 @@ export const LensColumn = ({
   isBranchless = false,
 }: Props) => {
   const sessionId = session.id as SessionId;
+  const isSidebarCollapsed = useSessionSidebarCollapsed();
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
   const loading = useAppStore((s) => s.sessionLoading[sessionId]);
   const fileVersions = useAppStore((s) => s.sessionFileVersions[sessionId] ?? EMPTY_ARRAY);
   const loadSessionFileVersions = useAppStore((s) => s.loadSessionFileVersions);
@@ -81,7 +89,7 @@ export const LensColumn = ({
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const nonResolverStandalone = useNonResolverStandaloneAgents(sessionId);
   const activeNonResolverStandalone = useMemo(
-    () => nonResolverStandalone.filter((agent) => agent.doneAt == null),
+    () => nonResolverStandalone.filter((agent) => !isAgentFinished({ agent })),
     [nonResolverStandalone],
   );
   const unreadLens = useSessionUnreadLens(sessionId);
@@ -197,7 +205,7 @@ export const LensColumn = ({
       glyph: 'github',
       tone: CONCEPT_TONE.pr,
       count: githubCount,
-      dot: hasGithubPr ? 'running' : undefined,
+      secondaryDot: hasGithubPr,
       isConnected: githubConnection.isConnected,
     },
     {
@@ -206,7 +214,7 @@ export const LensColumn = ({
       glyph: 'gitlab',
       tone: CONCEPT_TONE.gitlab,
       count: gitlabCount,
-      dot: hasGitlabMr ? 'running' : undefined,
+      secondaryDot: hasGitlabMr,
       isConnected: gitlabConnection.isConnected,
     },
     {
@@ -263,42 +271,57 @@ export const LensColumn = ({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ScrollFade className="min-h-0 flex-1">
-        <nav className="flex flex-col gap-4 px-2 py-3">
-          <button
-            type="button"
-            onClick={onSelectOverview}
-            aria-current={activeLens === null ? 'page' : undefined}
-            className={cn(
-              'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-              activeLens === null
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-            )}
-          >
-            <span className="flex w-5 flex-none items-center justify-center transition-colors">
-              <LayoutDashboard size={14} aria-hidden />
-            </span>
-            <span
+        <nav className={cn('flex flex-col gap-4', PANE_RHYTHM.navRail.body)}>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onSelectOverview}
+              aria-current={activeLens === null ? 'page' : undefined}
               className={cn(
-                'min-w-0 flex-1 truncate pr-12 text-[13px]',
-                activeLens === null && 'font-medium',
+                'group relative flex flex-1 items-center gap-2.5 rounded-md text-left transition-colors',
+                PANE_RHYTHM.navRail.row,
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                activeLens === null
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >
-              Overview
-            </span>
-            <KbdPill
-              aria-hidden
-              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
-            >
-              {shortcutGlyphs('lens.overview')}
-            </KbdPill>
-          </button>
+              <span className="flex w-5 flex-none items-center justify-center transition-colors">
+                <LayoutDashboard size={14} aria-hidden />
+              </span>
+              <span
+                className={cn(
+                  'min-w-0 flex-1 truncate pr-12 text-sm',
+                  activeLens === null && 'font-medium',
+                )}
+              >
+                Overview
+              </span>
+              <KbdPill
+                aria-hidden
+                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-3xs opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
+              >
+                {shortcutGlyphs('lens.overview')}
+              </KbdPill>
+            </button>
+            {isSidebarCollapsed ? (
+              <button
+                type="button"
+                onClick={() => void setCurrentSession(null)}
+                aria-label="Back to board"
+                title={`Back to board (${shortcutGlyphs('session.board')})`}
+                className={BOARD_ICON_BUTTON}
+              >
+                <Kanban size={14} aria-hidden />
+              </button>
+            ) : null}
+          </div>
           {visibleGroups.map((group) => (
             <div key={group.label} className="flex flex-col gap-0.5">
               <span
                 className={cn(
-                  'px-2 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] transition-colors',
+                  'pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
+                  PANE_RHYTHM.navRail.inset,
                   groupWantsAttention({ rows: group.rows })
                     ? 'text-foreground/80'
                     : 'text-muted-foreground/60',
@@ -337,7 +360,8 @@ export const LensColumn = ({
                       aria-label={row.glyph != null ? glyphRowLabel : undefined}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+                        'group relative flex items-center gap-2.5 rounded-md text-left transition-colors',
+                        PANE_RHYTHM.navRail.row,
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                         active
                           ? 'bg-muted text-foreground'
@@ -372,7 +396,7 @@ export const LensColumn = ({
                       ) : null}
                       <span
                         className={cn(
-                          'min-w-0 flex-1 truncate text-[13px]',
+                          'min-w-0 flex-1 truncate text-sm',
                           !hasBadge && 'pr-12',
                           active && 'font-medium',
                         )}
@@ -438,7 +462,7 @@ export const LensColumn = ({
                       ) : null}
                       <KbdPill
                         aria-hidden
-                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
+                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-3xs opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60"
                       >
                         {shortcut}
                       </KbdPill>

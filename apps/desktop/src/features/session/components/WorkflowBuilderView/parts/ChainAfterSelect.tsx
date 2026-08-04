@@ -25,7 +25,7 @@ export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => 
         type="button"
         disabled={disabled}
         onClick={toggle}
-        aria-label="run after which workflow"
+        aria-label="Run after which workflow"
         className={cn(
           'flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
           open
@@ -50,7 +50,7 @@ export const ChainAfterSelect = ({ runs, value, disabled, onChange }: Props) => 
       {open && (
         <Popover
           role="listbox"
-          ariaLabel="workflow to run after"
+          ariaLabel="Workflow to run after"
           className={cn(popupClassName, 'py-0.5')}
         >
           {runs.map(({ run, template }) => {

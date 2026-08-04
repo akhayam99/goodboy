@@ -45,8 +45,8 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
         <button
           type="button"
           onClick={() => collapse()}
-          title="hide, reopen from the sidebar"
-          aria-label="hide onboarding checklist"
+          title="Hide onboarding checklist (reopen from the sidebar)"
+          aria-label="Hide onboarding checklist"
           className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />
@@ -60,7 +60,7 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
           }
           return (
             <div key={group} className="flex flex-col gap-1">
-              <span className="px-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/50">
+              <span className="px-1.5 text-3xs font-medium uppercase tracking-[0.08em] text-muted-foreground/50">
                 {GROUP_LABEL[group]}
               </span>
               <ul className="flex flex-col gap-1">
@@ -78,7 +78,7 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
           );
         })}
       </div>
-      <p className="text-[10px] leading-snug text-muted-foreground/60">
+      <p className="text-3xs leading-snug text-muted-foreground/60">
         {progress.completedCount} of {progress.totalCount} steps done
       </p>
     </>
@@ -96,8 +96,8 @@ function CompletedBody() {
         <button
           type="button"
           onClick={() => finish()}
-          title="dismiss"
-          aria-label="dismiss onboarding"
+          title="Dismiss onboarding"
+          aria-label="Dismiss onboarding"
           className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />
@@ -154,7 +154,7 @@ export const OnboardingChip = () => {
         type="button"
         onClick={() => reopen()}
         title={`Setup, ${progress.completedCount} of ${progress.totalCount} done`}
-        aria-label="open onboarding checklist"
+        aria-label="Open onboarding checklist"
         className="inline-flex items-center gap-1"
       >
         {visibleSteps.map((step, i) => (

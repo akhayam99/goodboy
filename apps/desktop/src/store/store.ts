@@ -94,11 +94,22 @@ import { createSidebarSlice } from './slices/sidebar';
 import type { PanelSection } from './slices/sidebar/types';
 import { createSessionViewSlice } from './slices/session-view';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
-import type { DiffFocus, LensKind, SessionStudio } from './slices/session-view';
+import type {
+  DiffFocus,
+  LensKind,
+  SessionCreationId,
+  SessionCreationKind,
+  SessionStudio,
+} from './slices/session-view';
+import type { SpawnFocus } from './slices/session-view/spawnFocus';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { createPermissionsSlice } from './slices/permissions';
-import { createProvidersSlice, INITIAL_LIFECYCLE_MAP } from './slices/providers';
+import {
+  createProvidersSlice,
+  INITIAL_CONNECT_MAP,
+  INITIAL_LIFECYCLE_MAP,
+} from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
@@ -165,10 +176,11 @@ export type AppActions = {
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
   refreshProviders(): Promise<void>;
-  installProvider(providerId: ProviderId): Promise<void>;
-  loginProvider(providerId: ProviderId): Promise<void>;
   logoutProvider(providerId: ProviderId): Promise<void>;
   cancelProviderLifecycle(providerId: ProviderId): Promise<void>;
+  connectProvider(providerId: ProviderId): Promise<void>;
+  cancelProviderConnect(providerId: ProviderId): Promise<void>;
+  dismissProviderConnect(providerId: ProviderId): void;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   addCompositeWorkspace(input: {
     name?: string;
@@ -271,7 +283,7 @@ export type AppActions = {
     sessionId: SessionId,
     agentId: AgentId,
     explicitPlanId?: PlanId,
-    navigate?: boolean,
+    focus?: SpawnFocus,
   ): Promise<void>;
   advanceClusterImplementation(
     sessionId: SessionId,
@@ -393,6 +405,7 @@ export type AppActions = {
       sourceCommentUrl?: string;
       sourceKind?: AgentSourceKind;
       deferKickoff?: boolean;
+      focus?: SpawnFocus;
     },
   ): Promise<AgentId>;
   activateNextResolver(sessionId: SessionId): Promise<void>;
@@ -633,6 +646,12 @@ export type AppActions = {
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
+  openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
+  beginSessionCreation(
+    sessionId: SessionId,
+    creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
+  ): SessionCreationId;
+  endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
   closeTerminal(sessionId: SessionId): Promise<void>;
   addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;
@@ -672,6 +691,7 @@ export const initialState: AppState = {
     openrouter: null,
   }),
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
+  providerConnect: INITIAL_CONNECT_MAP,
   providerCredentials: [],
   hydrated: false,
   bootPhase: 'pending',

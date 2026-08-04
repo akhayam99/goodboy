@@ -31,6 +31,7 @@ import {
   cn,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import {
   PlannerClient,
   type PlannerOutput,
@@ -195,7 +196,6 @@ const initialStage = (d: WorkflowBuilderDraft | undefined): Stage => {
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
@@ -659,7 +659,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       if (usePresetAsIs) {
         await attachWorkflowToSession(session.id, selectedPreset!.id, attachOptions());
-        setActiveLens(session.id, 'workflows');
         showToast('success', `workflow started: ${selectedPreset!.name}`);
         handleClose();
         return;
@@ -697,7 +696,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       };
       const saved = await savePhaseTemplate(workflow);
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
-      setActiveLens(session.id, 'workflows');
       showToast('success', `workflow started: ${saved?.name ?? name}`);
       handleClose();
     } catch (err) {
@@ -784,7 +782,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           <ScrollFade className="min-h-0 flex-1">
             <div
               key={stage}
-              className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-7 motion-safe:animate-fade-in"
+              className={cn(
+                'flex max-w-2xl flex-col motion-safe:animate-fade-in',
+                PANE_RHYTHM.column,
+                PANE_RHYTHM.stack,
+                PANE_RHYTHM.body,
+              )}
             >
               {stage === 0 ? (
                 <>
@@ -814,7 +817,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               type="button"
                               onClick={onUndoGoal}
                               disabled={blocked || polishing}
-                              aria-label="undo goal change"
+                              aria-label="Undo goal change"
                               className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <Undo2 size={10} aria-hidden /> Undo
@@ -824,7 +827,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             type="button"
                             onClick={() => void onPolishGoal()}
                             disabled={blocked || polishing || goalText.trim().length === 0}
-                            aria-label="polish goal"
+                            aria-label="Polish goal"
                             className={cn(
                               'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
                               polishing && 'animate-border-pulse',
@@ -919,7 +922,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       label="Approach"
                       action={
                         <SegmentedTabs
-                          ariaLabel="workflow approach"
+                          ariaLabel="Workflow approach"
                           options={[
                             {
                               value: 'preset',
@@ -975,7 +978,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             <div
                               className="flex flex-col gap-1.5"
                               role="radiogroup"
-                              aria-label="presets"
+                              aria-label="Presets"
                             >
                               {presets.map((t) => {
                                 const tSteps = sortedSteps(t);
@@ -1006,12 +1009,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                         <span className="min-w-0 truncate text-xs font-medium text-foreground">
                                           {t.name}
                                         </span>
-                                        <span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px] tabular-nums text-muted-foreground">
+                                        <span className="shrink-0 rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground">
                                           {tSteps.length}
                                         </span>
                                       </span>
                                       {desc ? (
-                                        <span className="truncate text-[10px] leading-snug text-muted-foreground/70">
+                                        <span className="truncate text-3xs leading-snug text-muted-foreground/70">
                                           {desc}
                                         </span>
                                       ) : null}
@@ -1021,7 +1024,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                                         <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
                                       ))}
                                       {kinds.length > shown.length ? (
-                                        <span className="text-[10px] text-muted-foreground">
+                                        <span className="text-3xs text-muted-foreground">
                                           +{kinds.length - shown.length}
                                         </span>
                                       ) : null}
@@ -1086,7 +1089,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <div className="flex justify-end px-1">
                             <div className="w-64">
                               <RoutingPicker
-                                ariaLabel="planner routing"
+                                ariaLabel="Planner routing"
                                 connectedProviders={connectedProviders}
                                 provider={plannerProviderOverride}
                                 model={plannerModelOverride}
@@ -1182,7 +1185,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             {stepCount} step{stepCount === 1 ? '' : 's'}
                           </span>
                         </div>
-                        <ol className="flex flex-col" aria-label="workflow steps">
+                        <ol className="flex flex-col" aria-label="Workflow steps">
                           {steps.map((st, i) => (
                             <Fragment key={st.key}>
                               <StepFlowConnector
@@ -1387,7 +1390,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           <Divider />
 
           <footer className="shrink-0">
-            <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-6 py-4">
+            <div
+              className={cn(
+                'flex max-w-2xl items-center justify-between gap-3',
+                PANE_RHYTHM.column,
+                PANE_RHYTHM.dock,
+              )}
+            >
               <div className="flex min-w-0 items-center gap-2">
                 {!draftEmpty ? (
                   <Button
@@ -1395,7 +1404,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     size="md"
                     onClick={resetDraft}
                     disabled={busy}
-                    aria-label="reset workflow draft"
+                    aria-label="Reset workflow draft"
                     className="gap-1.5 text-muted-foreground"
                   >
                     <RotateCcw size={14} aria-hidden />

@@ -282,7 +282,7 @@ export const RoutingPicker = ({
           title={
             defaultSummary != null ? `reset to default (${defaultSummary})` : 'reset to default'
           }
-          aria-label="reset routing override"
+          aria-label="Reset routing override"
           className="shrink-0 rounded-full p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
         >
           <RotateCcw size={10} aria-hidden />

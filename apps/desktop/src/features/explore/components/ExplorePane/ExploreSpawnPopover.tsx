@@ -90,6 +90,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
         model: config.model,
         ...(config.provider !== '' && { provider: config.provider }),
         effort: config.effort,
+        focus: 'agent',
       });
       close();
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
@@ -114,7 +115,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel={`ask an agent about ${entry.name}`}
+            ariaLabel={`Ask an agent about ${entry.name}`}
             className={cn(popupClassName, 'flex flex-col gap-3 p-3')}
             style={popupStyle}
           >

@@ -9,4 +9,5 @@ export const createInitialSessionViewState = ({}: Params) => ({
   workflowExpand: {},
   focusedWorkflowRunId: {},
   diffFocus: {},
+  sessionCreations: {},
 });

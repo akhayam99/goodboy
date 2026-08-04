@@ -66,7 +66,7 @@ export const ScoutSubtree = ({
         scouts {doneCount}/{children.length}
         {!expanded && unreadCount > 0 ? (
           <span
-            className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
+            className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-3xs font-medium text-warning"
             title={`${unreadCount} scout ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
           >
             <span aria-hidden className="size-1 rounded-full bg-warning" />

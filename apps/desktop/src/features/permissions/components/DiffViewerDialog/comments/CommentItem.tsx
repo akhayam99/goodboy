@@ -40,16 +40,14 @@ export const CommentItem = ({
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-[9px] font-semibold uppercase text-muted-foreground"
+          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-3xs font-semibold uppercase text-muted-foreground"
         >
           ME
         </span>
-        <span className="text-[11px] font-medium text-foreground">you</span>
-        <span className="text-[10px] text-muted-foreground/70">
-          {relativeTime(comment.createdAt)}
-        </span>
+        <span className="text-2xs font-medium text-foreground">you</span>
+        <span className="text-3xs text-muted-foreground/70">{relativeTime(comment.createdAt)}</span>
         {statusPill ? (
-          <span className={cn('rounded-full px-1.5 py-0.5 text-[9px] font-medium', statusPill.cls)}>
+          <span className={cn('rounded-full px-1.5 py-0.5 text-3xs font-medium', statusPill.cls)}>
             {statusPill.label}
           </span>
         ) : null}
@@ -58,8 +56,8 @@ export const CommentItem = ({
             <button
               type="button"
               onClick={() => onResolve(comment.id)}
-              title="mark resolved"
-              aria-label="resolve"
+              title="Mark resolved"
+              aria-label="Mark resolved"
               className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-success"
             >
               <Check size={11} />
@@ -69,8 +67,8 @@ export const CommentItem = ({
             <button
               type="button"
               onClick={() => onReopen(comment.id)}
-              title="reopen note"
-              aria-label="reopen"
+              title="Reopen note"
+              aria-label="Reopen note"
               className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-warning"
             >
               <RotateCcw size={11} />
@@ -79,8 +77,8 @@ export const CommentItem = ({
           <button
             type="button"
             onClick={() => onDelete(comment.id)}
-            title="delete"
-            aria-label="delete"
+            title="Delete"
+            aria-label="Delete"
             className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
           >
             <Trash2 size={11} />
@@ -95,7 +93,7 @@ export const CommentItem = ({
         )}
       </p>
       {comment.status === 'consumed' && (
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-3xs text-muted-foreground">
           {agentName && comment.consumedByAgentId ? (
             <>
               <span>consumed by</span>

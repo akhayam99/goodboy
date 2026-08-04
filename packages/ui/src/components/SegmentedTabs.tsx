@@ -86,7 +86,6 @@ export const SegmentedTabs = <T extends string>({
       className={cn(
         'gap-1 rounded-lg border border-border-soft/60 bg-subtle/30 p-1',
         fill ? 'grid w-full' : 'inline-flex items-center',
-        isMedium && 'gap-1.5 p-1.5',
         className,
       )}
       style={gridStyle}
@@ -111,10 +110,8 @@ export const SegmentedTabs = <T extends string>({
             onKeyDown={(event) => onKeyDown({ event, index })}
             style={activeStyle}
             className={cn(
-              'relative flex items-center justify-center rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-              isMedium
-                ? 'gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold'
-                : 'gap-1.5 px-2 py-0.5 text-xs',
+              'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              isMedium ? 'px-3 py-2 text-sm font-semibold' : 'px-2.5 py-1 text-xs',
               isActive
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
@@ -129,12 +126,15 @@ export const SegmentedTabs = <T extends string>({
                 <Icon size={13} aria-hidden className="shrink-0" />
               )
             ) : null}
-            <span
-              className={cn('min-w-0', option.hint != null && isMedium && 'flex flex-col gap-0.5')}
-            >
+            <span className={cn('min-w-0', option.hint != null && 'flex flex-col gap-0.5')}>
               <span className="block truncate">{option.label}</span>
-              {option.hint != null && isMedium ? (
-                <span className="block truncate text-2xs font-normal text-muted-foreground">
+              {option.hint != null ? (
+                <span
+                  className={cn(
+                    'block truncate font-normal text-muted-foreground',
+                    isMedium ? 'text-2xs' : 'text-3xs',
+                  )}
+                >
                   {option.hint}
                 </span>
               ) : null}

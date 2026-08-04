@@ -6,6 +6,7 @@ import { InspectorHeader } from './InspectorSplit/InspectorHeader';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '../../../../../shared/components/CopyButton';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 
 type HistoryEntryProps = {
   readonly entry: ContextSlotHistoryEntry;
@@ -45,8 +46,8 @@ const HistoryEntry = ({
           <button
             type="button"
             onClick={() => onRestore(entry)}
-            title="restore this version"
-            aria-label="restore"
+            title="Restore this version"
+            aria-label="Restore this version"
             className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <RotateCcw size={10} aria-hidden />
@@ -59,7 +60,7 @@ const HistoryEntry = ({
         onClick={onToggle}
         className="text-left"
         aria-expanded={expanded}
-        aria-label={expanded ? 'collapse entry' : 'expand entry'}
+        aria-label={expanded ? 'Collapse entry' : 'Expand entry'}
       >
         {expanded ? (
           <div className="rounded text-xs leading-relaxed text-foreground">
@@ -103,11 +104,11 @@ export const SlotHistoryPanel = ({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <InspectorHeader
-        title={`history: ${label}`}
+        title={`History: ${label}`}
         closeLabel="close history panel"
         onClose={onClose}
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
         {entries.length === 0 ? (
           <EmptyState
             icon={CONCEPT_ICONS.sessionSummary}

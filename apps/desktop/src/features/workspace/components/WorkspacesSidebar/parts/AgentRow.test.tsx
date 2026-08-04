@@ -51,7 +51,11 @@ const markDone = vi.fn();
 const remove = vi.fn();
 const inspect = vi.fn();
 
-const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
+const renderRow = (
+  isSelected: boolean,
+  runOverride: Partial<Agent> = {},
+  density?: 'lane' | 'sidebar',
+) =>
   render(
     <ul>
       <AgentRow
@@ -80,6 +84,7 @@ const renderRow = (isSelected: boolean, runOverride: Partial<Agent> = {}) =>
         onDelete={remove}
         onInspect={inspect}
         onMarkDone={markDone}
+        density={density}
       />
     </ul>,
   );
@@ -100,37 +105,36 @@ describe('AgentRow', () => {
     expect(screen.getByText(/ctx \d+%/)).toBeTruthy();
   });
 
-  it('shows the token split and the duration without being selected', () => {
-    renderRow(false);
-    expect(screen.getByTestId('agent-metrics-block')).toBeTruthy();
-    expect(screen.getByTitle('in: 100 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle('out: 20 tokens (cumulative)')).toBeTruthy();
-    expect(screen.getByTitle(/^started .+2026/)).toBeTruthy();
+  it('keeps duration and last update on the one fact line', () => {
+    const meta = within(renderRow(false).getByTestId('agent-metrics-inline'));
+    expect(meta.getByTitle(/^Started .+2026/)).toBeTruthy();
+    expect(meta.getByText(/^updated /)).toBeTruthy();
   });
 
-  it('shows the per-provider context gauge without being selected', () => {
+  it('leaves the token split and the context gauge to the inspector', () => {
     const { container } = renderRow(false);
-    expect(container.querySelectorAll('[title*="context:"]').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
+    expect(screen.queryByTitle('in: 100 tokens (cumulative)')).toBeNull();
+    expect(container.querySelector('[title*="last turn context:"]')).toBeNull();
   });
 
   it('includes cache tokens in the last-turn tooltip total', () => {
     renderRow(false);
-    expect(screen.getAllByTitle(/last turn: 62 tokens/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/Last turn: 62 tokens/).length).toBeGreaterThan(0);
   });
 
   it('prints cost, turns and duration exactly once', () => {
-    const { container } = renderRow(false);
-    expect(container.querySelectorAll('[title^="in: "]')).toHaveLength(1);
-    expect(container.querySelectorAll('[title^="out: "]')).toHaveLength(1);
+    renderRow(false);
     expect(screen.getAllByText('3t')).toHaveLength(1);
-    expect(screen.getAllByTitle(/^started .+2026/)).toHaveLength(1);
+    expect(screen.getAllByTitle(/^Started .+2026/)).toHaveLength(1);
+    expect(screen.getAllByText(/^updated /)).toHaveLength(1);
   });
 
   it('shows the same metrics when selected', () => {
     renderRow(true);
     expect(screen.getByText('Sonnet 4.5')).toBeTruthy();
     expect(screen.getAllByTestId('agent-metrics-inline')).toHaveLength(1);
-    expect(screen.getAllByTestId('agent-metrics-block')).toHaveLength(1);
+    expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
   });
 
   it('marks an unread row seen after the hover dwell', () => {
@@ -162,19 +166,19 @@ describe('AgentRow', () => {
 
   it('offers mark done for a stopped standalone agent', () => {
     renderRow(false);
-    fireEvent.click(screen.getByRole('button', { name: 'mark agent done' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mark agent done' }));
     expect(markDone).toHaveBeenCalledOnce();
   });
 
   it('hides mark done while the agent is running', () => {
     renderRow(false, { status: 'running' });
-    expect(screen.queryByRole('button', { name: 'mark agent done' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mark agent done' })).toBeNull();
   });
 
   it('keeps the row actions mounted at rest and reveals them by opacity', () => {
     renderRow(false);
-    const remove = screen.getByRole('button', { name: 'delete agent' });
-    const done = screen.getByRole('button', { name: 'mark agent done' });
+    const remove = screen.getByRole('button', { name: 'Delete agent' });
+    const done = screen.getByRole('button', { name: 'Mark agent done' });
     const details = screen.getByRole('button', { name: 'Toggle agent details' });
     const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
     const lifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
@@ -206,7 +210,7 @@ describe('AgentRow', () => {
     expect(lifecycleIndex).toBeGreaterThan(navigationIndex);
     expect(screen.queryByRole('group', { name: 'Delete agent?' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'delete agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete agent' }));
 
     const panel = screen.getByRole('group', { name: 'Delete agent?' });
     const armedNavigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
@@ -224,12 +228,27 @@ describe('AgentRow', () => {
 
   it('deletes only after the confirm step', () => {
     renderRow(false);
-    fireEvent.click(screen.getByRole('button', { name: 'delete agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete agent' }));
     expect(remove).not.toHaveBeenCalled();
 
     const panel = screen.getByRole('group', { name: 'Delete agent?' });
     fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
     expect(remove).toHaveBeenCalledOnce();
+  });
+
+  it('drops mark done and delete from the lane density card, the inspector footer owns them there', () => {
+    renderRow(false, {}, 'lane');
+
+    expect(screen.queryByRole('button', { name: 'Mark agent done' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete agent' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Toggle agent details' })).toBeTruthy();
+  });
+
+  it('keeps mark done and delete on the sidebar density card', () => {
+    renderRow(false, {}, 'sidebar');
+
+    expect(screen.getByRole('button', { name: 'Mark agent done' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete agent' })).toBeTruthy();
   });
 });
 
@@ -244,6 +263,6 @@ describe('AgentRow numbering', () => {
   it('keeps the badge and the row tooltip on the same number', () => {
     renderRow(false, { ordinal: 3 });
     expect(screen.getByText('4.')).toBeDefined();
-    expect(screen.getAllByTitle(/agent 4/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/Agent 4/).length).toBeGreaterThan(0);
   });
 });

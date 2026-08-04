@@ -1,4 +1,6 @@
 import type {
+  AgentId,
+  IsoDateTime,
   PlanId,
   Session,
   SessionGroupKey,
@@ -51,10 +53,9 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'gitlab_issues',
 ]);
 
-export type DiffFocus = {
-  readonly sha: string | null;
-  readonly path: string | null;
-};
+export type DiffFocus =
+  | { readonly kind: 'commit'; readonly sha: string; readonly path: string | null }
+  | { readonly kind: 'working'; readonly path: string | null };
 
 export type SessionStudio =
   | { readonly kind: 'workflow' }
@@ -84,9 +85,26 @@ export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   merged: 6,
 };
 
+export type WorkSurfacePosition = {
+  readonly lens: LensKind | null;
+  readonly agentId: AgentId | null;
+  readonly studio: SessionStudio | null;
+};
+
 export type LensHistory = {
-  readonly entries: ReadonlyArray<LensKind | null>;
+  readonly entries: ReadonlyArray<WorkSurfacePosition>;
   readonly index: number;
+};
+
+export type SessionCreationKind = 'agent' | 'workflow';
+
+export type SessionCreationId = string;
+
+export type SessionCreation = {
+  readonly id: SessionCreationId;
+  readonly kind: SessionCreationKind;
+  readonly label: string | null;
+  readonly startedAt: IsoDateTime;
 };
 
 type SessionViewSliceState = {
@@ -98,6 +116,7 @@ type SessionViewSliceState = {
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
+  readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
 };
 
 type SessionViewSliceActions = {
@@ -111,6 +130,12 @@ type SessionViewSliceActions = {
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
+  openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
+  beginSessionCreation(
+    sessionId: SessionId,
+    creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
+  ): SessionCreationId;
+  endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
 };
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;

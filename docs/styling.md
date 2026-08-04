@@ -189,3 +189,75 @@ In the chat transcript that container is
 inside the body draws its own box: a labelled section is a `2xs` uppercase muted
 label plus its content, never a nested card. Outside the transcript the same rule is
 carried by `Collapsible` in `@goodboy/ui`.
+
+## Compaction: lists stay dense, artifacts don't
+
+Sourced from a density audit that found the same defects repeating everywhere a
+list, popover, or card row appeared: unbounded prose, four-deep item stacks,
+terminal state crowding the top, a wall of actions shown at all times when hover
+would do, placeholder cards where nothing needed saying, and type sizes invented on
+the spot. Six rules, phrased so a diff can be checked against them directly.
+
+### Prose clamps in lists
+
+Any user, model, or bot prose rendered inside a list, popover, or card row goes
+through a line clamp (3 lines or fewer, e.g. `line-clamp-3`) or a collapsed
+disclosure. An unbounded markdown render or `whitespace-pre-wrap` is legal only in a
+pane or detail view whose title names that content, see the exemption below.
+
+### Three tiers per list item
+
+A list item renders at most a title, one status or chip row, and one `MetaRow`. A
+fourth stacked block means the item needs a focused view, not another row. `RailCard`
+is the reference shape: `title` (clamped), `status` (a wrapped chip row), `meta` (a
+`MetaRow`), `trailing` (one action plus the chevron). Lists render through
+`RailCard`, `SelectableRow`, or `LinkedWorkRow`; a bespoke `flex-col` with four or
+more children inside a `map()` is a review flag.
+
+### Terminal state hides behind a count
+
+Completed, answered, resolved, dismissed, and discarded items never render inline by
+default. They sit behind a header toggle with a count (the `CountToggle` primitive from
+`@goodboy/ui`, which takes the noun as an `itemsLabel` prop so each caller states its own)
+or a collapsed disclosure row.
+
+### One visible action per row
+
+A repeated row shows at most one always-visible action plus the chevron. Everything
+else is revealed on hover and focus (`CardAction`'s `reveal` prop, gated on
+`group-hover`/`group-focus-within`), or lives in the focused view.
+
+### Empty sections collapse
+
+Inside a composite page, a section with nothing to show renders its header at most,
+never a placeholder card. Only a full pane may show an `EmptyState`.
+
+### No off-scale type
+
+Any `text-[Npx]` is rejected; the scale is `text-3xs` through `text-xl`
+(`3xs` 10px, `2xs` 11px, `xs` 12px, `sm` 14px, `base` 15px, `lg` 17px, `xl`
+20px). The one exception is relative `em` sizing inside prose/markdown
+rendering (`InlineCode`, `CostBadge`, `Markdown`'s inline chips and code
+spans), where the size is intentionally proportional to a parent font size
+that varies by call site, not a fixed pixel value.
+
+### The exemption: never compress the artifact
+
+None of the rules above are absolute; a rule with no stated exception gets
+misapplied. The governing line: compress metadata, chrome, and history without
+limit; never compress the artifact the user navigated to.
+
+| surface                                                 | why it's exempt                                       |
+| ------------------------------------------------------- | ----------------------------------------------------- |
+| the plan body in Plan Studio                            | the plan is the artifact the user opened              |
+| `SlotPane` documents (goal, decisions, session summary) | the pane's own title already names the content        |
+| the PR description in `PrOverview`                      | click-to-edit; a clamp fights the editor              |
+| the question text in `QuestionCard`                     | clamping the thing being decided causes wrong answers |
+| the diff viewer                                         | the diff is the artifact                              |
+| the terminal dock                                       | raw process output, not summarizable                  |
+| the Explore preview contents                            | file contents, not metadata                           |
+| Sentry stack traces and breadcrumbs                     | the trace is the artifact under investigation         |
+| GuideStudio                                             | the guide body is the artifact                        |
+
+Bounded scroll regions on those are fine (`ScrollFade`, per Scroll edges fade above);
+truncation is not.

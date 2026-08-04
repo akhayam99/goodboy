@@ -35,14 +35,14 @@ export const LinkTicketPopover = ({ sessionId, workspaceId, provider, providerLa
     <div ref={containerRef} className="relative min-w-0">
       <Button variant="secondary" size="sm" onClick={toggle}>
         <Plus size={13} aria-hidden />
-        Link ticket
+        Link issue
       </Button>
       <DropdownPortal portal={portal} portalTarget={portalTarget}>
         {open && (
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel={`link ${providerLabel} ticket`}
+            ariaLabel={`Link ${providerLabel} issue`}
             className={cn(popupClassName, 'p-3')}
             style={popupStyle}
           >

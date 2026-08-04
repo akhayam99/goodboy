@@ -112,7 +112,7 @@ export function useChatPrefix({
     setValue('');
     setShowPopover(false);
     try {
-      await spawnAgent(session.id, {});
+      await spawnAgent(session.id, { focus: 'agent' });
       showToast('success', 'new agent spawned');
     } catch (err) {
       showToast('error', formatError(err));

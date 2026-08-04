@@ -13,13 +13,13 @@ import { AgentCardAction } from '../../../../../features/session/components/Agen
 import { AgentStatusIcon } from '../../../../../features/session/components/AgentCard/AgentStatusIcon';
 import { AgentCardTitle } from '../../../../../features/session/components/AgentCard/AgentCardTitle';
 import { agentCardTone } from '../../../../../features/session/components/AgentCard/agentCardTone';
+import type { AgentCardDensity } from '../../../../../features/session/components/AgentCard/agentCardDensity';
 import {
   AgentMetrics,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetrics';
-import { AgentLastUpdate } from '../../../../../shared/components/AgentLastUpdate';
 import { useHoverMarkViewed } from '../../../../../features/session/hooks/useHoverMarkViewed';
-import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
+import type { ProviderContextUsage } from './ContextWindowBar';
 
 type Props = {
   readonly run: Agent;
@@ -37,6 +37,7 @@ type Props = {
   readonly onRenameCommit: (name: string) => void;
   readonly onRenameCancel: () => void;
   readonly onDelete: () => void;
+  readonly density?: AgentCardDensity;
   readonly isInspected?: boolean;
   readonly isMuted?: boolean;
   readonly onInspect?: () => void;
@@ -59,6 +60,7 @@ export const AgentRow = ({
   onRenameCommit,
   onRenameCancel,
   onDelete,
+  density = 'sidebar',
   isInspected = false,
   isMuted = false,
   onInspect,
@@ -75,14 +77,14 @@ export const AgentRow = ({
     telemetry == null
       ? null
       : lastTurnContextTokens == null
-        ? `last turn: ${formatCost(telemetry.estimatedCostUsd)}`
-        : `last turn: ${lastTurnContextTokens} tokens · ${formatCost(telemetry.estimatedCostUsd)}`;
+        ? `Last turn: ${formatCost(telemetry.estimatedCostUsd)}`
+        : `Last turn: ${lastTurnContextTokens} tokens · ${formatCost(telemetry.estimatedCostUsd)}`;
   const titleParts = [
-    `agent ${run.ordinal + 1}`,
-    `status: ${run.status}`,
-    isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
-    telemetry != null ? `provider: ${telemetry.provider}` : null,
-    telemetry != null ? `model: ${modelLabel(telemetry.model)}` : null,
+    `Agent ${run.ordinal + 1}`,
+    `Status: ${run.status}`,
+    isSelected ? 'Selected: chat shows this agent' : 'Click to switch chat to this agent',
+    telemetry != null ? `Provider: ${telemetry.provider}` : null,
+    telemetry != null ? `Model: ${modelLabel(telemetry.model)}` : null,
     lastTurn,
   ].filter((part): part is string => part !== null);
   const isMarkDoneAvailable =
@@ -100,6 +102,7 @@ export const AgentRow = ({
         isRunning: run.status === 'running',
         hasUnread,
       })}
+      density={density}
       isSelected={isSelected}
       isInspected={isInspected}
       isMuted={isMuted}
@@ -117,10 +120,6 @@ export const AgentRow = ({
           >
             {run.ordinal + 1}.
           </span>
-          <AgentKindChip
-            kind={kind}
-            title={`agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
-          />
           <AgentStatusIcon status={run.status} />
         </>
       }
@@ -129,6 +128,7 @@ export const AgentRow = ({
           name={run.name}
           isEditing={isEditing}
           isSelected={isSelected}
+          density={density}
           onRenameCommit={onRenameCommit}
           onRenameCancel={onRenameCancel}
         />
@@ -147,29 +147,48 @@ export const AgentRow = ({
         )
       }
       lifecycleActions={
-        <>
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            {isMarkDoneAvailable && (
+        density === 'sidebar' ? (
+          <>
+            <span className="flex size-6 shrink-0 items-center justify-center">
+              {isMarkDoneAvailable && (
+                <AgentCardAction
+                  icon={CircleCheck}
+                  label="Mark agent done"
+                  tone="success"
+                  reveal
+                  onClick={() => onMarkDone?.()}
+                />
+              )}
+            </span>
+            <span className="flex size-6 shrink-0 items-center justify-center">
               <AgentCardAction
-                icon={CircleCheck}
-                label="mark agent done"
-                tone="success"
-                reveal
-                onClick={() => onMarkDone?.()}
+                icon={Trash2}
+                label="Delete agent"
+                tone="danger"
+                highlighted={isConfirmingDelete}
+                reveal={!isConfirmingDelete}
+                onClick={() => setIsConfirmingDelete(true)}
               />
-            )}
-          </span>
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            <AgentCardAction
-              icon={Trash2}
-              label="delete agent"
-              tone="danger"
-              highlighted={isConfirmingDelete}
-              reveal={!isConfirmingDelete}
-              onClick={() => setIsConfirmingDelete(true)}
-            />
-          </span>
-        </>
+            </span>
+          </>
+        ) : undefined
+      }
+      status={
+        <AgentKindChip
+          kind={kind}
+          title={`Agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
+        />
+      }
+      meta={
+        <AgentMetrics
+          run={run}
+          telemetry={telemetry}
+          aggregate={aggregate}
+          contextUsage={contextUsage}
+          turns={turns}
+          turnsLoading={turnsLoading}
+          density="lane"
+        />
       }
       confirmation={
         isConfirmingDelete ? (
@@ -187,20 +206,6 @@ export const AgentRow = ({
           />
         ) : null
       }
-    >
-      <div className="flex flex-col gap-0.5">
-        <AgentMetrics
-          run={run}
-          telemetry={telemetry}
-          aggregate={aggregate}
-          contextUsage={contextUsage}
-          turns={turns}
-          turnsLoading={turnsLoading}
-          density="full"
-        />
-        <AgentLastUpdate agent={run} />
-        <ContextWindowBar usage={contextUsage} />
-      </div>
-    </AgentCard>
+    />
   );
 };

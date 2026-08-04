@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollFade, cn } from '@goodboy/ui';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { ScriptRunRecord } from '../../scripts';
+import { formatClockTime } from '../../../../shared/utils/formatClockTime';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
 
 type Props = {
@@ -34,7 +35,7 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
         {result !== null ? (
           <span className="text-2xs font-normal text-muted-foreground">
             exit {result.exitCode}
-            {completedAt !== undefined ? ` · ${new Date(completedAt).toLocaleTimeString()}` : ''}
+            {completedAt !== undefined ? ` · ${formatClockTime({ iso: completedAt })}` : ''}
           </span>
         ) : null}
       </button>

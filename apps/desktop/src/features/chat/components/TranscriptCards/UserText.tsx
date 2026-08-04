@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
-import { Markdown, Skeleton } from '@goodboy/ui';
+import { Markdown, MetaRow, Skeleton } from '@goodboy/ui';
 import type { MessageAttachment, ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
@@ -87,8 +87,8 @@ const AttachmentImage = ({ attachment, workingDir }: AttachmentImageProps) => {
       <button
         type="button"
         onClick={() => setPreviewOpen(true)}
-        title={`preview ${attachment.fileName}`}
-        aria-label={`preview ${attachment.fileName}`}
+        title={`Preview ${attachment.fileName}`}
+        aria-label={`Preview ${attachment.fileName}`}
         className="cursor-zoom-in"
       >
         <img
@@ -146,9 +146,7 @@ const AttachmentFileCard = ({ attachment, workingDir }: AttachmentFileCardProps)
       >
         <Icon size={16} aria-hidden className="shrink-0 text-muted-foreground" />
         <span className="truncate text-xs text-foreground/80">{attachment.fileName}</span>
-        {loading ? (
-          <span className="shrink-0 text-2xs text-muted-foreground">loading...</span>
-        ) : null}
+        {loading ? <Skeleton className="h-3 w-10 shrink-0 rounded" /> : null}
       </button>
       {previewOpen && src !== null ? (
         <ImageLightbox
@@ -191,9 +189,16 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
           <Markdown text={text} />
         </div>
       )}
-      <div className="flex items-center justify-end gap-1.5 text-2xs text-foreground/55">
-        {provider ? <ProviderFootnote provider={provider} model={model} /> : null}
-        <span className="font-mono">{formatHHMM(at)}</span>
+      <div className="flex items-center justify-end gap-1.5">
+        <MetaRow
+          items={[
+            provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
+            provider && model ? <span key="model">{modelLabel(model)}</span> : null,
+            <span key="time" className="font-mono">
+              {formatHHMM(at)}
+            </span>,
+          ]}
+        />
         {text.length > 0 && (
           <CopyButton
             value={text}
@@ -216,12 +221,11 @@ const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
   const label = PROVIDER_LABEL[provider];
   return (
     <span
-      className="mr-auto inline-flex items-center gap-1 text-foreground/45"
-      title={`sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
+      className="inline-flex items-center gap-1"
+      title={`Sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
     >
       <Icon size={11} aria-hidden style={{ color: brandColor(provider) }} />
       <span>{label}</span>
-      {model ? <span className="text-foreground/35">· {modelLabel(model)}</span> : null}
     </span>
   );
 };

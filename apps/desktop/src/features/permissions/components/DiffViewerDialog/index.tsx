@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Dialog } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { DiffFocus } from '../../../../store';
@@ -23,6 +24,10 @@ type DiffViewerDialogProps = DiffViewerContentProps & {
   open: boolean;
 };
 
+type DiffViewerPaneProps = DiffViewerContentProps & {
+  readonly paneActions?: ReactNode;
+};
+
 export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
   <Dialog
     open={open}
@@ -37,6 +42,6 @@ export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
   </Dialog>
 );
 
-export const DiffViewerPane = ({ onClose, ...rest }: DiffViewerContentProps) => (
+export const DiffViewerPane = ({ onClose, ...rest }: DiffViewerPaneProps) => (
   <DiffViewerContent {...rest} onClose={onClose} presentation="pane" showToolbarClose={false} />
 );

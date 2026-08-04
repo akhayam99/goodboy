@@ -42,8 +42,8 @@ export const FileRail = ({
             type="button"
             onClick={onToggle}
             className={TOOLBAR_ICON_BTN}
-            title={collapsed ? 'show file list' : 'hide file list'}
-            aria-label={collapsed ? 'show file list' : 'hide file list'}
+            title={collapsed ? 'Show file list' : 'Hide file list'}
+            aria-label={collapsed ? 'Show file list' : 'Hide file list'}
             aria-expanded={!collapsed}
           >
             {collapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}

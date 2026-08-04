@@ -104,12 +104,6 @@ function BootErrorRecovery({
 }) {
   const isDetectingCli = phase === 'detecting-cli' || phase === 'error';
 
-  const openLogs = useCallback(() => {
-    void openUrl('tauri://localhost/__log_dir__').catch(() => {
-      void openUrl('about:blank');
-    });
-  }, []);
-
   const openIssue = useCallback(() => {
     const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\``)}`;
     void openUrl(url);
@@ -131,7 +125,7 @@ function BootErrorRecovery({
   return (
     <div
       role="alert"
-      className="flex w-64 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 font-mono text-[11px]"
+      className="flex w-64 flex-col gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4 font-mono text-2xs"
     >
       <div className="flex flex-col gap-1">
         <span className="text-danger">✗ {category} failed</span>
@@ -158,14 +152,6 @@ function BootErrorRecovery({
             › skip provider detection
           </button>
         ) : null}
-
-        <button
-          type="button"
-          onClick={openLogs}
-          className="rounded border border-border px-3 py-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted"
-        >
-          › open logs
-        </button>
 
         <button
           type="button"

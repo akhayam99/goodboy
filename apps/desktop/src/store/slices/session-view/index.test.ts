@@ -608,6 +608,52 @@ describe('store contract', () => {
       expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
     });
 
+    it('lensGo restores the agent chat the user was on, not just its lens', async () => {
+      const store = await getStore();
+      store.setState({
+        sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: AGENT_ID })] },
+      } as never);
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+
+      store.getState().lensGo(SESSION_ID, -1);
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(store.getState().selectedAgentId[SESSION_ID]).toBe(AGENT_ID);
+    });
+
+    it('lensGo drops an agent that no longer exists and still restores its lens', async () => {
+      const store = await getStore();
+      store.setState({
+        sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: AGENT_ID })] },
+      } as never);
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [] } } as never);
+
+      store.getState().lensGo(SESSION_ID, -1);
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
+    });
+
+    it('lensGo does not push a new entry, so back and forward stay symmetric', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+      const before = store.getState().lensHistory[SESSION_ID]?.entries.length;
+
+      store.getState().lensGo(SESSION_ID, -1);
+      store.getState().lensGo(SESSION_ID, -1);
+
+      expect(store.getState().lensHistory[SESSION_ID]?.entries.length).toBe(before);
+      expect(store.getState().lensHistory[SESSION_ID]?.index).toBe(0);
+      store.getState().lensGo(SESSION_ID, 1);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('plans');
+    });
+
     it('selecting a new lens after going back truncates the forward history', async () => {
       const store = await getStore();
       store.getState().setActiveLens(SESSION_ID, 'agents');
@@ -653,11 +699,38 @@ describe('store contract', () => {
 
     it('setDiffFocus survives the switch to the files lens and dies on any other', async () => {
       const store = await getStore();
-      store.getState().setDiffFocus(SESSION_ID, { sha: 'abc1234', path: 'src/a.ts' });
+      store
+        .getState()
+        .setDiffFocus(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: 'src/a.ts' });
       store.getState().setActiveLens(SESSION_ID, 'files');
-      expect(store.getState().diffFocus[SESSION_ID]).toEqual({ sha: 'abc1234', path: 'src/a.ts' });
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({
+        kind: 'commit',
+        sha: 'abc1234',
+        path: 'src/a.ts',
+      });
       store.getState().setActiveLens(SESSION_ID, 'agents');
       expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
+    });
+
+    it('openDiffLens lands on the files lens with the commit focus still set', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
+      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({
+        kind: 'commit',
+        sha: 'abc1234',
+        path: null,
+      });
+    });
+
+    it('openDiffLens carries a working-tree focus and leaves a step to go back to', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'resolve');
+      store.getState().openDiffLens(SESSION_ID, { kind: 'working', path: null });
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
+      store.getState().lensGo(SESSION_ID, -1);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('resolve');
     });
 
     it('setSessionStudio(non-null) clears the selected agent', async () => {

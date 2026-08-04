@@ -15,6 +15,7 @@ import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { Sparkline } from '../../../../shared/components/Sparkline';
+import { formatInteger } from '../../../../shared/utils/formatInteger';
 
 type Props = {
   readonly cacheEfficiency: QueryResult<ReadonlyArray<CacheEfficiencyEntry>>;
@@ -44,11 +45,7 @@ export const EfficiencyPanel = ({
   const accepted = nudgeData?.find((entry) => entry.outcome === 'accepted')?.count ?? 0;
   const nudgeTotal = nudgeData?.reduce((sum, entry) => sum + entry.count, 0) ?? 0;
   return (
-    <StudioPanel
-      title="Efficiency"
-      subtitle="Token reuse, context growth, and right-sized runs"
-      maxWidthClass="max-w-5xl"
-    >
+    <StudioPanel title="Efficiency" subtitle="Token reuse, context growth, and right-sized runs">
       <ErrorStrip label="cache efficiency" error={cacheEfficiency.error} onRetry={onRetry} />
       <ErrorStrip label="context growth" error={contextGrowth.error} onRetry={onRetry} />
       <ErrorStrip label="turn distribution" error={turns.error} onRetry={onRetry} />
@@ -98,7 +95,7 @@ export const EfficiencyPanel = ({
         <StudioWidget label="context growth per turn" hint="latest 40 measured turns">
           <Sparkline
             values={context?.map((point) => point.contextTokens) ?? []}
-            formatMaximum={(maximum) => `${maximum.toLocaleString()} tokens`}
+            formatMaximum={(maximum) => `${formatInteger(maximum)} tokens`}
           />
         </StudioWidget>
         <StudioWidget label="turn distribution" hint={`${stats?.agents ?? 0} agents`}>

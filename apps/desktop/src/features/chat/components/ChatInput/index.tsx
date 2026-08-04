@@ -10,6 +10,7 @@ import { QuickActionsPopover } from '../../../quick-actions';
 import { ProviderUsagePill } from '../ProviderUsagePill';
 import { CostBadge } from '../../../providers/components/CostBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
@@ -252,7 +253,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setValue(content);
     await scope.recordScopeOutcome('accepted');
     try {
-      await spawnAgent(session.id, { kindOverride: target });
+      await spawnAgent(session.id, { kindOverride: target, focus: 'agent' });
     } catch {
       // ignore
     }
@@ -337,14 +338,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   };
 
   const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
-  const sendDisabledTitle = providerDisconnected ? 'sign in first' : undefined;
+  const sendDisabledTitle = providerDisconnected ? 'Sign in first' : undefined;
   const overrideDisabledTitle = !routing.allowOverride
     ? 'this session was created without per-turn routing overrides'
     : undefined;
 
   return (
     <div className="px-10 pb-4 pt-2">
-      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-2">
+      <div className={cn('flex flex-col gap-2', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}>
         {!isRunning && !providerDisconnected && (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
@@ -422,8 +423,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               <button
                 type="button"
                 onClick={() => void cancelCurrentTurn(session.id)}
-                title="cancel turn"
-                aria-label="cancel turn"
+                title="Cancel turn"
+                aria-label="Cancel turn"
                 className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
               >
                 <Square size={14} aria-hidden fill="currentColor" />
@@ -433,8 +434,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 type="button"
                 onClick={() => void onSend()}
                 disabled={!canSend}
-                title={sendDisabledTitle ?? (isRunning ? 'queue message (enter)' : 'send (enter)')}
-                aria-label={isRunning ? 'queue message' : 'send message'}
+                title={sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')}
+                aria-label={isRunning ? 'Queue message' : 'Send message'}
                 className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
               >
                 <Send size={14} aria-hidden className="-translate-x-px" />
@@ -449,8 +450,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={providerDisconnected}
-                title="attach files"
-                aria-label="attach files"
+                title="Attach files"
+                aria-label="Attach files"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Paperclip size={15} aria-hidden />
@@ -470,9 +471,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   wrapperRef.current?.querySelector('textarea')?.focus();
                 }}
                 disabled={providerDisconnected}
-                title="run a workspace script"
-                aria-label="run a workspace script"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-[13px] text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                title="Run a workspace script"
+                aria-label="Run a workspace script"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 $
               </button>
@@ -481,7 +482,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               {sessionCost > 0 && (
                 <CostBadge
                   value={sessionCost}
-                  title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
+                  title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
                   className="text-xs text-muted-foreground"
                 />
               )}
@@ -489,7 +490,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               <RoutingPicker
                 variant="pill"
                 align="end"
-                ariaLabel="model routing"
+                ariaLabel="Model routing"
                 openEvent="goodboy:open-model-picker"
                 provider={routing.effectiveProvider}
                 model={routing.effectiveModel}

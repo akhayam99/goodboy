@@ -15,9 +15,7 @@ export const InlineComposer = ({ onSubmit, onCancel, label }: Props) => {
     <div className="flex gap-2 rounded-md border border-border-soft bg-background px-2 py-1.5">
       <MessageSquarePlus size={13} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {label ? (
-          <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
-        ) : null}
+        {label ? <span className="text-3xs font-medium text-muted-foreground">{label}</span> : null}
         <Textarea
           autoFocus
           value={body}
@@ -43,7 +41,7 @@ export const InlineComposer = ({ onSubmit, onCancel, label }: Props) => {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-sm px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             Cancel
           </button>
@@ -51,7 +49,7 @@ export const InlineComposer = ({ onSubmit, onCancel, label }: Props) => {
             type="button"
             onClick={() => trimmed.length > 0 && onSubmit(trimmed)}
             disabled={trimmed.length === 0}
-            className="inline-flex items-center gap-1 rounded-sm bg-foreground px-2 py-0.5 text-[10px] font-medium text-background hover:opacity-80 disabled:opacity-30"
+            className="inline-flex items-center gap-1 rounded-sm bg-foreground px-2 py-0.5 text-3xs font-medium text-background hover:opacity-80 disabled:opacity-30"
           >
             Send
           </button>

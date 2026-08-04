@@ -3,6 +3,7 @@ import type { Agent, AgentId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY } from '../../../../../store';
 import { resolveAgentKind, type AgentKind } from '../../../../../features/session/agent-kind';
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
+import type { AgentCardDensity } from '../../../../../features/session/components/AgentCard/agentCardDensity';
 import type { ProviderContextUsage } from './ContextWindowBar';
 import { AgentRow } from './AgentRow';
 import { ScoutSubtree } from './ScoutSubtree';
@@ -30,6 +31,7 @@ type Props = {
   readonly onInspectAgent?: (id: AgentId) => void;
   readonly onMarkDone: (id: AgentId) => void;
   readonly isMuted?: boolean;
+  readonly density?: AgentCardDensity;
 };
 
 export const AdHocRow = ({
@@ -55,6 +57,7 @@ export const AdHocRow = ({
   onInspectAgent,
   onMarkDone,
   isMuted = false,
+  density = 'sidebar',
 }: Props) => {
   const kind = resolveAgentKind(
     run.name,
@@ -84,6 +87,7 @@ export const AdHocRow = ({
         onInspect={onInspectAgent === undefined ? undefined : () => onInspectAgent(run.id)}
         onMarkDone={() => onMarkDone(run.id)}
         isMuted={isMuted}
+        density={density}
       />
       {scoutChildren.length > 0 && (
         <li>

@@ -1,4 +1,5 @@
 import type { Agent } from '@goodboy/types';
+import { MetaRow } from '@goodboy/ui';
 import type { AgentAggregate } from '../AgentMetrics';
 import { AgentDuration } from '../AgentMetrics/AgentDuration';
 import { formatCost, shortModel } from '../../agent-row-format';
@@ -16,8 +17,6 @@ type Props = {
   readonly isWorking: boolean;
 };
 
-const SEPARATOR = <span className="text-muted-foreground/40">·</span>;
-
 export const ResolverMetaLine = ({
   agent,
   model,
@@ -30,21 +29,17 @@ export const ResolverMetaLine = ({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap items-center gap-1.5 text-2xs tabular-nums text-muted-foreground">
-        {model !== null && (
-          <>
-            <span>{shortModel(model)}</span>
-            {SEPARATOR}
-          </>
-        )}
-        <span>{formatCost(aggregate?.estimatedCostUsd ?? 0)}</span>
-        {SEPARATOR}
-        <span>
-          {turnCount} {turnCount === 1 ? 'turn' : 'turns'}
-        </span>
-        {SEPARATOR}
-        <AgentDuration run={agent} />
-      </div>
+      <MetaRow
+        className="tabular-nums"
+        items={[
+          model !== null ? <span key="model">{shortModel(model)}</span> : null,
+          <span key="cost">{formatCost(aggregate?.estimatedCostUsd ?? 0)}</span>,
+          <span key="turns">
+            {turnCount} {turnCount === 1 ? 'turn' : 'turns'}
+          </span>,
+          <AgentDuration key="duration" run={agent} />,
+        ]}
+      />
       {isWorking && <ContextWindowBar usage={contextUsage} />}
     </div>
   );

@@ -89,6 +89,7 @@ export const CreateAgentPopover = ({
       provider: effective.provider,
       model: effective.model,
       effort: effective.effort,
+      focus: 'agent',
     });
     setKind('generic');
     setRouting(null);
@@ -114,7 +115,7 @@ export const CreateAgentPopover = ({
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel="create agent"
+            ariaLabel="Create agent"
             className={cn(popupClassName, 'flex max-h-[calc(100vh-1rem)] flex-col bg-subtle')}
             style={popupStyle}
           >

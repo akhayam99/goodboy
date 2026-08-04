@@ -67,7 +67,7 @@ export const QuestionClusterHeader = ({
           'hover:opacity-70 motion-safe:transition-opacity',
           'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
         )}
-        title={`open ${label}`}
+        title={`Open ${label}`}
       >
         {inner}
       </button>

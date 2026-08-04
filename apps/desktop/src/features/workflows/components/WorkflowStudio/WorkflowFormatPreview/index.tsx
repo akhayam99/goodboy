@@ -104,7 +104,7 @@ export const WorkflowFormatPreview = ({
                 {before.map((name, i) => (
                   <span
                     key={i}
-                    className="rounded bg-muted/60 px-1.5 py-0.5 line-through opacity-70"
+                    className="rounded-md bg-muted/60 px-1.5 py-0.5 line-through opacity-70"
                   >
                     {name}
                   </span>
@@ -124,7 +124,7 @@ export const WorkflowFormatPreview = ({
                       <span className="text-sm font-medium text-foreground">{step.name}</span>
                       <span
                         className={cn(
-                          'rounded px-1.5 py-px text-2xs font-semibold uppercase tracking-eyebrow',
+                          'rounded-md px-1.5 py-px text-2xs font-semibold uppercase tracking-eyebrow',
                           AGENT_KIND_PALETTE[kind].fg,
                         )}
                       >

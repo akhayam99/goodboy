@@ -88,8 +88,8 @@ export const GithubCard = ({
             type="button"
             onClick={onRefresh}
             disabled={detailLoading}
-            title="refresh GitHub data"
-            aria-label="refresh GitHub data"
+            title="Refresh GitHub data"
+            aria-label="Refresh GitHub data"
             className={cn(TAB_ICON_BTN, 'disabled:opacity-40')}
           >
             <RefreshCw size={10} aria-hidden />

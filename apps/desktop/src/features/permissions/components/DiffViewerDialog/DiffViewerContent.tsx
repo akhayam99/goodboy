@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+  type ReactNode,
+} from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, GitBranch, RefreshCw, X } from 'lucide-react';
 import { Divider, ScrollFade, Skeleton, cn } from '@goodboy/ui';
@@ -65,6 +73,7 @@ type Props = {
   diffFocus?: DiffFocus | null;
   showToolbarClose?: boolean;
   presentation?: 'dialog' | 'pane';
+  paneActions?: ReactNode;
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
@@ -271,6 +280,7 @@ export const DiffViewerContent = ({
   diffFocus = null,
   showToolbarClose = true,
   presentation = 'dialog',
+  paneActions = null,
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [focusPath, setFocusPath] = useState<string | null>(null);
@@ -429,9 +439,11 @@ export const DiffViewerContent = ({
     if (diffFocus == null) {
       return;
     }
-    if (diffFocus.sha != null) {
-      setView({ kind: 'commit', sha: diffFocus.sha });
-    }
+    setView(
+      diffFocus.kind === 'working'
+        ? { kind: 'working', scope: 'all' }
+        : { kind: 'commit', sha: diffFocus.sha },
+    );
     setFocusPath(diffFocus.path);
   }, [diffFocus, setView]);
 
@@ -679,14 +691,14 @@ export const DiffViewerContent = ({
         effort: resolverRouting.effort,
         kindOverride: 'resolver',
         sourceKind: 'diff_comment',
+        focus: 'none',
       });
       try {
         await consumeDiffComments(sessionId, idsToConsume, agentId);
       } catch (err) {
         console.error('failed to mark comments consumed', err);
       }
-      void sendTurn({ sessionId, content: prompt });
-      onClose();
+      void sendTurn({ sessionId, agentId, content: prompt });
     } finally {
       setSpawning(false);
     }
@@ -785,7 +797,7 @@ export const DiffViewerContent = ({
                   {status != null && status.commitsBehindMain > 0 ? (
                     <span
                       className="text-muted-foreground/70"
-                      title="commits on main not in this branch"
+                      title="Commits on main not in this branch"
                     >
                       behind main by {status.commitsBehindMain}
                     </span>
@@ -821,6 +833,7 @@ export const DiffViewerContent = ({
           </div>
           {!isEmpty ? (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
+              {paneActions}
               <DiffToolbar
                 title={title}
                 prNumber={prNumber}
@@ -847,30 +860,32 @@ export const DiffViewerContent = ({
                 }
               />
             </div>
-          ) : isGitAware ? (
+          ) : (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
-              {isDefaultView ? (
-                <button
-                  type="button"
-                  onClick={() => setRefreshTick((tick) => tick + 1)}
-                  title="refresh git state"
-                  aria-label="refresh git state"
-                  className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
-                >
-                  <RefreshCw size={12} aria-hidden />
-                </button>
-              ) : (
-                <DiffViewSelector
-                  view={view}
-                  onChange={setView}
-                  commits={commits}
-                  status={status}
-                  filesCount={files.length}
-                  loading={false}
-                />
-              )}
+              {paneActions}
+              {isGitAware &&
+                (isDefaultView ? (
+                  <button
+                    type="button"
+                    onClick={() => setRefreshTick((tick) => tick + 1)}
+                    title="Refresh git state"
+                    aria-label="Refresh git state"
+                    className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
+                  >
+                    <RefreshCw size={12} aria-hidden />
+                  </button>
+                ) : (
+                  <DiffViewSelector
+                    view={view}
+                    onChange={setView}
+                    commits={commits}
+                    status={status}
+                    filesCount={files.length}
+                    loading={false}
+                  />
+                ))}
             </div>
-          ) : null}
+          )}
         </div>
       ) : (
         <>
@@ -892,8 +907,8 @@ export const DiffViewerContent = ({
                     <button
                       type="button"
                       onClick={onClose}
-                      title="close"
-                      aria-label="close"
+                      title="Close"
+                      aria-label="Close"
                       className={TOOLBAR_ICON_BTN}
                     >
                       <X size={13} />
@@ -908,8 +923,8 @@ export const DiffViewerContent = ({
                   <button
                     type="button"
                     onClick={onClose}
-                    title="close"
-                    aria-label="close"
+                    title="Close"
+                    aria-label="Close"
                     className={TOOLBAR_ICON_BTN}
                   >
                     <X size={13} />
@@ -1045,7 +1060,7 @@ export const DiffViewerContent = ({
           onPropose={() => void handleProposeFixes()}
           routing={
             <RoutingPicker
-              ariaLabel="resolver routing"
+              ariaLabel="Resolver routing"
               connectedProviders={connectedProviderIds}
               provider={resolverRouting.provider}
               model={resolverRouting.model}

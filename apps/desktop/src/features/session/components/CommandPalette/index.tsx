@@ -324,14 +324,14 @@ export const CommandPalette = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          aria-label="command palette search"
+          aria-label="Command palette search"
           className="w-full bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
         />
         <Divider />
 
         {parsed.prefix === null && query.length === 0 && (
           <>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-[10px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-3xs text-muted-foreground">
               {PALETTE_PREFIXES.map((p) => (
                 <button
                   key={p.symbol}
@@ -341,7 +341,7 @@ export const CommandPalette = ({
                     setQuery(p.symbol);
                     inputRef.current?.focus();
                   }}
-                  aria-label={`filter by ${p.hint}`}
+                  aria-label={`Filter by ${p.hint}`}
                   className="inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-foreground/5 hover:text-foreground"
                   title={p.hint}
                 >

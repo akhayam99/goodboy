@@ -100,7 +100,12 @@ describe('ChatWorkflowAdvance', () => {
 
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
 
-    expect(store.activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
+    expect(store.activateWorkflowAgent).toHaveBeenCalledWith(
+      SESSION_ID,
+      'agent-1',
+      undefined,
+      'agent',
+    );
   });
 
   it('names the blocker instead of hiding the CTA while the summarizer runs', () => {
@@ -123,8 +128,13 @@ describe('ChatWorkflowAdvance', () => {
     expect(cta.className).toContain('border-warning');
     fireEvent.click(cta);
     expect(store.activateWorkflowAgent).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'start anyway' }));
-    expect(store.activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
+    fireEvent.click(screen.getByRole('button', { name: 'Start anyway' }));
+    expect(store.activateWorkflowAgent).toHaveBeenCalledWith(
+      SESSION_ID,
+      'agent-1',
+      undefined,
+      'agent',
+    );
   });
 
   it('forces past a stuck step only after an explicit confirmation', () => {

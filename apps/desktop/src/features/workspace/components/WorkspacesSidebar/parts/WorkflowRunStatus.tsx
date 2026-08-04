@@ -33,7 +33,7 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
   const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted;
 
   const baseClass =
-    'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide';
+    'inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide';
 
   if (isDiscarded) {
     return (
@@ -91,7 +91,7 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
     return (
       <span
         className={cn(baseClass, 'max-w-40 truncate bg-muted text-muted-foreground')}
-        title={`after ${predecessorName}`}
+        title={`After ${predecessorName}`}
       >
         <Link2 size={10} aria-hidden />
         After {predecessorName}

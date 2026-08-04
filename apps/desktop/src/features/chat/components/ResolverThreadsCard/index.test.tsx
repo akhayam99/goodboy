@@ -1,21 +1,24 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
   analysis: vi.fn<(text: string) => ReadonlyArray<unknown>>(() => []),
   resolved: vi.fn<(text: string) => ReadonlyArray<unknown>>(() => []),
   wontfix: vi.fn<(text: string) => ReadonlyArray<unknown>>(() => []),
+  replies: vi.fn<(text: string) => ReadonlyArray<unknown>>(() => []),
   comments: [] as Array<{ threadId: string; resolved: boolean }>,
   pending: [] as Array<{ threadId: string }>,
   selectAgent: vi.fn(async () => undefined),
+  openDiffLens: vi.fn(),
 }));
 
 vi.mock('@goodboy/core', () => ({
   extractAllCommentAnalysis: h.analysis,
   extractAllCommentResolved: h.resolved,
   extractAllCommentWontfix: h.wontfix,
+  extractAllCommentReplies: h.replies,
   isReviewThreadId: (id: string) => /^PRRT_/.test(id),
 }));
 
@@ -25,12 +28,14 @@ vi.mock('../../../../store', () => ({
       sessionGithub: Record<string, { detail: { comments: typeof h.comments } | null }>;
       sessionPendingResolutions: Record<string, typeof h.pending>;
       selectAgent: typeof h.selectAgent;
+      openDiffLens: typeof h.openDiffLens;
     }) => T,
   ) =>
     selector({
       sessionGithub: { s: { detail: { comments: h.comments } } },
       sessionPendingResolutions: { s: h.pending },
       selectAgent: h.selectAgent,
+      openDiffLens: h.openDiffLens,
     }),
 }));
 
@@ -44,9 +49,12 @@ describe('ResolverThreadsCard', () => {
     h.resolved.mockReturnValue([]);
     h.wontfix.mockReset();
     h.wontfix.mockReturnValue([]);
+    h.replies.mockReset();
+    h.replies.mockReturnValue([]);
     h.comments = [];
     h.pending = [];
     h.selectAgent.mockClear();
+    h.openDiffLens.mockClear();
   });
 
   afterEach(cleanup);
@@ -69,7 +77,7 @@ describe('ResolverThreadsCard', () => {
     expect(screen.queryByTestId('resolver-threads-card')).toBeNull();
     expect(screen.getByTestId('resolver-thread-verdict')).toBeDefined();
     expect(screen.getByText('thread 1')).toBeDefined();
-    expect(screen.getByText(/fix committed locally/)).toBeDefined();
+    expect(screen.getByText('fix committed locally')).toBeDefined();
   });
 
   it('groups multiple threads under one collapsed card', () => {
@@ -90,13 +98,50 @@ describe('ResolverThreadsCard', () => {
     h.wontfix.mockReturnValue([{ threadId: 'PRRT_2', reason: 'already covered upstream' }]);
 
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /expand resolver findings/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Expand resolver findings/ }));
 
     expect(screen.getByTestId('resolver-thread-verdict-0')).toBeDefined();
     expect(screen.getByTestId('resolver-thread-verdict-1')).toBeDefined();
     expect(screen.getByText('thread 1')).toBeDefined();
     expect(screen.getByText('thread 2')).toBeDefined();
     expect(screen.getByText('already covered upstream')).toBeDefined();
+  });
+
+  it('shows the commit sha as a chip that opens the commit in the files lens', () => {
+    h.resolved.mockReturnValue([{ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' }]);
+    render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open commit abcdef1' }));
+
+    expect(h.openDiffLens).toHaveBeenCalledWith('s', {
+      kind: 'commit',
+      sha: 'abcdef1234567890',
+      path: null,
+    });
+  });
+
+  it('renders the thread reply as markdown once the row is expanded', () => {
+    h.resolved.mockReturnValue([{ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' }]);
+    h.replies.mockReturnValue([
+      { threadId: 'PRRT_1', body: 'Extracted the guard into `isReviewThreadId`.' },
+    ]);
+
+    render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
+    const row = screen.getByTestId('resolver-thread-verdict');
+    expect(within(row).queryByText('isReviewThreadId')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand thread 1' }));
+
+    expect(within(row).getByText('isReviewThreadId').tagName).toBe('CODE');
+    expect(row.textContent).not.toContain('<<');
+  });
+
+  it('leaves a row without a reply block unexpandable', () => {
+    h.wontfix.mockReturnValue([{ threadId: 'PRRT_2', reason: 'already covered upstream' }]);
+
+    render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
+
+    expect(screen.queryByRole('button', { name: /Expand thread/ })).toBeNull();
   });
 
   it('deep-links a verdict line into the resolver inspector for the shared agent', () => {
@@ -114,8 +159,10 @@ describe('ResolverThreadsCard', () => {
         agentId={'agent-1' as never}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /expand resolver findings/ }));
-    fireEvent.click(screen.getByTestId('resolver-thread-verdict-1'));
+    fireEvent.click(screen.getByRole('button', { name: /Expand resolver findings/ }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Open thread 2 in the resolver inspector' }),
+    );
 
     expect(h.selectAgent).toHaveBeenCalledWith('s', 'agent-1');
     expect(reveal).toHaveBeenCalledOnce();
@@ -129,11 +176,11 @@ describe('ResolverThreadsCard', () => {
   });
 
   it('stays inert without a resolver agent to navigate to', () => {
-    h.resolved.mockReturnValue([{ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' }]);
+    h.wontfix.mockReturnValue([{ threadId: 'PRRT_2', reason: 'already covered upstream' }]);
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
 
     const row = screen.getByTestId('resolver-thread-verdict');
-    expect(row.tagName).toBe('DIV');
+    expect(within(row).queryByRole('button')).toBeNull();
   });
 
   it('reflects a github-resolved thread and a queued local fix in the verdict text', () => {
@@ -145,9 +192,9 @@ describe('ResolverThreadsCard', () => {
     h.pending = [{ threadId: 'PRRT_2' }];
 
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /expand resolver findings/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Expand resolver findings/ }));
 
-    expect(screen.getByText('conversation resolved')).toBeDefined();
-    expect(screen.getByText('solved locally, pending push')).toBeDefined();
+    expect(screen.getByText('fix committed, thread closed')).toBeDefined();
+    expect(screen.getByText('fix committed, reply queued')).toBeDefined();
   });
 });

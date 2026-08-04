@@ -28,11 +28,7 @@ export const FlowPanel = ({
   const agents = agentDurations.data;
   const health = flowHealth.data;
   return (
-    <StudioPanel
-      title="Flow"
-      subtitle="How quickly work moves and where it waits"
-      maxWidthClass="max-w-5xl"
-    >
+    <StudioPanel title="Flow" subtitle="How quickly work moves and where it waits">
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
       <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
       {isLoading && agents === null && health === null ? (

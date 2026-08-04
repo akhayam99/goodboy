@@ -87,7 +87,7 @@ export const LensColumnFooter = ({ session }: Props) => {
             type="button"
             onClick={doUnarchive}
             title="Unarchive session"
-            aria-label="unarchive session"
+            aria-label="Unarchive session"
             className={ICON_BUTTON}
           >
             <ArchiveRestore size={13} aria-hidden />
@@ -95,7 +95,7 @@ export const LensColumnFooter = ({ session }: Props) => {
         ) : armed === 'archive' ? (
           <ConfirmPill
             label="Archive?"
-            confirmAria="archive session"
+            confirmAria="Archive session"
             busy={busy}
             onConfirm={doArchive}
             onCancel={() => setArmed(null)}
@@ -105,7 +105,7 @@ export const LensColumnFooter = ({ session }: Props) => {
             type="button"
             onClick={() => setArmed('archive')}
             title={ARCHIVE_TITLE}
-            aria-label="archive session"
+            aria-label="Archive session"
             className={ICON_BUTTON}
           >
             <Archive size={13} aria-hidden />
@@ -114,7 +114,7 @@ export const LensColumnFooter = ({ session }: Props) => {
         {armed === 'delete' ? (
           <ConfirmPill
             label="Delete?"
-            confirmAria="delete session"
+            confirmAria="Delete session"
             danger
             busy={busy}
             onConfirm={doDelete}
@@ -125,7 +125,7 @@ export const LensColumnFooter = ({ session }: Props) => {
             type="button"
             onClick={() => setArmed('delete')}
             title={DELETE_TITLE}
-            aria-label="delete session"
+            aria-label="Delete session"
             className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           >
             <Trash2 size={13} aria-hidden />

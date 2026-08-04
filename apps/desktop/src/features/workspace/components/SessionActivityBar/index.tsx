@@ -159,7 +159,7 @@ export const SessionActivityBar = ({
                   setTab(next);
                 }}
                 aria-pressed={isArchivedView}
-                title={isArchivedView ? 'hide archived sessions' : 'show archived sessions'}
+                title={isArchivedView ? 'Hide archived sessions' : 'Show archived sessions'}
                 className={cn(
                   'flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium transition-colors',
                   isArchivedView
@@ -179,15 +179,15 @@ export const SessionActivityBar = ({
               variant="secondary"
               size="sm"
               onClick={onNewSession}
-              aria-label="create new session"
-              title={`new session (${shortcutGlyphs('session.new')})`}
+              aria-label="Create new session"
+              title={`Create new session (${shortcutGlyphs('session.new')})`}
               className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"
             >
               <Plus size={13} aria-hidden />
               New
               <KbdPill
                 aria-hidden
-                className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
+                className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-3xs opacity-0 transition-opacity group-hover:opacity-100"
               >
                 {shortcutGlyphs('session.new')}
               </KbdPill>
@@ -205,7 +205,7 @@ export const SessionActivityBar = ({
                     type="button"
                     onClick={() => toggleGroup(group.key)}
                     aria-expanded={!collapsed}
-                    title={collapsed ? 'expand group' : 'collapse group'}
+                    title={collapsed ? 'Expand group' : 'Collapse group'}
                     className="group mt-3 flex w-full items-center gap-1 rounded px-0.5 text-left first:mt-1"
                   >
                     <ChevronRight
@@ -344,7 +344,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
             pulsing={stage === 'running'}
           />
         </span>
-        <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-medium leading-snug">
+        <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
           {session.goal}
         </span>
         {externalTasks.map((task) => (
@@ -357,14 +357,14 @@ const SessionActivityItem = memo(function SessionActivityItem({
         {prState && <PullRequestChip state={prState} variant="icon" iconSize={11} />}
       </span>
       <span className="flex w-full items-center gap-1.5 pl-[14px]">
-        <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-muted-foreground/60">
+        <span className="min-w-0 flex-1 truncate text-2xs leading-tight text-muted-foreground/60">
           {reason}
         </span>
         {sessionCost > 0 && (
           <CostBadge
             value={sessionCost}
-            title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-            className="shrink-0 text-[11px] font-medium text-muted-foreground/55"
+            title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
+            className="shrink-0 text-2xs font-medium text-muted-foreground/55"
           />
         )}
       </span>
@@ -377,9 +377,9 @@ const SessionActivityItem = memo(function SessionActivityItem({
         type="button"
         role="checkbox"
         aria-checked={selected === true}
-        aria-label={`select ${session.goal}`}
+        aria-label={`Select ${session.goal}`}
         onClick={(event) => onToggleSelect(session.id as SessionId, event)}
-        title={selected ? 'deselect session' : 'select session · shift-click to extend'}
+        title={selected ? 'Deselect session' : 'Select session · shift-click to extend'}
         className={cn(
           'flex size-4 shrink-0 items-center justify-center rounded border motion-safe:transition-colors',
           selected

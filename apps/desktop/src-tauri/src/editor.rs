@@ -121,14 +121,69 @@ pub fn open_file_in_workspace(
     }
 }
 
+const MAX_URL_LEN: usize = 4096;
+const URL_FORBIDDEN: &[char] = &['"', '<', '>', '`', '|', '\\', '^', '{', '}'];
+
+fn is_openable_url(url: &str) -> bool {
+    if url.is_empty() || url.len() > MAX_URL_LEN {
+        return false;
+    }
+    let lower = url.to_ascii_lowercase();
+    if !lower.starts_with("http://") && !lower.starts_with("https://") {
+        return false;
+    }
+    !url.chars()
+        .any(|c| c.is_whitespace() || c.is_control() || URL_FORBIDDEN.contains(&c))
+}
+
 #[tauri::command]
 pub fn open_url(url: String) -> Result<(), String> {
+    if !is_openable_url(&url) {
+        return Err("refused to open a url that is not a plain http(s) address".to_string());
+    }
+
     #[cfg(target_os = "macos")]
     let result = Command::new("open").arg(&url).spawn();
     #[cfg(target_os = "linux")]
     let result = Command::new("xdg-open").arg(&url).spawn();
     #[cfg(target_os = "windows")]
-    let result = Command::new("cmd").args(["/c", "start", "", &url]).spawn();
+    let result = Command::new("rundll32.exe")
+        .arg("url.dll,FileProtocolHandler")
+        .arg(&url)
+        .spawn();
 
     result.map(|_| ()).map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{is_openable_url, MAX_URL_LEN};
+
+    #[test]
+    fn accepts_a_real_oauth_url_with_query_parameters() {
+        assert!(is_openable_url(
+            "https://claude.ai/oauth/authorize?code=1&client_id=abc&redirect_uri=http%3A%2F%2Flocalhost"
+        ));
+    }
+
+    #[test]
+    fn rejects_characters_no_url_may_carry() {
+        assert!(!is_openable_url("https://x.test/a\u{60}whoami\u{60}"));
+        assert!(!is_openable_url("https://x.test/a|calc.exe"));
+        assert!(!is_openable_url("https://x.test/a\"b"));
+        assert!(!is_openable_url("https://x.test/a b"));
+        assert!(!is_openable_url("https://x.test/a\nb"));
+        assert!(!is_openable_url(&format!(
+            "https://x.test/{}",
+            "a".repeat(MAX_URL_LEN)
+        )));
+    }
+
+    #[test]
+    fn rejects_every_scheme_but_http_and_https() {
+        assert!(!is_openable_url("file:///etc/passwd"));
+        assert!(!is_openable_url("javascript:alert(1)"));
+        assert!(!is_openable_url("ftp://x.test/a"));
+        assert!(!is_openable_url(""));
+    }
 }

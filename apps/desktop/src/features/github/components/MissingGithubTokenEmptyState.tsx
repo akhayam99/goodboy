@@ -7,6 +7,7 @@ type Props = {
   readonly compact?: boolean;
   readonly onConnected: () => void;
   readonly shouldAutoFocus?: boolean;
+  readonly wrapped?: boolean;
 };
 
 export const MissingGithubTokenEmptyState = ({
@@ -14,8 +15,9 @@ export const MissingGithubTokenEmptyState = ({
   compact = false,
   onConnected,
   shouldAutoFocus = false,
-}: Props) => (
-  <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>
+  wrapped = true,
+}: Props) => {
+  const panel = (
     <IntegrationConnectPanel
       provider="github"
       description="Connect a GitHub token to review pull requests and issues from this repository."
@@ -28,5 +30,13 @@ export const MissingGithubTokenEmptyState = ({
         shouldAutoFocus={shouldAutoFocus}
       />
     </IntegrationConnectPanel>
-  </div>
-);
+  );
+
+  if (!wrapped) {
+    return panel;
+  }
+
+  return (
+    <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>{panel}</div>
+  );
+};

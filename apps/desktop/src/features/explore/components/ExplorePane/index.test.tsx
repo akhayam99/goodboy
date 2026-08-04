@@ -293,4 +293,57 @@ describe('ExplorePane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ask an agent to work on notes.txt' }));
     expect(screen.getByRole('button', { name: 'Spawn agent' }).hasAttribute('disabled')).toBe(true);
   });
+
+  it('hides row actions until hover or keyboard focus, but keeps them focusable and working', async () => {
+    h.exploreList.mockResolvedValueOnce([
+      {
+        name: 'notes.txt',
+        relPath: 'notes.txt',
+        isDir: false,
+        sizeBytes: 20,
+        modifiedAt: '2026-07-21T11:00:00Z',
+      },
+    ]);
+
+    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+
+    await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
+    const revealButton = screen.getByRole('button', {
+      name: 'Reveal notes.txt in file manager',
+    });
+    const actionsWrapper = revealButton.parentElement;
+    expect(actionsWrapper?.className).toContain('opacity-0');
+    expect(actionsWrapper?.className).toContain('group-focus-within/explore-row:opacity-100');
+    expect(actionsWrapper?.className).toContain('group-hover/explore-row:opacity-100');
+
+    revealButton.focus();
+    expect(document.activeElement).toBe(revealButton);
+
+    fireEvent.click(revealButton);
+    await waitFor(() =>
+      expect(h.exploreOpen).toHaveBeenCalledWith({
+        sessionDir: '/workspace/sessions/session-1',
+        relPath: 'notes.txt',
+        reveal: true,
+      }),
+    );
+  });
+
+  it('shows size and age in the title attribute instead of a permanent meta row', async () => {
+    h.exploreList.mockResolvedValueOnce([
+      {
+        name: 'notes.txt',
+        relPath: 'notes.txt',
+        isDir: false,
+        sizeBytes: 20,
+        modifiedAt: '2026-07-21T11:00:00Z',
+      },
+    ]);
+
+    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+
+    await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
+    const row = screen.getByText('notes.txt').closest('[title]');
+    expect(row?.getAttribute('title')).toMatch(/^20 B ·/);
+  });
 });

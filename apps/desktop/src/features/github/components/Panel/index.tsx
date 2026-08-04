@@ -77,8 +77,8 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
           type="button"
           onClick={() => void onReload()}
           disabled={checking}
-          title="refresh status"
-          aria-label="refresh GitHub status"
+          title="Refresh GitHub status"
+          aria-label="Refresh GitHub status"
           className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
         >
           <RefreshCw size={13} aria-hidden />
@@ -103,7 +103,7 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
         />
       )}
 
-      <p className="text-[10px] leading-relaxed text-muted-foreground">
+      <p className="text-3xs leading-relaxed text-muted-foreground">
         This is your baseline (system gh / global token). To use a different token for a specific
         repo (e.g. SSO-authorized for its org), connect one per-workspace in that workspace&apos;s
         Settings → Integrations.
@@ -154,9 +154,9 @@ function Absent({
     <div className="flex flex-col gap-3">
       <p className="text-xs leading-relaxed text-muted-foreground">
         connect with a personal access token (classic or fine-grained, scope:{' '}
-        <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">repo</code>), or run{' '}
-        <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">gh auth login</code> in
-        a terminal and reload Goodboy.
+        <code className="rounded bg-muted px-1 py-0.5 font-mono text-3xs">repo</code>), or run{' '}
+        <code className="rounded bg-muted px-1 py-0.5 font-mono text-3xs">gh auth login</code> in a
+        terminal and reload Goodboy.
       </p>
       <div className="flex items-center gap-2">
         <Input
@@ -182,7 +182,7 @@ function Absent({
         </p>
       ) : null}
       <CreateTokenLink />
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-3xs text-muted-foreground">
         token is stored in your OS keychain via the system credential store. it never leaves your
         machine.
       </p>
@@ -239,7 +239,7 @@ function Connected({
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-[10px] leading-relaxed text-muted-foreground">
+          <p className="text-3xs leading-relaxed text-muted-foreground">
             Using your system gh login, Goodboy is not storing a token. To disconnect, run{' '}
             <code className="rounded bg-muted px-1 py-0.5 font-mono">gh auth logout</code> in a
             terminal. To use a different token here (e.g. one authorized for your org via SSO),

@@ -1,5 +1,5 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn, formatUsd, formatUsdPrecise, StatusDot } from '@goodboy/ui';
+import { cn, formatUsd, formatUsdPrecise, MetaRow, StatusDot } from '@goodboy/ui';
 import { ChevronDown, ChevronRight, ChevronUp, Play, Undo2, Zap, ZapOff } from 'lucide-react';
 import type {
   Agent,
@@ -25,6 +25,7 @@ import { GoalAttachmentsStrip } from '../../../../../features/context/components
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { CardAction } from '../../../../../shared/components/CardAction';
 import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
+import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { workflowKindName } from '../lib';
@@ -195,30 +196,22 @@ export const WorkflowRow = ({
                   predecessorName={predecessorName}
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                {total > 0 ? (
-                  <>
+              <MetaRow
+                items={[
+                  total > 0 ? (
                     <span className="tabular-nums">
                       Step {Math.min(done + 1, total)} of {total}
                     </span>
-                    <span aria-hidden className="text-muted-foreground/40">
-                      ·
-                    </span>
-                  </>
-                ) : null}
-                {currentStepName != null && !isCompleted ? (
-                  <>
+                  ) : null,
+                  currentStepName != null && !isCompleted ? (
                     <span className="min-w-0 truncate">{currentStepName}</span>
-                    <span aria-hidden className="text-muted-foreground/40">
-                      ·
-                    </span>
-                  </>
-                ) : null}
-                <CostBadge
-                  value={runCostUsd}
-                  title={`${formatUsdPrecise(runCostUsd)} for this run`}
-                />
-              </div>
+                  ) : null,
+                  <CostBadge
+                    value={runCostUsd}
+                    title={`${formatUsdPrecise(runCostUsd)} for this run`}
+                  />,
+                ]}
+              />
             </div>
           </div>
         ) : (
@@ -228,7 +221,7 @@ export const WorkflowRow = ({
             title={workflow.name || name}
             aria-expanded={expanded}
             aria-label={`${name} workflow`}
-            className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
+            className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-muted/50"
           >
             {forceExpanded ? (
               <CONCEPT_ICONS.workflows size={13} aria-hidden className="shrink-0 text-accent" />
@@ -238,7 +231,7 @@ export const WorkflowRow = ({
             </span>
             {unreadCount > 0 ? (
               <span
-                className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-warning/15 px-1.5 py-0.5 text-2xs font-medium text-warning"
                 title={`${unreadCount} agent ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
               >
                 <StatusDot tone="warning" size="sm" />
@@ -252,7 +245,7 @@ export const WorkflowRow = ({
               predecessorName={predecessorName}
             />
             {total > 0 ? (
-              <span className="shrink-0 font-mono text-[10px] text-muted-foreground/50">
+              <span className="shrink-0 font-mono text-2xs text-muted-foreground/50">
                 {done}/{total}
               </span>
             ) : null}
@@ -265,7 +258,7 @@ export const WorkflowRow = ({
           >
             <CardAction
               icon={expanded ? ChevronDown : ChevronRight}
-              label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+              label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
               expanded={expanded}
               onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
             />
@@ -277,7 +270,7 @@ export const WorkflowRow = ({
                 {isQueuedManual ? (
                   <CardAction
                     icon={Play}
-                    label="start workflow now"
+                    label="Start workflow now"
                     tone="success"
                     onClick={() => void startWorkflowRun(task.id, run.id)}
                   />
@@ -285,7 +278,7 @@ export const WorkflowRow = ({
                 {!isCompleted ? (
                   <CardAction
                     icon={run.autoRun ? Zap : ZapOff}
-                    label={run.autoRun ? 'autorun on' : 'autorun off'}
+                    label={run.autoRun ? 'Autorun on' : 'Autorun off'}
                     tone="primary"
                     pressed={run.autoRun}
                     highlighted={run.autoRun}
@@ -298,7 +291,7 @@ export const WorkflowRow = ({
             <CardActionSlot label="Workflow navigation actions">
               <CardAction
                 icon={expanded ? ChevronDown : ChevronRight}
-                label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+                label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
                 expanded={expanded}
                 onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
               />
@@ -306,13 +299,13 @@ export const WorkflowRow = ({
                 <>
                   <CardAction
                     icon={ChevronUp}
-                    label="move workflow up"
+                    label="Move workflow up"
                     disabled={!canMoveUp}
                     onClick={() => void onReorderWorkflow(run.id, 'up')}
                   />
                   <CardAction
                     icon={ChevronDown}
-                    label="move workflow down"
+                    label="Move workflow down"
                     disabled={!canMoveDown}
                     onClick={() => void onReorderWorkflow(run.id, 'down')}
                   />
@@ -425,7 +418,7 @@ export const WorkflowRow = ({
                               type="button"
                               onClick={() => toggleClusterExpand(run.id)}
                               aria-expanded={clustersExpanded}
-                              aria-label={`${clustersExpanded ? 'collapse' : 'expand'} clusters for ${run.name}`}
+                              aria-label={`${clustersExpanded ? 'Collapse' : 'Expand'} clusters for ${run.name}`}
                               className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50 transition-colors hover:text-muted-foreground"
                             >
                               {clustersExpanded ? (
@@ -440,7 +433,7 @@ export const WorkflowRow = ({
                               </span>
                               {!clustersExpanded && clusterUnread > 0 ? (
                                 <span
-                                  className="inline-flex shrink-0 items-center gap-1 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium text-warning"
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-md bg-warning/15 px-1 py-0.5 text-2xs font-medium text-warning"
                                   title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
                                 >
                                   <span aria-hidden className="size-1 rounded-full bg-warning" />
@@ -515,41 +508,30 @@ export const WorkflowRow = ({
           className={cn('col-start-2 self-end', expanded ? 'row-start-3' : 'row-start-2')}
         >
           {isQueuedManual ? (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={Play}
+              label="Start"
+              tone="success"
               onClick={() => void startWorkflowRun(task.id, run.id)}
-              className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-success transition-colors hover:bg-success/15"
-            >
-              <Play size={14} aria-hidden />
-              Start
-            </button>
+            />
           ) : null}
           {!isDiscarded && !isCompleted ? (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={run.autoRun ? Zap : ZapOff}
+              label="Autorun"
+              tone={run.autoRun ? 'primary' : 'neutral'}
+              pressed={run.autoRun}
+              highlighted={run.autoRun}
+              ariaLabel={run.autoRun ? 'Autorun on' : 'Autorun off'}
               onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-              aria-label={run.autoRun ? 'autorun on' : 'autorun off'}
-              aria-pressed={run.autoRun}
-              className={cn(
-                'inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold transition-colors',
-                run.autoRun
-                  ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                  : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
-              )}
-            >
-              {run.autoRun ? <Zap size={14} aria-hidden /> : <ZapOff size={14} aria-hidden />}
-              Autorun
-            </button>
+            />
           ) : null}
           {isDiscarded ? (
-            <button
-              type="button"
+            <GhostActionButton
+              icon={Undo2}
+              label="Restore"
               onClick={() => void restoreWorkflow(task.id, run.id)}
-              className="inline-flex min-h-7 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
-            >
-              <Undo2 size={14} aria-hidden />
-              Restore
-            </button>
+            />
           ) : (
             <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
           )}

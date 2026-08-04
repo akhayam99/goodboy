@@ -46,7 +46,7 @@ const makeStore = ({
 afterEach(() => vi.clearAllMocks());
 
 describe('activateNextResolver', () => {
-  it('starts the lowest ordinal queued resolver and consumes its kickoff', async () => {
+  it('starts the lowest ordinal queued resolver in place, without selecting it', async () => {
     const { state, get, set, sendTurn, selectAgent } = makeStore({
       agents: [resolver({ id: SECOND, ordinal: 2 }), resolver({ id: FIRST, ordinal: 1 })],
       pendingResolverKickoff: { [FIRST]: 'fix comment one', [SECOND]: 'fix comment two' },
@@ -54,7 +54,7 @@ describe('activateNextResolver', () => {
 
     await activateNextResolver(set, get)(SID);
 
-    expect(selectAgent).toHaveBeenCalledWith(SID, FIRST);
+    expect(selectAgent).not.toHaveBeenCalled();
     expect(sendTurn).toHaveBeenCalledWith(
       expect.objectContaining({ agentId: FIRST, content: 'fix comment one' }),
     );

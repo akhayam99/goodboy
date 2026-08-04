@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
-import { AlertTriangle, Check, Clock, Play } from 'lucide-react';
+import { AlertTriangle, Check, Clock, CircleHelp, Play } from 'lucide-react';
 import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { agentHasUnread } from '../../../../../store';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
@@ -9,6 +9,7 @@ import {
   AgentMetrics,
   type AgentAggregate,
 } from '../../../../../features/session/components/AgentMetrics';
+import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
 import { ContextWindowBar, type ProviderContextUsage } from './ContextWindowBar';
 import { WorkflowStepPlanBadge } from './WorkflowStepPlanBadge';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
@@ -154,10 +155,10 @@ export const WorkflowStepRow = ({
 
   const stableTitle =
     isActionable && isBlocked && blockReason !== null
-      ? `next workflow step. ${WORKFLOW_BLOCK_COPY[blockReason]} click to force`
+      ? `Next workflow step. ${WORKFLOW_BLOCK_COPY[blockReason]} click to force`
       : isPendingFuture
-        ? 'waiting for previous steps'
-        : `agent ${run.ordinal + 1}: ${run.status}`;
+        ? 'Waiting for previous steps'
+        : `Agent ${run.ordinal + 1}: ${run.status}`;
 
   return (
     <div className="flex flex-col gap-1">
@@ -216,7 +217,7 @@ export const WorkflowStepRow = ({
                 'line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1',
                 rename.error !== null ? 'ring-danger' : 'ring-primary',
               )}
-              aria-label="rename agent"
+              aria-label="Rename agent"
             />
           ) : (
             <span
@@ -251,35 +252,30 @@ export const WorkflowStepRow = ({
         </div>
       </div>
       {pendingConfirm && blockReason !== null ? (
-        <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-[11px]">
+        <div className="flex items-center gap-2 rounded-md bg-warning/5 px-2.5 py-1.5 text-xs">
           <AlertTriangle size={12} aria-hidden className="shrink-0 text-warning" />
           <span className="min-w-0 flex-1 truncate text-foreground">
             {WORKFLOW_BLOCK_COPY[blockReason]}
           </span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
+          <GhostActionButton
+            icon={blockReason === 'questions' ? CircleHelp : Clock}
+            label={blockReason === 'questions' ? 'Resolve first' : 'Wait'}
+            onClick={() => {
               setPendingConfirm(false);
               if (blockReason === 'questions') {
                 onResolveFirst?.();
               }
             }}
-            className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            {blockReason === 'questions' ? 'Resolve first' : 'Wait'}
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
+          />
+          <GhostActionButton
+            icon={Play}
+            label="Force start"
+            tone="warning"
+            onClick={() => {
               setPendingConfirm(false);
               onStart();
             }}
-            className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold text-warning transition-colors hover:bg-warning/10"
-          >
-            Force start
-          </button>
+          />
         </div>
       ) : null}
     </div>

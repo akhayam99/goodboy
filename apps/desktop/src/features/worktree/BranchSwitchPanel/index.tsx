@@ -126,7 +126,7 @@ export const BranchSwitchPanel = ({ sessionId, onDone }: Props) => {
       </div>
 
       <SegmentedTabs
-        ariaLabel="branch source"
+        ariaLabel="Branch source"
         options={[
           {
             value: 'existing',

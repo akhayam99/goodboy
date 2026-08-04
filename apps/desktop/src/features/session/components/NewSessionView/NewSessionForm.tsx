@@ -335,8 +335,8 @@ export const NewSessionForm = ({
                     type="button"
                     onClick={onGenerateSlug}
                     disabled={goal.trim().length === 0 || slugGenerating || busy}
-                    title="Generate from goal"
-                    aria-label="Generate branch name"
+                    title="Generate branch name from goal"
+                    aria-label="Generate branch name from goal"
                     className={cn(
                       'shrink-0 rounded-md border border-border p-2 text-xs motion-safe:transition-colors',
                       goal.trim().length > 0 && !slugGenerating && !busy

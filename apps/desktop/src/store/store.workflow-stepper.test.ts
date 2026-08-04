@@ -518,7 +518,7 @@ describe('spawnAgent, CTA auto-run next step (#442)', () => {
 
     const agentId = await useAppStore
       .getState()
-      .spawnAgent(session.id, { stepId: 's-plan' as StepId });
+      .spawnAgent(session.id, { stepId: 's-plan' as StepId, focus: 'agent' });
 
     expect(useAppStore.getState().selectedAgentId[session.id]).toBe(agentId);
   });

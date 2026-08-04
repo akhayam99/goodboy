@@ -72,7 +72,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           actions={<ExternalRefActions url={issue.webUrl} label="issue" hostLabel="GitLab" />}
         />
       }
-      rail={launch}
+      dock={launch}
       properties={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
     >
       <DetailSection label="description" variant="frameless">

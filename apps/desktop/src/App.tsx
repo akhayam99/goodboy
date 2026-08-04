@@ -65,6 +65,7 @@ import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useWorkspaceRemoteHostKind } from './features/worktree/useWorkspaceRemoteHostKind';
 import { resolveSessionRepo } from './store/slices/worktrees/resolveSessionRepo';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
+import { SessionSidebarCollapsedContext } from './features/workspace/hooks/useSessionSidebarVisibility/collapsed';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -678,144 +679,146 @@ export const App = () => {
   return (
     <ToastProvider>
       <NotificationToastBridge />
-      <AppShell
-        topBar={
-          <AppTopBar
-            onOpenSettings={openSettings}
-            onOpenBudget={openBudget}
-            activeStudio={activeStudio}
-            hasWorkspace={currentWorkspace != null}
-            hasActiveSession={hasActiveSession}
-            isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
-            isSessionSidebarPeeking={sessionSidebar.isPeeking}
-            onToggleSessionSidebar={
-              sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
-            }
-            onSessionSidebarAnchorEnter={() => sessionSidebar.requestPeek({ source: 'anchor' })}
-            onSessionSidebarAnchorLeave={() => {
-              sessionSidebar.cancelPeek();
-              sessionSidebar.scheduleClose();
-            }}
-          />
-        }
-        footer={
-          currentWorkspace ? (
-            <AppFooter
-              activeStudio={activeStudio}
-              isSimpleWorkspace={currentWorkspace.kind === 'simple'}
-              onConvertToDevProject={() => setConvertWorkspaceOpen(true)}
-              githubEnabled={remoteKind === 'github'}
-              linearEnabled={hasLinear}
-              sentryEnabled={hasSentry}
-              gitlabEnabled={hasGitlab}
-              onOpenWorkflows={() => {
-                closeAllStudios();
-                setWorkflowStudioOpen(true);
-              }}
-              onOpenProviders={() => {
-                closeAllStudios();
-                setProviderStudioFocus(null);
-                setProviderStudioAction(null);
-                setProviderStudioOpen(true);
-              }}
+      <SessionSidebarCollapsedContext value={sessionSidebar.isCollapsed}>
+        <AppShell
+          topBar={
+            <AppTopBar
+              onOpenSettings={openSettings}
               onOpenBudget={openBudget}
-              onOpenImpact={openImpact}
-              onOpenChangelog={openChangelog}
-              onOpenGithub={() => {
-                closeAllStudios();
-                setGithubStudioSession(currentSession?.id ?? null);
-                setGithubStudioIssueId(null);
-                setGithubStudioOpen(true);
-              }}
-              onOpenLinear={() => {
-                closeAllStudios();
-                setLinearStudioFocus(null);
-                setLinearStudioOpen(true);
-              }}
-              onOpenSentry={() => {
-                closeAllStudios();
-                setSentryStudioFocus(null);
-                setSentryStudioOpen(true);
-              }}
-              onOpenGitlab={() => {
-                closeAllStudios();
-                setGitlabStudioFocus(null);
-                setGitlabStudioOpen(true);
-              }}
-            />
-          ) : undefined
-        }
-        leftHidden={sessionSidebar.leftHidden}
-        leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
-        leftOverlay={
-          hasWorkspaces && hasActiveSession && sessionSidebar.isCollapsed ? (
-            <SidebarPeekOverlay
-              isPeeking={sessionSidebar.isPeeking}
-              onEdgeEnter={() => sessionSidebar.requestPeek({ source: 'edge' })}
-              onEdgeLeave={() => {
+              activeStudio={activeStudio}
+              hasWorkspace={currentWorkspace != null}
+              hasActiveSession={hasActiveSession}
+              isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
+              isSessionSidebarPeeking={sessionSidebar.isPeeking}
+              onToggleSessionSidebar={
+                sessionSidebar.isCollapsed ? sessionSidebar.pin : sessionSidebar.toggle
+              }
+              onSessionSidebarAnchorEnter={() => sessionSidebar.requestPeek({ source: 'anchor' })}
+              onSessionSidebarAnchorLeave={() => {
                 sessionSidebar.cancelPeek();
                 sessionSidebar.scheduleClose();
               }}
-              onPanelEnter={sessionSidebar.cancelClose}
-              onPanelLeave={sessionSidebar.scheduleClose}
-              onHold={sessionSidebar.holdPeek}
-              onRelease={sessionSidebar.releasePeek}
-            >
-              <WorkspacesSidebar onNavigate={sessionSidebar.closePeek} />
-            </SidebarPeekOverlay>
-          ) : undefined
-        }
-        main={
-          <div className="relative h-full w-full">
-            {error ? (
-              <p className="p-6 text-sm text-danger">init error: {error}</p>
-            ) : currentSession ? (
-              <div className="relative h-full w-full">
-                {deferredRenderedIds.map((id) => (
-                  <KeepAliveWorkSurface
-                    key={id}
-                    sessionId={id}
-                    isActive={id === deferredActiveId}
-                  />
-                ))}
-              </div>
-            ) : currentWorkspace ? (
-              <StageBoard
-                workspaceId={currentWorkspace.id}
-                sessions={currentWorkspaceSessions}
-                onCreateSession={openNewSession}
+            />
+          }
+          footer={
+            currentWorkspace ? (
+              <AppFooter
+                activeStudio={activeStudio}
+                isSimpleWorkspace={currentWorkspace.kind === 'simple'}
+                onConvertToDevProject={() => setConvertWorkspaceOpen(true)}
+                githubEnabled={remoteKind === 'github'}
+                linearEnabled={hasLinear}
+                sentryEnabled={hasSentry}
+                gitlabEnabled={hasGitlab}
+                onOpenWorkflows={() => {
+                  closeAllStudios();
+                  setWorkflowStudioOpen(true);
+                }}
+                onOpenProviders={() => {
+                  closeAllStudios();
+                  setProviderStudioFocus(null);
+                  setProviderStudioAction(null);
+                  setProviderStudioOpen(true);
+                }}
+                onOpenBudget={openBudget}
+                onOpenImpact={openImpact}
+                onOpenChangelog={openChangelog}
+                onOpenGithub={() => {
+                  closeAllStudios();
+                  setGithubStudioSession(currentSession?.id ?? null);
+                  setGithubStudioIssueId(null);
+                  setGithubStudioOpen(true);
+                }}
+                onOpenLinear={() => {
+                  closeAllStudios();
+                  setLinearStudioFocus(null);
+                  setLinearStudioOpen(true);
+                }}
+                onOpenSentry={() => {
+                  closeAllStudios();
+                  setSentryStudioFocus(null);
+                  setSentryStudioOpen(true);
+                }}
+                onOpenGitlab={() => {
+                  closeAllStudios();
+                  setGitlabStudioFocus(null);
+                  setGitlabStudioOpen(true);
+                }}
               />
-            ) : (
-              <NoWorkspaceScreen onAddWorkspace={() => setAddWorkspaceOpen(true)} />
-            )}
+            ) : undefined
+          }
+          leftHidden={sessionSidebar.leftHidden}
+          leftSidebar={hasWorkspaces ? <WorkspacesSidebar /> : undefined}
+          leftOverlay={
+            hasWorkspaces && hasActiveSession && sessionSidebar.isCollapsed ? (
+              <SidebarPeekOverlay
+                isPeeking={sessionSidebar.isPeeking}
+                onEdgeEnter={() => sessionSidebar.requestPeek({ source: 'edge' })}
+                onEdgeLeave={() => {
+                  sessionSidebar.cancelPeek();
+                  sessionSidebar.scheduleClose();
+                }}
+                onPanelEnter={sessionSidebar.cancelClose}
+                onPanelLeave={sessionSidebar.scheduleClose}
+                onHold={sessionSidebar.holdPeek}
+                onRelease={sessionSidebar.releasePeek}
+              >
+                <WorkspacesSidebar onNavigate={sessionSidebar.closePeek} />
+              </SidebarPeekOverlay>
+            ) : undefined
+          }
+          main={
+            <div className="relative h-full w-full">
+              {error ? (
+                <p className="p-6 text-sm text-danger">init error: {error}</p>
+              ) : currentSession ? (
+                <div className="relative h-full w-full">
+                  {deferredRenderedIds.map((id) => (
+                    <KeepAliveWorkSurface
+                      key={id}
+                      sessionId={id}
+                      isActive={id === deferredActiveId}
+                    />
+                  ))}
+                </div>
+              ) : currentWorkspace ? (
+                <StageBoard
+                  workspaceId={currentWorkspace.id}
+                  sessions={currentWorkspaceSessions}
+                  onCreateSession={openNewSession}
+                />
+              ) : (
+                <NoWorkspaceScreen onAddWorkspace={() => setAddWorkspaceOpen(true)} />
+              )}
 
-            <OnboardingCard />
-          </div>
-        }
-        rightSidebar={null}
-        overlay={
-          newSessionOpen && currentWorkspace ? (
-            <NewSessionView
-              workspaceId={currentWorkspace.id}
-              onClose={() => setNewSessionOpen(false)}
-              onOpenSettings={() => {
-                setNewSessionOpen(false);
-                openSettings();
-              }}
-            />
-          ) : workspaceSettingsOpen && currentWorkspace ? (
-            <WorkspaceSettingsPane
-              workspaceId={currentWorkspace.id}
-              workspaceName={currentWorkspace.name}
-              initialSection={workspaceSettingsFocus}
-              onClose={() => {
-                setWorkspaceSettingsOpen(false);
-                setWorkspaceSettingsFocus(undefined);
-              }}
-            />
-          ) : undefined
-        }
-      />
+              <OnboardingCard />
+            </div>
+          }
+          rightSidebar={null}
+          overlay={
+            newSessionOpen && currentWorkspace ? (
+              <NewSessionView
+                workspaceId={currentWorkspace.id}
+                onClose={() => setNewSessionOpen(false)}
+                onOpenSettings={() => {
+                  setNewSessionOpen(false);
+                  openSettings();
+                }}
+              />
+            ) : workspaceSettingsOpen && currentWorkspace ? (
+              <WorkspaceSettingsPane
+                workspaceId={currentWorkspace.id}
+                workspaceName={currentWorkspace.name}
+                initialSection={workspaceSettingsFocus}
+                onClose={() => {
+                  setWorkspaceSettingsOpen(false);
+                  setWorkspaceSettingsFocus(undefined);
+                }}
+              />
+            ) : undefined
+          }
+        />
+      </SessionSidebarCollapsedContext>
 
       {appSettingsOpen ? (
         <SettingsStudio
@@ -931,7 +934,7 @@ export const App = () => {
         <DiffViewerDialog
           open
           onClose={() => setCommitDiff(null)}
-          title={`commit ${commitDiff.sha.slice(0, 7)}`}
+          title={`Commit ${commitDiff.sha.slice(0, 7)}`}
           loader={commitDiffLoader}
         />
       ) : null}

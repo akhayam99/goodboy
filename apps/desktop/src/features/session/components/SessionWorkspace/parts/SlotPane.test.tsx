@@ -214,7 +214,7 @@ describe('SlotPane', () => {
       fireEvent.click(historyBtn);
 
       expect(screen.queryByRole('dialog')).toBeNull();
-      expect(screen.getByText('history: Goal')).toBeDefined();
+      expect(screen.getByText('History: Goal')).toBeDefined();
     });
 
     it('lists history entries with author labels and relative timestamps', () => {
@@ -232,10 +232,10 @@ describe('SlotPane', () => {
       render(<SlotPane session={SESSION} slotKey="goal" />);
 
       fireEvent.click(screen.getByRole('button', { name: /view history for goal/i }));
-      expect(screen.getByText('history: Goal')).toBeDefined();
+      expect(screen.getByText('History: Goal')).toBeDefined();
 
       fireEvent.click(screen.getByRole('button', { name: /close history panel/i }));
-      expect(screen.queryByText('history: Goal')).toBeNull();
+      expect(screen.queryByText('History: Goal')).toBeNull();
     });
 
     it('calls loadSlotHistory on open', () => {
@@ -253,14 +253,14 @@ describe('SlotPane', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /view history for goal/i }));
 
-      const restoreButtons = screen.getAllByRole('button', { name: /^restore$/i });
+      const restoreButtons = screen.getAllByRole('button', { name: /^restore this version$/i });
       const first = restoreButtons[0];
       if (first != null) {
         fireEvent.click(first);
       }
 
       expect(store.upsertSessionSlot).toHaveBeenCalledWith('session-1', 'goal', 'old goal text');
-      expect(screen.queryByText('history: Goal')).toBeNull();
+      expect(screen.queryByText('History: Goal')).toBeNull();
     });
   });
 
@@ -371,10 +371,10 @@ describe('SlotPane', () => {
 
       const historyBtn = screen.getByRole('button', { name: /view history for goal/i });
       fireEvent.click(historyBtn);
-      expect(screen.getByText('history: Goal')).toBeDefined();
+      expect(screen.getByText('History: Goal')).toBeDefined();
 
       fireEvent.click(historyBtn);
-      expect(screen.queryByText('history: Goal')).toBeNull();
+      expect(screen.queryByText('History: Goal')).toBeNull();
     });
   });
 });

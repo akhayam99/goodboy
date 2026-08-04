@@ -71,7 +71,7 @@ export const AgentOverlay = ({
             onChange={setInspectorWidth}
             onReset={() => setInspectorWidth(320)}
             side="right"
-            ariaLabel="resize resolver inspector"
+            ariaLabel="Resize resolver inspector"
           />
           <div className="flex shrink-0 flex-col bg-background" style={{ width: inspectorWidth }}>
             <AgentInspector sessionId={sessionId} agentId={inspectedResolverId} />
@@ -87,7 +87,7 @@ export const AgentOverlay = ({
             onChange={setInspectorWidth}
             onReset={() => setInspectorWidth(320)}
             side="right"
-            ariaLabel="resize agent inspector"
+            ariaLabel="Resize agent inspector"
           />
           <div className="flex shrink-0 flex-col bg-background" style={{ width: inspectorWidth }}>
             <AgentInspector sessionId={sessionId} agentId={selectedAgentId} />
@@ -103,7 +103,7 @@ export const AgentOverlay = ({
             onChange={setInspectorWidth}
             onReset={() => setInspectorWidth(320)}
             side="right"
-            ariaLabel="resize workflow step inspector"
+            ariaLabel="Resize workflow step inspector"
           />
           <div className="flex shrink-0 flex-col bg-background" style={{ width: inspectorWidth }}>
             <WorkflowStepInspector session={session} agentId={selectedAgentId} />

@@ -4,11 +4,15 @@ import type { AgentMetrics } from '../../hooks/useAgentMetrics';
 import { agentThreadIds } from '../../agentThreadIds';
 import type { ResolverLink } from '../../resolver-linkage';
 import { ResolverCard } from './ResolverCard';
+import type { ResolverDiffTarget } from './resolverDiffActionLabel';
 import { hasOtherActiveResolver } from './resolverLaneEntries';
+
+const UNKNOWN_DIFF_TARGET: ResolverDiffTarget = { kind: 'unknown' };
 
 type Props = {
   readonly entries: ReadonlyArray<ResolverLink>;
   readonly activeIds: ReadonlySet<AgentId>;
+  readonly canOpenDiff: boolean;
   readonly isQueueStalled: boolean;
   readonly isTaskActive: boolean;
   readonly isTranscriptLoading: boolean;
@@ -19,14 +23,17 @@ type Props = {
   readonly diffCommentByAgentId: ReadonlyMap<AgentId, DiffComment>;
   readonly metrics: AgentMetrics;
   readonly reportedCommitShaByAgentId: ReadonlyMap<AgentId, string>;
+  readonly diffTargetByAgentId: ReadonlyMap<AgentId, ResolverDiffTarget>;
   readonly onOpenChat: (agentId: AgentId) => void;
   readonly onInspect: (agentId: AgentId) => void;
   readonly onJump: (agent: Agent) => void;
+  readonly onOpenDiff: (agentId: AgentId) => void;
 };
 
 export const ResolverRows = ({
   entries,
   activeIds,
+  canOpenDiff,
   isQueueStalled,
   isTaskActive,
   isTranscriptLoading,
@@ -37,9 +44,11 @@ export const ResolverRows = ({
   diffCommentByAgentId,
   metrics,
   reportedCommitShaByAgentId,
+  diffTargetByAgentId,
   onOpenChat,
   onInspect,
   onJump,
+  onOpenDiff,
 }: Props) => (
   <ul className="flex flex-col gap-1">
     {entries.map(({ agent, status }) => {
@@ -63,6 +72,8 @@ export const ResolverRows = ({
           turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
           turnsLoading={agent.id === selectedAgentId && isTranscriptLoading}
           reportedCommitSha={reportedCommitShaByAgentId.get(agent.id) ?? null}
+          diffTarget={diffTargetByAgentId.get(agent.id) ?? UNKNOWN_DIFF_TARGET}
+          canOpenDiff={canOpenDiff}
           isQueueStalled={isQueueStalled}
           hasOtherActiveResolvers={hasOtherActiveResolver({ activeIds, agentId: agent.id })}
           isSelected={agent.id === selectedAgentId}
@@ -73,6 +84,7 @@ export const ResolverRows = ({
           onOpenChat={() => onOpenChat(agent.id)}
           onInspect={() => onInspect(agent.id)}
           onJump={() => onJump(agent)}
+          onOpenDiff={() => onOpenDiff(agent.id)}
         />
       );
     })}

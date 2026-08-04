@@ -27,7 +27,7 @@ import { BranchPair } from '../../../../../shared/components/BranchPair';
 import { workspaceMountName } from '../../../../../shared/utils/workspaceMountName';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
-import { PaneShell } from './PaneShell';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { PrListRow } from './PrListRow';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -324,7 +324,7 @@ const GithubPrCard = ({
   ).length;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-elevated px-4 py-3.5">
+    <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-elevated p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex items-center gap-2">
@@ -343,7 +343,7 @@ const GithubPrCard = ({
           </h2>
         </div>
         <RefreshIconButton
-          label="refresh PR status"
+          label="Refresh PR status"
           iconSize={12}
           onClick={refresh}
           isLoading={loading}

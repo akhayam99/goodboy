@@ -120,6 +120,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
 
   return (
     <StudioDetailLayout
+      fit="fill"
       header={
         <HeaderBand
           meta={
@@ -146,7 +147,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           options={options}
         />
       }
-      rail={launch}
+      dock={launch}
       properties={resolveDetailFields({ registry: sentryIssueFields, entity: view })}
     >
       {activeSection === 'overview' ? (

@@ -63,7 +63,7 @@ export const WorkspaceStep = ({
                 <span className="truncate text-sm font-medium text-foreground">
                   {workspace.name}
                 </span>
-                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground">
                   {WORKSPACE_KIND_LABELS[workspace.kind ?? 'repo']}
                 </span>
               </span>

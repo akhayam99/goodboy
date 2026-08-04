@@ -289,7 +289,7 @@ describe('ChatInput, input wiring', () => {
     const textarea = screen.getByRole('textbox');
     expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
     expect(
-      (screen.getByRole('button', { name: /^model routing:/ }) as HTMLButtonElement).disabled,
+      (screen.getByRole('button', { name: /^Model routing:/ }) as HTMLButtonElement).disabled,
     ).toBe(false);
   });
 
@@ -419,9 +419,9 @@ describe('ChatInput, input wiring', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /^model routing:/ }));
+    await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
     await user.click(
-      within(screen.getByRole('dialog', { name: 'model routing' })).getByRole('button', {
+      within(screen.getByRole('dialog', { name: 'Model routing' })).getByRole('button', {
         name: 'Claude',
       }),
     );
@@ -431,7 +431,7 @@ describe('ChatInput, input wiring', () => {
       modelOverride: null,
     });
 
-    await user.click(screen.getByRole('button', { name: /^model routing:/ }));
+    await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
     const textarea = screen.getByRole('textbox');
     await user.type(textarea, 'back to claude');
     await user.keyboard('{Enter}');

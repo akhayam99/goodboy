@@ -1,9 +1,19 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Button, Divider, Markdown, ScrollFade, Skeleton } from '@goodboy/ui';
+import {
+  Button,
+  CopyButton,
+  Divider,
+  EmptyState,
+  Markdown,
+  ScrollFade,
+  Skeleton,
+} from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreContent, type ExploreEntry } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 
 type PreviewState =
@@ -25,6 +35,7 @@ type PreviewState =
 type Props = {
   readonly entry: ExploreEntry;
   readonly previewState: PreviewState;
+  readonly absolutePath: string;
   readonly onClose: () => void;
   readonly onOpenOutside: () => void;
 };
@@ -88,7 +99,13 @@ const formatByteSize = ({ bytes }: { readonly bytes: number }): string => {
   return `${size.toFixed(precision)} ${units[index]}`;
 };
 
-export const ExplorePreviewPanel = ({ entry, previewState, onClose, onOpenOutside }: Props) => {
+export const ExplorePreviewPanel = ({
+  entry,
+  previewState,
+  absolutePath,
+  onClose,
+  onOpenOutside,
+}: Props) => {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const previewKind = useMemo(() => previewKindOf({ entry, previewState }), [entry, previewState]);
   const modifiedLabel =
@@ -121,7 +138,13 @@ export const ExplorePreviewPanel = ({ entry, previewState, onClose, onOpenOutsid
     }
     if (previewState.status === 'error') {
       return (
-        <p className="text-xs text-danger">Could not read this file. {previewState.message}</p>
+        <EmptyState
+          icon={CONCEPT_ICONS.errors}
+          tone={CONCEPT_TONE.errors}
+          title="Could not read this file"
+          description={previewState.message}
+          size="inline"
+        />
       );
     }
     if (previewKind === 'markdown') {
@@ -191,7 +214,7 @@ export const ExplorePreviewPanel = ({ entry, previewState, onClose, onOpenOutsid
         closeLabel={`close preview for ${entry.name}`}
         onClose={onClose}
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 text-xs text-muted-foreground">
             <p className="truncate font-mono text-2xs">{entry.relPath}</p>
@@ -205,6 +228,7 @@ export const ExplorePreviewPanel = ({ entry, previewState, onClose, onOpenOutsid
               <ExternalLink size={13} aria-hidden />
               Open outside
             </Button>
+            <CopyButton value={absolutePath} label={`path for ${entry.name}`} />
           </div>
           <Divider />
           {renderPreviewBody()}

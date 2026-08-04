@@ -49,7 +49,7 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
             <button
               type="button"
               onClick={() => onDismiss(alert.id)}
-              aria-label="dismiss alert"
+              aria-label="Dismiss alert"
               className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <X size={13} aria-hidden />

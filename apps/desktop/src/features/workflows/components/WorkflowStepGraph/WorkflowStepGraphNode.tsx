@@ -29,7 +29,7 @@ export const WorkflowStepGraphNode = ({
   onSelect,
 }: Props) => (
   <div className="flex min-w-0 items-center gap-1.5">
-    <span className="w-6 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted-foreground/50">
+    <span className="w-6 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground/50">
       {marker}
     </span>
     <button
@@ -56,7 +56,7 @@ export const WorkflowStepGraphNode = ({
     {childCount > 0 ? (
       <span
         title={`${doneChildCount} of ${childCount} agents under ${run.name} are done`}
-        className="shrink-0 px-1 py-1 font-mono text-[10px] tabular-nums text-muted-foreground/70"
+        className="shrink-0 px-1 py-1 font-mono text-2xs tabular-nums text-muted-foreground/70"
       >
         {doneChildCount}/{childCount}
       </span>

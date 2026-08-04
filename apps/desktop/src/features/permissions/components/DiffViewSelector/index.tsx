@@ -319,7 +319,7 @@ export const DiffViewSelector = ({
           'hover:border-foreground/30 hover:bg-muted/30',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         )}
-        title="change diff view"
+        title="Change diff view"
       >
         <GitCommit size={11} aria-hidden className="text-muted-foreground" />
         <span className="font-medium">{label}</span>
@@ -336,7 +336,7 @@ export const DiffViewSelector = ({
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel="diff view"
+            ariaLabel="Diff view"
             className={cn(popupClassName, 'flex flex-col bg-subtle')}
             style={popupStyle}
           >
@@ -351,7 +351,7 @@ export const DiffViewSelector = ({
                 onKeyDown={handleKeyDown}
                 placeholder="filter commits by sha or subject…"
                 className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/60"
-                aria-label="filter commits"
+                aria-label="Filter commits"
               />
             </div>
             <Divider />
@@ -365,7 +365,7 @@ export const DiffViewSelector = ({
                           return (
                             <span
                               key={`${section.label}-${row.label}`}
-                              className="px-1.5 py-1 text-[11px] italic text-muted-foreground/50"
+                              className="px-1.5 py-1 text-2xs italic text-muted-foreground/50"
                             >
                               {row.label}
                             </span>
@@ -412,11 +412,11 @@ export const DiffViewSelector = ({
                                   {row.commit.subject}
                                 </span>
                                 {row.commit.pushed && (
-                                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground">
                                     pushed
                                   </span>
                                 )}
-                                <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+                                <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">
                                   {relativeTime({ timestamp: row.commit.timestamp })}
                                 </span>
                               </>

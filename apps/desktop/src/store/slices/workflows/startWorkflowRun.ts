@@ -37,6 +37,8 @@ export const startWorkflowRun = (set: SetFn, get: GetFn) => {
       ),
     }));
 
+    get().setFocusedWorkflowRun(sessionId, workflowRunId);
+
     if (run.autoRun) {
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
@@ -47,7 +49,7 @@ export const startWorkflowRun = (set: SetFn, get: GetFn) => {
       .sort((a, b) => a.ordinal - b.ordinal)
       .find((r) => r.status === 'pending');
     if (firstPending) {
-      await get().activateWorkflowAgent(sessionId, firstPending.id);
+      await get().activateWorkflowAgent(sessionId, firstPending.id, undefined, 'none');
       return;
     }
     if (run.executionMode === 'dynamic') {

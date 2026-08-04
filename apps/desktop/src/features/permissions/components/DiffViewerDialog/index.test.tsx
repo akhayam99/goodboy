@@ -190,7 +190,7 @@ describe('DiffViewerPane', () => {
     expect(await screen.findByText('Branch matches main')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'branch vs main' })).toBeNull();
     expect(screen.queryByRole('button', { name: /file list/i })).toBeNull();
-    const refresh = screen.getByRole('button', { name: 'refresh git state' });
+    const refresh = screen.getByRole('button', { name: 'Refresh git state' });
     expect(refresh).toBeDefined();
     expect(refresh.parentElement?.className).toContain('gap-1.5');
     expect(refresh.parentElement?.className).toContain('pt-0.5');
@@ -219,9 +219,9 @@ describe('DiffViewerPane', () => {
     expect(screen.getByRole('button', { name: 'branch vs main' })).toBeDefined();
     expect(await screen.findByText('2 commits')).toBeDefined();
     expect(screen.getByText('behind main by 3')).toBeDefined();
-    expect(screen.getByTitle('commits on main not in this branch')).toBeDefined();
-    expect(screen.getByTitle('unpushed commits')).toBeDefined();
-    expect(screen.getByTitle('behind upstream')).toBeDefined();
+    expect(screen.getByTitle('Commits on main not in this branch')).toBeDefined();
+    expect(screen.getByTitle('Unpushed commits')).toBeDefined();
+    expect(screen.getByTitle('Behind upstream')).toBeDefined();
     expect(screen.queryByText('1 file')).toBeNull();
   });
 
@@ -289,7 +289,7 @@ describe('DiffViewerPane', () => {
       <DiffViewerPane
         sessionId={SID}
         worktreePath="/tmp/worktree"
-        diffFocus={{ sha: 'abc1234def', path: 'src/a.ts' }}
+        diffFocus={{ kind: 'commit', sha: 'abc1234def', path: 'src/a.ts' }}
         onClose={vi.fn()}
       />,
     );
@@ -298,6 +298,35 @@ describe('DiffViewerPane', () => {
       expect(worktreeDiffCommit).toHaveBeenCalledWith('/tmp/worktree', 'abc1234def'),
     );
     await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalled());
+  });
+
+  it('loads every uncommitted change when the diff focus names the working tree', async () => {
+    fixtures.files = fileFixture();
+    const { worktreeDiffWorking } = await import('../../../../features/worktree/worktree');
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        diffFocus={{ kind: 'working', path: null }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(worktreeDiffWorking).toHaveBeenCalledWith('/tmp/worktree', 'all'));
+  });
+
+  it('keeps a pane action next to the diff toolbar', async () => {
+    fixtures.files = fileFixture();
+    render(
+      <DiffViewerPane
+        sessionId={SID}
+        worktreePath="/tmp/worktree"
+        paneActions={<button type="button">Back</button>}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Back' })).toBeDefined();
   });
 });
 
@@ -453,7 +482,7 @@ describe('line comment add (single + multi-line drag)', () => {
     fixtures.files = fileFixture();
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
 
-    const addFileNote = await screen.findByRole('button', { name: 'add file note' });
+    const addFileNote = await screen.findByRole('button', { name: 'Add file note' });
     expect(screen.queryByText('Add file note')).toBeNull();
     fireEvent.click(addFileNote);
     expect(await screen.findByPlaceholderText(/note for the agent/i)).toBeDefined();
@@ -473,7 +502,7 @@ describe('line comment add (single + multi-line drag)', () => {
       },
     ];
     render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
-    const picker = await screen.findByRole('button', { name: /^resolver routing:/ });
+    const picker = await screen.findByRole('button', { name: /^Resolver routing:/ });
     expect(picker.getAttribute('aria-label')).toContain('Claude');
     expect(picker.textContent).toContain('Medium');
   });

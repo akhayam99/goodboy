@@ -104,7 +104,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="menu"
           aria-expanded={open}
-          aria-label="display options"
+          aria-label="Display options"
           className={cn(
             'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
             open
@@ -122,7 +122,7 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
               <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden />
               <Popover
                 role="menu"
-                ariaLabel="session display options"
+                ariaLabel="Session display options"
                 className="fixed z-40 py-1"
                 style={{ top: coords.top, left: coords.left, width: MENU_WIDTH }}
               >

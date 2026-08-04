@@ -42,7 +42,7 @@ export const ThinkingIndicator = ({ context }: Props) => {
   return (
     <div
       role="status"
-      aria-label="agent working"
+      aria-label="Agent working"
       className="relative flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-2xs animate-border-pulse"
     >
       <DogMascot size={12} className="text-muted-foreground/70" />
