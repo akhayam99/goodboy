@@ -1,8 +1,4 @@
 import {
-  extractAllCommentAnalysis,
-  extractAllCommentReplies,
-  extractAllCommentResolved,
-  extractAllCommentWontfix,
   extractFanOut,
   extractPlanFromMarker,
   extractReviewComments,
@@ -12,13 +8,13 @@ import {
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
+import { resolverTurnOutcomes } from '../../../features/session/resolverTurnOutcomes';
 import {
   inferAgentKindFromName,
   KIND_TO_ROLE,
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import type { GetFn, SetFn } from './types';
-import type { ResolverThreadOutcome } from '../../types';
 
 type Params = {
   readonly set: SetFn;
@@ -95,36 +91,15 @@ export const completeResolvedAgent = async ({
     return null;
   }
 
-  const resolvedMarkers = extractAllCommentResolved(assistantText);
-  const wontfixMarkers = extractAllCommentWontfix(assistantText);
-  const analysisMarkers = extractAllCommentAnalysis(assistantText);
-  const outcomes: Record<string, ResolverThreadOutcome> = {};
-  for (const marker of resolvedMarkers) {
-    outcomes[marker.threadId] = { kind: 'resolved', commitSha: marker.commitSha };
-  }
-  for (const marker of wontfixMarkers) {
-    if (outcomes[marker.threadId]?.kind === 'resolved') {
-      continue;
-    }
-    outcomes[marker.threadId] = { kind: 'wontfix', reason: marker.reason };
-  }
-  for (const marker of analysisMarkers) {
-    if (outcomes[marker.threadId]?.kind === 'resolved') {
-      continue;
-    }
-    outcomes[marker.threadId] = { kind: 'analyzed', reply: marker.summary };
-  }
-  for (const marker of extractAllCommentReplies(assistantText)) {
-    const outcome = outcomes[marker.threadId];
-    if (outcome !== undefined) {
-      outcomes[marker.threadId] = { ...outcome, reply: marker.body };
-    }
-  }
-  const markerCount = resolvedMarkers.length + wontfixMarkers.length + analysisMarkers.length;
-  const previousOutcomes = get().resolverThreadOutcomes[resolvedAgentId] ?? {};
-  const nextOutcomes: Record<string, ResolverThreadOutcome> =
-    markerCount === 0 ? previousOutcomes : { ...previousOutcomes, ...outcomes };
-  const verdictOutcomes = markerCount === 0 ? outcomes : nextOutcomes;
+  const {
+    outcomes: nextOutcomes,
+    turnOutcomes,
+    markerCount,
+  } = resolverTurnOutcomes({
+    assistantText,
+    previousOutcomes: get().resolverThreadOutcomes[resolvedAgentId] ?? {},
+  });
+  const verdictOutcomes = markerCount === 0 ? turnOutcomes : nextOutcomes;
   const ownedThreadIds = ranAgent ? agentThreadIds(ranAgent) : [];
   const settledThreadIds =
     ownedThreadIds.length > 0 ? ownedThreadIds : Object.keys(verdictOutcomes);

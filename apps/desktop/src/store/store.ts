@@ -422,6 +422,7 @@ export type AppActions = {
   activateNextResolver(sessionId: SessionId): Promise<void>;
   forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;
   setResolverThreadReply(params: { agentId: AgentId; threadId: string; reply: string }): void;
+  hydrateResolverOutcomes(sessionId: SessionId): Promise<void>;
   renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
   setAgentKind(agentId: AgentId, kind: AgentKind): void;
   setAgentEffortOverride(agentId: AgentId, effort: string): void;

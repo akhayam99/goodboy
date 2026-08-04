@@ -13,6 +13,8 @@ import type {
   PlanConsumption,
   PlanConsumptionId,
   PlanId,
+  Message,
+  MessageId,
   PlanWithCount,
   ProviderRunId,
   Session,
@@ -84,6 +86,7 @@ vi.mock('@goodboy/db', () => ({
   listContextSlotsForSession: vi.fn(async () => []),
   insertContextSlotHistory: vi.fn(async () => undefined),
   listContextSlotHistory: vi.fn(async () => []),
+  listGoalAttachmentsForSession: vi.fn(async () => []),
   listMessagesForAgent: vi.fn(async () => []),
   listMessagesForSession: vi.fn(async () => []),
   listTurnEventsForAgent: vi.fn(async () => []),
@@ -553,6 +556,39 @@ describe('store contract', () => {
       expect(ss).toHaveLength(2);
       expect(ss[0]?.id).toBe(SESSION_ID);
       expect(ss[1]?.goal).toBe('two');
+    });
+
+    it('setCurrentSession rebuilds resolver verdicts from the persisted transcript', async () => {
+      const store = await getStore();
+      store.setState({ resolverThreadOutcomes: {} } as never);
+      invokeAgentListSpy.mockResolvedValue([
+        buildAgent({
+          id: AGENT_ID,
+          name: 'resolver',
+          kind: 'resolver',
+          status: 'completed',
+          sourceThreadIds: ['PRRT_1'],
+        }),
+      ]);
+      const { listMessagesForAgent } = await import('@goodboy/db');
+      (listMessagesForAgent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: 'message-1' as MessageId,
+          sessionId: SESSION_ID,
+          agentId: AGENT_ID,
+          role: 'assistant',
+          content: '<<comment-resolved threadId="PRRT_1" commitSha="abcdef1234567890">>',
+          createdAt: NOW,
+        } satisfies Message,
+      ]);
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      await vi.waitFor(() => {
+        expect(store.getState().resolverThreadOutcomes[AGENT_ID]).toEqual({
+          PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+        });
+      });
     });
 
     it('renameTask updates goal and stamps titleUserEdited', async () => {
