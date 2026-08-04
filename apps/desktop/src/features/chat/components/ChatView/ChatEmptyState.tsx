@@ -1,5 +1,6 @@
 import { useCallback, useMemo, type ReactElement, type ReactNode } from 'react';
-import { Button, Eyebrow, KbdPill } from '@goodboy/ui';
+import { Button, Eyebrow, KbdPill, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
@@ -135,7 +136,13 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
   }, [sessionId]);
 
   return (
-    <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center">
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center gap-5 px-6 py-16 text-center',
+        PANE_RHYTHM.column,
+        PANE_RHYTHM.measure.hero,
+      )}
+    >
       <div className="flex items-center justify-center">
         {agentVisual?.image ? (
           <span

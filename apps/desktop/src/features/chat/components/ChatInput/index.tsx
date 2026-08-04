@@ -10,6 +10,7 @@ import { QuickActionsPopover } from '../../../quick-actions';
 import { ProviderUsagePill } from '../ProviderUsagePill';
 import { CostBadge } from '../../../providers/components/CostBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
@@ -344,7 +345,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   return (
     <div className="px-10 pb-4 pt-2">
-      <div className="mx-auto flex w-full max-w-[880px] flex-col gap-2">
+      <div className={cn('flex flex-col gap-2', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}>
         {!isRunning && !providerDisconnected && (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
