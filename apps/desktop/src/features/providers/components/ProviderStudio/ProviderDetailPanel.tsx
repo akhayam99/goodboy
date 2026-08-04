@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Button,
-  Chip,
-  Divider,
-  EmptyState,
-  ScrollFade,
-  SectionHeader,
-  StatusDot,
-} from '@goodboy/ui';
+import { Button, Chip, EmptyState, SectionHeader, StatusDot } from '@goodboy/ui';
 import { RotateCw, Sparkles, type LucideIcon } from 'lucide-react';
 import {
   PROVIDER_BETA,
@@ -24,6 +16,7 @@ import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ApiProviderDetail } from './ApiProviderDetail';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 
 type Props = {
   readonly info: ProviderInfo | null;
@@ -90,85 +83,80 @@ function Detail({
     connectPhase === 'idle' || connectPhase === 'cancelled' || connectPhase === 'success';
   const showConnected = info.connection === 'connected' && settled;
 
+  const subtitle = info.version ? `${info.binary} ${info.version}` : info.binary;
+  const action = (
+    <div className="flex items-center gap-2">
+      {PROVIDER_BETA.has(id) ? <Chip tone="warning" label="Beta" /> : null}
+      <button
+        type="button"
+        aria-label="Re-detect CLIs"
+        disabled={refreshing}
+        onClick={() => void onRefresh()}
+        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+      >
+        <RotateCw size={14} aria-hidden />
+      </button>
+    </div>
+  );
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 px-8 py-4">
+    <StudioPanel
+      icon={
         <Icon
           size={20}
           aria-hidden
           className="shrink-0"
           style={{ color: `var(${PROVIDER_BRAND[id].cssVar})` }}
         />
-        <div className="flex min-w-0 flex-col">
-          <span className="flex items-center gap-2">
-            <span className="text-base font-semibold text-foreground">{info.label}</span>
-            {PROVIDER_BETA.has(id) ? <Chip tone="warning" label="Beta" /> : null}
-          </span>
-          <span className="truncate text-2xs text-muted-foreground">
-            {info.version ? `${info.binary} ${info.version}` : info.binary}
-          </span>
-        </div>
-        <div className="flex-1" />
-        <button
-          type="button"
-          aria-label="Re-detect CLIs"
-          disabled={refreshing}
-          onClick={() => void onRefresh()}
-          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-        >
-          <RotateCw size={14} aria-hidden />
-        </button>
-      </div>
-      <Divider />
+      }
+      title={info.label}
+      subtitle={subtitle}
+      action={action}
+    >
+      <section className="flex flex-col gap-2">
+        <SectionHeader label="Account" />
+        {info.connection === 'error' && settled ? (
+          <EmptyState
+            bordered
+            tone={CONCEPT_TONE.providers}
+            icon={CONCEPT_ICONS.providers}
+            title="Detection failed"
+            action={
+              <Button size="sm" onClick={() => void onRefresh()} disabled={refreshing}>
+                Retry
+              </Button>
+            }
+          />
+        ) : showConnected ? (
+          <ConnectedAccount
+            identity={info.identity}
+            canReauth={PROVIDER_CONNECT_CAPABILITIES[id].tier !== 'manual'}
+            confirmDisconnect={confirmDisconnect}
+            onReauth={() => void connectProvider(id)}
+            onAskDisconnect={() => setConfirmDisconnect(true)}
+            onCancelDisconnect={() => setConfirmDisconnect(false)}
+            onConfirmDisconnect={() => {
+              setConfirmDisconnect(false);
+              void logoutProvider(id);
+            }}
+          />
+        ) : (
+          <ProviderConnect
+            providerId={id}
+            chrome="studio"
+            autoStart={autoConnect}
+            onDone={() => void onRefresh()}
+          />
+        )}
+      </section>
 
-      <ScrollFade className="flex-1" fadeFrom="background">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-8 py-6">
-          <section className="flex flex-col gap-2">
-            <SectionHeader label="Account" />
-            {info.connection === 'error' && settled ? (
-              <EmptyState
-                bordered
-                tone={CONCEPT_TONE.providers}
-                icon={CONCEPT_ICONS.providers}
-                title="Detection failed"
-                action={
-                  <Button size="sm" onClick={() => void onRefresh()} disabled={refreshing}>
-                    Retry
-                  </Button>
-                }
-              />
-            ) : showConnected ? (
-              <ConnectedAccount
-                identity={info.identity}
-                canReauth={PROVIDER_CONNECT_CAPABILITIES[id].tier !== 'manual'}
-                confirmDisconnect={confirmDisconnect}
-                onReauth={() => void connectProvider(id)}
-                onAskDisconnect={() => setConfirmDisconnect(true)}
-                onCancelDisconnect={() => setConfirmDisconnect(false)}
-                onConfirmDisconnect={() => {
-                  setConfirmDisconnect(false);
-                  void logoutProvider(id);
-                }}
-              />
-            ) : (
-              <ProviderConnect
-                providerId={id}
-                chrome="studio"
-                autoStart={autoConnect}
-                onDone={() => void onRefresh()}
-              />
-            )}
-          </section>
-
-          {info.connection !== 'missing' && (
-            <>
-              <ProviderCredentialsSection providerId={id} />
-              <ProviderBindingsSection providerId={id} cliIdentity={info.identity} />
-            </>
-          )}
-        </div>
-      </ScrollFade>
-    </div>
+      {info.connection !== 'missing' && (
+        <>
+          <ProviderCredentialsSection providerId={id} />
+          <ProviderBindingsSection providerId={id} cliIdentity={info.identity} />
+        </>
+      )}
+    </StudioPanel>
   );
 }
 
