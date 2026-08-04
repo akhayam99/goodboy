@@ -4,7 +4,7 @@ import type { SetFn } from './types';
 
 export const resetTranscript = (set: SetFn) => {
   return (agentId: AgentId) => {
-    dropPendingTurnEvents({ agentId });
+    dropPendingTurnEvents({ agentIds: [agentId] });
     set((state) => ({
       transcripts: { ...state.transcripts, [agentId]: [] },
     }));

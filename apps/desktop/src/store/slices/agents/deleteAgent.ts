@@ -4,6 +4,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, deleteAttachment } from '../../../features/chat/turn';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
+import { dropPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
 export const deleteAgent = (set: SetFn, get: GetFn) => {
@@ -25,6 +26,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
     await tauriDatabase.execute('DELETE FROM agents WHERE id = ?', [agentId]);
     const refreshed = await invokeAgentList(sessionId);
     let derived: ReturnType<typeof deriveSessionState> | null = null;
+    dropPendingTurnEvents({ agentIds: [agentId] });
     set((s) => {
       const wasSelected = s.selectedAgentId[sessionId] === agentId;
       const nextSelected = { ...s.selectedAgentId };

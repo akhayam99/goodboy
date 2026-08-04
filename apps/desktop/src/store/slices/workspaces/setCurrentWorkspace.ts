@@ -39,6 +39,7 @@ import { buildProviderSpendBreakdown } from '../budget';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { relinkSimpleSessionDirectories } from './relinkSimpleSessionDirectories';
 import { buildSessionMounts } from '../worktrees/buildSessionMounts';
+import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
 export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
@@ -50,6 +51,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       ),
     );
 
+    clearPendingTurnEvents();
     set({
       currentWorkspaceId: id,
       currentSessionId: null,

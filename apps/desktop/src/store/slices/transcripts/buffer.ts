@@ -99,9 +99,15 @@ export const bufferTurnEvent = ({ set, agentId, sessionId, event }: BufferParams
 };
 
 type DropParams = {
-  readonly agentId: AgentId;
+  readonly agentIds: ReadonlyArray<AgentId>;
 };
 
-export const dropPendingTurnEvents = ({ agentId }: DropParams): void => {
-  pending.delete(agentId);
+export const dropPendingTurnEvents = ({ agentIds }: DropParams): void => {
+  for (const agentId of agentIds) {
+    pending.delete(agentId);
+  }
+};
+
+export const clearPendingTurnEvents = (): void => {
+  pending.clear();
 };
