@@ -120,7 +120,11 @@ export const AppFooter = ({
               <FooterButton
                 icon={<IntegrationGlyph provider="gitlab" size="xs" useBrandColor />}
                 label="GitLab"
-                title={gitlabEnabled ? 'launch a session from a GitLab issue' : 'Connect GitLab'}
+                title={
+                  gitlabEnabled
+                    ? 'review merge requests and launch a session from a GitLab issue'
+                    : 'Connect GitLab'
+                }
                 onClick={onOpenGitlab}
                 active={activeStudio === 'gitlab'}
                 connected={gitlabEnabled}

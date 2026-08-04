@@ -225,7 +225,11 @@ describe('AppFooter', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'launch a session from a GitLab issue' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'review merge requests and launch a session from a GitLab issue',
+      }),
+    );
 
     expect(onOpenGitlab).toHaveBeenCalledOnce();
   });
