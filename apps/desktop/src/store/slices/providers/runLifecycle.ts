@@ -151,7 +151,7 @@ export const runLifecycle = async (
     const chunk = atob(payload.data);
     outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
     if (!foundAuthUrl) {
-      const url = detectAuthUrl({ text: stripAnsi({ text: chunk }) });
+      const url = detectAuthUrl({ text: stripAnsi({ text: outputTail }) });
       if (url !== null) {
         foundAuthUrl = true;
         set((state) => {

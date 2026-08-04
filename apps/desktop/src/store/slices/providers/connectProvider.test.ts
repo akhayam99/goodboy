@@ -134,6 +134,23 @@ describe('connectProvider', () => {
     expect(h.phase()).toBe('handoff');
   });
 
+  it('opens an auth url that arrives split across two pty chunks', async () => {
+    const h = harness();
+    await h.connect('anthropic');
+    h.emitOutput('open https://claude.ai/oauth/authoriz');
+    expect(mocks.openUrl).not.toHaveBeenCalled();
+    h.emitOutput('e?code=1 to continue\n');
+    expect(mocks.openUrl).toHaveBeenCalledWith(AUTH_URL);
+    expect(h.phase()).toBe('handoff');
+  });
+
+  it('waits for the line to end before opening a url still being written', async () => {
+    const h = harness();
+    await h.connect('anthropic');
+    h.emitOutput(`open ${AUTH_URL}`);
+    expect(mocks.openUrl).not.toHaveBeenCalled();
+  });
+
   it('passes NO_OPEN_BROWSER to the cursor login so only goodboy opens the tab', async () => {
     const h = harness();
     await h.connect('cursor');

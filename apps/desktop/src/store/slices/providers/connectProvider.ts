@@ -311,7 +311,7 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
     if (run.openedUrl) {
       return;
     }
-    const url = detectAuthUrl({ text: stripAnsi({ text: chunk }) });
+    const url = detectAuthUrl({ text: stripAnsi({ text: run.outputTail }) });
     if (url === null) {
       return;
     }

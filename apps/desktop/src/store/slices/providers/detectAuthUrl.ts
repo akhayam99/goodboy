@@ -7,11 +7,11 @@ type Params = {
 };
 
 export const detectAuthUrl = ({ text }: Params): string | null => {
-  const matches = text.match(URL_RE);
-  if (matches === null) {
-    return null;
-  }
-  for (const url of matches) {
+  for (const match of text.matchAll(URL_RE)) {
+    const url = match[0];
+    if (match.index + url.length >= text.length) {
+      continue;
+    }
     if (AUTH_HINT_RE.test(url)) {
       return url;
     }
