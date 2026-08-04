@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
+import { ComposerActionRow } from './ComposerActionRow';
 
 type Props = {
   readonly label: string;
@@ -38,23 +39,12 @@ export const LineComposer = ({ label, onSubmit, onCancel }: Props) => {
             }
           }}
         />
-        <div className="flex items-center justify-end gap-1">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => trimmed.length > 0 && onSubmit(trimmed)}
-            disabled={trimmed.length === 0}
-            className="inline-flex items-center gap-1 rounded-sm bg-foreground px-2 py-0.5 text-3xs font-medium text-background hover:opacity-80 disabled:opacity-30"
-          >
-            Add draft
-          </button>
-        </div>
+        <ComposerActionRow
+          saveLabel="Add draft"
+          disabled={trimmed.length === 0}
+          onCancel={onCancel}
+          onSave={() => trimmed.length > 0 && onSubmit(trimmed)}
+        />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Textarea, cn } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
+import { ComposerActionRow } from './ComposerActionRow';
 
 type Props = {
   readonly draft: PrReviewDraft;
@@ -88,23 +89,12 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
               }
             }}
           />
-          <div className="flex items-center justify-end gap-1">
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="rounded-sm px-2 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={save}
-              disabled={trimmed.length === 0}
-              className="rounded-sm bg-foreground px-2 py-0.5 text-3xs font-medium text-background hover:opacity-80 disabled:opacity-30"
-            >
-              Save
-            </button>
-          </div>
+          <ComposerActionRow
+            saveLabel="Save"
+            disabled={trimmed.length === 0}
+            onCancel={() => setEditing(false)}
+            onSave={save}
+          />
         </div>
       ) : (
         <button
