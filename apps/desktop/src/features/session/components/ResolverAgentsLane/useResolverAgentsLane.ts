@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { listTurnEventsForSession } from '@goodboy/db';
 import type {
   Agent,
@@ -58,8 +59,18 @@ export const useResolverAgentsLane = ({ session }: Params) => {
   const selectAgent = useAppStore((state) => state.selectAgent);
   const openDiffLens = useAppStore((state) => state.openDiffLens);
   const activateNextResolver = useAppStore((state) => state.activateNextResolver);
-  const transcripts = useAppStore((state) => state.transcripts);
-  const agentRunHistory = useAppStore((state) => state.agentRunHistory);
+  const laneAgentIds = useMemo(
+    () => resolverIndex.links.map(({ agent }) => agent.id),
+    [resolverIndex.links],
+  );
+  const liveEventsByLaneIndex = useAppStore(
+    useShallow((state) =>
+      laneAgentIds.map((agentId) => state.transcripts[agentId] ?? EMPTY_EVENTS),
+    ),
+  );
+  const runIdsByLaneIndex = useAppStore(
+    useShallow((state) => laneAgentIds.map((agentId) => state.agentRunHistory[agentId] ?? null)),
+  );
   const worktreePath = useSessionRepo({ sessionId })?.worktreePath ?? null;
   const loading = useSessionLoading(sessionId);
   const metrics = useAgentMetrics({ sessionId });
@@ -126,9 +137,9 @@ export const useResolverAgentsLane = ({ session }: Params) => {
       eventsByRunId.set(event.runId, events);
     }
     const result = new Map<AgentId, string>();
-    for (const { agent } of resolverIndex.links) {
-      const liveEvents = transcripts[agent.id] ?? EMPTY_EVENTS;
-      const runIds = agentRunHistory[agent.id] ?? (agent.runId === undefined ? [] : [agent.runId]);
+    for (const [index, { agent }] of resolverIndex.links.entries()) {
+      const liveEvents = liveEventsByLaneIndex[index] ?? EMPTY_EVENTS;
+      const runIds = runIdsByLaneIndex[index] ?? (agent.runId === undefined ? [] : [agent.runId]);
       const events =
         liveEvents.length > 0
           ? liveEvents
@@ -145,7 +156,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
       }
     }
     return result;
-  }, [agentRunHistory, commits, resolverIndex.links, storedEvents, transcripts]);
+  }, [commits, liveEventsByLaneIndex, resolverIndex.links, runIdsByLaneIndex, storedEvents]);
 
   const diffCommitShaByAgentId = useMemo(() => {
     const map = new Map<AgentId, string>();

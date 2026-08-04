@@ -181,7 +181,23 @@ export const useWorkspaceRuns = (
       return out;
     }),
   );
-  const agentRunHistory = useAppStore((s) => s.agentRunHistory);
+  const workspaceAgentIds = useMemo(
+    () => Object.values(phaseRunsBySession).flatMap((runs) => runs.map((run) => run.id)),
+    [phaseRunsBySession],
+  );
+  const agentRunHistory = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, ReadonlyArray<string>> = {};
+      for (const id of workspaceAgentIds) {
+        const history = s.agentRunHistory[id];
+        if (history === undefined) {
+          continue;
+        }
+        out[id] = history;
+      }
+      return out;
+    }),
+  );
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const selectedAgentIdBySession = useAppStore(
     useShallow((s) => {

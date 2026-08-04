@@ -112,6 +112,13 @@ export const PrDetailPanel = ({
     () => (activePr == null ? [] : prSectionOptions({ pr: activePr, detail })),
     [activePr, detail],
   );
+  const properties = useMemo(
+    () =>
+      activePr == null
+        ? null
+        : resolveDetailFields({ registry: githubPullRequestFields, entity: activePr }),
+    [activePr],
+  );
 
   useEffect(() => {
     setCreateOpen(false);
@@ -442,7 +449,7 @@ export const PrDetailPanel = ({
           onAddReviewers={onAddReviewers}
         />
       }
-      properties={resolveDetailFields({ registry: githubPullRequestFields, entity: activePr })}
+      {...(properties != null && { properties })}
     >
       {section === 'overview' ? (
         <PrOverview pr={activePr} sessionId={sessionId} onMutated={onMutated} />

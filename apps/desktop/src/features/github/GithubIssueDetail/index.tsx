@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Markdown } from '@goodboy/ui';
 import type { GithubIssue } from '@goodboy/types';
 import {
@@ -19,6 +19,10 @@ type Props = {
 };
 
 export const GithubIssueDetail = ({ issue, headerActions, fit = 'fill' }: Props) => {
+  const properties = useMemo(
+    () => resolveDetailFields({ registry: githubIssueFields, entity: issue }),
+    [issue],
+  );
   return (
     <StudioDetailLayout
       fit={fit}
@@ -41,7 +45,7 @@ export const GithubIssueDetail = ({ issue, headerActions, fit = 'fill' }: Props)
           }
         />
       }
-      properties={resolveDetailFields({ registry: githubIssueFields, entity: issue })}
+      properties={properties}
     >
       <DetailSection label="description" variant="frameless">
         {issue.body.trim() !== '' ? (

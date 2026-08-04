@@ -155,7 +155,10 @@ export const LensColumn = ({
   const hasGithubPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr != null);
   const hasGitlabMr = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr != null);
   const resolverIndex = useResolverIndex(sessionId);
-  const openResolvers = resolverLaneEntries({ links: resolverIndex.links }).active.length;
+  const openResolvers = useMemo(
+    () => resolverLaneEntries({ links: resolverIndex.links }).active.length,
+    [resolverIndex.links],
+  );
   const hasPendingBatch = useAppStore(
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
   );

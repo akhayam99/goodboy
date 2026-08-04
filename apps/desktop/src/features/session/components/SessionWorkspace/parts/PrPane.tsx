@@ -243,6 +243,20 @@ const GithubPrCard = ({
   );
   const loading = github?.loading ?? false;
   const error = github?.error ?? null;
+  const checks = detail?.checks ?? EMPTY_ARRAY;
+  const unresolved = (detail?.comments ?? []).filter(
+    (c) => c.source === 'review' && c.resolved === false,
+  ).length;
+  const properties = useMemo(
+    () =>
+      pr === null
+        ? null
+        : resolveDetailFields({
+            registry: sessionPullRequestFields,
+            entity: { pr, checks, unresolved },
+          }),
+    [checks, pr, unresolved],
+  );
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
 
   const shell = ({ children }: { readonly children: ReactNode }) => (
@@ -328,10 +342,6 @@ const GithubPrCard = ({
     });
   }
 
-  const unresolved = (detail?.comments ?? []).filter(
-    (c) => c.source === 'review' && c.resolved === false,
-  ).length;
-
   return (
     <StudioDetailLayout
       fit="fill"
@@ -359,10 +369,7 @@ const GithubPrCard = ({
         />
       }
       {...(tabs != null && { tabs })}
-      properties={resolveDetailFields({
-        registry: sessionPullRequestFields,
-        entity: { pr, checks: detail?.checks ?? [], unresolved },
-      })}
+      {...(properties != null && { properties })}
     >
       <LinkedPullRequestsSection
         prs={branchPrs.length > 0 ? branchPrs : [pr]}
