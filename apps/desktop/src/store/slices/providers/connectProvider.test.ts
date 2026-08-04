@@ -232,6 +232,32 @@ describe('connectProvider', () => {
     expect(h.phase()).toBe('finished-unverified');
   });
 
+  it('still reaches success when the callback lands after the process exited', async () => {
+    const h = harness();
+    await h.connect('anthropic');
+    h.emitExit({ exitCode: 0, authState: 'unknown', identity: null });
+    expect(h.phase()).toBe('finished-unverified');
+
+    mocks.checkProviderAuth.mockResolvedValue({ state: 'connected', identity: 'a@b.com' });
+    await vi.advanceTimersByTimeAsync(4_000);
+
+    expect(h.phase()).toBe('success');
+    expect(h.identity()).toBe('a@b.com');
+  });
+
+  it('gives up probing once the post-exit window closes', async () => {
+    const h = harness();
+    await h.connect('anthropic');
+    h.emitExit({ exitCode: 0, authState: 'unknown', identity: null });
+    await vi.advanceTimersByTimeAsync(61_000);
+    expect(vi.getTimerCount()).toBe(0);
+
+    mocks.checkProviderAuth.mockResolvedValue({ state: 'connected', identity: 'a@b.com' });
+    await vi.advanceTimersByTimeAsync(120_000);
+
+    expect(h.phase()).toBe('finished-unverified');
+  });
+
   it('carries the last meaningful output line when the run fails', async () => {
     const h = harness();
     await h.connect('anthropic');

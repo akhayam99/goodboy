@@ -6,7 +6,7 @@ export type ConnectRun = {
   outputTail: string;
   stallTimer: number | null;
   probeTimer: number | null;
-  handoffTimers: number[];
+  timers: number[];
   unlisten: Array<() => void>;
 };
 
@@ -43,10 +43,10 @@ export const disposeConnectRun = ({ providerId }: Params): void => {
     window.clearTimeout(run.probeTimer);
     run.probeTimer = null;
   }
-  for (const timer of run.handoffTimers) {
+  for (const timer of run.timers) {
     window.clearTimeout(timer);
   }
-  run.handoffTimers = [];
+  run.timers = [];
   for (const stop of run.unlisten) {
     stop();
   }
@@ -61,7 +61,7 @@ export const openConnectRun = ({ providerId }: Params): ConnectRun => {
     outputTail: '',
     stallTimer: null,
     probeTimer: null,
-    handoffTimers: [],
+    timers: [],
     unlisten: [],
   };
   RUNS.set(providerId, run);

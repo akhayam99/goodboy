@@ -90,6 +90,9 @@ export const ACTIVE_CONNECT_PHASES: ReadonlySet<ProviderConnectPhase> =
     'stall',
   ]);
 
+export const PROBED_CONNECT_PHASES: ReadonlySet<ProviderConnectPhase> =
+  new Set<ProviderConnectPhase>([...ACTIVE_CONNECT_PHASES, 'finished-unverified']);
+
 export type ProviderLifecycleMap = Readonly<Record<ProviderId, ProviderLifecycleState>>;
 
 export const INITIAL_LIFECYCLE_MAP: ProviderLifecycleMap = {

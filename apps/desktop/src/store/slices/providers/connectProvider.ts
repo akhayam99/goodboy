@@ -22,6 +22,7 @@ import { stripAnsi } from './stripAnsi';
 import {
   ACTIVE_CONNECT_PHASES,
   IDLE_CONNECT,
+  PROBED_CONNECT_PHASES,
   type GetFn,
   type ProviderConnectState,
   type SetFn,
@@ -32,6 +33,7 @@ const HANDOFF_LONG_MS = 30_000;
 const HANDOFF_FALLBACK_MS = 120_000;
 const PROBE_DELAYS_MS = [3_000, 6_000, 12_000, 24_000] as const;
 const PROBE_CEILING_MS = 600_000;
+const POST_EXIT_PROBE_MS = 60_000;
 const OUTPUT_TAIL_CAP = 4 * 1024;
 const ERROR_TAIL_CAP = 500;
 const PTY_COLS = 100;
@@ -203,15 +205,24 @@ const finishSuccess = ({ set, get, providerId, run, identity }: FinishSuccessPar
 type ProbeParams = StepParams & {
   readonly attempt: number;
   readonly startedAt: number;
+  readonly ceiling: number;
 };
 
-const scheduleProbe = ({ set, get, providerId, run, attempt, startedAt }: ProbeParams): void => {
+const scheduleProbe = ({
+  set,
+  get,
+  providerId,
+  run,
+  attempt,
+  startedAt,
+  ceiling,
+}: ProbeParams): void => {
   const delay = PROBE_DELAYS_MS[Math.min(attempt, PROBE_DELAYS_MS.length - 1)] ?? PROBE_CEILING_MS;
-  if (Date.now() - startedAt + delay > PROBE_CEILING_MS) {
+  if (Date.now() - startedAt + delay > ceiling) {
     return;
   }
   run.probeTimer = window.setTimeout(() => {
-    void probeOnce({ set, get, providerId, run, attempt, startedAt });
+    void probeOnce({ set, get, providerId, run, attempt, startedAt, ceiling });
   }, delay);
 };
 
@@ -222,6 +233,7 @@ const probeOnce = async ({
   run,
   attempt,
   startedAt,
+  ceiling,
 }: ProbeParams): Promise<void> => {
   run.probeTimer = null;
   if (!isOwnedRun({ providerId, run })) {
@@ -235,10 +247,10 @@ const probeOnce = async ({
     finishSuccess({ set, get, providerId, run, identity: auth.identity });
     return;
   }
-  if (!ACTIVE_CONNECT_PHASES.has(get().providerConnect[providerId].phase)) {
+  if (!PROBED_CONNECT_PHASES.has(get().providerConnect[providerId].phase)) {
     return;
   }
-  scheduleProbe({ set, get, providerId, run, attempt: attempt + 1, startedAt });
+  scheduleProbe({ set, get, providerId, run, attempt: attempt + 1, startedAt, ceiling });
 };
 
 type EnterHandoffParams = StepParams & {
@@ -248,7 +260,7 @@ type EnterHandoffParams = StepParams & {
 const enterHandoff = ({ set, get, providerId, run, url }: EnterHandoffParams): void => {
   clearStallTimer({ run });
   patchConnect({ set, providerId, patch: { phase: 'handoff', authUrl: url } });
-  run.handoffTimers.push(
+  run.timers.push(
     window.setTimeout(() => {
       if (!isOwnedRun({ providerId, run })) {
         return;
@@ -259,7 +271,7 @@ const enterHandoff = ({ set, get, providerId, run, url }: EnterHandoffParams): v
       patchConnect({ set, providerId, patch: { phase: 'waiting-long' } });
     }, HANDOFF_LONG_MS),
   );
-  run.handoffTimers.push(
+  run.timers.push(
     window.setTimeout(() => {
       if (!isOwnedRun({ providerId, run })) {
         return;
@@ -271,7 +283,15 @@ const enterHandoff = ({ set, get, providerId, run, url }: EnterHandoffParams): v
       patchConnect({ set, providerId, patch: { phase: 'fallback-offered' } });
     }, HANDOFF_FALLBACK_MS),
   );
-  scheduleProbe({ set, get, providerId, run, attempt: 0, startedAt: Date.now() });
+  scheduleProbe({
+    set,
+    get,
+    providerId,
+    run,
+    attempt: 0,
+    startedAt: Date.now(),
+    ceiling: PROBE_CEILING_MS,
+  });
 };
 
 const runLogin = async ({ set, get, providerId, run, capability }: LoginParams): Promise<void> => {
@@ -337,8 +357,28 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
       failRun({ set, get, providerId, run });
       return;
     }
-    disposeConnectRun({ providerId });
+    clearStallTimer({ run });
     patchConnect({ set, providerId, patch: { phase: 'finished-unverified' } });
+    scheduleProbe({
+      set,
+      get,
+      providerId,
+      run,
+      attempt: 0,
+      startedAt: Date.now(),
+      ceiling: POST_EXIT_PROBE_MS,
+    });
+    run.timers.push(
+      window.setTimeout(() => {
+        if (!isOwnedRun({ providerId, run })) {
+          return;
+        }
+        if (get().providerConnect[providerId].phase !== 'finished-unverified') {
+          return;
+        }
+        disposeConnectRun({ providerId });
+      }, POST_EXIT_PROBE_MS),
+    );
     void get().refreshProviders();
   };
 
