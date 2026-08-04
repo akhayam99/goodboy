@@ -178,7 +178,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
         SESSION_ID,
         IMPL_AGENT_ID,
         PLAN_ID,
-        'agent',
+        'none',
       );
     });
 
@@ -214,7 +214,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
         expect(
           state.activateWorkflowAgent,
           `alias "${name}" should activate the slot`,
-        ).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID, 'agent');
+        ).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID, 'none');
       }
     });
 
@@ -240,7 +240,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
           SESSION_ID,
           IMPL_AGENT_ID,
           PLAN_ID,
-          'agent',
+          'none',
         );
       },
     );
@@ -260,7 +260,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
       expect(args).not.toHaveProperty('stepId');
     });
@@ -275,7 +275,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
   });
@@ -310,7 +310,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
 
@@ -326,7 +326,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
 
@@ -352,7 +352,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
   });
@@ -368,7 +368,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
 
@@ -382,7 +382,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
   });
@@ -417,7 +417,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
 
@@ -464,7 +464,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
   });
@@ -504,7 +504,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
     });
 
@@ -548,8 +548,57 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(args, `next step "${name}" must trigger free-spawn`).toEqual({
         triggeredPlanId: PLAN_ID,
         kindOverride: 'implementer',
-        focus: 'agent',
+        focus: 'none',
       });
+    });
+  });
+
+  describe('spawning does not steal focus', () => {
+    it('activates the workflow slot without focus and hands back the agent to open', async () => {
+      const state = defaultState();
+      const slice = buildSlice(state);
+
+      const agentId = await slice.runPlan(SESSION_ID, PLAN_ID);
+
+      expect(state.activateWorkflowAgent).toHaveBeenCalledWith(
+        SESSION_ID,
+        IMPL_AGENT_ID,
+        PLAN_ID,
+        'none',
+      );
+      expect(agentId).toBe(IMPL_AGENT_ID);
+    });
+
+    it('free-spawns without focus and hands back the spawned agent', async () => {
+      const state = defaultState({ sessions: [makeSession({ workflowRuns: [] })] });
+
+      const agentId = await buildSlice(state).runPlan(SESSION_ID, PLAN_ID);
+
+      expect(state.spawnAgent.mock.calls[0]![1]).toMatchObject({ focus: 'none' });
+      expect(agentId).toBe('spawned');
+    });
+
+    it('hands back nothing when the plan creator failed and no agent starts', async () => {
+      const state = defaultState({
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            makeAgent({
+              id: CREATOR_AGENT_ID,
+              stepId: STEP_PLAN,
+              workflowRunId: RUN_ID,
+              status: 'failed',
+              name: 'Plan',
+              ordinal: 0,
+            }),
+          ],
+        },
+      });
+
+      const agentId = await buildSlice(state).runPlan(SESSION_ID, PLAN_ID);
+
+      expect(agentId).toBeNull();
+      expect(state.spawnAgent).not.toHaveBeenCalled();
+      expect(state.activateWorkflowAgent).not.toHaveBeenCalled();
     });
   });
 

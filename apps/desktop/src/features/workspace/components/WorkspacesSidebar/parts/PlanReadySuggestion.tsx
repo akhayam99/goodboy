@@ -14,6 +14,7 @@ import {
   inferAgentKindFromName,
   kindConsumesPlan,
 } from '../../../../session/agent-kind';
+import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
 
 type Props = {
   task: Session;
@@ -29,6 +30,7 @@ export const PlanReadySuggestion = ({ task }: Props) => {
     (s) => s.phaseTemplates[task.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
   const runPlan = useAppStore((s) => s.runPlan);
+  const announceAgentStarted = useAgentStartedToast();
   const [spawning, setSpawning] = useState(false);
 
   const latest = plans[plans.length - 1];
@@ -74,7 +76,13 @@ export const PlanReadySuggestion = ({ task }: Props) => {
     }
     setSpawning(true);
     try {
-      await runPlan(task.id, latest.id);
+      const agentId = await runPlan(task.id, latest.id);
+      announceAgentStarted({
+        sessionId: task.id,
+        agentId,
+        title: 'Implementer started',
+        message: 'An agent is running this plan. You can keep working.',
+      });
     } finally {
       setSpawning(false);
     }

@@ -1,12 +1,12 @@
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { recordOutcome } from './recordOutcome';
 import type { GetFn, SetFn } from './types';
 
 export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId) => {
+  return async (sessionId: SessionId): Promise<AgentId | null> => {
     const nudge = get().sessionNudges[sessionId] ?? null;
     if (!nudge) {
-      return;
+      return null;
     }
     set((state) => ({
       sessionNudges: { ...state.sessionNudges, [sessionId]: null },
@@ -14,20 +14,21 @@ export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
     await recordOutcome(nudge.id, 'accepted');
     if (nudge.kind === 'plan-ready') {
       if (nudge.planId !== null) {
-        await get().spawnAgent(sessionId, {
+        return await get().spawnAgent(sessionId, {
           triggeredPlanId: nudge.planId,
           kindOverride: 'implementer',
-          focus: 'agent',
+          focus: 'none',
         });
-      } else {
-        await get().spawnAgent(sessionId, { kindOverride: 'implementer', focus: 'agent' });
       }
-    } else if (nudge.kind === 'handoff-suggested') {
-      await get().spawnAgent(sessionId, {
+      return await get().spawnAgent(sessionId, { kindOverride: 'implementer', focus: 'none' });
+    }
+    if (nudge.kind === 'handoff-suggested') {
+      return await get().spawnAgent(sessionId, {
         kindOverride: nudge.targetKind,
         ...(nudge.planId !== null && { triggeredPlanId: nudge.planId }),
-        focus: 'agent',
+        focus: 'none',
       });
     }
+    return null;
   };
 };

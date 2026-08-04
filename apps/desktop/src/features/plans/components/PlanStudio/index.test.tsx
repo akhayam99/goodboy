@@ -1,9 +1,14 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { state } = vi.hoisted(() => ({
+type ToastAction = { readonly label: string; readonly onClick: () => void };
+
+type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
+
+const { state, showToast } = vi.hoisted(() => ({
+  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
   state: {
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
@@ -11,8 +16,10 @@ const { state } = vi.hoisted(() => ({
     updatePlanBody: vi.fn(async () => undefined),
     deletePlan: vi.fn(async () => undefined),
     restorePlan: vi.fn(async () => undefined),
-    runPlan: vi.fn(async () => undefined),
+    runPlan: vi.fn(async () => 'agent-impl'),
     selectAgent: vi.fn(async () => undefined),
+    setCurrentSession: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
     setFocusedPlanId: vi.fn(),
     plans: [] as ReadonlyArray<unknown>,
   },
@@ -25,10 +32,14 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast: vi.fn() }),
+  useToast: () => ({ showToast }),
 }));
 
 beforeEach(() => {
+  showToast.mockClear();
+  state.runPlan.mockClear();
+  state.selectAgent.mockClear();
+  state.setActiveLens.mockClear();
   state.sessionPhaseRuns = {};
   state.planConsumptions = {};
   state.plans = [];
@@ -102,6 +113,35 @@ describe('PlanStudio', () => {
     expect(state.deletePlan).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Delete Implement auth module' }));
     expect(state.deletePlan).toHaveBeenCalledWith('sess-1', 'plan-1');
+  });
+
+  it('starts the plan without opening the agent, and opens it only from the toast action', async () => {
+    state.plans = [
+      {
+        id: 'plan-1',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'Implement auth module',
+        bodyMd: '## Steps',
+        status: 'active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 0,
+      },
+    ];
+    render(<PlanStudio sessionId={'sess-1' as never} initialPlanId={'plan-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+
+    await waitFor(() => expect(state.runPlan).toHaveBeenCalledWith('sess-1', 'plan-1'));
+    await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
+    expect(state.selectAgent).not.toHaveBeenCalled();
+    const opts = showToast.mock.calls[0]![2];
+    expect(opts?.title).toBe('Implementer started');
+    expect(opts?.action?.label).toBe('Open the agent');
+
+    opts?.action?.onClick();
+
+    await waitFor(() => expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-impl'));
+    expect(state.setActiveLens).toHaveBeenCalledWith('sess-1', 'agents');
   });
 });
 

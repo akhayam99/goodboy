@@ -646,9 +646,9 @@ export type AppActions = {
   deletePlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   restorePlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   loadConsumptionsForPlan(planId: PlanId): Promise<void>;
-  runPlan(sessionId: SessionId, planId: PlanId): Promise<void>;
+  runPlan(sessionId: SessionId, planId: PlanId): Promise<AgentId | null>;
   dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
-  acceptSessionNudgeHandoff(sessionId: SessionId): Promise<void>;
+  acceptSessionNudgeHandoff(sessionId: SessionId): Promise<AgentId | null>;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;

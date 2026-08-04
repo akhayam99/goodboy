@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Paperclip, Send, Square } from 'lucide-react';
 import { Divider, Textarea, cn, formatUsd } from '@goodboy/ui';
-import type { Session, TurnProviderOverride } from '@goodboy/types';
+import type { Session, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import { useAppStore, useSessionCost } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
@@ -25,6 +25,7 @@ import { useScopeNudge } from './hooks/useScopeNudge';
 import { useRightSizeNudge } from './hooks/useRightSizeNudge';
 import { useAgentSwitchSync } from './hooks/useAgentSwitchSync';
 import { useSuggestionCards } from './hooks/useSuggestionCards';
+import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { AttachmentChip } from './parts/AttachmentChip';
 import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
@@ -59,6 +60,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
 
   const { showToast } = useToast();
+  const announceAgentStarted = useAgentStartedToast();
 
   const value = useAppStore((s) => (selectedAgentId ? (s.agentDraft[selectedAgentId] ?? '') : ''));
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
@@ -305,6 +307,16 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     await rightSize.recordRightSizeOutcome({ outcome: 'dismissed' });
   };
 
+  const onAcceptHandoff = async (targetSessionId: SessionId) => {
+    const agentId = await acceptSessionNudgeHandoff(targetSessionId);
+    announceAgentStarted({
+      sessionId: targetSessionId,
+      agentId,
+      title: 'Agent started',
+      message: 'The agent is picking this up. You can keep working.',
+    });
+  };
+
   const suggestions = useSuggestionCards({
     session,
     sessionNudge,
@@ -320,7 +332,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     onKeepCurrent,
     onChangeModel,
     dismissSessionNudge,
-    acceptSessionNudgeHandoff,
+    acceptSessionNudgeHandoff: onAcceptHandoff,
   });
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
