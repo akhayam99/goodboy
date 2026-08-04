@@ -53,9 +53,9 @@ const sideAccent = ({ line, hasDraft }: SideStateParams): string => {
   return 'border-transparent';
 };
 
-const ACTIONS_CLASS = 'w-11 select-none border-l-2 px-0.5 align-top';
-const GUTTER_CLASS = 'w-9 select-none px-1.5 text-right text-3xs tabular-nums';
-const CONTENT_CLASS = 'whitespace-pre px-2.5 text-foreground/80';
+const ACTIONS_CLASS = 'select-none border-l-2 px-0.5 align-top';
+const GUTTER_CLASS = 'select-none px-1.5 text-right align-top text-3xs tabular-nums';
+const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground/80';
 
 export const ReviewPairCells = ({
   pair,

@@ -9,7 +9,7 @@ export const DetailProperties = ({ entries }: Props) => {
   return (
     <dl
       data-testid="detail-properties"
-      className="flex flex-row flex-wrap gap-x-5 gap-y-3 lg:flex-col lg:flex-nowrap lg:gap-4"
+      className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-x-6 gap-y-3"
     >
       {entries.map((entry) => (
         <MetaItem key={entry.key} label={entry.label}>

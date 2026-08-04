@@ -10,6 +10,7 @@ import {
   VISIBLE_LINES_STEP,
 } from '../../../permissions/components/DiffViewerDialog/lib';
 import { ShowMoreBar } from '../../../permissions/components/DiffViewerDialog/ShowMoreBar';
+import { SplitDiffColumns } from '../../../permissions/components/DiffViewerDialog/SplitDiffColumns';
 import {
   SYNTAX_CLASS,
   highlightLine,
@@ -177,61 +178,187 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
             />
           ) : (
             <>
-              <table className="w-full border-collapse font-mono text-xs leading-5">
-                <tbody>
-                  {visibleRows.map((row) => {
-                    if (row.type === 'header') {
-                      return (
-                        <tr key={`hunk-${row.hunkIndex}`}>
-                          <td
-                            colSpan={columnCount}
-                            className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70"
-                          >
-                            {row.header}
-                          </td>
-                        </tr>
-                      );
-                    }
-                    if (row.type === 'pair') {
-                      const { pair, hunkIndex, rowIndex } = row;
-                      const oldTarget = sideTarget({
-                        line: pair.old,
-                        side: 'old',
-                        path: file.path,
-                      });
-                      const newTarget = sideTarget({
-                        line: pair.new,
-                        side: 'new',
-                        path: file.path,
-                      });
-                      const activeTarget = isTargetActive({ target: oldTarget })
-                        ? oldTarget
-                        : isTargetActive({ target: newTarget })
-                          ? newTarget
-                          : null;
-                      return (
-                        <Fragment key={`hunk-${hunkIndex}-pair-${rowIndex}`}>
-                          <tr className="group">
-                            <ReviewPairCells
-                              pair={pair}
-                              lang={lang}
-                              oldTarget={oldTarget}
-                              newTarget={newTarget}
-                              isOldActive={isTargetActive({ target: oldTarget })}
-                              isNewActive={isTargetActive({ target: newTarget })}
-                              hasOldDraft={isDraftedTarget({ target: oldTarget })}
-                              hasNewDraft={isDraftedTarget({ target: newTarget })}
-                              onToggleComposer={toggleComposer}
-                              onAskAgent={onAskAgent}
-                            />
+              <div className={cn('min-w-0 max-w-full', isSplit ? undefined : 'overflow-x-auto')}>
+                <table
+                  className={cn(
+                    'border-collapse font-mono text-xs leading-5',
+                    isSplit ? 'w-full table-fixed' : 'w-max min-w-full',
+                  )}
+                >
+                  {isSplit ? <SplitDiffColumns variant="review" /> : null}
+                  <tbody>
+                    {visibleRows.map((row) => {
+                      if (row.type === 'header') {
+                        return (
+                          <tr key={`hunk-${row.hunkIndex}`}>
+                            <td
+                              colSpan={columnCount}
+                              className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70"
+                            >
+                              {row.header}
+                            </td>
                           </tr>
-                          {activeTarget != null ? (
+                        );
+                      }
+                      if (row.type === 'pair') {
+                        const { pair, hunkIndex, rowIndex } = row;
+                        const oldTarget = sideTarget({
+                          line: pair.old,
+                          side: 'old',
+                          path: file.path,
+                        });
+                        const newTarget = sideTarget({
+                          line: pair.new,
+                          side: 'new',
+                          path: file.path,
+                        });
+                        const activeTarget = isTargetActive({ target: oldTarget })
+                          ? oldTarget
+                          : isTargetActive({ target: newTarget })
+                            ? newTarget
+                            : null;
+                        return (
+                          <Fragment key={`hunk-${hunkIndex}-pair-${rowIndex}`}>
+                            <tr className="group">
+                              <ReviewPairCells
+                                pair={pair}
+                                lang={lang}
+                                oldTarget={oldTarget}
+                                newTarget={newTarget}
+                                isOldActive={isTargetActive({ target: oldTarget })}
+                                isNewActive={isTargetActive({ target: newTarget })}
+                                hasOldDraft={isDraftedTarget({ target: oldTarget })}
+                                hasNewDraft={isDraftedTarget({ target: newTarget })}
+                                onToggleComposer={toggleComposer}
+                                onAskAgent={onAskAgent}
+                              />
+                            </tr>
+                            {activeTarget != null ? (
+                              <tr>
+                                <td colSpan={columnCount} className="bg-background px-3 py-2">
+                                  <LineComposer
+                                    label={`Commenting on ${file.path}:${activeTarget.line}`}
+                                    onSubmit={(body) => {
+                                      onAddDraft(activeTarget, body);
+                                      setActiveAnchor(null);
+                                    }}
+                                    onCancel={() => setActiveAnchor(null)}
+                                  />
+                                </td>
+                              </tr>
+                            ) : null}
+                          </Fragment>
+                        );
+                      }
+                      const { line, hunkIndex, rowIndex } = row;
+                      const anchor = anchorOf(line);
+                      const target: ReviewLineTarget | null =
+                        anchor == null
+                          ? null
+                          : {
+                              path: file.path,
+                              line: anchor.line,
+                              side: anchor.side,
+                              text: line.text,
+                            };
+                      const isActive =
+                        anchor != null &&
+                        activeAnchor != null &&
+                        activeAnchor.side === anchor.side &&
+                        activeAnchor.line === anchor.line;
+                      const hasDraft = anchor != null && draftedKeys.has(anchorKeyOf(anchor));
+                      return (
+                        <Fragment key={`hunk-${hunkIndex}-line-${rowIndex}`}>
+                          <tr
+                            className={cn(
+                              'group',
+                              line.kind === 'add' && 'bg-success/[0.07]',
+                              line.kind === 'del' && 'bg-danger/[0.07]',
+                              hasDraft && 'bg-indigo-400/[0.08]',
+                            )}
+                          >
+                            <td
+                              className={cn(
+                                'w-11 select-none border-l-2 px-0.5 align-top',
+                                hasDraft
+                                  ? 'border-indigo-400/70'
+                                  : line.kind === 'add'
+                                    ? 'border-success/50'
+                                    : line.kind === 'del'
+                                      ? 'border-danger/50'
+                                      : 'border-transparent',
+                              )}
+                            >
+                              {target != null ? (
+                                <span className="flex items-center gap-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setActiveAnchor(isActive ? null : (anchor ?? null))
+                                    }
+                                    title="Draft a comment on this line"
+                                    aria-label={`Draft a comment on line ${target.line}`}
+                                    className={cn(
+                                      'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
+                                      isActive
+                                        ? 'opacity-100'
+                                        : 'opacity-0 group-hover:opacity-100',
+                                    )}
+                                  >
+                                    <MessageSquarePlus size={9} aria-hidden />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => onAskAgent(target)}
+                                    title="Ask the agent about this line"
+                                    aria-label={`Ask the agent about line ${target.line}`}
+                                    className="flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                                  >
+                                    <Bot size={9} aria-hidden />
+                                  </button>
+                                </span>
+                              ) : null}
+                            </td>
+                            <td className="w-9 select-none px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50">
+                              {line.oldLine ?? ''}
+                            </td>
+                            <td className="w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50">
+                              {line.newLine ?? ''}
+                            </td>
+                            <td className="whitespace-pre px-2.5 text-foreground/80">
+                              <span
+                                aria-hidden
+                                className={cn(
+                                  'select-none',
+                                  line.kind === 'add'
+                                    ? 'text-success'
+                                    : line.kind === 'del'
+                                      ? 'text-danger'
+                                      : 'text-transparent',
+                                )}
+                              >
+                                {LINE_PREFIX[line.kind]}
+                              </span>
+                              {lang
+                                ? highlightLine(line.text, lang).map((token, ti) =>
+                                    token.kind === 'plain' ? (
+                                      <Fragment key={ti}>{token.text}</Fragment>
+                                    ) : (
+                                      <span key={ti} className={SYNTAX_CLASS[token.kind]}>
+                                        {token.text}
+                                      </span>
+                                    ),
+                                  )
+                                : line.text}
+                            </td>
+                          </tr>
+                          {isActive && target != null ? (
                             <tr>
                               <td colSpan={columnCount} className="bg-background px-3 py-2">
                                 <LineComposer
-                                  label={`Commenting on ${file.path}:${activeTarget.line}`}
+                                  label={`Commenting on ${file.path}:${target.line}`}
                                   onSubmit={(body) => {
-                                    onAddDraft(activeTarget, body);
+                                    onAddDraft(target, body);
                                     setActiveAnchor(null);
                                   }}
                                   onCancel={() => setActiveAnchor(null)}
@@ -241,126 +368,10 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                           ) : null}
                         </Fragment>
                       );
-                    }
-                    const { line, hunkIndex, rowIndex } = row;
-                    const anchor = anchorOf(line);
-                    const target: ReviewLineTarget | null =
-                      anchor == null
-                        ? null
-                        : {
-                            path: file.path,
-                            line: anchor.line,
-                            side: anchor.side,
-                            text: line.text,
-                          };
-                    const isActive =
-                      anchor != null &&
-                      activeAnchor != null &&
-                      activeAnchor.side === anchor.side &&
-                      activeAnchor.line === anchor.line;
-                    const hasDraft = anchor != null && draftedKeys.has(anchorKeyOf(anchor));
-                    return (
-                      <Fragment key={`hunk-${hunkIndex}-line-${rowIndex}`}>
-                        <tr
-                          className={cn(
-                            'group',
-                            line.kind === 'add' && 'bg-success/[0.07]',
-                            line.kind === 'del' && 'bg-danger/[0.07]',
-                            hasDraft && 'bg-indigo-400/[0.08]',
-                          )}
-                        >
-                          <td
-                            className={cn(
-                              'w-11 select-none border-l-2 px-0.5 align-top',
-                              hasDraft
-                                ? 'border-indigo-400/70'
-                                : line.kind === 'add'
-                                  ? 'border-success/50'
-                                  : line.kind === 'del'
-                                    ? 'border-danger/50'
-                                    : 'border-transparent',
-                            )}
-                          >
-                            {target != null ? (
-                              <span className="flex items-center gap-0.5">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setActiveAnchor(isActive ? null : (anchor ?? null))
-                                  }
-                                  title="Draft a comment on this line"
-                                  aria-label={`Draft a comment on line ${target.line}`}
-                                  className={cn(
-                                    'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
-                                    isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-                                  )}
-                                >
-                                  <MessageSquarePlus size={9} aria-hidden />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onAskAgent(target)}
-                                  title="Ask the agent about this line"
-                                  aria-label={`Ask the agent about line ${target.line}`}
-                                  className="flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-                                >
-                                  <Bot size={9} aria-hidden />
-                                </button>
-                              </span>
-                            ) : null}
-                          </td>
-                          <td className="w-9 select-none px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50">
-                            {line.oldLine ?? ''}
-                          </td>
-                          <td className="w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50">
-                            {line.newLine ?? ''}
-                          </td>
-                          <td className="whitespace-pre px-2.5 text-foreground/80">
-                            <span
-                              aria-hidden
-                              className={cn(
-                                'select-none',
-                                line.kind === 'add'
-                                  ? 'text-success'
-                                  : line.kind === 'del'
-                                    ? 'text-danger'
-                                    : 'text-transparent',
-                              )}
-                            >
-                              {LINE_PREFIX[line.kind]}
-                            </span>
-                            {lang
-                              ? highlightLine(line.text, lang).map((token, ti) =>
-                                  token.kind === 'plain' ? (
-                                    <Fragment key={ti}>{token.text}</Fragment>
-                                  ) : (
-                                    <span key={ti} className={SYNTAX_CLASS[token.kind]}>
-                                      {token.text}
-                                    </span>
-                                  ),
-                                )
-                              : line.text}
-                          </td>
-                        </tr>
-                        {isActive && target != null ? (
-                          <tr>
-                            <td colSpan={columnCount} className="bg-background px-3 py-2">
-                              <LineComposer
-                                label={`Commenting on ${file.path}:${target.line}`}
-                                onSubmit={(body) => {
-                                  onAddDraft(target, body);
-                                  setActiveAnchor(null);
-                                }}
-                                onCancel={() => setActiveAnchor(null)}
-                              />
-                            </td>
-                          </tr>
-                        ) : null}
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    })}
+                  </tbody>
+                </table>
+              </div>
               {remaining > 0 && (
                 <ShowMoreBar
                   step={Math.min(VISIBLE_LINES_STEP, remaining)}

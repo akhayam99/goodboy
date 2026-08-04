@@ -19,7 +19,7 @@ type Props = {
 };
 
 const GUTTER_CLASS = 'w-9 select-none px-1.5 text-right text-3xs tabular-nums';
-const CONTENT_CLASS = 'whitespace-pre px-2.5 text-foreground/80';
+const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground/80';
 const COMMENTABLE_CLASS =
   'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60';
 
