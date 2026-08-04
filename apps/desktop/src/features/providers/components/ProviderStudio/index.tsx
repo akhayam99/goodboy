@@ -6,9 +6,9 @@ import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { isConnectRunning } from '../ProviderConnect/connectView';
 import { ProvidersRail } from './ProvidersRail';
 import { ProviderDetailPanel } from './ProviderDetailPanel';
-import { ProviderConnectPane } from './ProviderConnectPane';
 import { DefaultsPanel } from './DefaultsPanel';
 import { PROVIDER_ORDER } from './providerOrder';
 
@@ -30,9 +30,7 @@ export const ProviderStudio = ({
   const providers = useAppStore((s) => s.providers);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const [focused, setFocused] = useState<ProviderId | 'defaults'>(initialFocus ?? 'defaults');
-  const [connectAction, setConnectAction] = useState<ProviderLifecycleAction | null>(
-    initialFocus && initialAction ? initialAction : null,
-  );
+  const [autoConnect, setAutoConnect] = useState(initialFocus != null && initialAction != null);
 
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderInfo => p !== undefined,
@@ -41,12 +39,9 @@ export const ProviderStudio = ({
   const selected = ordered.find((p) => p.id === focused) ?? null;
 
   useEffect(() => {
-    const lifecycle = useAppStore.getState().providerLifecycle;
-    const isInFlight = Object.values(lifecycle).some(
-      (item) =>
-        item.phase === 'installing' ||
-        item.phase === 'connecting' ||
-        item.phase === 'disconnecting',
+    const connect = useAppStore.getState().providerConnect;
+    const isInFlight = Object.values(connect).some((item) =>
+      isConnectRunning({ phase: item.phase }),
     );
     if (isInFlight) {
       return;
@@ -55,7 +50,7 @@ export const ProviderStudio = ({
   }, [focused, refreshProviders]);
 
   const onSelect = (id: ProviderId) => {
-    setConnectAction(null);
+    setAutoConnect(false);
     setFocused(id);
   };
 
@@ -79,7 +74,7 @@ export const ProviderStudio = ({
                 focusedId={focused}
                 onSelect={onSelect}
                 onSelectDefaults={() => {
-                  setConnectAction(null);
+                  setAutoConnect(false);
                   setFocused('defaults');
                 }}
               />
@@ -88,15 +83,11 @@ export const ProviderStudio = ({
           detail={
             focused === 'defaults' ? (
               <DefaultsPanel workspaceId={workspaceId} />
-            ) : selected && connectAction ? (
-              <ProviderConnectPane
-                providerId={selected.id as ProviderId}
-                action={connectAction}
-                autoStart
-                onBack={() => setConnectAction(null)}
-              />
             ) : (
-              <ProviderDetailPanel info={selected} onConnect={setConnectAction} />
+              <ProviderDetailPanel
+                info={selected}
+                autoConnect={autoConnect && selected?.id === initialFocus}
+              />
             )
           }
         />

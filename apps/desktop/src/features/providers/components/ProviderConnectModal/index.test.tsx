@@ -3,30 +3,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
+import type { ProviderConnectState } from '../../../../store/slices/providers';
 
 const { state } = vi.hoisted(() => ({
   state: {
-    providerLifecycle: {
-      anthropic: { phase: 'idle', action: null, runId: null, command: null, errorTail: null },
-      codex: { phase: 'idle', action: null, runId: null, command: null, errorTail: null },
-    } as Record<string, unknown>,
+    providerConnect: {} as Record<string, unknown>,
     providers: [
-      {
-        id: 'anthropic',
-        label: 'claude code',
-        connection: 'installed_disconnected',
-        identity: null,
-      },
-      { id: 'codex', label: 'codex', connection: 'installed_disconnected', identity: null },
-    ] as ReadonlyArray<{
-      readonly id: string;
-      readonly label: string;
-      readonly connection: string;
-      readonly identity: string | null;
-    }>,
-    installProvider: vi.fn(async () => undefined),
-    loginProvider: vi.fn(async () => undefined),
-    cancelProviderLifecycle: vi.fn(async () => undefined),
+      { id: 'anthropic', label: 'claude code', connection: 'installed_disconnected' },
+      { id: 'codex', label: 'codex', connection: 'installed_disconnected' },
+    ] as ReadonlyArray<unknown>,
+    connectProvider: vi.fn(async () => undefined),
+    cancelProviderConnect: vi.fn(async () => undefined),
+    dismissProviderConnect: vi.fn(() => undefined),
+    refreshProviders: vi.fn(async () => undefined),
   },
 }));
 
@@ -36,99 +25,92 @@ vi.mock('../../../../store', () => {
   return { useAppStore };
 });
 
+vi.mock('../../../../shared/lib/editor', () => ({ openUrl: vi.fn(async () => undefined) }));
+
 vi.mock('../ProviderLifecycleTile/InlineTerminal', () => ({
-  InlineTerminal: () => <div>terminal</div>,
+  InlineTerminal: () => <div>live terminal</div>,
 }));
 
 import { ProviderConnectModal } from './index';
 
+const IDLE: ProviderConnectState = {
+  phase: 'idle',
+  step: null,
+  runId: null,
+  command: null,
+  authUrl: null,
+  identity: null,
+  errorTail: null,
+  startedAt: null,
+};
+
+const setConnect = (providerId: string, patch: Partial<ProviderConnectState>) => {
+  state.providerConnect = {
+    ...state.providerConnect,
+    [providerId]: { ...IDLE, ...patch },
+  };
+};
+
 beforeEach(() => {
-  state.installProvider = vi.fn(async () => undefined);
-  state.loginProvider = vi.fn(async () => undefined);
-  state.providers = [
-    { id: 'anthropic', label: 'claude code', connection: 'installed_disconnected', identity: null },
-    { id: 'codex', label: 'codex', connection: 'installed_disconnected', identity: null },
-  ];
+  state.connectProvider = vi.fn(async () => undefined);
+  state.cancelProviderConnect = vi.fn(async () => undefined);
+  state.providerConnect = { anthropic: { ...IDLE }, codex: { ...IDLE } };
 });
 
 afterEach(cleanup);
 
 describe('ProviderConnectModal', () => {
-  it('auto starts the sign-in again for the next provider after a close', async () => {
+  it('starts the connect for the provider it opens on, and for the next one after a close', async () => {
     const view = render(
-      <ProviderConnectModal
-        providerId={'anthropic' as ProviderId}
-        initialAction="login"
-        onClose={vi.fn()}
-      />,
+      <ProviderConnectModal providerId={'anthropic' as ProviderId} onClose={vi.fn()} />,
     );
 
-    expect(state.loginProvider).toHaveBeenCalledWith('anthropic');
+    expect(state.connectProvider).toHaveBeenCalledWith('anthropic');
 
     await act(async () => {
-      view.rerender(
-        <ProviderConnectModal providerId={null} initialAction="login" onClose={vi.fn()} />,
-      );
+      view.rerender(<ProviderConnectModal providerId={null} onClose={vi.fn()} />);
     });
     await act(async () => {
+      view.rerender(<ProviderConnectModal providerId={'codex' as ProviderId} onClose={vi.fn()} />);
+    });
+
+    expect(state.connectProvider).toHaveBeenCalledWith('codex');
+  });
+
+  it('leaves the attempt running when the dialog closes, and shows its phase on reopen', async () => {
+    setConnect('anthropic', { phase: 'working', step: 'login' });
+    const view = render(
+      <ProviderConnectModal providerId={'anthropic' as ProviderId} onClose={vi.fn()} />,
+    );
+
+    await act(async () => {
+      view.rerender(<ProviderConnectModal providerId={null} onClose={vi.fn()} />);
+    });
+
+    expect(state.cancelProviderConnect).not.toHaveBeenCalled();
+
+    setConnect('anthropic', { phase: 'handoff', step: 'login', authUrl: 'https://claude.ai/cli' });
+    await act(async () => {
       view.rerender(
-        <ProviderConnectModal
-          providerId={'codex' as ProviderId}
-          initialAction="login"
-          onClose={vi.fn()}
-        />,
+        <ProviderConnectModal providerId={'anthropic' as ProviderId} onClose={vi.fn()} />,
       );
     });
 
-    expect(state.loginProvider).toHaveBeenCalledWith('codex');
+    expect(screen.getByText('Finish signing in in your browser.')).toBeDefined();
+    expect(state.cancelProviderConnect).not.toHaveBeenCalled();
+    expect(state.connectProvider).not.toHaveBeenCalled();
   });
 
-  it('names the dialog and keeps a close control while a run is in flight', () => {
-    state.providerLifecycle = {
-      ...state.providerLifecycle,
-      anthropic: {
-        phase: 'connecting',
-        action: 'login',
-        runId: null,
-        command: null,
-        errorTail: null,
-      },
-    };
-
-    render(
-      <ProviderConnectModal
-        providerId={'anthropic' as ProviderId}
-        initialAction="login"
-        onClose={vi.fn()}
-      />,
+  it('does not cancel the attempt when the surface unmounts', async () => {
+    setConnect('anthropic', { phase: 'handoff', step: 'login' });
+    const view = render(
+      <ProviderConnectModal providerId={'anthropic' as ProviderId} onClose={vi.fn()} />,
     );
 
-    expect(screen.getByRole('heading', { name: /claude code/i })).toBeDefined();
-    expect(
-      screen.getByText('Step through install and sign-in without leaving Goodboy.'),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'close' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Back to account' })).toBeNull();
-  });
+    await act(async () => {
+      view.unmount();
+    });
 
-  it('confirms the connected identity', () => {
-    state.providers = [
-      {
-        id: 'anthropic',
-        label: 'claude code',
-        connection: 'connected',
-        identity: 'ada@example.com',
-      },
-    ];
-
-    render(
-      <ProviderConnectModal
-        providerId={'anthropic' as ProviderId}
-        initialAction="login"
-        onClose={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText('Connected as ada@example.com')).toBeDefined();
+    expect(state.cancelProviderConnect).not.toHaveBeenCalled();
   });
 });

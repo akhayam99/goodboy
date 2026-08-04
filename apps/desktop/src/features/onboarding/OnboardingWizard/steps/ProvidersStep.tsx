@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@goodboy/ui';
-import { isApiProvider, type ProviderId, type ProviderLifecycleAction } from '@goodboy/types';
+import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL_LOWER, type ProviderInfo } from '../../../providers/providers';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
 import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
-import type { ProviderLifecyclePhase } from '../../../../store/slices/providers';
 
 const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
   'anthropic',
@@ -18,12 +17,9 @@ const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
   'openrouter',
 ];
 
-type ConnectTarget = { readonly providerId: ProviderId; readonly action: ProviderLifecycleAction };
-
 export const ProvidersStep = () => {
   const providers = useAppStore((s) => s.providers);
-  const lifecycle = useAppStore((s) => s.providerLifecycle);
-  const [connectTarget, setConnectTarget] = useState<ConnectTarget | null>(null);
+  const [connectTarget, setConnectTarget] = useState<ProviderId | null>(null);
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderInfo => p !== undefined,
   );
@@ -42,37 +38,26 @@ export const ProvidersStep = () => {
 
       <ul className="flex flex-col gap-2">
         {ordered.map((info) => (
-          <ProviderRow
-            key={info.id}
-            info={info}
-            phase={lifecycle[info.id].phase}
-            onConnect={setConnectTarget}
-          />
+          <ProviderRow key={info.id} info={info} onConnect={setConnectTarget} />
         ))}
       </ul>
 
-      <ProviderConnectModal
-        providerId={connectTarget?.providerId ?? null}
-        initialAction={connectTarget?.action ?? 'login'}
-        onClose={() => setConnectTarget(null)}
-      />
+      <ProviderConnectModal providerId={connectTarget} onClose={() => setConnectTarget(null)} />
     </div>
   );
 };
 
 function ProviderRow({
   info,
-  phase,
   onConnect,
 }: {
   info: ProviderInfo;
-  phase: ProviderLifecyclePhase;
-  onConnect: (target: ConnectTarget) => void;
+  onConnect: (providerId: ProviderId) => void;
 }) {
   const Icon = PROVIDER_BRAND[info.id].icon;
   const connected = info.connection === 'connected';
   const isApi = isApiProvider({ id: info.id });
-  const action: ProviderLifecycleAction = info.connection === 'missing' ? 'install' : 'login';
+  const isManual = PROVIDER_CONNECT_CAPABILITIES[info.id].tier === 'manual';
 
   return (
     <li className="flex items-center gap-3 rounded-lg border border-border-soft/50 bg-subtle/20 px-3.5 py-2.5">
@@ -86,7 +71,7 @@ function ProviderRow({
         <span className="text-sm font-medium capitalize text-foreground">
           {PROVIDER_LABEL_LOWER[info.id]}
         </span>
-        <StatusPill phase={phase} connection={info.connection} />
+        <StatusPill connection={info.connection} />
       </div>
       {connected ? (
         <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
@@ -94,12 +79,12 @@ function ProviderRow({
         </span>
       ) : isApi ? (
         <span className="text-xs text-muted-foreground">Set up later</span>
+      ) : isManual ? (
+        <Button size="sm" variant="ghost" onClick={() => onConnect(info.id)}>
+          Set up manually
+        </Button>
       ) : (
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => onConnect({ providerId: info.id, action })}
-        >
+        <Button size="sm" variant="secondary" onClick={() => onConnect(info.id)}>
           Connect
         </Button>
       )}
