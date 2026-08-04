@@ -207,12 +207,12 @@ describe('WorkflowRow detail dashboard', () => {
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
   });
 
-  it('answers where the run is and what it cost', () => {
+  it('answers where the run is and what it cost, leaving the step name to the strip', () => {
     renderDetail();
 
     const meta = screen.getByText('Step 2 of 2').parentElement;
 
-    expect(meta?.textContent).toContain('Plan');
+    expect(meta?.textContent).not.toContain('Plan');
     expect(screen.getByTitle('$0.2500 for this run')).toBeDefined();
   });
 
@@ -292,8 +292,18 @@ describe('WorkflowRow dynamic runs', () => {
     renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
 
     expect(screen.queryByText('Completed')).toBeNull();
-    expect(screen.getByText('Next step due')).toBeDefined();
-    expect(screen.getByText('deciding next step')).toBeDefined();
+    expect(screen.getByTestId('orchestrator-state').textContent).toContain('ready to continue');
+  });
+
+  it('leaves the orchestrator phase to the strip instead of a second pill', () => {
+    renderDetail({
+      runOverride: { ...dynamicRun, orchestrationError: 'usage limit reached' },
+      agentsOverride: doneAgents,
+      actionableStepId: null,
+    });
+
+    expect(screen.queryByTestId('workflow-orchestrator-failed')).toBeNull();
+    expect(screen.getByTestId('orchestrator-state').textContent).toContain('Last decision failed');
   });
 
   it('marks the dynamic run completed only on a persisted done outcome', () => {

@@ -18,7 +18,6 @@ import { resolveStepRouting } from '../../../../../features/workflows/resolveSte
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
-import { WorkflowOrchestratorTldr } from '../../../../../features/workflows/components/WorkflowOrchestratorTldr';
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
@@ -139,12 +138,6 @@ export const WorkflowRow = ({
   const isDynamic = run.executionMode === 'dynamic';
   const isCompleted =
     !isDiscarded && (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total);
-  const isDynamicActionable =
-    isDynamic &&
-    !isDiscarded &&
-    run.triggerMode === 'immediate' &&
-    run.orchestrationOutcome !== 'done' &&
-    !wfAgents.some((a) => a.status === 'pending' || a.status === 'running');
   const unreadCount = countUnread(wfAgents);
   const isDetail = variant === 'detail';
   const defaultExpanded = isDetail || (!isDiscarded && (!isCompleted || unreadCount > 0));
@@ -162,11 +155,7 @@ export const WorkflowRow = ({
     0,
   );
   const stepById = new Map(workflow.steps.map((step) => [step.id, step]));
-  const isDynamicDeciding = isDynamicActionable && run.orchestrationOutcome == null;
-  const currentStepName =
-    wfAgents.find((agent) => agent.status === 'running')?.name ??
-    workflow.steps.find((step) => step.id === actionableStepId)?.name ??
-    (isDynamicDeciding ? 'deciding next step' : undefined);
+  const hasOrchestratorStrip = isDynamic && !isDiscarded && expanded;
   return (
     <div
       className={cn(
@@ -194,6 +183,7 @@ export const WorkflowRow = ({
                   workflow={workflow}
                   agents={wfAgents}
                   predecessorName={predecessorName}
+                  hasOrchestratorStrip={hasOrchestratorStrip}
                 />
               </div>
               <MetaRow
@@ -202,9 +192,6 @@ export const WorkflowRow = ({
                     <span className="tabular-nums">
                       Step {Math.min(done + 1, total)} of {total}
                     </span>
-                  ) : null,
-                  currentStepName != null && !isCompleted ? (
-                    <span className="min-w-0 truncate">{currentStepName}</span>
                   ) : null,
                   <CostBadge
                     value={runCostUsd}
@@ -243,6 +230,7 @@ export const WorkflowRow = ({
               workflow={workflow}
               agents={wfAgents}
               predecessorName={predecessorName}
+              hasOrchestratorStrip={hasOrchestratorStrip}
             />
             {total > 0 ? (
               <span className="shrink-0 font-mono text-2xs text-muted-foreground/50">
@@ -338,10 +326,11 @@ export const WorkflowRow = ({
                   sessionId={task.id}
                   run={run}
                   agents={wfAgents}
+                  steps={workflow.steps}
+                  costUsd={runCostUsd}
                   isOrchestrating={isOrchestrating}
                 />
               ) : null}
-              <WorkflowOrchestratorTldr steps={workflow.steps} run={run} />
             </div>
           ) : null}
           {expanded ? (

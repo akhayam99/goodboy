@@ -7,9 +7,16 @@ type Props = {
   readonly workflow: Workflow;
   readonly agents: ReadonlyArray<Agent>;
   readonly predecessorName: string;
+  readonly hasOrchestratorStrip?: boolean;
 };
 
-export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Props) => {
+export const WorkflowRunStatus = ({
+  run,
+  workflow,
+  agents,
+  predecessorName,
+  hasOrchestratorStrip = false,
+}: Props) => {
   const completedSteps = agents.filter(
     (agent) => agent.status === 'completed' || agent.status === 'skipped',
   ).length;
@@ -51,7 +58,7 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
       </span>
     );
   }
-  if (run.orchestrationError != null && !isRunning) {
+  if (run.orchestrationError != null && !isRunning && !hasOrchestratorStrip) {
     return (
       <span
         className={cn(baseClass, 'bg-danger/10 text-danger')}
@@ -71,7 +78,7 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
       </span>
     );
   }
-  if (isDeciding) {
+  if (isDeciding && !hasOrchestratorStrip) {
     return (
       <span className={cn(baseClass, 'bg-accent/10 text-accent')}>
         <Wand2 size={10} aria-hidden />
