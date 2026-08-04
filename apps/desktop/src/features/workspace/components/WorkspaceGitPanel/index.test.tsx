@@ -1,17 +1,20 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceGitStatus } from '@goodboy/types';
 
-const { openInEditorSpy, writeTextSpy } = vi.hoisted(() => ({
+const { openInEditorSpy, writeTextSpy, invokeSpy } = vi.hoisted(() => ({
   openInEditorSpy: vi.fn(async () => undefined),
   writeTextSpy: vi.fn(async () => undefined),
+  invokeSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../shared/lib/editor', () => ({
   openInEditor: openInEditorSpy,
 }));
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
 import { WorkspaceGitPanel } from './index';
 
@@ -37,20 +40,26 @@ afterEach(() => {
 });
 
 describe('WorkspaceGitPanel init guide', () => {
-  it('explains git init and exposes the commands without running git', () => {
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: { writeText: writeTextSpy },
-    });
-
+  it('explains git init and shows the commands rooted at the folder', () => {
     render(<WorkspaceGitPanel rootPath={ROOT} status={status({ state: 'absent' })} />);
 
     expect(screen.getByText('This folder has no git repository yet')).toBeDefined();
     expect(screen.getByText(`git -C "${ROOT}" init -b main`)).toBeDefined();
-    expect(screen.getByLabelText('copy command: Create the repository')).toBeDefined();
     expect(screen.getByText(/Sessions stay unavailable until the first commit/)).toBeDefined();
+  });
+
+  it('copies the command and runs nothing when the shortcut is used', () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: writeTextSpy },
+    });
+    render(<WorkspaceGitPanel rootPath={ROOT} status={status({ state: 'absent' })} />);
+
+    fireEvent.click(screen.getByLabelText('copy command: Create the repository'));
+
+    expect(writeTextSpy).toHaveBeenCalledExactlyOnceWith(`git -C "${ROOT}" init -b main`);
+    expect(invokeSpy).not.toHaveBeenCalled();
     expect(openInEditorSpy).not.toHaveBeenCalled();
-    expect(writeTextSpy).not.toHaveBeenCalled();
   });
 
   it('drops the init step once the repository exists but has no commit', () => {
