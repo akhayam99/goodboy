@@ -6,6 +6,7 @@ import { PendingResolutionsStrip } from '../../../context/components/ContextPane
 import type { WorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { ActivityEmptyState } from './ActivityEmptyState';
+import { InFlightActionsStrip } from './InFlightActionsStrip';
 import { PipelineSection } from './PipelineSection';
 import { SummaryRow } from './SummaryRow';
 
@@ -56,6 +57,7 @@ export const ActivitySection = ({
           </div>
         )}
       </div>
+      <InFlightActionsStrip sessionId={sessionId} />
       {isFresh ? (
         <ActivityEmptyState sessionId={sessionId} onOpenWorkflowBuilder={onOpenWorkflowBuilder} />
       ) : (

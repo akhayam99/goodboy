@@ -32,6 +32,10 @@ type ConfigProps = {
   readonly disabled: boolean;
 };
 
+type ToastAction = { readonly label: string; readonly onClick: () => void };
+
+type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
+
 type MrParams = {
   readonly mergeStatus?: GitlabMergeRequest['mergeStatus'];
   readonly webUrl?: string;
@@ -45,7 +49,7 @@ const h = vi.hoisted(() => ({
     hint: 'Mention the rollout order.',
   } satisfies AgentSpawnConfigValue,
   gitlabMergeMr: vi.fn(async () => undefined),
-  showToast: vi.fn(),
+  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
   store: {
     sessions: [
       {
@@ -206,6 +210,24 @@ describe('MrDetailPanel', () => {
     expect(args.initialPrompt).toContain(
       '\n\nOperator notes:\n---\nMention the rollout order.\n---',
     );
+    expect(args).toMatchObject({ focus: 'none' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the panel in place after the spawn and opens the agent only from the toast action', async () => {
+    const onClose = vi.fn();
+    render(<MrDetailPanel sessionId={SESSION_ID} onClose={onClose} />);
+    switchToAgentMode();
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
+
+    await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
+    expect(h.store.selectAgent).not.toHaveBeenCalled();
+    const action = h.showToast.mock.calls[0]![2]?.action;
+    expect(action?.label).toBe('Open the agent');
+
+    action?.onClick();
+
+    await waitFor(() => expect(h.store.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-3'));
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 

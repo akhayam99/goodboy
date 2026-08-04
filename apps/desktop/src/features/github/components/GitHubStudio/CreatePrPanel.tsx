@@ -22,6 +22,7 @@ import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpaw
 import { BranchCombobox } from '../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../worktree/worktree';
 import { useAppStore } from '../../../../store';
+import { useToast } from '../../../../app/components/Toast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
 type CreateMode = 'manual' | 'agent';
@@ -47,6 +48,7 @@ export const CreatePrPanel = ({
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const { showToast } = useToast();
   const repo = useSessionRepo({ sessionId });
   const branch = repo?.branch ?? null;
   const workspaceRoot = repo?.repoRoot ?? null;
@@ -156,13 +158,24 @@ export const CreatePrPanel = ({
         model: agentConfig.model,
         ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
         effort: agentConfig.effort,
-        focus: 'agent',
+        focus: 'none',
       });
-      await setCurrentSession(sessionId);
-      await selectAgent(sessionId, agentId);
-      onStudioClose();
+      showToast('success', 'An agent is drafting the pull request. You can keep working.', {
+        title: 'Agent started',
+        action: {
+          label: 'Open the agent',
+          onClick: () => {
+            void (async () => {
+              await setCurrentSession(sessionId);
+              await selectAgent(sessionId, agentId);
+              onStudioClose();
+            })();
+          },
+        },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    } finally {
       setBusy(null);
     }
   };

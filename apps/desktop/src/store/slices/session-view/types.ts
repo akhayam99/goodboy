@@ -96,7 +96,7 @@ export type LensHistory = {
   readonly index: number;
 };
 
-export type SessionCreationKind = 'agent' | 'workflow';
+export type SessionCreationKind = 'agent' | 'workflow' | 'branch';
 
 export type SessionCreationId = string;
 

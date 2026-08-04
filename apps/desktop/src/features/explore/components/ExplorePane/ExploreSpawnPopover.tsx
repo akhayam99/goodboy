@@ -5,6 +5,7 @@ import type { SessionId } from '@goodboy/types';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 import { useAppStore } from '../../../../store';
+import { useToast } from '../../../../app/components/Toast';
 import { clampEffort } from '../../../chat/utils/chat-constants';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import { resolveSpawnRouting } from '../../../session/spawn-routing';
@@ -46,6 +47,8 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
     strategy: 'fixed',
   });
   const spawnAgent = useAppStore((state) => state.spawnAgent);
+  const selectAgent = useAppStore((state) => state.selectAgent);
+  const { showToast } = useToast();
   const session = useAppStore(
     (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
   );
@@ -85,15 +88,24 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
     try {
       const kickoff = buildExploreSpawnPrompt({ ask: trimmedAsk, relPath: entry.relPath });
       const initialPrompt = appendOperatorNotes({ prompt: kickoff, hint: config.hint });
-      await spawnAgent(sessionId, {
+      const agentId = await spawnAgent(sessionId, {
         initialPrompt,
         model: config.model,
         ...(config.provider !== '' && { provider: config.provider }),
         effort: config.effort,
-        focus: 'agent',
+        focus: 'none',
       });
       close();
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      showToast('success', `An agent is working on ${entry.name}. You can keep working.`, {
+        title: 'Agent started',
+        action: {
+          label: 'Open the agent',
+          onClick: () => {
+            void selectAgent(sessionId, agentId);
+            window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+          },
+        },
+      });
     } catch (error) {
       setSpawnError(toErrorMessage({ error }));
     }
