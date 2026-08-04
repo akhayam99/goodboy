@@ -469,11 +469,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           pool: modelMenu,
           roleDefaults,
         });
-        if (enforced.rejection != null) {
-          console.warn(
-            `orchestrator picked ${enforced.rejection.requested} outside the routing pool, falling back to ${enforced.rejection.appliedModel}`,
-          );
-        }
         const reason = [decision.reason.trim(), enforced.rejection?.note ?? '']
           .filter((entry) => entry !== '')
           .join('\n\n');
@@ -504,6 +499,16 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           stepName: agent.name,
           preferredAgentId: agent.id,
         });
+        if (enforced.rejection != null) {
+          const { requested, appliedModel, appliedEffort } = enforced.rejection;
+          void get().emitNotification(
+            'error',
+            'warning',
+            'orchestrator model pick refused',
+            `${requested} is outside the routing pool for this workspace, so ${agent.name} runs on ${appliedModel} at ${appliedEffort} effort.`,
+            { sessionId },
+          );
+        }
         await recordOrchestratorUsage({
           set,
           get,

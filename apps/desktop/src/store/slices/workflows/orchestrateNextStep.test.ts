@@ -411,6 +411,63 @@ describe('orchestrateNextStep', () => {
     );
   });
 
+  it('raises a notification naming the refused model and the one that ran', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['emitNotification']).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'orchestrator model pick refused',
+      expect.stringContaining('fable-5'),
+      { sessionId: SESSION_ID },
+    );
+    expect(state['emitNotification']).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'orchestrator model pick refused',
+      expect.stringContaining(ROLE_DEFAULTS.implementer.model),
+      { sessionId: SESSION_ID },
+    );
+  });
+
+  it('stays quiet when the picked model is inside the pool', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'opus-5',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['emitNotification']).not.toHaveBeenCalled();
+  });
+
   it('bills the decision to the step it opened so the run cost includes it', async () => {
     decideSpy.mockResolvedValue({
       decision: {
