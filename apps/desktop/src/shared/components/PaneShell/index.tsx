@@ -22,7 +22,8 @@ export const PaneShell = ({
   <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
     <div
       className={cn(
-        'flex w-full flex-col motion-safe:animate-studio-in',
+        'flex flex-col motion-safe:animate-studio-in',
+        PANE_RHYTHM.column,
         PANE_RHYTHM.stack,
         PANE_RHYTHM.measure[measure],
       )}

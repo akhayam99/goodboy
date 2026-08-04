@@ -37,7 +37,7 @@ export const StudioDetailLayout = ({
         className={cn('flex shrink-0 flex-col', isFlow && 'sticky top-0 z-10 gap-4 bg-background')}
       >
         <div className={cn('flex flex-col', !isFlow && PANE_RHYTHM.header)}>
-          <div className={cn('flex w-full flex-col gap-3', measure)}>
+          <div className={cn('flex flex-col gap-3', PANE_RHYTHM.column, measure)}>
             {header}
             {tabs}
           </div>
@@ -54,7 +54,7 @@ export const StudioDetailLayout = ({
               viewportClassName={PANE_RHYTHM.body}
               fadeSize={24}
             >
-              <div className={cn('flex w-full flex-col', PANE_RHYTHM.stack, measure)}>
+              <div className={cn('flex flex-col', PANE_RHYTHM.column, PANE_RHYTHM.stack, measure)}>
                 {children}
               </div>
             </ScrollFade>
@@ -65,7 +65,7 @@ export const StudioDetailLayout = ({
               data-testid="detail-dock"
               className={cn('flex shrink-0 flex-col', PANE_RHYTHM.dock)}
             >
-              <div className={cn('flex w-full flex-col', measure)}>{dock}</div>
+              <div className={cn('flex flex-col', PANE_RHYTHM.column, measure)}>{dock}</div>
             </div>
           ) : null}
         </div>

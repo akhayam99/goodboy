@@ -204,7 +204,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
       <div
         className={cn(
-          'animate-fade-in flex w-full flex-col',
+          'animate-fade-in flex flex-col',
+          PANE_RHYTHM.column,
           PANE_RHYTHM.stack,
           PANE_RHYTHM.measure.pane,
         )}

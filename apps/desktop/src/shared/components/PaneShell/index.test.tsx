@@ -45,7 +45,7 @@ describe('PaneShell', () => {
     expect(screen.getByText('Body copy')).toBeDefined();
   });
 
-  it('insets the pane body on the shared rhythm and holds the reading measure left aligned', () => {
+  it('insets the pane body on the shared rhythm and centres the reading measure', () => {
     render(
       <PaneShell title="Linear" measure="reading">
         <p>Body copy</p>
@@ -57,7 +57,7 @@ describe('PaneShell', () => {
       pattern: /^max-w-/,
     }) as HTMLElement;
     expect(column.className).toContain(PANE_RHYTHM.measure.reading);
-    expect(column.className).not.toContain('mx-auto');
+    expect(column.className).toContain(PANE_RHYTHM.column);
 
     const viewport = closestWith({ node: column, pattern: /^p[xy]-/ }) as HTMLElement;
     expect(viewport.className).toContain(PANE_RHYTHM.body);
