@@ -488,6 +488,89 @@ fn check_gemini_auth() -> AuthState {
     }
 }
 
+const OPENCODE_BOX_CHARS: &[char] = &['┌', '│', '└', '├', '┐', '┘', '─', '●', '○', '◆', '◇'];
+
+fn opencode_row_label(line: &str) -> String {
+    line.split('\u{1b}')
+        .next()
+        .unwrap_or("")
+        .trim_matches(|c: char| c.is_whitespace() || OPENCODE_BOX_CHARS.contains(&c))
+        .to_string()
+}
+
+fn parse_opencode_credentials(output: &str) -> Vec<String> {
+    let mut in_section = false;
+    let mut names = Vec::new();
+    for line in output.lines() {
+        let label = opencode_row_label(line);
+        if label.is_empty() {
+            continue;
+        }
+        let lower = label.to_lowercase();
+        if !in_section {
+            if lower.starts_with("credentials") {
+                in_section = true;
+            }
+            continue;
+        }
+        if lower.ends_with("credentials") || lower.ends_with("credential") {
+            break;
+        }
+        names.push(label);
+    }
+    names
+}
+
+fn check_opencode_auth() -> AuthState {
+    match run_auth_command(&["opencode", "auth", "list"]) {
+        Ok(out) => {
+            let names = parse_opencode_credentials(out.primary_text());
+            if names.is_empty() {
+                return AuthState {
+                    state: AuthStateKind::Disconnected,
+                    identity: None,
+                };
+            }
+            AuthState {
+                state: AuthStateKind::Connected,
+                identity: Some(names.join(", ")),
+            }
+        }
+        Err(_) => AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        },
+    }
+}
+
+fn openrouter_credential(names: &[String]) -> Option<&String> {
+    names
+        .iter()
+        .find(|name| name.to_lowercase().replace(' ', "").contains("openrouter"))
+}
+
+fn check_openrouter_auth() -> AuthState {
+    match run_auth_command(&["opencode", "auth", "list"]) {
+        Ok(out) => {
+            let names = parse_opencode_credentials(out.primary_text());
+            match openrouter_credential(&names) {
+                Some(name) => AuthState {
+                    state: AuthStateKind::Connected,
+                    identity: Some(name.clone()),
+                },
+                None => AuthState {
+                    state: AuthStateKind::Disconnected,
+                    identity: None,
+                },
+            }
+        }
+        Err(_) => AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        },
+    }
+}
+
 fn parse_codex_auth_output(output: &str) -> AuthState {
     let stripped: String = strip_ansi(output);
     let first_line = stripped
@@ -640,10 +723,8 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
         "cursor" => check_cursor_auth(),
         "codex" => check_codex_auth(),
         "gemini" => check_gemini_auth(),
-        "opencode" | "openrouter" => AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-        },
+        "opencode" => check_opencode_auth(),
+        "openrouter" => check_openrouter_auth(),
         _ => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
@@ -864,6 +945,33 @@ mod tests {
     // parser is gone and unit-test coverage moved to the filesystem layer.
     // See extract_email_from_id_token tests below for the JWT decode path
     // that backs both gemini and codex on-disk identity recovery.
+
+    const OPENCODE_EMPTY_LIST: &str = "\u{250c}  Credentials \u{1b}[90m~/.local/share/opencode/auth.json\n\u{2502}\n\u{2514}  0 credentials\n\n\u{250c}  Environment\n\u{2502}\n\u{25cf}  GitHub Copilot \u{1b}[90mGITHUB_TOKEN\n\u{2502}\n\u{2514}  1 environment variable\n";
+
+    const OPENCODE_FILLED_LIST: &str = "\u{250c}  Credentials \u{1b}[90m~/.local/share/opencode/auth.json\n\u{2502}\n\u{25cf}  OpenRouter \u{1b}[90mapi\n\u{2502}\n\u{25cf}  Anthropic \u{1b}[90moauth\n\u{2502}\n\u{2514}  2 credentials\n\n\u{250c}  Environment\n\u{2502}\n\u{25cf}  GitHub Copilot \u{1b}[90mGITHUB_TOKEN\n\u{2502}\n\u{2514}  1 environment variable\n";
+
+    #[test]
+    fn opencode_reads_no_credentials_as_disconnected() {
+        assert!(parse_opencode_credentials(OPENCODE_EMPTY_LIST).is_empty());
+    }
+
+    #[test]
+    fn opencode_reads_credential_names_without_the_method_suffix() {
+        let names = parse_opencode_credentials(OPENCODE_FILLED_LIST);
+        assert_eq!(names, vec!["OpenRouter".to_string(), "Anthropic".to_string()]);
+    }
+
+    #[test]
+    fn openrouter_ignores_environment_only_entries() {
+        let names = parse_opencode_credentials(OPENCODE_EMPTY_LIST);
+        assert!(openrouter_credential(&names).is_none());
+    }
+
+    #[test]
+    fn openrouter_matches_its_credential_row() {
+        let names = parse_opencode_credentials(OPENCODE_FILLED_LIST);
+        assert_eq!(openrouter_credential(&names), Some(&"OpenRouter".to_string()));
+    }
 
     #[test]
     #[ignore = "requires real codex binary + active login; opt in via GOODBOY_TEST_REAL_CODEX=1"]
