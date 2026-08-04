@@ -31,6 +31,7 @@ type Props = {
   readonly actions?: ReactNode;
   readonly attribution?: ReactNode;
   readonly navigation?: 'internal' | 'external';
+  readonly isSelected?: boolean;
 };
 
 export const LinkedWorkRow = ({
@@ -43,6 +44,7 @@ export const LinkedWorkRow = ({
   actions,
   attribution,
   navigation = 'internal',
+  isSelected = false,
 }: Props) => {
   const glyph =
     leading.kind === 'icon' ? (
@@ -58,7 +60,15 @@ export const LinkedWorkRow = ({
     );
 
   return (
-    <div className="group flex w-full items-center gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-2.5 shadow-sm transition-colors hover:border-border">
+    <div
+      data-selected={isSelected ? 'true' : undefined}
+      className={cn(
+        'group flex w-full items-center gap-2 rounded-lg border bg-elevated px-3.5 py-2.5 shadow-sm transition-colors',
+        isSelected
+          ? 'border-primary/40 ring-1 ring-primary/25'
+          : 'border-border-soft hover:border-border',
+      )}
+    >
       <button
         type="button"
         onClick={(event) => {
