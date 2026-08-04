@@ -134,6 +134,26 @@ describe('connectProvider', () => {
     expect(h.phase()).toBe('handoff');
   });
 
+  it('ignores a docs link and still opens the real auth url printed after it', async () => {
+    const h = harness();
+    await h.connect('anthropic');
+    h.emitOutput('see https://docs.anthropic.com/en/docs/claude-code/getting-started\n');
+    expect(mocks.openUrl).not.toHaveBeenCalled();
+    h.emitOutput(`open ${AUTH_URL}\n`);
+    expect(mocks.openUrl).toHaveBeenCalledWith(AUTH_URL);
+    expect(h.phase()).toBe('handoff');
+  });
+
+  it('upgrades to a more auth-specific url after opening a weaker one', async () => {
+    const h = harness();
+    await h.connect('anthropic');
+    h.emitOutput('trouble? https://claude.ai/login\n');
+    expect(mocks.openUrl).toHaveBeenCalledWith('https://claude.ai/login');
+    h.emitOutput(`open ${AUTH_URL}\n`);
+    expect(mocks.openUrl).toHaveBeenLastCalledWith(AUTH_URL);
+    expect(mocks.openUrl).toHaveBeenCalledTimes(2);
+  });
+
   it('opens an auth url that arrives split across two pty chunks', async () => {
     const h = harness();
     await h.connect('anthropic');

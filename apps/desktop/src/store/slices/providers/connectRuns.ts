@@ -2,7 +2,7 @@ import type { ProviderId } from '@goodboy/types';
 
 export type ConnectRun = {
   runId: string | null;
-  openedUrl: boolean;
+  authScore: number;
   outputTail: string;
   stallTimer: number | null;
   probeTimer: number | null;
@@ -57,7 +57,7 @@ export const openConnectRun = ({ providerId }: Params): ConnectRun => {
   disposeConnectRun({ providerId });
   const run: ConnectRun = {
     runId: null,
-    openedUrl: false,
+    authScore: 0,
     outputTail: '',
     stallTimer: null,
     probeTimer: null,

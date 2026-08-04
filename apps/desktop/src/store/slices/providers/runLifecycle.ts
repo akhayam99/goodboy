@@ -140,7 +140,7 @@ export const runLifecycle = async (
   }));
 
   let outputTail = '';
-  let foundAuthUrl = false;
+  let authScore = 0;
   let unlistenOutput: () => void = () => undefined;
   let unlistenExit: () => void = () => undefined;
 
@@ -150,24 +150,23 @@ export const runLifecycle = async (
     }
     const chunk = atob(payload.data);
     outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
-    if (!foundAuthUrl) {
-      const url = detectAuthUrl({ text: stripAnsi({ text: outputTail }) });
-      if (url !== null) {
-        foundAuthUrl = true;
-        set((state) => {
-          const curr = state.providerLifecycle[providerId];
-          if (curr.runId !== runId) {
-            return {};
-          }
-          return {
-            providerLifecycle: {
-              ...state.providerLifecycle,
-              [providerId]: { ...curr, detectedAuthUrl: url },
-            },
-          };
-        });
-      }
+    const match = detectAuthUrl({ text: stripAnsi({ text: outputTail }) });
+    if (match === null || match.score <= authScore) {
+      return;
     }
+    authScore = match.score;
+    set((state) => {
+      const curr = state.providerLifecycle[providerId];
+      if (curr.runId !== runId) {
+        return {};
+      }
+      return {
+        providerLifecycle: {
+          ...state.providerLifecycle,
+          [providerId]: { ...curr, detectedAuthUrl: match.url },
+        },
+      };
+    });
   });
 
   unlistenExit = await listenLifecycleExit((payload) => {

@@ -308,16 +308,21 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
     if (phase === 'working' || phase === 'stall') {
       armStall();
     }
-    if (run.openedUrl) {
+    const match = detectAuthUrl({ text: stripAnsi({ text: run.outputTail }) });
+    if (match === null) {
       return;
     }
-    const url = detectAuthUrl({ text: stripAnsi({ text: run.outputTail }) });
-    if (url === null) {
+    if (match.score <= run.authScore) {
       return;
     }
-    run.openedUrl = true;
-    void openUrl(url);
-    enterHandoff({ set, get, providerId, run, url });
+    const isUpgrade = run.authScore > 0;
+    run.authScore = match.score;
+    void openUrl(match.url);
+    if (isUpgrade) {
+      patchConnect({ set, providerId, patch: { authUrl: match.url } });
+      return;
+    }
+    enterHandoff({ set, get, providerId, run, url: match.url });
   };
 
   const onExit = (payload: LifecycleExitPayload) => {
