@@ -3,6 +3,7 @@ import { ArrowRight, GitBranch, GitFork, GitMerge } from 'lucide-react';
 import { Button, Eyebrow } from '@goodboy/ui';
 import type {
   LinkedIssue,
+  PullRequestState,
   PullRequestStateKind,
   Session,
   SessionExternalTask,
@@ -10,7 +11,6 @@ import type {
   Workspace,
 } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
-import { PrSwitcher } from '../../../../github/components/GitHubStudio/PrSwitcher';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { PROVIDER_LENS } from '../../../../integrations/providerLens';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
@@ -338,15 +338,7 @@ const GithubPrCard = ({
       header={
         <HeaderBand
           meta={
-            branchPrs.length > 1 ? (
-              <PrSwitcher
-                prs={branchPrs}
-                selected={pr.number}
-                onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
-              />
-            ) : (
-              <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
-            )
+            <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
           }
           title={pr.title}
           actions={
@@ -359,7 +351,7 @@ const GithubPrCard = ({
                 error={error}
               />
               <Button size="sm" variant="ghost" onClick={onOpenStudio}>
-                Open in code host
+                Review this pull request
                 <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
               </Button>
             </>
@@ -372,6 +364,11 @@ const GithubPrCard = ({
         entity: { pr, checks: detail?.checks ?? [], unresolved },
       })}
     >
+      <LinkedPullRequestsSection
+        prs={branchPrs.length > 0 ? branchPrs : [pr]}
+        selectedNumber={pr.number}
+        onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
+      />
       <LinkedIssuesSection issues={linkedIssues} />
       <ExternalTasksSection
         tasks={codeHostTasks}
@@ -384,6 +381,59 @@ const GithubPrCard = ({
         </span>
       ) : null}
     </StudioDetailLayout>
+  );
+};
+
+type LinkedPullRequestsSectionProps = {
+  readonly prs: ReadonlyArray<PullRequestState>;
+  readonly selectedNumber: number;
+  readonly onSelect: (prNumber: number) => void;
+};
+
+const LinkedPullRequestsSection = ({
+  prs,
+  selectedNumber,
+  onSelect,
+}: LinkedPullRequestsSectionProps) => {
+  if (prs.length === 0) {
+    return null;
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Eyebrow
+        label={prs.length === 1 ? 'Linked pull request' : `Linked pull requests (${prs.length})`}
+        muted
+        className="px-0.5 font-medium"
+      />
+      <div className="flex flex-col gap-1">
+        {prs.map((candidate) => (
+          <LinkedWorkRow
+            key={candidate.number}
+            leading={{ kind: 'glyph', provider: 'github' }}
+            identifier={`#${candidate.number}`}
+            title={candidate.title}
+            isSelected={candidate.number === selectedNumber}
+            ariaLabel={`Show pull request #${candidate.number}`}
+            tooltip={
+              candidate.number === selectedNumber
+                ? 'Showing this pull request'
+                : 'Show this pull request instead'
+            }
+            attribution={
+              <IssueStateBadge>{pullRequestMeta(candidate.state).label}</IssueStateBadge>
+            }
+            onClick={() => onSelect(candidate.number)}
+            actions={
+              <ExternalRefActions
+                url={candidate.url}
+                label={`pull request #${candidate.number}`}
+                hostLabel="GitHub"
+              />
+            }
+          />
+        ))}
+      </div>
+    </div>
   );
 };
 

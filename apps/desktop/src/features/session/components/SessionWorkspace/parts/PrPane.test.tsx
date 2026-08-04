@@ -239,15 +239,14 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(
-      screen.queryByRole('button', { name: /GitHub #42 Refactor authentication In review/i }),
-    ).toBeNull();
-    expect(screen.getAllByText('Refactor authentication')).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Refactor authentication' })).toBeDefined();
+    expect(screen.getByText('Linked pull request')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Show pull request #42' })).toBeDefined();
     expect(screen.getByText('No CI')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open in code host' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Review this pull request/i })).toBeDefined();
   });
 
-  it('offers a switcher across every pull request on the branch', () => {
+  it('lists every pull request on the branch and switches on click', () => {
     const closedPr = {
       ...PULL_REQUEST,
       number: 40,
@@ -266,8 +265,8 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /#42 of 2/i }));
-    fireEvent.click(screen.getByRole('option', { name: /#40/i }));
+    expect(screen.getByText('Linked pull requests (2)')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Show pull request #40' }));
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 40);
   });
@@ -292,8 +291,17 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByText(closedPr.title)).toBeDefined();
-    expect(screen.queryByText(PULL_REQUEST.title)).toBeNull();
+    expect(screen.getByRole('heading', { name: closedPr.title })).toBeDefined();
+    expect(screen.queryByRole('heading', { name: PULL_REQUEST.title })).toBeNull();
+    const selectedRow = screen
+      .getByRole('button', { name: `Show pull request #${closedPr.number}` })
+      .closest('[data-selected]');
+    expect(selectedRow).not.toBeNull();
+    expect(
+      screen
+        .getByRole('button', { name: `Show pull request #${PULL_REQUEST.number}` })
+        .closest('[data-selected]'),
+    ).toBeNull();
   });
 
   it('falls back when the selected provider request disappears', () => {
@@ -324,7 +332,7 @@ describe('PrPane', () => {
     view.rerender(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.queryByText('GitLab merge request detail')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open in code host' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Review this pull request/i })).toBeDefined();
   });
 
   it('shows PR status, linked issues, and code-host external tasks from stored state', () => {
@@ -383,7 +391,7 @@ describe('PrPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'open #7 in GitHub' }));
     expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/goodboy/issues/7');
     expect(h.onSelectLens).not.toHaveBeenCalled();
-    expect(screen.getAllByRole('link', { name: 'Open in GitHub' })).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: 'Open in GitHub' })).toHaveLength(3);
   });
 
   it('shows repository attribution on composite linked rows', () => {
