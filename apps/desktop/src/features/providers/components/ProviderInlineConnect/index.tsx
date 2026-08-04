@@ -4,7 +4,7 @@ import { isApiProvider, type ProviderId, type ProviderLifecycleAction } from '@g
 import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
 import { ProviderConnect } from '../ProviderConnect';
-import { isConnectRunning } from '../ProviderConnect/connectView';
+import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
 import { ProviderCredentialsSection } from '../ProviderStudio/ProviderCredentialsSection';
 
 type Props = {

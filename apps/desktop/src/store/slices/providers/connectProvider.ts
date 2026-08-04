@@ -52,7 +52,11 @@ const patchConnect = ({ set, providerId, patch }: PatchParams): void => {
   }));
 };
 
-const lastMeaningfulLine = (tail: string): string | null => {
+type LastLineParams = {
+  readonly tail: string;
+};
+
+const lastMeaningfulLine = ({ tail }: LastLineParams): string | null => {
   const lines = stripAnsi({ text: tail })
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -117,11 +121,16 @@ type StepParams = {
   readonly run: ConnectRun;
 };
 
-const isOwnedRun = ({ providerId, run }: { providerId: ProviderId; run: ConnectRun }): boolean =>
+type OwnedRunParams = {
+  readonly providerId: ProviderId;
+  readonly run: ConnectRun;
+};
+
+const isOwnedRun = ({ providerId, run }: OwnedRunParams): boolean =>
   getConnectRun({ providerId }) === run;
 
 const failRun = ({ set, get, providerId, run }: StepParams): void => {
-  const errorTail = lastMeaningfulLine(run.outputTail);
+  const errorTail = lastMeaningfulLine({ tail: run.outputTail });
   disposeConnectRun({ providerId });
   patchConnect({ set, providerId, patch: { phase: 'failed', errorTail } });
   void get().refreshProviders();
@@ -171,13 +180,11 @@ type LoginParams = StepParams & {
   readonly capability: ProviderConnectCapability;
 };
 
-const finishSuccess = ({
-  set,
-  get,
-  providerId,
-  run,
-  identity,
-}: StepParams & { readonly identity: string | null }): void => {
+type FinishSuccessParams = StepParams & {
+  readonly identity: string | null;
+};
+
+const finishSuccess = ({ set, get, providerId, run, identity }: FinishSuccessParams): void => {
   const { runId } = run;
   disposeConnectRun({ providerId });
   patchConnect({ set, providerId, patch: { phase: 'success', identity, errorTail: null } });
@@ -234,14 +241,12 @@ const probeOnce = async ({
   scheduleProbe({ set, get, providerId, run, attempt: attempt + 1, startedAt });
 };
 
-const enterHandoff = ({
-  set,
-  get,
-  providerId,
-  run,
-  url,
-}: StepParams & { readonly url: string }): void => {
-  clearStallTimer(run);
+type EnterHandoffParams = StepParams & {
+  readonly url: string;
+};
+
+const enterHandoff = ({ set, get, providerId, run, url }: EnterHandoffParams): void => {
+  clearStallTimer({ run });
   patchConnect({ set, providerId, patch: { phase: 'handoff', authUrl: url } });
   run.handoffTimers.push(
     window.setTimeout(() => {
@@ -278,7 +283,7 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
   });
 
   const armStall = () => {
-    clearStallTimer(run);
+    clearStallTimer({ run });
     run.stallTimer = window.setTimeout(() => {
       run.stallTimer = null;
       if (!isOwnedRun({ providerId, run })) {
@@ -352,7 +357,12 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
   armStall();
 };
 
-const isInstalled = ({ get, providerId }: { get: GetFn; providerId: ProviderId }): boolean => {
+type InstalledParams = {
+  readonly get: GetFn;
+  readonly providerId: ProviderId;
+};
+
+const isInstalled = ({ get, providerId }: InstalledParams): boolean => {
   const info = get().providers.find((provider) => provider.id === providerId);
   if (info === undefined) {
     return false;

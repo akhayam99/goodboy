@@ -121,6 +121,3 @@ export const connectView = ({
     }
   }
 };
-
-export const isConnectRunning = ({ phase }: { readonly phase: ProviderConnectPhase }): boolean =>
-  connectView({ phase, step: null, providerLabel: '', identity: null, chrome: 'inline' }).isRunning;

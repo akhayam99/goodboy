@@ -20,7 +20,11 @@ export const getConnectRun = ({ providerId }: Params): ConnectRun | null => {
   return RUNS.get(providerId) ?? null;
 };
 
-export const clearStallTimer = (run: ConnectRun): void => {
+type ClearStallTimerParams = {
+  readonly run: ConnectRun;
+};
+
+export const clearStallTimer = ({ run }: ClearStallTimerParams): void => {
   if (run.stallTimer === null) {
     return;
   }
@@ -34,7 +38,7 @@ export const disposeConnectRun = ({ providerId }: Params): void => {
     return;
   }
   RUNS.delete(providerId);
-  clearStallTimer(run);
+  clearStallTimer({ run });
   if (run.probeTimer !== null) {
     window.clearTimeout(run.probeTimer);
     run.probeTimer = null;
