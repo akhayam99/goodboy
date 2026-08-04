@@ -13,28 +13,13 @@ import {
   type LifecycleExitPayload,
 } from '../../../features/providers/provider-lifecycle';
 import { formatError } from '../../../shared/lib/errors';
+import { detectAuthUrl } from './detectAuthUrl';
+import { stripAnsi } from './stripAnsi';
 import type { GetFn, SetFn } from './types';
 import { IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types';
 
 const OUTPUT_TAIL_CAP = 4 * 1024;
-// eslint-disable-next-line no-control-regex
-const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g;
-const URL_RE = /https?:\/\/[^\s<>"'\x00-\x1F]+/g;
-const AUTH_HINT_RE =
-  /oauth|authoriz|sign[-_]?in|\/login|cli-auth|claude\.|anthropic\.|cursor\.|openai\.|accounts\.google\./i;
-
-function findAuthUrl(text: string): string | null {
-  const matches = text.match(URL_RE);
-  if (!matches) {
-    return null;
-  }
-  for (const url of matches) {
-    if (AUTH_HINT_RE.test(url)) {
-      return url;
-    }
-  }
-  return null;
-}
+const ERROR_TAIL_CAP = 500;
 
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
   if (action === 'install') {
@@ -166,8 +151,8 @@ export const runLifecycle = async (
     const chunk = atob(payload.data);
     outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
     if (!foundAuthUrl) {
-      const url = findAuthUrl(chunk.replace(ANSI_RE, ''));
-      if (url) {
+      const url = detectAuthUrl({ text: stripAnsi({ text: chunk }) });
+      if (url !== null) {
         foundAuthUrl = true;
         set((state) => {
           const curr = state.providerLifecycle[providerId];
@@ -195,7 +180,8 @@ export const runLifecycle = async (
     const curr = get().providerLifecycle[providerId];
     const finalPhase: ProviderLifecyclePhase =
       curr.phase === 'cancelled' ? 'cancelled' : restingPhase(action, payload);
-    const errorTail = finalPhase === 'error' ? outputTail.replace(ANSI_RE, '').slice(-500) : null;
+    const errorTail =
+      finalPhase === 'error' ? stripAnsi({ text: outputTail }).slice(-ERROR_TAIL_CAP) : null;
 
     set((state) => {
       const statuses: ProviderStatuses = {
