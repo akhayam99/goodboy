@@ -7,6 +7,7 @@ import { deleteWorkflow } from './deleteWorkflow';
 import { detachWorkflowFromSession } from './detachWorkflowFromSession';
 import { discardWorkflow } from './discardWorkflow';
 import { finalizeWorkflowStep } from './finalizeWorkflowStep';
+import { generateWorkflowTitle } from './generateWorkflowTitle';
 import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
 import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
@@ -35,6 +36,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     savePhaseTemplate: savePhaseTemplate(set),
     deleteWorkflow: deleteWorkflow(set),
     renameWorkflow: renameWorkflow(set, get),
+    generateWorkflowTitle: generateWorkflowTitle(set, get),
     loadStepLibrary: loadStepLibrary(set),
     saveStepDef: saveStepDef(set),
     deleteStepDef: deleteStepDef(set),

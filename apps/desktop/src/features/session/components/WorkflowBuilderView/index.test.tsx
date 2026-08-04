@@ -12,6 +12,7 @@ const {
   mockPlan,
   mockPolish,
   mockPolishStep,
+  mockGenerateWorkflowTitle,
   toastMock,
   storeState,
 } = vi.hoisted(() => ({
@@ -21,6 +22,7 @@ const {
   mockPlan: vi.fn(),
   mockPolish: vi.fn(),
   mockPolishStep: vi.fn(),
+  mockGenerateWorkflowTitle: vi.fn(async () => undefined),
   toastMock: vi.fn(),
   storeState: {
     phaseTemplates: {} as Record<string, ReadonlyArray<Workflow>>,
@@ -50,6 +52,7 @@ vi.mock('../../../../store', () => {
     sessionBranches: { [session.id]: 'ak/workflow' },
     savePhaseTemplate: mockSavePhaseTemplate,
     attachWorkflowToSession: mockAttach,
+    generateWorkflowTitle: mockGenerateWorkflowTitle,
     setActiveLens: mockSetActiveLens,
     phaseTemplates: storeState.phaseTemplates,
     sessionPhaseRuns: storeState.sessionPhaseRuns,
@@ -293,6 +296,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     );
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(toastMock).toHaveBeenCalledWith('success', 'workflow started: Test Workflow');
+    expect(mockGenerateWorkflowTitle).not.toHaveBeenCalled();
   });
 
   it('passes the typed goal per-run and onto the saved template', async () => {
@@ -459,6 +463,40 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
         executionMode: 'dynamic',
       }),
     );
+    expect(mockGenerateWorkflowTitle).toHaveBeenCalledWith(
+      'ws-1',
+      saved.id,
+      'sess-1',
+      'Orchestrated workflow',
+      'test goal',
+      'Inspect each result and stop after tests pass.',
+    );
+  });
+
+  it('starts and closes even when title generation never resolves', async () => {
+    mockGenerateWorkflowTitle.mockImplementationOnce(() => new Promise(() => {}));
+    const onClose = vi.fn();
+    render(<WorkflowBuilderView session={session} onClose={onClose} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    fireEvent.click(continueBtn());
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  });
+
+  it('does not generate a title for preset or custom workflows', async () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    goToApproach();
+    fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockGenerateWorkflowTitle).not.toHaveBeenCalled();
   });
 
   it('defaults auto-run to on for dynamic runs while letting the user disable it', async () => {

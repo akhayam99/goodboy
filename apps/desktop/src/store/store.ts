@@ -377,6 +377,14 @@ export type AppActions = {
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   renameWorkflow(workspaceId: WorkspaceId, workflowId: WorkflowId, name: string): Promise<void>;
+  generateWorkflowTitle(
+    workspaceId: WorkspaceId,
+    workflowId: WorkflowId,
+    sessionId: SessionId,
+    fallbackName: string,
+    goal: string,
+    process: string,
+  ): Promise<void>;
   loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
   saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<void>;
   deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;
