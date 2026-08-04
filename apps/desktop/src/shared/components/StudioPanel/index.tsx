@@ -25,7 +25,7 @@ export const StudioPanel = ({
         <div className={cn('flex items-center gap-3', PANE_RHYTHM.column, maxWidthClass)}>
           {icon ?? null}
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-base font-semibold text-foreground">{title}</span>
+            <h2 className="text-base font-semibold text-foreground">{title}</h2>
             {subtitle != null ? (
               <span className="text-2xs text-muted-foreground">{subtitle}</span>
             ) : null}
