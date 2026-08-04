@@ -4,6 +4,22 @@ Goodboy orchestrates AI sessions through your locally installed CLI tools. This 
 
 ---
 
+## How Connect works
+
+One button. Clicking **Connect** chains install-if-missing then login in a PTY you never see. Exactly one thing opens your browser: Goodboy does, from the first auth URL it reads out of the CLI output. Cursor is spawned with `NO_OPEN_BROWSER=1` so it does not race us with its own tab. Success comes from the auth probe, never from the process exit code, because OAuth CLIs stay alive waiting for their callback.
+
+The attempt lives in the store keyed by provider and survives the dialog closing, so you can leave the app to finish in the browser. If the CLI goes silent for 15s after login started, it is sitting on an interactive prompt: Goodboy surfaces the hidden terminal instead of hanging. After 30s in browser handoff it says so; after 120s it offers the external-terminal escape hatch.
+
+What a provider supports is data, not UI branching: `PROVIDER_CONNECT_CAPABILITIES` in `packages/types/src/provider-connect.ts`.
+
+| Provider                 | Tier        | Why                                                                                                               |
+| ------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| anthropic, codex, cursor | `one-click` | drivable non-interactively and probe-confirmable                                                                  |
+| opencode, openrouter     | `assisted`  | `opencode auth login` is menu-driven, so the terminal appears when it stalls; the probe still confirms the ending |
+| gemini                   | `manual`    | `agy` ships no auth subcommand, so there is nothing to drive                                                      |
+
+---
+
 ## Anthropic (Claude)
 
 ### Install
@@ -19,16 +35,20 @@ Verify: `claude --version`
 ### Connect
 
 ```bash
-claude /login
+claude auth login --claudeai
 ```
 
-Goodboy opens an external terminal for the OAuth flow. A browser window will open to complete login.
+`claude` has no top-level `login`: the real surface is `claude auth login|logout|status`. `--claudeai` is the subscription flow (the default); `--console` switches to Anthropic Console billing and `--sso` forces the SSO flow. Goodboy runs the subscription flow in a hidden PTY and opens the printed URL itself.
 
 ### Disconnect
 
 ```bash
-claude /logout
+claude auth logout
 ```
+
+### Auth probe
+
+`claude auth status` (JSON by default, `--text` for the human form). Goodboy parses `loggedIn` plus `email`/`username` for the identity.
 
 ### Subscription tier
 
@@ -71,7 +91,7 @@ Verify: `cursor-agent --version`
 cursor-agent login
 ```
 
-Goodboy opens an external terminal for the OAuth flow.
+`cursor-agent login` opens the browser itself and honors `NO_OPEN_BROWSER` to suppress that. Goodboy sets it, reads the URL off the PTY, and opens the tab, so there is exactly one browser handoff. The probe is `cursor-agent status`.
 
 ### Disconnect
 
@@ -182,11 +202,9 @@ Verify: `agy --version`
 
 ### Connect
 
-```bash
-agy login
-```
+**Antigravity authenticates outside the CLI, and Goodboy cannot drive it.** `agy` (v1.1.9) has no auth surface at all: `agy help login` answers `Error: unknown subcommand: login`, and the full subcommand list is `agent, agents, changelog, help, install, models, plugin, plugins, update`. There is no `auth`, no `logout`, no `status`. Earlier revisions of this file, and `PROVIDER_LIFECYCLE_COMMANDS`, declared `agy login`: that command has never existed and would fail on click, so gemini ships no Connect button.
 
-`agy login` opens the Google OAuth flow in the browser; session state lands in `~/.gemini/antigravity-cli/`. Alternatively, set a Gemini API key via `GEMINI_API_KEY`, which `agy` honors with no browser round-trip.
+Sign in from the Antigravity app itself, which writes the session to `~/.gemini/antigravity-cli/`, or set a Gemini API key via `GEMINI_API_KEY`, which `agy` honors with no browser round-trip.
 
 ### Disconnect
 
@@ -222,6 +240,40 @@ agy -p <PROMPT> --model <MODEL> --sandbox
 ### Auth detection
 
 `agy` has no stable `auth status` subcommand. Goodboy reads `~/.gemini/antigravity-cli/` directly as ground truth: an email claim in a session file populates the identity, and any session file marks the provider connected. API-key auth leaves no session directory and is surfaced as connected by the credential layer. If the providers panel shows "not logged in" after a successful login, click **refresh** so the file check runs again.
+
+---
+
+## opencode and OpenRouter (beta)
+
+Both ride the same `opencode` binary; OpenRouter is the API-key provider routed through it.
+
+### Install
+
+```bash
+npm install -g opencode-ai
+```
+
+### Connect
+
+```bash
+opencode auth login
+```
+
+The flow is menu-driven (`-p <provider>` and `-m <method>` skip the pickers). Goodboy runs it hidden and reveals the terminal when it stalls, which for a menu is immediate.
+
+### Disconnect
+
+```bash
+opencode auth logout
+```
+
+### Auth probe
+
+```bash
+opencode auth list
+```
+
+Prints a boxed report of stored credentials, terminated by a `N credentials` row. Goodboy parses the credential names out of that section (each row is `<name>` followed by an ANSI-dimmed method, so the name is everything before the first escape sequence). No rows means disconnected. OpenRouter is connected when one of those rows names it. The `Environment` block below it lists providers reachable through env vars and is deliberately ignored: env-var credentials belong to Goodboy's own credential layer.
 
 ---
 
@@ -286,7 +338,7 @@ Goodboy detects provider binaries via `$PATH`. If a CLI is installed but the pro
 
 The login flow opens a system terminal and a browser. If the browser does not open or the callback hangs:
 
-1. Run the login command manually in a terminal (e.g. `claude /login`).
+1. Run the login command manually in a terminal (e.g. `claude auth login --claudeai`).
 2. Complete the flow there.
 3. Return to Goodboy and click **refresh**. The identity should populate.
 
