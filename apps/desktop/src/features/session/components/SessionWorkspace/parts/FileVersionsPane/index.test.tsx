@@ -108,7 +108,7 @@ describe('FileVersionsPane', () => {
       <FileVersionsPane sessionId={SESSION_ID} sessionDir="/tmp/session-1" onClose={vi.fn()} />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'restore this version' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore this version' }));
     expect(store.restoreSessionFileVersion).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       versionId: 'v-1' as FileVersionId,

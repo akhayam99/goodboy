@@ -331,14 +331,14 @@ describe('SessionOverviewPane header band', () => {
       ],
     };
     renderPane();
-    expect(screen.getByLabelText('definition of done').textContent).toBe(
+    expect(screen.getByLabelText('Definition of done').textContent).toBe(
       'Done when PR #123 merges and LIN-456 closes',
     );
   });
 
   it('says nothing when nothing is linked, rather than repeating the goal above it', () => {
     renderPane();
-    expect(screen.queryByLabelText('definition of done')).toBeNull();
+    expect(screen.queryByLabelText('Definition of done')).toBeNull();
   });
 });
 
