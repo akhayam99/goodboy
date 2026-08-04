@@ -328,9 +328,20 @@ keyed by thread id, one answer can never be cross-posted on several threads.
 `completeResolvedAgent` attaches each body to the outcome of the thread it names,
 so a reply for a thread with no resolution, wontfix, or analysis marker is
 discarded. On publish, `markThreadResolvedNoPush` reads it through
-`resolverReplyForThread` and `buildResolutionReplyBody` puts it above the commit
-link or the closing reason. Without a block the body degrades to the machine
-line alone, which is what every resolver produced before the marker existed.
+`resolverReplyForThread` and `buildResolutionReplyBody` wraps it in the posted
+structure. Without a block the body degrades to the verdict and resolution lines
+alone, which still tell the reviewer the outcome.
+
+The structure is the app's, not the model's. `buildResolutionReplyBody` opens the
+first paragraph with a verdict label the marker already implies, `**Valid.**` for
+a `<<comment-resolved>>` with a sha and `**Not applying.**` for a
+`<<comment-wontfix>>`, then appends a `**Resolution.**` paragraph naming the
+linked commit or the closing reason. The agent's block supplies only the middle:
+why the comment was right, or why the change is not the one to make. The reply
+contract in `spawn-from-comment.ts` tells it so explicitly, since a resolver that
+opens with "Fixed in `abc1234`." makes the reader read the outcome twice. A reply
+with no sha and no reason is posted unwrapped, because there is no outcome to
+label.
 
 ## Rewriting local history before the push
 

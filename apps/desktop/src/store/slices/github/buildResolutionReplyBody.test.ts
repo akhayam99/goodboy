@@ -8,29 +8,40 @@ describe('buildResolutionReplyBody', () => {
     expect(buildResolutionReplyBody(undefined, PR_URL)).toBeNull();
   });
 
-  it('puts the agent reply above the commit line', () => {
+  it('labels a fix and puts the resolution below the reason', () => {
     const body = buildResolutionReplyBody(
-      { commitSha: 'abc1234def', reply: 'switched to the guard helper' },
+      { commitSha: 'abc1234def', reply: 'the guard ran after the early return' },
       PR_URL,
     );
     expect(body).toBe(
-      'switched to the guard helper\n\nResolved in [`abc1234`](https://github.com/o/r/commit/abc1234def).',
+      '**Valid.** the guard ran after the early return\n\n**Resolution.** Fixed in [`abc1234`](https://github.com/o/r/commit/abc1234def).',
     );
   });
 
   it('keeps the plain commit line when the pr url is unknown', () => {
     expect(buildResolutionReplyBody({ commitSha: 'abc1234def' }, null)).toBe(
-      'Resolved in `abc1234`.',
+      '**Valid.**\n\n**Resolution.** Fixed in `abc1234`.',
     );
   });
 
-  it('puts the agent reply above the closing reason', () => {
+  it('labels a close and names the closing reason', () => {
     expect(
-      buildResolutionReplyBody({ reason: 'covered elsewhere', reply: 'no change needed' }, PR_URL),
-    ).toBe('no change needed\n\nClosing: covered elsewhere');
+      buildResolutionReplyBody(
+        { reason: 'covered elsewhere', reply: 'the sibling routes share this convention' },
+        PR_URL,
+      ),
+    ).toBe(
+      '**Not applying.** the sibling routes share this convention\n\n**Resolution.** Closed without a change: covered elsewhere',
+    );
   });
 
-  it('posts the reply alone when there is no sha and no reason', () => {
+  it('stands on the verdict alone when the agent wrote no reason', () => {
+    expect(buildResolutionReplyBody({ reason: 'covered elsewhere' }, PR_URL)).toBe(
+      '**Not applying.**\n\n**Resolution.** Closed without a change: covered elsewhere',
+    );
+  });
+
+  it('posts the reply unlabelled when there is no sha and no reason', () => {
     expect(buildResolutionReplyBody({ reply: 'answered inline' }, PR_URL)).toBe('answered inline');
   });
 

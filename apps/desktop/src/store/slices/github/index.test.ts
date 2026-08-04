@@ -849,7 +849,9 @@ describe('store contract', () => {
       expect(bodyByThread.get('PRRT_2')).toContain(
         'This path cannot be reached for review threads.',
       );
-      expect(bodyByThread.get('PRRT_2')).toContain('Closing: the suggested branch is unreachable');
+      expect(bodyByThread.get('PRRT_2')).toContain(
+        '**Resolution.** Closed without a change: the suggested branch is unreachable',
+      );
       expect(bodyByThread.get('PRRT_2')).not.toContain('abcdef1');
     });
 
@@ -958,7 +960,7 @@ describe('store contract', () => {
       expect(addReplySpy).toHaveBeenCalledWith(
         expect.anything(),
         persisted.threadId,
-        expect.stringContaining('Resolved in `abcdef1`.'),
+        expect.stringContaining('**Resolution.** Fixed in `abcdef1`.'),
         expect.anything(),
       );
       expect(resolveThreadSpy).toHaveBeenCalledOnce();
@@ -1043,7 +1045,7 @@ describe('store contract', () => {
       expect(addReplySpy).toHaveBeenCalledWith(
         expect.anything(),
         'PRRT_1',
-        'Closing: the requested behavior is intentional',
+        '**Not applying.**\n\n**Resolution.** Closed without a change: the requested behavior is intentional',
         expect.anything(),
       );
       expect(resolveThreadSpy).toHaveBeenCalledOnce();

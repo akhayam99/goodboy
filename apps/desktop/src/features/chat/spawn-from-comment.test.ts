@@ -182,7 +182,8 @@ describe('spawn-from-comment', () => {
     const prompt = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR).initialPrompt;
     expect(prompt).toContain('<<comment-reply id="PRRT_7">>your answer<</comment-reply>>');
     expect(prompt).toContain('Every <<comment-reply>> block follows this contract.');
-    expect(prompt).toContain('Start with a verdict line');
+    expect(prompt).toContain('Goodboy wraps your block in a fixed structure when it posts');
+    expect(prompt).toContain('never state the outcome and never name the commit sha');
     expect(prompt).toContain('Never go past 120 words');
     expect(prompt).toContain('- `apps/web/src/routes/` uses camelCase folders');
   });
