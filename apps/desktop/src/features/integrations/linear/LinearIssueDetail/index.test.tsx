@@ -57,6 +57,18 @@ describe('LinearIssueDetail', () => {
     expect(screen.getByText('The fix is ready for review.')).toBeDefined();
   });
 
+  it('keeps a fenced description as a code block and offers no edit affordance', () => {
+    const { container } = render(
+      <LinearIssueDetail
+        issue={{ ...ISSUE, description: '```\nnot markdown, a fence\n```' }}
+        workspaceId={'workspace-1' as WorkspaceId}
+      />,
+    );
+
+    expect(container.querySelector('pre code')?.textContent).toBe('not markdown, a fence');
+    expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+  });
+
   it('renders the properties in registry order, once', () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
 

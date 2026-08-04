@@ -1,28 +1,38 @@
 import { useMemo, type ReactNode } from 'react';
-import { Markdown } from '@goodboy/ui';
 import type { GithubIssue } from '@goodboy/types';
-import {
-  DetailSection,
-  HeaderBand,
-  StudioDetailLayout,
-} from '../../../shared/components/StudioDetail';
+import { HeaderBand, StudioDetailLayout } from '../../../shared/components/StudioDetail';
 import { githubIssueFields, resolveDetailFields } from '../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../shared/components/ExternalRefActions';
+import { DescriptionSection } from '../../../shared/components/DescriptionSection';
+import {
+  useGithubIssueDescription,
+  type GithubIssueEditContext,
+} from '../useGithubIssueDescription';
 
 type Fit = 'fill' | 'bleed' | 'flow';
 
 type Props = {
   readonly issue: GithubIssue;
   readonly headerActions?: ReactNode;
+  readonly dock?: ReactNode;
   readonly fit?: Fit;
+  readonly editContext?: GithubIssueEditContext | null;
 };
 
-export const GithubIssueDetail = ({ issue, headerActions, fit = 'fill' }: Props) => {
+export const GithubIssueDetail = ({
+  issue,
+  headerActions,
+  dock,
+  fit = 'fill',
+  editContext,
+}: Props) => {
+  const { description, save } = useGithubIssueDescription({ issue, editContext });
   const properties = useMemo(
     () => resolveDetailFields({ registry: githubIssueFields, entity: issue }),
     [issue],
   );
+
   return (
     <StudioDetailLayout
       fit={fit}
@@ -45,15 +55,10 @@ export const GithubIssueDetail = ({ issue, headerActions, fit = 'fill' }: Props)
           }
         />
       }
+      dock={dock}
       properties={properties}
     >
-      <DetailSection label="description" variant="frameless">
-        {issue.body.trim() !== '' ? (
-          <Markdown text={issue.body} className="text-sm leading-relaxed" />
-        ) : (
-          <p className="text-sm italic text-muted-foreground/60">No description.</p>
-        )}
-      </DetailSection>
+      <DescriptionSection text={description} onSave={save} />
     </StudioDetailLayout>
   );
 };

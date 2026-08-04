@@ -1,6 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import type { GithubIssue } from '@goodboy/types';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { GithubIssue, WorkspaceId } from '@goodboy/types';
+
+const h = vi.hoisted(() => ({
+  ghUpdateIssueBody: vi.fn(),
+}));
+
+vi.mock('../github', () => ({ ghUpdateIssueBody: h.ghUpdateIssueBody }));
+
 import { GithubIssueDetail } from './index';
 
 const ISSUE: GithubIssue = {
@@ -13,7 +20,15 @@ const ISSUE: GithubIssue = {
   updatedAt: '2026-07-22T10:00:00Z',
 };
 
-afterEach(cleanup);
+const EDIT_CONTEXT = {
+  workspaceId: 'workspace-1' as WorkspaceId,
+  rootPath: '/repo',
+};
+
+afterEach(() => {
+  h.ghUpdateIssueBody.mockReset();
+  cleanup();
+});
 
 describe('GithubIssueDetail', () => {
   it('renders the issue title, description and properties', () => {
@@ -29,5 +44,33 @@ describe('GithubIssueDetail', () => {
     render(<GithubIssueDetail issue={{ ...ISSUE, body: '' }} />);
 
     expect(screen.getByText('No description.')).toBeDefined();
+  });
+
+  it('offers no description editing without an edit context', () => {
+    render(<GithubIssueDetail issue={ISSUE} />);
+
+    expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+  });
+
+  it('writes the edited description to GitHub and shows the stored body', async () => {
+    h.ghUpdateIssueBody.mockResolvedValueOnce('Rewritten from Goodboy.');
+    render(<GithubIssueDetail issue={ISSUE} editContext={EDIT_CONTEXT} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit description' }), {
+      target: { value: 'Rewritten from Goodboy.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(h.ghUpdateIssueBody).toHaveBeenCalledWith({
+        cwd: '/repo',
+        issueNumber: 42,
+        body: 'Rewritten from Goodboy.',
+        workspaceId: 'workspace-1',
+      }),
+    );
+    await waitFor(() => expect(screen.getByText('Rewritten from Goodboy.')).toBeDefined());
+    expect(screen.queryByText('Show assigned issues in GitHub Studio.')).toBeNull();
   });
 });
