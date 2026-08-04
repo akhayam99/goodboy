@@ -504,7 +504,7 @@ describe('SessionOverviewPane next up', () => {
   it('says nothing needs you when the session is idle and complete', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
     renderPane();
-    expect(screen.getByText('Nothing needs you right now.')).toBeDefined();
+    expect(screen.getByText('Nothing needs you right now')).toBeDefined();
   });
 });
 
