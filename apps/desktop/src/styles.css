@@ -520,7 +520,7 @@ dialog[open]::backdrop {
 
 @media (prefers-reduced-motion: no-preference) {
   .attention-ring {
-    animation: attention-ring 2.4s ease-in-out infinite;
+    animation: attention-ring 2.4s ease-in-out 3;
   }
 }
 

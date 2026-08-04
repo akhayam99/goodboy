@@ -349,6 +349,11 @@ before sending, a running total after.
   `warning` tone and an explicit ask, because motion signals machine agency and
   animating "waiting for you" assigns the work to the wrong party. A surface
   that shimmers for hours teaches that its motion means nothing.
+- `attention-ring` is the arrival halo: a finite outward breath (three cycles,
+  then rest) on an element that now requires the user, never one that is
+  working. It announces, then stands still; the tone keeps carrying the state.
+  `spin-border` means working; `border-pulse` means a warning-stage card needs
+  you; `attention-ring` means something new arrived for you.
 
 ## Accessibility
 
