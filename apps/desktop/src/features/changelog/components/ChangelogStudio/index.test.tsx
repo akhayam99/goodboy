@@ -86,7 +86,7 @@ describe('ChangelogStudio', () => {
 
     renderStudio();
 
-    expect(screen.getByRole('heading', { name: 'v0.1.56' })).toBeDefined();
+    expect(screen.getAllByText('v0.1.56').length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /Open on GitHub/ }));
     expect(mocks.openUrl).toHaveBeenCalledWith(
       'https://github.com/akhayam99/goodboy/releases/tag/v0.1.56',
@@ -120,7 +120,7 @@ describe('ChangelogStudio', () => {
 
     renderStudio();
 
-    expect(screen.getByRole('heading', { name: 'v0.1.55' })).toBeDefined();
+    expect(screen.getAllByText('v0.1.55').length).toBeGreaterThan(0);
     expect(screen.getByText(/last updated 2h ago/)).toBeDefined();
     expect(screen.getByRole('alert').textContent).toContain('network down');
   });

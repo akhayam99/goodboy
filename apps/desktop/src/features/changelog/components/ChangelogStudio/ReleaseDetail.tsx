@@ -2,7 +2,7 @@ import { Button, EmptyState, Markdown, Skeleton, SkeletonText } from '@goodboy/u
 import { ExternalLink } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
-import { HeaderBand, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { openUrl } from '../../../../shared/lib/editor';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import type { ReleaseNote } from '../../changelog';
@@ -18,21 +18,31 @@ type Props = {
 };
 
 export const ReleaseDetail = ({ release, view, staleError, staleSince, onRetry }: Props) => {
-  if (view === 'loading') {
-    return (
-      <div className="flex flex-col gap-5 px-6 py-6" role="status" aria-label="Loading releases">
-        <Skeleton className="h-6 w-36" />
-        <SkeletonText lines={7} />
-      </div>
-    );
-  }
+  const subtitle =
+    view === 'ready' && release != null
+      ? formatReleaseDate({ iso: release.publishedAt, style: 'full' })
+      : undefined;
+  const action =
+    view === 'ready' && release != null ? (
+      <Button size="sm" variant="secondary" onClick={() => void openUrl(release.htmlUrl)}>
+        <ExternalLink size={12} aria-hidden />
+        Open on GitHub
+      </Button>
+    ) : undefined;
 
-  if (view === 'failed') {
-    return (
-      <div className="px-6 py-6">
+  return (
+    <StudioPanel title={release?.version ?? 'Release notes'} subtitle={subtitle} action={action}>
+      {view === 'loading' ? (
+        <div className="flex flex-col gap-5" role="status" aria-label="Loading releases">
+          <Skeleton className="h-6 w-36" />
+          <SkeletonText lines={7} />
+        </div>
+      ) : null}
+      {view === 'failed' ? (
         <EmptyState
           bordered
-          size="inline"
+          size="lg"
+          headingLevel={2}
           icon={CONCEPT_ICONS.changelog}
           tone={CONCEPT_TONE.changelog}
           title="couldn't load releases"
@@ -43,59 +53,37 @@ export const ReleaseDetail = ({ release, view, staleError, staleSince, onRetry }
             </Button>
           }
         />
-      </div>
-    );
-  }
-
-  if (release == null) {
-    return (
-      <div className="px-6 py-6">
+      ) : null}
+      {view === 'empty' ? (
         <EmptyState
           bordered
-          size="inline"
+          size="lg"
+          headingLevel={2}
           icon={CONCEPT_ICONS.changelog}
           tone={CONCEPT_TONE.changelog}
           title="no published releases yet"
           description="release notes appear here once the first version ships"
         />
-      </div>
-    );
-  }
-
-  return (
-    <StudioDetailLayout
-      header={
-        <HeaderBand
-          meta={
-            <span className="text-2xs tabular-nums text-muted-foreground">
-              {formatReleaseDate({ iso: release.publishedAt, style: 'full' })}
-            </span>
-          }
-          title={release.version}
-          actions={
-            <Button size="sm" variant="secondary" onClick={() => void openUrl(release.htmlUrl)}>
-              <ExternalLink size={12} aria-hidden />
-              Open on GitHub
-            </Button>
-          }
-        />
-      }
-    >
-      {staleError != null ? (
-        <div className="flex flex-col gap-1.5">
-          <ErrorStrip label="the latest releases" error={staleError} onRetry={onRetry} />
-          {staleSince != null && (
-            <span className="text-2xs text-muted-foreground">
-              last updated {formatRelativeAge({ fromIso: staleSince })}
-            </span>
-          )}
-        </div>
       ) : null}
-      {release.body.trim() === '' ? (
-        <p className="text-sm italic text-muted-foreground/60">no notes for this release.</p>
-      ) : (
-        <Markdown text={release.body} className="text-sm leading-relaxed" />
-      )}
-    </StudioDetailLayout>
+      {view === 'ready' && release != null ? (
+        <>
+          {staleError != null ? (
+            <div className="flex flex-col gap-1.5">
+              <ErrorStrip label="the latest releases" error={staleError} onRetry={onRetry} />
+              {staleSince != null && (
+                <span className="text-2xs text-muted-foreground">
+                  last updated {formatRelativeAge({ fromIso: staleSince })}
+                </span>
+              )}
+            </div>
+          ) : null}
+          {release.body.trim() === '' ? (
+            <p className="text-sm italic text-muted-foreground/60">no notes for this release.</p>
+          ) : (
+            <Markdown text={release.body} className="text-sm leading-relaxed" />
+          )}
+        </>
+      ) : null}
+    </StudioPanel>
   );
 };
