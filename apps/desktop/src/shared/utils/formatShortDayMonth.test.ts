@@ -9,7 +9,10 @@ describe('formatShortDayMonth', () => {
   });
 
   it('pins the Intl locale to en-US', () => {
-    const spy = vi.spyOn(Intl, 'DateTimeFormat');
+    const original = Intl.DateTimeFormat;
+    const spy = vi
+      .spyOn(Intl, 'DateTimeFormat')
+      .mockImplementation((...args) => new original(...args));
     formatShortDayMonth({ iso: ISO });
     expect(spy.mock.calls[0]?.[0]).toBe('en-US');
     spy.mockRestore();

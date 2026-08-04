@@ -65,7 +65,10 @@ describe('formatAbsoluteDateTime', () => {
   });
 
   it('pins the Intl locale to en-US when the caller omits it', () => {
-    const spy = vi.spyOn(Intl, 'DateTimeFormat');
+    const original = Intl.DateTimeFormat;
+    const spy = vi
+      .spyOn(Intl, 'DateTimeFormat')
+      .mockImplementation((...args) => new original(...args));
     formatAbsoluteDateTime({ iso: '2026-07-29T11:49:00' });
     expect(spy.mock.calls[0]?.[0]).toBe('en-US');
     spy.mockRestore();
