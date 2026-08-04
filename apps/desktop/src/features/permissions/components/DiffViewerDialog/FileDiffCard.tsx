@@ -8,9 +8,10 @@ import type {
   DiffComment,
   DiffCommentAnchor,
   DiffCommentSide,
-  DiffHunkLine,
   FileDiff,
 } from '@goodboy/types';
+import { buildDiffRows } from '../../../../shared/utils/diffRows';
+import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
 import {
   INITIAL_VISIBLE_LINES,
   LINE_PREFIX,
@@ -174,17 +175,7 @@ export const FileDiffCard = ({
     setFileLevelComposerOpen(false);
   };
 
-  const rows = useMemo(() => {
-    const out: Array<
-      | { type: 'header'; hi: number; header: string }
-      | { type: 'line'; hi: number; li: number; line: DiffHunkLine }
-    > = [];
-    file.hunks.forEach((hunk, hi) => {
-      out.push({ type: 'header', hi, header: hunk.header });
-      hunk.lines.forEach((line, li) => out.push({ type: 'line', hi, li, line }));
-    });
-    return out;
-  }, [file]);
+  const rows = useMemo(() => buildDiffRows({ hunks: file.hunks }), [file.hunks]);
 
   const totalLines = useMemo(() => file.hunks.reduce((n, h) => n + h.lines.length, 0), [file]);
 
@@ -192,21 +183,7 @@ export const FileDiffCard = ({
 
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
 
-  const visibleRows = useMemo(() => {
-    if (visibleLines >= totalLines) {
-      return rows;
-    }
-    let count = 0;
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i]?.type === 'line') {
-        count += 1;
-        if (count >= visibleLines) {
-          return rows.slice(0, i + 1);
-        }
-      }
-    }
-    return rows;
-  }, [rows, visibleLines, totalLines]);
+  const visibleRows = useMemo(() => visibleDiffRows({ rows, visibleLines }), [rows, visibleLines]);
 
   const remaining = Math.max(0, totalLines - visibleLines);
   const noteCount = comments.filter((c) => c.status === 'open').length;
@@ -395,7 +372,7 @@ export const FileDiffCard = ({
                   {visibleRows.map((row) => {
                     if (row.type === 'header') {
                       return (
-                        <tr key={`hunk-${row.hi}`}>
+                        <tr key={`hunk-${row.hunkIndex}`}>
                           <td colSpan={3} className="border-y border-border-soft/40 bg-muted/30">
                             <div
                               className={cn(
@@ -409,7 +386,7 @@ export const FileDiffCard = ({
                         </tr>
                       );
                     }
-                    const { line, hi, li } = row;
+                    const { line, hunkIndex, rowIndex } = row;
                     const oldAnchor: DiffCommentAnchor | null =
                       line.oldLine === null ? null : { side: 'old', lineNumber: line.oldLine };
                     const newAnchor: DiffCommentAnchor | null =
@@ -440,7 +417,7 @@ export const FileDiffCard = ({
                       drag?.side === 'old' ? oldAnchor : drag?.side === 'new' ? newAnchor : null;
                     const selecting = inDrag(dragAnchor);
                     return (
-                      <Fragment key={`hunk-${hi}-line-${li}`}>
+                      <Fragment key={`hunk-${hunkIndex}-line-${rowIndex}`}>
                         <tr
                           onMouseEnter={() => {
                             if (drag === null) {

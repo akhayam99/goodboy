@@ -17,6 +17,8 @@ import {
 } from '../../../permissions/components/DiffViewerDialog/highlight';
 import { LineComposer } from './LineComposer';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { buildDiffRows } from '../../../../shared/utils/diffRows';
+import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
 
 export type ReviewLineTarget = {
   readonly path: string;
@@ -59,35 +61,11 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
     [drafts],
   );
 
-  const rows = useMemo(() => {
-    const out: Array<
-      | { type: 'header'; hi: number; header: string }
-      | { type: 'line'; hi: number; li: number; line: DiffHunkLine }
-    > = [];
-    file.hunks.forEach((hunk, hi) => {
-      out.push({ type: 'header', hi, header: hunk.header });
-      hunk.lines.forEach((line, li) => out.push({ type: 'line', hi, li, line }));
-    });
-    return out;
-  }, [file]);
+  const rows = useMemo(() => buildDiffRows({ hunks: file.hunks }), [file.hunks]);
 
   const totalLines = useMemo(() => file.hunks.reduce((n, h) => n + h.lines.length, 0), [file]);
 
-  const visibleRows = useMemo(() => {
-    if (visibleLines >= totalLines) {
-      return rows;
-    }
-    let count = 0;
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i]?.type === 'line') {
-        count += 1;
-        if (count >= visibleLines) {
-          return rows.slice(0, i + 1);
-        }
-      }
-    }
-    return rows;
-  }, [rows, visibleLines, totalLines]);
+  const visibleRows = useMemo(() => visibleDiffRows({ rows, visibleLines }), [rows, visibleLines]);
 
   const lang = useMemo(() => languageForPath(file.path), [file.path]);
   const remaining = Math.max(0, totalLines - visibleLines);
@@ -159,7 +137,7 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
                   {visibleRows.map((row) => {
                     if (row.type === 'header') {
                       return (
-                        <tr key={`hunk-${row.hi}`}>
+                        <tr key={`hunk-${row.hunkIndex}`}>
                           <td
                             colSpan={4}
                             className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70"
@@ -169,7 +147,7 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
                         </tr>
                       );
                     }
-                    const { line, hi, li } = row;
+                    const { line, hunkIndex, rowIndex } = row;
                     const anchor = anchorOf(line);
                     const target: ReviewLineTarget | null =
                       anchor == null
@@ -187,7 +165,7 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
                       activeAnchor.line === anchor.line;
                     const hasDraft = anchor != null && draftedKeys.has(anchorKeyOf(anchor));
                     return (
-                      <Fragment key={`hunk-${hi}-line-${li}`}>
+                      <Fragment key={`hunk-${hunkIndex}-line-${rowIndex}`}>
                         <tr
                           className={cn(
                             'group',
