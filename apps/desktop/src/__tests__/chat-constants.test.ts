@@ -73,11 +73,11 @@ describe('suggestLighterModel', () => {
 });
 
 describe('suggestHeavierModel', () => {
-  it('Opus 4.8 → Opus 5, optional within the expensive tier, at the same price', () => {
+  it('Opus 4.8 → Fable 5, optional within the expensive tier, about 2x cost', () => {
     expect(suggestHeavierModel('claude-opus-4-8', ANTHROPIC)).toEqual({
-      id: 'claude-opus-5',
+      id: 'claude-fable-5',
       kind: 'optional',
-      costMultiplier: null,
+      costMultiplier: 2,
     });
   });
 
@@ -91,12 +91,12 @@ describe('suggestHeavierModel', () => {
     });
   });
 
-  it('Sonnet 4.6 → Opus 5 (heavy task escalates to the strongest coding model)', () => {
-    expect(suggestHeavierModel('claude-sonnet-4-6', ANTHROPIC)?.id).toBe('claude-opus-5');
+  it('Sonnet 4.6 → Fable 5 (heavy task escalates straight to the top)', () => {
+    expect(suggestHeavierModel('claude-sonnet-4-6', ANTHROPIC)?.id).toBe('claude-fable-5');
   });
 
   it('no suggestion when already on the top model', () => {
-    expect(suggestHeavierModel('claude-opus-5', ANTHROPIC)).toBeNull();
+    expect(suggestHeavierModel('claude-fable-5', ANTHROPIC)).toBeNull();
   });
 
   it('codex: GPT-5.4 → GPT-5.5', () => {
@@ -111,11 +111,11 @@ describe('suggestHeavierModel', () => {
     });
   });
 
-  it('Sonnet 4.6 → Opus 5, strong, about 1.7x cost', () => {
+  it('Sonnet 4.6 → Fable 5, strong, about 3.3x cost', () => {
     expect(suggestHeavierModel('claude-sonnet-4-6', ANTHROPIC)).toEqual({
-      id: 'claude-opus-5',
+      id: 'claude-fable-5',
       kind: 'strong',
-      costMultiplier: 1.7,
+      costMultiplier: 3.3,
     });
   });
 

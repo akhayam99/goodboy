@@ -37,6 +37,7 @@ export type ModelDescriptor = {
   readonly costTier: ModelCostTier;
   readonly weight: number;
   readonly effort: ReadonlyArray<ModelEffort> | null;
+  readonly thinkerOnly: boolean;
 };
 
 export type ProviderRegistryCapabilities = {

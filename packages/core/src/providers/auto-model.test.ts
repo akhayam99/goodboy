@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { autoModelForRole, recommendedModelForRole } from './auto-model';
+import { PROVIDER_CAPABILITIES } from './capabilities';
 import { CURSOR_MODELS } from './cursor/models';
 
 describe('autoModelForRole', () => {
@@ -84,7 +85,7 @@ describe('autoModelForRole', () => {
       expect(result).toEqual({ provider: 'cursor', model: 'opus-5' });
     });
 
-    it('substitutes a coding role with Opus, never the storytelling model', () => {
+    it('substitutes a coding role with Opus, never with a thinker-only model', () => {
       const prefs = {
         implementer: { providerId: 'cursor' as const, model: 'gpt-5.6', effort: 'high' as const },
       };
@@ -95,6 +96,25 @@ describe('autoModelForRole', () => {
       expect(recommendedModelForRole({ role: 'implementer', provider: 'anthropic', prefs })).toBe(
         'opus-5',
       );
+    });
+
+    it('still reaches for the thinker on a role that only thinks', () => {
+      const prefs = {
+        planner: { providerId: 'cursor' as const, model: 'gpt-5.6', effort: 'high' as const },
+      };
+      expect(autoModelForRole({ role: 'planner', providers: ['anthropic'], prefs })).toEqual({
+        provider: 'anthropic',
+        model: 'fable-5',
+      });
+    });
+
+    it('leaves the thinker above Opus in raw strength', () => {
+      const anthropic = PROVIDER_CAPABILITIES.anthropic.models;
+      const fable = anthropic.find((model) => model.id === 'fable-5');
+      const opus = anthropic.find((model) => model.id === 'opus-5');
+      expect(fable?.weight ?? 0).toBeGreaterThan(opus?.weight ?? 0);
+      expect(fable?.thinkerOnly).toBe(true);
+      expect(opus?.thinkerOnly).toBe(false);
     });
   });
 });
