@@ -8,6 +8,7 @@ type Params = {
   hasRunningAgent?: boolean;
   isPrReview?: boolean;
   isBranchless?: boolean;
+  requestLabel?: string;
 };
 
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
@@ -24,7 +25,9 @@ export const deriveSessionStage = ({
   hasRunningAgent = false,
   isPrReview = false,
   isBranchless = false,
+  requestLabel,
 }: Params): SessionStageInfo => {
+  const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
   if (isBranchless) {
     if (session.state.kind === 'running' || session.state.kind === 'starting' || hasRunningAgent) {
       return { stage: 'running', reason: 'agent running' };
@@ -57,12 +60,12 @@ export const deriveSessionStage = ({
     return { stage: 'running', reason: 'agent running' };
   }
   if (isPrLive(pr) && pr.checks === 'failure') {
-    return { stage: 'attention', reason: `PR #${pr.number}: CI failed`, attention: 'ci-failed' };
+    return { stage: 'attention', reason: `${label}: CI failed`, attention: 'ci-failed' };
   }
   if (isPrLive(pr) && pr.reviewDecision === 'changes_requested') {
     return {
       stage: 'attention',
-      reason: `PR #${pr.number}: changes requested`,
+      reason: `${label}: changes requested`,
       attention: 'changes-requested',
     };
   }
@@ -79,7 +82,7 @@ export const deriveSessionStage = ({
   if (isPrLive(pr) && isPrApproved(pr)) {
     return {
       stage: 'attention',
-      reason: `PR #${pr.number} approved, ready to merge`,
+      reason: `${label} approved, ready to merge`,
       attention: 'pr-approved',
     };
   }
@@ -93,16 +96,16 @@ export const deriveSessionStage = ({
     return { stage: 'building', reason: 'no PR yet' };
   }
   if (pr.state === 'merged') {
-    return { stage: 'done', reason: `PR #${pr.number} merged` };
+    return { stage: 'done', reason: `${label} merged` };
   }
   if (pr.state === 'closed') {
-    return { stage: 'done', reason: `PR #${pr.number} closed` };
+    return { stage: 'done', reason: `${label} closed` };
   }
   if (pr.isDraft) {
-    return { stage: 'review', reason: `draft PR #${pr.number}` };
+    return { stage: 'review', reason: `draft ${label}` };
   }
   if (pr.checks === 'pending') {
-    return { stage: 'review', reason: `PR #${pr.number}: CI running` };
+    return { stage: 'review', reason: `${label}: CI running` };
   }
-  return { stage: 'review', reason: `PR #${pr.number} awaiting review` };
+  return { stage: 'review', reason: `${label} awaiting review` };
 };

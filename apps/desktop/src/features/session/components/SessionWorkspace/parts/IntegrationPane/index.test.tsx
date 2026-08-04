@@ -14,6 +14,7 @@ import type {
 type Store = {
   readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
   readonly sessionGithubPrs: Readonly<Record<string, ReadonlyArray<PullRequestState>>>;
+  readonly sessionGitlabMr: Readonly<Record<string, unknown>>;
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
   readonly sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
   readonly linkSessionExternalTask: ReturnType<typeof vi.fn>;
@@ -36,6 +37,7 @@ const h = vi.hoisted(() => ({
   store: {
     sessionExternalTasks: {},
     sessionGithubPrs: {},
+    sessionGitlabMr: {},
     workspaceIntegrations: {},
     sessions: [],
     linkSessionExternalTask: vi.fn(async () => undefined),

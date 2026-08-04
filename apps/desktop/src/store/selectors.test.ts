@@ -98,6 +98,7 @@ beforeEach(() => {
     terminalTabs: {},
     terminalSessions: {},
     sessionGithub: {},
+    sessionGitlabMr: {},
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
     getSessionViewPrefs: vi.fn(),
@@ -264,6 +265,21 @@ describe('useStageGroupedSessions', () => {
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionGithub = {
       [SESSION_ID]: { pr: { number: 12, state: 'merged', isDraft: false } },
+    };
+    const sessions = [createSession(SESSION_ID)];
+
+    const { result } = renderHook(() => useStageGroupedSessions(WORKSPACE_ID, sessions));
+
+    expect(result.current).toEqual([{ key: 'done', sessions }]);
+  });
+
+  it('groups a GitLab-only session by its merge request stage', () => {
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionGitlabMr = {
+      [SESSION_ID]: {
+        mr: { iid: 7, state: 'merged', draft: false, sourceBranch: 'ak/feat-thing' },
+      },
     };
     const sessions = [createSession(SESSION_ID)];
 

@@ -1,14 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { ArrowRight, GitBranch, GitFork, GitMerge, Unlink } from 'lucide-react';
 import { Button, Eyebrow } from '@goodboy/ui';
-import type {
-  LinkedIssue,
-  PullRequestState,
-  PullRequestStateKind,
-  Session,
-  SessionId,
-  Workspace,
-} from '@goodboy/types';
+import type { LinkedIssue, PullRequestState, Session, SessionId, Workspace } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { PROVIDER_LENS } from '../../../../integrations/providerLens';
@@ -18,6 +11,7 @@ import { MissingGithubTokenEmptyState } from '../../../../github/components/Miss
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
 import { useGithubConnection } from '../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
+import { gitlabMrStateKind } from '../../../../integrations/gitlab/gitlabMrStateKind';
 import { closingIssueReferences } from '../../../../github/closingIssueReferences';
 import { closingReferenceLines } from '../../../../github/closingReferenceLines';
 import { removeClosingReference } from '../../../../github/removeClosingReference';
@@ -40,6 +34,7 @@ import { LensEmptyState } from '../../../../../shared/components/LensEmptyState'
 import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
 import { openUrl } from '../../../../../shared/lib/editor';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
+import { branchRequests } from '../../../branchRequests';
 import { buildWorkItems, type WorkItem, type WorkItemGroups } from '../../../workItems';
 import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
 
@@ -130,16 +125,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
       : selectedProvider === 'gitlab' && mergeRequest != null
         ? 'gitlab'
         : defaultProvider;
-  const mergeRequestState: PullRequestStateKind | null =
-    mergeRequest == null
-      ? null
-      : mergeRequest.draft
-        ? 'draft'
-        : mergeRequest.state === 'merged'
-          ? 'merged'
-          : mergeRequest.state === 'closed'
-            ? 'closed'
-            : 'open';
+  const mergeRequestState = mergeRequest == null ? null : gitlabMrStateKind({ mr: mergeRequest });
   const hasBothProviders = pullRequest != null && mergeRequest != null;
   const openStudio = () =>
     window.dispatchEvent(
@@ -222,6 +208,7 @@ const GithubPrCard = ({
   const [unlinkingIssueNumber, setUnlinkingIssueNumber] = useState<number | null>(null);
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const branchPrs = useAppStore((s) => s.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
+  const mergeRequest = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr ?? null);
   const selectedPrNumber = useAppStore((s) => s.sessionSelectedPrNumber[sessionId] ?? null);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
@@ -274,7 +261,11 @@ const GithubPrCard = ({
   const workItems = buildWorkItems({
     tasks: codeHostTasks,
     currentBranch: branch,
-    branchPrs: branchPrs.length > 0 ? branchPrs : pr != null ? [pr] : [],
+    branchPrs: branchRequests({
+      prs: branchPrs.length > 0 ? branchPrs : pr != null ? [pr] : [],
+      mr: mergeRequest,
+      branch,
+    }),
   });
 
   const githubTasks = codeHostTasks.filter((task) => task.provider === 'github');
