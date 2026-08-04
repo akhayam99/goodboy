@@ -13,7 +13,6 @@ export const PANE_RHYTHM = {
     hero: 'max-w-[640px]',
   },
   rail: {
-    inset: 'px-3',
     header: 'px-3 py-2.5',
     body: 'px-3 py-3',
     dock: 'px-3 py-2.5',
