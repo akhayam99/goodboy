@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CircleHelp, PenLine, Play, RotateCcw, Wallet, Wand2 } from 'lucide-react';
+import { CircleHelp, PenLine, Play, RotateCcw, SkipForward, Wallet, Wand2 } from 'lucide-react';
 import { Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, OpenQuestion, SessionId, Step, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
@@ -34,6 +34,7 @@ export const OrchestratorPanel = ({
   const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const continueWorkflowRun = useAppStore((state) => state.continueWorkflowRun);
   const setWorkflowOrchestratorHints = useAppStore((state) => state.setWorkflowOrchestratorHints);
+  const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const setActiveLens = useAppStore((state) => state.setActiveLens);
   const openQuestions = useAppStore(
     (state) => state.sessionOpenQuestions[sessionId] ?? EMPTY_QUESTIONS,
@@ -159,6 +160,19 @@ export const OrchestratorPanel = ({
                 tone="warning"
                 testId="orchestrator-review-budget"
                 onClick={() => openBudgetStudio({ scope: { kind: 'session', sessionId } })}
+              />
+            ) : null}
+
+            {state.phase === 'step-failed' ? (
+              <OrchestratorAction
+                icon={SkipForward}
+                label="Skip the failed step"
+                variant="primary"
+                tone="danger"
+                testId="orchestrator-skip-failed-step"
+                title="Mark the failed step skipped and ask the orchestrator what comes next"
+                disabled={busy}
+                onClick={() => void guard(() => skipStuckStepAndAdvance(sessionId, run.id))}
               />
             ) : null}
 

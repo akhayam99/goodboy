@@ -102,6 +102,7 @@ beforeEach(() => {
     continueWorkflowRun: vi.fn(async () => undefined),
     setWorkflowOrchestratorHints: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
+    skipStuckStepAndAdvance: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     sessionOpenQuestions: {},
     sessions: [],
@@ -137,6 +138,29 @@ describe('OrchestratorPanel state ladder', () => {
 
     expect(sentence()).toContain('Continuing automatically');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
+  });
+
+  it('says a step failed instead of claiming autorun is still continuing', () => {
+    renderPanel({
+      runOverride: run({ autoRun: true }),
+      agents: [agent(0, 'completed'), agent(1, 'failed', { name: 'implement the remap' })],
+    });
+
+    expect(sentence()).not.toContain('Continuing automatically');
+    expect(sentence()).toContain('Stopped · step 2 failed · implement the remap');
+    expect(screen.getByTestId('orchestrator-panel').getAttribute('data-phase')).toBe('step-failed');
+    expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
+  });
+
+  it('gets a run frozen on a failed step moving again', () => {
+    renderPanel({
+      runOverride: run({ autoRun: true }),
+      agents: [agent(0, 'completed'), agent(1, 'failed')],
+    });
+
+    fireEvent.click(screen.getByTestId('orchestrator-skip-failed-step'));
+
+    expect(storeState['skipStuckStepAndAdvance']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
   it('moves its own border while it decides, with no manual control', () => {

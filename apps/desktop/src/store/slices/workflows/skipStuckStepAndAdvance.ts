@@ -46,16 +46,19 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
     void get().refreshUnreadWorkspaces();
 
-    const nextChain = classifyWorkflowChain(template, runsForWorkflowRun(refreshed, workflowRunId));
-    if (nextChain.kind !== 'step') {
-      return;
+    const refreshedRunAgents = runsForWorkflowRun(refreshed, workflowRunId);
+    const nextChain = classifyWorkflowChain(template, refreshedRunAgents);
+    if (nextChain.kind === 'step') {
+      const nextAgent = refreshedRunAgents.find(
+        (candidate) => candidate.stepId === nextChain.step.id && candidate.status === 'pending',
+      );
+      if (nextAgent != null) {
+        await get().activateWorkflowAgent(sessionId, nextAgent.id, undefined, 'agent');
+        return;
+      }
     }
-    const nextAgent = runsForWorkflowRun(refreshed, workflowRunId).find(
-      (r) => r.stepId === nextChain.step.id && r.status === 'pending',
-    );
-    if (!nextAgent) {
-      return;
+    if (run.executionMode === 'dynamic' && run.orchestrationOutcome == null) {
+      await get().orchestrateNextStep(sessionId, workflowRunId);
     }
-    await get().activateWorkflowAgent(sessionId, nextAgent.id, undefined, 'agent');
   };
 };

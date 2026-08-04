@@ -7,7 +7,7 @@ import type {
   WorkflowRun,
 } from '@goodboy/types';
 
-export type OrchestratorPhase =
+type OrchestratorPhase =
   | 'deciding'
   | 'waiting'
   | 'automatic'
@@ -17,6 +17,7 @@ export type OrchestratorPhase =
   | 'paused-budget'
   | 'blocked'
   | 'failed'
+  | 'step-failed'
   | 'done';
 
 export type OrchestratorState = {
@@ -120,6 +121,17 @@ export const resolveOrchestratorState = ({
       phase: 'needs-answer',
       tone: 'warning',
       sentence: 'Paused · an open question needs your answer',
+    };
+  }
+  const failedIndex = ordered.findIndex((agent) => agent.status === 'failed');
+  if (failedIndex >= 0) {
+    const agent = ordered[failedIndex]!;
+    return {
+      ...base,
+      phase: 'step-failed',
+      tone: 'danger',
+      sentence: `Stopped · step ${failedIndex + 1} failed · ${agent.name}`,
+      detail: 'Automation stops here. Skip the step to let the orchestrator plan around it.',
     };
   }
   const pendingIndex = ordered.findIndex((agent) => agent.status === 'pending');
