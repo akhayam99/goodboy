@@ -13,6 +13,7 @@ export type NotificationKind =
   | 'boundary-drift'
   | 'budget-cap'
   | 'title-generation'
+  | 'provider-connected'
   | 'error';
 
 export type NotificationAction =

@@ -4,7 +4,7 @@ import {
   type ProviderId,
   type ProviderLifecycleAction,
 } from '@goodboy/types';
-import { checkProviderAuth } from '../../../features/providers/providers';
+import { PROVIDER_LABEL_LOWER, checkProviderAuth } from '../../../features/providers/providers';
 import {
   invokeProviderLifecycleCancel,
   invokeProviderLifecycleRun,
@@ -184,6 +184,12 @@ const finishSuccess = ({
   if (runId !== null) {
     void invokeProviderLifecycleCancel(runId);
   }
+  void get().emitNotification(
+    'provider-connected',
+    'success',
+    `${PROVIDER_LABEL_LOWER[providerId]} is connected`,
+    identity ?? undefined,
+  );
   void get().refreshProviders();
 };
 

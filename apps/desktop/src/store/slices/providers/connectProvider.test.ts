@@ -38,9 +38,13 @@ vi.mock('../../../features/providers/provider-lifecycle', async (importOriginal)
   };
 });
 
-vi.mock('../../../features/providers/providers', () => ({
-  checkProviderAuth: mocks.checkProviderAuth,
-}));
+vi.mock('../../../features/providers/providers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../features/providers/providers')>();
+  return {
+    ...actual,
+    checkProviderAuth: mocks.checkProviderAuth,
+  };
+});
 
 vi.mock('../../../shared/lib/editor', () => ({ openUrl: mocks.openUrl }));
 
@@ -69,6 +73,7 @@ const harness = ({ missing }: { readonly missing?: ProviderId } = {}): Harness =
       connection: id === missing ? 'missing' : 'installed_disconnected',
     })),
     refreshProviders: vi.fn(async () => undefined),
+    emitNotification: vi.fn(async () => undefined),
   };
   const set = vi.fn(
     (
