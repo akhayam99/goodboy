@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { CircleHelp, PenLine, Play, RotateCcw, SkipForward, Wallet, Wand2 } from 'lucide-react';
+import {
+  CircleHelp,
+  Eraser,
+  PenLine,
+  Play,
+  RotateCcw,
+  SkipForward,
+  Wallet,
+  Wand2,
+} from 'lucide-react';
 import { Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, OpenQuestion, SessionId, Step, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
@@ -7,6 +16,7 @@ import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate'
 import { openBudgetStudio } from '../../../budget/openBudgetStudio';
 import { WorkflowOrchestratorTldr } from '../WorkflowOrchestratorTldr';
 import { OrchestratorAction } from './OrchestratorAction';
+import { OrchestratorDrawer } from './OrchestratorDrawer';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
 import { resolveOrchestratorState } from './orchestratorState';
 import { useElapsedLabel } from './useElapsedLabel';
@@ -39,11 +49,17 @@ export const OrchestratorPanel = ({
   const openQuestions = useAppStore(
     (state) => state.sessionOpenQuestions[sessionId] ?? EMPTY_QUESTIONS,
   );
-  const [hintsOpen, setHintsOpen] = useState(false);
+  const [openDrawer, setOpenDrawer] = useState<'none' | 'continue' | 'hints'>('none');
   const [hintsDraft, setHintsDraft] = useState(run.orchestratorHints ?? '');
   const [continueNote, setContinueNote] = useState('');
-  const [continueOpen, setContinueOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const savedHints = run.orchestratorHints ?? '';
+  const continueOpen = openDrawer === 'continue';
+  const hintsOpen = openDrawer === 'hints';
+  const hasNote = continueNote.trim() !== '';
+
+  const toggleDrawer = (drawer: 'continue' | 'hints') =>
+    setOpenDrawer((current) => (current === drawer ? 'none' : drawer));
 
   const state = resolveOrchestratorState({
     run,
@@ -190,38 +206,45 @@ export const OrchestratorPanel = ({
             {state.phase === 'done' ? (
               <OrchestratorAction
                 icon={Play}
-                label="Keep going"
+                label="Continue the run"
                 variant="primary"
                 testId="orchestrator-continue-toggle"
+                title="Continue this run, with or without a note about what is missing"
                 expanded={continueOpen}
                 disabled={busy}
-                onClick={() => setContinueOpen((open) => !open)}
+                onClick={() => toggleDrawer('continue')}
               />
             ) : null}
 
             <OrchestratorAction
               icon={PenLine}
-              label={(run.orchestratorHints ?? '') === '' ? 'Add hints' : 'Hints on'}
+              label={savedHints === '' ? 'Standing hints' : 'Standing hints on'}
               variant="ghost"
               testId="orchestrator-hints-toggle"
+              title="Notes the orchestrator reads before every step it decides"
               expanded={hintsOpen}
-              onClick={() => setHintsOpen((open) => !open)}
+              onClick={() => toggleDrawer('hints')}
             />
           </div>
 
           {continueOpen ? (
-            <div className="flex flex-col gap-1.5">
+            <OrchestratorDrawer
+              inputId="orchestrator-continue-note-field"
+              title="Not done? Say what is missing"
+              help="Optional. Leave it empty and the orchestrator decides what comes next on its own."
+            >
               <textarea
+                id="orchestrator-continue-note-field"
                 value={continueNote}
                 onChange={(event) => setContinueNote(event.target.value)}
                 rows={2}
-                placeholder="What is still missing? This is handed to the orchestrator."
+                placeholder="e.g. the gate is in place but its tests are missing"
                 data-testid="orchestrator-continue-note"
                 className="w-full rounded-md border border-border-soft bg-background px-2 py-1 text-2xs text-foreground focus:outline-none focus:ring-1 focus:ring-[var(--color-focus-ring)]"
               />
               <OrchestratorAction
                 icon={Play}
-                label="Continue this run"
+                label={hasNote ? 'Continue with this note' : 'Continue, you decide'}
                 variant="primary"
                 testId="orchestrator-continue-confirm"
                 disabled={busy}
@@ -229,37 +252,60 @@ export const OrchestratorPanel = ({
                   void guard(async () => {
                     await continueWorkflowRun(sessionId, run.id, continueNote);
                     setContinueNote('');
-                    setContinueOpen(false);
+                    setOpenDrawer('none');
                   })
                 }
               />
-            </div>
+            </OrchestratorDrawer>
           ) : null}
 
           {hintsOpen ? (
-            <div className="flex flex-col gap-1.5">
+            <OrchestratorDrawer
+              inputId="orchestrator-hints-field"
+              title="Standing hints for every step"
+              help="The orchestrator reads these before each step it decides, until you clear them."
+            >
               <textarea
+                id="orchestrator-hints-field"
                 value={hintsDraft}
                 onChange={(event) => setHintsDraft(event.target.value)}
                 rows={3}
-                placeholder="Runtime hints: what to look at, what to ignore, how to sequence."
+                placeholder="e.g. open a PR and push a single commit, use the project skill"
                 data-testid="orchestrator-hints-input"
                 className="w-full rounded-md border border-border-soft bg-background px-2 py-1 text-2xs text-foreground focus:outline-none focus:ring-1 focus:ring-[var(--color-focus-ring)]"
               />
-              <OrchestratorAction
-                icon={PenLine}
-                label="Save hints"
-                variant="ghost"
-                testId="orchestrator-hints-save"
-                disabled={busy}
-                onClick={() =>
-                  void guard(async () => {
-                    await setWorkflowOrchestratorHints(sessionId, run.id, hintsDraft);
-                    setHintsOpen(false);
-                  })
-                }
-              />
-            </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <OrchestratorAction
+                  icon={PenLine}
+                  label="Save hints"
+                  variant="primary"
+                  testId="orchestrator-hints-save"
+                  disabled={busy}
+                  onClick={() =>
+                    void guard(async () => {
+                      await setWorkflowOrchestratorHints(sessionId, run.id, hintsDraft);
+                      setOpenDrawer('none');
+                    })
+                  }
+                />
+                {savedHints === '' ? null : (
+                  <OrchestratorAction
+                    icon={Eraser}
+                    label="Clear hints"
+                    variant="ghost"
+                    testId="orchestrator-hints-clear"
+                    disabled={busy}
+                    onClick={() =>
+                      void guard(async () => {
+                        await setWorkflowOrchestratorHints(sessionId, run.id, '');
+                        setHintsDraft('');
+                        setOpenDrawer('none');
+                      })
+                    }
+                  />
+                )}
+              </div>
+            </OrchestratorDrawer>
           ) : null}
         </div>
       </div>

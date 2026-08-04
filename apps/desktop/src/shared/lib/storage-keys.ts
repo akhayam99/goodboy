@@ -8,7 +8,6 @@ export const STORAGE_KEYS = {
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   lensColumnWidth: `${PREFIX}lens-column-width`,
   inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
-  studioDetailRailWidth: `${PREFIX}studio-detail-rail-width`,
   reviewBoardListWidth: `${PREFIX}review-board-list-width`,
   planListWidth: `${PREFIX}plan-list-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,

@@ -31,6 +31,7 @@ import { DiffCommentThreadRow } from './DiffCommentThreadRow';
 import { DiffComposerRow } from './DiffComposerRow';
 import { DiffLineText } from './DiffLineText';
 import { DiffPairCells } from './DiffPairCells';
+import { SplitDiffColumns } from './SplitDiffColumns';
 import { ShowMoreBar } from './ShowMoreBar';
 import { languageForPath } from './highlight';
 
@@ -429,13 +430,18 @@ export const FileDiffCard = ({
               className="justify-center py-4"
             />
           ) : (
-            <div ref={diffScrollRef} className="min-w-0 max-w-full overflow-x-auto">
+            <div
+              ref={diffScrollRef}
+              className={cn('min-w-0 max-w-full', isSplit ? undefined : 'overflow-x-auto')}
+            >
               <table
                 className={cn(
-                  'w-max min-w-full border-collapse font-mono text-xs leading-5',
+                  'border-collapse font-mono text-xs leading-5',
+                  isSplit ? 'w-full table-fixed' : 'w-max min-w-full',
                   drag && 'select-none',
                 )}
               >
+                {isSplit ? <SplitDiffColumns variant="viewer" /> : null}
                 <tbody>
                   {visibleRows.map((row) => {
                     if (row.type === 'header') {
@@ -447,7 +453,7 @@ export const FileDiffCard = ({
                           >
                             <div
                               className={cn(
-                                DIFF_SCROLL_CONTENT_CLASS,
+                                isSplit ? undefined : DIFF_SCROLL_CONTENT_CLASS,
                                 'px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70',
                               )}
                             >

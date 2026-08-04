@@ -13,9 +13,7 @@ export const buildReviewInboxRows = ({
   provider,
   scope,
 }: Params): ReadonlyArray<ReviewablePr> => {
-  const scoped = items.filter(
-    (pr) => pr.provider === provider && (scope === 'all' || !pr.mine),
-  );
+  const scoped = items.filter((pr) => pr.provider === provider && (scope === 'all' || !pr.mine));
   return [...scoped].sort((a, b) => {
     if (a.reviewRequested !== b.reviewRequested) {
       return a.reviewRequested ? -1 : 1;

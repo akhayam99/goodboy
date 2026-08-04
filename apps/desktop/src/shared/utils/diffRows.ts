@@ -1,4 +1,5 @@
 import type { DiffHunk, DiffHunkLine } from '@goodboy/types';
+import { hunkLabel } from './hunkLabel';
 
 export type DiffRow =
   | { readonly type: 'header'; readonly hunkIndex: number; readonly header: string }
@@ -16,7 +17,7 @@ type Params = {
 export const buildDiffRows = ({ hunks }: Params): ReadonlyArray<DiffRow> => {
   const rows: DiffRow[] = [];
   hunks.forEach((hunk, hunkIndex) => {
-    rows.push({ type: 'header', hunkIndex, header: hunk.header });
+    rows.push({ type: 'header', hunkIndex, header: hunkLabel({ hunk }) });
     hunk.lines.forEach((line, rowIndex) => rows.push({ type: 'line', hunkIndex, rowIndex, line }));
   });
   return rows;

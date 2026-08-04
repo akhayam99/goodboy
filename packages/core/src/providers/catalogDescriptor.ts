@@ -6,7 +6,7 @@ type Params = {
 
 const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'opus-5': 85,
-  'fable-5': 90,
+  'fable-5': 82,
   'opus-4.8': 80,
   'opus-4.7': 75,
   'opus-4.6': 60,

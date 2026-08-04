@@ -30,10 +30,10 @@ const hunks = [
 ];
 
 describe('buildDiffPairRows', () => {
-  it('keeps the hunk header and one row per pair', () => {
+  it('names the hunk in line numbers, not in diff syntax, and keeps one row per pair', () => {
     const rows = buildDiffPairRows({ hunks });
     expect(rows.map((row) => row.type)).toEqual(['header', 'pair', 'pair', 'pair']);
-    expect(rows[0]?.type === 'header' && rows[0].header).toBe('@@ -1,3 +1,3 @@');
+    expect(rows[0]?.type === 'header' && rows[0].header).toBe('Lines 1-4');
   });
 
   it('pads the old side of an unmatched addition', () => {

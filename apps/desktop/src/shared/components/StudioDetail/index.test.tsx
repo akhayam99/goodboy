@@ -113,7 +113,7 @@ describe('StudioDetailLayout', () => {
     expect((dock.parentElement as HTMLElement).contains(scroller as HTMLElement)).toBe(true);
   });
 
-  it('leaves the rail to the properties when the action is docked', () => {
+  it('leaves the meta to the properties when the action is docked', () => {
     render(
       <StudioDetailLayout
         header={<span>Header slot</span>}
@@ -124,14 +124,14 @@ describe('StudioDetailLayout', () => {
       </StudioDetailLayout>,
     );
 
-    const properties = screen.getByTestId('detail-properties');
-    const railStack = properties.parentElement as HTMLElement;
+    const meta = screen.getByTestId('detail-meta');
 
-    expect(railStack.contains(screen.getByRole('button', { name: 'Launch session' }))).toBe(false);
-    expect(railStack.querySelector('[role="separator"]')).toBeNull();
+    expect(meta.contains(screen.getByTestId('detail-properties'))).toBe(true);
+    expect(meta.contains(screen.getByRole('button', { name: 'Launch session' }))).toBe(false);
+    expect(meta.querySelector('[role="separator"]')).toBeNull();
   });
 
-  it('scrolls the rail as one region that carries every rail block', () => {
+  it('carries the meta in the header band, never in a side column', () => {
     render(
       <StudioDetailLayout
         header={<span>Header slot</span>}
@@ -142,16 +142,13 @@ describe('StudioDetailLayout', () => {
       </StudioDetailLayout>,
     );
 
-    const viewport = screen
-      .getByRole('button', { name: 'Launch session' })
-      .closest('.overflow-y-auto');
-    expect(viewport).not.toBeNull();
-    expect(viewport).toBe(screen.getByTestId('detail-properties').closest('.overflow-y-auto'));
-
-    const bounds = (viewport as HTMLElement).parentElement as HTMLElement;
-    expect(bounds.className).toContain('max-h-64');
-    expect(bounds.className).toContain('lg:max-h-none');
-    expect(scrollAncestors({ node: viewport as HTMLElement })).toHaveLength(1);
+    const band = screen.getByTestId('detail-header-band');
+    const meta = screen.getByTestId('detail-meta');
+    expect(band.contains(meta)).toBe(true);
+    expect(meta.contains(screen.getByTestId('detail-properties'))).toBe(true);
+    expect(meta.contains(screen.getByRole('button', { name: 'Launch session' }))).toBe(true);
+    expect(scrollAncestors({ node: meta })).toEqual([]);
+    expect(band.contains(screen.getByText('Main slot'))).toBe(false);
   });
 
   it('pins the header band while a flow body scrolls', () => {
@@ -167,7 +164,7 @@ describe('StudioDetailLayout', () => {
     expect(band.className).toContain('bg-background');
   });
 
-  it('insets the properties rail in flow mode', () => {
+  it('keeps the meta on the header measure in flow mode', () => {
     render(
       <StudioDetailLayout
         header={<span>Header slot</span>}
@@ -178,13 +175,15 @@ describe('StudioDetailLayout', () => {
       </StudioDetailLayout>,
     );
 
-    const rail = screen.getByTestId('detail-properties').closest('.px-6');
-    expect(rail).not.toBeNull();
-    expect((rail as HTMLElement).className).toContain('py-4');
-    expect((rail as HTMLElement).className).toContain('lg:p-4');
+    const band = screen.getByTestId('detail-header-band');
+    const meta = screen.getByTestId('detail-meta');
+    expect(band.contains(meta)).toBe(true);
+    expect((meta.parentElement as HTMLElement).contains(screen.getByText('Header slot'))).toBe(
+      true,
+    );
   });
 
-  it('renders the properties once, as a wrapping row below lg and a column from lg', () => {
+  it('renders the properties once, in one aligned grid of columns', () => {
     render(
       <StudioDetailLayout
         header={<span>Header slot</span>}
@@ -200,8 +199,8 @@ describe('StudioDetailLayout', () => {
 
     const panel = panels[0] as HTMLElement;
     expect(panel.tagName).toBe('DL');
-    expect(panel.className).toContain('flex-row flex-wrap');
-    expect(panel.className).toContain('lg:flex-col');
+    expect(panel.className).toContain('grid');
+    expect(panel.className).toContain('auto-fill');
     expect(
       within(panel)
         .getAllByRole('term')
@@ -231,22 +230,17 @@ describe('StudioDetailLayout', () => {
     expect(hidden).toEqual([]);
   });
 
-  it('restores, resizes, and resets the studio detail rail width', () => {
-    localStorage.setItem(STORAGE_KEYS.studioDetailRailWidth, '420');
+  it('gives the body the full width, with no column to resize', () => {
     render(
       <StudioDetailLayout header={<span>Header slot</span>} rail={<span>Rail slot</span>}>
         <span>Main slot</span>
       </StudioDetailLayout>,
     );
 
-    const handle = screen.getByRole('separator', { name: 'Resize studio detail rail' });
-    expect(handle.getAttribute('aria-valuenow')).toBe('420');
-
-    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
-    expect(localStorage.getItem(STORAGE_KEYS.studioDetailRailWidth)).toBe('428');
-
-    fireEvent.doubleClick(handle);
-    expect(localStorage.getItem(STORAGE_KEYS.studioDetailRailWidth)).toBe('320');
+    expect(screen.queryByRole('separator', { name: 'Resize studio detail rail' })).toBeNull();
+    const body = screen.getByText('Main slot').closest('.overflow-y-auto');
+    expect(body).not.toBeNull();
+    expect((body as HTMLElement).contains(screen.getByText('Rail slot'))).toBe(false);
   });
 });
 

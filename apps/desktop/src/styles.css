@@ -46,7 +46,7 @@
   --color-provider-linear: oklch(0.57 0.16 277);
   --color-provider-sentry: oklch(0.55 0.18 320);
   --color-provider-gitlab: oklch(0.68 0.18 45);
-  --color-provider-github: oklch(0.68 0.02 260);
+  --color-provider-github: oklch(0.88 0 0);
 
   --color-workspace-1: oklch(0.72 0.1 180);
   --color-workspace-2: oklch(0.72 0.14 260);
@@ -281,7 +281,7 @@ html[data-theme='light'] {
   --color-provider-linear: oklch(0.5 0.16 277);
   --color-provider-sentry: oklch(0.48 0.18 320);
   --color-provider-gitlab: oklch(0.56 0.18 45);
-  --color-provider-github: oklch(0.42 0.03 260);
+  --color-provider-github: oklch(0.24 0 0);
   --color-workspace-1: oklch(0.5 0.1 180);
   --color-workspace-2: oklch(0.5 0.15 260);
   --color-workspace-3: oklch(0.52 0.15 290);

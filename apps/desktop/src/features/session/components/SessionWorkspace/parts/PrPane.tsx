@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { ArrowRight, GitBranch, GitFork, GitMerge, MessageSquare } from 'lucide-react';
-import { Button, EmptyState, Eyebrow } from '@goodboy/ui';
+import { useMemo, useState, type ReactNode } from 'react';
+import { ArrowRight, GitBranch, GitFork, GitMerge } from 'lucide-react';
+import { Button, Eyebrow } from '@goodboy/ui';
 import type {
   LinkedIssue,
   PullRequestStateKind,
@@ -10,8 +10,6 @@ import type {
   Workspace,
 } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
-import { PrChecksChip } from '../../../../github/components/PrChecksChip';
-import { ReviewDecisionChip } from '../../../../github/components/ReviewDecisionChip';
 import { PrSwitcher } from '../../../../github/components/GitHubStudio/PrSwitcher';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { PROVIDER_LENS } from '../../../../integrations/providerLens';
@@ -23,12 +21,16 @@ import { useGithubConnection } from '../../../../integrations/github/useGithubCo
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
-import { BranchPair } from '../../../../../shared/components/BranchPair';
 import { workspaceMountName } from '../../../../../shared/utils/workspaceMountName';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { PrListRow } from './PrListRow';
+import {
+  HeaderBand,
+  StudioDetailLayout,
+  StudioDetailTabs,
+} from '../../../../../shared/components/StudioDetail';
+import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
+import { resolveDetailFields, sessionPullRequestFields } from '../../../../../shared/detail-fields';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
@@ -138,54 +140,54 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
       new CustomEvent(resolveSessionStudioOpenEvent({ remoteKind }), { detail: { sessionId } }),
     );
 
-  return (
-    <PaneShell
-      title={hostTitle({ remoteKind, hasBothProviders })}
-      description="Linked issues and pull or merge request for this session."
-    >
-      <div className="flex flex-col gap-3">
-        {hasBothProviders ? (
-          <div className="flex flex-col gap-1.5">
-            <Eyebrow label="Code host requests" muted className="px-0.5 font-medium" />
-            <div className="flex flex-col gap-1">
-              {pullRequest != null ? (
-                <PrListRow
-                  provider="GitHub"
-                  icon={GitFork}
-                  identifier={`#${pullRequest.number}`}
-                  title={pullRequest.title}
-                  state={pullRequestMeta(pullRequest.state).label}
-                  isSelected={activeProvider === 'github'}
-                  onClick={() => setSelectedProvider('github')}
-                />
-              ) : null}
-              {mergeRequest != null && mergeRequestState != null ? (
-                <PrListRow
-                  provider="GitLab"
-                  icon={GitMerge}
-                  identifier={`!${mergeRequest.iid}`}
-                  title={mergeRequest.title}
-                  state={pullRequestMeta(mergeRequestState).label}
-                  isSelected={activeProvider === 'gitlab'}
-                  onClick={() => setSelectedProvider('gitlab')}
-                />
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-        {activeProvider === 'gitlab' ? (
-          <GitlabMrStrip sessionId={sessionId} onOpenStudio={openStudio} />
-        ) : (
-          <GithubPrCard
-            session={session}
-            isPrReview={isPrReview}
-            onSelectLens={onSelectLens}
-            remoteKind={remoteKind}
-            onOpenStudio={openStudio}
+  const providerTabs = hasBothProviders ? (
+    <StudioDetailTabs
+      ariaLabel="Code host"
+      value={activeProvider}
+      onChange={setSelectedProvider}
+      options={[
+        { value: 'github', label: 'GitHub', icon: GitFork },
+        { value: 'gitlab', label: 'GitLab', icon: GitMerge },
+      ]}
+    />
+  ) : undefined;
+
+  if (activeProvider === 'gitlab') {
+    return (
+      <StudioDetailLayout
+        fit="fill"
+        header={
+          <HeaderBand
+            meta={
+              mergeRequest != null && mergeRequestState != null ? (
+                <>
+                  <span className="font-mono text-2xs tabular-nums text-muted-foreground">
+                    !{mergeRequest.iid}
+                  </span>
+                  <IssueStateBadge>{pullRequestMeta(mergeRequestState).label}</IssueStateBadge>
+                </>
+              ) : null
+            }
+            title={mergeRequest?.title ?? hostTitle({ remoteKind, hasBothProviders })}
           />
-        )}
-      </div>
-    </PaneShell>
+        }
+        {...(providerTabs != null && { tabs: providerTabs })}
+      >
+        <GitlabMrStrip sessionId={sessionId} onOpenStudio={openStudio} />
+      </StudioDetailLayout>
+    );
+  }
+
+  return (
+    <GithubPrCard
+      session={session}
+      isPrReview={isPrReview}
+      onSelectLens={onSelectLens}
+      remoteKind={remoteKind}
+      onOpenStudio={openStudio}
+      hasBothProviders={hasBothProviders}
+      {...(providerTabs != null && { tabs: providerTabs })}
+    />
   );
 };
 
@@ -195,12 +197,16 @@ const GithubPrCard = ({
   onSelectLens,
   remoteKind,
   onOpenStudio,
+  hasBothProviders,
+  tabs,
 }: {
   session: Session;
   isPrReview: boolean;
   onSelectLens: (lens: LensKind) => void;
   remoteKind: RemoteHostKind | null;
   onOpenStudio: () => void;
+  hasBothProviders: boolean;
+  tabs?: ReactNode;
 }) => {
   const sessionId = session.id as SessionId;
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
@@ -239,84 +245,87 @@ const GithubPrCard = ({
   const error = github?.error ?? null;
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
 
+  const shell = ({ children }: { readonly children: ReactNode }) => (
+    <StudioDetailLayout
+      fit="fill"
+      header={<HeaderBand meta={null} title={hostTitle({ remoteKind, hasBothProviders })} />}
+      {...(tabs != null && { tabs })}
+    >
+      {children}
+    </StudioDetailLayout>
+  );
+
   if (!pr && remoteKind !== 'github') {
-    return (
-      <div className="animate-fade-in rounded-lg border border-dashed border-border-soft bg-elevated/40">
-        <MissingGithubRemoteEmptyState />
-      </div>
-    );
+    return shell({ children: <MissingGithubRemoteEmptyState /> });
   }
 
   if (!pr && !isGithubConnected) {
-    return (
-      <div className="animate-fade-in rounded-lg border border-dashed border-border-soft bg-elevated/40">
+    return shell({
+      children: (
         <MissingGithubTokenEmptyState
           workspaceId={session.workspaceId}
           onConnected={() => void githubConnection.refresh()}
         />
-      </div>
-    );
+      ),
+    });
   }
 
   if (!pr && isPrReview) {
-    return (
-      <LensEmptyState
-        tone={CONCEPT_TONE.pr}
-        icon={CONCEPT_ICONS.pr}
-        title="External review session"
-        description="This session reviews someone else’s pull request, so there is no PR to open from here. Draft and publish comments from the review board."
-        className="animate-fade-in"
-      />
-    );
+    return shell({
+      children: (
+        <LensEmptyState
+          tone={CONCEPT_TONE.pr}
+          icon={CONCEPT_ICONS.pr}
+          title="External review session"
+          description="This session reviews someone else’s pull request, so there is no PR to open from here. Draft and publish comments from the review board."
+        />
+      ),
+    });
   }
 
   if (!pr) {
     const hasLinkedWork = linkedIssues.length > 0 || codeHostTasks.length > 0;
-    if (!hasLinkedWork) {
-      return (
-        <LensEmptyState
-          tone={CONCEPT_TONE.pr}
-          icon={CONCEPT_ICONS.pr}
-          title="Open a pull or merge request"
-          description="No issues or external tasks are linked to this session yet. Turn its work into a pull or merge request, or hand it to an agent that writes one from your commits."
-          className="animate-fade-in"
-          action={
-            <div className="flex items-center gap-2">
-              <SessionBranchTag branch={branch} />
-              <Button size="sm" onClick={onOpenStudio}>
-                Open in code host
-                <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
-              </Button>
-            </div>
-          }
-        />
-      );
-    }
-    return (
-      <div className="animate-fade-in flex flex-col gap-3">
-        <LinkedIssuesSection issues={linkedIssues} />
-        <ExternalTasksSection
-          tasks={codeHostTasks}
-          workspace={workspace}
-          onSelectLens={onSelectLens}
-        />
-        <LensEmptyState
-          tone={CONCEPT_TONE.pr}
-          icon={CONCEPT_ICONS.pr}
-          title="No pull or merge request yet"
-          description="Turn this session's work into a pull or merge request when it is ready."
-          action={
-            <div className="flex items-center gap-2">
-              <SessionBranchTag branch={branch} />
-              <Button size="sm" onClick={onOpenStudio}>
-                Open in code host
-                <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
-              </Button>
-            </div>
-          }
-        />
+    const openAction = (
+      <div className="flex items-center gap-2">
+        <SessionBranchTag branch={branch} />
+        <Button size="sm" onClick={onOpenStudio}>
+          Open in code host
+          <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
+        </Button>
       </div>
     );
+    if (!hasLinkedWork) {
+      return shell({
+        children: (
+          <LensEmptyState
+            tone={CONCEPT_TONE.pr}
+            icon={CONCEPT_ICONS.pr}
+            title="Open a pull or merge request"
+            description="No issues or external tasks are linked to this session yet. Turn its work into a pull or merge request, or hand it to an agent that writes one from your commits."
+            action={openAction}
+          />
+        ),
+      });
+    }
+    return shell({
+      children: (
+        <>
+          <LinkedIssuesSection issues={linkedIssues} />
+          <ExternalTasksSection
+            tasks={codeHostTasks}
+            workspace={workspace}
+            onSelectLens={onSelectLens}
+          />
+          <LensEmptyState
+            tone={CONCEPT_TONE.pr}
+            icon={CONCEPT_ICONS.pr}
+            title="No pull or merge request yet"
+            description="Turn this session's work into a pull or merge request when it is ready."
+            action={openAction}
+          />
+        </>
+      ),
+    });
   }
 
   const unresolved = (detail?.comments ?? []).filter(
@@ -324,11 +333,12 @@ const GithubPrCard = ({
   ).length;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-elevated p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <div className="flex items-center gap-2">
-            {branchPrs.length > 1 ? (
+    <StudioDetailLayout
+      fit="fill"
+      header={
+        <HeaderBand
+          meta={
+            branchPrs.length > 1 ? (
               <PrSwitcher
                 prs={branchPrs}
                 selected={pr.number}
@@ -336,54 +346,44 @@ const GithubPrCard = ({
               />
             ) : (
               <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
-            )}
-          </div>
-          <h2 className="text-balance text-sm font-semibold leading-snug text-foreground">
-            {pr.title}
-          </h2>
-        </div>
-        <RefreshIconButton
-          label="Refresh PR status"
-          iconSize={12}
-          onClick={refresh}
-          isLoading={loading}
-          error={error}
+            )
+          }
+          title={pr.title}
+          actions={
+            <>
+              <RefreshIconButton
+                label="Refresh PR status"
+                iconSize={12}
+                onClick={refresh}
+                isLoading={loading}
+                error={error}
+              />
+              <Button size="sm" variant="ghost" onClick={onOpenStudio}>
+                Open in code host
+                <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
+              </Button>
+            </>
+          }
         />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-2xs text-muted-foreground">
-        <BranchPair headBranch={pr.headBranch} baseBranch={pr.baseBranch} />
-        <ReviewDecisionChip decision={pr.reviewDecision} />
-        <PrChecksChip checks={detail?.checks ?? []} />
-        <span className="inline-flex items-center gap-1">
-          <MessageSquare size={11} aria-hidden />
-          <span className="tabular-nums">{unresolved}</span>
-          <span>unresolved</span>
-        </span>
-      </div>
-
+      }
+      {...(tabs != null && { tabs })}
+      properties={resolveDetailFields({
+        registry: sessionPullRequestFields,
+        entity: { pr, checks: detail?.checks ?? [], unresolved },
+      })}
+    >
       <LinkedIssuesSection issues={linkedIssues} />
       <ExternalTasksSection
         tasks={codeHostTasks}
         workspace={workspace}
         onSelectLens={onSelectLens}
       />
-
-      <button
-        type="button"
-        onClick={onOpenStudio}
-        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground/[0.04] px-3 py-2 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-foreground/[0.08]"
-      >
-        Open in code host
-        <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
-      </button>
-
       {error ? (
         <span className="text-2xs text-danger" title={error}>
           {error}
         </span>
       ) : null}
-    </div>
+    </StudioDetailLayout>
   );
 };
 

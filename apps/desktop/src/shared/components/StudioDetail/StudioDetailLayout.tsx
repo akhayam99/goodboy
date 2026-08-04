@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Divider, ScrollFade, cn } from '@goodboy/ui';
 import type { ResolvedDetailFields } from '../../detail-fields';
 import { PANE_RHYTHM } from '../paneRhythm';
-import { RailStack } from './RailStack';
+import { DetailProperties } from './DetailProperties';
 
 type Fit = 'fill' | 'bleed' | 'flow';
 
@@ -27,7 +27,7 @@ export const StudioDetailLayout = ({
 }: Props) => {
   const isFlow = fit === 'flow';
   const hasProperties = properties != null && properties.length > 0;
-  const hasRail = fit !== 'bleed' && (rail != null || hasProperties);
+  const hasMeta = fit !== 'bleed' && (rail != null || hasProperties);
   const measure = fit === 'fill' ? PANE_RHYTHM.measure.reading : PANE_RHYTHM.measure.full;
 
   return (
@@ -39,45 +39,31 @@ export const StudioDetailLayout = ({
         <div className={cn('flex flex-col', !isFlow && PANE_RHYTHM.header)}>
           <div className={cn('flex flex-col gap-3', PANE_RHYTHM.column, measure)}>
             {header}
+            {hasMeta ? (
+              <div data-testid="detail-meta" className="flex min-w-0 flex-col gap-3">
+                {hasProperties ? <DetailProperties entries={properties} /> : null}
+                {rail != null ? <div className="min-w-0">{rail}</div> : null}
+              </div>
+            ) : null}
             {tabs}
           </div>
         </div>
         <Divider />
       </div>
-      <div className={cn('flex flex-col lg:flex-row', isFlow ? 'gap-4' : 'min-h-0 flex-1')}>
-        <div className={cn('flex min-w-0 flex-1 flex-col', isFlow ? 'gap-4' : 'min-h-0')}>
-          {isFlow ? <div className={cn('flex flex-col', PANE_RHYTHM.stack)}>{children}</div> : null}
-          {fit === 'bleed' ? <div className="flex min-h-0 flex-1 flex-col">{children}</div> : null}
-          {fit === 'fill' ? (
-            <ScrollFade
-              className="min-h-0 flex-1"
-              viewportClassName={PANE_RHYTHM.body}
-              fadeSize={24}
-            >
-              <div className={cn('flex flex-col', PANE_RHYTHM.column, PANE_RHYTHM.stack, measure)}>
-                {children}
-              </div>
-            </ScrollFade>
-          ) : null}
-          {dock != null ? <Divider /> : null}
-          {dock != null ? (
-            <div
-              data-testid="detail-dock"
-              className={cn('flex shrink-0 flex-col', PANE_RHYTHM.dock)}
-            >
-              <div className={cn('flex flex-col', PANE_RHYTHM.column, measure)}>{dock}</div>
+      <div className={cn('flex min-w-0 flex-col', isFlow ? 'gap-4' : 'min-h-0 flex-1')}>
+        {isFlow ? <div className={cn('flex flex-col', PANE_RHYTHM.stack)}>{children}</div> : null}
+        {fit === 'bleed' ? <div className="flex min-h-0 flex-1 flex-col">{children}</div> : null}
+        {fit === 'fill' ? (
+          <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
+            <div className={cn('flex flex-col', PANE_RHYTHM.column, PANE_RHYTHM.stack, measure)}>
+              {children}
             </div>
-          ) : null}
-        </div>
-        {hasRail ? (
-          <div
-            className={cn(
-              'order-first flex shrink-0 flex-col lg:order-none lg:flex-row',
-              !isFlow && 'min-h-0',
-            )}
-          >
-            <RailStack rail={rail} properties={properties} isScrollable={!isFlow} />
-            <Divider className="lg:hidden" />
+          </ScrollFade>
+        ) : null}
+        {dock != null ? <Divider /> : null}
+        {dock != null ? (
+          <div data-testid="detail-dock" className={cn('flex shrink-0 flex-col', PANE_RHYTHM.dock)}>
+            <div className={cn('flex flex-col', PANE_RHYTHM.column, measure)}>{dock}</div>
           </div>
         ) : null}
       </div>
