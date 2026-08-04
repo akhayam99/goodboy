@@ -3,10 +3,17 @@
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  PullRequestState,
+  SessionExternalTask,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 
 type Store = {
   readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
+  readonly sessionGithubPrs: Readonly<Record<string, ReadonlyArray<PullRequestState>>>;
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
   readonly sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
   readonly linkSessionExternalTask: ReturnType<typeof vi.fn>;
@@ -16,18 +23,19 @@ type Store = {
 };
 
 type Props = {
+  readonly title: string;
   readonly children: ReactNode;
   readonly actions?: ReactNode;
 };
 
 type TaskDetailProps = {
   readonly task: SessionExternalTask;
-  readonly headerActions: ReactNode;
 };
 
 const h = vi.hoisted(() => ({
   store: {
     sessionExternalTasks: {},
+    sessionGithubPrs: {},
     workspaceIntegrations: {},
     sessions: [],
     linkSessionExternalTask: vi.fn(async () => undefined),
@@ -62,9 +70,8 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
 }));
 
 vi.mock('./LinearTaskDetail', () => ({
-  LinearTaskDetail: ({ task, headerActions }: TaskDetailProps) => (
+  LinearTaskDetail: ({ task }: TaskDetailProps) => (
     <div data-testid="task-detail">
-      {headerActions}
       <a href="https://linear.app/GB-42" aria-label="Open in Linear">
         Linear detail {task.externalId}
       </a>
@@ -74,9 +81,8 @@ vi.mock('./LinearTaskDetail', () => ({
 }));
 
 vi.mock('./SentryTaskDetail', () => ({
-  SentryTaskDetail: ({ task, headerActions }: TaskDetailProps) => (
+  SentryTaskDetail: ({ task }: TaskDetailProps) => (
     <div data-testid="task-detail">
-      {headerActions}
       <a href="https://sentry.io/issues/12345" aria-label="Open in Sentry">
         Sentry detail {task.externalId}
       </a>
@@ -86,12 +92,23 @@ vi.mock('./SentryTaskDetail', () => ({
 }));
 
 vi.mock('../../../../../../shared/components/PaneShell', () => ({
-  PaneShell: ({ children, actions }: Props) => (
+  PaneShell: ({ title, children, actions }: Props) => (
     <div>
+      <h1>{title}</h1>
       {actions}
       {children}
     </div>
   ),
+}));
+
+vi.mock('../../../../../../store/slices/worktrees/useSessionRepo', () => ({
+  useSessionRepo: () => ({
+    repoRoot: '/tmp/goodboy',
+    worktreePath: '/tmp/goodboy/.goodboy/worktrees/current',
+    branch: 'ak/current',
+    mountName: null,
+    workspaceId: 'workspace-1',
+  }),
 }));
 
 vi.mock('../../../../../integrations/hooks/useIssueCandidates', () => ({
@@ -128,6 +145,20 @@ const SECOND_TASK: SessionExternalTask = {
   url: 'https://linear.app/goodboy/issue/GB-43/trim-the-integration-pane',
   createdAt: CREATED_AT,
 };
+const MERGED_PR: PullRequestState = {
+  number: 42,
+  title: 'Refactor integration storage',
+  url: 'https://github.com/acme/goodboy/pull/42',
+  state: 'merged',
+  mergeable: null,
+  checks: 'success',
+  baseBranch: 'main',
+  headBranch: 'ak/current',
+  isDraft: false,
+  reviewDecision: 'approved',
+  body: '',
+  updatedAt: CREATED_AT,
+};
 const SENTRY_TASK: SessionExternalTask = {
   sessionId: SESSION_ID,
   provider: 'sentry',
@@ -140,6 +171,7 @@ const SENTRY_TASK: SessionExternalTask = {
 
 beforeEach(() => {
   h.store.sessionExternalTasks = { [SESSION_ID]: [TASK] };
+  h.store.sessionGithubPrs = {};
   h.store.workspaceIntegrations = {
     [WORKSPACE_ID]: [{ provider: 'linear' }, { provider: 'sentry' }],
   };
@@ -197,28 +229,34 @@ describe('IntegrationPane', () => {
       render(
         <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
       );
+      fireEvent.click(screen.getByRole('button', { name: `View ${task.identifier}` }));
 
       expect(screen.getAllByRole('link', { name: `Open in ${host}` })).toHaveLength(1);
       expect(screen.getAllByRole('button', { name: 'Copy issue link' })).toHaveLength(1);
     },
   );
 
-  it('auto-focuses the only linked task instead of listing it', () => {
+  it.each([0, 1, 2] as const)('states its section title with %i linked records', (count) => {
+    h.store.sessionExternalTasks = { [SESSION_ID]: [TASK, SECOND_TASK].slice(0, count) };
+
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'View GB-42' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
+    expect(screen.queryAllByRole('button', { name: /^View GB-/ })).toHaveLength(count);
+    expect(screen.queryByTestId('task-detail')).toBeNull();
   });
 
-  it('hands the focused actions to the detail header instead of stacking a pane header', () => {
+  it('states the section title above the focused record and holds its actions', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
 
     const detail = screen.getByTestId('task-detail');
 
-    expect(within(detail).getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
-    expect(within(detail).getByRole('button', { name: 'Link issue' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Unlink GB-42' })).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
+    expect(within(detail).queryByRole('button', { name: 'Unlink GB-42' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Link issue' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
   });
 
   it('lists every linked task as a card and focuses the clicked one', () => {
@@ -236,8 +274,25 @@ describe('IntegrationPane', () => {
     expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
   });
 
+  it('groups a merged work item as completed instead of current work', () => {
+    h.store.sessionExternalTasks = {
+      [SESSION_ID]: [
+        { ...TASK, branch: 'ak/current' },
+        { ...SECOND_TASK, branch: 'ak/shipped' },
+      ],
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [MERGED_PR] };
+
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    expect(screen.getByText('Completed work (2)')).toBeDefined();
+    expect(screen.getAllByText('Completed')).toHaveLength(1);
+    expect(screen.getByText('ak/shipped')).toBeDefined();
+  });
+
   it('opens and confirms before unlinking the focused task', async () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
 
     expect(screen.getByText('Linear detail GB-42')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
@@ -297,7 +352,7 @@ describe('IntegrationPane', () => {
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    expect(screen.getByText('Linear')).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
     expect(screen.queryByRole('combobox', { name: 'Link an issue' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Personal access token'), {
       target: { value: 'lin_api_test' },

@@ -19,10 +19,12 @@ export const linkSessionExternalTask = ({ set, get }: Params) => {
     const workspace = state.workspaces.find((candidate) => candidate.id === session?.workspaceId);
     const repo = workspace?.kind === 'composite' ? resolveSessionRepo({ state, sessionId }) : null;
     const mountWorkspaceId = task.mountWorkspaceId ?? repo?.workspaceId;
+    const branch = task.branch ?? repo?.branch ?? state.sessionBranches[sessionId] ?? null;
     const linkedTask: SessionExternalTask = {
       ...task,
       sessionId,
       ...(mountWorkspaceId != null ? { mountWorkspaceId } : {}),
+      ...(branch != null && branch !== '' ? { branch } : {}),
     };
     await upsertSessionExternalTask({ db: tauriDatabase, task: linkedTask });
     set((state) => {

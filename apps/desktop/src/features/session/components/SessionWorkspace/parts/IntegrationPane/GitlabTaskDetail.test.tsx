@@ -47,7 +47,7 @@ describe('GitlabTaskDetail', () => {
       refetch: vi.fn(),
     });
 
-    render(<GitlabTaskDetail workspaceId={WORKSPACE_ID} task={TASK} headerActions={null} />);
+    render(<GitlabTaskDetail workspaceId={WORKSPACE_ID} task={TASK} />);
 
     expect(screen.getByRole('status', { name: 'Loading GitLab issue' })).toBeDefined();
   });
@@ -61,7 +61,7 @@ describe('GitlabTaskDetail', () => {
       refetch,
     });
 
-    render(<GitlabTaskDetail workspaceId={WORKSPACE_ID} task={TASK} headerActions={null} />);
+    render(<GitlabTaskDetail workspaceId={WORKSPACE_ID} task={TASK} />);
 
     expect(screen.getByRole('alert')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -76,7 +76,7 @@ describe('GitlabTaskDetail', () => {
       refetch: vi.fn(),
     });
 
-    render(<GitlabTaskDetail workspaceId={WORKSPACE_ID} task={TASK} headerActions={null} />);
+    render(<GitlabTaskDetail workspaceId={WORKSPACE_ID} task={TASK} />);
 
     expect(screen.getByText('Fix the thing')).toBeDefined();
     expect(screen.getByText('Investigate the flaky request.')).toBeDefined();

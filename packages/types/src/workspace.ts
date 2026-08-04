@@ -196,6 +196,7 @@ export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab' | 'gith
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
   mountWorkspaceId?: WorkspaceId;
+  branch?: string;
   provider: SessionExternalTaskProvider;
   externalId: string;
   identifier: string;

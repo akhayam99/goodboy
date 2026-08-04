@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { listWorktreesForSession, updateSessionWorktreeBranch } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { announceSessionBranchChange } from './announceSessionBranchChange';
 import { getSessionRepo } from './getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
@@ -45,9 +46,14 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
         trimmed,
       );
     }
+    const previousBranch = repo.branch;
     set((state) => {
       const nextGithub = { ...state.sessionGithub };
+      const nextGithubPrs = { ...state.sessionGithubPrs };
+      const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
       delete nextGithub[sessionId];
+      delete nextGithubPrs[sessionId];
+      delete nextSelectedPrNumber[sessionId];
       const mounts = state.sessionMounts[sessionId] ?? [];
       const shouldUpdateSessionBranch =
         workspace?.kind !== 'composite' || mounts[0]?.worktreePath === repo.worktreePath;
@@ -66,7 +72,15 @@ export const reconcileSessionBranch = (set: SetFn, get: GetFn) => {
           : state.sessionBranches,
         sessionMounts,
         sessionGithub: nextGithub,
+        sessionGithubPrs: nextGithubPrs,
+        sessionSelectedPrNumber: nextSelectedPrNumber,
       };
+    });
+    await announceSessionBranchChange({
+      get,
+      sessionId,
+      fromBranch: previousBranch,
+      toBranch: trimmed,
     });
   };
 };

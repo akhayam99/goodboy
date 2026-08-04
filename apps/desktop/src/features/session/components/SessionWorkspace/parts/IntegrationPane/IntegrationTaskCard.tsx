@@ -1,18 +1,33 @@
 import type { SessionExternalTask } from '@goodboy/types';
-import { MetaRow } from '@goodboy/ui';
+import { Chip, MetaRow } from '@goodboy/ui';
 import { RailCard } from '../../../../../../shared/components/RailCard';
 import { formatRelativeAge } from '../../../../../../shared/utils/relativeDate';
 
 type Props = {
   readonly task: SessionExternalTask;
   readonly providerLabel: string;
+  readonly branch: string | null;
+  readonly isCompleted: boolean;
   readonly onSelect: () => void;
 };
 
-export const IntegrationTaskCard = ({ task, providerLabel, onSelect }: Props) => (
+export const IntegrationTaskCard = ({
+  task,
+  providerLabel,
+  branch,
+  isCompleted,
+  onSelect,
+}: Props) => (
   <RailCard
     title={task.title !== '' ? task.title : task.identifier}
     ariaLabel={`View ${task.identifier}`}
+    muted={isCompleted}
+    status={
+      <>
+        <Chip tone="neutral" label={branch ?? 'No branch'} size="xs" />
+        {isCompleted && <Chip tone="merged" label="Completed" size="xs" />}
+      </>
+    }
     meta={
       <MetaRow
         items={[

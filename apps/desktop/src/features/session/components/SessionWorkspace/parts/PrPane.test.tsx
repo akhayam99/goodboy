@@ -185,6 +185,21 @@ describe('PrPane', () => {
     expect(screen.queryByText('GitHub')).toBeNull();
   });
 
+  it('keeps naming GitLab with a merge request linked below the title', () => {
+    h.remoteKind = 'gitlab';
+    h.store.sessionGitlabMr = {
+      [SESSION_ID]: {
+        mr: { iid: 7, title: 'Refactor authentication', state: 'open', draft: false },
+      },
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByRole('heading', { name: 'GitLab', level: 2 })).toBeDefined();
+    expect(screen.getByText('!7')).toBeDefined();
+    expect(screen.getByText('Refactor authentication')).toBeDefined();
+  });
+
   it('names GitHub when that is the host', () => {
     h.remoteKind = 'github';
 
@@ -209,9 +224,114 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'Refactor authentication' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Code host work' })).toBeDefined();
+    expect(screen.getAllByText('Refactor authentication').length).toBeGreaterThan(0);
     expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'GitLab' })).toBeDefined();
+  });
+
+  it.each([0, 1, 2] as const)('states its section title with %i linked records', (count) => {
+    const secondPr = {
+      ...PULL_REQUEST,
+      number: 40,
+      title: 'Refactor authentication (superseded)',
+      state: 'closed',
+    } satisfies PullRequestState;
+    const prs = [PULL_REQUEST, secondPr].slice(0, count);
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: prs[0] ?? null,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: prs };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
+    expect(screen.queryByRole('heading', { name: PULL_REQUEST.title })).toBeNull();
+  });
+
+  it('scopes the pull request list to the branch it reads', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByText('Pull request on ak/refactor-auth')).toBeDefined();
+  });
+
+  it('moves a work item stamped on another branch to the completed section', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionExternalTasks = {
+      [SESSION_ID]: [
+        {
+          sessionId: SESSION_ID,
+          provider: 'github',
+          externalId: '9',
+          identifier: '#9',
+          url: 'https://github.com/acme/goodboy/issues/9',
+          title: 'Harden token refresh',
+          branch: 'ak/previous-work',
+          createdAt: DATE,
+        },
+      ],
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByText('Completed work (1)')).toBeDefined();
+    expect(screen.getByText('ak/previous-work')).toBeDefined();
+    expect(screen.queryByText('External tasks')).toBeNull();
+  });
+
+  it('reads a merged pull request as completed work', () => {
+    const mergedPr = { ...PULL_REQUEST, state: 'merged' } satisfies PullRequestState;
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: mergedPr,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [mergedPr] };
+    h.store.sessionExternalTasks = {
+      [SESSION_ID]: [
+        {
+          sessionId: SESSION_ID,
+          provider: 'github',
+          externalId: '9',
+          identifier: '#9',
+          url: 'https://github.com/acme/goodboy/issues/9',
+          title: 'Harden token refresh',
+          branch: 'ak/refactor-auth',
+          createdAt: DATE,
+        },
+      ],
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByText('Completed work (1)')).toBeDefined();
+    expect(screen.queryByText('External tasks')).toBeNull();
   });
 
   it('never offers create-PR actions inside a PR review session', () => {
@@ -239,8 +359,8 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'Refactor authentication' })).toBeDefined();
-    expect(screen.getByText('Linked pull request')).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
+    expect(screen.getByText('Pull request on ak/refactor-auth')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Show pull request #42' })).toBeDefined();
     expect(screen.getByText('No CI')).toBeDefined();
     expect(screen.getByRole('button', { name: /Review this pull request/i })).toBeDefined();
@@ -265,7 +385,7 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByText('Linked pull requests (2)')).toBeDefined();
+    expect(screen.getByText('Pull requests (2) on ak/refactor-auth')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Show pull request #40' }));
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 40);
@@ -291,7 +411,7 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: closedPr.title })).toBeDefined();
+    expect(screen.getAllByText(closedPr.title).length).toBeGreaterThan(0);
     expect(screen.queryByRole('heading', { name: PULL_REQUEST.title })).toBeNull();
     const selectedRow = screen
       .getByRole('button', { name: `Show pull request #${closedPr.number}` })
@@ -384,7 +504,7 @@ describe('PrPane', () => {
 
     expect(screen.getByText('CI passing')).toBeDefined();
     expect(screen.getByText('Review required')).toBeDefined();
-    expect(screen.getByText('ak/refactor-auth')).toBeDefined();
+    expect(screen.getAllByText('ak/refactor-auth').length).toBeGreaterThan(0);
     expect(screen.getByText('main')).toBeDefined();
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();

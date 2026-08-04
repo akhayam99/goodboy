@@ -6,7 +6,6 @@ import type {
   PullRequestState,
   PullRequestStateKind,
   Session,
-  SessionExternalTask,
   SessionId,
   Workspace,
 } from '@goodboy/types';
@@ -37,6 +36,7 @@ import { LensEmptyState } from '../../../../../shared/components/LensEmptyState'
 import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
 import { openUrl } from '../../../../../shared/lib/editor';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
+import { buildWorkItems, type WorkItem, type WorkItemGroups } from '../../../workItems';
 
 type Props = {
   readonly session: Session;
@@ -96,6 +96,7 @@ const resolveSessionStudioOpenEvent = ({
 export const PrPane = ({ session, onSelectLens }: Props) => {
   const sessionId = session.id as SessionId;
   const remoteKind = useRemoteHostKind({ sessionId });
+  const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
   const canonicalPullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const branchPrs = useAppStore((state) => state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
   const selectedPrNumber = useAppStore((state) => state.sessionSelectedPrNumber[sessionId] ?? null);
@@ -158,17 +159,21 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
         fit="fill"
         header={
           <HeaderBand
-            meta={
+            meta={<SessionBranchTag branch={sessionBranch} />}
+            title={hostTitle({ remoteKind, hasBothProviders })}
+            subtitle={
               mergeRequest != null && mergeRequestState != null ? (
-                <>
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                     !{mergeRequest.iid}
                   </span>
                   <IssueStateBadge>{pullRequestMeta(mergeRequestState).label}</IssueStateBadge>
-                </>
+                  <span className="min-w-0 truncate text-sm text-muted-foreground">
+                    {mergeRequest.title}
+                  </span>
+                </div>
               ) : null
             }
-            title={mergeRequest?.title ?? hostTitle({ remoteKind, hasBothProviders })}
           />
         }
         {...(providerTabs != null && { tabs: providerTabs })}
@@ -245,10 +250,21 @@ const GithubPrCard = ({
   const error = github?.error ?? null;
   const refresh = () => void refreshSessionPr(sessionId, { force: true });
 
+  const workItems = buildWorkItems({
+    tasks: codeHostTasks,
+    currentBranch: branch,
+    branchPrs: branchPrs.length > 0 ? branchPrs : pr != null ? [pr] : [],
+  });
+
   const shell = ({ children }: { readonly children: ReactNode }) => (
     <StudioDetailLayout
       fit="fill"
-      header={<HeaderBand meta={null} title={hostTitle({ remoteKind, hasBothProviders })} />}
+      header={
+        <HeaderBand
+          meta={<SessionBranchTag branch={branch} />}
+          title={hostTitle({ remoteKind, hasBothProviders })}
+        />
+      }
       {...(tabs != null && { tabs })}
     >
       {children}
@@ -286,13 +302,10 @@ const GithubPrCard = ({
   if (!pr) {
     const hasLinkedWork = linkedIssues.length > 0 || codeHostTasks.length > 0;
     const openAction = (
-      <div className="flex items-center gap-2">
-        <SessionBranchTag branch={branch} />
-        <Button size="sm" onClick={onOpenStudio}>
-          Open in code host
-          <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
-        </Button>
-      </div>
+      <Button size="sm" onClick={onOpenStudio}>
+        Open in code host
+        <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
+      </Button>
     );
     if (!hasLinkedWork) {
       return shell({
@@ -311,11 +324,7 @@ const GithubPrCard = ({
       children: (
         <>
           <LinkedIssuesSection issues={linkedIssues} />
-          <ExternalTasksSection
-            tasks={codeHostTasks}
-            workspace={workspace}
-            onSelectLens={onSelectLens}
-          />
+          <WorkItemsSections groups={workItems} workspace={workspace} onSelectLens={onSelectLens} />
           <LensEmptyState
             tone={CONCEPT_TONE.pr}
             icon={CONCEPT_ICONS.pr}
@@ -337,10 +346,14 @@ const GithubPrCard = ({
       fit="fill"
       header={
         <HeaderBand
-          meta={
-            <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
+          meta={<SessionBranchTag branch={branch} />}
+          title={hostTitle({ remoteKind, hasBothProviders })}
+          subtitle={
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
+              <span className="min-w-0 truncate text-sm text-muted-foreground">{pr.title}</span>
+            </div>
           }
-          title={pr.title}
           actions={
             <>
               <RefreshIconButton
@@ -366,15 +379,12 @@ const GithubPrCard = ({
     >
       <LinkedPullRequestsSection
         prs={branchPrs.length > 0 ? branchPrs : [pr]}
+        branch={branch}
         selectedNumber={pr.number}
         onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
       />
       <LinkedIssuesSection issues={linkedIssues} />
-      <ExternalTasksSection
-        tasks={codeHostTasks}
-        workspace={workspace}
-        onSelectLens={onSelectLens}
-      />
+      <WorkItemsSections groups={workItems} workspace={workspace} onSelectLens={onSelectLens} />
       {error ? (
         <span className="text-2xs text-danger" title={error}>
           {error}
@@ -386,12 +396,25 @@ const GithubPrCard = ({
 
 type LinkedPullRequestsSectionProps = {
   readonly prs: ReadonlyArray<PullRequestState>;
+  readonly branch: string | null;
   readonly selectedNumber: number;
   readonly onSelect: (prNumber: number) => void;
 };
 
+const branchScopedLabel = ({
+  count,
+  branch,
+}: {
+  readonly count: number;
+  readonly branch: string | null;
+}): string => {
+  const noun = count === 1 ? 'Pull request' : `Pull requests (${count})`;
+  return branch == null || branch === '' ? noun : `${noun} on ${branch}`;
+};
+
 const LinkedPullRequestsSection = ({
   prs,
+  branch,
   selectedNumber,
   onSelect,
 }: LinkedPullRequestsSectionProps) => {
@@ -401,7 +424,7 @@ const LinkedPullRequestsSection = ({
   return (
     <div className="flex flex-col gap-1.5">
       <Eyebrow
-        label={prs.length === 1 ? 'Linked pull request' : `Linked pull requests (${prs.length})`}
+        label={branchScopedLabel({ count: prs.length, branch })}
         muted
         className="px-0.5 font-medium"
       />
@@ -471,24 +494,49 @@ const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
   );
 };
 
-type ExternalTasksSectionProps = {
-  readonly tasks: ReadonlyArray<SessionExternalTask>;
+type WorkItemsSectionsProps = {
+  readonly groups: WorkItemGroups;
   readonly workspace: Workspace | null;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-const ExternalTasksSection = ({ tasks, workspace, onSelectLens }: ExternalTasksSectionProps) => {
-  if (tasks.length === 0) {
+const WorkItemsSections = ({ groups, workspace, onSelectLens }: WorkItemsSectionsProps) => (
+  <>
+    <WorkItemsSection
+      label="External tasks"
+      items={groups.current}
+      workspace={workspace}
+      onSelectLens={onSelectLens}
+    />
+    <WorkItemsSection
+      label={`Completed work (${groups.history.length})`}
+      items={groups.history}
+      workspace={workspace}
+      onSelectLens={onSelectLens}
+    />
+  </>
+);
+
+type WorkItemsSectionProps = {
+  readonly label: string;
+  readonly items: ReadonlyArray<WorkItem>;
+  readonly workspace: Workspace | null;
+  readonly onSelectLens: (lens: LensKind) => void;
+};
+
+const WorkItemsSection = ({ label, items, workspace, onSelectLens }: WorkItemsSectionProps) => {
+  if (items.length === 0) {
     return null;
   }
   return (
     <div className="flex flex-col gap-1.5">
-      <Eyebrow label="External tasks" muted className="px-0.5 font-medium" />
+      <Eyebrow label={label} muted className="px-0.5 font-medium" />
       <div className="flex flex-col gap-1">
-        {tasks.map((task) => (
+        {items.map(({ key, task, branch }) => (
           <ExternalTaskChip
-            key={`${task.provider}:${task.externalId}:${task.mountWorkspaceId ?? ''}`}
+            key={key}
             task={task}
+            branchLabel={branch ?? undefined}
             appearance="row"
             navigation={task.provider === 'github' ? 'external' : 'internal'}
             ariaLabel={

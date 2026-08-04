@@ -73,6 +73,9 @@ type Store = {
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   sessionGithub: Record<string, unknown>;
+  sessionGithubPrs: Record<string, ReadonlyArray<unknown>>;
+  sessionSelectedPrNumber: Record<string, number | null>;
+  sessionExternalTasks: Record<string, ReadonlyArray<{ readonly branch?: string }>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   closeSessionTerminals: () => void;
   emitNotification: () => void;
@@ -85,6 +88,9 @@ const makeStore = (branch: string): Store => ({
   sessionBranches: { 'sess-1': branch },
   sessionWorktrees: { 'sess-1': ['/root/sessions/study-plan'] },
   sessionGithub: {},
+  sessionGithubPrs: {},
+  sessionSelectedPrNumber: {},
+  sessionExternalTasks: {},
   sessionPhaseRuns: {},
   closeSessionTerminals: vi.fn(),
   emitNotification: vi.fn(),

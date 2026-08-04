@@ -17,7 +17,7 @@ type SeedParams = {
   readonly throughVersion?: number;
 };
 
-const seed = async ({ throughVersion = 96 }: SeedParams) => {
+const seed = async ({ throughVersion = 103 }: SeedParams) => {
   const db = makeTestDatabase();
   await migrate(
     db,
@@ -178,17 +178,7 @@ describe('session_external_tasks queries', () => {
         Date.parse(original.createdAt),
       ],
     );
-    const migration = migrations.find((candidate) => candidate.version === 71);
-    if (migration == null) {
-      throw new Error('Migration 71 should exist');
-    }
-
-    await migrate(db, [migration]);
-    const mountMigration = migrations.find((candidate) => candidate.version === 96);
-    if (mountMigration == null) {
-      throw new Error('Migration 96 should exist');
-    }
-    await migrate(db, [mountMigration]);
+    await migrate(db, migrations);
 
     expect(await listSessionExternalTasks({ db, sessionId })).toEqual([original]);
   });
@@ -218,17 +208,7 @@ describe('session_external_tasks queries', () => {
         Date.parse(gitlab.createdAt),
       ],
     );
-    const migration = migrations.find((candidate) => candidate.version === 73);
-    if (migration == null) {
-      throw new Error('Migration 73 should exist');
-    }
-
-    await migrate(db, [migration]);
-    const mountMigration = migrations.find((candidate) => candidate.version === 96);
-    if (mountMigration == null) {
-      throw new Error('Migration 96 should exist');
-    }
-    await migrate(db, [mountMigration]);
+    await migrate(db, migrations);
     const github = makeTask({
       overrides: {
         provider: 'github',
@@ -260,13 +240,29 @@ describe('session_external_tasks queries', () => {
         Date.parse(original.createdAt),
       ],
     );
-    const migration = migrations.find((candidate) => candidate.version === 96);
-    if (migration == null) {
-      throw new Error('Migration 96 should exist');
-    }
-
-    await migrate(db, [migration]);
+    await migrate(db, migrations);
 
     expect(await listSessionExternalTasks({ db, sessionId })).toEqual([original]);
+  });
+
+  it('keeps the branch an issue was linked on', async () => {
+    const db = await seed({});
+    const stamped = makeTask({ overrides: { branch: 'ak/fix-auth' } });
+    await upsertSessionExternalTask({ db, task: stamped });
+
+    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([stamped]);
+  });
+
+  it('keeps the original branch when the same link is upserted without one', async () => {
+    const db = await seed({});
+    await upsertSessionExternalTask({
+      db,
+      task: makeTask({ overrides: { branch: 'ak/fix-auth' } }),
+    });
+    await upsertSessionExternalTask({ db, task: makeTask({ overrides: { title: 'Renamed' } }) });
+
+    expect(await listSessionExternalTasks({ db, sessionId })).toEqual([
+      makeTask({ overrides: { branch: 'ak/fix-auth', title: 'Renamed' } }),
+    ]);
   });
 });
