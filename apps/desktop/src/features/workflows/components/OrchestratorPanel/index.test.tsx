@@ -154,6 +154,9 @@ describe('OrchestratorPanel state ladder', () => {
     expect(sentence()).not.toContain('Continuing automatically');
     expect(sentence()).toContain('Stopped · step 2 failed · implement the remap');
     expect(screen.getByTestId('orchestrator-panel').getAttribute('data-phase')).toBe('step-failed');
+    expect(screen.getByTestId('orchestrator-detail').textContent).toContain(
+      'Nothing advances until this step is skipped.',
+    );
     expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
   });
 

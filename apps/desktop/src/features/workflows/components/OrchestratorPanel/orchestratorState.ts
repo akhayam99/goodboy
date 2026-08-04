@@ -131,7 +131,7 @@ export const resolveOrchestratorState = ({
       phase: 'step-failed',
       tone: 'danger',
       sentence: `Stopped · step ${failedIndex + 1} failed · ${agent.name}`,
-      detail: 'Automation stops here. Skip the step to let the orchestrator plan around it.',
+      detail: 'Nothing advances until this step is skipped.',
     };
   }
   const pendingIndex = ordered.findIndex((agent) => agent.status === 'pending');
