@@ -16,9 +16,12 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
+const storeMocks = vi.hoisted(() => ({ renameWorkflow: vi.fn(async () => undefined) }));
+
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: unknown) => T) => selector({}),
+  useAppStore: <T,>(selector: (state: unknown) => T) =>
+    selector({ renameWorkflow: storeMocks.renameWorkflow }),
 }));
 
 vi.mock(
@@ -190,6 +193,21 @@ describe('WorkflowRow detail dashboard', () => {
     ).toBe(true);
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Autorun off' }))).toBe(true);
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
+  });
+
+  it('renames the run from its own header', () => {
+    renderDetail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
+    const field = screen.getByRole('textbox', { name: 'Workflow name' });
+    fireEvent.change(field, { target: { value: 'Language id remap' } });
+    fireEvent.blur(field);
+
+    expect(storeMocks.renameWorkflow).toHaveBeenCalledWith(
+      'workspace-1',
+      WORKFLOW_ID,
+      'Language id remap',
+    );
   });
 
   it('puts the lifecycle actions in the header, ahead of the run body', () => {

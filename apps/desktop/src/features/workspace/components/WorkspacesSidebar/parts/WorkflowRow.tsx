@@ -1,6 +1,15 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn, Divider, formatUsdPrecise, MetaRow, StatusDot } from '@goodboy/ui';
-import { ChevronDown, ChevronRight, ChevronUp, Play, Undo2, Zap, ZapOff } from 'lucide-react';
+import { cn, Divider, formatUsdPrecise, Input, MetaRow, StatusDot } from '@goodboy/ui';
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Pencil,
+  Play,
+  Undo2,
+  Zap,
+  ZapOff,
+} from 'lucide-react';
 import type {
   Agent,
   AgentId,
@@ -20,6 +29,7 @@ import type { AgentAggregate } from '../../../../../features/session/components/
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
 import { WorkflowAutorunToggle } from '../../../../../features/workflows/components/WorkflowAutorunToggle';
+import { useWorkflowTitleRename } from '../../../../../features/workflows/hooks/useWorkflowTitleRename';
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
@@ -134,6 +144,11 @@ export const WorkflowRow = ({
   const canMoveUp = index > 0;
   const canMoveDown = index < attachedRuns.length - 1;
   const name = workflowKindName(workflow);
+  const rename = useWorkflowTitleRename({
+    workspaceId: workflow.workspaceId,
+    workflowId: workflow.id,
+    currentTitle: workflow.name,
+  });
   const total = workflow.steps.length;
   const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
   const isDynamic = run.executionMode === 'dynamic';
@@ -176,9 +191,38 @@ export const WorkflowRow = ({
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-xl font-semibold leading-snug text-foreground">
-                  {name}
-                </h2>
+                {rename.editing ? (
+                  <Input
+                    autoFocus
+                    value={rename.draft}
+                    maxLength={rename.maxLength}
+                    onChange={(event) => rename.setDraft(event.target.value)}
+                    onBlur={() => void rename.commit()}
+                    onKeyDown={rename.onKeyDown}
+                    aria-label="Workflow name"
+                    className="text-xl font-semibold"
+                  />
+                ) : (
+                  <div className="group/name flex min-w-0 items-start gap-1.5">
+                    <h2 className="truncate text-xl font-semibold leading-snug text-foreground">
+                      {name}
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={rename.start}
+                      aria-label="Edit workflow name"
+                      title="Edit workflow name"
+                      className={cn(
+                        'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
+                        'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+                        'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                        'group-hover/name:opacity-100 motion-reduce:opacity-60',
+                      )}
+                    >
+                      <Pencil size={13} aria-hidden />
+                    </button>
+                  </div>
+                )}
                 <WorkflowRunStatus
                   run={run}
                   workflow={workflow}
