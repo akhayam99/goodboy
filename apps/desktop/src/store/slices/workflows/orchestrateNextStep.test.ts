@@ -435,7 +435,7 @@ describe('orchestrateNextStep', () => {
     ]!;
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({
-      kind: 'turn',
+      kind: 'orchestrator',
       provider: 'anthropic',
       model: 'claude-haiku-4-5',
       inputTokens: 4200,

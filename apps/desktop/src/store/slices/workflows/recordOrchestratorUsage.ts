@@ -73,7 +73,7 @@ export const recordOrchestratorUsage = async ({
     id: crypto.randomUUID() as TelemetryRecordId,
     runId,
     sessionId,
-    kind: 'turn',
+    kind: 'orchestrator',
     provider,
     model,
     inputTokens: usage.inputTokens,
