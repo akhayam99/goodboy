@@ -108,10 +108,10 @@ describe('CreateAgentPopover', () => {
     const trigger = screen.getByRole('button', { name: 'Create agent' });
 
     expect(trigger.className).toContain('rounded-lg');
-    expect(screen.queryByRole('dialog', { name: 'create agent' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Create agent' })).toBeNull();
 
     openPopover();
-    const dialog = screen.getByRole('dialog', { name: 'create agent' });
+    const dialog = screen.getByRole('dialog', { name: 'Create agent' });
     expect(dialog).toBeTruthy();
     expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
     expect(dialog.className).toContain('fixed');
@@ -278,7 +278,7 @@ describe('CreateAgentPopover', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
     fireEvent.click(screen.getByRole('button', { name: 'Connect Codex' }));
 
-    expect(screen.getByRole('dialog', { name: 'create agent' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Create agent' })).toBeDefined();
     expect(screen.getByText(/Connect codex/i)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect' })).toBeDefined();
     expect(studioListener).not.toHaveBeenCalled();

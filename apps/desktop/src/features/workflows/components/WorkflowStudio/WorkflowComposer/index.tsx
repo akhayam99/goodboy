@@ -162,7 +162,7 @@ export const WorkflowComposer = ({
               <Check size={13} aria-hidden />
               {approved ? 'Move to draft' : 'Approve'}
             </Button>
-            <Button variant="ghost" size="sm" onClick={onClose} aria-label="close workflow editor">
+            <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close workflow editor">
               <X size={13} aria-hidden />
               Close
             </Button>

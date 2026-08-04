@@ -17,10 +17,9 @@ const h = vi.hoisted(() => {
     setAgentDraft: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
   };
-  const useAppStore = Object.assign(
-    <T,>(selector: (s: typeof state) => T) => selector(state),
-    { getState: () => state },
-  );
+  const useAppStore = Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  });
   return {
     state,
     useAppStore,
@@ -104,7 +103,9 @@ const DRAFT: PrReviewDraft = {
 
 beforeEach(() => {
   h.state.reviewDrafts = { 'session-1': [DRAFT] };
-  h.state.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }] };
+  h.state.sessionPhaseRuns = {
+    'session-1': [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
+  };
   h.state.agentDraft = {};
   h.diff.files = [FILE];
   h.diff.loading = false;
@@ -136,16 +137,14 @@ describe('ReviewBoardPane', () => {
       'Guard the session, then retry.',
     );
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'discard draft on src/auth.ts:4' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Discard draft on src/auth.ts:4' }));
     expect(h.state.discardReviewDraft).toHaveBeenCalledWith('draft-1');
   });
 
   it('adds a user draft from a diff line composer', async () => {
     render(<ReviewBoardPane session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'draft a comment on line 3' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Draft a comment on line 3' }));
     const composer = screen.getByRole('textbox', { name: 'Draft comment body' });
     fireEvent.change(composer, { target: { value: 'Load lazily instead.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add draft' }));
@@ -164,7 +163,7 @@ describe('ReviewBoardPane', () => {
   it('prefills the reviewer chat draft from the ask agent action', () => {
     render(<ReviewBoardPane session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'ask the agent about line 4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask the agent about line 4' }));
 
     expect(h.state.setAgentDraft).toHaveBeenCalledWith(
       'agent-1',
@@ -174,8 +173,11 @@ describe('ReviewBoardPane', () => {
   });
 
   it('publishes with the chosen verdict and disables while pending', async () => {
-    let resolvePublish: (value: { published: number; stale: never[]; failed: never[] }) => void =
-      () => undefined;
+    let resolvePublish: (value: {
+      published: number;
+      stale: never[];
+      failed: never[];
+    }) => void = () => undefined;
     h.state.publishPrReview.mockReturnValue(
       new Promise((resolve) => {
         resolvePublish = resolve;

@@ -14,7 +14,7 @@ export const WorkflowKillButton = ({ onConfirm }: Props) => {
       <button
         type="button"
         onClick={() => setIsArmed(true)}
-        aria-label="discard workflow"
+        aria-label="Discard workflow"
         aria-expanded={isArmed}
         className="inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md px-2 text-2xs font-semibold text-muted-foreground motion-safe:transition-colors hover:bg-foreground/10 hover:text-foreground"
       >

@@ -778,7 +778,7 @@ describe('LensColumn', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'back to board' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back to board' })).toBeNull();
   });
 
   it('shows an icon-only board escape hatch next to Overview when the sidebar is collapsed, and it navigates back to the board', () => {
@@ -794,7 +794,7 @@ describe('LensColumn', () => {
       </SessionSidebarCollapsedContext>,
     );
 
-    const backToBoard = screen.getByRole('button', { name: 'back to board' });
+    const backToBoard = screen.getByRole('button', { name: 'Back to board' });
     expect(backToBoard.className).toContain('shrink-0');
     fireEvent.click(backToBoard);
     expect(store.setCurrentSession).toHaveBeenCalledWith(null);

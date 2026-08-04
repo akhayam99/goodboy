@@ -126,7 +126,7 @@ export const LibraryStepForm = ({
           <button
             type="button"
             onClick={onClose}
-            aria-label="close step editor"
+            aria-label="Close step editor"
             className="shrink-0 rounded-md p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <X size={13} aria-hidden />
@@ -156,7 +156,7 @@ export const LibraryStepForm = ({
         <div className="col-span-2">
           <InlineField label="Provider, model, effort">
             <RoutingPicker
-              ariaLabel="step routing"
+              ariaLabel="Step routing"
               connectedProviders={connectedProviders}
               provider={providerOverride}
               model={modelOverride}

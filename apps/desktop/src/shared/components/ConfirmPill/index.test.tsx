@@ -19,7 +19,7 @@ describe('ConfirmPill', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onCancel).toHaveBeenCalledOnce();
     expect(onConfirm).not.toHaveBeenCalled();
 
@@ -39,6 +39,6 @@ describe('ConfirmPill', () => {
     );
 
     expect(screen.getByRole('button', { name: 'delete session' })).toHaveProperty('disabled', true);
-    expect(screen.getByRole('button', { name: 'cancel' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true);
   });
 });

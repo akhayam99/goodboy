@@ -202,7 +202,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
           onChange={setListWidth}
           onReset={() => setListWidth(320)}
           side="right"
-          ariaLabel="resize review list"
+          ariaLabel="Resize review list"
         />
         <div className="flex shrink-0 flex-col" style={{ width: listWidth }}>
           <DraftsPanel

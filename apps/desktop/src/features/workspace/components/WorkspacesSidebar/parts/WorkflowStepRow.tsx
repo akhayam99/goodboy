@@ -155,10 +155,10 @@ export const WorkflowStepRow = ({
 
   const stableTitle =
     isActionable && isBlocked && blockReason !== null
-      ? `next workflow step. ${WORKFLOW_BLOCK_COPY[blockReason]} click to force`
+      ? `Next workflow step. ${WORKFLOW_BLOCK_COPY[blockReason]} click to force`
       : isPendingFuture
-        ? 'waiting for previous steps'
-        : `agent ${run.ordinal + 1}: ${run.status}`;
+        ? 'Waiting for previous steps'
+        : `Agent ${run.ordinal + 1}: ${run.status}`;
 
   return (
     <div className="flex flex-col gap-1">
@@ -217,7 +217,7 @@ export const WorkflowStepRow = ({
                 'line-clamp-1 flex-1 rounded-full bg-background px-1.5 py-0.5 text-2xs font-medium text-foreground outline-none ring-1',
                 rename.error !== null ? 'ring-danger' : 'ring-primary',
               )}
-              aria-label="rename agent"
+              aria-label="Rename agent"
             />
           ) : (
             <span

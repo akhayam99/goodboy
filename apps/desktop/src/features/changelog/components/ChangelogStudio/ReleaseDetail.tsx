@@ -45,8 +45,8 @@ export const ReleaseDetail = ({ release, view, staleError, staleSince, onRetry }
           headingLevel={2}
           icon={CONCEPT_ICONS.changelog}
           tone={CONCEPT_TONE.changelog}
-          title="couldn't load releases"
-          description="check your connection and retry"
+          title="Couldn't load releases"
+          description="Check your connection and retry"
           action={
             <Button size="sm" variant="secondary" onClick={onRetry}>
               Retry
@@ -61,8 +61,8 @@ export const ReleaseDetail = ({ release, view, staleError, staleSince, onRetry }
           headingLevel={2}
           icon={CONCEPT_ICONS.changelog}
           tone={CONCEPT_TONE.changelog}
-          title="no published releases yet"
-          description="release notes appear here once the first version ships"
+          title="No published releases yet"
+          description="Release notes appear here once the first version ships"
         />
       ) : null}
       {view === 'ready' && release != null ? (

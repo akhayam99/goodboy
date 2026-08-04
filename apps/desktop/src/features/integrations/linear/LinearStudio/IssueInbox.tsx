@@ -156,7 +156,7 @@ export const IssueInbox = ({
                                 row.sessionId != null ? (
                                   <MessagesSquare
                                     size={11}
-                                    aria-label="session launched"
+                                    aria-label="Session launched"
                                     className="text-success"
                                   />
                                 ) : null
@@ -165,7 +165,7 @@ export const IssueInbox = ({
                                 linkedPullRequest != null ? (
                                   <CodeHostIcon
                                     size={11}
-                                    aria-label="has linked pull request"
+                                    aria-label="Has linked pull request"
                                     className="text-muted-foreground/70"
                                   />
                                 ) : null

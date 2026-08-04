@@ -7,7 +7,7 @@ export const TranscriptSkeleton = () => {
   return (
     <div
       role="status"
-      aria-label="loading transcript"
+      aria-label="Loading transcript"
       className={cn('flex flex-col gap-6', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
     >
       {[0, 1].map((i) => (

@@ -65,7 +65,7 @@ export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
       ) : (
         <div className="flex w-full flex-col gap-4 text-left">
           <Segmented
-            ariaLabel="issue tracker"
+            ariaLabel="Issue tracker"
             options={options}
             value={tracker}
             onChange={setTracker}

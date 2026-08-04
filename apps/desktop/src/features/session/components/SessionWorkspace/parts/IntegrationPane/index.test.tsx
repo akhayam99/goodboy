@@ -207,7 +207,7 @@ describe('IntegrationPane', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     expect(screen.getByText('Linear detail GB-42')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'view GB-42' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'View GB-42' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
   });
 
@@ -216,9 +216,9 @@ describe('IntegrationPane', () => {
 
     const detail = screen.getByTestId('task-detail');
 
-    expect(within(detail).getByRole('button', { name: 'unlink GB-42' })).toBeDefined();
+    expect(within(detail).getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
     expect(within(detail).getByRole('button', { name: 'Link issue' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'unlink GB-42' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Unlink GB-42' })).toHaveLength(1);
   });
 
   it('lists every linked task as a card and focuses the clicked one', () => {
@@ -226,11 +226,11 @@ describe('IntegrationPane', () => {
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    expect(screen.getAllByRole('button', { name: /^view GB-/ })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /^View GB-/ })).toHaveLength(2);
     expect(screen.getByText('Trim the integration pane')).toBeDefined();
     expect(screen.queryByText('Linear detail GB-42')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'view GB-43' }));
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-43' }));
 
     expect(screen.getByText('Linear detail GB-43')).toBeDefined();
     expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
@@ -240,7 +240,7 @@ describe('IntegrationPane', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     expect(screen.getByText('Linear detail GB-42')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'unlink GB-42' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
     expect(h.store.unlinkSessionExternalTask).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
     await waitFor(() =>
@@ -283,7 +283,7 @@ describe('IntegrationPane', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
 
-    expect(screen.getByRole('dialog', { name: 'link Sentry issue' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Link Sentry issue' })).toBeDefined();
     expect(screen.getByRole('combobox', { name: 'Link an issue' })).toBeDefined();
     expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-sentry-studio', listener);

@@ -84,7 +84,7 @@ describe('FocusedTaskBody', () => {
 
       expect(screen.queryByText('Github detail')).toBeNull();
       expect(screen.queryByText('Gitlab detail')).toBeNull();
-      expect(screen.getByRole('button', { name: 'open #42' })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Open #42' })).toBeDefined();
     },
   );
 });

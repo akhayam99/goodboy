@@ -61,7 +61,7 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`preview ${alt}`}
+      aria-label={`Preview ${alt}`}
       onClick={requestClose}
       className={`fixed inset-0 z-[100] flex items-center justify-center bg-foreground/70 p-8 backdrop-blur-sm transition-opacity duration-[180ms] ease-out ${
         visible ? 'opacity-100' : 'opacity-0'

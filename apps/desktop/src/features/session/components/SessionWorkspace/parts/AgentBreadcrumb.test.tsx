@@ -137,7 +137,7 @@ describe('AgentBreadcrumb', () => {
     expect(crumb.getAttribute('title')).toBe('scout one. Switch agent.');
 
     fireEvent.click(crumb);
-    const menu = screen.getByRole('menu', { name: 'switch agent' });
+    const menu = screen.getByRole('menu', { name: 'Switch agent' });
 
     expect(menu.textContent).toContain('implement two');
     expect(menu.textContent).toContain('running');

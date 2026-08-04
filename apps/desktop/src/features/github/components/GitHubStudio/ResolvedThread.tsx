@@ -36,7 +36,7 @@ export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
           }
           preview={threadPreview({ body: head.body })}
           meta={formatRelativeAge({ fromIso: head.createdAt })}
-          aria-label={`resolved thread by ${head.author}`}
+          aria-label={`Resolved thread by ${head.author}`}
         />
       }
     >

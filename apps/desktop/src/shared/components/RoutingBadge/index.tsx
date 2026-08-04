@@ -105,7 +105,7 @@ export const RoutingBadge = ({
       {model != null ? (
         <span
           className={cn('min-w-0 truncate font-medium', TIER_TEXT[modelTier(model)])}
-          title={`model: ${model}`}
+          title={`Model: ${model}`}
         >
           {modelLabel(model)}
         </span>
@@ -113,7 +113,7 @@ export const RoutingBadge = ({
         <span className="text-muted-foreground/50">{missingLabel}</span>
       )}
       {model != null && resolvedEffort != null && (
-        <span className={cn('shrink-0', EFFORT_TEXT[resolvedEffort])} title="effort">
+        <span className={cn('shrink-0', EFFORT_TEXT[resolvedEffort])} title="Effort">
           {EFFORT_LABEL[resolvedEffort]}
         </span>
       )}

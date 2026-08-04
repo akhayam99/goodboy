@@ -319,7 +319,7 @@ export const DiffViewSelector = ({
           'hover:border-foreground/30 hover:bg-muted/30',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         )}
-        title="change diff view"
+        title="Change diff view"
       >
         <GitCommit size={11} aria-hidden className="text-muted-foreground" />
         <span className="font-medium">{label}</span>
@@ -336,7 +336,7 @@ export const DiffViewSelector = ({
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel="diff view"
+            ariaLabel="Diff view"
             className={cn(popupClassName, 'flex flex-col bg-subtle')}
             style={popupStyle}
           >
@@ -351,7 +351,7 @@ export const DiffViewSelector = ({
                 onKeyDown={handleKeyDown}
                 placeholder="filter commits by sha or subject…"
                 className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground/60"
-                aria-label="filter commits"
+                aria-label="Filter commits"
               />
             </div>
             <Divider />

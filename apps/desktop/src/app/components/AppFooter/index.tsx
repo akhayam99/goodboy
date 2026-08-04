@@ -100,7 +100,7 @@ export const AppFooter = ({
             <FooterButton
               icon={<FolderGit2 size={12} aria-hidden />}
               label="Add a repo"
-              title="turn this workspace into a dev project backed by a git repository"
+              title="Turn this workspace into a dev project backed by a git repository"
               onClick={onConvertToDevProject}
             />
           ) : (
@@ -110,7 +110,7 @@ export const AppFooter = ({
                 label="GitHub"
                 title={
                   githubEnabled
-                    ? 'review and act on pull requests across this workspace'
+                    ? 'Review and act on pull requests across this workspace'
                     : 'Connect GitHub'
                 }
                 onClick={onOpenGithub}
@@ -122,7 +122,7 @@ export const AppFooter = ({
                 label="GitLab"
                 title={
                   gitlabEnabled
-                    ? 'review merge requests and launch a session from a GitLab issue'
+                    ? 'Review merge requests and launch a session from a GitLab issue'
                     : 'Connect GitLab'
                 }
                 onClick={onOpenGitlab}
@@ -134,7 +134,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<IntegrationGlyph provider="linear" size="xs" useBrandColor />}
             label="Linear"
-            title={linearEnabled ? 'launch a session from a Linear issue' : 'Connect Linear'}
+            title={linearEnabled ? 'Launch a session from a Linear issue' : 'Connect Linear'}
             onClick={onOpenLinear}
             active={activeStudio === 'linear'}
             connected={linearEnabled}
@@ -143,7 +143,7 @@ export const AppFooter = ({
             <FooterButton
               icon={<IntegrationGlyph provider="sentry" size="xs" useBrandColor />}
               label="Sentry"
-              title={sentryEnabled ? 'launch a session from a Sentry issue' : 'Connect Sentry'}
+              title={sentryEnabled ? 'Launch a session from a Sentry issue' : 'Connect Sentry'}
               onClick={onOpenSentry}
               active={activeStudio === 'sentry'}
               connected={sentryEnabled}
@@ -158,7 +158,7 @@ export const AppFooter = ({
             icon={<CONCEPT_ICONS.workflows size={12} aria-hidden />}
             label="Workflows"
             tone={CONCEPT_TONE.workflows}
-            title="open the workflow library for this workspace"
+            title="Open the workflow library for this workspace"
             onClick={onOpenWorkflows}
             active={activeStudio === 'workflow'}
           />
@@ -166,7 +166,7 @@ export const AppFooter = ({
             icon={<CONCEPT_ICONS.providers size={12} aria-hidden />}
             label="Providers"
             tone={CONCEPT_TONE.providers}
-            title="connect and manage your provider accounts"
+            title="Connect and manage your provider accounts"
             onClick={onOpenProviders}
             pulse={noProviderConnected && activeStudio !== 'provider'}
             active={activeStudio === 'provider'}
@@ -175,7 +175,7 @@ export const AppFooter = ({
             icon={<CONCEPT_ICONS.budget size={12} aria-hidden />}
             label="Budget"
             tone={CONCEPT_TONE.budget}
-            title="open budget studio"
+            title="Open budget studio"
             onClick={onOpenBudget}
             active={activeStudio === 'budget'}
           />
@@ -183,7 +183,7 @@ export const AppFooter = ({
             icon={<CONCEPT_ICONS.impact size={12} aria-hidden />}
             label="Impact"
             tone={CONCEPT_TONE.impact}
-            title="see how orchestration changed the way this workspace works"
+            title="See how orchestration changed the way this workspace works"
             onClick={onOpenImpact}
             active={activeStudio === 'impact'}
           />
@@ -191,7 +191,7 @@ export const AppFooter = ({
             icon={<CONCEPT_ICONS.changelog size={12} aria-hidden />}
             label="Changelog"
             tone={CONCEPT_TONE.changelog}
-            title="see what changed, release by release"
+            title="See what changed, release by release"
             onClick={onOpenChangelog}
             active={activeStudio === 'changelog'}
           />

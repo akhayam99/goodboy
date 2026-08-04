@@ -76,7 +76,7 @@ describe('LinkedWorkSection', () => {
 
     expect(screen.queryByText('#42')).toBeNull();
     expect(screen.queryByText('Ship linked work')).toBeNull();
-    expect(screen.getByRole('button', { name: 'link work' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Link work' })).toBeDefined();
   });
 
   it('renders every linked issue and routes it to the PR lens', () => {
@@ -149,9 +149,9 @@ describe('LinkedWorkSection', () => {
     expect(screen.getByText('ENG-42')).toBeDefined();
     expect(screen.getByText('Track linked work')).toBeDefined();
     expect(screen.getByText('GOODBOY-7')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'open ENG-42 integration' }));
-    fireEvent.click(screen.getByRole('button', { name: 'open GOODBOY-7 integration' }));
-    fireEvent.click(screen.getByRole('button', { name: 'open acme/repo#3 integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open ENG-42 integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open GOODBOY-7 integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open acme/repo#3 integration' }));
     expect(onSelectLens.mock.calls).toEqual([['linear'], ['sentry'], ['gitlab_issues']]);
   });
 
@@ -159,11 +159,11 @@ describe('LinkedWorkSection', () => {
     const onSelectLens = vi.fn();
     render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={onSelectLens} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'link work' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Linear' }));
-    fireEvent.click(screen.getByRole('button', { name: 'link work' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sentry' }));
-    fireEvent.click(screen.getByRole('button', { name: 'link work' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'GitLab issues' }));
 
     expect(onSelectLens.mock.calls).toEqual([['linear'], ['sentry'], ['gitlab_issues']]);
@@ -209,6 +209,6 @@ describe('LinkedWorkSection', () => {
     render(<LinkedWorkSection sessionId={'sess-1' as SessionId} onSelectLens={vi.fn()} />);
 
     expect(screen.getByText('Linked work')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'link work' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Link work' })).toBeDefined();
   });
 });

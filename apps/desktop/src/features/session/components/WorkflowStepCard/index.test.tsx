@@ -63,7 +63,7 @@ describe('WorkflowStepCard (collapsed)', () => {
     render(<WorkflowStepCard {...baseProps} />);
     expect(screen.getByText('Haiku 4.5')).toBeDefined();
     expect(screen.queryByText('claude-haiku-4-5')).toBeNull();
-    expect(screen.queryByRole('button', { name: /^routing for step 1:/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Routing for step 1:/ })).toBeNull();
   });
 
   it('shows the clamped effort for the resolved model', () => {
@@ -145,7 +145,7 @@ describe('WorkflowStepCard (expanded)', () => {
   it('changes verbosity through the routing picker', () => {
     const onVerbosity = vi.fn();
     render(<WorkflowStepCard {...baseProps} expanded={true} onVerbosity={onVerbosity} />);
-    fireEvent.click(screen.getByRole('button', { name: /^routing for step 1:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Routing for step 1:/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Verbose' }));
     expect(onVerbosity).toHaveBeenCalledWith('verbose');
   });

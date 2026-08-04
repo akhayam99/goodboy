@@ -103,7 +103,7 @@ export const EditorMenu = ({ sessionId, density = 'full' }: Props) => {
   return (
     <OverflowMenu
       items={items}
-      label="open worktree"
+      label="Open worktree"
       align="left"
       side="top"
       triggerClassName={triggerClassName}

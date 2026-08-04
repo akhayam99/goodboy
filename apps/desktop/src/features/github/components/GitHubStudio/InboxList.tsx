@@ -128,8 +128,8 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
                             ) : null}
                             {row.attention ? (
                               <span
-                                aria-label="needs attention"
-                                title="failing CI or changes requested"
+                                aria-label="Needs attention"
+                                title="Failing CI or changes requested"
                                 className="size-1.5 shrink-0 rounded-full bg-danger"
                               />
                             ) : null}
@@ -138,7 +138,7 @@ export const InboxList = ({ groups, focusedSessionId, onSelect }: Props) => {
                               sessionIcon={
                                 <MessagesSquare
                                   size={11}
-                                  aria-label="session launched"
+                                  aria-label="Session launched"
                                   className="text-success"
                                 />
                               }

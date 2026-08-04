@@ -125,7 +125,7 @@ describe('ResolveBoard', () => {
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /Resolve with/i }));
     });
-    expect(screen.getByRole('dialog', { name: 'configure resolver' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Configure resolver' })).toBeDefined();
     act(() => {
       fireEvent.click(screen.getByRole('tab', { name: 'Analyze' }));
     });

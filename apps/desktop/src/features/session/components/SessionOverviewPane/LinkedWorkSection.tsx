@@ -64,7 +64,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
         <Eyebrow label="Linked work" muted className="font-medium" />
         <OverflowMenu
           items={linkItems}
-          label="link work"
+          label="Link work"
           triggerClassName="flex items-center gap-1 rounded-md px-1.5 py-1 text-2xs font-medium"
           trigger={
             <>
@@ -99,7 +99,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
               variant="full"
               appearance="row"
               navigation="internal"
-              ariaLabel={`open ${task.identifier} integration`}
+              ariaLabel={`Open ${task.identifier} integration`}
               repoLabel={
                 workspaceMountName({
                   workspace,

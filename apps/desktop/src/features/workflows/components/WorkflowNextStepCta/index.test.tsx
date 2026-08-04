@@ -161,7 +161,7 @@ describe('WorkflowNextStepCta', () => {
     fireEvent.click(cta);
     expect(screen.getByText(/start the next agent anyway/i)).toBeDefined();
     expect(onAdvance).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'start anyway' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start anyway' }));
     await Promise.resolve();
     expect(onAdvance).toHaveBeenCalledTimes(1);
     expect(onAdvance.mock.calls[0]?.[0]).toMatchObject({ id: 's2' });
@@ -224,7 +224,7 @@ describe('WorkflowNextStepCta', () => {
     fireEvent.click(screen.getByTestId('workflow-force-next-step-cta'));
     expect(screen.getByText(/skip the blocked step/i)).toBeDefined();
     expect(onForceAdvance).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'skip and continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip and continue' }));
     await Promise.resolve();
     expect(onForceAdvance).toHaveBeenCalledTimes(1);
   });

@@ -77,7 +77,7 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
     >
       <div className="flex items-center gap-1.5 text-2xs font-semibold">
         {phase === 'deciding' ? (
-          <StatusDot tone="info" size="sm" pulsing ariaLabel="deciding" />
+          <StatusDot tone="info" size="sm" pulsing ariaLabel="Deciding" />
         ) : phase === 'done' ? (
           <CheckCircle2 size={12} aria-hidden className="shrink-0" />
         ) : phase === 'failed' || phase === 'blocked' ? (
@@ -102,7 +102,7 @@ export const OrchestratorPanel = ({ sessionId, run, agents, isOrchestrating }: P
             type="button"
             disabled={busy}
             data-testid="workflow-orchestrate-next-cta"
-            title="ask the orchestrator to decide the next step"
+            title="Ask the orchestrator to decide the next step"
             onClick={() => void guard(() => orchestrateNextStep(sessionId, run.id))}
             className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-2xs font-semibold text-primary hover:border-primary disabled:opacity-60"
           >

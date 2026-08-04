@@ -75,7 +75,7 @@ export const FocusedTaskBody = ({
         task={task}
         appearance="row"
         navigation="external"
-        ariaLabel={`open ${task.identifier}`}
+        ariaLabel={`Open ${task.identifier}`}
         onClick={() => void openUrl(task.url)}
       />
     </StudioDetailLayout>

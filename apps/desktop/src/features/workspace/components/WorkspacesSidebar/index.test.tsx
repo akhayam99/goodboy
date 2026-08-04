@@ -43,7 +43,7 @@ describe('WorkspacesSidebar', () => {
   it('carries the primary tone without going solid', () => {
     currentSessionRef.value = { id: 'session-1' } as Session;
     render(<WorkspacesSidebar />);
-    const back = screen.getByRole('button', { name: 'back to board' });
+    const back = screen.getByRole('button', { name: 'Back to board' });
     expect(back.className).toContain('bg-primary/10');
     expect(back.className).toContain('text-primary');
     expect(back.className).not.toContain('text-primary-foreground');
@@ -70,7 +70,7 @@ describe('WorkspacesSidebar', () => {
     const onNavigate = vi.fn();
     render(<WorkspacesSidebar onNavigate={onNavigate} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'back to board' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to board' }));
     expect(onNavigate).toHaveBeenCalledOnce();
     currentSessionRef.value = null;
   });

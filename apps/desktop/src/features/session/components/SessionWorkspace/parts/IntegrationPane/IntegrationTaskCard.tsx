@@ -12,7 +12,7 @@ type Props = {
 export const IntegrationTaskCard = ({ task, providerLabel, onSelect }: Props) => (
   <RailCard
     title={task.title !== '' ? task.title : task.identifier}
-    ariaLabel={`view ${task.identifier}`}
+    ariaLabel={`View ${task.identifier}`}
     meta={
       <MetaRow
         items={[

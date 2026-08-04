@@ -47,7 +47,7 @@ export const VerbositySelect = ({ value, onChange, disabled }: Props) => {
       {open && (
         <Popover
           role="listbox"
-          ariaLabel="reply verbosity"
+          ariaLabel="Reply verbosity"
           className={cn(popupClassName, 'py-0.5')}
         >
           {VERBOSITY_LEVELS.map((level) => {

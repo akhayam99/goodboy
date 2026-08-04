@@ -38,7 +38,7 @@ export const WorkflowStepGraph = ({
   return (
     <div
       className="flex min-w-0 flex-col gap-2"
-      aria-label="workflow steps"
+      aria-label="Workflow steps"
       data-testid="workflow-step-graph"
     >
       {sortedRuns.map((run, index) => (

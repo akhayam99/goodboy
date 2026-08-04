@@ -86,7 +86,7 @@ export const HeaderBand = ({ session, stage }: Props) => {
             onChange={(e) => rename.setDraft(e.target.value)}
             onBlur={() => void rename.commit()}
             onKeyDown={rename.onKeyDown}
-            aria-label="session goal"
+            aria-label="Session goal"
             className="text-xl font-semibold"
           />
           {rename.error != null && <span className="text-2xs text-danger">{rename.error}</span>}
@@ -99,7 +99,7 @@ export const HeaderBand = ({ session, stage }: Props) => {
           <button
             type="button"
             onClick={rename.start}
-            aria-label="edit goal"
+            aria-label="Edit goal"
             title="Edit goal"
             className={cn(
               'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
@@ -114,7 +114,7 @@ export const HeaderBand = ({ session, stage }: Props) => {
       )}
       {done !== '' ? (
         <p
-          aria-label="definition of done"
+          aria-label="Definition of done"
           className="text-sm leading-relaxed text-muted-foreground"
         >
           {done}

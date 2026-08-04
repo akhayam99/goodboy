@@ -92,7 +92,7 @@ export const PlanProvenance = ({
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel="plan consumption history"
+            ariaLabel="Plan consumption history"
             tabIndex={-1}
             className={cn(popupClassName, 'flex max-h-80 flex-col bg-elevated')}
             style={popupStyle}

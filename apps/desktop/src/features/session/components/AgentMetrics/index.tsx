@@ -90,7 +90,7 @@ export const AgentMetrics = ({
                   'tabular-nums',
                   contextUsageTone({ pct: summary.pct, prefix: 'text' }),
                 )}
-                title={`context: ${formatInteger(summary.usedTokens)} / ${formatInteger(summary.windowTokens)} tokens`}
+                title={`Context: ${formatInteger(summary.usedTokens)} / ${formatInteger(summary.windowTokens)} tokens`}
               >
                 ctx {pct}%
               </span>
@@ -98,7 +98,7 @@ export const AgentMetrics = ({
             turnsLoading ? (
               <span
                 key="turns"
-                aria-label="loading turn count"
+                aria-label="Loading turn count"
                 className="inline-block h-2.5 w-4 motion-safe:animate-pulse rounded bg-muted"
               />
             ) : (
@@ -122,7 +122,7 @@ export const AgentMetrics = ({
         >
           <span
             className="inline-flex items-baseline gap-0.5 tabular-nums"
-            title={`in: ${formatInteger(inputTokens)} tokens (cumulative)`}
+            title={`In: ${formatInteger(inputTokens)} tokens (cumulative)`}
           >
             <span aria-hidden className="text-muted-foreground/70">
               ↓
@@ -131,7 +131,7 @@ export const AgentMetrics = ({
           </span>
           <span
             className="inline-flex items-baseline gap-0.5 tabular-nums"
-            title={`out: ${formatInteger(outputTokens)} tokens (cumulative)`}
+            title={`Out: ${formatInteger(outputTokens)} tokens (cumulative)`}
           >
             <span aria-hidden className="text-muted-foreground/70">
               ↑

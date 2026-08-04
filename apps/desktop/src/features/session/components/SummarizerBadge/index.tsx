@@ -34,8 +34,8 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
 
   const costTooltip =
     totals.count === 0
-      ? 'summarizer has not run yet'
-      : `summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · ${formatUsd(totals.estimatedCostUsd)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
+      ? 'Summarizer has not run yet'
+      : `Summary total · ${totals.count} run${totals.count === 1 ? '' : 's'} · ${totals.inputTokens} in / ${totals.outputTokens} out · ${formatUsd(totals.estimatedCostUsd)}${lastUpdate ? ` · last ${lastUpdate}` : ''}`;
 
   const costPill = (
     <span
@@ -56,7 +56,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
   }
 
   if (status === 'error') {
-    const errorTitle = error ? `cannot summarize · ${error}` : 'cannot summarize';
+    const errorTitle = error ? `Cannot summarize · ${error}` : 'Cannot summarize';
     return (
       <span className="flex items-center gap-1">
         {costPill}
@@ -69,7 +69,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
           }}
           disabled={!canRetry}
           title={canRetry ? `${errorTitle}, click to retry` : errorTitle}
-          aria-label={canRetry ? 'retry summarizer' : 'summarizer failed'}
+          aria-label={canRetry ? 'Retry summarizer' : 'Summarizer failed'}
           className={cn(
             'inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-2xs uppercase tracking-wide text-danger transition-colors',
             retrying && 'animate-border-pulse',

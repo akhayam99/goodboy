@@ -70,7 +70,7 @@ export const OperationsCluster = ({
     return [...counts.entries()].map(([name, count]) => `${count} ${name}`).join(' · ');
   }, [items]);
 
-  const ariaLabel = `operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
+  const ariaLabel = `Operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
     running != null
       ? `, running ${running.toolName}`
       : showError

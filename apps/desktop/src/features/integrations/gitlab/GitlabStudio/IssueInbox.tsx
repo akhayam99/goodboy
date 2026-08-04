@@ -145,7 +145,7 @@ export const IssueInbox = ({
                               row.sessionId != null ? (
                                 <MessagesSquare
                                   size={11}
-                                  aria-label="session launched"
+                                  aria-label="Session launched"
                                   className="text-success"
                                 />
                               ) : null

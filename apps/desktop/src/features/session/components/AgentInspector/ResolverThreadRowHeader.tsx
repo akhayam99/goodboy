@@ -32,7 +32,7 @@ export const ResolverThreadRowHeader = ({
           type="button"
           onClick={onToggle}
           aria-expanded={isExpanded}
-          aria-label={`thread ${position} details`}
+          aria-label={`Thread ${position} details`}
           className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left transition-colors hover:bg-foreground/5"
         >
           <Chevron size={12} aria-hidden className="shrink-0 text-muted-foreground/60" />

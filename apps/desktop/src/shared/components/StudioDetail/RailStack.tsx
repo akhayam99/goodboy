@@ -41,7 +41,7 @@ export const RailStack = ({ rail, properties, isScrollable }: Props) => {
           onChange={setWidth}
           onReset={() => setWidth(320)}
           side="right"
-          ariaLabel="resize studio detail rail"
+          ariaLabel="Resize studio detail rail"
         />
       </div>
       {isScrollable ? (

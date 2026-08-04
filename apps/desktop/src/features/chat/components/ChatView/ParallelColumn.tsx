@@ -71,7 +71,7 @@ export const ParallelColumn = ({
         <AgentAvatar kind={kind} size="sm" title={label} />
         <span className="min-w-0 truncate text-foreground/80">{label}</span>
         {isRunning ? (
-          <StatusDot tone="info" size="sm" pulsing ariaLabel="running" className="ml-auto" />
+          <StatusDot tone="info" size="sm" pulsing ariaLabel="Running" className="ml-auto" />
         ) : null}
       </div>
       <Divider />

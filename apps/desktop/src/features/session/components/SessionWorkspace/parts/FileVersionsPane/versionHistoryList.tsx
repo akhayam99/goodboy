@@ -66,7 +66,7 @@ export const VersionHistoryList = ({
                 type="button"
                 onClick={() => onRestoreVersion(version.id)}
                 disabled={isRestoring || deletingVersionId != null}
-                aria-label="restore this version"
+                aria-label="Restore this version"
                 className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RotateCcw size={12} aria-hidden />
@@ -76,7 +76,7 @@ export const VersionHistoryList = ({
                 type="button"
                 onClick={() => onDeleteVersion(version.id)}
                 disabled={isDeleting || restoringVersionId != null}
-                aria-label="delete this version"
+                aria-label="Delete this version"
                 className="inline-flex size-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Trash2 size={12} aria-hidden />

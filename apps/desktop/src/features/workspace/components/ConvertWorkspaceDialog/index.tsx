@@ -213,7 +213,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                 value={selectedRepo}
                 onChange={(event) => setSelectedRepo(event.target.value)}
                 disabled={isBusy || areReposLoading}
-                aria-label="repository"
+                aria-label="Repository"
               >
                 <option value={MANUAL_REPO}>
                   {areReposLoading ? 'loading your repositories…' : 'paste a remote url instead'}

@@ -46,8 +46,8 @@ export const OpenThread = ({ thread, link, onOpenUrl }: Props) => {
         <button
           type="button"
           onClick={() => onOpenUrl(head.url)}
-          title="open in browser"
-          aria-label="open in browser"
+          title="Open in browser"
+          aria-label="Open in browser"
           className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <ExternalLink size={12} aria-hidden />

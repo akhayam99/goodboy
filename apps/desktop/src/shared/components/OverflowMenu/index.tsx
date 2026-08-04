@@ -35,7 +35,7 @@ type OverflowMenuProps = {
 
 export const OverflowMenu = ({
   items,
-  label = 'more actions',
+  label = 'More actions',
   triggerClassName,
   trigger,
   disabled,

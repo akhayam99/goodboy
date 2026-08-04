@@ -934,7 +934,7 @@ export const App = () => {
         <DiffViewerDialog
           open
           onClose={() => setCommitDiff(null)}
-          title={`commit ${commitDiff.sha.slice(0, 7)}`}
+          title={`Commit ${commitDiff.sha.slice(0, 7)}`}
           loader={commitDiffLoader}
         />
       ) : null}

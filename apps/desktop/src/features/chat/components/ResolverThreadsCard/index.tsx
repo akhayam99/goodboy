@@ -161,7 +161,7 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
           meta={`${verdicts.length}`}
           open={open}
           onToggle={() => setOpen((value) => !value)}
-          aria-label={open ? 'collapse resolver findings' : 'expand resolver findings'}
+          aria-label={open ? 'Collapse resolver findings' : 'Expand resolver findings'}
         />
       }
     >

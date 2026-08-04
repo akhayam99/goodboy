@@ -47,11 +47,11 @@ describe('SpawnedAgentList', () => {
         ]}
       />,
     );
-    expect(screen.getByText('running…')).toBeTruthy();
-    expect(screen.getByText('done')).toBeTruthy();
-    expect(screen.getByText('stalled')).toBeTruthy();
-    expect(screen.getByText('queued')).toBeTruthy();
-    expect(screen.getByText('planned')).toBeTruthy();
+    expect(screen.getByText('Running…')).toBeTruthy();
+    expect(screen.getByText('Done')).toBeTruthy();
+    expect(screen.getByText('Stalled')).toBeTruthy();
+    expect(screen.getByText('Queued')).toBeTruthy();
+    expect(screen.getByText('Planned')).toBeTruthy();
   });
 
   it('shows the body line when present and omits it when null', () => {

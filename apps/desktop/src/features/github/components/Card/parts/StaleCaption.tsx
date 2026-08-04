@@ -20,7 +20,7 @@ export const StaleCaption = ({ fetchedAt }: Props) => {
   return (
     <span
       className="text-3xs text-muted-foreground/60"
-      title={`fetched at ${formatAbsoluteDateTime({ iso: fetchedAt })}`}
+      title={`Fetched at ${formatAbsoluteDateTime({ iso: fetchedAt })}`}
     >
       updated {formatRelativeAge({ fromIso: fetchedAt, nowMs: now })}
     </span>

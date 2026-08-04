@@ -108,7 +108,7 @@ export const AgentBreadcrumb = ({
   );
 
   return (
-    <nav aria-label="agent breadcrumb" className="flex min-w-0 items-center gap-1">
+    <nav aria-label="Agent breadcrumb" className="flex min-w-0 items-center gap-1">
       <button
         type="button"
         onClick={homeCrumb.onClick}
@@ -150,7 +150,7 @@ export const AgentBreadcrumb = ({
             {open && (
               <Popover
                 role="menu"
-                ariaLabel="switch agent"
+                ariaLabel="Switch agent"
                 className={cn(popupClassName, 'flex flex-col bg-subtle')}
               >
                 <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-64">

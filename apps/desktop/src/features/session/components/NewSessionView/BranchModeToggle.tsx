@@ -17,7 +17,7 @@ const OPTIONS: ReadonlyArray<SegmentedTabOption<BranchMode>> = [
 export const BranchModeToggle = ({ mode, onChange, disabled }: Props) => {
   return (
     <SegmentedTabs
-      ariaLabel="branch source"
+      ariaLabel="Branch source"
       options={OPTIONS.map((option) => ({ ...option, disabled }))}
       value={mode}
       onChange={onChange}

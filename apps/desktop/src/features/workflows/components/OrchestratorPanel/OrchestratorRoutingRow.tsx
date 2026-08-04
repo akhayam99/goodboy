@@ -59,7 +59,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     >
       <span>decided by</span>
       <RoutingPicker
-        ariaLabel="orchestrator routing"
+        ariaLabel="Orchestrator routing"
         variant="pill"
         connectedProviders={connectedProviders}
         provider={providerId}

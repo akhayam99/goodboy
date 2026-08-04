@@ -13,13 +13,13 @@ export const SaveCancel = ({ isBusy, onSave, onCancel }: Props) => {
       <IconButton
         icon={Check}
         iconSize={14}
-        label="save"
+        label="Save"
         onClick={onSave}
         disabled={isBusy}
         busy={isBusy}
         className="border-primary bg-primary text-primary-foreground hover:border-primary hover:bg-primary/90 hover:text-primary-foreground"
       />
-      <IconButton icon={X} iconSize={14} label="cancel" onClick={onCancel} disabled={isBusy} />
+      <IconButton icon={X} iconSize={14} label="Cancel" onClick={onCancel} disabled={isBusy} />
     </div>
   );
 };

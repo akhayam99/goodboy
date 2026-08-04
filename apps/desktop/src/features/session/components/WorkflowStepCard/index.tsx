@@ -191,7 +191,7 @@ export const WorkflowStepCard = ({
           <button
             type="button"
             onClick={onExpand}
-            aria-label={`step ${ordinal + 1}: ${displayName}`}
+            aria-label={`Step ${ordinal + 1}: ${displayName}`}
             title="Open this step to edit it"
             className="flex min-w-0 flex-1 flex-col gap-1 py-2 pl-1 pr-8 text-left"
           >
@@ -266,7 +266,7 @@ export const WorkflowStepCard = ({
                   minRows={1}
                   maxRows={4}
                   disabled={disabled}
-                  aria-label="expected output"
+                  aria-label="Expected output"
                   className="text-2xs leading-relaxed"
                 />
               </div>
@@ -281,7 +281,7 @@ export const WorkflowStepCard = ({
               <div className="col-span-2 flex flex-col gap-1">
                 <FieldLabel>Provider, model, effort</FieldLabel>
                 <RoutingPicker
-                  ariaLabel={`routing for step ${ordinal + 1}`}
+                  ariaLabel={`Routing for step ${ordinal + 1}`}
                   connectedProviders={connectedProviders}
                   provider={providerValue}
                   model={model}

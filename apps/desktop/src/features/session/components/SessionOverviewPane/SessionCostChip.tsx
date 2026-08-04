@@ -147,7 +147,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel="session budget details"
+            ariaLabel="Session budget details"
             tabIndex={-1}
             className={cn(popupClassName, 'flex max-h-[32rem] flex-col bg-subtle')}
             style={popupStyle}

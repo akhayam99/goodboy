@@ -34,7 +34,7 @@ export const BranchDetails = ({
         <SectionHeader icon={<GitBranch size={12} aria-hidden />} label="Branch" />
         {adoptable != null ? (
           <SegmentedTabs
-            ariaLabel="branch source"
+            ariaLabel="Branch source"
             options={[
               { value: 'adopt', label: adoptable.label, disabled: busy },
               { value: 'fresh', label: 'Start fresh', disabled: busy },

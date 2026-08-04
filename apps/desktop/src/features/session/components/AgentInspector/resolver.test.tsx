@@ -268,7 +268,7 @@ const renderInspector = (agentId: AgentId) =>
   render(<AgentInspector sessionId={SESSION_ID} agentId={agentId} onClose={() => undefined} />);
 
 const openOverflow = () =>
-  fireEvent.click(screen.getByRole('button', { name: 'more resolver actions' }));
+  fireEvent.click(screen.getByRole('button', { name: 'More resolver actions' }));
 
 describe('AgentInspector (resolver)', () => {
   beforeEach(() => {
@@ -371,7 +371,7 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getByText('Closing reason')).toBeDefined();
     expect(screen.getByText('covered by the follow up')).toBeDefined();
     expect(screen.getByText('Already guarded')).toBeDefined();
-    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
+    expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
   });
 
   it('gives every owned thread its own outcome, its own reply and its own action', () => {
@@ -428,8 +428,8 @@ describe('AgentInspector (resolver)', () => {
     const post = screen.getByRole('button', { name: 'Post & close' }) as HTMLButtonElement;
     expect(post.disabled).toBe(true);
 
-    fireEvent.click(screen.getByLabelText('edit reply for thread 1'));
-    fireEvent.change(screen.getByLabelText('reply for thread 1'), {
+    fireEvent.click(screen.getByLabelText('Edit reply for thread 1'));
+    fireEvent.change(screen.getByLabelText('Reply for thread 1'), {
       target: { value: 'the check already covers it' },
     });
 
@@ -449,10 +449,10 @@ describe('AgentInspector (resolver)', () => {
 
     expect(screen.getByText('Reply')).toBeDefined();
     expect(screen.getByText('guard')).toBeDefined();
-    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
+    expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
 
-    fireEvent.click(screen.getByLabelText('edit reply for thread 1'));
-    const editor = screen.getByLabelText('reply for thread 1') as HTMLTextAreaElement;
+    fireEvent.click(screen.getByLabelText('Edit reply for thread 1'));
+    const editor = screen.getByLabelText('Reply for thread 1') as HTMLTextAreaElement;
     expect(editor.value).toBe('The `guard` already covers it');
 
     fireEvent.change(editor, { target: { value: 'Covered by the new guard' } });
@@ -463,7 +463,7 @@ describe('AgentInspector (resolver)', () => {
       threadId: 'PRRT_3',
       reply: 'Covered by the new guard',
     });
-    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
+    expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
   });
 
   it('collapses a closed thread to its header and a one-line summary', () => {
@@ -482,11 +482,11 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.queryByText('Reviewer')).toBeNull();
     expect(screen.queryByText('this one too')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'thread 1 details' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thread 1 details' }));
 
     expect(screen.getByText('Reviewer')).toBeDefined();
     expect(screen.getByText('this one too')).toBeDefined();
-    expect(screen.queryByLabelText('edit reply for thread 1')).toBeNull();
+    expect(screen.queryByLabelText('Edit reply for thread 1')).toBeNull();
   });
 
   it('shows the running action on the button that started it and freezes its siblings', async () => {
@@ -635,7 +635,7 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getByText('closed')).toBeDefined();
     expect(screen.queryByText('fixed')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add to batch' })).toBeNull();
-    expect(screen.queryByLabelText('reply for thread 1')).toBeNull();
+    expect(screen.queryByLabelText('Reply for thread 1')).toBeNull();
     expect(screen.getByRole('button', { name: 'Post & close' })).toBeDefined();
   });
 

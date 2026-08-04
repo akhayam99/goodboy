@@ -32,7 +32,7 @@ export function PendingResolutionsStrip({ sessionId }: { sessionId: SessionId })
       type="button"
       onClick={() => void onPush()}
       disabled={busy}
-      title="push the branch once, then reply and resolve every queued review comment"
+      title="Push the branch once, then reply and resolve every queued review comment"
       className={cn(
         'relative flex w-full items-center justify-between gap-2 rounded-lg bg-accent/5 px-3 py-2 text-xs text-accent ring-1 ring-accent/20 motion-safe:transition-colors hover:bg-accent/10 disabled:cursor-default disabled:opacity-60',
         busy && 'animate-border-pulse',

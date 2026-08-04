@@ -44,7 +44,7 @@ export const AgentCardTitle = ({
     <input
       autoFocus
       value={rename.draft}
-      aria-label="rename agent"
+      aria-label="Rename agent"
       onChange={(event) => rename.setDraft(event.target.value)}
       onClick={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}

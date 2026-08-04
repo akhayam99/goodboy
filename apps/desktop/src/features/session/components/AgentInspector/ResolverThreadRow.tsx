@@ -100,7 +100,7 @@ export const ResolverThreadRow = ({
           label="Reply"
           value={draftedReply}
           placeholder={PLACEHOLDER[settlement.kind]}
-          ariaLabel={`drafted reply for thread ${position}`}
+          ariaLabel={`Drafted reply for thread ${position}`}
           isEditable={false}
           onChange={() => undefined}
           onCommit={() => undefined}
@@ -111,7 +111,7 @@ export const ResolverThreadRow = ({
           label={settlement.kind === 'wontfix' ? 'Closing reason' : 'Reply'}
           value={text}
           placeholder={PLACEHOLDER[settlement.kind]}
-          ariaLabel={`reply for thread ${position}`}
+          ariaLabel={`Reply for thread ${position}`}
           isEditable={isEditable}
           onChange={setEdited}
           onCommit={() => onReplyChange({ threadId: settlement.threadId, reply: text })}
@@ -143,7 +143,7 @@ export const ResolverThreadRow = ({
                   isMissingText(action) ||
                   (runningThreadAction !== null && runningKind !== action.kind)
                 }
-                title={isMissingText(action) ? 'write the reply to post first' : undefined}
+                title={isMissingText(action) ? 'Write the reply to post first' : undefined}
                 onClick={() => {
                   if (action.confirm === null) {
                     void onRun({ threadId: settlement.threadId, kind: action.kind, text });

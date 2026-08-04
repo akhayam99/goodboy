@@ -74,7 +74,7 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
               <button
                 type="button"
                 aria-expanded={isOpen}
-                aria-label={`why ${entry.name}`}
+                aria-label={`Why ${entry.name}`}
                 onClick={() => toggleRow(entry.id)}
                 className={ROW_BUTTON}
               >
@@ -106,7 +106,7 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
             <button
               type="button"
               aria-expanded={closingOpen}
-              aria-label={`why the run ended: ${OUTCOME_LABEL[outcome]}`}
+              aria-label={`Why the run ended: ${OUTCOME_LABEL[outcome]}`}
               onClick={() => setClosingOpen((open) => !open)}
               className={ROW_BUTTON}
             >

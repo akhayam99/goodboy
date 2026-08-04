@@ -120,11 +120,11 @@ export const ChatBreadcrumb = ({ session }: Props) => {
           'flex h-[var(--chat-header-h)] shrink-0 items-center justify-between gap-2 text-2xs text-muted-foreground',
           PANE_RHYTHM.inset,
         )}
-        aria-label="chat breadcrumb"
+        aria-label="Chat breadcrumb"
       >
         <div className="flex min-w-0 items-center gap-1.5">
           {workspace ? (
-            <span className="truncate font-medium" title={`workspace: ${workspace.name}`}>
+            <span className="truncate font-medium" title={`Workspace: ${workspace.name}`}>
               {workspace.name}
             </span>
           ) : (
@@ -142,7 +142,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
               <Separator />
               <span
                 className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium ${workflowAccent.bg} ${workflowAccent.text}`}
-                title={`workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
+                title={`Workflow: ${workflowProgress.workflow.name} · step ${workflowProgress.currentOrdinal} of ${workflowProgress.total}`}
               >
                 <GitBranch size={9} aria-hidden />
                 <span className="max-w-[10rem] truncate">{workflowProgress.workflow.name}</span>
@@ -161,7 +161,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
           <button
             type="button"
             onClick={onPickParent}
-            title={`spawned by ${parentAgent.name}. go to parent`}
+            title={`Spawned by ${parentAgent.name}. go to parent`}
             className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <CornerLeftUp size={10} aria-hidden />

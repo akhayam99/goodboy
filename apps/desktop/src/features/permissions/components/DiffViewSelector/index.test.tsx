@@ -103,7 +103,7 @@ describe('DiffViewSelector', () => {
       />,
     );
     fireEvent.click(screen.getByTitle(/change diff view/i));
-    const filter = screen.getByRole('textbox', { name: 'filter commits' });
+    const filter = screen.getByRole('textbox', { name: 'Filter commits' });
     fireEvent.keyDown(filter, { key: 'ArrowDown' });
     fireEvent.keyDown(filter, { key: 'Enter' });
 

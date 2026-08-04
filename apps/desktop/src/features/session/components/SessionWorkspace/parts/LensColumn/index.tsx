@@ -308,8 +308,8 @@ export const LensColumn = ({
               <button
                 type="button"
                 onClick={() => void setCurrentSession(null)}
-                aria-label="back to board"
-                title={`back to board (${shortcutGlyphs('session.board')})`}
+                aria-label="Back to board"
+                title={`Back to board (${shortcutGlyphs('session.board')})`}
                 className={BOARD_ICON_BUTTON}
               >
                 <Kanban size={14} aria-hidden />

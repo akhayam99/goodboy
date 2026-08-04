@@ -225,7 +225,7 @@ describe('PlanStudio subpage', () => {
     ];
     const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByRole('button', { name: 'Other plans (1)' }));
-    fireEvent.click(screen.getByRole('button', { name: 'close plan list' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close plan list' }));
     expect(container.querySelectorAll('li')).toHaveLength(0);
   });
 

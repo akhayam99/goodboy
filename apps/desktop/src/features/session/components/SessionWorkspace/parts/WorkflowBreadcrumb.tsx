@@ -101,7 +101,7 @@ export const WorkflowBreadcrumb = ({
     : (selectedAgent?.name ?? rootAgent?.name ?? '');
 
   return (
-    <nav aria-label="workflow breadcrumb" className="flex min-w-0 items-center gap-1">
+    <nav aria-label="Workflow breadcrumb" className="flex min-w-0 items-center gap-1">
       <button
         type="button"
         onClick={onHome}
@@ -150,7 +150,7 @@ export const WorkflowBreadcrumb = ({
             {canSwitchStep && stepMenu.open && workflow != null && (
               <Popover
                 role="menu"
-                ariaLabel="switch step"
+                ariaLabel="Switch step"
                 className={cn(stepMenu.popupClassName, 'flex flex-col bg-subtle')}
               >
                 <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-64">
@@ -224,7 +224,7 @@ export const WorkflowBreadcrumb = ({
             {agentMenu.open && (
               <Popover
                 role="menu"
-                ariaLabel="switch agent"
+                ariaLabel="Switch agent"
                 className={cn(agentMenu.popupClassName, 'flex flex-col bg-subtle')}
               >
                 <ScrollFade fadeFrom="subtle" className="min-h-0 max-h-64">

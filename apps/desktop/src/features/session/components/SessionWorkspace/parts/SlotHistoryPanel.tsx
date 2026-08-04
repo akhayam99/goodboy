@@ -60,7 +60,7 @@ const HistoryEntry = ({
         onClick={onToggle}
         className="text-left"
         aria-expanded={expanded}
-        aria-label={expanded ? 'collapse entry' : 'expand entry'}
+        aria-label={expanded ? 'Collapse entry' : 'Expand entry'}
       >
         {expanded ? (
           <div className="rounded text-xs leading-relaxed text-foreground">
@@ -104,7 +104,7 @@ export const SlotHistoryPanel = ({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <InspectorHeader
-        title={`history: ${label}`}
+        title={`History: ${label}`}
         closeLabel="close history panel"
         onClose={onClose}
       />

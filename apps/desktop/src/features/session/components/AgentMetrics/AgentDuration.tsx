@@ -25,8 +25,8 @@ export const AgentDuration = ({ run }: Props) => {
   const startedAt = formatAbsoluteDateTime({ iso: run.startedAt });
   const tooltip =
     run.completedAt != null
-      ? `started ${startedAt}\ncompleted ${formatAbsoluteDateTime({ iso: run.completedAt })}\nworked ${worked}`
-      : `started ${startedAt}\nworking for ${worked}`;
+      ? `Started ${startedAt}\nCompleted ${formatAbsoluteDateTime({ iso: run.completedAt })}\nWorked ${worked}`
+      : `Started ${startedAt}\nWorking for ${worked}`;
 
   return (
     <span className="font-mono" title={tooltip}>

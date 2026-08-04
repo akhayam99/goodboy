@@ -380,7 +380,7 @@ export const PrDetailPanel = ({
               hostLabel="GitHub"
             />
             <RefreshIconButton
-              label="refresh"
+              label="Refresh"
               iconSize={14}
               isLoading={detailLoading}
               onClick={refreshActive}

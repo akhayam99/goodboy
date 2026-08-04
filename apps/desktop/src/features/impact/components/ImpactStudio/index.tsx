@@ -41,7 +41,7 @@ export const ImpactStudio = ({ workspaceId, workspaceName, onClose }: Props) => 
       closeLabel="close impact studio"
       headerAccessory={
         <SegmentedTabs
-          ariaLabel="impact window"
+          ariaLabel="Impact window"
           options={IMPACT_WINDOW_OPTIONS}
           value={windowId}
           onChange={setWindowId}

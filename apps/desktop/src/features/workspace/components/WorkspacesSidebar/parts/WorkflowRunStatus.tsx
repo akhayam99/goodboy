@@ -91,7 +91,7 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
     return (
       <span
         className={cn(baseClass, 'max-w-40 truncate bg-muted text-muted-foreground')}
-        title={`after ${predecessorName}`}
+        title={`After ${predecessorName}`}
       >
         <Link2 size={10} aria-hidden />
         After {predecessorName}

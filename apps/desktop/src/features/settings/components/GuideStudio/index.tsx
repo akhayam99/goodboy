@@ -79,7 +79,7 @@ export const GuideStudio = ({ onClose }: Props) => {
       {() => (
         <div className="flex min-h-0 flex-1">
           <nav
-            aria-label="guide sections"
+            aria-label="Guide sections"
             className="flex w-52 shrink-0 flex-col gap-1 bg-subtle/40 p-3"
           >
             {NAV_ITEMS.map((item) => (

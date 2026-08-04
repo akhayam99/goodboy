@@ -148,7 +148,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
                     icon={Unlink}
                     tone="danger"
                     label="Unlink"
-                    ariaLabel={`unlink ${focusedTask.identifier}`}
+                    ariaLabel={`Unlink ${focusedTask.identifier}`}
                     disabled={isUnlinking}
                     onClick={() => setIsUnlinkArmed(true)}
                   />

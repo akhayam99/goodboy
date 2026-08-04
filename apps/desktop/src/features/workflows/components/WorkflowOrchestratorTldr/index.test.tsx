@@ -86,7 +86,7 @@ describe('WorkflowOrchestratorTldr', () => {
 
     expect(screen.getByText(reason).className).toContain('truncate');
 
-    fireEvent.click(screen.getByRole('button', { name: 'why Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Why Scout' }));
 
     const full = screen.getByText(reason);
     expect(full.className).not.toContain('truncate');
@@ -95,7 +95,7 @@ describe('WorkflowOrchestratorTldr', () => {
 
   it('collapses an expanded step row again', () => {
     render(<WorkflowOrchestratorTldr steps={[step(0, 'Scout', 'a long rationale')]} />);
-    fireEvent.click(screen.getByRole('button', { name: 'why Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Why Scout' }));
 
     fireEvent.click(screen.getByRole('button', { expanded: true }));
 

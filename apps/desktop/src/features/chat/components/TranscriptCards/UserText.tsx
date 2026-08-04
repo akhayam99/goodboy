@@ -87,8 +87,8 @@ const AttachmentImage = ({ attachment, workingDir }: AttachmentImageProps) => {
       <button
         type="button"
         onClick={() => setPreviewOpen(true)}
-        title={`preview ${attachment.fileName}`}
-        aria-label={`preview ${attachment.fileName}`}
+        title={`Preview ${attachment.fileName}`}
+        aria-label={`Preview ${attachment.fileName}`}
         className="cursor-zoom-in"
       >
         <img
@@ -222,7 +222,7 @@ const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
   return (
     <span
       className="inline-flex items-center gap-1"
-      title={`sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
+      title={`Sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
     >
       <Icon size={11} aria-hidden style={{ color: brandColor(provider) }} />
       <span>{label}</span>

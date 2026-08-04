@@ -241,7 +241,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
           type="button"
           className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 hover:bg-muted hover:text-foreground"
           onClick={() => onDismiss(toast.id)}
-          aria-label="dismiss notification"
+          aria-label="Dismiss notification"
         >
           <X size={13} aria-hidden />
         </button>

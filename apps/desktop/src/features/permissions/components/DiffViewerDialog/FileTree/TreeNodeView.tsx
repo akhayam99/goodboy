@@ -66,7 +66,7 @@ export const TreeNodeView = ({
           {reviewState === 'stale' ? (
             <span
               className="shrink-0 rounded-full bg-muted px-1 text-3xs font-medium text-muted-foreground"
-              title="previously reviewed, changed since"
+              title="Previously reviewed, changed since"
             >
               ↻
             </span>

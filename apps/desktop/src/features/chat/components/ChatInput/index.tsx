@@ -338,7 +338,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   };
 
   const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
-  const sendDisabledTitle = providerDisconnected ? 'sign in first' : undefined;
+  const sendDisabledTitle = providerDisconnected ? 'Sign in first' : undefined;
   const overrideDisabledTitle = !routing.allowOverride
     ? 'this session was created without per-turn routing overrides'
     : undefined;
@@ -434,8 +434,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 type="button"
                 onClick={() => void onSend()}
                 disabled={!canSend}
-                title={sendDisabledTitle ?? (isRunning ? 'queue message (enter)' : 'send (enter)')}
-                aria-label={isRunning ? 'queue message' : 'send message'}
+                title={sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')}
+                aria-label={isRunning ? 'Queue message' : 'Send message'}
                 className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
               >
                 <Send size={14} aria-hidden className="-translate-x-px" />
@@ -482,7 +482,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               {sessionCost > 0 && (
                 <CostBadge
                   value={sessionCost}
-                  title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
+                  title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
                   className="text-xs text-muted-foreground"
                 />
               )}
@@ -490,7 +490,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               <RoutingPicker
                 variant="pill"
                 align="end"
-                ariaLabel="model routing"
+                ariaLabel="Model routing"
                 openEvent="goodboy:open-model-picker"
                 provider={routing.effectiveProvider}
                 model={routing.effectiveModel}

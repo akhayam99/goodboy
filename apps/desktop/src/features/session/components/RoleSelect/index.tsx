@@ -43,7 +43,7 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
         />
       </button>
       {open && (
-        <Popover role="listbox" ariaLabel="agent role" className={cn(popupClassName, 'py-0.5')}>
+        <Popover role="listbox" ariaLabel="Agent role" className={cn(popupClassName, 'py-0.5')}>
           {agentRoles.map((role) => {
             const active = value === role;
             return (

@@ -77,8 +77,8 @@ export const CommentItem = ({
           <button
             type="button"
             onClick={() => onDelete(comment.id)}
-            title="delete"
-            aria-label="delete"
+            title="Delete"
+            aria-label="Delete"
             className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
           >
             <Trash2 size={11} />

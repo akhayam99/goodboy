@@ -54,7 +54,7 @@ export function useSuggestionCards({
       node: (
         <NudgeCard
           severity="success"
-          ariaLabel="plan ready to implement"
+          ariaLabel="Plan ready to implement"
           testId="plan-ready-nudge"
           icon={<ClipboardCheck size={12} aria-hidden />}
           title={
@@ -85,7 +85,7 @@ export function useSuggestionCards({
       node: (
         <NudgeCard
           severity="warning"
-          ariaLabel="scope mismatch suggestion"
+          ariaLabel="Scope mismatch suggestion"
           testId="scope-mismatch-nudge"
           title={
             <>

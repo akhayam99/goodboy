@@ -47,7 +47,7 @@ export function QueuedMessages({
               type="button"
               disabled={!canEdit}
               onClick={() => onEdit(item.id)}
-              title={canEdit ? 'edit, moves it back to the composer' : 'clear the composer to edit'}
+              title={canEdit ? 'Edit, moves it back to the composer' : 'Clear the composer to edit'}
               className="min-w-0 flex-1 truncate text-left text-xs text-foreground/80 transition-colors enabled:hover:text-foreground disabled:cursor-default"
             >
               {preview}

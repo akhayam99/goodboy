@@ -23,14 +23,14 @@ export const SectionBody = ({ detail, detailLoading, detailError, onRetry, child
           <button
             type="button"
             onClick={onRetry}
-            aria-label="retry"
+            aria-label="Retry"
             className="rounded-md p-0.5 hover:bg-muted"
           >
             <RefreshCw size={12} aria-hidden />
           </button>
         </div>
       ) : detailLoading && detail == null ? (
-        <div className="flex flex-col gap-2" role="status" aria-label="loading pr data">
+        <div className="flex flex-col gap-2" role="status" aria-label="Loading pr data">
           {[0, 1, 2, 3].map((index) => (
             <div key={index} className="flex items-center gap-2">
               <Skeleton className="size-4 shrink-0 rounded-full" />

@@ -197,7 +197,7 @@ function ScriptRow({
             }
           }}
           aria-expanded={logOpen}
-          title={logOpen ? 'hide log' : 'show log'}
+          title={logOpen ? 'Hide log' : 'Show log'}
           className={cn(
             'flex size-6 shrink-0 items-center justify-center rounded transition-colors',
             logOpen
@@ -212,8 +212,8 @@ function ScriptRow({
         <button
           type="button"
           onClick={onCancel}
-          title="stop script"
-          aria-label="stop script"
+          title="Stop script"
+          aria-label="Stop script"
           className="flex size-6 shrink-0 items-center justify-center rounded text-danger transition-colors hover:bg-danger/10"
         >
           <Square size={11} fill="currentColor" aria-hidden />
@@ -223,8 +223,8 @@ function ScriptRow({
           type="button"
           onClick={onRun}
           disabled={disabled}
-          title="run script"
-          aria-label="run script"
+          title="Run script"
+          aria-label="Run script"
           className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-primary group-hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Play size={12} aria-hidden />
@@ -337,7 +337,7 @@ function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
     return (
       <span
         className="size-2 shrink-0 rounded-full bg-success"
-        aria-label="last run ok"
+        aria-label="Last run ok"
         role="img"
       />
     );
@@ -346,7 +346,7 @@ function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
     return (
       <span
         className="size-2 shrink-0 rounded-full bg-danger"
-        aria-label="last run failed"
+        aria-label="Last run failed"
         role="img"
       />
     );
@@ -355,7 +355,7 @@ function StatusDot({ status }: { readonly status: ScriptRunStatus }) {
     return (
       <span
         className="size-2 shrink-0 rounded-full bg-muted-foreground/50"
-        aria-label="last run cancelled"
+        aria-label="Last run cancelled"
         role="img"
       />
     );

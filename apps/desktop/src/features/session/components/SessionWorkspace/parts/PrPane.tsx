@@ -343,7 +343,7 @@ const GithubPrCard = ({
           </h2>
         </div>
         <RefreshIconButton
-          label="refresh PR status"
+          label="Refresh PR status"
           iconSize={12}
           onClick={refresh}
           isLoading={loading}

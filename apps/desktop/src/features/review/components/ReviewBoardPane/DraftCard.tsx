@@ -51,7 +51,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         </span>
         {draft.stale ? (
           <span
-            title="the diff changed under this comment; it will be skipped on publish"
+            title="The diff changed under this comment; it will be skipped on publish"
             className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning"
           >
             Stale
@@ -61,8 +61,8 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         <button
           type="button"
           onClick={onDiscard}
-          title="discard draft"
-          aria-label={`discard draft on ${draft.path}:${draft.line}`}
+          title="Discard draft"
+          aria-label={`Discard draft on ${draft.path}:${draft.line}`}
           className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-danger"
         >
           <Trash2 size={11} aria-hidden />
@@ -100,7 +100,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         <button
           type="button"
           onClick={startEditing}
-          title="edit draft"
+          title="Edit draft"
           className="whitespace-pre-wrap rounded-sm text-left text-xs leading-relaxed text-foreground/85 transition-colors hover:bg-muted/40"
         >
           {draft.body}

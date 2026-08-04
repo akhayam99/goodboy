@@ -154,7 +154,7 @@ export const OnboardingChip = () => {
         type="button"
         onClick={() => reopen()}
         title={`Setup, ${progress.completedCount} of ${progress.totalCount} done`}
-        aria-label="open onboarding checklist"
+        aria-label="Open onboarding checklist"
         className="inline-flex items-center gap-1"
       >
         {visibleSteps.map((step, i) => (
