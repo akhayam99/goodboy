@@ -39,6 +39,8 @@ import { BudgetStudio } from './features/budget/components/BudgetStudio';
 import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
 import { ImpactStudio } from './features/impact/components/ImpactStudio';
 import { ChangelogStudio } from './features/changelog/components/ChangelogStudio';
+import { NotificationsStudio } from './features/notifications/components/NotificationsStudio';
+import { NOTIFICATIONS_STUDIO_EVENT } from './features/notifications/studioEvent';
 import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
@@ -133,6 +135,7 @@ export const App = () => {
   const [budgetStudioScope, setBudgetStudioScope] = useState<BudgetScope | undefined>(undefined);
   const [impactStudioOpen, setImpactStudioOpen] = useState(false);
   const [changelogStudioOpen, setChangelogStudioOpen] = useState(false);
+  const [notificationsStudioOpen, setNotificationsStudioOpen] = useState(false);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const clearSessionStudio = useCallback(() => {
     const id = useAppStore.getState().currentSessionId;
@@ -151,6 +154,7 @@ export const App = () => {
     setBudgetStudioOpen(false);
     setImpactStudioOpen(false);
     setChangelogStudioOpen(false);
+    setNotificationsStudioOpen(false);
     setLinearStudioOpen(false);
     setSentryStudioOpen(false);
     setGitlabStudioOpen(false);
@@ -266,7 +270,12 @@ export const App = () => {
     };
     const onAddWorkspace = () => setAddWorkspaceOpen(true);
     const onPairDevice = () => setCompanionOpen(true);
+    const onOpenNotificationsStudio = () => {
+      closeAllStudios();
+      setNotificationsStudioOpen(true);
+    };
 
+    window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
     window.addEventListener('goodboy:open-settings', onOpenSettings);
     window.addEventListener('goodboy:open-guide', onOpenGuide);
     window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
@@ -281,6 +290,7 @@ export const App = () => {
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
     window.addEventListener('goodboy:open-pair-device', onPairDevice);
     return () => {
+      window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
       window.removeEventListener('goodboy:open-guide', onOpenGuide);
       window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
@@ -431,17 +441,19 @@ export const App = () => {
             ? 'impact'
             : changelogStudioOpen
               ? 'changelog'
-              : linearStudioOpen
-                ? 'linear'
-                : sentryStudioOpen
-                  ? 'sentry'
-                  : gitlabStudioOpen
-                    ? 'gitlab'
-                    : appSettingsOpen
-                      ? 'settings'
-                      : guideStudioOpen
-                        ? 'guide'
-                        : null;
+              : notificationsStudioOpen
+                ? 'notifications'
+                : linearStudioOpen
+                  ? 'linear'
+                  : sentryStudioOpen
+                    ? 'sentry'
+                    : gitlabStudioOpen
+                      ? 'gitlab'
+                      : appSettingsOpen
+                        ? 'settings'
+                        : guideStudioOpen
+                          ? 'guide'
+                          : null;
 
   const openSettings = useCallback(() => {
     closeAllStudios();
@@ -904,6 +916,12 @@ export const App = () => {
         <ChangelogStudio
           workspaceName={currentWorkspace.name}
           onClose={() => setChangelogStudioOpen(false)}
+        />
+      ) : null}
+      {notificationsStudioOpen && currentWorkspace ? (
+        <NotificationsStudio
+          workspaceName={currentWorkspace.name}
+          onClose={() => setNotificationsStudioOpen(false)}
         />
       ) : null}
       {linearStudioOpen && currentWorkspace ? (

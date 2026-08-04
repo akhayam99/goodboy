@@ -45,6 +45,7 @@ const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | n
   async () => null,
 );
 const insertNotificationSpy = vi.fn(async () => undefined);
+const listNotificationsSpy = vi.fn(async () => []);
 const insertNudgeEventSpy = vi.fn(async () => undefined);
 const updateNudgeOutcomeSpy = vi.fn(async () => undefined);
 const insertDiffCommentSpy = vi.fn(async () => undefined);
@@ -123,8 +124,12 @@ vi.mock('@goodboy/db', () => ({
   insertNudgeEvent: insertNudgeEventSpy,
   updateNudgeEventOutcome: updateNudgeOutcomeSpy,
   insertNotification: insertNotificationSpy,
-  listNotifications: vi.fn(async () => []),
+  listNotifications: listNotificationsSpy,
+  countNotifications: vi.fn(async () => ({ total: 0, unread: 0 })),
+  NOTIFICATION_LIST_LIMIT: 200,
   markAllNotificationsRead: vi.fn(async () => undefined),
+  markNotificationRead: vi.fn(async () => undefined),
+  deleteNotification: vi.fn(async () => undefined),
   clearAllNotifications: vi.fn(async () => undefined),
   listDiffCommentsForSession: listDiffCommentsSpy,
   insertDiffComment: insertDiffCommentSpy,
@@ -531,6 +536,12 @@ describe('store contract', () => {
       const s = store.getState();
       expect(s.hydrated).toBe(true);
       expect(s.bootPhase === 'ready' || s.bootPhase === 'error').toBe(true);
+    });
+
+    it('loads notifications at boot without waiting for the bell to mount', async () => {
+      const store = await getStore();
+      await store.getState().hydrate();
+      expect(listNotificationsSpy).toHaveBeenCalled();
     });
   });
 });

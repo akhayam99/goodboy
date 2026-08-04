@@ -41,6 +41,9 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         await runDbMigrations();
         await migrateLsToDb();
         await hydrateOnboardingFromDb();
+        void get()
+          .loadNotifications()
+          .catch(() => {});
 
         set({ bootPhase: 'loading-settings' });
         const [editorBinary, lastWorkspaceRaw, lastSessionRaw, reopenLastRaw] = await Promise.all([

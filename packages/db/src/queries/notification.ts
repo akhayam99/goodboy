@@ -100,13 +100,45 @@ export const insertNotification = async (db: Database, n: Notification): Promise
   );
 };
 
+export const NOTIFICATION_LIST_LIMIT = 200;
+
 export const listNotifications = async (db: Database): Promise<ReadonlyArray<Notification>> => {
-  const rows = await db.select<NotificationRow>('SELECT * FROM notifications ORDER BY ts DESC');
+  const rows = await db.select<NotificationRow>(
+    'SELECT * FROM notifications ORDER BY ts DESC LIMIT ?',
+    [NOTIFICATION_LIST_LIMIT],
+  );
   return rows.map(toNotification);
+};
+
+export type NotificationCounts = {
+  readonly total: number;
+  readonly unread: number;
+};
+
+export const countNotifications = async (db: Database): Promise<NotificationCounts> => {
+  const rows = await db.select<{ total: number | null; unread: number | null }>(
+    `SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN read = 0 THEN 1 ELSE 0 END), 0) AS unread
+     FROM notifications`,
+  );
+  const row = rows[0];
+  return { total: row?.total ?? 0, unread: row?.unread ?? 0 };
 };
 
 export const markAllNotificationsRead = async (db: Database): Promise<void> => {
   await db.execute('UPDATE notifications SET read = 1 WHERE read = 0');
+};
+
+type SingleNotificationParams = {
+  readonly db: Database;
+  readonly id: string;
+};
+
+export const markNotificationRead = async ({ db, id }: SingleNotificationParams): Promise<void> => {
+  await db.execute('UPDATE notifications SET read = 1 WHERE id = ?', [id]);
+};
+
+export const deleteNotification = async ({ db, id }: SingleNotificationParams): Promise<void> => {
+  await db.execute('DELETE FROM notifications WHERE id = ?', [id]);
 };
 
 export const clearAllNotifications = async (db: Database): Promise<void> => {

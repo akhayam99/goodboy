@@ -7,6 +7,7 @@ export const markNotificationsRead = (set: SetFn) => {
     await markAllNotificationsRead(tauriDatabase);
     set((state) => ({
       notifications: state.notifications.map((n) => (n.read ? n : { ...n, read: true })),
+      notificationCounts: { ...state.notificationCounts, unread: 0 },
     }));
   };
 };

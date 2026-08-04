@@ -619,7 +619,9 @@ export type AppActions = {
     agentId: AgentId;
     taskModelOverride?: TaskModelPreference;
   }): Promise<void>;
+  markNotificationRead(id: string): Promise<void>;
   markNotificationsRead(): Promise<void>;
+  dismissNotification(id: string): Promise<void>;
   clearNotifications(): Promise<void>;
   loadSessionOpenQuestions(sessionId: SessionId): Promise<void>;
   loadSessionAnsweredQuestions(sessionId: SessionId): Promise<void>;
@@ -774,6 +776,7 @@ export const initialState: AppState = {
   workflowRunAttachments: {},
   notifications: [],
   notificationsLoading: false,
+  notificationCounts: { total: 0, unread: 0 },
   sessionPlans: {},
   sessionNudges: {},
   planConsumptions: {},

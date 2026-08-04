@@ -1,4 +1,5 @@
 import {
+  NOTIFICATION_LIST_LIMIT,
   insertNotification,
   type Notification,
   type NotificationAction,
@@ -36,6 +37,12 @@ export const emitNotification = (set: SetFn) => {
       action: opts?.action ?? null,
     };
     await insertNotification(tauriDatabase, n);
-    set((state) => ({ notifications: [n, ...state.notifications] }));
+    set((state) => ({
+      notifications: [n, ...state.notifications].slice(0, NOTIFICATION_LIST_LIMIT),
+      notificationCounts: {
+        total: state.notificationCounts.total + 1,
+        unread: state.notificationCounts.unread + 1,
+      },
+    }));
   };
 };

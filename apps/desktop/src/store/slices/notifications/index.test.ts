@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Notification } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
@@ -45,6 +46,13 @@ const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | n
   async () => null,
 );
 const insertNotificationSpy = vi.fn(async () => undefined);
+const markNotificationReadSpy = vi.fn(async () => undefined);
+const listNotificationsSpy = vi.fn(async () => [] as ReadonlyArray<Notification>);
+const countNotificationsSpy: ReturnType<typeof vi.fn> = vi.fn(async () => ({
+  total: 0,
+  unread: 0,
+}));
+const deleteNotificationSpy = vi.fn(async () => undefined);
 const insertNudgeEventSpy = vi.fn(async () => undefined);
 const updateNudgeOutcomeSpy = vi.fn(async () => undefined);
 const insertDiffCommentSpy = vi.fn(async () => undefined);
@@ -123,8 +131,12 @@ vi.mock('@goodboy/db', () => ({
   insertNudgeEvent: insertNudgeEventSpy,
   updateNudgeEventOutcome: updateNudgeOutcomeSpy,
   insertNotification: insertNotificationSpy,
-  listNotifications: vi.fn(async () => []),
+  listNotifications: listNotificationsSpy,
+  countNotifications: countNotificationsSpy,
+  NOTIFICATION_LIST_LIMIT: 200,
   markAllNotificationsRead: vi.fn(async () => undefined),
+  markNotificationRead: markNotificationReadSpy,
+  deleteNotification: deleteNotificationSpy,
   clearAllNotifications: vi.fn(async () => undefined),
   listDiffCommentsForSession: listDiffCommentsSpy,
   insertDiffComment: insertDiffCommentSpy,
@@ -434,6 +446,8 @@ describe('store contract', () => {
     listWorkspaceScriptsSpy.mockResolvedValue([]);
     listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
+    listNotificationsSpy.mockResolvedValue([]);
+    countNotificationsSpy.mockResolvedValue({ total: 0, unread: 0 });
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
 
@@ -499,6 +513,7 @@ describe('store contract', () => {
         agentDraft: {},
         diffComments: {},
         notifications: [],
+        notificationCounts: { total: 0, unread: 0 },
         sessionPlans: {},
         sessionNudges: {},
         planConsumptions: {},
@@ -554,6 +569,79 @@ describe('store contract', () => {
       expect(store.getState().notifications.every((n) => n.read)).toBe(true);
     });
 
+    it('markNotificationRead flips read=true on that entry alone', async () => {
+      const store = await getStore();
+      store.setState({
+        notifications: [{ id: 'n1', read: false } as never, { id: 'n2', read: false } as never],
+      });
+      await store.getState().markNotificationRead('n2');
+      const ns = store.getState().notifications;
+      expect(ns.find((n) => n.id === 'n1')?.read).toBe(false);
+      expect(ns.find((n) => n.id === 'n2')?.read).toBe(true);
+      expect(markNotificationReadSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'n2' }) as never,
+      );
+    });
+
+    it('dismissNotification drops that entry alone', async () => {
+      const store = await getStore();
+      store.setState({
+        notifications: [{ id: 'n1' } as never, { id: 'n2' } as never],
+      });
+      await store.getState().dismissNotification('n1');
+      expect(store.getState().notifications.map((n) => n.id)).toEqual(['n2']);
+      expect(deleteNotificationSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'n1' }) as never,
+      );
+    });
+
+    it('loadNotifications keeps the counts true when the list is capped', async () => {
+      const store = await getStore();
+      const capped = Array.from({ length: 200 }, (_, i) => ({
+        id: `n${i}`,
+        read: true,
+      })) as unknown as ReadonlyArray<Notification>;
+      listNotificationsSpy.mockResolvedValue(capped);
+      countNotificationsSpy.mockResolvedValue({ total: 205, unread: 1 });
+
+      await store.getState().loadNotifications();
+
+      const s = store.getState();
+      expect(s.notifications).toHaveLength(200);
+      expect(s.notifications.some((n) => !n.read)).toBe(false);
+      expect(s.notificationCounts).toEqual({ total: 205, unread: 1 });
+    });
+
+    it('markNotificationRead decrements the unread count past the cap', async () => {
+      const store = await getStore();
+      store.setState({
+        notifications: [{ id: 'n1', read: false } as never],
+        notificationCounts: { total: 205, unread: 3 },
+      });
+      await store.getState().markNotificationRead('n1');
+      expect(store.getState().notificationCounts).toEqual({ total: 205, unread: 2 });
+    });
+
+    it('dismissNotification decrements both counts past the cap', async () => {
+      const store = await getStore();
+      store.setState({
+        notifications: [{ id: 'n1', read: false } as never],
+        notificationCounts: { total: 205, unread: 3 },
+      });
+      await store.getState().dismissNotification('n1');
+      expect(store.getState().notificationCounts).toEqual({ total: 204, unread: 2 });
+    });
+
+    it('markNotificationsRead zeroes unread even for rows past the cap', async () => {
+      const store = await getStore();
+      store.setState({
+        notifications: [{ id: 'n1', read: false } as never],
+        notificationCounts: { total: 205, unread: 7 },
+      });
+      await store.getState().markNotificationsRead();
+      expect(store.getState().notificationCounts).toEqual({ total: 205, unread: 0 });
+    });
+
     it('clearNotifications empties the array', async () => {
       const store = await getStore();
       store.setState({
@@ -561,6 +649,7 @@ describe('store contract', () => {
       });
       await store.getState().clearNotifications();
       expect(store.getState().notifications).toEqual([]);
+      expect(store.getState().notificationCounts).toEqual({ total: 0, unread: 0 });
     });
   });
 });

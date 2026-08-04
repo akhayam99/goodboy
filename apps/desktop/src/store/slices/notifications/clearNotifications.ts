@@ -5,6 +5,6 @@ import type { SetFn } from './types';
 export const clearNotifications = (set: SetFn) => {
   return async () => {
     await clearAllNotifications(tauriDatabase);
-    set({ notifications: [] });
+    set({ notifications: [], notificationCounts: { total: 0, unread: 0 } });
   };
 };

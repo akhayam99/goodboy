@@ -8,6 +8,8 @@ import type { Notification } from '@goodboy/db';
 const { state } = vi.hoisted(() => ({
   state: {
     notifications: [] as ReadonlyArray<Notification>,
+    notificationCounts: { total: 0, unread: 0 },
+    notificationsLoading: false,
     loadNotifications: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
     clearNotifications: vi.fn(async () => undefined),
@@ -35,6 +37,8 @@ import { NotificationCenter } from './index';
 
 beforeEach(() => {
   state.notifications = [];
+  state.notificationCounts = { total: 0, unread: 0 };
+  state.notificationsLoading = false;
   state.loadNotifications = vi.fn(async () => undefined);
   state.markNotificationsRead = vi.fn(async () => undefined);
   state.clearNotifications = vi.fn(async () => undefined);
@@ -103,8 +107,32 @@ describe('NotificationCenter', () => {
         ts: new Date().toISOString(),
       } as unknown as Notification,
     ];
+    state.notificationCounts = { total: 1, unread: 1 };
     render(<NotificationCenter />);
     expect(screen.getByRole('button', { name: /^notifications, 1 unread$/i })).toBeDefined();
+  });
+
+  it('counts unread notifications the list cap cut off', async () => {
+    const total = 205;
+    state.notifications = Array.from({ length: 200 }, (_, i) => ({
+      id: `n${total - 1 - i}`,
+      read: true,
+      severity: 'info',
+      title: `title ${total - 1 - i}`,
+      body: 'b',
+      ts: new Date(Date.UTC(2026, 0, 1, 0, 0, total - 1 - i)).toISOString(),
+    })) as unknown as ReadonlyArray<Notification>;
+    state.notificationCounts = { total, unread: 1 };
+
+    render(<NotificationCenter />);
+
+    expect(state.notifications.some((n) => !n.read)).toBe(false);
+    expect(screen.getByRole('button', { name: /^notifications, 1 unread$/i })).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /notifications, 1 unread/i }));
+    });
+    expect(screen.getByText('205 notifications')).toBeDefined();
   });
 
   it('retry with picker dispatches retryStepSummary with the selected override', async () => {
@@ -426,6 +454,42 @@ describe('NotificationCenter', () => {
 
     expect(state.retrySummarizer).toHaveBeenCalledWith('session-4');
     expect(state.setCurrentSession).not.toHaveBeenCalled();
+  });
+
+  it('opens the notifications studio from the show more entry', async () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-notifications-studio', listener);
+    state.notifications = [
+      {
+        id: 'n1',
+        read: true,
+        severity: 'info',
+        title: 'something happened',
+        body: 'b',
+        ts: new Date().toISOString(),
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /show more/i }));
+    });
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('something happened')).toBeNull();
+    window.removeEventListener('goodboy:open-notifications-studio', listener);
+  });
+
+  it('hides the show more entry when there is nothing to show', async () => {
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+
+    expect(screen.queryByRole('button', { name: /show more/i })).toBeNull();
   });
 
   it('keeps a long notification list inside a bounded scroll viewport', async () => {
