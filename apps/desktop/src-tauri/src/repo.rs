@@ -18,7 +18,25 @@ pub struct GitRepoCheck {
     pub is_repo: bool,
     #[serde(rename = "rootPath")]
     pub root_path: Option<String>,
+    #[serde(rename = "resolvedPath")]
+    pub resolved_path: Option<String>,
     pub error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct WorkspaceGitStatus {
+    pub state: &'static str,
+    pub branch: Option<String>,
+    #[serde(rename = "headSubject")]
+    pub head_subject: Option<String>,
+    pub ahead: u32,
+    pub behind: u32,
+    pub staged: u32,
+    pub unstaged: u32,
+    pub untracked: u32,
+    pub changed: u32,
+    #[serde(rename = "hasUpstream")]
+    pub has_upstream: bool,
 }
 
 #[derive(Debug, Error)]
@@ -88,13 +106,17 @@ struct GitignoreSnapshot {
 #[tauri::command]
 pub fn validate_git_repo(path: String) -> GitRepoCheck {
     let candidate = Path::new(&path);
-    if !candidate.exists() {
+    if !candidate.is_dir() {
         return GitRepoCheck {
             is_repo: false,
             root_path: None,
+            resolved_path: None,
             error: Some(format!("path does not exist: {path}")),
         };
     }
+    let resolved_path = std::fs::canonicalize(candidate)
+        .map(|found| found.to_string_lossy().into_owned())
+        .ok();
     let output = match crate::path_env::command("git")
         .args(["rev-parse", "--show-toplevel"])
         .current_dir(candidate)
@@ -105,6 +127,7 @@ pub fn validate_git_repo(path: String) -> GitRepoCheck {
             return GitRepoCheck {
                 is_repo: false,
                 root_path: None,
+                resolved_path,
                 error: Some(err.to_string()),
             };
         }
@@ -113,6 +136,7 @@ pub fn validate_git_repo(path: String) -> GitRepoCheck {
         return GitRepoCheck {
             is_repo: false,
             root_path: None,
+            resolved_path,
             error: Some("not a git repository".to_string()),
         };
     }
@@ -123,8 +147,89 @@ pub fn validate_git_repo(path: String) -> GitRepoCheck {
     GitRepoCheck {
         is_repo: true,
         root_path: Some(root),
+        resolved_path,
         error: None,
     }
+}
+
+pub(crate) fn is_inside_repo(path: &Path) -> bool {
+    validate_git_repo(path.to_string_lossy().into_owned())
+        .root_path
+        .is_some_and(|found| !found.is_empty())
+}
+
+#[tauri::command]
+pub fn workspace_git_status(workspace_path: String) -> WorkspaceGitStatus {
+    let root = Path::new(workspace_path.trim());
+    if !root.is_dir() {
+        return blank_status("missing");
+    }
+    if !is_repo_root(root) {
+        return blank_status("absent");
+    }
+    let (staged, unstaged, untracked, changed) = crate::worktree::parse_status_counts(root);
+    let branch = crate::worktree::current_branch_name(root);
+    if !has_commit(root) {
+        return WorkspaceGitStatus {
+            state: "unborn",
+            branch,
+            head_subject: None,
+            ahead: 0,
+            behind: 0,
+            staged,
+            unstaged,
+            untracked,
+            changed,
+            has_upstream: false,
+        };
+    }
+    let upstream = crate::worktree::resolve_upstream(root);
+    let (ahead, behind) = match upstream.as_ref() {
+        Some(reference) => {
+            crate::worktree::rev_list_left_right(root, reference, "HEAD").unwrap_or((0, 0))
+        }
+        None => (0, 0),
+    };
+    WorkspaceGitStatus {
+        state: "ready",
+        branch,
+        head_subject: run_git(root, &["log", "-1", "--format=%s"])
+            .ok()
+            .map(|found| found.trim().to_string())
+            .filter(|found| !found.is_empty()),
+        ahead,
+        behind,
+        staged,
+        unstaged,
+        untracked,
+        changed,
+        has_upstream: upstream.is_some(),
+    }
+}
+
+fn blank_status(state: &'static str) -> WorkspaceGitStatus {
+    WorkspaceGitStatus {
+        state,
+        branch: None,
+        head_subject: None,
+        ahead: 0,
+        behind: 0,
+        staged: 0,
+        unstaged: 0,
+        untracked: 0,
+        changed: 0,
+        has_upstream: false,
+    }
+}
+
+fn is_repo_root(root: &Path) -> bool {
+    let check = validate_git_repo(root.to_string_lossy().into_owned());
+    let Some(toplevel) = check.root_path.filter(|found| !found.is_empty()) else {
+        return false;
+    };
+    let resolved = std::fs::canonicalize(&toplevel).unwrap_or_else(|_| PathBuf::from(&toplevel));
+    let canonical_root = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
+    resolved == canonical_root
 }
 
 pub fn is_supported_remote_url(url: &str) -> bool {
@@ -331,7 +436,7 @@ fn commit_ignore_file(root: &Path) -> Result<(), RepoInitError> {
     Ok(())
 }
 
-fn has_commit(root: &Path) -> bool {
+pub(crate) fn has_commit(root: &Path) -> bool {
     run_git(root, &["rev-parse", "--verify", "HEAD"]).is_ok()
 }
 
@@ -417,7 +522,10 @@ fn run_git(cwd: &Path, args: &[&str]) -> Result<String, RepoInitError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_supported_remote_url, repo_init_with_remote, RepoInitArgs, RepoInitError};
+    use super::{
+        is_supported_remote_url, repo_init_with_remote, workspace_git_status, RepoInitArgs,
+        RepoInitError,
+    };
 
     fn test_root(name: &str) -> std::path::PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -606,6 +714,81 @@ mod tests {
         assert!(matches!(err, RepoInitError::InvalidRemote(_)));
         assert!(!root.join(".git").exists());
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    fn git_run(cwd: &std::path::Path, args: &[&str]) {
+        crate::path_env::command("git")
+            .args(args)
+            .current_dir(cwd)
+            .output()
+            .unwrap();
+    }
+
+    fn status_of(root: &std::path::Path) -> super::WorkspaceGitStatus {
+        workspace_git_status(root.to_string_lossy().into_owned())
+    }
+
+    #[test]
+    fn reports_a_plain_folder_as_having_no_repository() {
+        let root = test_root("status-absent");
+        std::fs::write(root.join("notes.md"), "hello").unwrap();
+
+        let absent = status_of(&root);
+        let missing = workspace_git_status(root.join("gone").to_string_lossy().into_owned());
+
+        assert_eq!(absent.state, "absent");
+        assert_eq!(absent.branch, None);
+        assert_eq!(missing.state, "missing");
+        assert!(!root.join(".git").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn reports_a_repository_without_commits_as_unborn() {
+        let root = test_root("status-unborn");
+        git_run(&root, &["init", "-b", "main"]);
+        std::fs::write(root.join("notes.md"), "hello").unwrap();
+
+        let unborn = status_of(&root);
+
+        assert_eq!(unborn.state, "unborn");
+        assert_eq!(unborn.branch.as_deref(), Some("main"));
+        assert_eq!(unborn.untracked, 1);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn reports_branch_dirt_and_distance_from_upstream() {
+        let root = test_root("status-ready");
+        git_run(&root, &["init", "-b", "main"]);
+        git_run(&root, &["config", "user.email", "test@example.com"]);
+        git_run(&root, &["config", "user.name", "test"]);
+        git_run(&root, &["config", "commit.gpgsign", "false"]);
+        std::fs::write(root.join("base.txt"), "base").unwrap();
+        git_run(&root, &["add", "--", "base.txt"]);
+        git_run(&root, &["commit", "-m", "base"]);
+        let remote = test_root("status-ready-remote").join("origin.git");
+        git_run(&root, &["init", "--bare", remote.to_str().unwrap()]);
+        git_run(
+            &root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        git_run(&root, &["push", "-u", "origin", "main"]);
+        std::fs::write(root.join("next.txt"), "next").unwrap();
+        git_run(&root, &["add", "--", "next.txt"]);
+        git_run(&root, &["commit", "-m", "next"]);
+        std::fs::write(root.join("dirty.txt"), "dirty").unwrap();
+
+        let ready = status_of(&root);
+
+        assert_eq!(ready.state, "ready");
+        assert_eq!(ready.branch.as_deref(), Some("main"));
+        assert_eq!(ready.head_subject.as_deref(), Some("next"));
+        assert_eq!((ready.ahead, ready.behind), (1, 0));
+        assert!(ready.has_upstream);
+        assert_eq!(ready.untracked, 1);
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(remote.parent().unwrap()).unwrap();
     }
 
     #[test]
