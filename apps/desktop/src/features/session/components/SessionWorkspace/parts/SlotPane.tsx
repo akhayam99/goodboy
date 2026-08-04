@@ -164,6 +164,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
       <PaneShell
         title={SLOT_TITLE[slotKey]}
         description={SLOT_DESCRIPTION[slotKey]}
+        measure="reading"
         actions={
           <>
             {hasValue ? (
@@ -191,7 +192,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
           </>
         }
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+        <>
           {slot === undefined && loading.slots ? (
             <div className="flex flex-col gap-2">
               <div className="h-4 w-full rounded bg-muted/50" />
@@ -268,7 +269,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
           {slotKey === 'goal' ? (
             <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
           ) : null}
-        </div>
+        </>
       </PaneShell>
     </InspectorSplit>
   );
