@@ -25,6 +25,8 @@ const COST_RANK: Readonly<Record<ModelCostTier, number>> = {
   expensive: 3,
 };
 
+const THINKING_ROLES: ReadonlySet<string> = new Set(['planner', 'investigator', 'custom']);
+
 export const autoModelForRole = ({
   role,
   providers,
@@ -41,9 +43,13 @@ export const autoModelForRole = ({
 
   const tier = PROVIDER_CAPABILITIES[def.provider].models.find((m) => m.id === def.model)?.costTier;
   const target = COST_RANK[tier ?? 'mid'];
+  const wantsThinker = THINKING_ROLES.has(role);
   let best: { provider: ProviderId; model: string; score: number } | null = null;
   for (const provider of providers) {
     for (const m of PROVIDER_CAPABILITIES[provider].models) {
+      if (m.thinkerOnly && !wantsThinker) {
+        continue;
+      }
       const score = -Math.abs(COST_RANK[m.costTier] - target) * 1000 + m.weight;
       if (best === null || score > best.score) {
         best = { provider, model: m.id, score };

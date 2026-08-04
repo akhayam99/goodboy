@@ -4,9 +4,11 @@ type Params = {
   readonly model: CatalogModel;
 };
 
+const THINKER_ONLY_KEYS: ReadonlySet<string> = new Set(['fable-5']);
+
 const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'opus-5': 85,
-  'fable-5': 82,
+  'fable-5': 90,
   'opus-4.8': 80,
   'opus-4.7': 75,
   'opus-4.6': 60,
@@ -56,5 +58,6 @@ export const catalogDescriptor = ({ model }: Params): ModelDescriptor => {
     costTier: model.presentation.costTier,
     weight: WEIGHT_BY_KEY[model.key] ?? 10,
     effort: effortFor({ model }),
+    thinkerOnly: THINKER_ONLY_KEYS.has(model.key),
   };
 };
