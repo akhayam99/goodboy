@@ -9,10 +9,17 @@ type Params = {
 };
 
 export const useWorkspaceGitStatus = ({ workspaceId }: Params): WorkspaceGitStatus | null => {
-  const status = useAppStore((state) => state.workspaceGitStatus[workspaceId] ?? null);
+  const tracksGit = useAppStore((state) => {
+    const workspace = state.workspaces.find((candidate) => candidate.id === workspaceId);
+    return workspace != null && workspace.kind !== 'simple' && workspace.kind !== 'composite';
+  });
+  const status = useAppStore((state) => state.workspaceGitStatus?.[workspaceId] ?? null);
   const loadWorkspaceGitStatus = useAppStore((state) => state.loadWorkspaceGitStatus);
 
   useEffect(() => {
+    if (!tracksGit) {
+      return;
+    }
     const refresh = (): void => {
       if (document.visibilityState !== 'visible') {
         return;
@@ -26,7 +33,10 @@ export const useWorkspaceGitStatus = ({ workspaceId }: Params): WorkspaceGitStat
       window.clearInterval(intervalId);
       document.removeEventListener('visibilitychange', refresh);
     };
-  }, [workspaceId, loadWorkspaceGitStatus]);
+  }, [workspaceId, tracksGit, loadWorkspaceGitStatus]);
 
+  if (!tracksGit) {
+    return null;
+  }
   return status;
 };

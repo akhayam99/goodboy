@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
+import type { WorkspaceGitStatus, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
 import type {
   ClearNewSessionDraftParams,
   NewSessionDraft,
@@ -23,6 +23,8 @@ const h = vi.hoisted(() => ({
       },
     ],
     workspaceOverrides: {},
+    workspaceGitStatus: {} as Record<string, WorkspaceGitStatus | undefined>,
+    loadWorkspaceGitStatus: vi.fn(async () => undefined),
     workspaceIntegrations: {} as Record<string, ReadonlyArray<WorkspaceIntegration>>,
     newSessionDrafts: {} as Record<string, NewSessionDraft | undefined>,
     sessionBranches: {},
@@ -89,6 +91,8 @@ beforeEach(() => {
   h.remoteKind = 'github';
   h.store.workspaces[0]!.kind = 'repo';
   h.store.workspaceIntegrations = {};
+  h.store.workspaceGitStatus = {};
+  h.store.loadWorkspaceGitStatus.mockClear();
   h.store.newSessionDrafts = {};
   h.store.createSession.mockReset();
   h.store.setNewSessionDraft.mockClear();
@@ -410,5 +414,82 @@ describe('NewSessionView issue sources', () => {
     expect(input).not.toHaveProperty('existingBranch');
     expect(input.folderName).toBe('Exam prep 2026');
     expect(h.store.newSessionDrafts[WORKSPACE_ID]).toBeUndefined();
+  });
+});
+
+const gitStatus = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
+  state,
+  branch: null,
+  headSubject: null,
+  ahead: 0,
+  behind: 0,
+  staged: 0,
+  unstaged: 0,
+  untracked: 0,
+  changed: 0,
+  hasUpstream: false,
+});
+
+describe('NewSessionView git gate', () => {
+  it('explains the missing repository instead of a form when opened with no git', () => {
+    h.store.workspaceGitStatus = { [WORKSPACE_ID]: gitStatus('absent') };
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.getByText('A session needs a repository first')).toBeDefined();
+    expect(screen.getByText('This folder has no git repository yet')).toBeDefined();
+    expect(screen.getByText('git -C "/repo" init -b main')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Create session' })).toBeNull();
+  });
+
+  it('explains the missing first commit instead of a form when the repository is unborn', () => {
+    h.store.workspaceGitStatus = { [WORKSPACE_ID]: gitStatus('unborn') };
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.getByText('A session needs a repository first')).toBeDefined();
+    expect(screen.getByText('This repository has no commits yet')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Create session' })).toBeNull();
+  });
+
+  it('never reaches createSession from the blocked surface', () => {
+    h.store.workspaceGitStatus = { [WORKSPACE_ID]: gitStatus('absent') };
+    const onClose = vi.fn();
+
+    render(
+      <NewSessionView onClose={onClose} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(h.store.createSession).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('renders the normal form once the repository is ready', () => {
+    h.store.workspaceGitStatus = { [WORKSPACE_ID]: gitStatus('ready') };
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.queryByText('A session needs a repository first')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Create session' })).toBeDefined();
+  });
+
+  it('renders the normal form for a standalone workspace and never polls git', () => {
+    h.store.workspaces[0]!.kind = 'simple';
+    h.store.workspaceGitStatus = {};
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.queryByText('A session needs a repository first')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Create session' })).toBeDefined();
+    expect(h.store.loadWorkspaceGitStatus).not.toHaveBeenCalled();
   });
 });

@@ -56,9 +56,6 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   const rootPath = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId)?.rootPath ?? null,
   );
-  const kind = useAppStore(
-    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId)?.kind ?? 'repo',
-  );
   const gitStatus = useWorkspaceGitStatus({ workspaceId });
   const [confirm, setConfirm] = useState<Confirm | null>(null);
 
@@ -78,8 +75,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   }, [groups]);
 
   const empty = sessions.length === 0;
-  const tracksGit = kind !== 'simple' && kind !== 'composite' && rootPath != null;
-  const gitReady = !tracksGit || gitStatus === null || gitStatus.state === 'ready';
+  const gitReady = gitStatus === null || gitStatus.state === 'ready';
   const blockedReason =
     gitStatus?.state === 'missing'
       ? 'The project folder is unreachable'
@@ -87,7 +83,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
 
   return (
     <div className="flex h-full w-full flex-col gap-4 p-6">
-      {tracksGit && rootPath != null && gitStatus !== null && (
+      {rootPath != null && gitStatus !== null && (
         <>
           <div className="shrink-0">
             <WorkspaceGitPanel rootPath={rootPath} status={gitStatus} />

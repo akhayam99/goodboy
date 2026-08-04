@@ -132,11 +132,13 @@ describe('StageBoard git gate', () => {
     );
   });
 
-  it('shows no git surface for a standalone workspace', () => {
-    state.workspaces = [{ ...workspace, kind: 'simple' }];
-    gitStatus.current = statusOf('absent');
+  it('shows no git surface and no gate when the workspace reports no git state', () => {
+    gitStatus.current = null;
     render(<StageBoard workspaceId={wsId} sessions={[]} onCreateSession={onCreate} />);
     expect(screen.queryByTestId('git-panel')).toBeNull();
     expect(screen.getByText('Start your first session')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
+      false,
+    );
   });
 });
