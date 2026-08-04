@@ -63,7 +63,11 @@ export const IssueInbox = ({
       </div>
 
       {loading && rows.length === 0 ? (
-        <div role="status" aria-label="Loading issues" className="flex flex-col gap-0.5 px-3 pb-3">
+        <div
+          role="status"
+          aria-label="Loading issues"
+          className="flex min-h-0 flex-1 flex-col gap-0.5 px-3 pb-3"
+        >
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1 px-2.5 py-2">
               <div className="flex items-center gap-2">
