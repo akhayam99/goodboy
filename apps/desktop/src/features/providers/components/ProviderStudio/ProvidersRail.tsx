@@ -1,5 +1,5 @@
-import { Chip, Eyebrow, SelectableRow, StatusDot, type Tone } from '@goodboy/ui';
-import { PROVIDER_BETA, type ProviderConnectionState, type ProviderId } from '@goodboy/types';
+import { Eyebrow, SelectableRow, StatusDot, type Tone } from '@goodboy/ui';
+import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
@@ -66,10 +66,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
                   style={{ color: brandColor(id) }}
                 />
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-medium text-foreground">{p.label}</span>
-                    {PROVIDER_BETA.has(id) ? <Chip tone="warning" label="Beta" /> : null}
-                  </span>
+                  <span className="truncate text-sm font-medium text-foreground">{p.label}</span>
                   <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
                 </span>
                 <StatusDot tone={STATUS_TONE[p.connection]} size="md" />

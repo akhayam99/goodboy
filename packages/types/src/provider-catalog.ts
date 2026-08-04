@@ -19,11 +19,6 @@ export const OPENCODE_ROUTING: Readonly<Partial<Record<ProviderId, OpenCodeRouti
   openrouter: { slug: 'openrouter' },
 };
 
-export const PROVIDER_BETA: ReadonlySet<ProviderId> = new Set<ProviderId>([
-  'opencode',
-  'openrouter',
-]);
-
 type ProviderParams = {
   readonly id: ProviderId;
 };
