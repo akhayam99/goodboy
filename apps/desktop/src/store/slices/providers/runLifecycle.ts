@@ -189,11 +189,11 @@ export const runLifecycle = async (
         codex: providerId === 'codex' ? payload.status : state.codexStatus,
         gemini: providerId === 'gemini' ? payload.status : state.geminiStatus,
         opencode:
-          providerId === 'opencode'
-            ? payload.status
+          providerId === 'opencode' || providerId === 'openrouter'
+            ? { ...payload.status, id: 'opencode' }
             : storedStatus({ providerId: 'opencode', providers: state.providers }),
         openrouter:
-          providerId === 'opencode'
+          providerId === 'opencode' || providerId === 'openrouter'
             ? { ...payload.status, id: 'openrouter' }
             : storedStatus({ providerId: 'openrouter', providers: state.providers }),
       };

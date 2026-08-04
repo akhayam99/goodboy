@@ -117,13 +117,17 @@ impl LifecycleError {
 
 // Re-detect both binary presence and auth status for the affected provider.
 // Called on PTY exit so the lifecycle-exit event ships ground-truth state.
-fn refresh_provider(provider_id: &str) -> (ProviderStatus, AuthState) {
-    let status = match provider_id {
+fn detect_provider_status(provider_id: &str) -> ProviderStatus {
+    match provider_id {
         "anthropic" => detect_claude(),
         "cursor" => detect_cursor(),
         "codex" => detect_codex(),
         "gemini" => detect_gemini(),
         "opencode" => detect_opencode(),
+        "openrouter" => ProviderStatus {
+            id: "openrouter".to_string(),
+            ..detect_opencode()
+        },
         _ => ProviderStatus {
             id: provider_id.to_string(),
             binary: provider_id.to_string(),
@@ -131,7 +135,11 @@ fn refresh_provider(provider_id: &str) -> (ProviderStatus, AuthState) {
             version: None,
             error: Some(format!("unknown provider: {}", provider_id)),
         },
-    };
+    }
+}
+
+fn refresh_provider(provider_id: &str) -> (ProviderStatus, AuthState) {
+    let status = detect_provider_status(provider_id);
     let auth = check_provider_auth_blocking(provider_id);
     (status, auth)
 }
@@ -448,6 +456,28 @@ mod tests {
         reserve_provider(&active, "anthropic", "run-1");
         release_provider(&active, "run-1");
         assert!(reserve_provider(&active, "anthropic", "run-2"));
+    }
+
+    #[test]
+    fn openrouter_detects_through_the_opencode_binary() {
+        let status = detect_provider_status("openrouter");
+        assert_eq!(status.id, "openrouter");
+        assert_eq!(status.binary, "opencode");
+        assert!(!status
+            .error
+            .as_deref()
+            .unwrap_or("")
+            .contains("unknown provider"));
+    }
+
+    #[test]
+    fn a_provider_we_do_not_drive_still_reports_unknown() {
+        let status = detect_provider_status("nope");
+        assert!(status
+            .error
+            .as_deref()
+            .unwrap_or("")
+            .contains("unknown provider"));
     }
 
     #[test]
