@@ -54,6 +54,30 @@ export const gitlabFetchIssue = async (
   });
 };
 
+type UpdateDescriptionParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly host: string;
+  readonly projectPath: string;
+  readonly issueIid: number;
+  readonly description: string;
+};
+
+export const gitlabUpdateIssueDescription = async ({
+  workspaceId,
+  host,
+  projectPath,
+  issueIid,
+  description,
+}: UpdateDescriptionParams): Promise<string> => {
+  return invoke<string>('gitlab_update_issue', {
+    workspaceId,
+    host,
+    projectPath,
+    issueIid,
+    description,
+  });
+};
+
 export const issueIdentifier = (issue: GitlabIssue): string =>
   issue.references.full ?? `#${issue.iid}`;
 

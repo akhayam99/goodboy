@@ -274,6 +274,7 @@ pub fn run() {
       gitlab::gitlab_disconnect,
       gitlab::gitlab_fetch_assigned_issues,
       gitlab::gitlab_fetch_issue,
+      gitlab::gitlab_update_issue,
       gitlab::gitlab_fetch_assigned_mrs,
       gitlab::gitlab_fetch_project_mrs,
       gitlab::gitlab_mr_for_branch,

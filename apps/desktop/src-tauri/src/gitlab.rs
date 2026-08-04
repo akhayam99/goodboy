@@ -241,6 +241,29 @@ pub async fn gitlab_fetch_issue(
     .await
 }
 
+#[tauri::command]
+pub async fn gitlab_update_issue(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    issue_iid: i64,
+    description: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<String, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let body = serde_json::json!({ "description": description });
+    let issue: GitlabIssue = send_json(
+        reqwest::Method::PUT,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/issues/{issue_iid}"),
+        &body,
+    )
+    .await?;
+    Ok(issue.description.unwrap_or_default())
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitlabMrAuthor {
     pub username: String,
