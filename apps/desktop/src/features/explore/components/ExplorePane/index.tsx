@@ -335,9 +335,20 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     <Skeleton className="h-6 w-10/12 rounded-md" />
                   </>
                 ) : childError != null ? (
-                  <p className="text-xs text-danger">Could not read this folder. {childError}</p>
+                  <EmptyState
+                    icon={CONCEPT_ICONS.errors}
+                    tone={CONCEPT_TONE.errors}
+                    title="Could not read this folder"
+                    description={childError}
+                    size="inline"
+                  />
                 ) : children.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">This folder is empty.</p>
+                  <EmptyState
+                    icon={CONCEPT_ICONS.explore}
+                    tone={CONCEPT_TONE.explore}
+                    title="This folder is empty"
+                    size="inline"
+                  />
                 ) : (
                   <div className="flex flex-col gap-0.5">
                     {renderEntries({ entries: children })}

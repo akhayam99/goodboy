@@ -1,9 +1,19 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Button, CopyButton, Divider, Markdown, ScrollFade, Skeleton } from '@goodboy/ui';
+import {
+  Button,
+  CopyButton,
+  Divider,
+  EmptyState,
+  Markdown,
+  ScrollFade,
+  Skeleton,
+} from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreContent, type ExploreEntry } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 
 type PreviewState =
@@ -128,7 +138,13 @@ export const ExplorePreviewPanel = ({
     }
     if (previewState.status === 'error') {
       return (
-        <p className="text-xs text-danger">Could not read this file. {previewState.message}</p>
+        <EmptyState
+          icon={CONCEPT_ICONS.errors}
+          tone={CONCEPT_TONE.errors}
+          title="Could not read this file"
+          description={previewState.message}
+          size="inline"
+        />
       );
     }
     if (previewKind === 'markdown') {
@@ -198,7 +214,7 @@ export const ExplorePreviewPanel = ({
         closeLabel={`close preview for ${entry.name}`}
         onClose={onClose}
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 text-xs text-muted-foreground">
             <p className="truncate font-mono text-2xs">{entry.relPath}</p>
