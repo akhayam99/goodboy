@@ -1,6 +1,11 @@
-use std::process::Stdio;
+use std::collections::HashMap;
+use std::io::Read;
+use std::process::{Child, Stdio};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 use serde::{Deserialize, Serialize};
+use tauri::State;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -22,6 +27,18 @@ impl SummarizeError {
     }
 }
 
+type ChildSlot = Arc<Mutex<Option<Child>>>;
+type ChildRegistry = Arc<Mutex<HashMap<String, ChildSlot>>>;
+
+#[derive(Default)]
+pub struct SummarizeRegistry(pub ChildRegistry);
+
+impl SummarizeRegistry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SummarizeArgs {
@@ -34,6 +51,8 @@ pub struct SummarizeArgs {
     pub working_dir: Option<String>,
     #[serde(default)]
     pub effort: Option<String>,
+    #[serde(default)]
+    pub run_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -45,32 +64,114 @@ pub struct SummarizeResult {
 }
 
 #[tauri::command]
-pub async fn summarize_session(args: SummarizeArgs) -> Result<SummarizeResult, SummarizeError> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let cli_args = build_cli_args(&args)?;
+pub async fn summarize_session(
+    state: State<'_, SummarizeRegistry>,
+    args: SummarizeArgs,
+) -> Result<SummarizeResult, SummarizeError> {
+    let registry = Arc::clone(&state.0);
+    tauri::async_runtime::spawn_blocking(move || run_summarize(&registry, args))
+        .await
+        .map_err(|e| SummarizeError::Io(std::io::Error::other(e.to_string())))?
+}
 
-        let mut command = crate::path_env::command(&args.binary);
-        crate::aux_spawn::scrub_nested_session_env(&mut command);
-        if let Some(dir) = args.working_dir.as_deref() {
-            if !dir.is_empty() {
-                command.current_dir(dir);
-            }
+#[tauri::command]
+pub fn summarize_cancel(
+    state: State<'_, SummarizeRegistry>,
+    run_id: String,
+) -> Result<(), SummarizeError> {
+    kill_run(&state.0, &run_id);
+    Ok(())
+}
+
+fn run_summarize(
+    registry: &ChildRegistry,
+    args: SummarizeArgs,
+) -> Result<SummarizeResult, SummarizeError> {
+    let cli_args = build_cli_args(&args)?;
+
+    let mut command = crate::path_env::command(&args.binary);
+    crate::aux_spawn::scrub_nested_session_env(&mut command);
+    if let Some(dir) = args.working_dir.as_deref() {
+        if !dir.is_empty() {
+            command.current_dir(dir);
         }
+    }
 
-        let output = command
-            .args(&cli_args)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()?;
+    let mut child = command
+        .args(&cli_args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stdout")))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| SummarizeError::Io(std::io::Error::other("no stderr")))?;
 
-        Ok(SummarizeResult {
-            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            exit_code: output.status.code(),
-        })
+    let slot: ChildSlot = Arc::new(Mutex::new(Some(child)));
+    let run_id = args.run_id.clone();
+    if let Some(id) = run_id.as_deref() {
+        if let Ok(mut map) = registry.lock() {
+            map.insert(id.to_string(), Arc::clone(&slot));
+        }
+    }
+
+    let stdout_handle = thread::spawn(move || drain(stdout));
+    let stderr_handle = thread::spawn(move || drain(stderr));
+    let stdout_buf = stdout_handle.join().unwrap_or_default();
+    let stderr_buf = stderr_handle.join().unwrap_or_default();
+    let exit_code = wait_and_remove(&slot, registry, run_id.as_deref());
+
+    Ok(SummarizeResult {
+        stdout: stdout_buf,
+        stderr: stderr_buf,
+        exit_code,
     })
-    .await
-    .map_err(|e| SummarizeError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?
+}
+
+fn drain<R: Read>(mut source: R) -> String {
+    let mut buf = Vec::new();
+    let _ = source.read_to_end(&mut buf);
+    String::from_utf8_lossy(&buf).into_owned()
+}
+
+fn kill_run(registry: &ChildRegistry, run_id: &str) {
+    let slot = {
+        let Ok(map) = registry.lock() else {
+            return;
+        };
+        map.get(run_id).cloned()
+    };
+    let Some(slot) = slot else {
+        return;
+    };
+    let Ok(mut guard) = slot.lock() else {
+        return;
+    };
+    if let Some(child) = guard.as_mut() {
+        let _ = child.kill();
+    }
+}
+
+fn wait_and_remove(
+    slot: &ChildSlot,
+    registry: &ChildRegistry,
+    run_id: Option<&str>,
+) -> Option<i32> {
+    let exit = {
+        let mut guard = slot.lock().ok()?;
+        let child = guard.as_mut()?;
+        child.wait().ok().and_then(|status| status.code())
+    };
+    if let Some(id) = run_id {
+        if let Ok(mut map) = registry.lock() {
+            map.remove(id);
+        }
+    }
+    exit
 }
 
 fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
@@ -162,6 +263,7 @@ mod tests {
             system_prompt: "you summarize".to_string(),
             working_dir: None,
             effort: None,
+            run_id: None,
         }
     }
 
@@ -220,5 +322,98 @@ mod tests {
     fn unknown_provider_is_rejected() {
         let err = build_cli_args(&make_args("nonexistent")).expect_err("unknown provider");
         assert_eq!(err.kind(), "unknown_provider");
+    }
+
+    #[cfg(unix)]
+    fn register_sleeping_child(registry: &ChildRegistry, run_id: &str) -> ChildSlot {
+        let child = std::process::Command::new("sleep")
+            .arg("30")
+            .spawn()
+            .expect("spawn sleep");
+        let slot: ChildSlot = Arc::new(Mutex::new(Some(child)));
+        registry
+            .lock()
+            .expect("registry")
+            .insert(run_id.to_string(), Arc::clone(&slot));
+        slot
+    }
+
+    #[cfg(unix)]
+    fn assert_exits_within(slot: &ChildSlot, budget: std::time::Duration, message: &str) {
+        let deadline = std::time::Instant::now() + budget;
+        loop {
+            let exited = slot
+                .lock()
+                .expect("slot")
+                .as_mut()
+                .expect("child")
+                .try_wait()
+                .expect("try_wait")
+                .is_some();
+            if exited {
+                return;
+            }
+            assert!(std::time::Instant::now() < deadline, "{message}");
+            thread::sleep(std::time::Duration::from_millis(20));
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cancel_kills_the_registered_child() {
+        let registry: ChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let slot = register_sleeping_child(&registry, "run-1");
+
+        kill_run(&registry, "run-1");
+
+        assert_exits_within(
+            &slot,
+            std::time::Duration::from_secs(2),
+            "cancel left the child running",
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cancel_leaves_a_different_run_alive() {
+        let registry: ChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let cancelled = register_sleeping_child(&registry, "run-1");
+        let other = register_sleeping_child(&registry, "run-2");
+
+        kill_run(&registry, "run-1");
+
+        assert_exits_within(
+            &cancelled,
+            std::time::Duration::from_secs(2),
+            "cancel left the child running",
+        );
+        assert!(other
+            .lock()
+            .expect("slot")
+            .as_mut()
+            .expect("child")
+            .try_wait()
+            .expect("try_wait")
+            .is_none());
+        kill_run(&registry, "run-2");
+    }
+
+    #[test]
+    fn cancel_for_an_unknown_run_is_a_no_op() {
+        let registry: ChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        kill_run(&registry, "missing");
+        assert!(registry.lock().expect("registry").is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn waiting_drops_the_registry_entry() {
+        let registry: ChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let slot = register_sleeping_child(&registry, "run-1");
+        kill_run(&registry, "run-1");
+
+        wait_and_remove(&slot, &registry, Some("run-1"));
+
+        assert!(registry.lock().expect("registry").is_empty());
     }
 }

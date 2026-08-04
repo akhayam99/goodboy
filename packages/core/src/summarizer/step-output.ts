@@ -31,6 +31,7 @@ type SummarizeParams = Params & {
   readonly model: string;
   readonly effort?: ModelEffort;
   readonly expectedOutput?: string;
+  readonly runId?: string;
 };
 
 const stepOutputSystemPrompt = ({
@@ -62,6 +63,7 @@ export const summarizeStepOutput = async ({
   output,
   model,
   expectedOutput,
+  runId,
 }: SummarizeParams & SummarizerDeps): Promise<string> => {
   const result = await runAuxOneShot({
     providerId,
@@ -71,6 +73,7 @@ export const summarizeStepOutput = async ({
     systemPrompt: stepOutputSystemPrompt({ expectedOutput: expectedOutput ?? '' }),
     ...(effort != null && { effort }),
     ...(workingDir != null && { workingDir }),
+    ...(runId != null && { runId }),
     invokeFn,
   });
   if ((result.exitCode ?? 0) !== 0) {

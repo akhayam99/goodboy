@@ -134,6 +134,7 @@ describe('finalizeWorkflowStep output summary', () => {
       invokeFn: expect.any(Function),
       output: 'raw assistant output',
       workingDir: '/tmp/worktree',
+      runId: expect.any(String),
     });
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       AGENT_ID,
