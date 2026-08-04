@@ -324,7 +324,7 @@ const GithubPrCard = ({
   ).length;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-elevated px-4 py-3.5">
+    <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-elevated p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex items-center gap-2">
