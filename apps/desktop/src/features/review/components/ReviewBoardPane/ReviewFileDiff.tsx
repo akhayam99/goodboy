@@ -344,7 +344,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                         </tr>
                         {isActive && target != null ? (
                           <tr>
-                            <td colSpan={4} className="bg-background px-3 py-2">
+                            <td colSpan={columnCount} className="bg-background px-3 py-2">
                               <LineComposer
                                 label={`Commenting on ${file.path}:${target.line}`}
                                 onSubmit={(body) => {
