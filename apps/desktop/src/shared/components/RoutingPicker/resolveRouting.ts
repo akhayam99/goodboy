@@ -62,8 +62,6 @@ const effortsFor = ({ model, selection, fallback }: EffortParams): ReadonlyArray
         .filter((effort) => effort != null);
       return efforts.length > 0 ? Array.from(new Set(efforts)) : [fallback];
     }
-    case 'gemini':
-      return [fallback];
     default: {
       const exhaustive: never = model;
       throw new Error(`unknown catalog model: ${String(exhaustive)}`);
@@ -119,11 +117,7 @@ export const resolveRouting = ({
     effort: appliedEffort,
     effortLevels,
     ...(resolved.clamped != null && { clamped: resolved.clamped }),
-    isEffortFixed:
-      selectedModel.provider === 'gemini' ||
-      (selectedModel.provider === 'anthropic' && selectedModel.efforts.length === 0) ||
-      (selectedModel.provider === 'cursor' &&
-        selectedModel.combos.every((combo) => combo.effort == null)),
+    isEffortFixed: effortLevels.length <= 1,
     models: catalog.map((candidate) => candidate.key),
     catalog,
     hasThinkingToggle,
