@@ -23,7 +23,7 @@ const {
   invokeAgentInsertSpy,
   listOpenQuestionsSpy,
   updateOutcomeSpy,
-  updateErrorSpy,
+  updateStopSpy,
   insertProviderRunSpy,
   updateProviderRunStatusSpy,
   insertTelemetrySpy,
@@ -35,7 +35,7 @@ const {
   invokeAgentInsertSpy: vi.fn(),
   listOpenQuestionsSpy: vi.fn(async () => []),
   updateOutcomeSpy: vi.fn(async () => undefined),
-  updateErrorSpy: vi.fn(async () => undefined),
+  updateStopSpy: vi.fn(async () => undefined),
   insertProviderRunSpy: vi.fn(async () => undefined),
   updateProviderRunStatusSpy: vi.fn(async () => undefined),
   insertTelemetrySpy: vi.fn(async () => undefined),
@@ -56,7 +56,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
-  updateWorkflowRunOrchestrationError: updateErrorSpy,
+  updateWorkflowRunOrchestrationStop: updateStopSpy,
   insertProviderRun: insertProviderRunSpy,
   updateProviderRunStatus: updateProviderRunStatusSpy,
   insertTelemetry: insertTelemetrySpy,
@@ -700,13 +700,13 @@ describe('orchestrateNextStep', () => {
 
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(updateErrorSpy).toHaveBeenCalledWith(
-      {},
-      WORKFLOW_RUN_ID,
-      expect.stringContaining('usage limit reached'),
-    );
+    expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
+      kind: 'failure',
+      message: expect.stringContaining('usage limit reached'),
+    });
     const failed = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(failed.orchestrationError).toContain('anthropic');
+    expect(failed.orchestrationStop?.kind).toBe('failure');
+    expect(failed.orchestrationStop?.message).toContain('anthropic');
 
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
@@ -715,9 +715,9 @@ describe('orchestrateNextStep', () => {
     });
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(updateErrorSpy).toHaveBeenLastCalledWith({}, WORKFLOW_RUN_ID, null);
+    expect(updateStopSpy).toHaveBeenLastCalledWith({}, WORKFLOW_RUN_ID, null);
     const cleared = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(cleared.orchestrationError).toBeUndefined();
+    expect(cleared.orchestrationStop).toBeUndefined();
   });
 
   it('hands the operator hints of the run to the orchestrator', async () => {
@@ -840,10 +840,11 @@ describe('orchestrateNextStep', () => {
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
     expect(decideSpy).not.toHaveBeenCalled();
-    expect(updateErrorSpy).toHaveBeenCalledWith(
-      {},
-      WORKFLOW_RUN_ID,
-      expect.stringContaining('budget cap'),
-    );
+    expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
+      kind: 'budget',
+      message: expect.stringContaining('budget cap'),
+    });
+    const paused = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(paused.orchestrationStop?.kind).toBe('budget');
   });
 });

@@ -1,7 +1,7 @@
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import {
-  updateWorkflowRunOrchestrationError,
   updateWorkflowRunOrchestrationOutcome,
+  updateWorkflowRunOrchestrationStop,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
@@ -15,13 +15,13 @@ export const retryWorkflowOrchestration = (set: SetFn, get: GetFn) => {
       return;
     }
     await updateWorkflowRunOrchestrationOutcome(tauriDatabase, workflowRunId, null);
-    await updateWorkflowRunOrchestrationError(tauriDatabase, workflowRunId, null);
+    await updateWorkflowRunOrchestrationStop(tauriDatabase, workflowRunId, null);
     patchWorkflowRun({
       set,
       sessionId,
       workflowRunId,
       patch: (current) =>
-        withoutKeys(current, ['orchestrationOutcome', 'orchestrationReason', 'orchestrationError']),
+        withoutKeys(current, ['orchestrationOutcome', 'orchestrationReason', 'orchestrationStop']),
     });
     await get().orchestrateNextStep(sessionId, workflowRunId);
   };

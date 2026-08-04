@@ -14,6 +14,7 @@ import type {
   TurnEvent,
   Workflow,
   WorkflowOrchestrationOutcome,
+  WorkflowOrchestrationStop,
   WorkflowRunId,
 } from '@goodboy/types';
 import {
@@ -32,8 +33,8 @@ import {
 } from '@goodboy/core';
 import {
   listOpenQuestionsForSession,
-  updateWorkflowRunOrchestrationError,
   updateWorkflowRunOrchestrationOutcome,
+  updateWorkflowRunOrchestrationStop,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -151,30 +152,48 @@ const persistOrchestrationOutcome = async ({
   });
 };
 
-type PersistErrorParams = {
+type PersistStopParams = {
   readonly set: SetFn;
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
-  readonly message: string | null;
+  readonly stop: WorkflowOrchestrationStop | null;
 };
 
-export const persistOrchestrationError = async ({
+export const persistOrchestrationStop = async ({
   set,
   sessionId,
   workflowRunId,
-  message,
-}: PersistErrorParams): Promise<void> => {
-  await updateWorkflowRunOrchestrationError(tauriDatabase, workflowRunId, message);
+  stop,
+}: PersistStopParams): Promise<void> => {
+  await updateWorkflowRunOrchestrationStop(tauriDatabase, workflowRunId, stop);
   patchWorkflowRun({
     set,
     sessionId,
     workflowRunId,
     patch: (run) =>
-      message == null
-        ? withoutKeys(run, ['orchestrationError'])
-        : { ...run, orchestrationError: message },
+      stop == null ? withoutKeys(run, ['orchestrationStop']) : { ...run, orchestrationStop: stop },
   });
 };
+
+type FailureParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly message: string;
+};
+
+const persistOrchestrationFailure = async ({
+  set,
+  sessionId,
+  workflowRunId,
+  message,
+}: FailureParams): Promise<void> =>
+  persistOrchestrationStop({
+    set,
+    sessionId,
+    workflowRunId,
+    stop: { kind: 'failure', message },
+  });
 
 const failureLabel = (error: unknown): string => {
   if (error instanceof OrchestratorProviderError) {
@@ -324,11 +343,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       if (isBudgetBlocked({ alerts: get().budgetAlerts ?? [], sessionId })) {
-        await persistOrchestrationError({
+        await persistOrchestrationStop({
           set,
           sessionId,
           workflowRunId,
-          message: BUDGET_BLOCK_MESSAGE,
+          stop: { kind: 'budget', message: BUDGET_BLOCK_MESSAGE },
         });
         return;
       }
@@ -399,7 +418,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         });
       } catch (error) {
         const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
-        await persistOrchestrationError({ set, sessionId, workflowRunId, message });
+        await persistOrchestrationFailure({ set, sessionId, workflowRunId, message });
         emitDecision({
           get,
           sessionId,
@@ -414,7 +433,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       const decision = result.decision;
       if (decision == null) {
-        await persistOrchestrationError({
+        await persistOrchestrationFailure({
           set,
           sessionId,
           workflowRunId,
@@ -445,7 +464,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         );
         return;
       }
-      await persistOrchestrationError({ set, sessionId, workflowRunId, message: null });
+      await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
       if (decision.action === 'next') {
         const enforced = enforceOrchestratorModelPool({
           step: decision.step,

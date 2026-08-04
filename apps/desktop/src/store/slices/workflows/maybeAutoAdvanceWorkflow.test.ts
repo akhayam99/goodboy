@@ -17,14 +17,14 @@ import type {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
-const { listOpenQuestionsSpy, updateOrchestrationErrorSpy } = vi.hoisted(() => ({
+const { listOpenQuestionsSpy, updateOrchestrationStopSpy } = vi.hoisted(() => ({
   listOpenQuestionsSpy: vi.fn(async () => []),
-  updateOrchestrationErrorSpy: vi.fn(async () => undefined),
+  updateOrchestrationStopSpy: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
-  updateWorkflowRunOrchestrationError: updateOrchestrationErrorSpy,
+  updateWorkflowRunOrchestrationStop: updateOrchestrationStopSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -332,6 +332,23 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
   });
 
+  it('records the budget stop once while the cap stays reached', async () => {
+    const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
+    state['budgetAlerts'] = [{ kind: 'provider-exceeded' }];
+    const { set, get } = harness(state);
+    const advance = maybeAutoAdvanceWorkflow(set, get);
+
+    await advance(SESSION_ID);
+    await advance(SESSION_ID);
+
+    expect(updateOrchestrationStopSpy).toHaveBeenCalledTimes(1);
+    const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(run.orchestrationStop).toEqual({
+      kind: 'budget',
+      message: 'the budget cap is reached, raise it in Budget to keep this run going',
+    });
+  });
+
   it('keeps dynamic orchestration behind summarizer, question, and budget gates', async () => {
     const state = baseState([], []);
     const session = (state['sessions'] as ReadonlyArray<Session>)[0]!;
@@ -352,11 +369,10 @@ describe('maybeAutoAdvanceWorkflow', () => {
     state['summarizerStatus'] = {};
     state['budgetAlerts'] = [{ kind: 'provider-exceeded' }];
     await advance(SESSION_ID);
-    expect(updateOrchestrationErrorSpy).toHaveBeenCalledWith(
-      {},
-      RUN_ID,
-      'the budget cap is reached, raise it in Budget to keep this run going',
-    );
+    expect(updateOrchestrationStopSpy).toHaveBeenCalledWith({}, RUN_ID, {
+      kind: 'budget',
+      message: 'the budget cap is reached, raise it in Budget to keep this run going',
+    });
     state['budgetAlerts'] = [];
     listOpenQuestionsSpy.mockResolvedValue([
       {
