@@ -20,10 +20,11 @@ type Input = {
 export const addWorkspace = (set: SetFn, get: GetFn) => {
   return async ({ rootPath, name }: Input): Promise<Workspace> => {
     const check = await validateGitRepo(rootPath);
-    if (!check.isRepo || !check.rootPath) {
-      throw new Error(check.error ?? 'not a git repository');
+    const gitRoot = check.isRepo && check.rootPath != null && check.rootPath !== '';
+    const resolvedRoot = gitRoot ? check.rootPath : check.resolvedPath;
+    if (resolvedRoot == null || resolvedRoot === '') {
+      throw new Error(check.error ?? 'folder not found');
     }
-    const resolvedRoot = check.rootPath;
 
     const onDisk = await findWorkspaceByRootPath(tauriDatabase, resolvedRoot);
     if (onDisk) {
@@ -56,6 +57,7 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
       id: crypto.randomUUID() as WorkspaceId,
       name: inferredName,
       rootPath: resolvedRoot,
+      kind: 'repo',
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,

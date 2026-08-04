@@ -11,6 +11,12 @@ const MAX_SLUG_LEN: usize = 40;
 pub enum WorktreeError {
     #[error("repository not found: {0}")]
     RepoNotFound(String),
+    #[error("no git repository at {0}. run git init in that folder, then start a session")]
+    NoRepository(String),
+    #[error(
+        "the git repository at {0} has no commits yet. make the first commit, then start a session"
+    )]
+    NoCommit(String),
     #[error("git failed: {message}")]
     Git { message: String },
     #[error("io error: {0}")]
@@ -25,6 +31,8 @@ impl WorktreeError {
     fn kind(&self) -> &'static str {
         match self {
             WorktreeError::RepoNotFound(_) => "repo_not_found",
+            WorktreeError::NoRepository(_) => "no_repository",
+            WorktreeError::NoCommit(_) => "no_commit",
             WorktreeError::Git { .. } => "git",
             WorktreeError::Io(_) => "io",
             WorktreeError::InvalidUtf8 => "invalid_utf8",
@@ -127,6 +135,12 @@ pub fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, WorktreeErro
     let repo_path = PathBuf::from(&args.repo_path);
     if !repo_path.exists() {
         return Err(WorktreeError::RepoNotFound(args.repo_path.clone()));
+    }
+    if !crate::repo::is_inside_repo(&repo_path) {
+        return Err(WorktreeError::NoRepository(args.repo_path.clone()));
+    }
+    if !crate::repo::has_commit(&repo_path) {
+        return Err(WorktreeError::NoCommit(args.repo_path.clone()));
     }
 
     let slug = sanitize_slug(&args.slug);
@@ -920,10 +934,7 @@ pub fn worktree_status(worktree_path: String) -> Result<WorktreeStatus, Worktree
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let branch = git(p, &["symbolic-ref", "--quiet", "--short", "HEAD"])
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
+    let branch = current_branch_name(p);
     let head = git(p, &["rev-parse", "HEAD"])
         .ok()
         .map(|s| s.trim().to_string())
@@ -965,7 +976,7 @@ fn resolve_branch_range(cwd: &Path) -> String {
 }
 
 fn resolve_main(cwd: &Path) -> Option<(&'static str, String)> {
-    for main_ref in ["origin/main", "main"] {
+    for main_ref in ["origin/main", "origin/master", "main", "master"] {
         let merge_base = git(cwd, &["merge-base", "HEAD", main_ref])
             .ok()
             .map(|out| out.trim().to_string())
@@ -977,7 +988,14 @@ fn resolve_main(cwd: &Path) -> Option<(&'static str, String)> {
     None
 }
 
-fn resolve_upstream(cwd: &Path) -> Option<String> {
+pub(crate) fn current_branch_name(cwd: &Path) -> Option<String> {
+    git(cwd, &["symbolic-ref", "--quiet", "--short", "HEAD"])
+        .ok()
+        .map(|found| found.trim().to_string())
+        .filter(|found| !found.is_empty())
+}
+
+pub(crate) fn resolve_upstream(cwd: &Path) -> Option<String> {
     git(
         cwd,
         &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
@@ -999,7 +1017,7 @@ fn rev_list_set(cwd: &Path, range: &str) -> std::collections::HashSet<String> {
         .unwrap_or_default()
 }
 
-fn rev_list_left_right(cwd: &Path, left: &str, right: &str) -> Option<(u32, u32)> {
+pub(crate) fn rev_list_left_right(cwd: &Path, left: &str, right: &str) -> Option<(u32, u32)> {
     let out = git(
         cwd,
         &[
@@ -1019,7 +1037,7 @@ fn rev_list_left_right(cwd: &Path, left: &str, right: &str) -> Option<(u32, u32)
     Some((ahead, behind))
 }
 
-fn parse_status_counts(cwd: &Path) -> (u32, u32, u32, u32) {
+pub(crate) fn parse_status_counts(cwd: &Path) -> (u32, u32, u32, u32) {
     let raw = match git(cwd, &["status", "--porcelain=v1"]) {
         Ok(s) => s,
         Err(_) => return (0, 0, 0, 0),
@@ -1274,7 +1292,10 @@ fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
 
 #[cfg(test)]
 mod rewrite_tests {
-    use super::{worktree_amend_commit, worktree_squash_commits, worktree_status, RewriteArgs};
+    use super::{
+        worktree_amend_commit, worktree_create, worktree_squash_commits, worktree_status,
+        CreateArgs, RewriteArgs,
+    };
     use std::path::{Path, PathBuf};
 
     fn temp_root(name: &str) -> PathBuf {
@@ -1352,6 +1373,72 @@ mod rewrite_tests {
 
         assert_eq!(status.commits_ahead_of_main, 2);
         assert_eq!(status.commits_behind_main, 1);
+    }
+
+    #[test]
+    fn resolves_master_when_the_repository_has_no_main_branch() {
+        let root = temp_root("resolve-main-master");
+        git_ok(&root, &["init", "-b", "master"]);
+        git_ok(&root, &["config", "user.email", "test@example.com"]);
+        git_ok(&root, &["config", "user.name", "test"]);
+        git_ok(&root, &["config", "commit.gpgsign", "false"]);
+        let base = commit(&root, "base.txt", "base", "base");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        commit(&root, "feature.txt", "feature", "feature");
+
+        let (main_ref, merge_base) = super::resolve_main(&root).expect("master resolves as main");
+
+        assert_eq!(main_ref, "master");
+        assert_eq!(merge_base, base);
+        assert_eq!(
+            worktree_status(root.to_string_lossy().into_owned())
+                .unwrap()
+                .commits_ahead_of_main,
+            1
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn refuses_to_create_a_worktree_before_the_repository_exists() {
+        let root = temp_root("create-without-git");
+
+        let plain = worktree_create(CreateArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            branch_prefix: "ak".to_string(),
+            slug: "first".to_string(),
+            existing_branch: None,
+            fallback_ref: None,
+            base_branch: None,
+            parent_dir: None,
+            dir_name: None,
+        })
+        .unwrap_err();
+
+        assert!(matches!(plain, super::WorktreeError::NoRepository(_)));
+        assert!(!root.join(".gitignore").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn refuses_to_create_a_worktree_before_the_first_commit() {
+        let root = init_repo("create-without-commit");
+
+        let unborn = worktree_create(CreateArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            branch_prefix: "ak".to_string(),
+            slug: "first".to_string(),
+            existing_branch: None,
+            fallback_ref: None,
+            base_branch: None,
+            parent_dir: None,
+            dir_name: None,
+        })
+        .unwrap_err();
+
+        assert!(matches!(unborn, super::WorktreeError::NoCommit(_)));
+        assert!(!root.join(".gitignore").exists());
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

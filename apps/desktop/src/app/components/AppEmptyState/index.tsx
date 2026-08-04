@@ -20,7 +20,7 @@ export const NoWorkspaceScreen = ({ onAddWorkspace }: Props) => {
       <EmptyState
         illustration={<DogMascot size={96} className="text-primary" />}
         title="Welcome to Goodboy"
-        description="Point at a git repo to create your first workspace. Every session spins up its own worktree and branch, your main checkout stays untouched."
+        description="Point at a project folder to create your first workspace. With git already set up, every session spins up its own worktree and branch and your main checkout stays untouched. Without it, Goodboy shows you the commands to set git up."
         action={
           <button
             type="button"

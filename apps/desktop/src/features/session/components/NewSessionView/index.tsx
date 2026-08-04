@@ -17,6 +17,7 @@ import {
 import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
 import { useSimpleSessionDirectoryConflict } from '../../../../features/worktree/useSimpleSessionDirectoryConflict';
 import { useWorkspaceRemoteHostKind } from '../../../../features/worktree/useWorkspaceRemoteHostKind';
+import { useWorkspaceGitStatus } from '../../../workspace/hooks/useWorkspaceGitStatus';
 import type { IssueCandidate } from '../../../../features/integrations/fetchIssueCandidates';
 import { resolveIssueSources } from '../../../../features/integrations/issueSources';
 import { useGithubConnection } from '../../../../features/integrations/github/useGithubConnection';
@@ -33,6 +34,7 @@ import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/pro
 import { EMPTY_NEW_SESSION_DRAFT } from '../../../../store/slices/newSessionDrafts/emptyNewSessionDraft';
 import { generateBranchSlug } from './generateBranchSlug';
 import { GoalEditor } from './GoalEditor';
+import { NewSessionBlocked } from './NewSessionBlocked';
 import { NewSessionFooter } from './NewSessionFooter';
 import { NewSessionForm } from './NewSessionForm';
 import { polishGoal } from './polishGoal';
@@ -61,6 +63,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const settingKey = settingBranchPrefix(workspaceId);
   const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId));
   const isSimple = workspace?.kind === 'simple';
+  const gitStatus = useWorkspaceGitStatus({ workspaceId });
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
 
   const {
@@ -381,6 +384,12 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       setBusy(false);
     }
   };
+
+  if (gitStatus !== null && gitStatus.state !== 'ready' && workspace?.rootPath != null) {
+    return (
+      <NewSessionBlocked rootPath={workspace.rootPath} status={gitStatus} onClose={onCancel} />
+    );
+  }
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-background py-6 motion-safe:animate-studio-in">

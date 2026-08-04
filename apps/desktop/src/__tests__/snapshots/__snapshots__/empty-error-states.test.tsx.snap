@@ -593,7 +593,7 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
       <p
         class="max-w-md text-sm leading-relaxed text-muted-foreground"
       >
-        Point at a git repo to create your first workspace. Every session spins up its own worktree and branch, your main checkout stays untouched.
+        Point at a project folder to create your first workspace. With git already set up, every session spins up its own worktree and branch and your main checkout stays untouched. Without it, Goodboy shows you the commands to set git up.
       </p>
     </div>
     <div
@@ -842,7 +842,7 @@ exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] =
         <span
           class="max-w-xs text-xs leading-relaxed text-muted-foreground"
         >
-          Point at a local git repo. Each session opens its own worktree off it.
+          Point at a local project folder. Once git is set up, each session opens its own worktree off it.
         </span>
       </div>
       <div

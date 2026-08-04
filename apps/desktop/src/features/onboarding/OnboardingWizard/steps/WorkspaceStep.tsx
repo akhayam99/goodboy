@@ -32,7 +32,7 @@ const AUDIENCE_OPTIONS = [
     value: 'developer',
     icon: Code2,
     label: 'I write code',
-    hint: 'Connect a git repository, or link several of them into one workspace.',
+    hint: 'Connect a project folder, or link several repositories into one workspace.',
   },
   {
     value: 'everyone-else',

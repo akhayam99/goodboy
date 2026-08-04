@@ -7,6 +7,8 @@ import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { ArchiveSessionConfirm } from '../../../session/components/ArchiveSessionConfirm';
 import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionConfirm';
+import { WorkspaceGitPanel } from '../WorkspaceGitPanel';
+import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
 
@@ -51,6 +53,10 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   const archived = useAppStore((s) => s.archivedSessions[workspaceId] ?? EMPTY_ARRAY);
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
+  const rootPath = useAppStore(
+    (s) => s.workspaces.find((candidate) => candidate.id === workspaceId)?.rootPath ?? null,
+  );
+  const gitStatus = useWorkspaceGitStatus({ workspaceId });
   const [confirm, setConfirm] = useState<Confirm | null>(null);
 
   const onArchive = useCallback((session: Session) => setConfirm({ kind: 'archive', session }), []);
@@ -69,9 +75,23 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
   }, [groups]);
 
   const empty = sessions.length === 0;
+  const gitReady = gitStatus === null || gitStatus.state === 'ready';
+  const blockedReason =
+    gitStatus?.state === 'missing'
+      ? 'The project folder is unreachable'
+      : 'This project needs a git repository with one commit first';
 
   return (
     <div className="flex h-full w-full flex-col gap-4 p-6">
+      {rootPath != null && gitStatus !== null && (
+        <>
+          <div className="shrink-0">
+            <WorkspaceGitPanel rootPath={rootPath} status={gitStatus} />
+          </div>
+          <Divider />
+        </>
+      )}
+
       {!boardReady || !empty ? (
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
@@ -81,7 +101,12 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
                 {sessions.length}
               </span>
             </span>
-            <Button size="sm" onClick={onCreateSession}>
+            <Button
+              size="sm"
+              onClick={onCreateSession}
+              disabled={!gitReady}
+              title={gitReady ? undefined : blockedReason}
+            >
               <Plus size={14} aria-hidden />
               New session
             </Button>
@@ -90,9 +115,9 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
         </>
       ) : null}
 
-      {!boardReady ? (
-        <BoardSkeleton />
-      ) : empty ? (
+      {!boardReady && <BoardSkeleton />}
+
+      {boardReady && empty && gitReady && (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             illustration={<DogMascot size={72} className="text-primary" />}
@@ -109,7 +134,9 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
             className="max-w-md"
           />
         </div>
-      ) : (
+      )}
+
+      {boardReady && !empty && (
         <div className="flex min-h-0 flex-1 overflow-x-auto">
           <div className="mx-auto flex min-h-0 w-fit max-w-full gap-4">
             {STAGES.map((stage) => (
