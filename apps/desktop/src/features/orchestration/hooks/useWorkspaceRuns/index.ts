@@ -80,7 +80,7 @@ const buildCostByAgentId = (
 ): CostByAgentId => {
   const latestByRun = new Map<string, TelemetryRecord>();
   for (const rec of telemetry) {
-    if (rec.kind !== 'turn') {
+    if (rec.kind === 'summarizer') {
       continue;
     }
     const existing = latestByRun.get(rec.runId);

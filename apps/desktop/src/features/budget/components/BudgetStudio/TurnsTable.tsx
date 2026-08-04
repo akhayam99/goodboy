@@ -93,7 +93,7 @@ export const TurnsTable = ({
                     <td className="px-2 py-2">
                       <span>
                         <Chip
-                          tone={record.kind === 'summarizer' ? 'neutral' : 'primary'}
+                          tone={record.kind === 'turn' ? 'primary' : 'neutral'}
                           size="xs"
                           shape="badge"
                           label={record.kind}
