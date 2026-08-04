@@ -13,6 +13,7 @@ export type ConnectView = {
   readonly isSuccess: boolean;
   readonly isFailure: boolean;
   readonly showAuthLink: boolean;
+  readonly showErrorTail: boolean;
   readonly showTerminalHint: boolean;
   readonly hasDetails: boolean;
   readonly autoDetails: boolean;
@@ -33,7 +34,7 @@ const PRIMARY_LABEL: Readonly<Record<ConnectPrimary, string>> = {
   done: 'Done',
 };
 
-const HANDOFF_STATUS = 'Finish signing in in your browser.';
+const HANDOFF_STATUS = 'Finish signing in from your browser.';
 const WAITING_NOTE = 'Still waiting for the browser. This can take a minute.';
 
 const REST: ConnectView = {
@@ -45,6 +46,7 @@ const REST: ConnectView = {
   isSuccess: false,
   isFailure: false,
   showAuthLink: false,
+  showErrorTail: false,
   showTerminalHint: false,
   hasDetails: false,
   autoDetails: false,
@@ -104,6 +106,14 @@ export const connectView = ({
         primaryLabel: PRIMARY_LABEL.done,
         hasDetails: true,
       };
+    case 'blocked':
+      return {
+        ...REST,
+        status: `Another window is already signing in to ${providerLabel}. Finish there, then come back.`,
+        primary: 'retry',
+        primaryLabel: PRIMARY_LABEL.retry,
+        isFailure: true,
+      };
     case 'failed':
       return {
         ...REST,
@@ -111,6 +121,7 @@ export const connectView = ({
         primary: 'retry',
         primaryLabel: PRIMARY_LABEL.retry,
         isFailure: true,
+        showErrorTail: true,
         showTerminalHint: true,
         hasDetails: true,
         autoDetails: true,

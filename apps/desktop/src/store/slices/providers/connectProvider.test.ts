@@ -179,6 +179,26 @@ describe('connectProvider', () => {
     );
   });
 
+  it('separates a provider already busy elsewhere from a real failure', async () => {
+    const h = harness();
+    mocks.invokeProviderLifecycleRun.mockRejectedValueOnce({
+      kind: 'busy',
+      message: 'a lifecycle run is already active for provider: anthropic',
+    });
+    await h.connect('anthropic');
+    expect(h.phase()).toBe('blocked');
+    expect(h.errorTail()).toBeNull();
+
+    const other = harness();
+    mocks.invokeProviderLifecycleRun.mockRejectedValueOnce({
+      kind: 'io',
+      message: 'openpty failed',
+    });
+    await other.connect('anthropic');
+    expect(other.phase()).toBe('failed');
+    expect(other.errorTail()).toBe('openpty failed');
+  });
+
   it('never runs a login command for a manual-tier provider', async () => {
     const h = harness();
     await h.connect('gemini');

@@ -44,6 +44,7 @@ export type ProviderConnectPhase =
   | 'success'
   | 'finished-unverified'
   | 'failed'
+  | 'blocked'
   | 'cancelled';
 
 export type ProviderConnectStep = 'install' | 'login';

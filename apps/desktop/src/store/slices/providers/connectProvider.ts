@@ -67,6 +67,21 @@ const lastMeaningfulLine = ({ tail }: LastLineParams): string | null => {
   return last === undefined ? null : last.slice(-ERROR_TAIL_CAP);
 };
 
+type FailedPatchParams = {
+  readonly err: unknown;
+};
+
+const failedPatch = ({ err }: FailedPatchParams): Partial<ProviderConnectState> => {
+  const kind =
+    typeof err === 'object' && err !== null && 'kind' in err
+      ? (err as { readonly kind: unknown }).kind
+      : null;
+  if (kind === 'busy') {
+    return { phase: 'blocked', errorTail: null };
+  }
+  return { phase: 'failed', errorTail: formatError(err) };
+};
+
 type AttachParams = {
   readonly providerId: ProviderId;
   readonly action: ProviderLifecycleAction;
@@ -179,7 +194,7 @@ const runInstall = async ({ set, get, providerId, run }: StepParams): Promise<bo
     patchConnect({ set, providerId, patch: { runId } });
   } catch (err) {
     disposeConnectRun({ providerId });
-    patchConnect({ set, providerId, patch: { phase: 'failed', errorTail: formatError(err) } });
+    patchConnect({ set, providerId, patch: failedPatch({ err }) });
     return false;
   }
   return finished;
@@ -405,7 +420,7 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
     patchConnect({ set, providerId, patch: { runId } });
   } catch (err) {
     disposeConnectRun({ providerId });
-    patchConnect({ set, providerId, patch: { phase: 'failed', errorTail: formatError(err) } });
+    patchConnect({ set, providerId, patch: failedPatch({ err }) });
     return;
   }
   armStall();
