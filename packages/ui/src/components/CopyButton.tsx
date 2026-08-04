@@ -47,7 +47,7 @@ export const CopyButton = ({ value, label = 'text' }: CopyButtonProps) => {
   })();
 
   return (
-    <Button variant="ghost" size="sm" onClick={() => void onCopy()} aria-label={`Copy ${label}`}>
+    <Button variant="ghost" size="sm" onClick={() => void onCopy()} aria-label={`copy ${label}`}>
       {buttonText}
     </Button>
   );
