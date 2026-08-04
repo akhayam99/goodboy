@@ -101,9 +101,7 @@ const emitDecision = ({
 }: EmitParams): AgentId | null => {
   const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
   const agentId =
-    preferredAgentId ??
-    [...runAgents].sort((left, right) => right.ordinal - left.ordinal)[0]?.id ??
-    get().selectedAgentId[sessionId];
+    preferredAgentId ?? [...runAgents].sort((left, right) => right.ordinal - left.ordinal)[0]?.id;
   if (agentId == null) {
     return null;
   }

@@ -54,7 +54,7 @@ export const recordOrchestratorUsage = async ({
   model,
   usage,
 }: Params): Promise<void> => {
-  if (agentId == null || usage.inputTokens + usage.outputTokens === 0) {
+  if (usage.inputTokens + usage.outputTokens === 0) {
     return;
   }
   const runId = crypto.randomUUID() as ProviderRunId;
@@ -84,13 +84,17 @@ export const recordOrchestratorUsage = async ({
     recordedAt: finishedAt,
   };
   await insertTelemetry(tauriDatabase, record);
-  const history = [...knownRunIds({ get, sessionId, agentId }), runId];
   set((state) => ({
     sessionTelemetry: {
       ...state.sessionTelemetry,
       [sessionId]: [...(state.sessionTelemetry[sessionId] ?? []), record],
     },
-    agentRunHistory: { ...state.agentRunHistory, [agentId]: history },
+    ...(agentId != null && {
+      agentRunHistory: {
+        ...state.agentRunHistory,
+        [agentId]: [...knownRunIds({ get, sessionId, agentId }), runId],
+      },
+    }),
   }));
   const session = get().sessions.find((candidate) => candidate.id === sessionId);
   if (session == null) {

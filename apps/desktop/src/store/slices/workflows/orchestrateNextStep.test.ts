@@ -626,10 +626,11 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('falls back to the session selection when the run has no agents', async () => {
+  it('never bills a decision to an agent outside the run', async () => {
     decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
       decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
     });
     const state = baseState();
     state['sessionPhaseRuns'] = { [SESSION_ID]: [] };
@@ -638,11 +639,30 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      'agent-other',
-      SESSION_ID,
-      expect.objectContaining({ action: 'done' }),
-    );
+    expect(state['appendTurnEvent']).not.toHaveBeenCalled();
+    const history = state['agentRunHistory'] as Record<string, ReadonlyArray<string>>;
+    expect(history['agent-other']).toBeUndefined();
+  });
+
+  it('records a decision the run has no agent to hang it on exactly once', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    state['sessionPhaseRuns'] = { [SESSION_ID]: [] };
+    state['selectedAgentId'] = { [SESSION_ID]: 'agent-other' as AgentId };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const records = (state['sessionTelemetry'] as Record<string, ReadonlyArray<TelemetryRecord>>)[
+      SESSION_ID
+    ]!;
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ kind: 'orchestrator', estimatedCostUsd: 0.0123 });
+    expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the run alive when the decision is unparseable', async () => {
