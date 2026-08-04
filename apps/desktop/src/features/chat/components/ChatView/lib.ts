@@ -1,3 +1,5 @@
+import { formatShortDate, formatWeekday } from '../../../../shared/utils/format';
+
 export const dayKey = (iso: string): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) {
@@ -21,9 +23,7 @@ export const formatDayLabel = (iso: string): string => {
     return 'yesterday';
   }
   if (diffDays > 0 && diffDays < 7) {
-    return d.toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase();
+    return formatWeekday({ iso }).toLowerCase();
   }
-  return d
-    .toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-    .toLowerCase();
+  return formatShortDate({ iso }).toLowerCase();
 };

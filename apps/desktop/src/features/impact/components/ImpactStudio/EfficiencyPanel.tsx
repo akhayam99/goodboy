@@ -15,6 +15,7 @@ import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { Sparkline } from '../../../../shared/components/Sparkline';
+import { formatInteger } from '../../../../shared/utils/format';
 
 type Props = {
   readonly cacheEfficiency: QueryResult<ReadonlyArray<CacheEfficiencyEntry>>;
@@ -94,7 +95,7 @@ export const EfficiencyPanel = ({
         <StudioWidget label="context growth per turn" hint="latest 40 measured turns">
           <Sparkline
             values={context?.map((point) => point.contextTokens) ?? []}
-            formatMaximum={(maximum) => `${maximum.toLocaleString()} tokens`}
+            formatMaximum={(maximum) => `${formatInteger(maximum)} tokens`}
           />
         </StudioWidget>
         <StudioWidget label="turn distribution" hint={`${stats?.agents ?? 0} agents`}>

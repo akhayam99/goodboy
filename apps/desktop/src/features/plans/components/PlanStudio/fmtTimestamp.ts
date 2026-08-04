@@ -1,7 +1,3 @@
-export const fmtTimestamp = (ts: string | number): string =>
-  new Date(ts).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+import { formatCompactDateTime } from '../../../../shared/utils/format';
+
+export const fmtTimestamp = (ts: string | number): string => formatCompactDateTime({ iso: ts });

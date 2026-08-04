@@ -47,17 +47,21 @@ describe('formatDayLabel', () => {
     expect(formatDayLabel(new Date(2026, 4, 14, 9, 0, 0).toISOString())).toBe('yesterday');
   });
 
-  it('labels a day earlier this week with a lowercase weekday', () => {
+  it('labels a day earlier this week with a lowercase English weekday', () => {
     const iso = new Date(2026, 4, 12, 9, 0, 0).toISOString();
-    const expected = new Date(2026, 4, 12)
-      .toLocaleDateString(undefined, { weekday: 'long' })
-      .toLowerCase();
-    expect(formatDayLabel(iso)).toBe(expected);
+    expect(formatDayLabel(iso)).toBe('tuesday');
   });
 
-  it('labels an older day with a lowercase full date', () => {
+  it('labels an older day with a lowercase English short date', () => {
     const label = formatDayLabel(new Date(2026, 2, 1, 9, 0, 0).toISOString());
-    expect(label).toContain('2026');
-    expect(label).toBe(label.toLowerCase());
+    expect(label).toBe('mar 1, 2026');
+  });
+
+  it('pins the Intl locale to en-US for both branches', () => {
+    const spy = vi.spyOn(Intl, 'DateTimeFormat');
+    formatDayLabel(new Date(2026, 4, 12, 9, 0, 0).toISOString());
+    formatDayLabel(new Date(2026, 2, 1, 9, 0, 0).toISOString());
+    expect(spy.mock.calls.map((call) => call[0])).toEqual(['en-US', 'en-US']);
+    spy.mockRestore();
   });
 });

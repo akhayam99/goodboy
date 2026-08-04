@@ -7,6 +7,7 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { contextUsageTone } from '../../contextUsageTone';
 import { formatTokens } from '../../agent-row-format';
+import { formatInteger } from '../../../../shared/utils/format';
 import { AgentDuration } from './AgentDuration';
 import { contextUsageSummary } from './contextUsageSummary';
 
@@ -89,7 +90,7 @@ export const AgentMetrics = ({
                   'tabular-nums',
                   contextUsageTone({ pct: summary.pct, prefix: 'text' }),
                 )}
-                title={`context: ${summary.usedTokens.toLocaleString()} / ${summary.windowTokens.toLocaleString()} tokens`}
+                title={`context: ${formatInteger(summary.usedTokens)} / ${formatInteger(summary.windowTokens)} tokens`}
               >
                 ctx {pct}%
               </span>
@@ -121,7 +122,7 @@ export const AgentMetrics = ({
         >
           <span
             className="inline-flex items-baseline gap-0.5 tabular-nums"
-            title={`in: ${inputTokens.toLocaleString()} tokens (cumulative)`}
+            title={`in: ${formatInteger(inputTokens)} tokens (cumulative)`}
           >
             <span aria-hidden className="text-muted-foreground/70">
               ↓
@@ -130,7 +131,7 @@ export const AgentMetrics = ({
           </span>
           <span
             className="inline-flex items-baseline gap-0.5 tabular-nums"
-            title={`out: ${outputTokens.toLocaleString()} tokens (cumulative)`}
+            title={`out: ${formatInteger(outputTokens)} tokens (cumulative)`}
           >
             <span aria-hidden className="text-muted-foreground/70">
               ↑

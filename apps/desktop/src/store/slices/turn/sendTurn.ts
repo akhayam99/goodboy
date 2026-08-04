@@ -59,6 +59,7 @@ import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/s
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
+import { formatInteger } from '../../../shared/utils/format';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
@@ -713,7 +714,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       const ratio = estimated / ctxWindow;
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
-        const msg = `ctx estimate: ${estimated.toLocaleString()} / ${ctxWindow.toLocaleString()} (${pct}%). consider /compact`;
+        const msg = `ctx estimate: ${formatInteger(estimated)} / ${formatInteger(ctxWindow)} (${pct}%). consider /compact`;
         if (import.meta.env.DEV) {
           console.warn(msg);
         }

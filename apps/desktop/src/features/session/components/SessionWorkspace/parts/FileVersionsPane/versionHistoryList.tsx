@@ -2,7 +2,10 @@ import { RotateCcw, Trash2 } from 'lucide-react';
 import { EmptyState, cn } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
-import { formatRelativeAge } from '../../../../../../shared/utils/relativeDate';
+import {
+  formatAbsoluteDateTime,
+  formatRelativeAge,
+} from '../../../../../../shared/utils/relativeDate';
 
 type Props = {
   versions: ReadonlyArray<FileVersion>;
@@ -55,7 +58,7 @@ export const VersionHistoryList = ({
                 {formatRelativeAge({ fromIso: version.capturedAt })}
               </span>
               <span className="ml-auto text-2xs text-muted-foreground">
-                {new Date(version.capturedAt).toLocaleString()}
+                {formatAbsoluteDateTime({ iso: version.capturedAt })}
               </span>
             </div>
             <div className="flex items-center gap-2">
