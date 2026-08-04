@@ -21,6 +21,8 @@ export type SummarizeAgentOutputResult = {
   readonly error?: string;
 };
 
+export const summarizedStepOutputs = new Map<AgentId, string>();
+
 const inFlightSummaries = new Map<AgentId, Promise<SummarizeAgentOutputResult>>();
 
 const runSummarization = async ({
@@ -74,14 +76,22 @@ export const summarizeAgentOutput = ({
     return alreadyRunning;
   }
 
+  summarizedStepOutputs.set(agentId, output);
   const running = runSummarization({
     output,
     taskModel,
     ...(workingDir != null && { workingDir }),
     ...(expectedOutput != null && { expectedOutput }),
-  }).finally(() => {
-    inFlightSummaries.delete(agentId);
-  });
+  })
+    .then((result) => {
+      if (!result.degraded) {
+        summarizedStepOutputs.delete(agentId);
+      }
+      return result;
+    })
+    .finally(() => {
+      inFlightSummaries.delete(agentId);
+    });
   inFlightSummaries.set(agentId, running);
   return running;
 };

@@ -18,6 +18,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { retryStepSummary } from './retryStepSummary';
+import { summarizeAgentOutput, summarizedStepOutputs } from '../../summarizeAgentOutput';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -92,6 +93,7 @@ const buildHarness = (stateOverrides: Partial<State> = {}) => {
 describe('retryStepSummary', () => {
   beforeEach(() => {
     invokeAgentUpdateStatusSpy.mockResolvedValue({ ...agent });
+    summarizedStepOutputs.clear();
   });
 
   afterEach(() => {
@@ -150,6 +152,36 @@ describe('retryStepSummary', () => {
 
     expect(summarizeStepOutputSpy).toHaveBeenCalledWith(
       expect.objectContaining({ providerId: 'anthropic', model: 'claude-haiku-4-5' }),
+    );
+  });
+
+  it('re-summarizes the output the degraded attempt used, not the current transcript', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    summarizeStepOutputSpy.mockRejectedValueOnce(new Error('provider unavailable'));
+    const degraded = await summarizeAgentOutput({
+      agentId: AGENT_ID,
+      output: 'the text the first attempt received',
+      taskModel: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+    });
+    expect(degraded.degraded).toBe(true);
+
+    summarizeStepOutputSpy.mockResolvedValueOnce('retried summary');
+    const retry = buildHarness();
+    await retry({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(summarizeStepOutputSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({ output: 'the text the first attempt received' }),
+    );
+  });
+
+  it('falls back to the transcript when no earlier attempt is on record', async () => {
+    summarizeStepOutputSpy.mockResolvedValue('transcript summary');
+    const retry = buildHarness();
+
+    await retry({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(summarizeStepOutputSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ output: 'implemented the feature with tests' }),
     );
   });
 

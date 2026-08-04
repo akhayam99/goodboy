@@ -5,7 +5,11 @@ const { invokeSpy } = vi.hoisted(() => ({ invokeSpy: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
-import { SUMMARY_TIMEOUT_MS, summarizeAgentOutput } from './summarizeAgentOutput';
+import {
+  SUMMARY_TIMEOUT_MS,
+  summarizeAgentOutput,
+  summarizedStepOutputs,
+} from './summarizeAgentOutput';
 
 const AGENT_ONE = 'agent-1' as AgentId;
 const AGENT_TWO = 'agent-2' as AgentId;
@@ -31,6 +35,7 @@ describe('summarizeAgentOutput', () => {
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     invokeSpy.mockReset();
+    summarizedStepOutputs.clear();
   });
 
   afterEach(() => {
@@ -161,5 +166,23 @@ describe('summarizeAgentOutput', () => {
     expect(callsFor('summarize_session')).toHaveLength(2);
     await vi.advanceTimersByTimeAsync(SUMMARY_TIMEOUT_MS);
     await second;
+  });
+
+  it('keeps the summarized output for a retry only while the summary is degraded', async () => {
+    invokeSpy.mockResolvedValueOnce({ stdout: '', stderr: 'cli exploded', exitCode: 1 });
+    await summarizeAgentOutput({
+      agentId: AGENT_ONE,
+      output: 'degraded source',
+      taskModel: TASK_MODEL,
+    });
+    expect(summarizedStepOutputs.get(AGENT_ONE)).toBe('degraded source');
+
+    invokeSpy.mockResolvedValueOnce(successEnvelope('a good summary'));
+    await summarizeAgentOutput({
+      agentId: AGENT_ONE,
+      output: 'degraded source',
+      taskModel: TASK_MODEL,
+    });
+    expect(summarizedStepOutputs.has(AGENT_ONE)).toBe(false);
   });
 });
