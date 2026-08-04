@@ -1140,6 +1140,21 @@ describe('store contract', () => {
       ]);
     });
 
+    it('stamps the branch the session is on when an issue is linked', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      store.setState({ sessionBranches: { [SESSION_ID]: 'ak/fix-auth' } });
+
+      await store.getState().linkSessionExternalTask(SESSION_ID, LINEAR_TASK);
+
+      const linkedTask = { ...LINEAR_TASK, sessionId: SESSION_ID, branch: 'ak/fix-auth' };
+      expect(vi.mocked(db.upsertSessionExternalTask)).toHaveBeenCalledWith({
+        db: expect.anything(),
+        task: linkedTask,
+      });
+      expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([linkedTask]);
+    });
+
     it('attributes a linked task to the active composite mount', async () => {
       const store = await getStore();
       const db = await import('@goodboy/db');
@@ -1179,6 +1194,7 @@ describe('store contract', () => {
         ...LINEAR_TASK,
         sessionId: SESSION_ID,
         mountWorkspaceId: memberWorkspaceId,
+        branch: 'ak/member',
       };
       expect(vi.mocked(db.upsertSessionExternalTask)).toHaveBeenCalledWith({
         db: expect.anything(),

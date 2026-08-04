@@ -12,6 +12,7 @@ type Props = {
   appearance?: 'chip' | 'row';
   ariaLabel?: string;
   repoLabel?: string;
+  branchLabel?: string;
   navigation?: 'internal' | 'external';
   hasReferenceActions?: boolean;
 };
@@ -51,6 +52,7 @@ export const ExternalTaskChip = ({
   appearance = 'chip',
   ariaLabel,
   repoLabel,
+  branchLabel,
   navigation = 'external',
   hasReferenceActions = true,
 }: Props) => {
@@ -81,6 +83,13 @@ export const ExternalTaskChip = ({
     });
 
   if (appearance === 'row') {
+    const attribution =
+      repoLabel == null && branchLabel == null ? null : (
+        <span className="flex min-w-0 items-center gap-1">
+          {repoLabel != null ? <Chip tone="neutral" label={repoLabel} size="xs" /> : null}
+          {branchLabel != null ? <Chip tone="neutral" label={branchLabel} size="xs" /> : null}
+        </span>
+      );
     return (
       <LinkedWorkRow
         leading={{ kind: 'glyph', provider: task.provider }}
@@ -90,9 +99,7 @@ export const ExternalTaskChip = ({
         ariaLabel={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
         tooltip={tooltip}
         navigation={navigation}
-        {...(repoLabel != null
-          ? { attribution: <Chip tone="neutral" label={repoLabel} size="xs" /> }
-          : {})}
+        {...(attribution != null ? { attribution } : {})}
         actions={
           hasReferenceActions && task.url !== '' ? (
             <ExternalRefActions url={task.url} label={task.identifier} hostLabel={meta.label} />

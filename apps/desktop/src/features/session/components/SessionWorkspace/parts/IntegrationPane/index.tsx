@@ -6,7 +6,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { InlineConfirm, cn } from '@goodboy/ui';
+import { Eyebrow, InlineConfirm, cn } from '@goodboy/ui';
 import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
@@ -18,11 +18,14 @@ import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '../../../../../../shared/components/GhostActionButton';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
+import { FocusedPane } from '../../../../../../shared/components/PaneShell/FocusedPane';
 import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
+import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
+import { buildWorkItems } from '../../../../workItems';
 import { FocusedTaskBody } from './FocusedTaskBody';
-import { IntegrationTaskCard } from './IntegrationTaskCard';
 import { integrationTaskKey } from './integrationTaskKey';
 import { LinkTicketPopover } from './LinkTicketPopover';
+import { WorkItemList } from './WorkItemList';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -59,6 +62,8 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   );
   const remoteKind = useRemoteHostKind({ sessionId });
   const githubConnection = useGithubConnection({ workspaceId });
+  const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
+  const branchPrs = useAppStore((state) => state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
   const tasks = useMemo(
     () => externalTasks.filter((task) => task.provider === provider),
     [externalTasks, provider],
@@ -83,9 +88,8 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       providerLabel={meta.label}
     />
   );
-  const autoFocusedTask = connection.isConnected && tasks.length === 1 ? (tasks[0] ?? null) : null;
-  const focusedTask =
-    tasks.find((task) => integrationTaskKey({ task }) === focusedTaskKey) ?? autoFocusedTask;
+  const focusedTask = tasks.find((task) => integrationTaskKey({ task }) === focusedTaskKey) ?? null;
+  const workItems = buildWorkItems({ tasks, currentBranch: sessionBranch, branchPrs });
 
   const handleUnlink = async ({ task }: UnlinkParams) => {
     const mountWorkspaceId = task.mountWorkspaceId;
@@ -108,57 +112,58 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
 
   if (focusedTask != null) {
     return (
-      <div className="flex h-full min-h-0 min-w-0 flex-col bg-background">
-        {unlinkError != null ? (
-          <p className={cn('shrink-0 pt-3 text-xs text-danger', PANE_RHYTHM.inset)}>
-            {unlinkError}
-          </p>
-        ) : null}
+      <FocusedPane
+        lens={meta.label}
+        count={tasks.length}
+        actions={
+          isUnlinkArmed ? (
+            <InlineConfirm
+              role="danger"
+              className="max-w-sm"
+              icon={<Unlink size={12} aria-hidden />}
+              title={`Unlink ${focusedTask.identifier}?`}
+              description={`Removes the ${meta.label} issue from this session without changing the issue.`}
+              confirmLabel={`Unlink ${focusedTask.identifier}`}
+              autoDisarmMs={4000}
+              isBusy={isUnlinking}
+              onConfirm={() => handleUnlink({ task: focusedTask })}
+              onCancel={() => setIsUnlinkArmed(false)}
+            />
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <GhostActionButton
+                icon={ArrowLeft}
+                label="All issues"
+                onClick={() => setFocusedTaskKey(null)}
+              />
+              <GhostActionButton
+                icon={Unlink}
+                tone="danger"
+                label="Unlink"
+                ariaLabel={`Unlink ${focusedTask.identifier}`}
+                disabled={isUnlinking}
+                onClick={() => setIsUnlinkArmed(true)}
+              />
+              {linkAction}
+            </div>
+          )
+        }
+      >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {unlinkError != null ? (
+            <p className={cn('shrink-0 pt-3 text-xs text-danger', PANE_RHYTHM.inset)}>
+              {unlinkError}
+            </p>
+          ) : null}
           <FocusedTaskBody
             provider={provider}
             sessionId={sessionId}
             workspaceId={workspaceId}
             task={focusedTask}
             isConnected={connection.isConnected}
-            headerActions={
-              isUnlinkArmed ? (
-                <InlineConfirm
-                  role="danger"
-                  className="max-w-sm"
-                  icon={<Unlink size={12} aria-hidden />}
-                  title={`Unlink ${focusedTask.identifier}?`}
-                  description={`Removes the ${meta.label} issue from this session without changing the issue.`}
-                  confirmLabel={`Unlink ${focusedTask.identifier}`}
-                  autoDisarmMs={4000}
-                  isBusy={isUnlinking}
-                  onConfirm={() => handleUnlink({ task: focusedTask })}
-                  onCancel={() => setIsUnlinkArmed(false)}
-                />
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  {tasks.length > 1 ? (
-                    <GhostActionButton
-                      icon={ArrowLeft}
-                      label="All issues"
-                      onClick={() => setFocusedTaskKey(null)}
-                    />
-                  ) : null}
-                  <GhostActionButton
-                    icon={Unlink}
-                    tone="danger"
-                    label="Unlink"
-                    ariaLabel={`Unlink ${focusedTask.identifier}`}
-                    disabled={isUnlinking}
-                    onClick={() => setIsUnlinkArmed(true)}
-                  />
-                  {linkAction}
-                </div>
-              )
-            }
           />
         </div>
-      </div>
+      </FocusedPane>
     );
   }
 
@@ -191,18 +196,24 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
           action={linkAction}
         />
       ) : null}
-      {hasTasks ? (
-        <ul className="flex flex-col gap-2">
-          {tasks.map((task) => (
-            <li key={integrationTaskKey({ task })}>
-              <IntegrationTaskCard
-                task={task}
-                providerLabel={meta.label}
-                onSelect={() => setFocusedTaskKey(integrationTaskKey({ task }))}
-              />
-            </li>
-          ))}
-        </ul>
+      <WorkItemList
+        items={workItems.current}
+        providerLabel={meta.label}
+        onSelect={setFocusedTaskKey}
+      />
+      {workItems.history.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <Eyebrow
+            label={`Completed work (${workItems.history.length})`}
+            muted
+            className="px-0.5 font-medium"
+          />
+          <WorkItemList
+            items={workItems.history}
+            providerLabel={meta.label}
+            onSelect={setFocusedTaskKey}
+          />
+        </div>
       ) : null}
       {unlinkError != null ? <p className="text-xs text-danger">{unlinkError}</p> : null}
     </PaneShell>

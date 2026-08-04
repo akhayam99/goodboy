@@ -224,6 +224,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
         ...(externalTask.mountWorkspaceId != null
           ? { mountWorkspaceId: externalTask.mountWorkspaceId }
           : {}),
+        ...(worktree.branchName !== '' ? { branch: worktree.branchName } : {}),
         provider: externalTask.provider,
         externalId: externalTask.externalId,
         identifier: externalTask.identifier,

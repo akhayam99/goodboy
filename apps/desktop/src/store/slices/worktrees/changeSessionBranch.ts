@@ -6,6 +6,7 @@ import {
   invalidateLocalBranchesCache,
 } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { announceSessionBranchChange } from './announceSessionBranchChange';
 import { getSessionRepo } from './getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
@@ -66,9 +67,14 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
       changedWorktree.parallelIndex,
       target,
     );
+    const previousBranch = changedWorktree.branch;
     set((state) => {
       const nextGithub = { ...state.sessionGithub };
+      const nextGithubPrs = { ...state.sessionGithubPrs };
+      const nextSelectedPrNumber = { ...state.sessionSelectedPrNumber };
       delete nextGithub[sessionId];
+      delete nextGithubPrs[sessionId];
+      delete nextSelectedPrNumber[sessionId];
       const mounts = state.sessionMounts[sessionId] ?? [];
       const shouldUpdateSessionBranch =
         workspace.kind !== 'composite' || mounts[0]?.worktreePath === worktreePath;
@@ -87,7 +93,15 @@ export const changeSessionBranch = (set: SetFn, get: GetFn) => {
           : state.sessionBranches,
         sessionMounts,
         sessionGithub: nextGithub,
+        sessionGithubPrs: nextGithubPrs,
+        sessionSelectedPrNumber: nextSelectedPrNumber,
       };
+    });
+    await announceSessionBranchChange({
+      get,
+      sessionId,
+      fromBranch: previousBranch,
+      toBranch: target,
     });
   };
 };
