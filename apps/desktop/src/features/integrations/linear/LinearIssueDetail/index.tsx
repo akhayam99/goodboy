@@ -1,13 +1,12 @@
 import { useState, type ReactNode } from 'react';
-import { Markdown } from '@goodboy/ui';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import {
-  DetailSection,
   HeaderBand,
   StudioDetailLayout,
   StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
+import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { linearIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
@@ -81,13 +80,7 @@ export const LinearIssueDetail = ({
       properties={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
     >
       {section === 'overview' ? (
-        <DetailSection label="description" variant="frameless">
-          {issue.description != null && issue.description !== '' ? (
-            <Markdown text={issue.description} className="text-sm leading-relaxed" />
-          ) : (
-            <p className="text-sm italic text-muted-foreground/60">No description.</p>
-          )}
-        </DetailSection>
+        <DescriptionSection text={issue.description ?? ''} />
       ) : (
         <LinearIssueComments comments={comments} isLoading={isLoading} error={error} />
       )}

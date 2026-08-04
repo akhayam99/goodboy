@@ -19,7 +19,13 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task }: Props) => {
   });
 
   if (issue != null) {
-    return <GithubIssueDetail issue={issue} fit="fill" />;
+    return (
+      <GithubIssueDetail
+        issue={issue}
+        fit="fill"
+        {...(rootPath != null && { editContext: { workspaceId, rootPath } })}
+      />
+    );
   }
 
   return (

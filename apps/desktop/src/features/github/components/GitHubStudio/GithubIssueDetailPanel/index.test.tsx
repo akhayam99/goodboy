@@ -57,6 +57,7 @@ describe('GithubIssueDetailPanel', () => {
         issue={ISSUE}
         sessionId={null}
         workspaceId={'workspace-1' as WorkspaceId}
+        rootPath="/repo"
         onClose={vi.fn()}
       />,
     );
@@ -90,6 +91,7 @@ describe('GithubIssueDetailPanel', () => {
         issue={ISSUE}
         sessionId={null}
         workspaceId={'workspace-1' as WorkspaceId}
+        rootPath="/repo"
         onClose={vi.fn()}
       />,
     );

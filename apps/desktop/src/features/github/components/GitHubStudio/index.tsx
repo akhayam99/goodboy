@@ -231,6 +231,7 @@ export const GitHubStudio = ({
                 issue={focusedIssue}
                 sessionId={focusedIssueRow?.sessionId ?? null}
                 workspaceId={workspaceId}
+                rootPath={rootPath}
                 onClose={requestClose}
               />
             }

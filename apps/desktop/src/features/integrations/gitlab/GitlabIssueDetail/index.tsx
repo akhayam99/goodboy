@@ -1,10 +1,6 @@
 import type { ReactNode } from 'react';
-import { Markdown } from '@goodboy/ui';
-import {
-  DetailSection,
-  HeaderBand,
-  StudioDetailLayout,
-} from '../../../../shared/components/StudioDetail';
+import { HeaderBand, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { gitlabIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
@@ -43,13 +39,7 @@ export const GitlabIssueDetail = ({ issue, headerActions, fit = 'fill' }: Props)
       }
       properties={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
     >
-      <DetailSection label="description" variant="frameless">
-        {issue.description != null && issue.description !== '' ? (
-          <Markdown text={issue.description} className="text-sm leading-relaxed" />
-        ) : (
-          <p className="text-sm italic text-muted-foreground/60">No description.</p>
-        )}
-      </DetailSection>
+      <DescriptionSection text={issue.description ?? ''} />
     </StudioDetailLayout>
   );
 };

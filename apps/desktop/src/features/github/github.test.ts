@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({
   detectRepoSlug: vi.fn(),
   ghRunJson: vi.fn(),
+  updateIssueBody: vi.fn(),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
@@ -11,14 +12,16 @@ vi.mock('@goodboy/core', async (importOriginal) => {
     ...actual,
     detectRepoSlug: h.detectRepoSlug,
     ghRunJson: h.ghRunJson,
+    updateIssueBody: h.updateIssueBody,
   };
 });
 
-import { ghIssueByNumber } from './github';
+import { ghIssueByNumber, ghUpdateIssueBody } from './github';
 
 afterEach(() => {
   h.detectRepoSlug.mockReset();
   h.ghRunJson.mockReset();
+  h.updateIssueBody.mockReset();
 });
 
 describe('ghIssueByNumber', () => {
@@ -67,5 +70,37 @@ describe('ghIssueByNumber', () => {
       'could not detect a GitHub repository for this workspace',
     );
     expect(h.ghRunJson).not.toHaveBeenCalled();
+  });
+});
+
+describe('ghUpdateIssueBody', () => {
+  it('writes the new body to the detected repo and returns the stored text', async () => {
+    h.detectRepoSlug.mockResolvedValueOnce('acme/web');
+    h.updateIssueBody.mockResolvedValueOnce('New body');
+
+    const body = await ghUpdateIssueBody({
+      cwd: '/repo',
+      issueNumber: 42,
+      body: 'New body',
+      workspaceId: 'workspace-1',
+    });
+
+    expect(body).toBe('New body');
+    expect(h.updateIssueBody).toHaveBeenCalledWith({
+      runner: expect.anything(),
+      repoSlug: 'acme/web',
+      issueNumber: 42,
+      body: 'New body',
+      opts: { cwd: '/repo', workspaceId: 'workspace-1' },
+    });
+  });
+
+  it('throws without writing when no github repository can be detected', async () => {
+    h.detectRepoSlug.mockResolvedValueOnce(null);
+
+    await expect(ghUpdateIssueBody({ cwd: '/repo', issueNumber: 42, body: 'x' })).rejects.toThrow(
+      'could not detect a GitHub repository for this workspace',
+    );
+    expect(h.updateIssueBody).not.toHaveBeenCalled();
   });
 });
