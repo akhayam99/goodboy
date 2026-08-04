@@ -6,6 +6,7 @@ import { InspectorHeader } from './InspectorSplit/InspectorHeader';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '../../../../../shared/components/CopyButton';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 
 type HistoryEntryProps = {
   readonly entry: ContextSlotHistoryEntry;
@@ -107,7 +108,7 @@ export const SlotHistoryPanel = ({
         closeLabel="close history panel"
         onClose={onClose}
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
         {entries.length === 0 ? (
           <EmptyState
             icon={CONCEPT_ICONS.sessionSummary}

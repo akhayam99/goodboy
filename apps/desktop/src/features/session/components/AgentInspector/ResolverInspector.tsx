@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Divider, ScrollFade } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import type { Agent, PendingResolution, PrComment, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
@@ -191,7 +192,7 @@ export const ResolverInspector = ({
           />
         }
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
         <div className="flex flex-col gap-4">
           <ResolverStateLine
             status={status}

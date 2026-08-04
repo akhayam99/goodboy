@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Kanban, LayoutDashboard, Unplug } from 'lucide-react';
 import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
+import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
 import { classifyAgent, isStandaloneAgent } from '../../../../agent-kind';
 import { isAgentFinished } from '../../../../agent-lifecycle';
 import { isPrReviewSession } from '../../../../../../store/slices/session-view';
@@ -270,14 +271,15 @@ export const LensColumn = ({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ScrollFade className="min-h-0 flex-1">
-        <nav className="flex flex-col gap-4 px-2 py-3">
+        <nav className={cn('flex flex-col gap-4', PANE_RHYTHM.navRail.body)}>
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={onSelectOverview}
               aria-current={activeLens === null ? 'page' : undefined}
               className={cn(
-                'group relative flex flex-1 items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+                'group relative flex flex-1 items-center gap-2.5 rounded-md text-left transition-colors',
+                PANE_RHYTHM.navRail.row,
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                 activeLens === null
                   ? 'bg-muted text-foreground'
@@ -318,7 +320,8 @@ export const LensColumn = ({
             <div key={group.label} className="flex flex-col gap-0.5">
               <span
                 className={cn(
-                  'px-2 pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
+                  'pb-1 text-3xs font-medium uppercase tracking-[0.12em] transition-colors',
+                  PANE_RHYTHM.navRail.inset,
                   groupWantsAttention({ rows: group.rows })
                     ? 'text-foreground/80'
                     : 'text-muted-foreground/60',
@@ -357,7 +360,8 @@ export const LensColumn = ({
                       aria-label={row.glyph != null ? glyphRowLabel : undefined}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors',
+                        'group relative flex items-center gap-2.5 rounded-md text-left transition-colors',
+                        PANE_RHYTHM.navRail.row,
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
                         active
                           ? 'bg-muted text-foreground'

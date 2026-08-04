@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Divider } from '@goodboy/ui';
+import { Divider, cn } from '@goodboy/ui';
 import { X } from 'lucide-react';
+import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
 
 type Props = {
   readonly title: string;
@@ -11,7 +12,9 @@ type Props = {
 
 export const InspectorHeader = ({ title, closeLabel, actions, onClose }: Props) => (
   <>
-    <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2.5">
+    <div
+      className={cn('flex shrink-0 items-center justify-between gap-2', PANE_RHYTHM.rail.header)}
+    >
       <span className="truncate text-xs font-medium text-foreground" title={title}>
         {title}
       </span>

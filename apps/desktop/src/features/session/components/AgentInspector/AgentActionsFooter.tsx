@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
+import { InlineConfirm, cn } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 
 type Props = {
   readonly agent: Agent;
@@ -36,7 +37,7 @@ export const AgentActionsFooter = ({
   };
 
   return (
-    <div className="flex shrink-0 flex-col gap-2 px-3 py-2.5">
+    <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.rail.dock)}>
       <div className="flex flex-wrap items-center gap-1.5">
         {agent.doneAt == null ? (
           <GhostActionButton
