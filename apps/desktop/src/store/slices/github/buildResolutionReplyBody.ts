@@ -1,26 +1,34 @@
+type Closure = { commitSha?: string; reason?: string; reply?: string };
+
+const VERDICT_FIXED = '**Valid.**';
+const VERDICT_CLOSED = '**Not applying.**';
+
+const commitLine = (sha: string, prUrl: string | null): string => {
+  const short = sha.slice(0, 7);
+  const commitUrl = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null;
+  return commitUrl && commitUrl !== prUrl
+    ? `**Resolution.** Fixed in [\`${short}\`](${commitUrl}).`
+    : `**Resolution.** Fixed in \`${short}\`.`;
+};
+
 export const buildResolutionReplyBody = (
-  closure: { commitSha?: string; reason?: string; reply?: string } | undefined,
+  closure: Closure | undefined,
   prUrl: string | null,
 ): string | null => {
   if (!closure) {
     return null;
   }
-  const reply = closure.reply?.trim();
-  const parts = reply && reply.length > 0 ? [reply] : [];
-  const sha = closure.commitSha?.trim();
-  if (sha && sha.length > 0) {
-    const short = sha.slice(0, 7);
-    const commitUrl = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null;
-    parts.push(
-      commitUrl && commitUrl !== prUrl
-        ? `Resolved in [\`${short}\`](${commitUrl}).`
-        : `Resolved in \`${short}\`.`,
-    );
-    return parts.join('\n\n');
+  const reply = closure.reply?.trim() ?? '';
+  const sha = closure.commitSha?.trim() ?? '';
+  const reason = closure.reason?.trim() ?? '';
+
+  if (sha.length > 0) {
+    const verdict = reply.length > 0 ? `${VERDICT_FIXED} ${reply}` : VERDICT_FIXED;
+    return [verdict, commitLine(sha, prUrl)].join('\n\n');
   }
-  const reason = closure.reason?.trim();
-  if (reason && reason.length > 0) {
-    parts.push(`Closing: ${reason}`);
+  if (reason.length > 0) {
+    const verdict = reply.length > 0 ? `${VERDICT_CLOSED} ${reply}` : VERDICT_CLOSED;
+    return [verdict, `**Resolution.** Closed without a change: ${reason}`].join('\n\n');
   }
-  return parts.length > 0 ? parts.join('\n\n') : null;
+  return reply.length > 0 ? reply : null;
 };
