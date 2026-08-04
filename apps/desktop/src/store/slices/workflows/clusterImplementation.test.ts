@@ -8,6 +8,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ROLE_DEFAULTS } from '@goodboy/core';
 import type { GetFn, SetFn } from './types';
 
 const hoisted = vi.hoisted(() => {
@@ -209,7 +210,12 @@ const childAgent = (over: Omit<Partial<Agent>, 'id'> & { id: string; ordinal: nu
   }) as Agent;
 
 const sessionRow = (autoRun: boolean) =>
-  ({ id: SID, autoRun, workflowRuns: [] }) as unknown as Record<string, unknown>;
+  ({
+    id: SID,
+    workspaceId: 'w1',
+    autoRun,
+    workflowRuns: [{ id: 'wf-1', workflowId: 'flow-1' }],
+  }) as unknown as Record<string, unknown>;
 
 function makeStore(initial: Record<string, unknown>) {
   const sendTurn = vi.fn(async () => undefined);
@@ -225,6 +231,11 @@ function makeStore(initial: Record<string, unknown>) {
     transcripts: {},
     agentTurnState: {},
     agentKindOverride: {},
+    agentModelOverride: {},
+    agentProviderOverride: {},
+    agentEffortOverride: {},
+    phaseTemplates: {},
+    workspaceOverrides: {},
     selectedAgentId: PARENT,
     sendTurn,
     emitNotification,
@@ -307,6 +318,60 @@ describe('fanOutClusters', () => {
     for (const args of hoisted.insertArgs) {
       expect(args.workflowRunId).toBeUndefined();
     }
+  });
+
+  it('routes every child on the resolved routing of the container step', async () => {
+    const c = container({
+      providerOverride: 'anthropic',
+      modelOverride: 'opus-5',
+      effort: 'high',
+    });
+    const { get, set } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+
+    for (const args of hoisted.insertArgs) {
+      expect(args.providerOverride).toBe('anthropic');
+      expect(args.modelOverride).toBe('opus-5');
+      expect(args.effort).toBe('high');
+    }
+  });
+
+  it('lets the step override the container row so the badge matches the spawn', async () => {
+    const c = container({
+      stepId: 'step-1' as Agent['stepId'],
+      workflowRunId: 'wf-1' as WorkflowRunId,
+      modelOverride: 'sonnet-5',
+      effort: 'medium',
+    });
+    const { get, set, state } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      phaseTemplates: {
+        w1: [
+          {
+            id: 'flow-1',
+            steps: [{ id: 'step-1', role: 'implementer', modelOverride: 'opus-5', effort: 'max' }],
+          },
+        ],
+      },
+    });
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe('opus-5');
+    expect(hoisted.insertArgs[0]?.effort).toBe('max');
+    const models = state.agentModelOverride as Record<string, string>;
+    expect(models['child-1']).toBe('opus-5');
+  });
+
+  it('falls back to the implementer role routing when the container pins nothing', async () => {
+    const c = container();
+    const { get, set } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe(ROLE_DEFAULTS.implementer.model);
+    expect(hoisted.insertArgs[0]?.effort).toBe(ROLE_DEFAULTS.implementer.effort);
   });
 
   it('kicks off only the first child and seeds its turn state to idle', async () => {

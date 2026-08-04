@@ -15,6 +15,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeKickoff, composeUnitBoundary } from '../../kickoff';
+import { childRoutingFromParent } from './childRoutingFromParent';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -94,6 +95,7 @@ export const fanOutClusters = async (
 ): Promise<void> => {
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
 
+  const routing = childRoutingFromParent({ get, parent: container });
   const baseOrdinal =
     (get().sessionPhaseRuns[sessionId] ?? []).reduce((m, r) => Math.max(m, r.ordinal), -1) + 1;
   const childIds: AgentId[] = [];
@@ -106,6 +108,9 @@ export const fanOutClusters = async (
       name: clusters[i]!.title,
       status: 'pending',
       kind: 'implementer',
+      providerOverride: routing.provider,
+      modelOverride: routing.model,
+      effort: routing.effort,
     });
     childIds.push(inserted.id);
   }
@@ -115,16 +120,25 @@ export const fanOutClusters = async (
     const transcripts = { ...s.transcripts };
     const agentTurnState = { ...s.agentTurnState };
     const agentKindOverride = { ...s.agentKindOverride };
+    const agentModelOverride = { ...s.agentModelOverride };
+    const agentProviderOverride = { ...s.agentProviderOverride };
+    const agentEffortOverride = { ...s.agentEffortOverride };
     for (const id of childIds) {
       transcripts[id] = transcripts[id] ?? [];
       agentTurnState[id] = { kind: 'idle', lastActivityAt: nowIso() };
       agentKindOverride[id] = 'implementer';
+      agentModelOverride[id] = routing.model;
+      agentProviderOverride[id] = routing.provider;
+      agentEffortOverride[id] = routing.effort;
     }
     return {
       sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
       transcripts,
       agentTurnState,
       agentKindOverride,
+      agentModelOverride,
+      agentProviderOverride,
+      agentEffortOverride,
     };
   });
 
