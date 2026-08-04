@@ -5,10 +5,9 @@ import type { WorkspaceId } from '@goodboy/types';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
-import { IntegrationConnectPanel } from '../../components/IntegrationConnectPanel';
+import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { resolveIntegrationConnection } from '../../connection';
-import { SentryFormBody } from '../SentryFormBody';
 import { IssueInbox } from './IssueInbox';
 import { IssueDetailPanel } from './IssueDetailPanel';
 import { useSentryIssues } from './useSentryIssues';
@@ -107,12 +106,12 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
           />
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center p-5">
-            <IntegrationConnectPanel
+            <ConnectIntegrationEmptyState
               provider="sentry"
-              description="Connect Sentry to review errors from this workspace"
-            >
-              <SentryFormBody workspaceId={workspaceId} shouldAutoFocus />
-            </IntegrationConnectPanel>
+              workspaceId={workspaceId}
+              shouldAutoFocus
+              wrapped={false}
+            />
           </div>
         )
       }
