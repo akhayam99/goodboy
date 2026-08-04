@@ -214,6 +214,10 @@ export const hydrate = (set: SetFn, get: GetFn) => {
 
         void drainAuditRetryQueue(set);
 
+        void get()
+          .reconcileOrphanWorktrees()
+          .catch(() => {});
+
         void get().refreshGithubStatus();
       } catch (err) {
         set({

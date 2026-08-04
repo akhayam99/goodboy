@@ -3,6 +3,7 @@ import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
 import { Button, Divider, FieldRow, ScrollFade, SectionHeader, Switch, cn } from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
+import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
@@ -205,6 +206,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           ) : null}
 
           <Divider />
+
+          <div ref={anchor('orphans')}>
+            <OrphanWorktreesSection workspaceId={workspaceId} />
+          </div>
 
           <section id="danger" ref={anchor('danger')} className="flex flex-col gap-4">
             <SectionHeader label="Danger zone" hint="Destructive workspace controls." />

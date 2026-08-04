@@ -391,12 +391,171 @@ pub fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), WorktreeErro
     Ok(())
 }
 
+const REMOVE_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(300);
+
+fn is_directory_not_empty(error: &WorktreeError) -> bool {
+    let WorktreeError::Git { message } = error else {
+        return false;
+    };
+    let lowered = message.to_ascii_lowercase();
+    lowered.contains("directory not empty") || lowered.contains("failed to delete")
+}
+
+pub(crate) fn remove_worktree_with(
+    repo_path: &Path,
+    worktree_path: &str,
+    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+) -> Result<(), WorktreeError> {
+    let remove_args = ["worktree", "remove", "--force", worktree_path];
+    let first = run_git(repo_path, &remove_args);
+    if first.is_ok() {
+        return Ok(());
+    }
+    let error = first.unwrap_err();
+    if !is_directory_not_empty(&error) {
+        return Err(error);
+    }
+    std::thread::sleep(REMOVE_RETRY_DELAY);
+    if run_git(repo_path, &remove_args).is_ok() {
+        return Ok(());
+    }
+    let target = Path::new(worktree_path);
+    if target.exists() {
+        let _ = std::fs::remove_dir_all(target);
+    }
+    let _ = run_git(repo_path, &["worktree", "prune"]);
+    if target.exists() {
+        return Err(WorktreeError::Git {
+            message: format!(
+                "worktree folder is still on disk after cleanup: {worktree_path}. close anything running inside it and remove it by hand"
+            ),
+        });
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn worktree_remove(repo_path: String, worktree_path: String) -> Result<(), WorktreeError> {
-    git(
-        Path::new(&repo_path),
-        &["worktree", "remove", "--force", &worktree_path],
-    )?;
+    remove_worktree_with(Path::new(&repo_path), &worktree_path, &mut |cwd, args| {
+        git(cwd, args)
+    })
+}
+
+const WORKTREE_PARENT: [&str; 2] = [".goodboy", "worktrees"];
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct OrphanWorktree {
+    pub path: String,
+    pub name: String,
+    #[serde(rename = "sizeBytes")]
+    pub size_bytes: u64,
+}
+
+fn worktrees_parent(repo_path: &Path) -> PathBuf {
+    repo_path.join(WORKTREE_PARENT[0]).join(WORKTREE_PARENT[1])
+}
+
+fn canonical_key(path: &Path) -> String {
+    std::fs::canonicalize(path)
+        .unwrap_or_else(|_| path.to_path_buf())
+        .to_string_lossy()
+        .into_owned()
+}
+
+fn directory_size(path: &Path) -> u64 {
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return 0;
+    };
+    let mut total = 0u64;
+    for entry in entries.flatten() {
+        let Ok(meta) = entry.metadata() else {
+            continue;
+        };
+        if meta.is_symlink() {
+            continue;
+        }
+        if meta.is_dir() {
+            total = total.saturating_add(directory_size(&entry.path()));
+            continue;
+        }
+        total = total.saturating_add(meta.len());
+    }
+    total
+}
+
+pub(crate) fn collect_orphans(
+    repo_path: &Path,
+    registered: &[String],
+    known_paths: &[String],
+) -> Vec<OrphanWorktree> {
+    let parent = worktrees_parent(repo_path);
+    let Ok(entries) = std::fs::read_dir(&parent) else {
+        return Vec::new();
+    };
+    let claimed: std::collections::HashSet<String> = registered
+        .iter()
+        .chain(known_paths.iter())
+        .map(|p| canonical_key(Path::new(p)))
+        .collect();
+    let mut orphans: Vec<OrphanWorktree> = entries
+        .flatten()
+        .filter(|entry| entry.path().is_dir())
+        .filter(|entry| !claimed.contains(&canonical_key(&entry.path())))
+        .map(|entry| OrphanWorktree {
+            path: entry.path().to_string_lossy().into_owned(),
+            name: entry.file_name().to_string_lossy().into_owned(),
+            size_bytes: directory_size(&entry.path()),
+        })
+        .collect();
+    orphans.sort_by(|a, b| a.path.cmp(&b.path));
+    orphans
+}
+
+#[tauri::command]
+pub async fn worktree_orphans(
+    repo_path: String,
+    known_paths: Vec<String>,
+) -> Result<Vec<OrphanWorktree>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let repo = Path::new(&repo_path);
+        if !worktrees_parent(repo).is_dir() {
+            return Ok(Vec::new());
+        }
+        let registered: Vec<String> = git(repo, &["worktree", "list", "--porcelain"])
+            .map(|stdout| {
+                parse_porcelain(&stdout)
+                    .into_iter()
+                    .map(|entry| entry.path)
+                    .collect()
+            })
+            .unwrap_or_default();
+        Ok(collect_orphans(repo, &registered, &known_paths))
+    })
+    .await
+    .map_err(|e| WorktreeError::Git {
+        message: e.to_string(),
+    })?
+}
+
+#[tauri::command]
+pub fn worktree_orphan_remove(repo_path: String, path: String) -> Result<(), WorktreeError> {
+    let repo = Path::new(&repo_path);
+    let parent = worktrees_parent(repo);
+    let target = Path::new(&path);
+    let parent_key = canonical_key(&parent);
+    let is_contained = target
+        .parent()
+        .map(|p| canonical_key(p) == parent_key)
+        .unwrap_or(false);
+    if !is_contained {
+        return Err(WorktreeError::Git {
+            message: format!("refusing to remove a path outside {parent_key}: {path}"),
+        });
+    }
+    if target.exists() {
+        std::fs::remove_dir_all(target)?;
+    }
+    let _ = git(repo, &["worktree", "prune"]);
     Ok(())
 }
 
@@ -1564,5 +1723,143 @@ mod rewrite_tests {
         assert_eq!(log_subjects(&root), vec!["third", "second", "first"]);
         assert!(!root.join(".git").join("rebase-merge").exists());
         assert!(!root.join(".git").join("rebase-apply").exists());
+    }
+}
+
+#[cfg(test)]
+mod teardown_tests {
+    use super::{collect_orphans, remove_worktree_with, worktree_orphan_remove, WorktreeError};
+    use std::path::{Path, PathBuf};
+
+    fn temp_root(name: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "goodboy-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    fn not_empty() -> WorktreeError {
+        WorktreeError::Git {
+            message:
+                "git worktree remove --force /x failed: fatal: could not remove: Directory not empty"
+                    .to_string(),
+        }
+    }
+
+    #[test]
+    fn a_directory_not_empty_failure_is_retried_once_before_giving_up() {
+        let root = temp_root("remove-retry");
+        let target = root.join("wt");
+        std::fs::create_dir_all(&target).unwrap();
+        let mut calls: Vec<String> = Vec::new();
+        let mut attempts = 0;
+
+        let outcome = remove_worktree_with(&root, target.to_str().unwrap(), &mut |_, args| {
+            calls.push(args.join(" "));
+            attempts += 1;
+            if attempts == 1 {
+                return Err(not_empty());
+            }
+            std::fs::remove_dir_all(&target).unwrap();
+            Ok(String::new())
+        });
+
+        assert!(outcome.is_ok(), "{outcome:?}");
+        assert_eq!(calls.len(), 2, "the second attempt never ran: {calls:?}");
+    }
+
+    #[test]
+    fn a_worktree_git_cannot_delete_is_removed_from_disk_and_pruned() {
+        let root = temp_root("remove-fallback");
+        let target = root.join("wt");
+        std::fs::create_dir_all(target.join("apps").join("web")).unwrap();
+        std::fs::write(target.join("apps").join("web").join("page.tsx"), "x").unwrap();
+        let mut calls: Vec<String> = Vec::new();
+
+        let outcome = remove_worktree_with(&root, target.to_str().unwrap(), &mut |_, args| {
+            calls.push(args.join(" "));
+            if args.first() == Some(&"worktree") && args.get(1) == Some(&"remove") {
+                return Err(not_empty());
+            }
+            Ok(String::new())
+        });
+
+        assert!(outcome.is_ok(), "{outcome:?}");
+        assert!(!target.exists(), "the folder is still on disk");
+        assert!(
+            calls.contains(&"worktree prune".to_string()),
+            "git worktree prune never ran: {calls:?}"
+        );
+    }
+
+    #[test]
+    fn a_failure_that_is_not_about_a_dirty_directory_is_reported_as_is() {
+        let root = temp_root("remove-other-error");
+        let target = root.join("wt");
+        std::fs::create_dir_all(&target).unwrap();
+        let mut calls = 0;
+
+        let outcome = remove_worktree_with(&root, target.to_str().unwrap(), &mut |_, _| {
+            calls += 1;
+            Err(WorktreeError::Git {
+                message: "fatal: 'wt' is not a working tree".to_string(),
+            })
+        });
+
+        assert!(outcome.is_err());
+        assert_eq!(calls, 1, "a hopeless failure must not be retried");
+        assert!(target.exists(), "the folder must be left untouched");
+    }
+
+    fn make_worktree_dir(parent: &Path, name: &str, bytes: usize) -> PathBuf {
+        let dir = parent.join(name);
+        std::fs::create_dir_all(dir.join("src")).unwrap();
+        std::fs::write(dir.join("src").join("main.ts"), "x".repeat(bytes)).unwrap();
+        dir
+    }
+
+    #[test]
+    fn a_folder_git_forgot_and_no_session_claims_is_reported_with_its_size() {
+        let root = temp_root("orphan-scan");
+        let parent = root.join(".goodboy").join("worktrees");
+        std::fs::create_dir_all(&parent).unwrap();
+        let registered = make_worktree_dir(&parent, "gb-live", 10);
+        let claimed = make_worktree_dir(&parent, "gb-known", 10);
+        let orphan = make_worktree_dir(&parent, "gb-ghost", 4096);
+
+        let found = collect_orphans(
+            &root,
+            &[registered.to_string_lossy().into_owned()],
+            &[claimed.to_string_lossy().into_owned()],
+        );
+
+        assert_eq!(
+            found.iter().map(|o| o.name.as_str()).collect::<Vec<_>>(),
+            vec!["gb-ghost"]
+        );
+        assert_eq!(found[0].size_bytes, 4096);
+        assert!(orphan.exists());
+    }
+
+    #[test]
+    fn orphan_removal_refuses_a_path_outside_the_worktrees_folder() {
+        let root = temp_root("orphan-confine");
+        std::fs::create_dir_all(root.join(".goodboy").join("worktrees")).unwrap();
+        let outside = root.join("precious");
+        std::fs::create_dir_all(&outside).unwrap();
+
+        let outcome = worktree_orphan_remove(
+            root.to_string_lossy().into_owned(),
+            outside.to_string_lossy().into_owned(),
+        );
+
+        assert!(outcome.is_err(), "{outcome:?}");
+        assert!(outside.exists(), "a path outside the folder was deleted");
     }
 }

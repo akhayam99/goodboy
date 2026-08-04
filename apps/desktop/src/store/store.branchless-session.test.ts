@@ -77,7 +77,7 @@ type Store = {
   sessionSelectedPrNumber: Record<string, number | null>;
   sessionExternalTasks: Record<string, ReadonlyArray<{ readonly branch?: string }>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
-  closeSessionTerminals: () => void;
+  closeSessionTerminals: () => Promise<void>;
   emitNotification: () => void;
 };
 
@@ -92,7 +92,7 @@ const makeStore = (branch: string): Store => ({
   sessionSelectedPrNumber: {},
   sessionExternalTasks: {},
   sessionPhaseRuns: {},
-  closeSessionTerminals: vi.fn(),
+  closeSessionTerminals: vi.fn(async () => undefined),
   emitNotification: vi.fn(),
 });
 

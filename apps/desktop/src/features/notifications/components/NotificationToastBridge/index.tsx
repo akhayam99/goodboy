@@ -82,6 +82,19 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'open-orphan-worktrees') {
+    const { workspaceId } = action;
+    return {
+      label: 'Review folders',
+      onClick: () => {
+        void store.setCurrentWorkspace(workspaceId).then(() => {
+          window.dispatchEvent(
+            new CustomEvent('goodboy:open-workspace-settings', { detail: { section: 'orphans' } }),
+          );
+        });
+      },
+    };
+  }
   const _exhaustive: never = action;
   return undefined;
 };
