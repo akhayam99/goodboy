@@ -16,8 +16,11 @@ import {
   languageForPath,
 } from '../../../permissions/components/DiffViewerDialog/highlight';
 import { LineComposer } from './LineComposer';
+import { ReviewPairCells } from './ReviewPairCells';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { buildDiffRows } from '../../../../shared/utils/diffRows';
+import type { DiffLayoutMode } from '../../../../shared/utils/diffLayoutMode';
+import { buildDiffPairRows, type DiffPairRow } from '../../../../shared/utils/diffPairRows';
+import { buildDiffRows, type DiffRow } from '../../../../shared/utils/diffRows';
 import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
 
 export type ReviewLineTarget = {
@@ -29,9 +32,14 @@ export type ReviewLineTarget = {
 
 type Props = {
   readonly file: FileDiff;
+  readonly layoutMode: DiffLayoutMode;
   readonly drafts: ReadonlyArray<PrReviewDraft>;
   readonly onAddDraft: (target: ReviewLineTarget, body: string) => void;
   readonly onAskAgent: (target: ReviewLineTarget) => void;
+};
+
+type TargetParams = {
+  readonly target: ReviewLineTarget | null;
 };
 
 type LineAnchor = {
@@ -51,7 +59,24 @@ const anchorOf = (line: DiffHunkLine): LineAnchor | null => {
 
 const anchorKeyOf = (anchor: LineAnchor): string => `${anchor.side}:${anchor.line}`;
 
-export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) => {
+type SideTargetParams = {
+  readonly line: DiffHunkLine | null;
+  readonly side: ReviewDraftSide;
+  readonly path: string;
+};
+
+const sideTarget = ({ line, side, path }: SideTargetParams): ReviewLineTarget | null => {
+  if (line === null) {
+    return null;
+  }
+  const anchor = anchorOf(line);
+  if (anchor == null || anchor.side !== side) {
+    return null;
+  }
+  return { path, line: anchor.line, side: anchor.side, text: line.text };
+};
+
+export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgent }: Props) => {
   const [collapsed, setCollapsed] = useState(false);
   const [activeAnchor, setActiveAnchor] = useState<LineAnchor | null>(null);
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
@@ -61,7 +86,27 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
     [drafts],
   );
 
-  const rows = useMemo(() => buildDiffRows({ hunks: file.hunks }), [file.hunks]);
+  const isSplit = layoutMode === 'split';
+  const columnCount = isSplit ? 6 : 4;
+
+  const isTargetActive = ({ target }: TargetParams): boolean =>
+    target != null &&
+    activeAnchor != null &&
+    activeAnchor.side === target.side &&
+    activeAnchor.line === target.line;
+
+  const isDraftedTarget = ({ target }: TargetParams): boolean =>
+    target != null && draftedKeys.has(`${target.side}:${target.line}`);
+
+  const toggleComposer = (target: ReviewLineTarget) => {
+    setActiveAnchor(isTargetActive({ target }) ? null : { side: target.side, line: target.line });
+  };
+
+  const rows = useMemo<ReadonlyArray<DiffRow | DiffPairRow>>(
+    () =>
+      isSplit ? buildDiffPairRows({ hunks: file.hunks }) : buildDiffRows({ hunks: file.hunks }),
+    [file.hunks, isSplit],
+  );
 
   const totalLines = useMemo(() => file.hunks.reduce((n, h) => n + h.lines.length, 0), [file]);
 
@@ -139,12 +184,62 @@ export const ReviewFileDiff = ({ file, drafts, onAddDraft, onAskAgent }: Props) 
                       return (
                         <tr key={`hunk-${row.hunkIndex}`}>
                           <td
-                            colSpan={4}
+                            colSpan={columnCount}
                             className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70"
                           >
                             {row.header}
                           </td>
                         </tr>
+                      );
+                    }
+                    if (row.type === 'pair') {
+                      const { pair, hunkIndex, rowIndex } = row;
+                      const oldTarget = sideTarget({
+                        line: pair.old,
+                        side: 'old',
+                        path: file.path,
+                      });
+                      const newTarget = sideTarget({
+                        line: pair.new,
+                        side: 'new',
+                        path: file.path,
+                      });
+                      const activeTarget = isTargetActive({ target: oldTarget })
+                        ? oldTarget
+                        : isTargetActive({ target: newTarget })
+                          ? newTarget
+                          : null;
+                      return (
+                        <Fragment key={`hunk-${hunkIndex}-pair-${rowIndex}`}>
+                          <tr className="group">
+                            <ReviewPairCells
+                              pair={pair}
+                              lang={lang}
+                              oldTarget={oldTarget}
+                              newTarget={newTarget}
+                              isOldActive={isTargetActive({ target: oldTarget })}
+                              isNewActive={isTargetActive({ target: newTarget })}
+                              hasOldDraft={isDraftedTarget({ target: oldTarget })}
+                              hasNewDraft={isDraftedTarget({ target: newTarget })}
+                              onToggleComposer={toggleComposer}
+                              onAskAgent={onAskAgent}
+                            />
+                          </tr>
+                          {activeTarget != null ? (
+                            <tr>
+                              <td colSpan={columnCount} className="bg-background px-3 py-2">
+                                <LineComposer
+                                  label={`Commenting on ${file.path}:${activeTarget.line}`}
+                                  onSubmit={(body) => {
+                                    onAddDraft(activeTarget, body);
+                                    setActiveAnchor(null);
+                                  }}
+                                  onCancel={() => setActiveAnchor(null)}
+                                />
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
                       );
                     }
                     const { line, hunkIndex, rowIndex } = row;

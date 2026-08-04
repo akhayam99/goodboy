@@ -187,6 +187,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
                 <ReviewFileDiff
                   key={file.path}
                   file={file}
+                  layoutMode="unified"
                   drafts={draftsByPath.get(file.path) ?? EMPTY_ARRAY}
                   onAddDraft={(lineTarget, body) => void addDraftFromLine(lineTarget, body)}
                   onAskAgent={askAgent}
