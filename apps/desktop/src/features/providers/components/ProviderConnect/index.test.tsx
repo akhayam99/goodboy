@@ -122,6 +122,49 @@ describe('ProviderConnect', () => {
     expect(screen.getByText('live terminal')).toBeDefined();
   });
 
+  it('keeps the forced-open details mounted when output flips the phase back to working', () => {
+    setConnect({ phase: 'stall', step: 'login', runId: 'run-1' });
+    const view = renderConnect();
+
+    expect(screen.getByText('live terminal')).toBeDefined();
+
+    setConnect({ phase: 'working', step: 'login', runId: 'run-1' });
+    view.rerender(
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+    );
+
+    expect(screen.getByText('live terminal')).toBeDefined();
+  });
+
+  it('reopens the details for a later phase that needs them after the user closed them', () => {
+    setConnect({ phase: 'stall', step: 'login', runId: 'run-1' });
+    const view = renderConnect();
+
+    fireEvent.click(screen.getByRole('button', { name: /Hide details/ }));
+    expect(screen.queryByText('live terminal')).toBeNull();
+
+    setConnect({ phase: 'failed', step: 'login', runId: 'run-1', command: 'claude auth login' });
+    view.rerender(
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+    );
+
+    expect(screen.getByText('live terminal')).toBeDefined();
+  });
+
+  it('keeps the details mounted when the run succeeds while focus sits inside them', () => {
+    setConnect({ phase: 'stall', step: 'login', runId: 'run-1' });
+    const view = renderConnect();
+
+    fireEvent.focusIn(screen.getByText('live terminal'));
+
+    setConnect({ phase: 'success', identity: 'ada@example.com', runId: 'run-1' });
+    view.rerender(
+      <ProviderConnect providerId={'anthropic' as ProviderId} chrome="modal" onDone={vi.fn()} />,
+    );
+
+    expect(screen.getByText('live terminal')).toBeDefined();
+  });
+
   it('lets the user close details the phase forced open', () => {
     setConnect({ phase: 'stall', step: 'login', runId: 'run-1' });
     renderConnect();

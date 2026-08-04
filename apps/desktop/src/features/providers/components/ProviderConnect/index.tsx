@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Button, Collapsible, cn } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
 import { PROVIDER_CONNECT_CAPABILITIES, type ProviderId } from '@goodboy/types';
@@ -11,6 +11,7 @@ import { ConnectDetails } from './ConnectDetails';
 import { ManualNote } from './ManualNote';
 import { TrustNote } from './TrustNote';
 import { connectView, type ProviderConnectChrome } from './connectView';
+import { useConnectDetails } from './useConnectDetails';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -25,7 +26,6 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
   const cancelProviderConnect = useAppStore((s) => s.cancelProviderConnect);
   const dismissProviderConnect = useAppStore((s) => s.dismissProviderConnect);
 
-  const [manualDetails, setManualDetails] = useState<boolean | null>(null);
   const startedRef = useRef<ProviderId | null>(null);
 
   const capability = PROVIDER_CONNECT_CAPABILITIES[providerId];
@@ -38,6 +38,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
     identity: connect.identity,
     chrome,
   });
+  const details = useConnectDetails({ autoOpenPhase: view.autoDetails ? connect.phase : null });
 
   useEffect(() => {
     if (!autoStart || startedRef.current === providerId) {
@@ -66,7 +67,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
     );
   }
 
-  const detailsOpen = manualDetails ?? view.autoDetails;
+  const showDetails = view.hasDetails || (details.engaged && details.open);
   const Mark = PROVIDER_BRAND[providerId].icon;
   const { authUrl } = connect;
 
@@ -148,18 +149,22 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
         </p>
       )}
 
-      {view.hasDetails && (
+      {showDetails && (
         <Collapsible
-          open={detailsOpen}
-          onOpenChange={setManualDetails}
-          trigger={<span className="text-xs">{detailsOpen ? 'Hide details' : 'Show details'}</span>}
+          open={details.open}
+          onOpenChange={details.setOpen}
+          trigger={
+            <span className="text-xs">{details.open ? 'Hide details' : 'Show details'}</span>
+          }
         >
-          <ConnectDetails
-            providerId={providerId}
-            runId={connect.runId}
-            command={connect.command}
-            guide={guide}
-          />
+          <div ref={details.regionRef} onFocus={details.onFocus} onBlur={details.onBlur}>
+            <ConnectDetails
+              providerId={providerId}
+              runId={connect.runId}
+              command={connect.command}
+              guide={guide}
+            />
+          </div>
         </Collapsible>
       )}
 
