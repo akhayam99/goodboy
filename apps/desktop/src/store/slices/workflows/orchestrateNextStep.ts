@@ -4,7 +4,6 @@ import type {
   AgentId,
   AgentRole,
   IsoDateTime,
-  ModelCostTier,
   OrchestratorRouting,
   ProviderId,
   ProviderRunId,
@@ -22,13 +21,13 @@ import {
   ORCHESTRATOR_STEP_HARD_CAP,
   OrchestratorClient,
   OrchestratorProviderError,
-  PROVIDER_CAPABILITIES,
   ROLE_DEFAULTS,
+  enforceOrchestratorModelPool,
+  orchestratorModelPool,
   recommendedModelForRole,
   resolveRoleRouting,
   resolveTaskModel,
   runsForWorkflowRun,
-  type OrchestratorModelOption,
   type OrchestratorRoleDefault,
 } from '@goodboy/core';
 import {
@@ -64,28 +63,15 @@ const setDeciding = ({ set, workflowRunId, isDeciding }: DecidingParams): void =
   }));
 };
 
-const MODEL_NOTE: Readonly<Record<ModelCostTier, string>> = {
-  cheap: 'cheap, fast',
-  mid: 'balanced default',
-  expensive: 'deepest reasoning',
-};
-
-type RoutingHintParams = {
+type RoleDefaultsParams = {
   readonly provider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
 };
 
-const modelMenuFor = ({ provider }: RoutingHintParams): ReadonlyArray<OrchestratorModelOption> =>
-  PROVIDER_CAPABILITIES[provider].models.map((model) => ({
-    id: model.id,
-    label: model.label,
-    note: MODEL_NOTE[model.costTier],
-  }));
-
 const roleDefaultsFor = ({
   provider,
   roleModels,
-}: RoutingHintParams): ReadonlyArray<OrchestratorRoleDefault> =>
+}: RoleDefaultsParams): ReadonlyArray<OrchestratorRoleDefault> =>
   (Object.keys(ROLE_DEFAULTS) as ReadonlyArray<AgentRole>).map((role) => ({
     role,
     model: recommendedModelForRole({ role, provider, prefs: roleModels }),
@@ -388,6 +374,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         .filter((entry) => entry !== '')
         .join('\n');
       const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
+      const roleDefaults = roleDefaultsFor({ provider: defaultProvider, roleModels });
+      const modelMenu = orchestratorModelPool({ provider: defaultProvider, roleDefaults });
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invoke,
@@ -402,8 +390,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           openQuestionCount: openQuestions.length,
           ...(hints !== '' && { operatorHints: hints }),
           providerId: defaultProvider,
-          modelMenu: modelMenuFor({ provider: defaultProvider, roleModels }),
-          roleDefaults: roleDefaultsFor({ provider: defaultProvider, roleModels }),
+          modelMenu,
+          roleDefaults,
           stepsUsed: workflow.steps.length,
           stepBudget: ORCHESTRATOR_STEP_BUDGET,
         });
@@ -448,6 +436,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       await persistOrchestrationError({ set, sessionId, workflowRunId, message: null });
       if (decision.action === 'next') {
+        const enforced = enforceOrchestratorModelPool({
+          step: decision.step,
+          pool: modelMenu,
+          roleDefaults,
+        });
+        if (enforced.rejection != null) {
+          console.warn(
+            `orchestrator picked ${enforced.rejection.requested} outside the routing pool, falling back to ${enforced.rejection.appliedModel}`,
+          );
+        }
+        const reason = [decision.reason.trim(), enforced.rejection?.note ?? '']
+          .filter((entry) => entry !== '')
+          .join('\n\n');
         const agent = await appendStep({
           set,
           get,
@@ -455,15 +456,15 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           workflow,
           step: {
-            name: decision.step.name,
-            role: decision.step.role,
-            promptPrefix: decision.step.promptPrefix,
-            ...(decision.step.expectedOutput != null && {
-              expectedOutput: decision.step.expectedOutput,
+            name: enforced.step.name,
+            role: enforced.step.role,
+            promptPrefix: enforced.step.promptPrefix,
+            ...(enforced.step.expectedOutput != null && {
+              expectedOutput: enforced.step.expectedOutput,
             }),
-            ...(decision.step.model != null && { modelOverride: decision.step.model }),
-            ...(decision.step.effort != null && { effort: decision.step.effort }),
-            ...(decision.reason.trim() !== '' && { orchestratorReason: decision.reason.trim() }),
+            ...(enforced.step.model != null && { modelOverride: enforced.step.model }),
+            ...(enforced.step.effort != null && { effort: enforced.step.effort }),
+            ...(reason !== '' && { orchestratorReason: reason }),
           },
         });
         emitDecision({
@@ -471,7 +472,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           sessionId,
           workflowRunId,
           action: decision.action,
-          reason: decision.reason,
+          reason,
           stepName: agent.name,
           preferredAgentId: agent.id,
         });

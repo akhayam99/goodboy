@@ -3,7 +3,7 @@ import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
 import type { TaskModelPreference } from '@goodboy/types';
 import { formatError } from '../shared/lib/errors';
 
-export const SUMMARY_TIMEOUT_MS = 15_000;
+export const SUMMARY_TIMEOUT_MS = 60_000;
 
 type Params = {
   readonly output: string;

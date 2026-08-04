@@ -301,6 +301,74 @@ describe('orchestrateNextStep', () => {
     );
   });
 
+  it('offers the orchestrator the routing pool instead of the whole provider catalog', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'all set' },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const menu = decideSpy.mock.calls[0]![0].modelMenu as ReadonlyArray<{ id: string }>;
+    expect(menu.map((option) => option.id)).toEqual(['opus-5', 'sonnet-5', 'haiku-4.5']);
+  });
+
+  it('falls back to the role default when the picked model is outside the pool', async () => {
+    decideSpy.mockResolvedValue({
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+          effort: 'max',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        modelOverride: ROLE_DEFAULTS.implementer.model,
+        effort: ROLE_DEFAULTS.implementer.effort,
+      }),
+    );
+  });
+
+  it('tells the operator which pick it refused', async () => {
+    decideSpy.mockResolvedValue({
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const saved = invokeWorkflowUpsertSpy.mock.calls[0]![0].steps[1];
+    expect(saved.orchestratorReason).toContain('fable-5');
+    expect(saved.orchestratorReason).toContain(ROLE_DEFAULTS.implementer.model);
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      'agent-2',
+      SESSION_ID,
+      expect.objectContaining({ reason: expect.stringContaining('fable-5') }),
+    );
+  });
+
   it('emits done and stops without adding a step', async () => {
     decideSpy.mockResolvedValue({
       decision: { action: 'done', reason: 'All required tests pass.' },

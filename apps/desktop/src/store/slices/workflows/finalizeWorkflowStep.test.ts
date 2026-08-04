@@ -38,6 +38,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { finalizeWorkflowStep, degradedNotifiedAgents } from './finalizeWorkflowStep';
+import { SUMMARY_TIMEOUT_MS } from '../../summarizeAgentOutput';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -217,14 +218,14 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(state.emitNotification).toHaveBeenCalledTimes(1);
   });
 
-  it('uses the fallback when summarization exceeds 15 seconds', async () => {
+  it('uses the fallback when summarization exceeds the timeout budget', async () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockImplementation(() => new Promise(() => undefined));
     const finalize = buildHarness();
     const completion = finalize(SESSION_ID, AGENT_ID, 'timeout output', false, { force: true });
 
-    await vi.advanceTimersByTimeAsync(14_999);
+    await vi.advanceTimersByTimeAsync(SUMMARY_TIMEOUT_MS - 1);
     expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(1);
