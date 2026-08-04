@@ -115,7 +115,6 @@ export { PROVIDER_API_KEY_ENV, PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
 export {
   OPENCODE_ROUTING,
-  PROVIDER_BETA,
   PROVIDER_KIND,
   isApiProvider,
   opencodeModelArg,

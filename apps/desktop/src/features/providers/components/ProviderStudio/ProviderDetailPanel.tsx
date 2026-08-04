@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Chip, EmptyState, SectionHeader, StatusDot } from '@goodboy/ui';
+import { Button, EmptyState, SectionHeader, StatusDot } from '@goodboy/ui';
 import { RotateCw, Sparkles, type LucideIcon } from 'lucide-react';
-import {
-  PROVIDER_BETA,
-  PROVIDER_CONNECT_CAPABILITIES,
-  isApiProvider,
-  type ProviderId,
-} from '@goodboy/types';
+import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
@@ -86,7 +81,6 @@ function Detail({
   const subtitle = info.version ? `${info.binary} ${info.version}` : info.binary;
   const action = (
     <div className="flex items-center gap-2">
-      {PROVIDER_BETA.has(id) ? <Chip tone="warning" label="Beta" /> : null}
       <button
         type="button"
         aria-label="Re-detect CLIs"

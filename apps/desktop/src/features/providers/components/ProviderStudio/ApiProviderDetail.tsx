@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Chip, SectionHeader } from '@goodboy/ui';
+import { SectionHeader } from '@goodboy/ui';
 import { CircleCheck, RotateCw, Terminal, TriangleAlert } from 'lucide-react';
-import { PROVIDER_BETA } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -31,7 +30,6 @@ export const ApiProviderDetail = ({ info }: Props) => {
 
   const action = (
     <div className="flex items-center gap-2">
-      {PROVIDER_BETA.has(info.id) ? <Chip tone="warning" label="Beta" /> : null}
       <button
         type="button"
         aria-label="Re-detect OpenCode"

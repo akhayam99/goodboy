@@ -1,17 +1,15 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
-import { Chip } from './Chip';
 
 export type SwitchProps = {
   readonly label: ReactNode;
   readonly checked: boolean;
   readonly disabled?: boolean;
-  readonly beta?: boolean;
   readonly onChange: (next: boolean) => void;
   readonly className?: string;
 };
 
-export const Switch = ({ label, checked, disabled, beta, onChange, className }: SwitchProps) => (
+export const Switch = ({ label, checked, disabled, onChange, className }: SwitchProps) => (
   <button
     type="button"
     role="switch"
@@ -40,6 +38,5 @@ export const Switch = ({ label, checked, disabled, beta, onChange, className }: 
       />
     </span>
     {label}
-    {beta ? <Chip tone="warning" label="Beta" /> : null}
   </button>
 );

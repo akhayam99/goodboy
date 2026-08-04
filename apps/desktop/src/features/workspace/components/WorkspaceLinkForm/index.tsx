@@ -648,12 +648,7 @@ export const WorkspaceLinkForm = ({
             >
               <SegmentedTabs
                 ariaLabel="Workspace type"
-                options={MODE_OPTIONS.filter((option) => modes.includes(option.value)).map(
-                  (option) =>
-                    option.value === 'multi'
-                      ? { ...option, badge: <Chip tone="warning" label="Beta" /> }
-                      : option,
-                )}
+                options={MODE_OPTIONS.filter((option) => modes.includes(option.value))}
                 value={mode}
                 onChange={(nextMode) => {
                   setMode(nextMode);
