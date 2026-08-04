@@ -1,9 +1,14 @@
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import type { LinearIssue } from '../client';
+import { linearUpdateIssueDescription, type LinearIssue } from '../client';
+
+vi.mock('../client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../client')>()),
+  linearUpdateIssueDescription: vi.fn(),
+}));
 
 vi.mock('../useLinearIssueComments', () => ({
   useLinearIssueComments: () => ({
@@ -38,6 +43,12 @@ const ISSUE: LinearIssue = {
   updatedAt: '2026-07-23T10:00:00Z',
 };
 
+const updateDescription = vi.mocked(linearUpdateIssueDescription);
+
+beforeEach(() => {
+  updateDescription.mockReset();
+});
+
 afterEach(cleanup);
 
 describe('LinearIssueDetail', () => {
@@ -57,7 +68,7 @@ describe('LinearIssueDetail', () => {
     expect(screen.getByText('The fix is ready for review.')).toBeDefined();
   });
 
-  it('keeps a fenced description as a code block and offers no edit affordance', () => {
+  it('keeps a fenced description as a code block', () => {
     const { container } = render(
       <LinearIssueDetail
         issue={{ ...ISSUE, description: '```\nnot markdown, a fence\n```' }}
@@ -66,7 +77,45 @@ describe('LinearIssueDetail', () => {
     );
 
     expect(container.querySelector('pre code')?.textContent).toBe('not markdown, a fence');
-    expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+  });
+
+  it('saves an edited description and renders the body Linear returned', async () => {
+    updateDescription.mockResolvedValueOnce('Body normalized by Linear');
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit description' }), {
+      target: { value: 'Body typed by the user' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(updateDescription).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        issueId: 'issue-1',
+        description: 'Body typed by the user',
+      }),
+    );
+    await waitFor(() => expect(screen.getByText('Body normalized by Linear')).toBeDefined());
+    expect(screen.queryByText('Body typed by the user')).toBeNull();
+  });
+
+  it('keeps the draft and shows the error inline when Linear rejects the save', async () => {
+    updateDescription.mockRejectedValueOnce(new Error('linear_update_issue: graphql error'));
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit description' }), {
+      target: { value: 'Body that fails' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toContain('linear_update_issue: graphql error'),
+    );
+    expect(
+      (screen.getByRole('textbox', { name: 'Edit description' }) as HTMLTextAreaElement).value,
+    ).toBe('Body that fails');
   });
 
   it('renders the properties in registry order, once', () => {

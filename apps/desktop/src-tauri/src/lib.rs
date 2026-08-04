@@ -265,6 +265,7 @@ pub fn run() {
       linear::linear_fetch_assigned_issues,
       linear::linear_fetch_issue,
       linear::linear_fetch_issue_comments,
+      linear::linear_update_issue,
       sentry::sentry_connect,
       sentry::sentry_disconnect,
       sentry::sentry_fetch_issues,
