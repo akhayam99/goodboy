@@ -275,7 +275,7 @@ describe('SessionOverviewPane header band', () => {
     hooks.stage = { stage: 'building', reason: 'agents are working' } as SessionStageInfo;
     renderPane();
     expect(screen.getByRole('heading', { name: /refactor auth/i })).toBeDefined();
-    expect(screen.getByText('Building')).toBeDefined();
+    expect(screen.getByText('building')).toBeDefined();
     expect(screen.getByText('agents are working')).toBeDefined();
     expect(screen.queryByText('My workspace')).toBeNull();
     expect(screen.queryByText('Shortcuts')).toBeNull();

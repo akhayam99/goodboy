@@ -1,9 +1,9 @@
 import { CheckCheck, Pencil } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, cn, Input, StatusDot } from '@goodboy/ui';
-import type { Session, SessionId, SessionStage, SessionStageInfo } from '@goodboy/types';
+import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
 import { agentHasUnread, EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../../../store';
-import { STAGE_TONE } from '../../session-stage';
+import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SummarizerBadge } from '../SummarizerBadge';
@@ -17,14 +17,6 @@ import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSe
 type Props = {
   readonly session: Session;
   readonly stage: SessionStageInfo;
-};
-
-const STAGE_LABEL: Record<SessionStage, string> = {
-  attention: 'Needs attention',
-  running: 'Running',
-  review: 'In review',
-  building: 'Building',
-  done: 'Done',
 };
 
 export const HeaderBand = ({ session, stage }: Props) => {
@@ -54,7 +46,7 @@ export const HeaderBand = ({ session, stage }: Props) => {
         <div className="flex min-w-0 items-center gap-2">
           <StatusDot tone={STAGE_TONE[stage.stage]} pulsing={stage.stage === 'running'} />
           <span className="shrink-0 text-xs font-medium text-foreground">
-            {STAGE_LABEL[stage.stage]}
+            {SESSION_STAGE_META[stage.stage].label}
           </span>
           {stage.reason !== '' ? (
             <span className="min-w-0 truncate text-xs text-muted-foreground/70">
