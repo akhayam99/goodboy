@@ -124,13 +124,18 @@ describe('OrchestratorPanel state ladder', () => {
     expect(screen.getByTestId('workflow-orchestrate-next-cta').textContent).toContain(
       'Decide next step',
     );
+    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
+
+    expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
   it('says where the run got to before offering the next decision', () => {
     renderPanel({ agents: [agent(0, 'completed'), agent(1, 'completed')] });
 
     expect(sentence()).toContain('Step 2 done · ready to continue');
-    expect(screen.getByTestId('workflow-orchestrate-next-cta')).toBeDefined();
+    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
+
+    expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
   it('offers no next step control while autorun drives the run', () => {
@@ -212,8 +217,13 @@ describe('OrchestratorPanel state ladder', () => {
     });
 
     expect(sentence()).toContain('Paused · session budget cap reached');
-    expect(screen.getByTestId('orchestrator-review-budget')).toBeDefined();
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-budget-studio', opened);
+    fireEvent.click(screen.getByTestId('orchestrator-review-budget'));
+    window.removeEventListener('goodboy:open-budget-studio', opened);
+
+    expect(opened).toHaveBeenCalledTimes(1);
   });
 
   it('reads a budget pause worded differently as a pause all the same', () => {
