@@ -11,6 +11,10 @@ export const RESOLVER_ACTION_BUSY_LABEL: Record<ResolverActionKind, string> = {
   run: 'Starting...',
   rerun: 'Starting...',
   fix: 'Sending...',
+  rework: 'Sending...',
+  redo: 'Sending...',
+  custom: 'Sending...',
+  verdict: 'Asking...',
   forceClose: 'Closing...',
   forceResolve: 'Resolving...',
 };

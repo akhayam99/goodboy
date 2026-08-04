@@ -11,6 +11,7 @@ import type {
 import { isOpenQuestionAnswerText } from '@goodboy/core';
 import { decodeAuthRequiredMessage } from '../turn';
 import { isWorkflowKickoff, parseWorkflowKickoff } from './parse-workflow-kickoff';
+import { parseResolverKickoff, type ResolverKickoffThread } from './parse-resolver-kickoff';
 
 export type TranscriptItem =
   | {
@@ -70,6 +71,14 @@ export type TranscriptItem =
       marker: string;
       raw: string;
       parsed: boolean;
+      at: IsoDateTime;
+    }
+  | {
+      kind: 'resolver_kickoff';
+      key: string;
+      headline: string;
+      threads: ReadonlyArray<ResolverKickoffThread>;
+      raw: string;
       at: IsoDateTime;
     }
   | { kind: 'oq_answer'; key: string }
@@ -148,6 +157,20 @@ export const reduceTranscript = (
         if (isOpenQuestionAnswerText(event.text)) {
           items.push({ kind: 'oq_answer', key: `oq-answer-${i}` });
           break;
+        }
+        {
+          const resolverKickoff = parseResolverKickoff({ text: event.text });
+          if (resolverKickoff !== null) {
+            items.push({
+              kind: 'resolver_kickoff',
+              key: `resolver-kickoff-${i}`,
+              headline: resolverKickoff.headline,
+              threads: resolverKickoff.threads,
+              raw: event.text,
+              at: event.at,
+            });
+            break;
+          }
         }
         if (isWorkflowKickoff(event.text)) {
           const parsed = parseWorkflowKickoff(event.text);

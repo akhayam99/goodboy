@@ -366,8 +366,8 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     });
 
     const kickoff = getState().pendingResolverKickoff[INSERTED_ID];
-    expect(kickoff).toContain('Analysis mode: do not modify or commit any file.');
-    expect(kickoff).toContain('Operator notes:\nAvoid schema changes.');
+    expect(kickoff).toContain('Analysis mode: do not modify or commit any file');
+    expect(kickoff).toContain('Operator notes\nAvoid schema changes.');
     expect(sendTurn).not.toHaveBeenCalled();
   });
 

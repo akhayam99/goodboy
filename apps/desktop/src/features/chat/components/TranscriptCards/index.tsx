@@ -6,6 +6,7 @@ import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { OrchestratorDecisionCard } from '../OrchestratorDecisionCard';
 import { WorkflowKickoffCard } from '../WorkflowKickoffCard';
+import { ResolverKickoffCard } from '../ResolverKickoffCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { ToolCallCard } from '../ToolCallCard';
@@ -91,6 +92,8 @@ function TranscriptCardImpl({
       return <OrchestratorDecisionCard item={item} />;
     case 'workflow_kickoff':
       return <WorkflowKickoffCard item={item} />;
+    case 'resolver_kickoff':
+      return <ResolverKickoffCard item={item} />;
     case 'oq_answer':
       return null;
     case 'done':

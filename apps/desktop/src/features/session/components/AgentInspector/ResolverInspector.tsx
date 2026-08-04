@@ -209,6 +209,9 @@ export const ResolverInspector = ({
             prNumber={prNumber}
             isBusy={actions.isBusy}
             canAct={status !== 'pending' && status !== 'running' && status !== 'resolved'}
+            missingVerdicts={actions.missingVerdicts}
+            isAskingForVerdicts={actions.runningAction === 'verdict'}
+            onAskForVerdicts={() => void actions.run('verdict')}
             runningThreadAction={actions.runningThreadAction}
             onRun={actions.runThread}
             onReplyChange={({ threadId, reply }) =>

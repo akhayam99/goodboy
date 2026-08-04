@@ -1,4 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import {
+  extractAllCommentAnalysis,
+  extractAllCommentReplies,
+  extractAllCommentResolved,
+  extractAllCommentWontfix,
+  isReviewThreadId,
+} from '@goodboy/core';
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import {
   buildCombinedCommentAgentArgs,
@@ -36,6 +43,30 @@ function makeComment(over: Partial<PrComment> = {}): PrComment {
     ...over,
   };
 }
+
+const threadsOf = (count: number) =>
+  Array.from({ length: count }, (unused, index) => ({
+    head: makeComment({
+      id: `review-${index + 1}`,
+      threadId: `PRRT_${index + 1}`,
+      body: `comment number ${index + 1}`,
+      url: `https://github.com/o/r/pull/9108#discussion_r${index + 1}`,
+    }),
+    replies: [],
+  }));
+
+const realIds = <T extends { readonly threadId: string }>(markers: ReadonlyArray<T>) =>
+  markers.filter((marker) => isReviewThreadId(marker.threadId));
+
+const outcomeIds = (prompt: string): ReadonlyArray<string> =>
+  [
+    ...realIds(extractAllCommentResolved(prompt)),
+    ...realIds(extractAllCommentWontfix(prompt)),
+    ...realIds(extractAllCommentAnalysis(prompt)),
+  ].map((marker) => marker.threadId);
+
+const occurrences = ({ text, needle }: { text: string; needle: string }): number =>
+  text.split(needle).length - 1;
 
 describe('spawn-from-comment', () => {
   it('titles review comments with short file + line', () => {
@@ -101,12 +132,21 @@ describe('spawn-from-comment', () => {
     expect(args.kind).toBe('resolver');
   });
 
+  it('carries author, location, link and thread id of every thread it hands over', () => {
+    const prompt = buildCombinedCommentAgentArgs(threadsOf(2), PR).initialPrompt;
+    expect(prompt).toContain('Thread 1 of 2');
+    expect(prompt).toContain('Thread 2 of 2');
+    expect(prompt).toContain('- author: alice');
+    expect(prompt).toContain('- location: src/foo.ts:42');
+    expect(prompt).toContain('- link: https://github.com/o/r/pull/9108#discussion_r2');
+    expect(prompt).toContain('- thread id: PRRT_2');
+  });
+
   it('includes thread replies as context after the head comment', () => {
     const args = buildCommentAgentArgs(makeComment(), PR, {}, [
       makeComment({ id: 'review-2', author: 'bob', body: 'agree, but rename it' }),
     ]);
-    expect(args.initialPrompt).toContain('Replies in this thread');
-    expect(args.initialPrompt).toContain('bob:');
+    expect(args.initialPrompt).toContain('- reply from bob:');
     expect(args.initialPrompt).toContain('agree, but rename it');
     expect(args.initialPrompt.indexOf('this should use a helper')).toBeLessThan(
       args.initialPrompt.indexOf('agree, but rename it'),
@@ -114,125 +154,115 @@ describe('spawn-from-comment', () => {
   });
 
   it('omits the replies section when the thread has no replies', () => {
-    const args = buildCommentAgentArgs(makeComment(), PR);
-    expect(args.initialPrompt).not.toContain('Replies in this thread');
+    expect(buildCommentAgentArgs(makeComment(), PR).initialPrompt).not.toContain('- reply from');
   });
 
-  it('passes the review thread id into the kickoff when present', () => {
-    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRT_42' }), PR);
-    expect(args.initialPrompt).toContain('PRT_42');
+  it('asks for exactly one outcome marker per thread and never reuses a reply', () => {
+    const prompt = buildCombinedCommentAgentArgs(threadsOf(3), PR).initialPrompt;
+    const replies = realIds(extractAllCommentReplies(prompt));
+
+    expect(outcomeIds(prompt)).toEqual(['PRRT_1', 'PRRT_3', 'PRRT_2']);
+    expect(replies.map((reply) => reply.threadId).sort()).toEqual(['PRRT_1', 'PRRT_2', 'PRRT_3']);
+    expect(new Set(replies.map((reply) => reply.body)).size).toBe(3);
   });
 
-  it('omits any thread-id hint when the comment has none', () => {
-    const args = buildCommentAgentArgs(
+  it('asks for one analysis marker per thread and no fix marker in analyze mode', () => {
+    const prompt = buildCombinedCommentAgentArgs(threadsOf(2), PR, {
+      mode: 'analyze',
+    }).initialPrompt;
+
+    expect(realIds(extractAllCommentAnalysis(prompt)).map((marker) => marker.threadId)).toEqual([
+      'PRRT_1',
+      'PRRT_2',
+    ]);
+    expect(realIds(extractAllCommentAnalysis(prompt)).map((marker) => marker.verdict)).toEqual([
+      'fix',
+      'wontfix',
+    ]);
+    expect(realIds(extractAllCommentResolved(prompt))).toEqual([]);
+    expect(prompt).toContain('Analysis mode: do not modify or commit any file');
+    expect(prompt).toContain('summary must be one paragraph of plain text with no double quotes');
+  });
+
+  it('keeps the phrase the resolver role prompt reads as analysis mode', () => {
+    const analyze = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
+      mode: 'analyze',
+    }).initialPrompt;
+    const fix = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR).initialPrompt;
+
+    expect(analyze).toContain('Analysis mode');
+    expect(fix).not.toContain('Analysis mode');
+  });
+
+  it('states the reply contract once, however many threads it hands over', () => {
+    const one = buildCombinedCommentAgentArgs(threadsOf(1), PR).initialPrompt;
+    const four = buildCombinedCommentAgentArgs(threadsOf(4), PR).initialPrompt;
+    const needle = 'Every <<comment-reply>> block follows this contract.';
+
+    expect(occurrences({ text: one, needle })).toBe(1);
+    expect(occurrences({ text: four, needle })).toBe(1);
+    expect(occurrences({ text: four, needle: 'How to report each thread' })).toBe(1);
+    expect(occurrences({ text: four, needle: 'never reuse a reply on another thread id' })).toBe(1);
+  });
+
+  it('names every thread id it owns in the worked example', () => {
+    const prompt = buildCombinedCommentAgentArgs(threadsOf(2), PR).initialPrompt;
+    const example = prompt.slice(prompt.indexOf('reads exactly like this:'));
+
+    expect(example).toContain('threadId="PRRT_1"');
+    expect(example).toContain('threadId="PRRT_2"');
+    expect(example).toContain('id="PRRT_1"');
+    expect(example).toContain('id="PRRT_2"');
+  });
+
+  it('asks for no marker at all on a comment that has no review thread', () => {
+    const prompt = buildCommentAgentArgs(
       makeComment({ source: 'issue', path: undefined, line: undefined, threadId: undefined }),
       PR,
-    );
-    expect(args.initialPrompt).not.toContain('thread id');
+    ).initialPrompt;
+
+    expect(prompt).not.toContain('thread id');
+    expect(prompt).not.toContain('How to report each thread');
+    expect(prompt).not.toContain('comment-reply');
   });
 
   it('keeps the omitted and explicit fix-mode prompts byte-identical', () => {
     const omitted = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
-    const explicit = buildCommentAgentArgs(makeComment(), PR, { mode: 'fix' }).initialPrompt;
-    expect(omitted).toBe(explicit);
+    expect(omitted).toBe(buildCommentAgentArgs(makeComment(), PR, { mode: 'fix' }).initialPrompt);
     expect(omitted).toBe(
       [
-        'Context: PR #9108 on branch `kay/foo`.',
-        'alice left a review comment on `src/foo.ts:42`:',
+        'Resolve 1 thread on PR #9108, branch `kay/foo`.',
         '',
+        'Thread 1 of 1',
+        '- author: alice',
+        '- location: src/foo.ts:42',
+        '- link: https://github.com/o/r/pull/9108#discussion_r1',
+        '- comment:',
         '> this should use a helper',
         '',
-        'Comment URL: https://github.com/o/r/pull/9108#discussion_r1',
+        'What to do',
+        'Fix the thread above in one pass, committing locally as you go.',
+        'Leave a thread unchanged when the change it asks for is wrong, and say why in its outcome marker.',
       ].join('\n'),
     );
   });
 
   it('keeps omitted, empty and whitespace-only hint prompts byte-identical', () => {
     const omitted = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
-    const empty = buildCommentAgentArgs(makeComment(), PR, { hint: '' }).initialPrompt;
-    const whitespace = buildCommentAgentArgs(makeComment(), PR, { hint: '  \n\t ' }).initialPrompt;
-    expect(empty).toBe(omitted);
-    expect(whitespace).toBe(omitted);
+    expect(buildCommentAgentArgs(makeComment(), PR, { hint: '' }).initialPrompt).toBe(omitted);
+    expect(buildCommentAgentArgs(makeComment(), PR, { hint: ' \n\t ' }).initialPrompt).toBe(
+      omitted,
+    );
   });
 
-  it('appends trimmed operator notes to the kickoff prompt', () => {
-    const args = buildCommentAgentArgs(makeComment(), PR, {
+  it('appends trimmed operator notes last', () => {
+    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
       hint: '  Use the existing helper.\nAvoid schema changes.  ',
     });
     expect(args.initialPrompt).toContain(
-      'Comment URL: https://github.com/o/r/pull/9108#discussion_r1\n\nOperator notes:\nUse the existing helper.\nAvoid schema changes.',
+      'Operator notes\nUse the existing helper.\nAvoid schema changes.',
     );
-  });
-
-  it('appends the read-only analysis contract in analyze mode', () => {
-    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
-      mode: 'analyze',
-    });
-    expect(args.mode).toBe('analyze');
-    expect(args.initialPrompt).toContain('do not modify or commit any file');
-    expect(args.initialPrompt).toContain(
-      '<<comment-analysis threadId="PRRT_7" verdict="fix" summary="...">>',
-    );
-    expect(args.initialPrompt).toContain(
-      'summary must be one paragraph of plain text with no double quotes',
-    );
-  });
-
-  it('gives the reply block a shape contract in the single-thread prompt', () => {
-    const prompt = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR).initialPrompt;
-    expect(prompt).toContain('<<comment-reply id="PRRT_7">>your answer<</comment-reply>>');
-    expect(prompt).toContain('Every <<comment-reply>> block follows this contract.');
-    expect(prompt).toContain('Goodboy wraps your block in a fixed structure when it posts');
-    expect(prompt).toContain('never state the outcome and never name the commit sha');
-    expect(prompt).toContain('Never go past 120 words');
-    expect(prompt).toContain('- `apps/web/src/routes/` uses camelCase folders');
-  });
-
-  it('gives the reply block the same shape contract in the combined prompt', () => {
-    const single = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR).initialPrompt;
-    const combined = buildCombinedCommentAgentArgs(
-      [
-        { head: makeComment({ threadId: 'PRRT_1' }), replies: [] },
-        { head: makeComment({ id: 'review-2', threadId: 'PRRT_2' }), replies: [] },
-      ],
-      PR,
-    ).initialPrompt;
-    const contract = single.slice(single.indexOf('Every <<comment-reply>> block follows'));
-    expect(contract.length).toBeGreaterThan(0);
-    expect(combined).toContain(contract);
-  });
-
-  it('keeps the marker instructions verbatim alongside the reply contract', () => {
-    const combined = buildCombinedCommentAgentArgs(
-      [{ head: makeComment({ threadId: 'PRRT_1' }), replies: [] }],
-      PR,
-    ).initialPrompt;
-    expect(combined).toContain('<<comment-resolved threadId="PRRT_..." commitSha="...">>');
-    expect(combined).toContain('<<comment-wontfix threadId="PRRT_..." reason="...">>');
-    expect(combined).toContain(
-      '<<comment-analysis threadId="PRRT_..." verdict="fix" summary="...">>',
-    );
-    expect(combined).toContain(
-      '<<comment-reply id="PRRT_...">>your answer for that thread<</comment-reply>>',
-    );
-    expect(combined).toContain(
-      'A block is posted only on the thread whose id it names, so never reuse one answer for several ids.',
-    );
-  });
-
-  it('scopes the plain-text summary rule to the analysis marker only', () => {
-    const single = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
-      mode: 'analyze',
-    }).initialPrompt;
-    const combined = buildCombinedCommentAgentArgs(
-      [{ head: makeComment({ threadId: 'PRRT_1' }), replies: [] }],
-      PR,
-      { mode: 'analyze' },
-    ).initialPrompt;
-    const scope =
-      'That plain-text rule covers the summary attribute only: the <<comment-reply>> block stays markdown and keeps the reply contract above.';
-    expect(single).toContain(scope);
-    expect(combined).toContain(scope);
+    expect(args.initialPrompt.endsWith('Avoid schema changes.')).toBe(true);
   });
 
   it('builds one combined resolver with every source thread', () => {
@@ -256,16 +286,10 @@ describe('spawn-from-comment', () => {
     expect(args.sourceKind).toBe('review_comment');
     expect(args.initialPrompt).toContain('first reply');
     expect(args.initialPrompt).toContain('handle the second issue');
-    expect(args.initialPrompt).toContain(
-      'Every review thread id above must receive exactly one marker',
-    );
   });
 
   it('keeps the omitted and explicit fix-mode combined prompts byte-identical', () => {
-    const threads = [
-      { head: makeComment({ threadId: 'PRRT_1' }), replies: [] },
-      { head: makeComment({ id: 'review-2', threadId: 'PRRT_2' }), replies: [] },
-    ];
+    const threads = threadsOf(2);
     const omitted = buildCombinedCommentAgentArgs(threads, PR).initialPrompt;
     const explicit = buildCombinedCommentAgentArgs(threads, PR, {
       mode: 'fix',
@@ -273,39 +297,14 @@ describe('spawn-from-comment', () => {
     }).initialPrompt;
     expect(omitted).toBe(explicit);
     expect(omitted).not.toContain('Operator notes');
-    expect(omitted).not.toContain('Analysis mode');
+    expect(omitted).not.toContain('read-only');
   });
 
-  it('appends the read-only analysis contract to the combined prompt in analyze mode', () => {
-    const args = buildCombinedCommentAgentArgs(
-      [
-        { head: makeComment({ threadId: 'PRRT_1' }), replies: [] },
-        { head: makeComment({ id: 'review-2', threadId: 'PRRT_2' }), replies: [] },
-      ],
-      PR,
-      { mode: 'analyze' },
+  it('marks the mode on the args only when it is not the default fix', () => {
+    expect(buildCombinedCommentAgentArgs(threadsOf(2), PR).mode).toBeUndefined();
+    expect(buildCombinedCommentAgentArgs(threadsOf(2), PR, { mode: 'analyze' }).mode).toBe(
+      'analyze',
     );
-    expect(args.mode).toBe('analyze');
-    expect(args.initialPrompt).toContain('Analyze all 2 review threads together in one pass.');
-    expect(args.initialPrompt).toContain('Analysis mode: do not modify or commit any file.');
-    expect(args.initialPrompt).toContain(
-      'summary must be one paragraph of plain text with no double quotes',
-    );
-  });
-
-  it('appends trimmed operator notes to the combined prompt', () => {
-    const args = buildCombinedCommentAgentArgs(
-      [
-        { head: makeComment({ threadId: 'PRRT_1' }), replies: [] },
-        { head: makeComment({ id: 'review-2', threadId: 'PRRT_2' }), replies: [] },
-      ],
-      PR,
-      { hint: '  Use the existing helper.\nAvoid schema changes.  ' },
-    );
-    expect(args.mode).toBeUndefined();
-    expect(args.initialPrompt).toContain(
-      'Operator notes:\nUse the existing helper.\nAvoid schema changes.',
-    );
-    expect(args.initialPrompt.endsWith('Avoid schema changes.')).toBe(true);
+    expect(buildCommentAgentArgs(makeComment(), PR, { mode: 'analyze' }).mode).toBe('analyze');
   });
 });

@@ -17,7 +17,12 @@ import {
   type ResolverThreadSettlement,
 } from '../../resolverThreadSettlements';
 import { resolverThreadTally, type ResolverThreadTally } from '../../resolverThreadTally';
-import { resolverFixThreadPrompt } from '../../resolverFixThreadPrompt';
+import {
+  resolverMissingVerdicts,
+  type ResolverMissingVerdicts,
+} from '../../resolverMissingVerdicts';
+import { resolverThreadFollowUpPrompt } from '../../resolverThreadFollowUpPrompt';
+import { resolverVerdictRequestPrompt } from '../../resolverVerdictRequestPrompt';
 import { useClosedThreadIds } from '../useClosedThreadIds';
 
 const EMPTY_PENDING: ReadonlyArray<PendingResolution> = [];
@@ -37,6 +42,7 @@ export type ResolverThreadRunParams = {
   readonly threadId: string;
   readonly kind: ResolverActionKind;
   readonly text: string;
+  readonly notes?: string;
 };
 
 export type ResolverRunningThreadAction = {
@@ -49,6 +55,7 @@ export type ResolverActionsController = {
   readonly threadCount: number;
   readonly settlements: ReadonlyArray<ResolverThreadSettlement>;
   readonly tally: ResolverThreadTally;
+  readonly missingVerdicts: ResolverMissingVerdicts | null;
   readonly prNumber: number | null;
   readonly isBusy: boolean;
   readonly runningAction: ResolverActionKind | null;
@@ -170,7 +177,12 @@ export const useResolverActions = ({
     return [];
   });
 
-  const dispatchThread = async ({ threadId, kind, text }: ResolverThreadRunParams) => {
+  const sendToAgent = async ({ content }: { readonly content: string }) => {
+    await selectAgent(sessionId, agent.id);
+    await sendTurn({ sessionId, agentId: agent.id, content });
+  };
+
+  const dispatchThread = async ({ threadId, kind, text, notes = '' }: ResolverThreadRunParams) => {
     const settlement = settlements.find((candidate) => candidate.threadId === threadId);
     if (settlement === undefined) {
       return;
@@ -199,12 +211,9 @@ export const useResolverActions = ({
       await resolveGithubThread(sessionId, threadId, closureFor({ settlement, text }));
       return;
     }
-    if (kind === 'fix') {
-      await selectAgent(sessionId, agent.id);
-      await sendTurn({
-        sessionId,
-        agentId: agent.id,
-        content: resolverFixThreadPrompt({ threadId }),
+    if (kind === 'fix' || kind === 'redo' || kind === 'rework' || kind === 'custom') {
+      await sendToAgent({
+        content: resolverThreadFollowUpPrompt({ threadId, intent: kind, notes }),
       });
       return;
     }
@@ -231,8 +240,23 @@ export const useResolverActions = ({
     }
   };
 
+  const missingVerdicts = resolverMissingVerdicts({
+    settlements,
+    status,
+    isBusy: turnState?.kind === 'running' || turnState?.kind === 'starting',
+  });
+
   const dispatch = async (kind: ResolverActionKind) => {
     if (kind === 'review' || kind === 'fix') {
+      return;
+    }
+    if (kind === 'verdict') {
+      if (missingVerdicts === null) {
+        return;
+      }
+      await sendToAgent({
+        content: resolverVerdictRequestPrompt({ threadIds: missingVerdicts.threadIds }),
+      });
       return;
     }
     if (kind === 'push') {
@@ -307,6 +331,7 @@ export const useResolverActions = ({
     threadCount: threadIds.length,
     settlements,
     tally,
+    missingVerdicts,
     prNumber,
     isBusy: turnState?.kind === 'running' || turnState?.kind === 'starting',
     runningAction,
