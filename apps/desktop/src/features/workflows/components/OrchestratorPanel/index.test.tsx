@@ -291,6 +291,41 @@ describe('OrchestratorPanel state ladder', () => {
       'tests are missing',
     );
   });
+
+  it('says who decides, so an empty note is never a dead end', () => {
+    renderPanel({
+      runOverride: run({ orchestrationOutcome: 'done' }),
+      agents: [agent(0, 'completed')],
+    });
+
+    fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
+    const drawer = screen.getByTestId('orchestrator-continue-note').parentElement;
+    expect(drawer?.textContent).toContain('Not done? Say what is missing');
+    expect(drawer?.textContent).toContain('Leave it empty and the orchestrator decides');
+    expect(screen.getByTestId('orchestrator-continue-confirm').textContent).toContain(
+      'Continue, you decide',
+    );
+
+    fireEvent.change(screen.getByTestId('orchestrator-continue-note'), {
+      target: { value: 'the tests are missing' },
+    });
+    expect(screen.getByTestId('orchestrator-continue-confirm').textContent).toContain(
+      'Continue with this note',
+    );
+  });
+
+  it('opens one drawer at a time, so two fields never stack', () => {
+    renderPanel({
+      runOverride: run({ orchestrationOutcome: 'done' }),
+      agents: [agent(0, 'completed')],
+    });
+
+    fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
+    fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+
+    expect(screen.getByTestId('orchestrator-hints-input')).toBeDefined();
+    expect(screen.queryByTestId('orchestrator-continue-note')).toBeNull();
+  });
 });
 
 describe('OrchestratorPanel strip', () => {
@@ -315,6 +350,19 @@ describe('OrchestratorPanel strip', () => {
       RUN_ID,
       'ignore the website',
     );
+  });
+
+  it('offers to clear standing hints only once there are some', () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+    expect(screen.queryByTestId('orchestrator-hints-clear')).toBeNull();
+
+    cleanup();
+    renderPanel({ runOverride: run({ orchestratorHints: 'ignore the website' }) });
+    fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+    fireEvent.click(screen.getByTestId('orchestrator-hints-clear'));
+
+    expect(storeState['setWorkflowOrchestratorHints']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, '');
   });
 
   it('folds the decisions into the strip behind a count', () => {
