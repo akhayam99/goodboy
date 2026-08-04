@@ -67,6 +67,7 @@ import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
 import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
+import { flushTurnEvents } from '../transcripts/buffer';
 import {
   beginTurnFileVersionCapture,
   finalizeTurnFileVersionCapture,
@@ -1159,6 +1160,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
       lastError = createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
     } finally {
+      flushTurnEvents();
       if (turnFileVersionCapture != null) {
         await finalizeTurnFileVersionCapture({
           sessionId,

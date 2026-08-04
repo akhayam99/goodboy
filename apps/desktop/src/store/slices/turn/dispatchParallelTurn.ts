@@ -22,6 +22,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
 import { runParallelBranch, type ParallelBranchEffects } from '../../parallel-turn';
 import { applySessionUpdate } from '../../session-mutators';
+import { flushTurnEvents } from '../transcripts/buffer';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import {
@@ -259,6 +260,7 @@ export const dispatchParallelTurn = async (
     applySessionUpdate(set, sessionId, errorState, activeAgentId);
     throw createTranscriptOwnedTurnError({ message: rawMessage, cause: err });
   } finally {
+    flushTurnEvents();
     if (turnFileVersionCapture != null) {
       await finalizeTurnFileVersionCapture({
         sessionId,

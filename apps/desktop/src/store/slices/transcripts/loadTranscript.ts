@@ -1,10 +1,12 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { listMessagesForAgent, listTurnEventsForAgent } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { flushTurnEvents } from './buffer';
 import type { SetFn } from './types';
 
 export const loadTranscript = (set: SetFn) => {
   return async (agentId: AgentId, sessionId: SessionId) => {
+    flushTurnEvents();
     const [messages, events] = await Promise.all([
       listMessagesForAgent(tauriDatabase, agentId),
       listTurnEventsForAgent(tauriDatabase, agentId),
