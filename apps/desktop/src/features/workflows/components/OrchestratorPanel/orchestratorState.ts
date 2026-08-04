@@ -1,6 +1,11 @@
 import { formatUsd } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { Agent, IsoDateTime, WorkflowRun } from '@goodboy/types';
+import type {
+  Agent,
+  IsoDateTime,
+  WorkflowOrchestrationStopKind,
+  WorkflowRun,
+} from '@goodboy/types';
 
 export type OrchestratorPhase =
   | 'deciding'
@@ -27,8 +32,29 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly isOrchestrating: boolean;
   readonly hasOpenQuestions: boolean;
-  readonly isBudgetPaused: boolean;
   readonly costUsd: number;
+};
+
+type StopPresentation = {
+  readonly phase: OrchestratorPhase;
+  readonly tone: Tone;
+  readonly sentence: string;
+  readonly showsMessage: boolean;
+};
+
+const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation> = {
+  budget: {
+    phase: 'paused-budget',
+    tone: 'warning',
+    sentence: 'Paused · session budget cap reached',
+    showsMessage: false,
+  },
+  failure: {
+    phase: 'failed',
+    tone: 'danger',
+    sentence: 'Last decision failed',
+    showsMessage: true,
+  },
 };
 
 const isDone = (agent: Agent): boolean =>
@@ -39,7 +65,6 @@ export const resolveOrchestratorState = ({
   agents,
   isOrchestrating,
   hasOpenQuestions,
-  isBudgetPaused,
   costUsd,
 }: Params): OrchestratorState => {
   const ordered = [...agents].sort((left, right) => left.ordinal - right.ordinal);
@@ -67,21 +92,15 @@ export const resolveOrchestratorState = ({
       detail: run.orchestrationReason ?? null,
     };
   }
-  if (isBudgetPaused) {
+  const stop = run.orchestrationStop;
+  if (stop != null) {
+    const presentation = STOP_PRESENTATION[stop.kind];
     return {
       ...base,
-      phase: 'paused-budget',
-      tone: 'warning',
-      sentence: 'Paused · session budget cap reached',
-    };
-  }
-  if (run.orchestrationError != null) {
-    return {
-      ...base,
-      phase: 'failed',
-      tone: 'danger',
-      sentence: 'Last decision failed',
-      detail: run.orchestrationError,
+      phase: presentation.phase,
+      tone: presentation.tone,
+      sentence: presentation.sentence,
+      detail: presentation.showsMessage ? stop.message : null,
     };
   }
   const runningIndex = ordered.findIndex((agent) => agent.status === 'running');

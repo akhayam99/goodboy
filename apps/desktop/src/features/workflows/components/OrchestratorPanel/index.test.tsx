@@ -104,7 +104,6 @@ beforeEach(() => {
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     sessionOpenQuestions: {},
-    budgetAlerts: [],
     sessions: [],
     workspaceOverrides: {},
     providers: [
@@ -181,7 +180,10 @@ describe('OrchestratorPanel state ladder', () => {
   it('reads a budget pause as a pause, not as a failure', () => {
     renderPanel({
       runOverride: run({
-        orchestrationError: 'the budget cap is reached, raise it in Budget to keep this run going',
+        orchestrationStop: {
+          kind: 'budget',
+          message: 'the budget cap is reached, raise it in Budget to keep this run going',
+        },
       }),
     });
 
@@ -190,12 +192,27 @@ describe('OrchestratorPanel state ladder', () => {
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
   });
 
+  it('reads a budget pause worded differently as a pause all the same', () => {
+    renderPanel({
+      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'any other wording' } }),
+    });
+
+    expect(sentence()).toContain('Paused · session budget cap reached');
+    expect(screen.getByTestId('orchestrator-review-budget')).toBeDefined();
+  });
+
   it('shows the failure with its reason and offers a retry', () => {
     renderPanel({
-      runOverride: run({ orchestrationError: 'usage limit reached (anthropic/haiku-4.5)' }),
+      runOverride: run({
+        orchestrationStop: {
+          kind: 'failure',
+          message: 'usage limit reached (anthropic/haiku-4.5)',
+        },
+      }),
     });
 
     expect(sentence()).toContain('Last decision failed');
+    expect(screen.queryByTestId('orchestrator-review-budget')).toBeNull();
     expect(screen.getByTestId('orchestrator-detail').textContent).toContain('usage limit reached');
     fireEvent.click(screen.getByTestId('orchestrator-retry'));
 

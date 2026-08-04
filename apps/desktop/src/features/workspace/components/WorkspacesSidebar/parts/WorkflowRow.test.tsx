@@ -339,7 +339,10 @@ describe('WorkflowRow dynamic runs', () => {
 
   it('leaves the orchestrator phase to the strip instead of a second pill', () => {
     renderDetail({
-      runOverride: { ...dynamicRun, orchestrationError: 'usage limit reached' },
+      runOverride: {
+        ...dynamicRun,
+        orchestrationStop: { kind: 'failure', message: 'usage limit reached' },
+      },
       agentsOverride: doneAgents,
       actionableStepId: null,
     });

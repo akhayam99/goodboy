@@ -58,11 +58,24 @@ export const WorkflowRunStatus = ({
       </span>
     );
   }
-  if (run.orchestrationError != null && !isRunning && !hasOrchestratorStrip) {
+  const stop = run.orchestrationStop;
+  if (stop?.kind === 'budget' && !isRunning && !hasOrchestratorStrip) {
+    return (
+      <span
+        className={cn(baseClass, 'bg-warning/10 text-warning')}
+        title={stop.message}
+        data-testid="workflow-orchestrator-budget-paused"
+      >
+        <Pause size={10} aria-hidden />
+        Budget paused
+      </span>
+    );
+  }
+  if (stop != null && !isRunning && !hasOrchestratorStrip) {
     return (
       <span
         className={cn(baseClass, 'bg-danger/10 text-danger')}
-        title={run.orchestrationError}
+        title={stop.message}
         data-testid="workflow-orchestrator-failed"
       >
         <AlertTriangle size={10} aria-hidden />

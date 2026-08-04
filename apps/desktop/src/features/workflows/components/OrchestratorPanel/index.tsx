@@ -3,10 +3,6 @@ import { CircleHelp, PenLine, Play, RotateCcw, Wallet, Wand2 } from 'lucide-reac
 import { Eyebrow, Markdown, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, OpenQuestion, SessionId, Step, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
-import {
-  BUDGET_BLOCK_MESSAGE,
-  isBudgetBlocked,
-} from '../../../../store/slices/workflows/budgetBlock';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import { openBudgetStudio } from '../../../budget/openBudgetStudio';
 import { WorkflowOrchestratorTldr } from '../WorkflowOrchestratorTldr';
@@ -42,7 +38,6 @@ export const OrchestratorPanel = ({
   const openQuestions = useAppStore(
     (state) => state.sessionOpenQuestions[sessionId] ?? EMPTY_QUESTIONS,
   );
-  const budgetAlerts = useAppStore((state) => state.budgetAlerts);
   const [hintsOpen, setHintsOpen] = useState(false);
   const [hintsDraft, setHintsDraft] = useState(run.orchestratorHints ?? '');
   const [continueNote, setContinueNote] = useState('');
@@ -54,9 +49,6 @@ export const OrchestratorPanel = ({
     agents,
     isOrchestrating,
     hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
-    isBudgetPaused:
-      run.orchestrationError === BUDGET_BLOCK_MESSAGE ||
-      (run.autoRun && isBudgetBlocked({ alerts: budgetAlerts, sessionId })),
     costUsd,
   });
   const elapsed = useElapsedLabel({ since: state.waitingSince });
