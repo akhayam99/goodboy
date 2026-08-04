@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Divider, EmptyState, ResizeHandle, ScrollFade, Skeleton } from '@goodboy/ui';
+import { ResizeHandle, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
@@ -7,6 +7,8 @@ import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
 import { classifyAgent } from '../../../session/agent-kind';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
 import { DraftsPanel } from './DraftsPanel';
 import { PublishBar } from './PublishBar';
 import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
@@ -108,32 +110,45 @@ export const ReviewBoardPane = ({ session }: Props) => {
     }
   };
 
+  const header = (
+    <div className="flex items-center gap-2">
+      <span className="min-w-0 truncate text-sm font-medium text-foreground">
+        {target == null
+          ? 'Review board'
+          : `${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
+      </span>
+      <span className="text-2xs tabular-nums text-muted-foreground/60">
+        {loading ? '' : `${files.length} files`}
+      </span>
+      <span className="flex-1" />
+      <RefreshIconButton
+        label="Refresh diff"
+        isLoading={loading}
+        onClick={refresh}
+        iconSize={12}
+        className="size-6 border-transparent p-0"
+      />
+    </div>
+  );
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <StudioDetailLayout
+      header={header}
+      fit="bleed"
+      dock={
+        <PublishBar
+          provider={target?.provider ?? 'github'}
+          draftCount={openDrafts.length}
+          publishing={publishing}
+          onPublish={(opts) => void publish(opts)}
+        />
+      }
+    >
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex shrink-0 items-center gap-2 px-3 py-1.5">
-            <span className="min-w-0 truncate text-xs font-medium text-foreground">
-              {target == null
-                ? 'Review board'
-                : `${target.repo} ${target.provider === 'gitlab' ? '!' : '#'}${target.prNumber}`}
-            </span>
-            <span className="text-2xs tabular-nums text-muted-foreground/60">
-              {loading ? '' : `${files.length} files`}
-            </span>
-            <span className="flex-1" />
-            <RefreshIconButton
-              label="Refresh diff"
-              isLoading={loading}
-              onClick={refresh}
-              iconSize={12}
-              className="size-6 border-transparent p-0"
-            />
-          </div>
-          <Divider className="shrink-0" />
           {loading ? (
             <div
-              className="flex min-h-0 flex-1 flex-col gap-4 p-4"
+              className="flex min-h-0 flex-1 flex-col gap-4 px-6 py-5"
               role="status"
               aria-label="Loading diff"
             >
@@ -149,13 +164,17 @@ export const ReviewBoardPane = ({ session }: Props) => {
               ))}
             </div>
           ) : error != null ? (
-            <div className="flex flex-1 items-center justify-center px-6 text-center text-xs text-danger">
-              {error}
+            <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
+              <LensEmptyState
+                tone={CONCEPT_TONE.errors}
+                icon={CONCEPT_ICONS.errors}
+                title="Could not load the diff"
+                description={error}
+              />
             </div>
           ) : files.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center px-6">
-              <EmptyState
-                bordered
+            <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
+              <LensEmptyState
                 tone={CONCEPT_TONE.diff}
                 icon={CONCEPT_ICONS.diff}
                 title="No changes in this pull request"
@@ -193,13 +212,6 @@ export const ReviewBoardPane = ({ session }: Props) => {
           />
         </div>
       </div>
-      <Divider />
-      <PublishBar
-        provider={target?.provider ?? 'github'}
-        draftCount={openDrafts.length}
-        publishing={publishing}
-        onPublish={(opts) => void publish(opts)}
-      />
-    </div>
+    </StudioDetailLayout>
   );
 };
