@@ -1,7 +1,7 @@
 import type { IsoDateTime, ProviderRunId, SessionId, TelemetryRecordId } from './ids';
 import type { ProviderName } from './provider';
 
-export type TelemetryKind = 'turn' | 'summarizer';
+export type TelemetryKind = 'turn' | 'summarizer' | 'orchestrator';
 
 export type TelemetryRecord = Readonly<{
   id: TelemetryRecordId;

@@ -62,6 +62,27 @@ const latestTurnTelemetryByRunId = ({
   return map;
 };
 
+const aggregatesByRunId = ({ telemetry }: TelemetryParams): Map<string, MutableAggregate> => {
+  const map = new Map<string, MutableAggregate>();
+  for (const record of telemetry) {
+    const aggregate = map.get(record.runId) ?? {
+      inputTokens: 0,
+      outputTokens: 0,
+      estimatedCostUsd: 0,
+      turns: 0,
+    };
+    aggregate.estimatedCostUsd += record.estimatedCostUsd;
+    map.set(record.runId, aggregate);
+    if (record.kind !== 'turn') {
+      continue;
+    }
+    aggregate.inputTokens += inputTokensForUsage(record);
+    aggregate.outputTokens += record.outputTokens;
+    aggregate.turns = 1;
+  }
+  return map;
+};
+
 type AgentParams = {
   readonly agents: ReadonlyArray<Agent>;
 };
@@ -118,16 +139,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
     }),
   );
 
-  const telemetryByRunId = useMemo(() => {
-    const map = new Map<string, TelemetryRecord>();
-    for (const rec of telemetry) {
-      const existing = map.get(rec.runId);
-      if (existing == null || existing.recordedAt < rec.recordedAt) {
-        map.set(rec.runId, rec);
-      }
-    }
-    return map;
-  }, [telemetry]);
+  const telemetryByRunId = useMemo(() => latestTurnTelemetryByRunId({ telemetry }), [telemetry]);
 
   const latestTelemetryByAgentId = useMemo(
     () => computeLatestTelemetryByAgentId(phaseRuns, agentRunHistory, telemetryByRunId),
@@ -146,22 +158,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
   }, [messages]);
 
   const aggregatesByAgentId = useMemo(() => {
-    const turnTelemetry = new Map<string, MutableAggregate>();
-    for (const record of telemetry) {
-      if (record.kind !== 'turn') {
-        continue;
-      }
-      const aggregate = turnTelemetry.get(record.runId) ?? {
-        inputTokens: 0,
-        outputTokens: 0,
-        estimatedCostUsd: 0,
-        turns: 1,
-      };
-      aggregate.inputTokens += inputTokensForUsage(record);
-      aggregate.outputTokens += record.outputTokens;
-      aggregate.estimatedCostUsd += record.estimatedCostUsd;
-      turnTelemetry.set(record.runId, aggregate);
-    }
+    const runAggregates = aggregatesByRunId({ telemetry });
     const map = new Map<string, MutableAggregate>();
     for (const run of phaseRuns) {
       const runIds = agentRunHistory[run.id] ?? (run.runId != null ? [run.runId] : []);
@@ -172,7 +169,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
         turns: 0,
       };
       for (const runId of runIds) {
-        const rec = turnTelemetry.get(runId);
+        const rec = runAggregates.get(runId);
         if (rec == null) {
           continue;
         }
@@ -213,13 +210,12 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
   }, [telemetry, phaseRuns, agentRunHistory]);
 
   const providerUsageByAgentId = useMemo(() => {
-    const turnTelemetry = latestTurnTelemetryByRunId({ telemetry });
     const map = new Map<string, Map<ProviderName, ProviderEntry>>();
     for (const run of phaseRuns) {
       const runIds = agentRunHistory[run.id] ?? (run.runId != null ? [run.runId] : []);
       const byProvider = new Map<ProviderName, ProviderEntry>();
       for (const runId of runIds) {
-        const rec = turnTelemetry.get(runId);
+        const rec = telemetryByRunId.get(runId);
         if (rec == null) {
           continue;
         }
@@ -257,7 +253,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
       );
     }
     return result;
-  }, [telemetry, phaseRuns, agentRunHistory]);
+  }, [telemetryByRunId, phaseRuns, agentRunHistory]);
 
   return useMemo(
     () => ({

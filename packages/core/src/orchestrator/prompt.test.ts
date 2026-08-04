@@ -37,6 +37,14 @@ describe('buildOrchestratorUserPrompt', () => {
     expect(prompt).toContain('Step budget: 5 used of 8');
   });
 
+  it('presents the model menu as the routing pool rather than a catalog', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({ modelMenu: [{ id: 'sonnet-5', label: 'Sonnet 5', note: 'balanced default' }] }),
+    );
+
+    expect(prompt).toContain('Routing pool, the only models you may pick');
+  });
+
   it('presents the role defaults as the operator configuration', () => {
     const prompt = buildOrchestratorUserPrompt(
       input({ roleDefaults: [{ role: 'implementer', model: 'sonnet-5', effort: 'medium' }] }),
@@ -59,6 +67,11 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
   it('makes the operator role defaults the routing baseline', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain("the operator's own configuration");
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('When you deviate you must say so in reason');
+  });
+
+  it('warns that a model outside the listed pool is rejected', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('The listed ids are the whole routing pool');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('falls back to the role default');
   });
 
   it('gives reason an operator facing contract', () => {

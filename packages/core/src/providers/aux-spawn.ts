@@ -15,6 +15,7 @@ type Params = {
   readonly userMessage: string;
   readonly systemPrompt: string;
   readonly workingDir?: string;
+  readonly runId?: string;
   readonly invokeFn: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 };
 
@@ -26,6 +27,7 @@ export const runAuxOneShot = async ({
   userMessage,
   systemPrompt,
   workingDir,
+  runId,
   invokeFn,
 }: Params): Promise<AuxSpawnResult> =>
   invokeFn<AuxSpawnResult>('summarize_session', {
@@ -37,5 +39,6 @@ export const runAuxOneShot = async ({
       userMessage,
       systemPrompt,
       ...(workingDir != null && { workingDir }),
+      ...(runId != null && { runId }),
     },
   });

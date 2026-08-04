@@ -14,6 +14,8 @@ import { PublishBar } from './PublishBar';
 import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
 import { useReviewDiff } from './useReviewDiff';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
+import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
+import { DiffLayoutToggle } from '../../../../shared/components/DiffLayoutToggle';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
@@ -36,6 +38,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
   const selectAgent = useAppStore((s) => s.selectAgent);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const { files, loading, error, target, refresh } = useReviewDiff({ session });
+  const [layoutMode, setLayoutMode] = useDiffLayoutMode();
   const { showToast } = useToast();
   const [publishing, setPublishing] = useState(false);
 
@@ -121,6 +124,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
         {loading ? '' : `${files.length} files`}
       </span>
       <span className="flex-1" />
+      <DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />
       <RefreshIconButton
         label="Refresh diff"
         isLoading={loading}
@@ -187,6 +191,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
                 <ReviewFileDiff
                   key={file.path}
                   file={file}
+                  layoutMode={layoutMode}
                   drafts={draftsByPath.get(file.path) ?? EMPTY_ARRAY}
                   onAddDraft={(lineTarget, body) => void addDraftFromLine(lineTarget, body)}
                   onAskAgent={askAgent}

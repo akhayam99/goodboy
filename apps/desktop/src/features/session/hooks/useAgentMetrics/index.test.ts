@@ -224,6 +224,54 @@ describe('useAgentMetrics', () => {
     ]);
   });
 
+  it('bills an orchestrator decision without crediting the agent a turn', () => {
+    store.state.sessionPhaseRuns = { [SID]: [agent('a')] };
+    store.state.agentRunHistory = { a: ['run-a', 'run-orchestrator'] };
+    store.state.sessionTelemetry = {
+      [SID]: [
+        turn('run-a'),
+        turn('run-orchestrator', {
+          kind: 'orchestrator',
+          inputTokens: 4_200,
+          outputTokens: 310,
+          estimatedCostUsd: 0.25,
+          recordedAt: '2026-01-01T00:00:01.000Z' as IsoDateTime,
+        }),
+      ],
+    };
+
+    const { result } = renderHook(() => useAgentMetrics({ sessionId: SID }));
+
+    expect(result.current.aggregatesByAgentId.get('a')).toEqual({
+      inputTokens: 100,
+      outputTokens: 10,
+      estimatedCostUsd: 0.75,
+      turns: 1,
+    });
+  });
+
+  it('keeps an orchestrator decision out of the context readout', () => {
+    store.state.sessionPhaseRuns = { [SID]: [agent('a')] };
+    store.state.agentRunHistory = { a: ['run-a', 'run-orchestrator'] };
+    store.state.sessionTelemetry = {
+      [SID]: [
+        turn('run-a', { inputTokens: 150_000, contextTokens: 150_000 }),
+        turn('run-orchestrator', {
+          kind: 'orchestrator',
+          model: 'claude-haiku-4-5',
+          inputTokens: 4_200,
+          contextTokens: 4_200,
+          recordedAt: '2026-01-01T00:00:01.000Z' as IsoDateTime,
+        }),
+      ],
+    };
+
+    const { result } = renderHook(() => useAgentMetrics({ sessionId: SID }));
+
+    expect(result.current.providerUsageByAgentId.get('a')?.[0]?.contextTokens).toBe(150_000);
+    expect(result.current.latestTelemetryByAgentId.get('a')?.model).toBe('claude-sonnet-4-5');
+  });
+
   it('exposes the latest telemetry record per agent', () => {
     store.state.sessionPhaseRuns = { [SID]: [agent('a')] };
     store.state.agentRunHistory = { a: ['run-a', 'run-a2'] };

@@ -4,7 +4,7 @@ import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import { BUDGET_BLOCK_MESSAGE, isBudgetBlocked } from './budgetBlock';
-import { persistOrchestrationError } from './orchestrateNextStep';
+import { persistOrchestrationStop } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
 
 const advanceInFlight = new Set<SessionId>();
@@ -68,14 +68,14 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   }
   if (isBudgetBlocked({ alerts: state.budgetAlerts, sessionId })) {
     for (const run of activeRuns) {
-      if (run.orchestrationError === BUDGET_BLOCK_MESSAGE) {
+      if (run.orchestrationStop?.kind === 'budget') {
         continue;
       }
-      await persistOrchestrationError({
+      await persistOrchestrationStop({
         set,
         sessionId,
         workflowRunId: run.id,
-        message: BUDGET_BLOCK_MESSAGE,
+        stop: { kind: 'budget', message: BUDGET_BLOCK_MESSAGE },
       });
     }
     return;

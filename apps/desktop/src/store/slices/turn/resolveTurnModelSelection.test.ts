@@ -73,6 +73,25 @@ describe('agentPinApplies', () => {
 });
 
 describe('resolveTurnModelSelection', () => {
+  it('spawns a cluster child on the routing inherited from its parent step', () => {
+    const selection = resolveTurnModelSelection({
+      ...BASE_PARAMS,
+      agentModelPin: 'opus-5',
+      agentProvider: 'anthropic',
+      requestedEffort: 'high',
+    });
+
+    expect(selection.key).toBe('opus-5');
+    expect(selection.effort).toBe('high');
+  });
+
+  it('drops a stepless agent onto the routing default when nothing is inherited', () => {
+    const selection = resolveTurnModelSelection(BASE_PARAMS);
+
+    expect(selection.key).not.toBe('opus-5');
+    expect(selection.key).toBe('sonnet-4.5');
+  });
+
   it('gives a retry model precedence over the phase override', () => {
     const selection = resolveTurnModelSelection({
       ...BASE_PARAMS,

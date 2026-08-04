@@ -41,6 +41,27 @@ describe('summarizeStepOutput', () => {
     expect(result).toBe('Implemented auth flow.\n- `src/auth.ts`');
   });
 
+  it('carries the cancellation handle down to the spawn boundary', async () => {
+    let request: Record<string, unknown> | undefined;
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(
+      _cmd: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => {
+      request = args;
+      return { stdout: 'Done.', stderr: '', exitCode: 0 } as T;
+    };
+
+    await summarizeStepOutput({
+      providerId: 'cursor',
+      model: 'sonnet-4.6',
+      invokeFn,
+      output: 'raw',
+      runId: 'summary-run-1',
+    });
+
+    expect(request?.['args']).toMatchObject({ runId: 'summary-run-1' });
+  });
+
   it('tells the summarizer what the next step expects when the step declares it', async () => {
     let request: Record<string, unknown> | undefined;
     const invokeFn: SummarizerDeps['invokeFn'] = async <T>(

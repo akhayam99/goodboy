@@ -38,6 +38,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { finalizeWorkflowStep, degradedNotifiedAgents } from './finalizeWorkflowStep';
+import { SUMMARY_TIMEOUT_MS } from '../../summarizeAgentOutput';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -134,6 +135,7 @@ describe('finalizeWorkflowStep output summary', () => {
       invokeFn: expect.any(Function),
       output: 'raw assistant output',
       workingDir: '/tmp/worktree',
+      runId: expect.any(String),
     });
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       AGENT_ID,
@@ -216,14 +218,14 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(state.emitNotification).toHaveBeenCalledTimes(1);
   });
 
-  it('uses the fallback when summarization exceeds 15 seconds', async () => {
+  it('uses the fallback when summarization exceeds the timeout budget', async () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockImplementation(() => new Promise(() => undefined));
     const finalize = buildHarness();
     const completion = finalize(SESSION_ID, AGENT_ID, 'timeout output', false, { force: true });
 
-    await vi.advanceTimersByTimeAsync(14_999);
+    await vi.advanceTimersByTimeAsync(SUMMARY_TIMEOUT_MS - 1);
     expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(1);
@@ -232,6 +234,28 @@ describe('finalizeWorkflowStep output summary', () => {
       AGENT_ID,
       expect.objectContaining({ outputSummary: 'timeout output' }),
     );
+  });
+
+  it('summarizes once when two finalize calls race for the same agent', async () => {
+    let release: (summary: string) => void = () => undefined;
+    summarizeStepOutputSpy.mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const finalize = buildHarness();
+
+    const first = finalize(SESSION_ID, AGENT_ID, 'raw output', false, { force: true });
+    const second = finalize(SESSION_ID, AGENT_ID, 'raw output', false, { force: true });
+    release('the only summary');
+    await Promise.all([first, second]);
+
+    expect(summarizeStepOutputSpy).toHaveBeenCalledTimes(1);
+    const written = invokeAgentUpdateStatusSpy.mock.calls.map(
+      (call) => (call[1] as { readonly outputSummary?: string }).outputSummary,
+    );
+    expect(new Set(written)).toEqual(new Set(['the only summary']));
   });
 
   it('ignores a step-done marker that names a different step', async () => {

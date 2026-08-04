@@ -96,12 +96,14 @@ const nextAgent: Agent = {
 
 const buildHarness = (turnKind: 'idle' | 'running') => {
   const activateWorkflowAgent = vi.fn();
+  const orchestrateNextStep = vi.fn();
   const state = {
     sessions: [session],
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
     sessionPhaseRuns: { [SESSION_ID]: [stuckAgent, nextAgent] },
     agentTurnState: { [STUCK]: { kind: turnKind, lastActivityAt: NOW } },
     activateWorkflowAgent,
+    orchestrateNextStep,
     refreshUnreadWorkspaces: vi.fn(),
   };
   const set = vi.fn();
@@ -112,6 +114,51 @@ const buildHarness = (turnKind: 'idle' | 'running') => {
       get,
     ),
     activateWorkflowAgent,
+    orchestrateNextStep,
+  };
+};
+
+type DynamicParams = {
+  readonly orchestrationOutcome?: 'done' | 'blocked';
+};
+
+const dynamicHarness = ({ orchestrationOutcome }: DynamicParams = {}) => {
+  const activateWorkflowAgent = vi.fn();
+  const orchestrateNextStep = vi.fn();
+  const scoutDone: Agent = { ...stuckAgent, status: 'completed' };
+  const planFailed: Agent = { ...nextAgent, status: 'failed', startedAt: NOW };
+  const state = {
+    sessions: [
+      {
+        ...session,
+        autoRun: true,
+        workflowRuns: [
+          {
+            ...session.workflowRuns[0]!,
+            autoRun: true,
+            executionMode: 'dynamic' as const,
+            ...(orchestrationOutcome != null && { orchestrationOutcome }),
+          },
+        ],
+      },
+    ],
+    phaseTemplates: { [WORKSPACE_ID]: [workflow] },
+    sessionPhaseRuns: { [SESSION_ID]: [scoutDone, planFailed] },
+    agentTurnState: { [NEXT]: { kind: 'idle' as const, lastActivityAt: NOW } },
+    activateWorkflowAgent,
+    orchestrateNextStep,
+    refreshUnreadWorkspaces: vi.fn(),
+  };
+  const set = vi.fn();
+  const get = (() => state) as unknown as Parameters<typeof skipStuckStepAndAdvance>[1];
+  invokeAgentListSpy.mockResolvedValue([scoutDone, { ...planFailed, status: 'skipped' }]);
+  return {
+    run: skipStuckStepAndAdvance(
+      set as unknown as Parameters<typeof skipStuckStepAndAdvance>[0],
+      get,
+    ),
+    activateWorkflowAgent,
+    orchestrateNextStep,
   };
 };
 
@@ -144,5 +191,26 @@ describe('skipStuckStepAndAdvance', () => {
 
     expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
     expect(activateWorkflowAgent).not.toHaveBeenCalled();
+  });
+
+  it('asks the orchestrator for the next step when a dynamic run has no known step left', async () => {
+    const { run, activateWorkflowAgent, orchestrateNextStep } = dynamicHarness();
+
+    await run(SESSION_ID, RUN_ID);
+
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      NEXT,
+      expect.objectContaining({ status: 'skipped' }),
+    );
+    expect(activateWorkflowAgent).not.toHaveBeenCalled();
+    expect(orchestrateNextStep).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('leaves a dynamic run alone once the orchestrator already closed it', async () => {
+    const { run, orchestrateNextStep } = dynamicHarness({ orchestrationOutcome: 'done' });
+
+    await run(SESSION_ID, RUN_ID);
+
+    expect(orchestrateNextStep).not.toHaveBeenCalled();
   });
 });

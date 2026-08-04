@@ -3,9 +3,11 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  ProviderRunId,
   Session,
   SessionId,
   StepId,
+  TelemetryRecord,
   Workflow,
   WorkflowId,
   WorkflowRunId,
@@ -21,14 +23,24 @@ const {
   invokeAgentInsertSpy,
   listOpenQuestionsSpy,
   updateOutcomeSpy,
-  updateErrorSpy,
+  updateStopSpy,
+  insertProviderRunSpy,
+  updateProviderRunStatusSpy,
+  insertTelemetrySpy,
+  summarizeSessionSpy,
+  summarizeWorkspaceSpy,
 } = vi.hoisted(() => ({
   decideSpy: vi.fn(),
   invokeWorkflowUpsertSpy: vi.fn(),
   invokeAgentInsertSpy: vi.fn(),
   listOpenQuestionsSpy: vi.fn(async () => []),
   updateOutcomeSpy: vi.fn(async () => undefined),
-  updateErrorSpy: vi.fn(async () => undefined),
+  updateStopSpy: vi.fn(async () => undefined),
+  insertProviderRunSpy: vi.fn(async () => undefined),
+  updateProviderRunStatusSpy: vi.fn(async () => undefined),
+  insertTelemetrySpy: vi.fn(async () => undefined),
+  summarizeSessionSpy: vi.fn(async () => ({ estimatedCostUsd: 0 })),
+  summarizeWorkspaceSpy: vi.fn(async () => ({ estimatedCostUsd: 0 })),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
@@ -44,7 +56,12 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
-  updateWorkflowRunOrchestrationError: updateErrorSpy,
+  updateWorkflowRunOrchestrationStop: updateStopSpy,
+  insertProviderRun: insertProviderRunSpy,
+  updateProviderRunStatus: updateProviderRunStatusSpy,
+  insertTelemetry: insertTelemetrySpy,
+  summarizeSessionTelemetry: summarizeSessionSpy,
+  summarizeWorkspaceTelemetry: summarizeWorkspaceSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -68,6 +85,22 @@ const WORKFLOW_ID = 'workflow-1' as WorkflowId;
 const WORKFLOW_RUN_ID = 'workflow-run-1' as WorkflowRunId;
 const AGENT_ID = 'agent-1' as AgentId;
 const NOW = '2026-07-30T00:00:00.000Z' as IsoDateTime;
+
+const NO_USAGE = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedInputTokens: 0,
+  cacheCreationInputTokens: 0,
+  estimatedCostUsd: 0,
+};
+
+const BILLED_USAGE = {
+  inputTokens: 4200,
+  outputTokens: 310,
+  cachedInputTokens: 0,
+  cacheCreationInputTokens: 0,
+  estimatedCostUsd: 0.0123,
+};
 
 const workflow = (): Workflow => ({
   id: WORKFLOW_ID,
@@ -145,6 +178,8 @@ const baseState = (): State => {
     sessionBranches: { [SESSION_ID]: 'ak/workflow' },
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     transcripts: { [AGENT_ID]: [] },
+    sessionTelemetry: {},
+    agentRunHistory: {},
     agentTurnState: {},
     agentModelOverride: {},
     agentKindOverride: {},
@@ -189,6 +224,7 @@ beforeEach(() => {
 describe('orchestrateNextStep', () => {
   it('appends a real step and agent, emits the decision, and activates it', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'The implementation is ready.',
@@ -229,6 +265,7 @@ describe('orchestrateNextStep', () => {
 
   it('suffixes a colliding step name', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'Inspect again.',
@@ -250,6 +287,7 @@ describe('orchestrateNextStep', () => {
 
   it('spawns a decided scout step on the scout role model, not on an expensive one', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'Survey first.',
@@ -276,6 +314,7 @@ describe('orchestrateNextStep', () => {
 
   it('still spawns a decided step on the model the orchestrator picked for it', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'This one is hard.',
@@ -301,8 +340,221 @@ describe('orchestrateNextStep', () => {
     );
   });
 
+  it('offers the orchestrator the routing pool instead of the whole provider catalog', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'done', reason: 'all set' },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const menu = decideSpy.mock.calls[0]![0].modelMenu as ReadonlyArray<{ id: string }>;
+    expect(menu.map((option) => option.id)).toEqual(['opus-5', 'sonnet-5', 'haiku-4.5']);
+  });
+
+  it('falls back to the role default when the picked model is outside the pool', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+          effort: 'max',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        modelOverride: ROLE_DEFAULTS.implementer.model,
+        effort: ROLE_DEFAULTS.implementer.effort,
+      }),
+    );
+  });
+
+  it('tells the operator which pick it refused', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const saved = invokeWorkflowUpsertSpy.mock.calls[0]![0].steps[1];
+    expect(saved.orchestratorReason).toContain('fable-5');
+    expect(saved.orchestratorReason).toContain(ROLE_DEFAULTS.implementer.model);
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      'agent-2',
+      SESSION_ID,
+      expect.objectContaining({ reason: expect.stringContaining('fable-5') }),
+    );
+  });
+
+  it('raises a notification naming the refused model and the one that ran', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'fable-5',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['emitNotification']).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'orchestrator model pick refused',
+      expect.stringContaining('fable-5'),
+      { sessionId: SESSION_ID },
+    );
+    expect(state['emitNotification']).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'orchestrator model pick refused',
+      expect.stringContaining(ROLE_DEFAULTS.implementer.model),
+      { sessionId: SESSION_ID },
+    );
+  });
+
+  it('stays quiet when the picked model is inside the pool', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'This one is hard.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the change.',
+          model: 'opus-5',
+        },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(state['emitNotification']).not.toHaveBeenCalled();
+  });
+
+  it('bills the decision to the step it opened so the run cost includes it', async () => {
+    decideSpy.mockResolvedValue({
+      decision: {
+        action: 'next',
+        reason: 'The implementation is ready.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the mapped change.',
+        },
+      },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const records = (state['sessionTelemetry'] as Record<string, ReadonlyArray<TelemetryRecord>>)[
+      SESSION_ID
+    ]!;
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      kind: 'orchestrator',
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      inputTokens: 4200,
+      outputTokens: 310,
+      estimatedCostUsd: 0.0123,
+    });
+    const history = state['agentRunHistory'] as Record<string, ReadonlyArray<string>>;
+    expect(history['agent-2']).toEqual([records[0]!.runId]);
+    expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('bills a decision that only closed the run to the last agent', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const history = state['agentRunHistory'] as Record<string, ReadonlyArray<string>>;
+    expect(history[AGENT_ID]).toHaveLength(1);
+  });
+
+  it('keeps the turn the agent already paid for alongside the decision', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    state['sessionPhaseRuns'] = {
+      [SESSION_ID]: [{ ...completedAgent(), runId: 'own-run' as ProviderRunId }],
+    };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const history = state['agentRunHistory'] as Record<string, ReadonlyArray<string>>;
+    expect(history[AGENT_ID]?.[0]).toBe('own-run');
+    expect(history[AGENT_ID]).toHaveLength(2);
+  });
+
+  it('persists nothing when the decision burned no tokens', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(insertTelemetrySpy).not.toHaveBeenCalled();
+  });
+
   it('emits done and stops without adding a step', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: { action: 'done', reason: 'All required tests pass.' },
     });
     const state = baseState();
@@ -349,6 +601,7 @@ describe('orchestrateNextStep', () => {
 
   it('notifies when blocked', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: { action: 'blocked', reason: 'A product choice is required.' },
     });
     const state = baseState();
@@ -403,6 +656,7 @@ describe('orchestrateNextStep', () => {
     expect(updated.orchestrationOutcome).toBeUndefined();
 
     decideSpy.mockResolvedValueOnce({
+      usage: NO_USAGE,
       decision: { action: 'done', reason: 'All required tests pass.' },
     });
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
@@ -413,6 +667,7 @@ describe('orchestrateNextStep', () => {
 
   it('targets the run latest agent over the session selection for decision events', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: { action: 'done', reason: 'All required tests pass.' },
     });
     const state = baseState();
@@ -428,9 +683,11 @@ describe('orchestrateNextStep', () => {
     );
   });
 
-  it('falls back to the session selection when the run has no agents', async () => {
+  it('never bills a decision to an agent outside the run', async () => {
     decideSpy.mockResolvedValue({
       decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
     });
     const state = baseState();
     state['sessionPhaseRuns'] = { [SESSION_ID]: [] };
@@ -439,15 +696,38 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
-      'agent-other',
-      SESSION_ID,
-      expect.objectContaining({ action: 'done' }),
-    );
+    expect(state['appendTurnEvent']).not.toHaveBeenCalled();
+    const history = state['agentRunHistory'] as Record<string, ReadonlyArray<string>>;
+    expect(history['agent-other']).toBeUndefined();
+  });
+
+  it('records a decision the run has no agent to hang it on exactly once', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    state['sessionPhaseRuns'] = { [SESSION_ID]: [] };
+    state['selectedAgentId'] = { [SESSION_ID]: 'agent-other' as AgentId };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const records = (state['sessionTelemetry'] as Record<string, ReadonlyArray<TelemetryRecord>>)[
+      SESSION_ID
+    ]!;
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ kind: 'orchestrator', estimatedCostUsd: 0.0123 });
+    expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the run alive when the decision is unparseable', async () => {
-    decideSpy.mockResolvedValue({ decision: null });
+    decideSpy.mockResolvedValue({
+      decision: null,
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
     const state = baseState();
     const { set, get } = harness(state);
 
@@ -466,6 +746,7 @@ describe('orchestrateNextStep', () => {
       'the decision could not be parsed, use next step to retry',
       { sessionId: SESSION_ID },
     );
+    expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
   });
 
   it('guards re-entrant decisions for the same run', async () => {
@@ -475,7 +756,7 @@ describe('orchestrateNextStep', () => {
     });
     decideSpy.mockImplementation(async () => {
       await gate;
-      return { decision: { action: 'done', reason: 'Complete.' } };
+      return { decision: { action: 'done', reason: 'Complete.' }, usage: NO_USAGE };
     });
     const state = baseState();
     const { set, get } = harness(state);
@@ -496,24 +777,24 @@ describe('orchestrateNextStep', () => {
 
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(updateErrorSpy).toHaveBeenCalledWith(
-      {},
-      WORKFLOW_RUN_ID,
-      expect.stringContaining('usage limit reached'),
-    );
+    expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
+      kind: 'failure',
+      message: expect.stringContaining('usage limit reached'),
+    });
     const failed = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(failed.orchestrationError).toContain('anthropic');
+    expect(failed.orchestrationStop?.kind).toBe('failure');
+    expect(failed.orchestrationStop?.message).toContain('anthropic');
 
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
-      model: 'haiku-4.5',
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
     });
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(updateErrorSpy).toHaveBeenLastCalledWith({}, WORKFLOW_RUN_ID, null);
+    expect(updateStopSpy).toHaveBeenLastCalledWith({}, WORKFLOW_RUN_ID, null);
     const cleared = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(cleared.orchestrationError).toBeUndefined();
+    expect(cleared.orchestrationStop).toBeUndefined();
   });
 
   it('hands the operator hints of the run to the orchestrator', async () => {
@@ -527,8 +808,8 @@ describe('orchestrateNextStep', () => {
     ];
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
-      model: 'haiku-4.5',
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
     });
     const { set, get } = harness(state);
 
@@ -542,7 +823,7 @@ describe('orchestrateNextStep', () => {
   it('routes the decision through the provider handed by the caller', async () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
+      usage: NO_USAGE,
       model: 'gpt-5.6',
     });
     const state = baseState();
@@ -560,7 +841,7 @@ describe('orchestrateNextStep', () => {
   it('routes the decision through the model pinned on the run', async () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
+      usage: NO_USAGE,
       model: 'gpt-5.6',
     });
     const state = baseState();
@@ -588,8 +869,8 @@ describe('orchestrateNextStep', () => {
   it('tells the orchestrator how much of the step budget is spent', async () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
-      model: 'haiku-4.5',
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
     });
     const state = baseState();
     const { set, get } = harness(state);
@@ -636,10 +917,11 @@ describe('orchestrateNextStep', () => {
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
     expect(decideSpy).not.toHaveBeenCalled();
-    expect(updateErrorSpy).toHaveBeenCalledWith(
-      {},
-      WORKFLOW_RUN_ID,
-      expect.stringContaining('budget cap'),
-    );
+    expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
+      kind: 'budget',
+      message: expect.stringContaining('budget cap'),
+    });
+    const paused = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(paused.orchestrationStop?.kind).toBe('budget');
   });
 });

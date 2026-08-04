@@ -4,7 +4,6 @@ import type {
   AgentId,
   AgentRole,
   IsoDateTime,
-  ModelCostTier,
   OrchestratorRouting,
   ProviderId,
   ProviderRunId,
@@ -15,6 +14,7 @@ import type {
   TurnEvent,
   Workflow,
   WorkflowOrchestrationOutcome,
+  WorkflowOrchestrationStop,
   WorkflowRunId,
 } from '@goodboy/types';
 import {
@@ -22,19 +22,19 @@ import {
   ORCHESTRATOR_STEP_HARD_CAP,
   OrchestratorClient,
   OrchestratorProviderError,
-  PROVIDER_CAPABILITIES,
   ROLE_DEFAULTS,
+  enforceOrchestratorModelPool,
+  orchestratorModelPool,
   recommendedModelForRole,
   resolveRoleRouting,
   resolveTaskModel,
   runsForWorkflowRun,
-  type OrchestratorModelOption,
   type OrchestratorRoleDefault,
 } from '@goodboy/core';
 import {
   listOpenQuestionsForSession,
-  updateWorkflowRunOrchestrationError,
   updateWorkflowRunOrchestrationOutcome,
+  updateWorkflowRunOrchestrationStop,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -43,6 +43,7 @@ import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
+import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import type { GetFn, SetFn } from './types';
 
 export type OrchestrateOptions = {
@@ -64,28 +65,15 @@ const setDeciding = ({ set, workflowRunId, isDeciding }: DecidingParams): void =
   }));
 };
 
-const MODEL_NOTE: Readonly<Record<ModelCostTier, string>> = {
-  cheap: 'cheap, fast',
-  mid: 'balanced default',
-  expensive: 'deepest reasoning',
-};
-
-type RoutingHintParams = {
+type RoleDefaultsParams = {
   readonly provider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
 };
 
-const modelMenuFor = ({ provider }: RoutingHintParams): ReadonlyArray<OrchestratorModelOption> =>
-  PROVIDER_CAPABILITIES[provider].models.map((model) => ({
-    id: model.id,
-    label: model.label,
-    note: MODEL_NOTE[model.costTier],
-  }));
-
 const roleDefaultsFor = ({
   provider,
   roleModels,
-}: RoutingHintParams): ReadonlyArray<OrchestratorRoleDefault> =>
+}: RoleDefaultsParams): ReadonlyArray<OrchestratorRoleDefault> =>
   (Object.keys(ROLE_DEFAULTS) as ReadonlyArray<AgentRole>).map((role) => ({
     role,
     model: recommendedModelForRole({ role, provider, prefs: roleModels }),
@@ -110,14 +98,12 @@ const emitDecision = ({
   reason,
   stepName,
   preferredAgentId,
-}: EmitParams): void => {
+}: EmitParams): AgentId | null => {
   const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
   const agentId =
-    preferredAgentId ??
-    [...runAgents].sort((left, right) => right.ordinal - left.ordinal)[0]?.id ??
-    get().selectedAgentId[sessionId];
+    preferredAgentId ?? [...runAgents].sort((left, right) => right.ordinal - left.ordinal)[0]?.id;
   if (agentId == null) {
-    return;
+    return null;
   }
   const event: TurnEvent = {
     kind: 'orchestrator_decision',
@@ -128,6 +114,7 @@ const emitDecision = ({
     at: new Date().toISOString() as IsoDateTime,
   };
   get().appendTurnEvent(agentId, sessionId, event);
+  return agentId;
 };
 
 type PersistOutcomeParams = {
@@ -163,30 +150,48 @@ const persistOrchestrationOutcome = async ({
   });
 };
 
-type PersistErrorParams = {
+type PersistStopParams = {
   readonly set: SetFn;
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
-  readonly message: string | null;
+  readonly stop: WorkflowOrchestrationStop | null;
 };
 
-export const persistOrchestrationError = async ({
+export const persistOrchestrationStop = async ({
   set,
   sessionId,
   workflowRunId,
-  message,
-}: PersistErrorParams): Promise<void> => {
-  await updateWorkflowRunOrchestrationError(tauriDatabase, workflowRunId, message);
+  stop,
+}: PersistStopParams): Promise<void> => {
+  await updateWorkflowRunOrchestrationStop(tauriDatabase, workflowRunId, stop);
   patchWorkflowRun({
     set,
     sessionId,
     workflowRunId,
     patch: (run) =>
-      message == null
-        ? withoutKeys(run, ['orchestrationError'])
-        : { ...run, orchestrationError: message },
+      stop == null ? withoutKeys(run, ['orchestrationStop']) : { ...run, orchestrationStop: stop },
   });
 };
+
+type FailureParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly message: string;
+};
+
+const persistOrchestrationFailure = async ({
+  set,
+  sessionId,
+  workflowRunId,
+  message,
+}: FailureParams): Promise<void> =>
+  persistOrchestrationStop({
+    set,
+    sessionId,
+    workflowRunId,
+    stop: { kind: 'failure', message },
+  });
 
 const failureLabel = (error: unknown): string => {
   if (error instanceof OrchestratorProviderError) {
@@ -336,11 +341,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       if (isBudgetBlocked({ alerts: get().budgetAlerts ?? [], sessionId })) {
-        await persistOrchestrationError({
+        await persistOrchestrationStop({
           set,
           sessionId,
           workflowRunId,
-          message: BUDGET_BLOCK_MESSAGE,
+          stop: { kind: 'budget', message: BUDGET_BLOCK_MESSAGE },
         });
         return;
       }
@@ -388,6 +393,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         .filter((entry) => entry !== '')
         .join('\n');
       const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
+      const roleDefaults = roleDefaultsFor({ provider: defaultProvider, roleModels });
+      const modelMenu = orchestratorModelPool({ provider: defaultProvider, roleDefaults });
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invoke,
@@ -402,14 +409,14 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           openQuestionCount: openQuestions.length,
           ...(hints !== '' && { operatorHints: hints }),
           providerId: defaultProvider,
-          modelMenu: modelMenuFor({ provider: defaultProvider, roleModels }),
-          roleDefaults: roleDefaultsFor({ provider: defaultProvider, roleModels }),
+          modelMenu,
+          roleDefaults,
           stepsUsed: workflow.steps.length,
           stepBudget: ORCHESTRATOR_STEP_BUDGET,
         });
       } catch (error) {
         const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
-        await persistOrchestrationError({ set, sessionId, workflowRunId, message });
+        await persistOrchestrationFailure({ set, sessionId, workflowRunId, message });
         emitDecision({
           get,
           sessionId,
@@ -424,18 +431,27 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       const decision = result.decision;
       if (decision == null) {
-        await persistOrchestrationError({
+        await persistOrchestrationFailure({
           set,
           sessionId,
           workflowRunId,
           message: `${routing.providerId}/${routing.model} replied with something that is not a decision`,
         });
-        emitDecision({
+        const unparseableAgentId = emitDecision({
           get,
           sessionId,
           workflowRunId,
           action: 'blocked',
           reason: 'the orchestrator reply could not be parsed, retry to continue',
+        });
+        await recordOrchestratorUsage({
+          set,
+          get,
+          sessionId,
+          agentId: unparseableAgentId,
+          provider: routing.providerId,
+          model: result.model,
+          usage: result.usage,
         });
         void get().emitNotification(
           'error',
@@ -446,8 +462,16 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         );
         return;
       }
-      await persistOrchestrationError({ set, sessionId, workflowRunId, message: null });
+      await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
       if (decision.action === 'next') {
+        const enforced = enforceOrchestratorModelPool({
+          step: decision.step,
+          pool: modelMenu,
+          roleDefaults,
+        });
+        const reason = [decision.reason.trim(), enforced.rejection?.note ?? '']
+          .filter((entry) => entry !== '')
+          .join('\n\n');
         const agent = await appendStep({
           set,
           get,
@@ -455,15 +479,15 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           workflow,
           step: {
-            name: decision.step.name,
-            role: decision.step.role,
-            promptPrefix: decision.step.promptPrefix,
-            ...(decision.step.expectedOutput != null && {
-              expectedOutput: decision.step.expectedOutput,
+            name: enforced.step.name,
+            role: enforced.step.role,
+            promptPrefix: enforced.step.promptPrefix,
+            ...(enforced.step.expectedOutput != null && {
+              expectedOutput: enforced.step.expectedOutput,
             }),
-            ...(decision.step.model != null && { modelOverride: decision.step.model }),
-            ...(decision.step.effort != null && { effort: decision.step.effort }),
-            ...(decision.reason.trim() !== '' && { orchestratorReason: decision.reason.trim() }),
+            ...(enforced.step.model != null && { modelOverride: enforced.step.model }),
+            ...(enforced.step.effort != null && { effort: enforced.step.effort }),
+            ...(reason !== '' && { orchestratorReason: reason }),
           },
         });
         emitDecision({
@@ -471,9 +495,28 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           sessionId,
           workflowRunId,
           action: decision.action,
-          reason: decision.reason,
+          reason,
           stepName: agent.name,
           preferredAgentId: agent.id,
+        });
+        if (enforced.rejection != null) {
+          const { requested, appliedModel, appliedEffort } = enforced.rejection;
+          void get().emitNotification(
+            'error',
+            'warning',
+            'orchestrator model pick refused',
+            `${requested} is outside the routing pool for this workspace, so ${agent.name} runs on ${appliedModel} at ${appliedEffort} effort.`,
+            { sessionId },
+          );
+        }
+        await recordOrchestratorUsage({
+          set,
+          get,
+          sessionId,
+          agentId: agent.id,
+          provider: routing.providerId,
+          model: result.model,
+          usage: result.usage,
         });
         await get().activateWorkflowAgent(sessionId, agent.id, undefined, 'agent');
         return;
@@ -485,12 +528,21 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         outcome: decision.action,
         reason: decision.reason,
       });
-      emitDecision({
+      const terminalAgentId = emitDecision({
         get,
         sessionId,
         workflowRunId,
         action: decision.action,
         reason: decision.reason,
+      });
+      await recordOrchestratorUsage({
+        set,
+        get,
+        sessionId,
+        agentId: terminalAgentId,
+        provider: routing.providerId,
+        model: result.model,
+        usage: result.usage,
       });
       if (decision.action === 'done') {
         void get().emitNotification(

@@ -11,9 +11,13 @@ import type {
   DiffHunkLine,
   FileDiff,
 } from '@goodboy/types';
+import type { DiffLayoutMode } from '../../../../shared/utils/diffLayoutMode';
+import { buildDiffPairRows, type DiffPairRow } from '../../../../shared/utils/diffPairRows';
+import { buildDiffRows, type DiffRow } from '../../../../shared/utils/diffRows';
+import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
 import {
+  DIFF_SCROLL_CONTENT_CLASS,
   INITIAL_VISIBLE_LINES,
-  LINE_PREFIX,
   STATUS_COLOR,
   STATUS_GLYPH,
   TOOLBAR_ICON_BTN,
@@ -23,11 +27,16 @@ import {
 } from './lib';
 import { CommentItem } from './comments/CommentItem';
 import { InlineComposer } from './comments/InlineComposer';
+import { DiffCommentThreadRow } from './DiffCommentThreadRow';
+import { DiffComposerRow } from './DiffComposerRow';
+import { DiffLineText } from './DiffLineText';
+import { DiffPairCells } from './DiffPairCells';
 import { ShowMoreBar } from './ShowMoreBar';
-import { SYNTAX_CLASS, highlightLine, languageForPath } from './highlight';
+import { languageForPath } from './highlight';
 
 type Props = {
   file: FileDiff;
+  layoutMode: DiffLayoutMode;
   registerRef: (el: HTMLElement | null) => void;
   reviewState: ReviewState;
   onToggleReviewed: (next: boolean) => void;
@@ -44,10 +53,31 @@ type Props = {
   getAgentName: (agentId: AgentId) => string | undefined;
 };
 
-const DIFF_SCROLL_CONTENT_CLASS = 'sticky left-0 box-border w-[var(--diff-card-width)]';
+type SideAnchorParams = {
+  line: DiffHunkLine | null;
+  side: DiffCommentSide;
+};
+
+const anchorOfSide = ({ line, side }: SideAnchorParams): DiffCommentAnchor | null => {
+  const lineNumber = side === 'old' ? line?.oldLine : line?.newLine;
+  if (lineNumber == null) {
+    return null;
+  }
+  return { side, lineNumber };
+};
+
+type AnchorParams = {
+  anchor: DiffCommentAnchor | null;
+};
+
+type AnchorPairParams = {
+  oldAnchor: DiffCommentAnchor | null;
+  newAnchor: DiffCommentAnchor | null;
+};
 
 export const FileDiffCard = ({
   file,
+  layoutMode,
   registerRef,
   reviewState,
   onToggleReviewed,
@@ -174,17 +204,46 @@ export const FileDiffCard = ({
     setFileLevelComposerOpen(false);
   };
 
-  const rows = useMemo(() => {
-    const out: Array<
-      | { type: 'header'; hi: number; header: string }
-      | { type: 'line'; hi: number; li: number; line: DiffHunkLine }
-    > = [];
-    file.hunks.forEach((hunk, hi) => {
-      out.push({ type: 'header', hi, header: hunk.header });
-      hunk.lines.forEach((line, li) => out.push({ type: 'line', hi, li, line }));
-    });
-    return out;
-  }, [file]);
+  const startDrag = (anchor: DiffCommentAnchor) => {
+    setDrag({ side: anchor.side, start: anchor.lineNumber, end: anchor.lineNumber });
+  };
+
+  const extendDrag = ({ oldAnchor, newAnchor }: AnchorPairParams) => {
+    if (drag === null) {
+      return;
+    }
+    const hoverAnchor = drag.side === 'old' ? oldAnchor : newAnchor;
+    if (hoverAnchor === null) {
+      return;
+    }
+    setDrag((current) => (current === null ? null : { ...current, end: hoverAnchor.lineNumber }));
+  };
+
+  const isAnchorActive = ({ anchor }: AnchorParams): boolean =>
+    anchor !== null &&
+    activeAnchor !== null &&
+    activeAnchor.side === anchor.side &&
+    activeAnchor.lineNumber === anchor.lineNumber;
+
+  const isRangeCommented = ({ anchor }: AnchorParams): boolean =>
+    anchor !== null && commentedRange.has(anchorKey(anchor));
+
+  const anchoredComments = ({
+    oldAnchor,
+    newAnchor,
+  }: AnchorPairParams): ReadonlyArray<DiffComment> => [
+    ...(oldAnchor === null ? [] : (commentsByAnchor.get(anchorKey(oldAnchor)) ?? [])),
+    ...(newAnchor === null ? [] : (commentsByAnchor.get(anchorKey(newAnchor)) ?? [])),
+  ];
+
+  const isSplit = layoutMode === 'split';
+  const columnCount = isSplit ? 4 : 3;
+
+  const rows = useMemo<ReadonlyArray<DiffRow | DiffPairRow>>(
+    () =>
+      isSplit ? buildDiffPairRows({ hunks: file.hunks }) : buildDiffRows({ hunks: file.hunks }),
+    [file.hunks, isSplit],
+  );
 
   const totalLines = useMemo(() => file.hunks.reduce((n, h) => n + h.lines.length, 0), [file]);
 
@@ -192,21 +251,7 @@ export const FileDiffCard = ({
 
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
 
-  const visibleRows = useMemo(() => {
-    if (visibleLines >= totalLines) {
-      return rows;
-    }
-    let count = 0;
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i]?.type === 'line') {
-        count += 1;
-        if (count >= visibleLines) {
-          return rows.slice(0, i + 1);
-        }
-      }
-    }
-    return rows;
-  }, [rows, visibleLines, totalLines]);
+  const visibleRows = useMemo(() => visibleDiffRows({ rows, visibleLines }), [rows, visibleLines]);
 
   const remaining = Math.max(0, totalLines - visibleLines);
   const noteCount = comments.filter((c) => c.status === 'open').length;
@@ -395,8 +440,11 @@ export const FileDiffCard = ({
                   {visibleRows.map((row) => {
                     if (row.type === 'header') {
                       return (
-                        <tr key={`hunk-${row.hi}`}>
-                          <td colSpan={3} className="border-y border-border-soft/40 bg-muted/30">
+                        <tr key={`hunk-${row.hunkIndex}`}>
+                          <td
+                            colSpan={columnCount}
+                            className="border-y border-border-soft/40 bg-muted/30"
+                          >
                             <div
                               className={cn(
                                 DIFF_SCROLL_CONTENT_CLASS,
@@ -409,51 +457,68 @@ export const FileDiffCard = ({
                         </tr>
                       );
                     }
-                    const { line, hi, li } = row;
-                    const oldAnchor: DiffCommentAnchor | null =
-                      line.oldLine === null ? null : { side: 'old', lineNumber: line.oldLine };
-                    const newAnchor: DiffCommentAnchor | null =
-                      line.newLine === null ? null : { side: 'new', lineNumber: line.newLine };
-                    const lineComments = [
-                      ...(oldAnchor === null
-                        ? []
-                        : (commentsByAnchor.get(anchorKey(oldAnchor)) ?? [])),
-                      ...(newAnchor === null
-                        ? []
-                        : (commentsByAnchor.get(anchorKey(newAnchor)) ?? [])),
-                    ];
-                    const isActiveOld =
-                      oldAnchor !== null &&
-                      activeAnchor !== null &&
-                      activeAnchor.side === oldAnchor.side &&
-                      activeAnchor.lineNumber === oldAnchor.lineNumber;
-                    const isActiveNew =
-                      newAnchor !== null &&
-                      activeAnchor !== null &&
-                      activeAnchor.side === newAnchor.side &&
-                      activeAnchor.lineNumber === newAnchor.lineNumber;
-                    const isActive = isActiveOld || isActiveNew;
-                    const linePrefix = LINE_PREFIX[line.kind];
-                    const oldRangeCommented =
-                      oldAnchor !== null && commentedRange.has(anchorKey(oldAnchor));
+                    if (row.type === 'pair') {
+                      const { pair, hunkIndex, rowIndex } = row;
+                      const oldAnchor = anchorOfSide({ line: pair.old, side: 'old' });
+                      const newAnchor = anchorOfSide({ line: pair.new, side: 'new' });
+                      const pairComments = anchoredComments({ oldAnchor, newAnchor });
+                      const isActive =
+                        isAnchorActive({ anchor: oldAnchor }) ||
+                        isAnchorActive({ anchor: newAnchor });
+                      return (
+                        <Fragment key={`hunk-${hunkIndex}-pair-${rowIndex}`}>
+                          <tr onMouseEnter={() => extendDrag({ oldAnchor, newAnchor })}>
+                            <DiffPairCells
+                              pair={pair}
+                              lang={lang}
+                              canComment={canComment}
+                              oldAnchor={oldAnchor}
+                              newAnchor={newAnchor}
+                              oldRangeCommented={isRangeCommented({ anchor: oldAnchor })}
+                              newRangeCommented={isRangeCommented({ anchor: newAnchor })}
+                              selectingOld={inDrag(drag?.side === 'old' ? oldAnchor : null)}
+                              selectingNew={inDrag(drag?.side === 'new' ? newAnchor : null)}
+                              onStartDrag={startDrag}
+                              onActivate={setActiveAnchor}
+                            />
+                          </tr>
+                          {pairComments.length > 0 && (
+                            <DiffCommentThreadRow
+                              comments={pairComments}
+                              colSpan={columnCount}
+                              onResolve={onResolve}
+                              onReopen={onReopen}
+                              onDelete={onDelete}
+                              onViewAgent={onViewAgent}
+                              getAgentName={getAgentName}
+                            />
+                          )}
+                          {isActive && activeAnchor !== null ? (
+                            <DiffComposerRow
+                              anchor={activeAnchor}
+                              colSpan={columnCount}
+                              onSubmit={(body) => handleSubmitComment(activeAnchor, body)}
+                              onCancel={() => setActiveAnchor(null)}
+                            />
+                          ) : null}
+                        </Fragment>
+                      );
+                    }
+                    const { line, hunkIndex, rowIndex } = row;
+                    const oldAnchor = anchorOfSide({ line, side: 'old' });
+                    const newAnchor = anchorOfSide({ line, side: 'new' });
+                    const lineComments = anchoredComments({ oldAnchor, newAnchor });
+                    const isActive =
+                      isAnchorActive({ anchor: oldAnchor }) ||
+                      isAnchorActive({ anchor: newAnchor });
+                    const oldRangeCommented = isRangeCommented({ anchor: oldAnchor });
                     const dragAnchor =
                       drag?.side === 'old' ? oldAnchor : drag?.side === 'new' ? newAnchor : null;
                     const selecting = inDrag(dragAnchor);
                     return (
-                      <Fragment key={`hunk-${hi}-line-${li}`}>
+                      <Fragment key={`hunk-${hunkIndex}-line-${rowIndex}`}>
                         <tr
-                          onMouseEnter={() => {
-                            if (drag === null) {
-                              return;
-                            }
-                            const hoverAnchor = drag.side === 'old' ? oldAnchor : newAnchor;
-                            if (hoverAnchor === null) {
-                              return;
-                            }
-                            setDrag((current) =>
-                              current === null ? null : { ...current, end: hoverAnchor.lineNumber },
-                            );
-                          }}
+                          onMouseEnter={() => extendDrag({ oldAnchor, newAnchor })}
                           className={cn(
                             line.kind === 'add' && 'bg-success/[0.07]',
                             line.kind === 'del' && 'bg-danger/[0.07]',
@@ -465,11 +530,7 @@ export const FileDiffCard = ({
                               canComment && oldAnchor !== null
                                 ? (event) => {
                                     event.preventDefault();
-                                    setDrag({
-                                      side: oldAnchor.side,
-                                      start: oldAnchor.lineNumber,
-                                      end: oldAnchor.lineNumber,
-                                    });
+                                    startDrag(oldAnchor);
                                   }
                                 : undefined
                             }
@@ -512,11 +573,7 @@ export const FileDiffCard = ({
                               canComment && newAnchor !== null
                                 ? (event) => {
                                     event.preventDefault();
-                                    setDrag({
-                                      side: newAnchor.side,
-                                      start: newAnchor.lineNumber,
-                                      end: newAnchor.lineNumber,
-                                    });
+                                    startDrag(newAnchor);
                                   }
                                 : undefined
                             }
@@ -548,89 +605,34 @@ export const FileDiffCard = ({
                             {line.newLine ?? ''}
                           </td>
                           <td className="whitespace-pre px-2.5 text-foreground/80">
-                            <span
-                              aria-hidden
-                              className={cn(
-                                'select-none',
-                                line.kind === 'add'
-                                  ? 'text-success'
-                                  : line.kind === 'del'
-                                    ? 'text-danger'
-                                    : 'text-transparent',
-                              )}
-                            >
-                              {linePrefix}
-                            </span>
-                            {lang
-                              ? highlightLine(line.text, lang).map((tok, ti) =>
-                                  tok.kind === 'plain' ? (
-                                    <Fragment key={ti}>{tok.text}</Fragment>
-                                  ) : (
-                                    <span key={ti} className={SYNTAX_CLASS[tok.kind]}>
-                                      {tok.text}
-                                    </span>
-                                  ),
-                                )
-                              : line.text}
+                            <DiffLineText line={line} lang={lang} />
                           </td>
                         </tr>
                         {lineComments.length > 0 && (
-                          <tr>
-                            <td colSpan={3} className="bg-background">
-                              <div
-                                data-diff-scroll-content
-                                className={cn(
-                                  DIFF_SCROLL_CONTENT_CLASS,
-                                  'flex flex-col gap-1.5 px-3 py-2',
-                                )}
-                              >
-                                {lineComments.map((c) => (
-                                  <div key={c.id} className="flex flex-col gap-0.5">
-                                    {c.anchor?.endLineNumber ? (
-                                      <span className="text-3xs font-medium text-muted-foreground">
-                                        lines {c.anchor.lineNumber}–{c.anchor.endLineNumber}
-                                      </span>
-                                    ) : null}
-                                    <CommentItem
-                                      comment={c}
-                                      onResolve={onResolve}
-                                      onReopen={onReopen}
-                                      onDelete={onDelete}
-                                      onViewAgent={onViewAgent}
-                                      getAgentName={getAgentName}
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
+                          <DiffCommentThreadRow
+                            comments={lineComments}
+                            colSpan={columnCount}
+                            onResolve={onResolve}
+                            onReopen={onReopen}
+                            onDelete={onDelete}
+                            onViewAgent={onViewAgent}
+                            getAgentName={getAgentName}
+                          />
                         )}
                         {isActive && activeAnchor !== null ? (
-                          <tr>
-                            <td colSpan={3} className="bg-background">
-                              <div
-                                data-diff-scroll-content
-                                className={cn(DIFF_SCROLL_CONTENT_CLASS, 'px-3 py-2')}
-                              >
-                                <InlineComposer
-                                  label={
-                                    activeAnchor?.endLineNumber
-                                      ? `commenting on lines ${activeAnchor.lineNumber}–${activeAnchor.endLineNumber}`
-                                      : `commenting on line ${activeAnchor.lineNumber}`
-                                  }
-                                  onSubmit={(body) => handleSubmitComment(activeAnchor, body)}
-                                  onCancel={() => setActiveAnchor(null)}
-                                />
-                              </div>
-                            </td>
-                          </tr>
+                          <DiffComposerRow
+                            anchor={activeAnchor}
+                            colSpan={columnCount}
+                            onSubmit={(body) => handleSubmitComment(activeAnchor, body)}
+                            onCancel={() => setActiveAnchor(null)}
+                          />
                         ) : null}
                       </Fragment>
                     );
                   })}
                   {remaining > 0 && (
                     <tr>
-                      <td colSpan={3}>
+                      <td colSpan={columnCount}>
                         <div data-diff-scroll-content className={DIFF_SCROLL_CONTENT_CLASS}>
                           <ShowMoreBar
                             step={Math.min(VISIBLE_LINES_STEP, remaining)}

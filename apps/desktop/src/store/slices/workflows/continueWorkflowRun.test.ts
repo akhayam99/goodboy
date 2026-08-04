@@ -8,7 +8,7 @@ const { updateOutcomeSpy, updateHintsSpy } = vi.hoisted(() => ({
 
 vi.mock('@goodboy/db', () => ({
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
-  updateWorkflowRunOrchestrationError: vi.fn(async () => undefined),
+  updateWorkflowRunOrchestrationStop: vi.fn(async () => undefined),
   updateWorkflowRunOrchestratorHints: updateHintsSpy,
 }));
 
@@ -42,7 +42,7 @@ const session = (overrides: Record<string, unknown> = {}): Session =>
         triggerMode: 'immediate',
         executionMode: 'dynamic',
         orchestrationOutcome: 'done',
-        orchestrationError: 'boom',
+        orchestrationStop: { kind: 'failure', message: 'boom' },
         ...overrides,
       },
     ],
@@ -87,7 +87,7 @@ describe('continueWorkflowRun', () => {
     expect(updateOutcomeSpy).toHaveBeenCalledWith({}, RUN_ID, null);
     const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(run.orchestrationOutcome).toBeUndefined();
-    expect(run.orchestrationError).toBeUndefined();
+    expect(run.orchestrationStop).toBeUndefined();
     expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {});
   });
 

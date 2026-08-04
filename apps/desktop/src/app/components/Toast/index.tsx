@@ -93,9 +93,6 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
     return null;
   }
 
-  // Cap persisted-error toasts so a failing agent can't bury the viewport.
-  // The newest survive; the overflow collapses into a single chip that
-  // points to the notification center where the full history lives.
   const persistedErrors = toasts.filter(isPersistedError);
   const overflowCount = Math.max(0, persistedErrors.length - MAX_PERSISTED_ERRORS);
   const suppressed = new Set(persistedErrors.slice(0, overflowCount).map((t) => t.id));
@@ -105,16 +102,14 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   const polite = visible.filter((t) => !isAssertive(t));
 
   return (
-    <div className="pointer-events-none fixed left-1/2 top-4 z-50 flex -translate-x-1/2 flex-col items-center gap-2">
-      {/* Errors and warnings interrupt; screen readers announce immediately. */}
-      <div role="alert" aria-live="assertive" className="flex flex-col items-center gap-2">
+    <div className="pointer-events-none fixed right-3 top-12 z-50 flex flex-col items-end gap-2">
+      <div role="alert" aria-live="assertive" className="flex flex-col items-end gap-2">
         {overflowCount > 0 ? <ErrorOverflowChip count={overflowCount} /> : null}
         {assertive.map((t) => (
           <ToastCard key={t.id} toast={t} onDismiss={onDismiss} />
         ))}
       </div>
-      {/* Info and success wait their turn. */}
-      <div role="status" aria-live="polite" className="flex flex-col items-center gap-2">
+      <div role="status" aria-live="polite" className="flex flex-col items-end gap-2">
         {polite.map((t) => (
           <ToastCard key={t.id} toast={t} onDismiss={onDismiss} />
         ))}
@@ -201,7 +196,7 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
       className={cn(
         'pointer-events-auto flex min-w-[22rem] max-w-[30rem] overflow-hidden rounded-lg border shadow-lg motion-safe:transition-all motion-safe:duration-200',
         card,
-        visible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0',
+        visible ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0',
       )}
     >
       <div className={cn('w-1 shrink-0', strip)} />

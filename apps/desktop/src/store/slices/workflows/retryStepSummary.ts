@@ -3,7 +3,7 @@ import { fallbackStepOutputSummary } from '@goodboy/core';
 import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
-import { summarizeAgentOutput } from '../../summarizeAgentOutput';
+import { summarizeAgentOutput, summarizedStepOutputs } from '../../summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
@@ -27,10 +27,11 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
     const assistantDeltas = transcriptEvents
       .filter((e) => e.kind === 'assistant_text')
       .map((e) => (e.kind === 'assistant_text' ? e.delta : ''));
-    const assistantText =
+    const transcriptText =
       assistantDeltas.length > 0
         ? assistantDeltas.join('')
         : fallbackStepOutputSummary({ output: '' });
+    const assistantText = summarizedStepOutputs.get(agentId) ?? transcriptText;
 
     const taskModel =
       taskModelOverride ??
@@ -51,6 +52,7 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
         ],
       })?.expectedOutput ?? '';
     const result = await summarizeAgentOutput({
+      agentId,
       output: assistantText,
       taskModel,
       ...(worktreePath != null && { workingDir: worktreePath }),

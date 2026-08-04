@@ -17,6 +17,7 @@ import {
   updateSessionWorkflowTriggerMode,
   updateWorkflowOrder,
   updateWorkflowRunOrchestrationOutcome,
+  updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorRouting,
 } from './session-workflow';
 import { listSessionsForWorkspace } from './session';
@@ -351,6 +352,72 @@ describe('session_workflows trigger-mode queries', () => {
       const runs = await listWorkflowsForSession(db, sessionId);
       const first = runs.find((r) => r.id === ('run-1' as WorkflowRunId));
       expect(first!.orchestrationOutcome).toBe('done');
+    });
+  });
+
+  describe('updateWorkflowRunOrchestrationStop', () => {
+    const attachRun = async (runId: string) =>
+      attachWorkflowToSession(
+        db,
+        sessionId,
+        runId as WorkflowRunId,
+        workflowId,
+        true,
+        NOW,
+        undefined,
+        'immediate',
+        undefined,
+        'dynamic',
+      );
+
+    it('round-trips why the run stopped, not only the sentence', async () => {
+      await attachRun('run-1');
+      await updateWorkflowRunOrchestrationStop(db, 'run-1' as WorkflowRunId, {
+        kind: 'budget',
+        message: 'the budget cap is reached, raise it in Budget to keep this run going',
+      });
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationStop).toEqual({
+        kind: 'budget',
+        message: 'the budget cap is reached, raise it in Budget to keep this run going',
+      });
+
+      await updateWorkflowRunOrchestrationStop(db, 'run-1' as WorkflowRunId, {
+        kind: 'failure',
+        message: 'usage limit reached (anthropic/haiku-4.5)',
+      });
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationStop).toEqual({
+        kind: 'failure',
+        message: 'usage limit reached (anthropic/haiku-4.5)',
+      });
+
+      await updateWorkflowRunOrchestrationStop(db, 'run-1' as WorkflowRunId, null);
+      expect((await listWorkflowsForSession(db, sessionId))[0]!.orchestrationStop).toBeUndefined();
+    });
+
+    it('keeps the budget stop a budget stop when runs are reordered', async () => {
+      await attachRun('run-1');
+      await attachWorkflowToSession(
+        db,
+        sessionId,
+        'run-2' as WorkflowRunId,
+        workflowId2,
+        true,
+        NOW,
+      );
+      await updateWorkflowRunOrchestrationStop(db, 'run-1' as WorkflowRunId, {
+        kind: 'budget',
+        message: 'the budget cap is reached, raise it in Budget to keep this run going',
+      });
+      await updateWorkflowOrder(
+        db,
+        sessionId,
+        ['run-2' as WorkflowRunId, 'run-1' as WorkflowRunId],
+        NOW,
+      );
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs.find((r) => r.id === ('run-1' as WorkflowRunId))!.orchestrationStop?.kind).toBe(
+        'budget',
+      );
     });
   });
 

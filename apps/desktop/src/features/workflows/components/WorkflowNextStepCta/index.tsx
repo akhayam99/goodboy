@@ -101,7 +101,7 @@ export const WorkflowNextStepCta = ({
           className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <AlertTriangle size={12} aria-hidden className="shrink-0" />
-          skip blocked step
+          Skip blocked step
         </button>
         {pendingForce ? (
           <InlineConfirm
@@ -110,7 +110,7 @@ export const WorkflowNextStepCta = ({
             title="Skip the blocked step and start the next agent?"
             description={`${chain.failedStep.name} did not finish. Its output will not be carried forward.`}
             confirmLabel="Skip and continue"
-            cancelLabel="cancel"
+            cancelLabel="Cancel"
             isBusy={busy}
             onConfirm={() => void doForce()}
             onCancel={() => setPendingForce(false)}
@@ -177,7 +177,7 @@ export const WorkflowNextStepCta = ({
         ) : (
           <Play size={12} aria-hidden className="shrink-0" />
         )}
-        <span className="truncate">run next step: {next.name}</span>
+        <span className="truncate">Run next step: {next.name}</span>
         <RoutingBadge
           className="shrink-0 opacity-70"
           model={routing.model}
@@ -196,7 +196,7 @@ export const WorkflowNextStepCta = ({
           title="Start the next agent anyway?"
           description={WORKFLOW_BLOCK_COPY[blockReason]}
           confirmLabel="Start anyway"
-          cancelLabel="wait"
+          cancelLabel="Wait"
           isBusy={busy}
           onConfirm={() => void doAdvance()}
           onCancel={() => setPendingConfirm(false)}

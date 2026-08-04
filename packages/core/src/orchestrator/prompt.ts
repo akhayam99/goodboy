@@ -18,7 +18,7 @@ Roles are limited to: scout, planner, implementer, reviewer, investigator, teste
 
 For a next step, promptPrefix is the instruction the step agent starts from and expectedOutput tells the post-step summarizer exactly what to extract.
 
-Routing: the role defaults in the request are the operator's own configuration, so they are your default and not a suggestion. Omit model and effort to accept them, which is the right call for almost every step. Set model or effort only when the role default genuinely cannot serve this step, for example a mechanical rename that does not need the default reasoning model or a cross-file refactor that needs a stronger one. When you deviate you must say so in reason, naming the model you picked and why in one clause. Set model only to one of the listed model ids and effort only to one of the listed effort levels.
+Routing: the role defaults in the request are the operator's own configuration, so they are your default and not a suggestion. Omit model and effort to accept them, which is the right call for almost every step. Set model or effort only when the role default genuinely cannot serve this step, for example a mechanical rename that does not need the default reasoning model or a cross-file refactor that needs a stronger one. When you deviate you must say so in reason, naming the model you picked and why in one clause. Set model only to one of the listed model ids and effort only to one of the listed effort levels. The listed ids are the whole routing pool: a model outside it is rejected, the step falls back to the role default, and the operator is told you tried.
 
 reason is written for the operator, not for you. Say why this step is needed now: what the step before it left open, what this one settles. One or two sentences, plain markdown, never a recap of what already happened. For done and blocked, say what the run achieved and what is left.
 
@@ -52,7 +52,7 @@ export const buildOrchestratorUserPrompt = ({
     '',
     `Step budget: ${stepsUsed} used of ${stepBudget}`,
     '',
-    `Models (provider ${providerId}):`,
+    `Routing pool, the only models you may pick (provider ${providerId}):`,
   ];
   if (modelMenu.length === 0) {
     lines.push('(none, omit model)');

@@ -196,6 +196,7 @@ const initialStage = (d: WorkflowBuilderDraft | undefined): Stage => {
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
+  const generateWorkflowTitle = useAppStore((s) => s.generateWorkflowTitle);
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
@@ -695,6 +696,16 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         updatedAt: now,
       };
       const saved = await savePhaseTemplate(workflow);
+      if (mode === 'dynamic') {
+        void generateWorkflowTitle(
+          session.workspaceId,
+          workflowId,
+          session.id,
+          saved?.name ?? name,
+          goal,
+          process,
+        );
+      }
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
       showToast('success', `workflow started: ${saved?.name ?? name}`);
       handleClose();

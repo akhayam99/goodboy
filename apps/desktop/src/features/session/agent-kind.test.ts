@@ -256,6 +256,10 @@ describe('AGENT_KIND_PALETTE', () => {
       expect(entry.label.length).toBeGreaterThan(0);
     }
   });
+
+  it('renders the generalist role as the GEN badge', () => {
+    expect(AGENT_KIND_PALETTE.generic.label).toBe('gen');
+  });
 });
 
 describe('AGENT_KIND_DEFAULTS', () => {
@@ -545,6 +549,11 @@ describe('AGENT_KIND_META', () => {
       expect(AGENT_KIND_META[kind].hint.length).toBeGreaterThan(0);
     }
   });
+
+  it('labels the do-everything role Generalist, resolved from its unchanged id', () => {
+    expect(AGENT_KIND_META.generic.label).toBe('Generalist');
+    expect(classifyAgent(agentOf({ kind: 'generic' }), null)).toBe('generic');
+  });
 });
 
 describe('boundary systemPrompts', () => {
@@ -579,9 +588,9 @@ describe('visibility by workspace kind', () => {
   it('restores every role and kind once the workspace is a dev project', () => {
     expect(visibleAgentRoles({ workspaceKind: 'repo' }).length).toBeGreaterThan(3);
     expect(visibleAgentKinds({ workspaceKind: 'repo' })).toEqual([
-      'generic',
       'debugger',
       'docs',
+      'generic',
       'implementer',
       'planner',
       'pr-reviewer',

@@ -107,6 +107,52 @@ describe('resolveWorkflowAdvance', () => {
     expect(state).toMatchObject({ kind: 'blocked', reason: 'turn-running' });
   });
 
+  it('refuses to offer a manual advance while autorun drives the run', () => {
+    const state = resolveWorkflowAdvance({
+      workflow,
+      agents: agents('completed', 'pending'),
+      ...gate,
+      isAutoRun: true,
+    });
+
+    expect(state).toEqual({ kind: 'automatic', step: workflow.steps[1] });
+  });
+
+  it('hides the busy summarizer, which autorun waits out on its own', () => {
+    const state = resolveWorkflowAdvance({
+      workflow,
+      agents: agents('running', 'pending'),
+      ...gate,
+      isSummarizerRunning: true,
+      isAutoRun: true,
+    });
+
+    expect(state).toMatchObject({ kind: 'automatic' });
+  });
+
+  it('surfaces an open question under autorun, which will never clear it', () => {
+    const state = resolveWorkflowAdvance({
+      workflow,
+      agents: agents('completed', 'pending'),
+      ...gate,
+      hasOpenQuestions: true,
+      isAutoRun: true,
+    });
+
+    expect(state).toEqual({ kind: 'blocked', reason: 'questions', step: workflow.steps[1] });
+  });
+
+  it('keeps the skip control under autorun, where automation has stopped for good', () => {
+    const state = resolveWorkflowAdvance({
+      workflow,
+      agents: agents('failed', 'pending'),
+      ...gate,
+      isAutoRun: true,
+    });
+
+    expect(state).toEqual({ kind: 'blocked', reason: 'failed-step', step: workflow.steps[0] });
+  });
+
   it('is complete once every step is done or skipped', () => {
     const state = resolveWorkflowAdvance({
       workflow,

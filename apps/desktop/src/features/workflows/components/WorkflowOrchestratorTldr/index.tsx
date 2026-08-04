@@ -1,13 +1,13 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn, Divider, Markdown } from '@goodboy/ui';
 import type { Step, WorkflowRun } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const COLLAPSED_COUNT = 3;
 
 const OUTCOME_LABEL = {
-  done: 'run complete',
-  blocked: 'stopped, needs a human call',
+  done: 'Run complete',
+  blocked: 'Stopped, needs a human call',
 } as const;
 
 const OUTCOME_TONE = {
@@ -24,6 +24,7 @@ type Props = {
 };
 
 export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
+  const [listOpen, setListOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [openIds, setOpenIds] = useState<ReadonlyArray<string>>([]);
   const [closingOpen, setClosingOpen] = useState(false);
@@ -44,94 +45,115 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
   const toggleRow = (id: string) => {
     setOpenIds((ids) => (ids.includes(id) ? ids.filter((open) => open !== id) : [...ids, id]));
   };
+  const summary =
+    entries.length === 0
+      ? 'Why the run ended'
+      : entries.length === 1
+        ? '1 decision'
+        : `${entries.length} decisions`;
 
   return (
-    <section
-      data-testid="workflow-orchestrator-tldr"
-      aria-label="Orchestrator reasoning"
-      className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle p-3"
-    >
-      <div className="flex items-center gap-1.5">
-        <CONCEPT_ICONS.workflows size={11} aria-hidden className="shrink-0 text-accent" />
-        <h3 className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-          Orchestrator decisions
-        </h3>
-      </div>
-      {hidden > 0 || showAll ? (
+    <>
+      <Divider />
+      <section
+        data-testid="workflow-orchestrator-tldr"
+        aria-label="Orchestrator reasoning"
+        className="flex min-w-0 flex-col gap-1.5"
+      >
         <button
           type="button"
-          onClick={() => setShowAll(!showAll)}
-          className="self-start text-2xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          aria-expanded={listOpen}
+          data-testid="workflow-orchestrator-decisions-toggle"
+          onClick={() => setListOpen((open) => !open)}
+          className="flex items-center gap-1 self-start rounded-md text-2xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          {showAll ? 'show less' : `show ${hidden} earlier`}
+          {listOpen ? (
+            <ChevronDown size={11} aria-hidden className="shrink-0" />
+          ) : (
+            <ChevronRight size={11} aria-hidden className="shrink-0" />
+          )}
+          {summary}
         </button>
-      ) : null}
-      <ol className="flex flex-col gap-1">
-        {visible.map((entry, index) => {
-          const isOpen = openIds.includes(entry.id);
-          return (
-            <li key={entry.id} className="flex min-w-0 flex-col gap-1">
+        {listOpen ? (
+          <>
+            {hidden > 0 || showAll ? (
               <button
                 type="button"
-                aria-expanded={isOpen}
-                aria-label={`Why ${entry.name}`}
-                onClick={() => toggleRow(entry.id)}
-                className={ROW_BUTTON}
+                onClick={() => setShowAll(!showAll)}
+                className="self-start text-2xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                <span className="shrink-0 tabular-nums text-muted-foreground/60">
-                  {entries.length - visible.length + index + 1}
-                </span>
-                <span className="min-w-0 max-w-[50%] truncate font-medium text-foreground">
-                  {entry.name}
-                </span>
-                {!isOpen && (
-                  <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                    {entry.reason}
-                  </span>
-                )}
+                {showAll ? 'Show less' : `Show ${hidden} earlier`}
               </button>
-              {isOpen ? (
-                <div className="min-w-0 pl-5">
-                  <Markdown text={entry.reason} className="text-2xs leading-relaxed" />
-                </div>
-              ) : null}
-            </li>
-          );
-        })}
-      </ol>
-      {hasClosing ? (
-        <>
-          <Divider />
-          <div data-testid="workflow-orchestrator-closing" className="flex min-w-0 flex-col gap-1">
-            <button
-              type="button"
-              aria-expanded={closingOpen}
-              aria-label={`Why the run ended: ${OUTCOME_LABEL[outcome]}`}
-              onClick={() => setClosingOpen((open) => !open)}
-              className={ROW_BUTTON}
-            >
-              <span
-                className={cn(
-                  'shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wide',
-                  OUTCOME_TONE[outcome],
-                )}
+            ) : null}
+            <ol className="flex flex-col gap-1">
+              {visible.map((entry, index) => {
+                const isOpen = openIds.includes(entry.id);
+                return (
+                  <li key={entry.id} className="flex min-w-0 flex-col gap-1">
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      aria-label={`Why ${entry.name}`}
+                      onClick={() => toggleRow(entry.id)}
+                      className={ROW_BUTTON}
+                    >
+                      <span className="shrink-0 tabular-nums text-muted-foreground/60">
+                        {entries.length - visible.length + index + 1}
+                      </span>
+                      <span className="min-w-0 max-w-[50%] truncate font-medium text-foreground">
+                        {entry.name}
+                      </span>
+                      {!isOpen && (
+                        <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                          {entry.reason}
+                        </span>
+                      )}
+                    </button>
+                    {isOpen ? (
+                      <div className="min-w-0 pl-5">
+                        <Markdown text={entry.reason} className="text-2xs leading-relaxed" />
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ol>
+            {hasClosing ? (
+              <div
+                data-testid="workflow-orchestrator-closing"
+                className="flex min-w-0 flex-col gap-1"
               >
-                {OUTCOME_LABEL[outcome]}
-              </span>
-              {!closingOpen && (
-                <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                  {closingReason}
-                </span>
-              )}
-            </button>
-            {closingOpen ? (
-              <div className="min-w-0 pl-5">
-                <Markdown text={closingReason} className="text-2xs leading-relaxed" />
+                <button
+                  type="button"
+                  aria-expanded={closingOpen}
+                  aria-label={`Why the run ended: ${OUTCOME_LABEL[outcome]}`}
+                  onClick={() => setClosingOpen((open) => !open)}
+                  className={ROW_BUTTON}
+                >
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-semibold',
+                      OUTCOME_TONE[outcome],
+                    )}
+                  >
+                    {OUTCOME_LABEL[outcome]}
+                  </span>
+                  {!closingOpen && (
+                    <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                      {closingReason}
+                    </span>
+                  )}
+                </button>
+                {closingOpen ? (
+                  <div className="min-w-0 pl-5">
+                    <Markdown text={closingReason} className="text-2xs leading-relaxed" />
+                  </div>
+                ) : null}
               </div>
             ) : null}
-          </div>
-        </>
-      ) : null}
-    </section>
+          </>
+        ) : null}
+      </section>
+    </>
   );
 };

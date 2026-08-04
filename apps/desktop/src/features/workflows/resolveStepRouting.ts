@@ -8,6 +8,7 @@ type Params = {
   readonly roleModels: RoleModelPreferences | null;
   readonly agentModel?: string | null;
   readonly agentProvider?: ProviderId | null;
+  readonly agentEffort?: ModelEffort | null;
 };
 
 export type StepRouting = {
@@ -22,6 +23,7 @@ export const resolveStepRouting = ({
   roleModels,
   agentModel,
   agentProvider,
+  agentEffort,
 }: Params): StepRouting => {
   const fallback = kindRouting({ kind, roleModels });
   const role = step?.role;
@@ -33,6 +35,6 @@ export const resolveStepRouting = ({
   return {
     provider,
     model: step?.modelOverride ?? agentModel ?? roleModel ?? fallback.model,
-    effort: step?.effort ?? roleRouting?.effort ?? fallback.effort,
+    effort: step?.effort ?? agentEffort ?? roleRouting?.effort ?? fallback.effort,
   };
 };

@@ -29,7 +29,7 @@ export const SessionBudgetContent = ({
   const models = useMemo(() => buildModelBreakdown(records), [records]);
   const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
   const sessionCost = records.reduce(
-    (sum, record) => (record.kind === 'turn' ? sum + record.estimatedCostUsd : sum),
+    (sum, record) => (record.kind === 'summarizer' ? sum : sum + record.estimatedCostUsd),
     0,
   );
   const summarizer = records.reduce(

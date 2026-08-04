@@ -14,10 +14,16 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
+type StoreSession = {
+  id: string;
+  workflowRuns: ReadonlyArray<{ id: string; autoRun: boolean }>;
+};
+
 type Store = {
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   agentTurnState: Record<string, { kind: string }>;
   summarizerStatus: Record<string, { status: string }>;
+  sessions: ReadonlyArray<StoreSession>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
 };
@@ -27,6 +33,7 @@ const { store, gate } = vi.hoisted(() => ({
     sessionPhaseRuns: {},
     agentTurnState: {},
     summarizerStatus: {},
+    sessions: [],
     activateWorkflowAgent: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
   } as Store,
@@ -82,10 +89,15 @@ const agent = (index: number, status: Agent['status']): Agent => ({
 const renderStrip = () =>
   render(<ChatWorkflowAdvance sessionId={SESSION_ID} workflowRunId={RUN_ID} workflow={workflow} />);
 
+const withAutoRun = (autoRun: boolean): ReadonlyArray<StoreSession> => [
+  { id: SESSION_ID, workflowRuns: [{ id: RUN_ID, autoRun }] },
+];
+
 beforeEach(() => {
   store.sessionPhaseRuns = {};
   store.agentTurnState = {};
   store.summarizerStatus = {};
+  store.sessions = withAutoRun(false);
   store.activateWorkflowAgent.mockReset();
   store.skipStuckStepAndAdvance.mockReset();
   gate.hasOpenQuestions = false;
@@ -148,6 +160,22 @@ describe('ChatWorkflowAdvance', () => {
     expect(store.skipStuckStepAndAdvance).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
       onlyWhenBlocked: true,
     });
+  });
+
+  it('offers no manual advance while autorun drives the run', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    store.sessions = withAutoRun(true);
+    const { container } = renderStrip();
+
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('keeps the skip control under autorun once a step has failed', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
+    store.sessions = withAutoRun(true);
+    renderStrip();
+
+    expect(screen.getByTestId('workflow-force-next-step-cta')).toBeDefined();
   });
 
   it('renders nothing once every step is done', () => {

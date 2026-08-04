@@ -7,9 +7,16 @@ type Props = {
   readonly workflow: Workflow;
   readonly agents: ReadonlyArray<Agent>;
   readonly predecessorName: string;
+  readonly hasOrchestratorStrip?: boolean;
 };
 
-export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Props) => {
+export const WorkflowRunStatus = ({
+  run,
+  workflow,
+  agents,
+  predecessorName,
+  hasOrchestratorStrip = false,
+}: Props) => {
   const completedSteps = agents.filter(
     (agent) => agent.status === 'completed' || agent.status === 'skipped',
   ).length;
@@ -51,11 +58,24 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
       </span>
     );
   }
-  if (run.orchestrationError != null && !isRunning) {
+  const stop = run.orchestrationStop;
+  if (stop?.kind === 'budget' && !isRunning && !hasOrchestratorStrip) {
+    return (
+      <span
+        className={cn(baseClass, 'bg-warning/10 text-warning')}
+        title={stop.message}
+        data-testid="workflow-orchestrator-budget-paused"
+      >
+        <Pause size={10} aria-hidden />
+        Budget paused
+      </span>
+    );
+  }
+  if (stop != null && !isRunning && !hasOrchestratorStrip) {
     return (
       <span
         className={cn(baseClass, 'bg-danger/10 text-danger')}
-        title={run.orchestrationError}
+        title={stop.message}
         data-testid="workflow-orchestrator-failed"
       >
         <AlertTriangle size={10} aria-hidden />
@@ -63,7 +83,7 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
       </span>
     );
   }
-  if (isRunning) {
+  if (isRunning && !hasOrchestratorStrip) {
     return (
       <span className={cn(baseClass, 'bg-info/10 text-info')}>
         <StatusDot tone="info" size="sm" pulsing />
@@ -71,7 +91,7 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
       </span>
     );
   }
-  if (isDeciding) {
+  if (isDeciding && !hasOrchestratorStrip) {
     return (
       <span className={cn(baseClass, 'bg-accent/10 text-accent')}>
         <Wand2 size={10} aria-hidden />
@@ -97,6 +117,9 @@ export const WorkflowRunStatus = ({ run, workflow, agents, predecessorName }: Pr
         After {predecessorName}
       </span>
     );
+  }
+  if (hasOrchestratorStrip) {
+    return null;
   }
   return <span className={cn(baseClass, 'bg-accent/10 text-accent')}>Ready</span>;
 };

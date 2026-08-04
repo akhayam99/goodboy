@@ -54,7 +54,7 @@ The rule for every integration: share the layout, never the logic. A Sentry issu
 
 ### Agent kinds
 
-Ten role labels that shape how an agent works: **planner**, **scout**, **implementer**, **debugger**, **tester**, **reviewer**, **pr-reviewer**, **docs**, **resolver**, **generic**. Each kind carries default model, effort, and optional system prompt settings. Kind is inferred automatically from the agent's name or first user message, or chosen explicitly when the agent is spawned. Nine are pickable in the spawn menu; **resolver** is spawned only by the resolve UI.
+Ten role labels that shape how an agent works: **planner**, **scout**, **implementer**, **debugger**, **tester**, **reviewer**, **pr-reviewer**, **docs**, **resolver**, **generic** (displayed as "Generalist", badge `GEN`). Each kind carries default model, effort, and optional system prompt settings. Kind is inferred automatically from the agent's name or first user message, or chosen explicitly when the agent is spawned. Nine are pickable in the spawn menu; **resolver** is spawned only by the resolve UI.
 
 ### Workflows
 

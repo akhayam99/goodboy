@@ -1,6 +1,15 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn, formatUsd, formatUsdPrecise, MetaRow, StatusDot } from '@goodboy/ui';
-import { ChevronDown, ChevronRight, ChevronUp, Play, Undo2, Zap, ZapOff } from 'lucide-react';
+import { cn, Divider, formatUsdPrecise, Input, MetaRow, StatusDot } from '@goodboy/ui';
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Pencil,
+  Play,
+  Undo2,
+  Zap,
+  ZapOff,
+} from 'lucide-react';
 import type {
   Agent,
   AgentId,
@@ -18,8 +27,9 @@ import { resolveStepRouting } from '../../../../../features/workflows/resolveSte
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
-import { WorkflowOrchestratorTldr } from '../../../../../features/workflows/components/WorkflowOrchestratorTldr';
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
+import { WorkflowAutorunToggle } from '../../../../../features/workflows/components/WorkflowAutorunToggle';
+import { useWorkflowTitleRename } from '../../../../../features/workflows/hooks/useWorkflowTitleRename';
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
@@ -134,17 +144,16 @@ export const WorkflowRow = ({
   const canMoveUp = index > 0;
   const canMoveDown = index < attachedRuns.length - 1;
   const name = workflowKindName(workflow);
+  const rename = useWorkflowTitleRename({
+    workspaceId: workflow.workspaceId,
+    workflowId: workflow.id,
+    currentTitle: workflow.name,
+  });
   const total = workflow.steps.length;
   const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
   const isDynamic = run.executionMode === 'dynamic';
   const isCompleted =
     !isDiscarded && (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total);
-  const isDynamicActionable =
-    isDynamic &&
-    !isDiscarded &&
-    run.triggerMode === 'immediate' &&
-    run.orchestrationOutcome !== 'done' &&
-    !wfAgents.some((a) => a.status === 'pending' || a.status === 'running');
   const unreadCount = countUnread(wfAgents);
   const isDetail = variant === 'detail';
   const defaultExpanded = isDetail || (!isDiscarded && (!isCompleted || unreadCount > 0));
@@ -162,17 +171,13 @@ export const WorkflowRow = ({
     0,
   );
   const stepById = new Map(workflow.steps.map((step) => [step.id, step]));
-  const isDynamicDeciding = isDynamicActionable && run.orchestrationOutcome == null;
-  const currentStepName =
-    wfAgents.find((agent) => agent.status === 'running')?.name ??
-    workflow.steps.find((step) => step.id === actionableStepId)?.name ??
-    (isDynamicDeciding ? 'deciding next step' : undefined);
+  const hasOrchestratorStrip = isDynamic && !isDiscarded && expanded;
   return (
     <div
       className={cn(
         'grid grid-cols-[minmax(0,1fr)_auto]',
-        isDetail && expanded && 'grid-rows-[auto_1fr_auto] gap-y-4',
-        isDetail && !expanded && 'grid-rows-[auto_auto] gap-y-4',
+        isDetail && expanded && 'grid-rows-[auto_1fr] gap-y-4',
+        isDetail && !expanded && 'grid-rows-[auto]',
         !isDetail && expanded && 'grid-rows-[auto_auto] gap-y-1.5',
         !isDetail && !expanded && 'grid-rows-[auto]',
         isDiscarded && 'opacity-70',
@@ -186,14 +191,44 @@ export const WorkflowRow = ({
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-xl font-semibold leading-snug text-foreground">
-                  {name}
-                </h2>
+                {rename.editing ? (
+                  <Input
+                    autoFocus
+                    value={rename.draft}
+                    maxLength={rename.maxLength}
+                    onChange={(event) => rename.setDraft(event.target.value)}
+                    onBlur={() => void rename.commit()}
+                    onKeyDown={rename.onKeyDown}
+                    aria-label="Workflow name"
+                    className="text-xl font-semibold"
+                  />
+                ) : (
+                  <div className="group/name flex min-w-0 items-start gap-1.5">
+                    <h2 className="truncate text-xl font-semibold leading-snug text-foreground">
+                      {name}
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={rename.start}
+                      aria-label="Edit workflow name"
+                      title="Edit workflow name"
+                      className={cn(
+                        'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50',
+                        'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+                        'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                        'group-hover/name:opacity-100 motion-reduce:opacity-60',
+                      )}
+                    >
+                      <Pencil size={13} aria-hidden />
+                    </button>
+                  </div>
+                )}
                 <WorkflowRunStatus
                   run={run}
                   workflow={workflow}
                   agents={wfAgents}
                   predecessorName={predecessorName}
+                  hasOrchestratorStrip={hasOrchestratorStrip}
                 />
               </div>
               <MetaRow
@@ -202,9 +237,6 @@ export const WorkflowRow = ({
                     <span className="tabular-nums">
                       Step {Math.min(done + 1, total)} of {total}
                     </span>
-                  ) : null,
-                  currentStepName != null && !isCompleted ? (
-                    <span className="min-w-0 truncate">{currentStepName}</span>
                   ) : null,
                   <CostBadge
                     value={runCostUsd}
@@ -243,6 +275,7 @@ export const WorkflowRow = ({
               workflow={workflow}
               agents={wfAgents}
               predecessorName={predecessorName}
+              hasOrchestratorStrip={hasOrchestratorStrip}
             />
             {total > 0 ? (
               <span className="shrink-0 font-mono text-2xs text-muted-foreground/50">
@@ -252,17 +285,43 @@ export const WorkflowRow = ({
           </button>
         )}
         {isDetail ? (
-          <CardActionSlot
-            label="Workflow navigation actions"
-            className="col-start-2 row-start-1 self-start"
-          >
-            <CardAction
-              icon={expanded ? ChevronDown : ChevronRight}
-              label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
-              expanded={expanded}
-              onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
-            />
-          </CardActionSlot>
+          <div className="col-start-2 row-start-1 flex items-start gap-2 self-start">
+            <CardActionSlot label="Workflow navigation actions">
+              <CardAction
+                icon={expanded ? ChevronDown : ChevronRight}
+                label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
+                expanded={expanded}
+                onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
+              />
+            </CardActionSlot>
+            <CardActionSlot label="Workflow lifecycle actions" className="gap-2">
+              {isQueuedManual ? (
+                <GhostActionButton
+                  icon={Play}
+                  label="Start"
+                  tone="success"
+                  onClick={() => void startWorkflowRun(task.id, run.id)}
+                />
+              ) : null}
+              {!isDiscarded && !isCompleted ? (
+                <WorkflowAutorunToggle
+                  isOn={run.autoRun}
+                  onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                />
+              ) : null}
+              <Divider orientation="vertical" className="h-5 self-center" />
+              {isDiscarded ? (
+                <GhostActionButton
+                  icon={Undo2}
+                  label="Restore"
+                  onClick={() => void restoreWorkflow(task.id, run.id)}
+                />
+              ) : (
+                <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
+              )}
+              <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
+            </CardActionSlot>
+          </div>
         ) : (
           <div className="col-start-2 row-start-1 flex items-start gap-1">
             {!isDiscarded ? (
@@ -338,10 +397,11 @@ export const WorkflowRow = ({
                   sessionId={task.id}
                   run={run}
                   agents={wfAgents}
+                  steps={workflow.steps}
+                  costUsd={runCostUsd}
                   isOrchestrating={isOrchestrating}
                 />
               ) : null}
-              <WorkflowOrchestratorTldr steps={workflow.steps} run={run} />
             </div>
           ) : null}
           {expanded ? (
@@ -501,42 +561,6 @@ export const WorkflowRow = ({
             </div>
           ) : null}
         </div>
-      ) : null}
-      {isDetail ? (
-        <CardActionSlot
-          label="Workflow lifecycle actions"
-          className={cn('col-start-2 self-end', expanded ? 'row-start-3' : 'row-start-2')}
-        >
-          {isQueuedManual ? (
-            <GhostActionButton
-              icon={Play}
-              label="Start"
-              tone="success"
-              onClick={() => void startWorkflowRun(task.id, run.id)}
-            />
-          ) : null}
-          {!isDiscarded && !isCompleted ? (
-            <GhostActionButton
-              icon={run.autoRun ? Zap : ZapOff}
-              label="Autorun"
-              tone={run.autoRun ? 'primary' : 'neutral'}
-              pressed={run.autoRun}
-              highlighted={run.autoRun}
-              ariaLabel={run.autoRun ? 'Autorun on' : 'Autorun off'}
-              onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-            />
-          ) : null}
-          {isDiscarded ? (
-            <GhostActionButton
-              icon={Undo2}
-              label="Restore"
-              onClick={() => void restoreWorkflow(task.id, run.id)}
-            />
-          ) : (
-            <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-          )}
-          <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
-        </CardActionSlot>
       ) : null}
     </div>
   );

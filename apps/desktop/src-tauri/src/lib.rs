@@ -65,6 +65,7 @@ pub fn run() {
   let gemini_state = providers::GeminiState(Mutex::new(providers::detect_gemini()));
   let opencode_state = providers::OpencodeState(Mutex::new(providers::detect_opencode()));
   let turn_registry = turn::TurnRegistry::new();
+  let summarize_registry = summarize::SummarizeRegistry::new();
   let script_registry = scripts::ScriptRegistry::new();
   let terminal_registry = terminal::TerminalRegistry::new();
   let provider_lifecycle_registry = provider_lifecycle::ProviderLifecycleRegistry::new();
@@ -83,6 +84,7 @@ pub fn run() {
     .manage(gemini_state)
     .manage(opencode_state)
     .manage(turn_registry)
+    .manage(summarize_registry)
     .manage(script_registry)
     .manage(terminal_registry)
     .manage(provider_lifecycle_registry)
@@ -181,6 +183,7 @@ pub fn run() {
       file_versions::file_versions_delete,
       file_versions::file_versions_purge_session,
       summarize::summarize_session,
+      summarize::summarize_cancel,
       planner::planner_run,
       repo::validate_git_repo,
       repo::repo_init_with_remote,

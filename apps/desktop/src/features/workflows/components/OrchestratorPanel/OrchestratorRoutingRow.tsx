@@ -55,9 +55,8 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
   return (
     <div
       data-testid="orchestrator-routing"
-      className="flex min-w-0 flex-wrap items-center gap-1.5 text-2xs text-muted-foreground"
+      className="flex min-w-0 shrink-0 items-center text-2xs text-muted-foreground"
     >
-      <span>decided by</span>
       <RoutingPicker
         ariaLabel="Orchestrator routing"
         variant="pill"

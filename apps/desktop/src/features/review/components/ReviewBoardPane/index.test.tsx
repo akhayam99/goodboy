@@ -119,6 +119,7 @@ beforeEach(() => {
   h.state.publishPrReview.mockResolvedValue({ published: 1, stale: [], failed: [] });
   h.state.setAgentDraft.mockClear();
   h.showToast.mockClear();
+  localStorage.clear();
 });
 
 afterEach(cleanup);
@@ -221,5 +222,22 @@ describe('ReviewBoardPane', () => {
     expect(
       screen.getByText('Ask the agent to draft comments, or click a diff line.'),
     ).toBeDefined();
+  });
+
+  it('switches the diff to split and remembers the choice', () => {
+    render(<ReviewBoardPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Split' }));
+
+    expect(localStorage.getItem('goodboy:diff-layout-mode')).toBe('split');
+    expect(screen.getByLabelText('Draft a comment on new line 4')).toBeDefined();
+  });
+
+  it('rehydrates the split layout from the stored preference', () => {
+    localStorage.setItem('goodboy:diff-layout-mode', 'split');
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.getByRole('tab', { name: 'Split' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByLabelText('Draft a comment on new line 4')).toBeDefined();
   });
 });
