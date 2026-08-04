@@ -7,6 +7,8 @@ import type {
   WorkflowId,
   WorkflowExecutionMode,
   WorkflowOrchestrationOutcome,
+  WorkflowOrchestrationStop,
+  WorkflowOrchestrationStopKind,
   WorkflowRun,
   WorkflowRunId,
   WorkflowTriggerMode,
@@ -24,6 +26,7 @@ export type SessionWorkflowRow = {
   orchestration_outcome: string | null;
   orchestration_reason: string | null;
   orchestration_error: string | null;
+  orchestration_stop_kind: string;
   orchestrator_hints: string | null;
   orchestrator_provider: string | null;
   orchestrator_model: string | null;
@@ -34,7 +37,7 @@ export type SessionWorkflowRow = {
 };
 
 export const SESSION_WORKFLOW_COLS =
-  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, chain_after_run_id, goal, discarded_at';
+  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, chain_after_run_id, goal, discarded_at';
 
 type RoutingColumns = {
   readonly provider: string | null;
@@ -53,7 +56,23 @@ const toRouting = ({ provider, model, effort }: RoutingColumns): OrchestratorRou
   };
 };
 
+type StopColumns = {
+  readonly message: string | null;
+  readonly kind: string;
+};
+
+const toStop = ({ message, kind }: StopColumns): WorkflowOrchestrationStop | null => {
+  if (message == null || message === '') {
+    return null;
+  }
+  return { kind: kind as WorkflowOrchestrationStopKind, message };
+};
+
 export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
+  const orchestrationStop = toStop({
+    message: row.orchestration_error,
+    kind: row.orchestration_stop_kind,
+  });
   const orchestratorRouting = toRouting({
     provider: row.orchestrator_provider,
     model: row.orchestrator_model,
@@ -72,8 +91,7 @@ export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     }),
     ...(row.orchestration_reason != null &&
       row.orchestration_reason !== '' && { orchestrationReason: row.orchestration_reason }),
-    ...(row.orchestration_error != null &&
-      row.orchestration_error !== '' && { orchestrationError: row.orchestration_error }),
+    ...(orchestrationStop != null && { orchestrationStop }),
     ...(row.orchestrator_hints != null &&
       row.orchestrator_hints !== '' && { orchestratorHints: row.orchestrator_hints }),
     ...(orchestratorRouting != null && { orchestratorRouting }),
@@ -174,7 +192,7 @@ export const updateWorkflowOrder = async (
         continue;
       }
       await db.execute(
-        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           runId,
           sessionId,
@@ -190,6 +208,7 @@ export const updateWorkflowOrder = async (
           prev.orchestration_outcome,
           prev.orchestration_reason,
           prev.orchestration_error,
+          prev.orchestration_stop_kind,
           prev.orchestrator_hints,
           prev.orchestrator_provider,
           prev.orchestrator_model,
@@ -284,14 +303,14 @@ export const updateWorkflowRunOrchestratorRouting = async (
   );
 };
 
-export const updateWorkflowRunOrchestrationError = async (
+export const updateWorkflowRunOrchestrationStop = async (
   db: Database,
   workflowRunId: WorkflowRunId,
-  message: string | null,
+  stop: WorkflowOrchestrationStop | null,
 ): Promise<void> => {
   await db.execute(
-    'UPDATE session_workflows SET orchestration_error = ? WHERE workflow_run_id = ?',
-    [message, workflowRunId],
+    'UPDATE session_workflows SET orchestration_error = ?, orchestration_stop_kind = ? WHERE workflow_run_id = ?',
+    [stop?.message ?? null, stop?.kind ?? 'failure', workflowRunId],
   );
 };
 

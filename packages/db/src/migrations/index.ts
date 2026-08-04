@@ -99,6 +99,7 @@ import { m098WorkflowStepRouting } from './m098-workflow-step-routing';
 import { m099FileVersions } from './m099-file-versions';
 import { m100WorkflowOrigin } from './m100-workflow-origin';
 import { m101TelemetryOrchestratorKind } from './m101-telemetry-orchestrator-kind';
+import { m102WorkflowOrchestrationStopKind } from './m102-workflow-orchestration-stop-kind';
 
 export type Migration = {
   readonly version: number;
@@ -207,4 +208,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 99, sql: m099FileVersions },
   { version: 100, sql: m100WorkflowOrigin },
   { version: 101, sql: m101TelemetryOrchestratorKind },
+  { version: 102, sql: m102WorkflowOrchestrationStopKind },
 ];

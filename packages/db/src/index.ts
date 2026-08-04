@@ -60,7 +60,7 @@ export {
   updateSessionWorkflowAutoRun,
   updateSessionWorkflowTriggerMode,
   updateWorkflowRunOrchestrationOutcome,
-  updateWorkflowRunOrchestrationError,
+  updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorHints,
   updateWorkflowRunOrchestratorRouting,
 } from './queries/session-workflow';

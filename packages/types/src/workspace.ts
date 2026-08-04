@@ -71,6 +71,13 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
+export type WorkflowOrchestrationStopKind = 'failure' | 'budget';
+
+export type WorkflowOrchestrationStop = Readonly<{
+  kind: WorkflowOrchestrationStopKind;
+  message: string;
+}>;
+
 export type OrchestratorRouting = Readonly<{
   providerId: ProviderId;
   model: string;
@@ -87,7 +94,7 @@ export type WorkflowRun = Readonly<{
   executionMode: WorkflowExecutionMode;
   orchestrationOutcome?: WorkflowOrchestrationOutcome;
   orchestrationReason?: string;
-  orchestrationError?: string;
+  orchestrationStop?: WorkflowOrchestrationStop;
   orchestratorHints?: string;
   orchestratorRouting?: OrchestratorRouting;
   chainAfterId?: WorkflowRunId;

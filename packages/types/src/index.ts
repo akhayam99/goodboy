@@ -44,6 +44,8 @@ export type {
   WorkflowRun,
   WorkflowExecutionMode,
   WorkflowOrchestrationOutcome,
+  WorkflowOrchestrationStop,
+  WorkflowOrchestrationStopKind,
   WorkflowTriggerMode,
   WorkspaceIntegration,
   WorkspaceIntegrationConfig,
