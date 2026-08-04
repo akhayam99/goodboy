@@ -180,8 +180,18 @@ describe('spawn-from-comment', () => {
       'wontfix',
     ]);
     expect(realIds(extractAllCommentResolved(prompt))).toEqual([]);
-    expect(prompt).toContain('Do not modify or commit any file');
+    expect(prompt).toContain('Analysis mode: do not modify or commit any file');
     expect(prompt).toContain('summary must be one paragraph of plain text with no double quotes');
+  });
+
+  it('keeps the phrase the resolver role prompt reads as analysis mode', () => {
+    const analyze = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
+      mode: 'analyze',
+    }).initialPrompt;
+    const fix = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR).initialPrompt;
+
+    expect(analyze).toContain('Analysis mode');
+    expect(fix).not.toContain('Analysis mode');
   });
 
   it('states the reply contract once, however many threads it hands over', () => {

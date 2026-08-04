@@ -187,7 +187,7 @@ const instructionsSection = ({
     return [
       RESOLVER_KICKOFF_LABELS.instructions,
       `Investigate ${target} in one pass and ${decide} a change.`,
-      'Do not modify or commit any file: this run is read-only.',
+      'Analysis mode: do not modify or commit any file, this run is read-only.',
     ];
   }
   return [
