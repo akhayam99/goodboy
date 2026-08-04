@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
-import type { SessionId, WorktreeStatus } from '@goodboy/types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { AgentId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { SessionCreationId } from '../../../../store/slices/session-view';
+import { useToast } from '../../../../app/components/Toast';
 import { formatError } from '../../../../shared/lib/errors';
 import { taskModelAgentSpawnConfig } from '../../components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 
@@ -17,7 +19,14 @@ type Result = {
   readonly run: () => Promise<void>;
 };
 
+type Pending = {
+  readonly agentId: AgentId;
+  readonly creationId: SessionCreationId;
+};
+
 const REBASE_AGENT_NAME = 'Rebase on main';
+
+const REBASE_PROGRESS_LABEL = 'Rebasing on main';
 
 const REBASE_PROMPT = [
   'Rebase this session branch onto origin/main.',
@@ -32,6 +41,9 @@ const REBASE_PROMPT = [
 export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result => {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<Pending | null>(null);
+  const settledAgentIds = useRef(new Set<AgentId>());
+  const pendingRef = useRef<Pending | null>(null);
   const session = useAppStore((state) =>
     sessionId == null
       ? null
@@ -45,6 +57,10 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
   );
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const selectAgent = useAppStore((state) => state.selectAgent);
+  const setActiveLens = useAppStore((state) => state.setActiveLens);
+  const beginSessionCreation = useAppStore((state) => state.beginSessionCreation);
+  const endSessionCreation = useAppStore((state) => state.endSessionCreation);
+  const { showToast } = useToast();
   const config = useMemo(
     () =>
       taskModelAgentSpawnConfig({
@@ -63,12 +79,64 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
   const isRunning = isStarting || isAgentRunning;
   const canRebase = sessionId != null && status != null && status.commitsBehindMain > 0;
 
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
+
+  useEffect(
+    () => () => {
+      const leftOver = pendingRef.current;
+      if (sessionId == null || leftOver == null) {
+        return;
+      }
+      pendingRef.current = null;
+      endSessionCreation(sessionId, leftOver.creationId);
+    },
+    [endSessionCreation, sessionId],
+  );
+
+  useEffect(() => {
+    if (sessionId == null || pending == null) {
+      return;
+    }
+    const agent = phaseRuns?.find((candidate) => candidate.id === pending.agentId) ?? null;
+    if (agent == null || (agent.status !== 'completed' && agent.status !== 'failed')) {
+      return;
+    }
+    if (settledAgentIds.current.has(pending.agentId)) {
+      return;
+    }
+    settledAgentIds.current.add(pending.agentId);
+    const agentId = pending.agentId;
+    const isFailed = agent.status === 'failed';
+    endSessionCreation(sessionId, pending.creationId);
+    setPending(null);
+    showToast(
+      isFailed ? 'error' : 'success',
+      isFailed ? 'The rebase agent stopped before finishing.' : 'This branch is rebased on main.',
+      {
+        title: isFailed ? 'Rebase failed' : 'Rebase done',
+        action: {
+          label: 'Open the rebase agent',
+          onClick: () => {
+            setActiveLens(sessionId, 'agents');
+            void selectAgent(sessionId, agentId);
+          },
+        },
+      },
+    );
+  }, [endSessionCreation, pending, phaseRuns, selectAgent, sessionId, setActiveLens, showToast]);
+
   const run = async (): Promise<void> => {
     if (!canRebase || isRunning || sessionId == null || config.provider === '') {
       return;
     }
     setError(null);
     setIsStarting(true);
+    const creationId = beginSessionCreation(sessionId, {
+      kind: 'branch',
+      label: REBASE_PROGRESS_LABEL,
+    });
     try {
       const agentId = await spawnAgent(sessionId, {
         name: REBASE_AGENT_NAME,
@@ -76,10 +144,14 @@ export const useRebaseAgent = ({ sessionId, status, onError }: Params): Result =
         model: config.model,
         provider: config.provider,
         effort: config.effort,
-        focus: 'agent',
+        focus: 'none',
       });
-      await selectAgent(sessionId, agentId);
+      setPending({ agentId, creationId });
+      showToast('info', 'An agent is rebasing this branch on main. You can keep working.', {
+        title: 'Rebase started',
+      });
     } catch (failure) {
+      endSessionCreation(sessionId, creationId);
       const message = formatError(failure);
       setError(message);
       onError?.(message);

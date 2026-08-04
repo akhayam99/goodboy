@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { INITIAL_LIFECYCLE_MAP } from './types';
+import { IDLE_CONNECT, INITIAL_CONNECT_MAP, INITIAL_LIFECYCLE_MAP } from './types';
 import { runLifecycle } from './runLifecycle';
 
 const providerMocks = vi.hoisted(() => ({
@@ -43,6 +43,7 @@ describe('runLifecycle', () => {
       authResults: null,
       providers: [],
       providerCredentials: [],
+      providerConnect: { ...INITIAL_CONNECT_MAP },
       refreshProviders,
     };
     const set = vi.fn(
@@ -114,6 +115,7 @@ describe('runLifecycle', () => {
       authResults: null,
       providers: [],
       providerCredentials: [],
+      providerConnect: { ...INITIAL_CONNECT_MAP },
       refreshProviders,
     };
     const set = vi.fn(
@@ -163,5 +165,52 @@ describe('runLifecycle', () => {
       }),
       new Set(),
     );
+  });
+
+  it('drops a connect state claiming success when a logout lands disconnected', async () => {
+    const refreshProviders = vi.fn(async () => undefined);
+    let state: Record<string, unknown> = {
+      providerLifecycle: { ...INITIAL_LIFECYCLE_MAP },
+      providerStatus: null,
+      cursorStatus: null,
+      codexStatus: null,
+      geminiStatus: null,
+      authResults: null,
+      providers: [],
+      providerCredentials: [],
+      providerConnect: {
+        ...INITIAL_CONNECT_MAP,
+        cursor: { ...IDLE_CONNECT, phase: 'success', identity: 'amin@serenis.it' },
+      },
+      refreshProviders,
+    };
+    const set = vi.fn(
+      (
+        update:
+          | Record<string, unknown>
+          | ((current: Record<string, unknown>) => Record<string, unknown>),
+      ) => {
+        const patch = typeof update === 'function' ? update(state) : update;
+        state = { ...state, ...patch };
+      },
+    );
+    const get = vi.fn(() => state);
+
+    await runLifecycle(set as never, get as never, { providerId: 'cursor', action: 'logout' });
+    const invocation = lifecycleMocks.invokeProviderLifecycleRun.mock.calls[0]?.[0];
+    expect(invocation).toBeDefined();
+    if (invocation === undefined) {
+      return;
+    }
+    lifecycleMocks.exitHandler?.({
+      runId: invocation.runId,
+      providerId: 'cursor',
+      action: 'logout',
+      exitCode: 0,
+      status: { id: 'cursor', binary: 'cursor-agent', available: true, version: '1', error: null },
+      auth: { state: 'disconnected', identity: null },
+    });
+
+    expect((state.providerConnect as Record<string, unknown>).cursor).toEqual(IDLE_CONNECT);
   });
 });

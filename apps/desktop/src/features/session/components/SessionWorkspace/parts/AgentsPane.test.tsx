@@ -34,11 +34,13 @@ vi.mock('../../StandaloneAgentsLane', () => ({
     inspectedAgentId,
     showCompleted,
     onCompletedCountChange,
+    filedToggle,
   }: {
     readonly variant?: string;
     readonly inspectedAgentId?: string | null;
     readonly showCompleted?: boolean;
     readonly onCompletedCountChange?: (completedCount: number) => void;
+    readonly filedToggle?: React.ReactNode;
   }) => (
     <>
       <div
@@ -46,7 +48,9 @@ vi.mock('../../StandaloneAgentsLane', () => ({
         data-variant={variant}
         data-inspected={String(inspectedAgentId)}
         data-show-completed={String(showCompleted)}
-      />
+      >
+        {filedToggle}
+      </div>
       <button type="button" onClick={() => onCompletedCountChange?.(2)}>
         Report completed agents
       </button>
@@ -108,7 +112,7 @@ describe('AgentsPane', () => {
     expect(lane.getAttribute('data-inspected')).toBe('agent-7');
   });
 
-  it('places the completed toggle before create and forwards its state', () => {
+  it('places the completed toggle after the list, not in the header, and forwards its state', () => {
     const onShowCompletedChange = vi.fn();
     render(
       <AgentsPane
@@ -122,9 +126,11 @@ describe('AgentsPane', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Report completed agents' }));
-    const toggle = screen.getByRole('button', { name: 'Completed (2)' });
+    const toggle = screen.getByRole('button', { name: 'Show completed (2)' });
     const create = screen.getByTestId('header-spawn');
-    expect(toggle.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const lane = screen.getByTestId('agents-lane');
+    expect(create.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(lane.contains(toggle)).toBe(true);
     fireEvent.click(toggle);
     expect(onShowCompletedChange).toHaveBeenCalledWith(true);
     expect(screen.getByTestId('agents-lane').getAttribute('data-show-completed')).toBe('false');

@@ -137,8 +137,12 @@ function parseProviderLine(
     case 'opencode':
     case 'openrouter':
       return parseOpenCodeJsonLine({ line, ctx });
-    default:
+    case 'anthropic':
       return parseStreamJsonLine(line, ctx);
+    default: {
+      const exhaustive: never = provider;
+      throw new Error(`unknown provider stream: ${String(exhaustive)}`);
+    }
   }
 }
 

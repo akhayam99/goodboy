@@ -40,7 +40,11 @@ export const UpdateIndicator = ({ variant }: Props) => {
       onClick={() => setConfirmOpen(true)}
       disabled={downloading}
       title={title}
-      className={cn('pointer-events-auto relative', downloading && 'animate-border-pulse')}
+      className={cn(
+        'pointer-events-auto relative',
+        downloading ? 'spin-border spin-border-primary' : 'attention-ring',
+      )}
+      testId="update-indicator"
     />
   );
 

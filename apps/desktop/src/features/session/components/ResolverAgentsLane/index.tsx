@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -20,6 +20,7 @@ type Props = {
   readonly onInspectResolver: (agentId: AgentId) => void;
   readonly showCompleted?: boolean;
   readonly onCompletedCountChange?: (completedCount: number) => void;
+  readonly filedToggle?: ReactNode;
 };
 
 export const ResolverAgentsLane = ({
@@ -28,6 +29,7 @@ export const ResolverAgentsLane = ({
   onInspectResolver,
   showCompleted = false,
   onCompletedCountChange,
+  filedToggle,
 }: Props) => {
   const lane = useResolverAgentsLane({ session });
   const hasNoResolvers = lane.totalCount === 0;
@@ -67,7 +69,7 @@ export const ResolverAgentsLane = ({
         ) : null
       }
     >
-      {hasVisibleEntries ? (
+      {hasVisibleEntries || filedToggle != null ? (
         <div className="flex flex-col gap-5">
           {hasActiveEntries ? (
             <ResolverRows
@@ -91,6 +93,7 @@ export const ResolverAgentsLane = ({
               onOpenDiff={lane.onOpenDiff}
             />
           ) : null}
+          {filedToggle}
           {showCompleted && lane.completedEntries.length > 0 ? (
             <ResolverRows
               entries={lane.completedEntries}

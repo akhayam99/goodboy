@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { CircleCheck } from 'lucide-react';
-import { CountToggle } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentInspector } from '../../AgentInspector';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
 import { StandaloneAgentsLane } from '../../StandaloneAgentsLane';
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
 
 type Props = {
   readonly session: Session;
@@ -45,19 +45,7 @@ export const AgentsPane = ({
         title="Agents"
         description="Agents you spawn by hand to work this session."
         meta={meta}
-        actions={
-          <>
-            <CountToggle
-              label="Completed"
-              count={completedCount}
-              isShown={showCompleted}
-              icon={CircleCheck}
-              itemsLabel="agents"
-              onChange={onShowCompletedChange}
-            />
-            <CreateAgentPopover sessionId={sessionId} variant="compact" />
-          </>
-        }
+        actions={<CreateAgentPopover sessionId={sessionId} variant="compact" />}
       >
         <StandaloneAgentsLane
           session={session}
@@ -66,6 +54,16 @@ export const AgentsPane = ({
           onInspectAgent={(agentId) => onInspectAgent(agentId)}
           showCompleted={showCompleted}
           onCompletedCountChange={setCompletedCount}
+          filedToggle={
+            <FiledItemsToggle
+              noun="completed"
+              items="agents"
+              count={completedCount}
+              isShown={showCompleted}
+              icon={CircleCheck}
+              onChange={onShowCompletedChange}
+            />
+          }
         />
       </PaneShell>
     </InspectorSplit>

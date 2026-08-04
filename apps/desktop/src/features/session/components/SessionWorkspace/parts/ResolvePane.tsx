@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { CircleCheck } from 'lucide-react';
-import { CountToggle } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { ResolverAgentsLane } from '../../ResolverAgentsLane';
 import { AgentInspector } from '../../AgentInspector';
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
 import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
 
 type Props = {
@@ -45,19 +45,7 @@ export const ResolvePane = ({
         title="Resolve"
         description="Resolver agents spawned from pull request comments and diff selections."
         meta={meta}
-        actions={
-          <>
-            <WorkSurfaceBackButton sessionId={sessionId} />
-            <CountToggle
-              label="Completed"
-              count={completedCount}
-              isShown={showCompleted}
-              icon={CircleCheck}
-              itemsLabel="agents"
-              onChange={onShowCompletedChange}
-            />
-          </>
-        }
+        actions={<WorkSurfaceBackButton sessionId={sessionId} />}
       >
         <ResolverAgentsLane
           session={session}
@@ -65,6 +53,16 @@ export const ResolvePane = ({
           onInspectResolver={(agentId) => onInspectResolver(agentId)}
           showCompleted={showCompleted}
           onCompletedCountChange={setCompletedCount}
+          filedToggle={
+            <FiledItemsToggle
+              noun="completed"
+              items="resolvers"
+              count={completedCount}
+              isShown={showCompleted}
+              icon={CircleCheck}
+              onChange={onShowCompletedChange}
+            />
+          }
         />
       </PaneShell>
     </InspectorSplit>

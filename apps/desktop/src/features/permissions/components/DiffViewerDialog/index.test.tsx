@@ -9,7 +9,12 @@ type DiffViewSelectorMockProps = {
   onChange: (view: DiffView) => void;
 };
 
-const { state, fixtures } = vi.hoisted(() => ({
+type ToastAction = { readonly label: string; readonly onClick: () => void };
+
+type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
+
+const { showToast, state, fixtures } = vi.hoisted(() => ({
+  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
   state: {
     settings: {} as Record<string, string>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
@@ -29,6 +34,9 @@ const { state, fixtures } = vi.hoisted(() => ({
     reopenDiffComment: vi.fn(async () => undefined),
     deleteDiffComment: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
+    beginSessionCreation: vi.fn(() => 'creation-1'),
+    endSessionCreation: vi.fn(),
     spawnAgent: vi.fn(async () => 'a1'),
     sendTurn: vi.fn(async () => undefined),
   },
@@ -65,7 +73,7 @@ vi.mock('../../../../features/github/github', () => ({
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast: vi.fn() }),
+  useToast: () => ({ showToast }),
 }));
 
 vi.mock('../../../../features/worktree/worktree', () => ({
@@ -101,7 +109,9 @@ beforeEach(() => {
   state.loadDiffComments = vi.fn(async () => undefined);
   state.addDiffComment = vi.fn(async () => undefined);
   state.selectAgent.mockClear();
+  state.setActiveLens.mockClear();
   state.spawnAgent.mockClear();
+  showToast.mockClear();
   fixtures.files = [];
   fixtures.comments = [];
   fixtures.status.hasUpstream = false;
@@ -225,6 +235,18 @@ describe('DiffViewerPane', () => {
     expect(screen.queryByText('1 file')).toBeNull();
   });
 
+  it('keeps the diff on screen when the rebase starts and opens the agent only on request', async () => {
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane sessionId={SID} worktreePath="/tmp/worktree" onClose={vi.fn()} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Rebase' }));
+
+    await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
+    expect(showToast.mock.calls[0]?.[2]?.title).toBe('Rebase started');
+    expect(state.selectAgent).not.toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: 'Rebase' })).toBeDefined();
+  });
+
   it('spawns a rebase agent with the resolved task model when behind main', async () => {
     fixtures.files = fileFixture();
     state.workspaceOverrides = {
@@ -246,9 +268,10 @@ describe('DiffViewerPane', () => {
         provider: 'codex',
         model: 'gpt-5.4',
         effort: 'low',
+        focus: 'none',
       }),
     );
-    await waitFor(() => expect(state.selectAgent).toHaveBeenCalledWith(SID, 'a1'));
+    expect(state.selectAgent).not.toHaveBeenCalled();
   });
 
   it('surfaces rebase agent failures beside the action', async () => {

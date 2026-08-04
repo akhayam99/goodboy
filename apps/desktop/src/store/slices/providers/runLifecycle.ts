@@ -13,6 +13,7 @@ import {
   type LifecycleExitPayload,
 } from '../../../features/providers/provider-lifecycle';
 import { formatError } from '../../../shared/lib/errors';
+import { clearStaleConnect } from './clearStaleConnect';
 import { detectAuthUrl } from './detectAuthUrl';
 import { stripAnsi } from './stripAnsi';
 import type { GetFn, SetFn } from './types';
@@ -208,6 +209,7 @@ export const runLifecycle = async (
         ...statusSlotPatch(providerId, payload.status),
         authResults,
         providers: buildProviderList(statuses, authResults, credentialProviderIds),
+        providerConnect: clearStaleConnect({ connect: state.providerConnect, authResults }),
         providerLifecycle: {
           ...state.providerLifecycle,
           [providerId]: {

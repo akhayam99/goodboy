@@ -30,7 +30,12 @@ type ConfigProps = {
 
 type BaseBranches = { defaultBranch: string | null; branches: ReadonlyArray<string> };
 
+type ToastAction = { readonly label: string; readonly onClick: () => void };
+
+type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
+
 const h = vi.hoisted(() => ({
+  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
   config: {
     provider: 'codex',
     model: 'gpt-5.4-mini',
@@ -64,6 +69,10 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../github', () => ({
   ghBaseBranches: h.ghBaseBranches,
+}));
+
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: h.showToast }),
 }));
 
 vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
@@ -117,6 +126,7 @@ beforeEach(() => {
   h.store.spawnAgent.mockClear();
   h.store.selectAgent.mockClear();
   h.store.setCurrentSession.mockClear();
+  h.showToast.mockClear();
   h.store.workspaceOverrides = {};
   h.ghBaseBranches.mockClear();
   h.ghBaseBranches.mockImplementation(async () => ({ defaultBranch: 'main', branches: ['main'] }));
@@ -218,6 +228,31 @@ describe('CreatePrPanel', () => {
     expect(args.initialPrompt).toContain(
       '\n\nOperator notes:\n---\nKeep the public API stable.\n---',
     );
+    expect(args).toMatchObject({ focus: 'none' });
+    expect(onStudioClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the panel in place after the spawn and opens the agent only from the toast action', async () => {
+    const onStudioClose = vi.fn();
+    render(
+      <CreatePrPanel
+        sessionId={SESSION_ID}
+        defaultTitle="Refactor PR cards"
+        onCreated={vi.fn()}
+        onStudioClose={onStudioClose}
+      />,
+    );
+    switchToAgentMode();
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
+
+    await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
+    expect(h.store.selectAgent).not.toHaveBeenCalled();
+    const action = h.showToast.mock.calls[0]![2]?.action;
+    expect(action?.label).toBe('Open the agent');
+
+    action?.onClick();
+
+    await waitFor(() => expect(h.store.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-2'));
     await waitFor(() => expect(onStudioClose).toHaveBeenCalledOnce());
   });
 

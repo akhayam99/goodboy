@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AdHocRow } from '../../../workspace/components/WorkspacesSidebar/parts/AdHocRow';
 import { AgentLane } from '../AgentLane';
@@ -23,6 +23,7 @@ type Props = {
   readonly onInspectAgent?: (agentId: AgentId) => void;
   readonly showCompleted?: boolean;
   readonly onCompletedCountChange?: (completedCount: number) => void;
+  readonly filedToggle?: ReactNode;
 };
 
 export const StandaloneAgentsLane = ({
@@ -33,6 +34,7 @@ export const StandaloneAgentsLane = ({
   onInspectAgent,
   showCompleted = false,
   onCompletedCountChange,
+  filedToggle,
 }: Props) => {
   const sessionId = session.id as SessionId;
   const lane = useStandaloneAgentsLane({ session });
@@ -80,6 +82,7 @@ export const StandaloneAgentsLane = ({
           isInspected={run.id === inspectedAgentId}
           onInspectAgent={onInspectAgent}
           onMarkDone={lane.onMarkDone}
+          onReopen={lane.onReopen}
           isMuted={muted}
           density={isLens ? 'lane' : 'sidebar'}
         />
@@ -120,9 +123,10 @@ export const StandaloneAgentsLane = ({
       }
       footer={error}
     >
-      {agents.length > 0 ? (
+      {agents.length > 0 || filedToggle != null ? (
         <div className="flex flex-col gap-5">
           {lane.activeAgents.length > 0 ? renderList(lane.activeAgents, false) : null}
+          {filedToggle}
           {showCompleted && lane.completedAgents.length > 0
             ? renderList(lane.completedAgents, true)
             : null}

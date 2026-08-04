@@ -30,6 +30,7 @@ type Props = {
   readonly isInspected?: boolean;
   readonly onInspectAgent?: (id: AgentId) => void;
   readonly onMarkDone: (id: AgentId) => void;
+  readonly onReopen?: (id: AgentId) => void;
   readonly isMuted?: boolean;
   readonly density?: AgentCardDensity;
 };
@@ -56,6 +57,7 @@ export const AdHocRow = ({
   isInspected = false,
   onInspectAgent,
   onMarkDone,
+  onReopen,
   isMuted = false,
   density = 'sidebar',
 }: Props) => {
@@ -86,6 +88,7 @@ export const AdHocRow = ({
         isInspected={isInspected}
         onInspect={onInspectAgent === undefined ? undefined : () => onInspectAgent(run.id)}
         onMarkDone={() => onMarkDone(run.id)}
+        {...(onReopen !== undefined && { onReopen: () => onReopen(run.id) })}
         isMuted={isMuted}
         density={density}
       />

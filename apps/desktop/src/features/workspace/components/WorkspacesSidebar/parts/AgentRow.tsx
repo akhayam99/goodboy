@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CircleCheck, PanelRight, Trash2 } from 'lucide-react';
+import { CircleCheck, PanelRight, RotateCcw, Trash2 } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
 import { contextTokensForUsage } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
@@ -42,6 +42,7 @@ type Props = {
   readonly isMuted?: boolean;
   readonly onInspect?: () => void;
   readonly onMarkDone?: () => void;
+  readonly onReopen?: () => void;
 };
 
 export const AgentRow = ({
@@ -65,6 +66,7 @@ export const AgentRow = ({
   isMuted = false,
   onInspect,
   onMarkDone,
+  onReopen,
 }: Props) => {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
@@ -89,6 +91,7 @@ export const AgentRow = ({
   ].filter((part): part is string => part !== null);
   const isMarkDoneAvailable =
     onMarkDone !== undefined && run.status !== 'running' && run.doneAt == null;
+  const isReopenAvailable = onReopen !== undefined && run.doneAt != null;
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
   const hoverMarkViewed = useHoverMarkViewed({
     sessionId: run.sessionId,
@@ -147,31 +150,37 @@ export const AgentRow = ({
         )
       }
       lifecycleActions={
-        density === 'sidebar' ? (
-          <>
-            <span className="flex size-6 shrink-0 items-center justify-center">
-              {isMarkDoneAvailable && (
-                <AgentCardAction
-                  icon={CircleCheck}
-                  label="Mark agent done"
-                  tone="success"
-                  reveal
-                  onClick={() => onMarkDone?.()}
-                />
-              )}
-            </span>
-            <span className="flex size-6 shrink-0 items-center justify-center">
+        <>
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            {isMarkDoneAvailable && (
               <AgentCardAction
-                icon={Trash2}
-                label="Delete agent"
-                tone="danger"
-                highlighted={isConfirmingDelete}
-                reveal={!isConfirmingDelete}
-                onClick={() => setIsConfirmingDelete(true)}
+                icon={CircleCheck}
+                label="Mark agent done"
+                tone="success"
+                reveal
+                onClick={() => onMarkDone?.()}
               />
-            </span>
-          </>
-        ) : undefined
+            )}
+            {isReopenAvailable && (
+              <AgentCardAction
+                icon={RotateCcw}
+                label="Reopen agent"
+                reveal
+                onClick={() => onReopen?.()}
+              />
+            )}
+          </span>
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            <AgentCardAction
+              icon={Trash2}
+              label="Delete agent"
+              tone="danger"
+              highlighted={isConfirmingDelete}
+              reveal={!isConfirmingDelete}
+              onClick={() => setIsConfirmingDelete(true)}
+            />
+          </span>
+        </>
       }
       status={
         <AgentKindChip

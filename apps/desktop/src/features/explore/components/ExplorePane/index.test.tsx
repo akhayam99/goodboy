@@ -5,8 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ProviderId, Session, SessionId } from '@goodboy/types';
 
+type ToastAction = { readonly label: string; readonly onClick: () => void };
+
+type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
+
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
+  readonly selectAgent: ReturnType<typeof vi.fn>;
   readonly providers: ReadonlyArray<{
     readonly id: ProviderId;
     readonly connection: string;
@@ -25,6 +30,8 @@ const h = vi.hoisted(() => ({
       args: { readonly model: string; readonly initialPrompt: string },
     ) => Promise<string>
   >(async () => 'agent-1'),
+  selectAgent: vi.fn(async () => undefined),
+  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
   sessions: [
     {
@@ -54,10 +61,15 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) =>
     selector({
       spawnAgent: h.spawnAgent,
+      selectAgent: h.selectAgent,
       providers: h.providers,
       sessions: h.sessions,
       workspaceOverrides: {},
     }),
+}));
+
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: h.showToast }),
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -83,6 +95,8 @@ beforeEach(() => {
   h.exploreRead.mockReset();
   h.spawnAgent.mockReset();
   h.spawnAgent.mockResolvedValue('agent-1');
+  h.selectAgent.mockClear();
+  h.showToast.mockClear();
   h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
 });
 
@@ -265,8 +279,9 @@ describe('ExplorePane', () => {
 
     await waitFor(() => expect(h.spawnAgent).toHaveBeenCalled());
     const spawnArgs = h.spawnAgent.mock.calls.at(-1)?.[1] as
-      | { readonly model: string; readonly initialPrompt: string }
+      | { readonly model: string; readonly initialPrompt: string; readonly focus: string }
       | undefined;
+    expect(spawnArgs?.focus).toBe('none');
     expect(spawnArgs?.model).toBe('claude-opus-5');
     expect(spawnArgs?.initialPrompt).toContain('Analyze this spreadsheet and summarize trends.');
     expect(spawnArgs?.initialPrompt).toContain('- budget.xlsx');
@@ -274,6 +289,13 @@ describe('ExplorePane', () => {
       (spawnArgs?.initialPrompt.indexOf('Analyze this spreadsheet and summarize trends.') ?? 0) <
         (spawnArgs?.initialPrompt.indexOf('- budget.xlsx') ?? 0),
     ).toBe(true);
+    expect(h.selectAgent).not.toHaveBeenCalled();
+
+    const action = h.showToast.mock.calls[0]![2]?.action;
+    expect(action?.label).toBe('Open the agent');
+    action?.onClick();
+
+    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
   });
 
   it('keeps spawn disabled when the ask is empty', async () => {

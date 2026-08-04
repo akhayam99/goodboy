@@ -193,9 +193,12 @@ describe('PlanStudio subpage', () => {
     expect(screen.getByText('beta body')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Other plans (1)' }));
+    expect(container.querySelectorAll('li')).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show consumed (1)' }));
     expect(container.querySelectorAll('li')).toHaveLength(2);
 
-    fireEvent.click(screen.getByRole('button', { name: /plan 1 consumed Alpha plan/i }));
+    fireEvent.click(screen.getByRole('button', { name: /plan 2 consumed Alpha plan/i }));
     expect(screen.getByText('alpha body')).toBeDefined();
     expect(container.querySelectorAll('li')).toHaveLength(0);
   });

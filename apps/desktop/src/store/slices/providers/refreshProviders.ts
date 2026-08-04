@@ -6,6 +6,7 @@ import {
   type ProviderStatuses,
 } from '../../../features/providers/providers';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
+import { clearStaleConnect } from './clearStaleConnect';
 import type { GetFn, SetFn } from './types';
 
 export const refreshProviders = (set: SetFn, get: GetFn) => {
@@ -60,6 +61,7 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
       geminiStatus,
       authResults,
       providers: buildProviderList(statuses, authResults, credentialProviderIds),
+      providerConnect: clearStaleConnect({ connect: get().providerConnect, authResults }),
     });
   };
 };

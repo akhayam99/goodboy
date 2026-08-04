@@ -196,13 +196,24 @@ export const MrDetailPanel = ({
         model: agentConfig.model,
         ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
         effort: agentConfig.effort,
-        focus: 'agent',
+        focus: 'none',
       });
-      await setCurrentSession(sessionId);
-      await selectAgent(sessionId, agentId);
-      onClose();
+      showToast('success', 'An agent is drafting the merge request. You can keep working.', {
+        title: 'Agent started',
+        action: {
+          label: 'Open the agent',
+          onClick: () => {
+            void (async () => {
+              await setCurrentSession(sessionId);
+              await selectAgent(sessionId, agentId);
+              onClose();
+            })();
+          },
+        },
+      });
     } catch (err) {
       showToast('error', formatError(err));
+    } finally {
       setBusy(null);
     }
   };

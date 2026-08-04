@@ -44,6 +44,10 @@ type Store = {
   agentKindOverride: Record<string, unknown>;
   messages: Record<string, ReadonlyArray<unknown>>;
   providers: ReadonlyArray<{ id: string; connection: string }>;
+  sessionCreations: Record<
+    string,
+    ReadonlyArray<{ id: string; kind: string; label: string | null; startedAt: string }>
+  >;
 };
 
 type Runs = {
@@ -83,6 +87,10 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     agentKindOverride: {} as Record<string, unknown>,
     messages: {} as Record<string, ReadonlyArray<unknown>>,
     providers: [{ id: 'anthropic', connection: 'connected' }],
+    sessionCreations: {} as Record<
+      string,
+      ReadonlyArray<{ id: string; kind: string; label: string | null; startedAt: string }>
+    >,
   } as Store,
   hooks: {
     workspace: { id: 'ws-1', name: 'My workspace' } as Workspace | null,
@@ -257,6 +265,7 @@ beforeEach(() => {
   store.sessionPendingResolutions = {};
   store.agentKindOverride = {};
   store.messages = {};
+  store.sessionCreations = {};
   hooks.workspace = { id: 'ws-1', name: 'My workspace' } as Workspace;
   hooks.openQuestions = [];
   hooks.stage = { stage: 'building', reason: '' } as SessionStageInfo;
@@ -568,6 +577,21 @@ describe('SessionOverviewPane activity', () => {
     fireEvent.click(screen.getByText('1 completed agent'));
     expect(onSelectLens).toHaveBeenCalledWith('agents');
     expect(store.setFocusedWorkflowRun).not.toHaveBeenCalled();
+  });
+
+  it('shows a branch action started elsewhere as in flight', () => {
+    store.sessionCreations = {
+      'sess-1': [
+        {
+          id: 'creation-1',
+          kind: 'branch',
+          label: 'Rebasing on main',
+          startedAt: '2026-08-04T10:00:00.000Z',
+        },
+      ],
+    };
+    renderPane();
+    expect(screen.getByText('Rebasing on main')).toBeDefined();
   });
 
   it('offers the batched push once resolutions are queued', async () => {

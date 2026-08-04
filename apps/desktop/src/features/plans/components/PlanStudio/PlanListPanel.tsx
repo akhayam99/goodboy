@@ -1,10 +1,12 @@
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { CircleCheck, X } from 'lucide-react';
 import { Divider, ResizeHandle, ScrollFade, SelectableRow, cn } from '@goodboy/ui';
 import type { PlanId, PlanWithCount } from '@goodboy/types';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
+import { FiledItemsToggle } from '../../../../shared/components/FiledItemsToggle';
 
 type Props = {
   readonly plans: ReadonlyArray<PlanWithCount>;
@@ -15,6 +17,10 @@ type Props = {
 
 export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) => {
   const [width, setWidth] = useColumnWidth(STORAGE_KEYS.planListWidth, 320);
+  const [showFiled, setShowFiled] = useState(false);
+  const active = plans.filter((plan) => plan.status === 'active');
+  const filed = plans.filter((plan) => plan.status !== 'active');
+  const visible = showFiled ? [...active, ...filed] : active;
 
   return (
     <div className="flex min-h-0 shrink-0">
@@ -42,7 +48,7 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
         <Divider />
         <ScrollFade className="min-h-0 flex-1">
           <ul className="flex w-full flex-col gap-1 px-3 py-3">
-            {plans.map((plan, idx) => {
+            {visible.map((plan, idx) => {
               const badge = planStatusBadge({ status: plan.status });
               return (
                 <li key={plan.id}>
@@ -77,6 +83,16 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
               );
             })}
           </ul>
+          <div className="px-3 pb-3">
+            <FiledItemsToggle
+              noun="consumed"
+              items="plans"
+              count={filed.length}
+              isShown={showFiled}
+              icon={CircleCheck}
+              onChange={setShowFiled}
+            />
+          </div>
         </ScrollFade>
       </div>
     </div>

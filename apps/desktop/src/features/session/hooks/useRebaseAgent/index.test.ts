@@ -4,7 +4,12 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 
-const { state } = vi.hoisted(() => ({
+type ToastAction = { readonly label: string; readonly onClick: () => void };
+
+type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
+
+const { showToast, state } = vi.hoisted(() => ({
+  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
   state: {
     sessions: [
       {
@@ -20,14 +25,24 @@ const { state } = vi.hoisted(() => ({
         },
       },
     },
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ name: string; status: string }>>,
+    sessionPhaseRuns: {} as Record<
+      string,
+      ReadonlyArray<{ id: string; name: string; status: string }>
+    >,
     spawnAgent: vi.fn(async () => 'agent-1'),
     selectAgent: vi.fn(async () => undefined),
+    setActiveLens: vi.fn(),
+    beginSessionCreation: vi.fn(() => 'creation-1'),
+    endSessionCreation: vi.fn(),
   },
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T>(selector: (store: typeof state) => T) => selector(state),
+}));
+
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast }),
 }));
 
 vi.mock('../../components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
@@ -53,6 +68,11 @@ beforeEach(() => {
   state.spawnAgent.mockResolvedValue('agent-1');
   state.selectAgent.mockReset();
   state.selectAgent.mockResolvedValue(undefined);
+  state.setActiveLens.mockReset();
+  state.beginSessionCreation.mockReset();
+  state.beginSessionCreation.mockReturnValue('creation-1');
+  state.endSessionCreation.mockReset();
+  showToast.mockClear();
 });
 
 afterEach(cleanup);
@@ -69,7 +89,7 @@ describe('useRebaseAgent', () => {
     expect(result.current.canRebase).toBe(true);
   });
 
-  it('spawns and selects the rebase agent with the resolved task model', async () => {
+  it('spawns the rebase agent with the resolved task model without selecting it', async () => {
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
     await act(() => result.current.run());
@@ -84,7 +104,44 @@ describe('useRebaseAgent', () => {
         effort: 'low',
       }),
     );
+    expect(state.selectAgent).not.toHaveBeenCalled();
+  });
+
+  it('spawns without taking the focus and marks the branch action in flight', async () => {
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run());
+
+    expect(state.spawnAgent).toHaveBeenCalledWith(
+      sessionId,
+      expect.objectContaining({ focus: 'none' }),
+    );
+    expect(state.beginSessionCreation).toHaveBeenCalledWith(sessionId, {
+      kind: 'branch',
+      label: 'Rebasing on main',
+    });
+    expect(showToast.mock.calls[0]?.[2]?.title).toBe('Rebase started');
+  });
+
+  it('offers an action that opens the agent once the rebase settles', async () => {
+    const { result, rerender } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    await act(() => result.current.run());
+    state.sessionPhaseRuns = {
+      [sessionId]: [{ id: 'agent-1', name: 'Rebase on main', status: 'failed' }],
+    };
+    rerender();
+
+    await waitFor(() => expect(showToast).toHaveBeenCalledTimes(2));
+    expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
+    const action = showToast.mock.calls[1]?.[2]?.action;
+    expect(action?.label).toBe('Open the rebase agent');
+    expect(state.selectAgent).not.toHaveBeenCalled();
+
+    action?.onClick();
+
     expect(state.selectAgent).toHaveBeenCalledWith(sessionId, 'agent-1');
+    expect(state.setActiveLens).toHaveBeenCalledWith(sessionId, 'agents');
   });
 
   it('reports spawn failures', async () => {
@@ -94,11 +151,12 @@ describe('useRebaseAgent', () => {
     await act(() => result.current.run());
 
     expect(result.current.error).toBe('agent launch failed');
+    expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
   });
 
   it('guards against a second rebase while the named agent is running', async () => {
     state.sessionPhaseRuns = {
-      [sessionId]: [{ name: 'Rebase on main', status: 'running' }],
+      [sessionId]: [{ id: 'agent-9', name: 'Rebase on main', status: 'running' }],
     };
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 
