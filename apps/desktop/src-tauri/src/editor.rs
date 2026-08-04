@@ -37,15 +37,8 @@ fn detect_editors_inner() -> Vec<DetectedEditor> {
 }
 
 fn which_binary(binary: &str) -> Option<()> {
-    let status = crate::path_env::command("which")
-        .arg(binary)
-        .output()
-        .ok()?;
-    if status.status.success() {
-        Some(())
-    } else {
-        None
-    }
+    let status = crate::path_env::command("which").arg(binary).output().ok()?;
+    if status.status.success() { Some(()) } else { None }
 }
 
 #[tauri::command]

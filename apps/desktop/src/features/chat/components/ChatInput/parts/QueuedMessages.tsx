@@ -71,7 +71,7 @@ export function QueuedMessages({
               type="button"
               onClick={() => onRemove(item.id)}
               title="Remove from queue"
-              aria-label="remove queued message"
+              aria-label="Remove from queue"
               className="flex size-5 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
             >
               <X size={11} aria-hidden />

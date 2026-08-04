@@ -26,8 +26,8 @@ export const ResolverCommitChip = ({ sha, onOpen }: Props) => {
     <button
       type="button"
       onClick={onOpen}
-      title={`Open the diff of ${shortSha}`}
-      aria-label={`open commit ${shortSha}`}
+      title={`Open commit ${shortSha}`}
+      aria-label={`Open commit ${shortSha}`}
       className={cn(
         CHIP_CLASS,
         'motion-safe:transition-colors hover:border-border hover:text-primary',

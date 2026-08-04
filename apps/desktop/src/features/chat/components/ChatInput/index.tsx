@@ -424,7 +424,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 type="button"
                 onClick={() => void cancelCurrentTurn(session.id)}
                 title="Cancel turn"
-                aria-label="cancel turn"
+                aria-label="Cancel turn"
                 className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
               >
                 <Square size={14} aria-hidden fill="currentColor" />
@@ -451,7 +451,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={providerDisconnected}
                 title="Attach files"
-                aria-label="attach files"
+                aria-label="Attach files"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Paperclip size={15} aria-hidden />
@@ -472,7 +472,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 }}
                 disabled={providerDisconnected}
                 title="Run a workspace script"
-                aria-label="run a workspace script"
+                aria-label="Run a workspace script"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 $

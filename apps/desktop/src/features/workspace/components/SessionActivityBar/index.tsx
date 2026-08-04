@@ -179,8 +179,8 @@ export const SessionActivityBar = ({
               variant="secondary"
               size="sm"
               onClick={onNewSession}
-              aria-label="create new session"
-              title={`new session (${shortcutGlyphs('session.new')})`}
+              aria-label="Create new session"
+              title={`Create new session (${shortcutGlyphs('session.new')})`}
               className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"
             >
               <Plus size={13} aria-hidden />

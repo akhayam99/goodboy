@@ -47,7 +47,7 @@ const HistoryEntry = ({
             type="button"
             onClick={() => onRestore(entry)}
             title="Restore this version"
-            aria-label="restore"
+            aria-label="Restore this version"
             className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <RotateCcw size={10} aria-hidden />

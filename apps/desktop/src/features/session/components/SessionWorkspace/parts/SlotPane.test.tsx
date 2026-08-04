@@ -253,7 +253,7 @@ describe('SlotPane', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /view history for goal/i }));
 
-      const restoreButtons = screen.getAllByRole('button', { name: /^restore$/i });
+      const restoreButtons = screen.getAllByRole('button', { name: /^restore this version$/i });
       const first = restoreButtons[0];
       if (first != null) {
         fireEvent.click(first);

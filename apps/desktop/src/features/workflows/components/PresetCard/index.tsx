@@ -74,8 +74,8 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
               e.stopPropagation();
               setConfirming(false);
             }}
-            title="cancel"
-            aria-label="cancel delete"
+            title="Cancel delete"
+            aria-label="Cancel delete"
             className="rounded-md p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <X size={12} aria-hidden />

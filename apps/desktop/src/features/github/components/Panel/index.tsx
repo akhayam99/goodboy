@@ -77,8 +77,8 @@ export const GithubPanel = ({ hideSectionHeader }: { hideSectionHeader?: boolean
           type="button"
           onClick={() => void onReload()}
           disabled={checking}
-          title="refresh status"
-          aria-label="refresh GitHub status"
+          title="Refresh GitHub status"
+          aria-label="Refresh GitHub status"
           className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground ring-1 ring-border-soft/40 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
         >
           <RefreshCw size={13} aria-hidden />

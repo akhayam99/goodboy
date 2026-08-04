@@ -111,7 +111,7 @@ describe('ResolverThreadsCard', () => {
     h.resolved.mockReturnValue([{ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' }]);
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'open commit abcdef1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open commit abcdef1' }));
 
     expect(h.openDiffLens).toHaveBeenCalledWith('s', {
       kind: 'commit',

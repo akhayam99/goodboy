@@ -45,8 +45,8 @@ function ChecklistBody({ progress }: { progress: OnboardingProgress }) {
         <button
           type="button"
           onClick={() => collapse()}
-          title="hide, reopen from the sidebar"
-          aria-label="hide onboarding checklist"
+          title="Hide onboarding checklist (reopen from the sidebar)"
+          aria-label="Hide onboarding checklist"
           className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />
@@ -96,8 +96,8 @@ function CompletedBody() {
         <button
           type="button"
           onClick={() => finish()}
-          title="dismiss"
-          aria-label="dismiss onboarding"
+          title="Dismiss onboarding"
+          aria-label="Dismiss onboarding"
           className="rounded-md p-0.5 text-muted-foreground/70 motion-safe:transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
           <X size={11} aria-hidden />

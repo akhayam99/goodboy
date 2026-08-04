@@ -307,8 +307,8 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
         <button
           type="button"
           onClick={onClose}
-          title="close"
-          aria-label="close log"
+          title="Close log"
+          aria-label="Close log"
           className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
         >
           <X size={12} aria-hidden />

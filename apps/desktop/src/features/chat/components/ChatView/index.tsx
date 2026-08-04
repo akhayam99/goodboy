@@ -629,7 +629,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         {!pinned && (
           <button
             type="button"
-            aria-label="jump to latest"
+            aria-label="Jump to latest"
             title="Jump to latest"
             className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
