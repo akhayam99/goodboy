@@ -236,12 +236,23 @@ describe('AgentRow', () => {
     expect(remove).toHaveBeenCalledOnce();
   });
 
-  it('drops mark done and delete from the lane density card, the inspector footer owns them there', () => {
+  it('keeps mark done and delete on the lane density card too', () => {
     renderRow(false, {}, 'lane');
 
-    expect(screen.queryByRole('button', { name: 'Mark agent done' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Delete agent' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Mark agent done' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete agent' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Toggle agent details' })).toBeTruthy();
+  });
+
+  it('keeps every action in the same order whether or not the card is hovered', () => {
+    renderRow(false, {}, 'lane');
+    const labelsOf = () =>
+      Array.from(document.querySelectorAll('button')).map((button) =>
+        button.getAttribute('aria-label'),
+      );
+    const atRest = labelsOf();
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Toggle agent details' }));
+    expect(labelsOf()).toEqual(atRest);
   });
 
   it('keeps mark done and delete on the sidebar density card', () => {

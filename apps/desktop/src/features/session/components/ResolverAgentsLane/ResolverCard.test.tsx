@@ -5,6 +5,12 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ResolverStatus } from '../../resolver-linkage';
 
+const lifecycle = vi.hoisted(() => ({
+  setAgentDone: vi.fn(),
+  clearAgentDone: vi.fn(),
+  deleteAgent: vi.fn(),
+}));
+
 vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
@@ -22,6 +28,9 @@ vi.mock('../../../../store', () => ({
       forceCloseResolver: vi.fn(),
       sendTurn: vi.fn(),
       selectAgent: vi.fn(),
+      setAgentDone: lifecycle.setAgentDone,
+      clearAgentDone: lifecycle.clearAgentDone,
+      deleteAgent: lifecycle.deleteAgent,
     }),
 }));
 
@@ -259,5 +268,40 @@ describe('ResolverCard', () => {
     fireEvent.click(details);
     expect(onInspect).toHaveBeenCalledOnce();
     expect(onOpenChat).toHaveBeenCalledOnce();
+  });
+
+  it('marks the resolver done from the card', () => {
+    renderCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Mark resolver done' }));
+    expect(lifecycle.setAgentDone).toHaveBeenCalledWith(SID, 'resolver-1');
+  });
+
+  it('offers reopen instead of mark done once the resolver is done', () => {
+    renderCard({ run: { ...agent, doneAt: '2026-05-28T00:02:00Z' } as Agent });
+    expect(screen.queryByRole('button', { name: 'Mark resolver done' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen resolver' }));
+    expect(lifecycle.clearAgentDone).toHaveBeenCalledWith(SID, 'resolver-1');
+  });
+
+  it('deletes the resolver only after the confirm step', () => {
+    renderCard();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete resolver' }));
+    expect(lifecycle.deleteAgent).not.toHaveBeenCalled();
+
+    const panel = screen.getByRole('group', { name: 'Delete this resolver?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
+    expect(lifecycle.deleteAgent).toHaveBeenCalledWith(SID, 'resolver-1');
+  });
+
+  it('keeps the lifecycle actions in their own slot, away from navigation', () => {
+    renderCard();
+    const lifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete resolver' }))).toBe(
+      true,
+    );
+    const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
+    expect(navigationSlot.contains(screen.getByRole('button', { name: 'Delete resolver' }))).toBe(
+      false,
+    );
   });
 });

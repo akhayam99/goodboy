@@ -40,6 +40,7 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
   const renameAgent = useAppStore((state) => state.renameAgent);
   const deleteAgent = useAppStore((state) => state.deleteAgent);
   const setAgentDone = useAppStore((state) => state.setAgentDone);
+  const clearAgentDone = useAppStore((state) => state.clearAgentDone);
   const loading = useSessionLoading(sessionId);
   const metrics = useAgentMetrics({ sessionId });
 
@@ -177,6 +178,13 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
     [setAgentDone, sessionId],
   );
 
+  const onReopen = useCallback(
+    (agentId: AgentId) => {
+      void clearAgentDone(sessionId, agentId);
+    },
+    [clearAgentDone, sessionId],
+  );
+
   return {
     activeAgents,
     agentKindOverride,
@@ -192,6 +200,7 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
     metrics,
     onDeleteAgent,
     onMarkDone,
+    onReopen,
     onPickAgent,
     onRenameCommit,
     selectedAgentId,
