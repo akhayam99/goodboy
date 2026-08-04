@@ -42,10 +42,7 @@ describe('computeStaleDrafts', () => {
   const files = parseUnifiedDiff(DIFF);
 
   it('keeps drafts anchored on add or context lines fresh', () => {
-    const drafts = [
-      makeDraft({}),
-      makeDraft({ overrides: { id: 'draft-2', line: 3 } }),
-    ];
+    const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-2', line: 3 } })];
     const { fresh, stale } = computeStaleDrafts({ drafts, files });
     expect(fresh.map((draft) => draft.id)).toEqual(['draft-1', 'draft-2']);
     expect(stale).toEqual([]);

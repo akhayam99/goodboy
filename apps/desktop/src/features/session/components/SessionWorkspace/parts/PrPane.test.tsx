@@ -182,9 +182,6 @@ describe('PrPane', () => {
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
     expect(screen.getByRole('heading', { name: 'GitLab' })).toBeDefined();
-    expect(
-      screen.getByText('Linked issues and pull or merge request for this session.'),
-    ).toBeDefined();
     expect(screen.queryByText('GitHub')).toBeNull();
   });
 
@@ -196,7 +193,7 @@ describe('PrPane', () => {
     expect(screen.getByRole('heading', { name: 'GitHub' })).toBeDefined();
   });
 
-  it('falls back to neutral copy when both hosts carry work', () => {
+  it('offers both hosts as tabs and opens on the pull request', () => {
     h.store.sessionGithub = {
       [SESSION_ID]: {
         pr: PULL_REQUEST,
@@ -212,7 +209,9 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByRole('heading', { name: 'Code host work' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Refactor authentication' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'GitLab' })).toBeDefined();
   });
 
   it('never offers create-PR actions inside a PR review session', () => {
@@ -318,7 +317,7 @@ describe('PrPane', () => {
     };
     const view = render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /GitLab !7/i }));
+    fireEvent.click(screen.getByRole('tab', { name: 'GitLab' }));
     expect(screen.getByText('GitLab merge request detail')).toBeDefined();
 
     h.store.sessionGitlabMr = {};

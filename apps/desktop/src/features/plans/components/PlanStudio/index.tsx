@@ -193,24 +193,91 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                       onAgentClick={handleAgentClick}
                     />
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      {selected.status !== 'discarded' ? (
+                        selected.status === 'consumed' ? (
+                          <button
+                            type="button"
+                            onClick={() => setReplayArmed(true)}
+                            disabled={spawning}
+                            title="Plan already ran, click to replay and confirm"
+                            className={cn(
+                              'inline-flex items-center justify-center gap-1.5 rounded-md border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/10',
+                              spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
+                            )}
+                          >
+                            <RotateCw size={12} aria-hidden />
+                            Replay
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => void handleTrigger()}
+                            disabled={spawning}
+                            className={cn(
+                              'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90',
+                              spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
+                            )}
+                            title={
+                              selected.status === 'active'
+                                ? 'Spawn new agent to execute this plan'
+                                : 'Replay this plan'
+                            }
+                          >
+                            {selected.status === 'active' ? (
+                              <Play size={12} aria-hidden className="fill-current" />
+                            ) : (
+                              <RotateCw size={12} aria-hidden />
+                            )}
+                            {selected.status === 'active' ? 'Start' : 'Replay'}
+                          </button>
+                        )
+                      ) : null}
+                      {selected.status === 'consumed' ? (
+                        <Tooltip content="Consumed plans cannot be deleted">
+                          <span
+                            className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
+                            aria-label="Consumed plans cannot be deleted"
+                          >
+                            <Trash2 size={13} aria-hidden />
+                          </span>
+                        </Tooltip>
+                      ) : selected.status === 'discarded' ? (
+                        <Tooltip content="Restore plan">
+                          <button
+                            type="button"
+                            onClick={() => handleRestore(selected)}
+                            aria-label="Restore plan"
+                            className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
+                          >
+                            <ArchiveRestore size={13} aria-hidden />
+                          </button>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip content="Delete plan (soft delete, click restore to recover)">
+                          <button
+                            type="button"
+                            onClick={() => setDeleteArmed(true)}
+                            aria-label="Delete plan"
+                            className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
+                          >
+                            <Trash2 size={13} aria-hidden />
+                          </button>
+                        </Tooltip>
+                      )}
+                    </div>
                     <SegmentedTabs
                       ariaLabel="Content mode"
                       options={[
-                        {
-                          value: 'preview',
-                          label: 'Preview',
-                          icon: Eye,
-                          hint: 'Preview rendered markdown',
-                        },
+                        { value: 'preview', label: 'Preview', icon: Eye },
                         {
                           value: 'edit',
                           label: 'Edit',
                           icon: Pencil,
-                          hint:
-                            selected.status === 'discarded'
-                              ? 'Discarded plans cannot be edited, restore first'
-                              : 'Edit markdown source',
+                          ...(selected.status === 'discarded' && {
+                            hint: 'Restore the plan to edit it',
+                          }),
                           disabled: selected.status === 'discarded',
                         },
                       ]}
@@ -223,77 +290,6 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                       }}
                       size="sm"
                     />
-                    {selected.status !== 'discarded' ? (
-                      selected.status === 'consumed' ? (
-                        <button
-                          type="button"
-                          onClick={() => setReplayArmed(true)}
-                          disabled={spawning}
-                          title="Plan already ran, click to replay and confirm"
-                          className={cn(
-                            'inline-flex items-center justify-center gap-1.5 rounded-md border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/10',
-                            spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
-                          )}
-                        >
-                          <RotateCw size={12} aria-hidden />
-                          Replay
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => void handleTrigger()}
-                          disabled={spawning}
-                          className={cn(
-                            'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90',
-                            spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
-                          )}
-                          title={
-                            selected.status === 'active'
-                              ? 'Spawn new agent to execute this plan'
-                              : 'Replay this plan'
-                          }
-                        >
-                          {selected.status === 'active' ? (
-                            <Play size={12} aria-hidden className="fill-current" />
-                          ) : (
-                            <RotateCw size={12} aria-hidden />
-                          )}
-                          {selected.status === 'active' ? 'Start' : 'Replay'}
-                        </button>
-                      )
-                    ) : null}
-                    {selected.status === 'consumed' ? (
-                      <Tooltip content="Consumed plans cannot be deleted">
-                        <span
-                          className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
-                          aria-label="Consumed plans cannot be deleted"
-                        >
-                          <Trash2 size={13} aria-hidden />
-                        </span>
-                      </Tooltip>
-                    ) : selected.status === 'discarded' ? (
-                      <Tooltip content="Restore plan">
-                        <button
-                          type="button"
-                          onClick={() => handleRestore(selected)}
-                          aria-label="Restore plan"
-                          className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
-                        >
-                          <ArchiveRestore size={13} aria-hidden />
-                        </button>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip content="Delete plan (soft delete, click restore to recover)">
-                        <button
-                          type="button"
-                          onClick={() => setDeleteArmed(true)}
-                          aria-label="Delete plan"
-                          className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
-                        >
-                          <Trash2 size={13} aria-hidden />
-                        </button>
-                      </Tooltip>
-                    )}
                   </div>
                 </div>
                 {deleteArmed ? (
