@@ -236,6 +236,28 @@ describe('finalizeWorkflowStep output summary', () => {
     );
   });
 
+  it('summarizes once when two finalize calls race for the same agent', async () => {
+    let release: (summary: string) => void = () => undefined;
+    summarizeStepOutputSpy.mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const finalize = buildHarness();
+
+    const first = finalize(SESSION_ID, AGENT_ID, 'raw output', false, { force: true });
+    const second = finalize(SESSION_ID, AGENT_ID, 'raw output', false, { force: true });
+    release('the only summary');
+    await Promise.all([first, second]);
+
+    expect(summarizeStepOutputSpy).toHaveBeenCalledTimes(1);
+    const written = invokeAgentUpdateStatusSpy.mock.calls.map(
+      (call) => (call[1] as { readonly outputSummary?: string }).outputSummary,
+    );
+    expect(new Set(written)).toEqual(new Set(['the only summary']));
+  });
+
   it('ignores a step-done marker that names a different step', async () => {
     const sibling: Agent = { ...agent, id: 'agent-2' as AgentId, ordinal: 1, name: 'Review' };
     invokeAgentListSpy.mockResolvedValue([agent, sibling]);

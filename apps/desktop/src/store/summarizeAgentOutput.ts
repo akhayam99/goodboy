@@ -1,16 +1,19 @@
 import { invoke } from '@tauri-apps/api/core';
 import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
-import type { TaskModelPreference } from '@goodboy/types';
+import type { AgentId, TaskModelPreference } from '@goodboy/types';
 import { formatError } from '../shared/lib/errors';
 
 export const SUMMARY_TIMEOUT_MS = 60_000;
 
 type Params = {
+  readonly agentId: AgentId;
   readonly output: string;
   readonly taskModel: TaskModelPreference;
   readonly workingDir?: string;
   readonly expectedOutput?: string;
 };
+
+type RunParams = Omit<Params, 'agentId'>;
 
 export type SummarizeAgentOutputResult = {
   readonly summary: string;
@@ -18,12 +21,14 @@ export type SummarizeAgentOutputResult = {
   readonly error?: string;
 };
 
-export const summarizeAgentOutput = async ({
+const inFlightSummaries = new Map<AgentId, Promise<SummarizeAgentOutputResult>>();
+
+const runSummarization = async ({
   output,
   taskModel,
   workingDir,
   expectedOutput,
-}: Params): Promise<SummarizeAgentOutputResult> => {
+}: RunParams): Promise<SummarizeAgentOutputResult> => {
   const runId = crypto.randomUUID();
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_resolve, reject) => {
@@ -55,4 +60,28 @@ export const summarizeAgentOutput = async ({
       clearTimeout(timeoutId);
     }
   }
+};
+
+export const summarizeAgentOutput = ({
+  agentId,
+  output,
+  taskModel,
+  workingDir,
+  expectedOutput,
+}: Params): Promise<SummarizeAgentOutputResult> => {
+  const alreadyRunning = inFlightSummaries.get(agentId);
+  if (alreadyRunning != null) {
+    return alreadyRunning;
+  }
+
+  const running = runSummarization({
+    output,
+    taskModel,
+    ...(workingDir != null && { workingDir }),
+    ...(expectedOutput != null && { expectedOutput }),
+  }).finally(() => {
+    inFlightSummaries.delete(agentId);
+  });
+  inFlightSummaries.set(agentId, running);
+  return running;
 };

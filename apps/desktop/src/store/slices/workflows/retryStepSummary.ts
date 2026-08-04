@@ -51,6 +51,7 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
         ],
       })?.expectedOutput ?? '';
     const result = await summarizeAgentOutput({
+      agentId,
       output: assistantText,
       taskModel,
       ...(worktreePath != null && { workingDir: worktreePath }),
