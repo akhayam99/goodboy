@@ -17,6 +17,12 @@ describe('AgentKindChip', () => {
     expect(screen.getByText('imple')).toBeDefined();
   });
 
+  it('renders GEN for the generalist role, uppercased by the chip styling', () => {
+    render(<AgentKindChip kind="generic" />);
+    const chip = screen.getByText('gen');
+    expect(chip.className).toContain('uppercase');
+  });
+
   it('applies the title attribute when provided', () => {
     const { container } = render(<AgentKindChip kind="scout" title="scout agent" />);
     expect(container.querySelector('[title="scout agent"]')).not.toBeNull();
