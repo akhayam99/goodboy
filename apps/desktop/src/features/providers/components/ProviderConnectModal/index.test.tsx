@@ -96,7 +96,7 @@ describe('ProviderConnectModal', () => {
       );
     });
 
-    expect(screen.getByText('Finish signing in in your browser.')).toBeDefined();
+    expect(screen.getByText('Finish signing in from your browser.')).toBeDefined();
     expect(state.cancelProviderConnect).not.toHaveBeenCalled();
     expect(state.connectProvider).not.toHaveBeenCalled();
   });

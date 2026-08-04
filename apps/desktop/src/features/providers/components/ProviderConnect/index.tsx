@@ -117,9 +117,9 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
               {view.note}
             </span>
           )}
-          {view.isFailure && connect.errorTail !== null && (
+          {view.showErrorTail && (
             <span className="max-w-prose break-words text-2xs leading-relaxed text-danger">
-              {connect.errorTail}
+              {connect.errorTail ?? 'It stopped without printing anything we could capture.'}
             </span>
           )}
         </div>

@@ -84,7 +84,7 @@ describe('ProviderConnect', () => {
     setConnect({ phase: 'handoff', step: 'login', authUrl: 'https://claude.ai/cli' });
     renderConnect();
 
-    expect(screen.getByText('Finish signing in in your browser.')).toBeDefined();
+    expect(screen.getByText('Finish signing in from your browser.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Open the link again' }));
     expect(openUrl).toHaveBeenCalledWith('https://claude.ai/cli');
   });
@@ -207,6 +207,30 @@ describe('ProviderConnect', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(state.connectProvider).toHaveBeenCalledWith('anthropic');
+  });
+
+  it('says so when the run failed without printing anything', () => {
+    setConnect({ phase: 'failed', step: 'login', command: 'claude auth login', errorTail: null });
+    renderConnect();
+
+    expect(screen.getByText(/without printing anything/i)).toBeDefined();
+  });
+
+  it('names the other window instead of blaming the sign-in when the provider is busy', () => {
+    setConnect({ phase: 'blocked', step: 'login', command: 'claude auth login' });
+    renderConnect();
+
+    expect(screen.getByText(/Another window is already signing in to claude/)).toBeDefined();
+    expect(screen.queryByText("Sign-in didn't finish.")).toBeNull();
+    expect(screen.queryByText(/If this keeps failing/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeDefined();
+  });
+
+  it('prints the command to read inside the details, never at rest', () => {
+    setConnect({ phase: 'failed', step: 'login', command: 'claude auth login', runId: 'run-1' });
+    renderConnect();
+
+    expect(screen.getAllByText('claude auth login').length).toBeGreaterThan(1);
   });
 
   it('confirms the identity on success and never claims one when unverified', () => {
