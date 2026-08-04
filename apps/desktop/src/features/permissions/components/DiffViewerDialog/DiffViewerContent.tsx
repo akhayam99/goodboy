@@ -43,6 +43,8 @@ import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { DiffLayoutToggle } from '../../../../shared/components/DiffLayoutToggle';
+import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import {
   listBranchCommits,
   worktreeDiff,
@@ -288,6 +290,7 @@ export const DiffViewerContent = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarPref);
+  const [layoutMode, setLayoutMode] = useDiffLayoutMode();
   const [activePath, setActivePath] = useState<string | null>(null);
   const fileRefs = useRef<Map<string, HTMLElement>>(new Map());
   const fileRefCallbacks = useRef<Map<string, React.RefCallback<HTMLElement>>>(new Map());
@@ -846,6 +849,7 @@ export const DiffViewerContent = ({
                 showClose={false}
                 onClose={onClose}
                 presentation="actions"
+                layoutToggle={<DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />}
                 viewSelector={
                   isGitAware ? (
                     <DiffViewSelector
@@ -945,6 +949,7 @@ export const DiffViewerContent = ({
               refreshing={loading}
               showClose={showToolbarClose}
               onClose={onClose}
+              layoutToggle={<DiffLayoutToggle mode={layoutMode} onChange={setLayoutMode} />}
               viewSelector={
                 isGitAware ? (
                   <DiffViewSelector
@@ -1017,7 +1022,7 @@ export const DiffViewerContent = ({
                   <FileDiffCard
                     key={file.path}
                     file={file}
-                    layoutMode="unified"
+                    layoutMode={layoutMode}
                     registerRef={registerFileRef({ path: file.path })}
                     reviewState={reviewStateByPath.get(file.path) ?? 'none'}
                     onToggleReviewed={(next) => toggleReviewed(file, next)}

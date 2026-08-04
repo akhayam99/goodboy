@@ -508,6 +508,31 @@ describe('line comment add (single + multi-line drag)', () => {
   });
 });
 
+describe('diff layout toggle', () => {
+  it('renders unified rows until the split layout is chosen', async () => {
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
+
+    const firstLine = await screen.findByText('alpha');
+    expect(firstLine.closest('tr')?.querySelectorAll('td')).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Split' }));
+
+    expect(screen.getByText('alpha').closest('tr')?.querySelectorAll('td')).toHaveLength(4);
+    expect(localStorage.getItem('goodboy:diff-layout-mode')).toBe('split');
+  });
+
+  it('rehydrates the split layout from the stored preference', async () => {
+    localStorage.setItem('goodboy:diff-layout-mode', 'split');
+    fixtures.files = fileFixture();
+    render(<DiffViewerPane sessionId={SID} loader={async () => 'raw'} onClose={vi.fn()} />);
+
+    const firstLine = await screen.findByText('alpha');
+    expect(firstLine.closest('tr')?.querySelectorAll('td')).toHaveLength(4);
+    expect(screen.getByRole('tab', { name: 'Split' }).getAttribute('aria-selected')).toBe('true');
+  });
+});
+
 const twoFileFixture = () => [
   {
     path: 'src/a.ts',

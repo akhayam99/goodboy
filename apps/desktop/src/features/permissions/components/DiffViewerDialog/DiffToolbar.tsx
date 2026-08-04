@@ -15,6 +15,7 @@ type Props = {
   showClose: boolean;
   onClose: () => void;
   viewSelector?: React.ReactNode;
+  layoutToggle?: React.ReactNode;
   presentation?: 'bar' | 'actions';
 };
 
@@ -30,6 +31,7 @@ export const DiffToolbar = ({
   showClose,
   onClose,
   viewSelector,
+  layoutToggle,
   presentation = 'bar',
 }: Props) => {
   const titleText = title ?? (prNumber !== undefined ? `PR #${prNumber} diff` : 'Diff');
@@ -76,7 +78,7 @@ export const DiffToolbar = ({
         </div>
 
         {status?.branch ? (
-          <span className="hidden min-w-0 shrink items-center gap-1.5 text-2xs text-muted-foreground md:flex">
+          <span className="hidden min-w-0 shrink items-center gap-1.5 text-2xs text-muted-foreground xl:flex">
             <GitBranch size={11} aria-hidden className="shrink-0 text-muted-foreground/70" />
             <span className="truncate font-mono">{status.branch}</span>
             {hasAheadBehind ? (
@@ -87,6 +89,8 @@ export const DiffToolbar = ({
             ) : null}
           </span>
         ) : null}
+
+        {layoutToggle}
 
         <div className="flex shrink-0 items-center gap-0.5">
           {onRefresh ? (
