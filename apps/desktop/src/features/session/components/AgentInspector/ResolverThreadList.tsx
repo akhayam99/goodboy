@@ -1,9 +1,11 @@
 import type { PrComment } from '@goodboy/types';
 import type { ResolverActionKind } from '../../resolverActions';
+import type { ResolverMissingVerdicts } from '../../resolverMissingVerdicts';
 import type { ResolverRunningThreadAction } from '../../hooks/useResolverActions';
 import type { ResolverThreadSettlement } from '../../resolverThreadSettlements';
+import { ResolverMissingVerdictsNotice } from './ResolverMissingVerdictsNotice';
 import { ResolverPanelSection } from './ResolverPanelSection';
-import { ResolverThreadRow } from './ResolverThreadRow';
+import { ResolverThreadCard } from './ResolverThreadCard';
 
 type Props = {
   readonly settlements: ReadonlyArray<ResolverThreadSettlement>;
@@ -11,12 +13,16 @@ type Props = {
   readonly prNumber: number | null;
   readonly isBusy: boolean;
   readonly canAct: boolean;
+  readonly missingVerdicts: ResolverMissingVerdicts | null;
   readonly runningThreadAction: ResolverRunningThreadAction | null;
+  readonly isAskingForVerdicts: boolean;
   readonly onRun: (params: {
     readonly threadId: string;
     readonly kind: ResolverActionKind;
     readonly text: string;
+    readonly notes: string;
   }) => Promise<void>;
+  readonly onAskForVerdicts: () => void;
   readonly onReplyChange: (params: { readonly threadId: string; readonly reply: string }) => void;
   readonly onOpenThread: ((threadId: string) => void) | null;
 };
@@ -27,8 +33,11 @@ export const ResolverThreadList = ({
   prNumber,
   isBusy,
   canAct,
+  missingVerdicts,
   runningThreadAction,
+  isAskingForVerdicts,
   onRun,
+  onAskForVerdicts,
   onReplyChange,
   onOpenThread,
 }: Props) => {
@@ -38,9 +47,16 @@ export const ResolverThreadList = ({
 
   return (
     <ResolverPanelSection label={settlements.length > 1 ? 'Threads' : 'Thread'}>
+      {missingVerdicts !== null && (
+        <ResolverMissingVerdictsNotice
+          missing={missingVerdicts}
+          isBusy={isAskingForVerdicts}
+          onAsk={onAskForVerdicts}
+        />
+      )}
       <ul className="flex flex-col gap-2">
         {settlements.map((settlement, index) => (
-          <ResolverThreadRow
+          <ResolverThreadCard
             key={settlement.threadId}
             settlement={settlement}
             comment={commentByThreadId.get(settlement.threadId) ?? null}
@@ -48,7 +64,6 @@ export const ResolverThreadList = ({
             prNumber={prNumber}
             isBusy={isBusy}
             canAct={canAct}
-            canForceResolve={settlements.length > 1}
             runningThreadAction={runningThreadAction}
             onRun={onRun}
             onReplyChange={onReplyChange}

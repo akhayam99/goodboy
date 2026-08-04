@@ -115,19 +115,36 @@ describe('resolverActionPlan', () => {
     expect(noneFixed.primary?.isEnabled).toBe(false);
   });
 
-  it('requires an explanation to close a thread without a fix', () => {
-    const wontfix = resolverActionPlan({ ...base, status: 'wontfix', tally: tallyOf('wontfix') });
-    const analyzed = resolverActionPlan({
+  it('sends a lane card without a fix to the inspector to be explained', () => {
+    const wontfix = resolverActionPlan({
       ...base,
-      status: 'analyzed',
-      tally: tallyOf('analyzed'),
+      status: 'wontfix',
+      surface: 'lane',
+      tally: tallyOf('wontfix'),
     });
 
     expect(wontfix.primary?.label).toBe('Post explanation & close');
     expect(wontfix.primary?.opensInspector).toBe(true);
     expect(wontfix.secondary).toBeNull();
+  });
+
+  it('closes threads in bulk from the inspector only when there are several', () => {
+    const one = resolverActionPlan({ ...base, status: 'wontfix', tally: tallyOf('wontfix') });
+    const analyzed = resolverActionPlan({
+      ...base,
+      status: 'analyzed',
+      tally: tallyOf('analyzed'),
+    });
+    const many = resolverActionPlan({
+      ...base,
+      status: 'analyzed',
+      tally: tallyOf('analyzed', 'analyzed'),
+    });
+
+    expect(one.primary).toBeNull();
     expect(analyzed.primary?.label).toBe('Proceed with fix');
-    expect(analyzed.secondary?.label).toBe('Post & close');
+    expect(analyzed.secondary).toBeNull();
+    expect(many.secondary?.label).toBe('Post & close all');
   });
 
   it('sends a lane card of disagreeing threads to the inspector instead of one CTA', () => {
@@ -192,7 +209,7 @@ describe('resolverActionPlan', () => {
   });
 
   it('sends an action needing typed input to the panel', () => {
-    const wontfix = resolverActionPlan({ ...base, status: 'wontfix' });
+    const wontfix = resolverActionPlan({ ...base, status: 'wontfix', surface: 'lane' });
     const committed = resolverActionPlan({ ...base, status: 'committed' });
 
     expect(resolverActionOpensPanel({ action: wontfix.primary! })).toBe(true);
@@ -221,26 +238,35 @@ describe('resolverActionPlan', () => {
     ).toBe('Run now');
   });
 
-  it('offers a rerun and a manual resolve on a dead end', () => {
+  it('offers a rerun on a dead end, and leaves a single thread to its own card', () => {
     const failed = resolverActionPlan({ ...base, status: 'failed' });
+    const onLane = resolverActionPlan({ ...base, status: 'failed', surface: 'lane' });
     const done = resolverActionPlan({ ...base, status: 'done' });
 
     expect(failed.primary?.label).toBe('Run again');
-    expect(failed.secondary?.label).toBe('Mark resolved');
+    expect(failed.secondary).toBeNull();
     expect(failed.overflow).toEqual([]);
+    expect(onLane.secondary?.label).toBe('Mark resolved');
     expect(done.primary?.label).toBe('Run again');
   });
 
-  it('keeps the manual resolve in the overflow while the resolver awaits an answer', () => {
-    const awaiting = resolverActionPlan({ ...base, status: 'awaiting' });
+  it('keeps a bulk resolve in the overflow only while several threads await an answer', () => {
+    const one = resolverActionPlan({ ...base, status: 'awaiting' });
+    const many = resolverActionPlan({
+      ...base,
+      status: 'awaiting',
+      agent: agentWith({ sourceThreadId: undefined, sourceThreadIds: ['PRRT_1', 'PRRT_2'] }),
+      tally: tallyOf('open', 'open'),
+    });
     const busy = resolverActionPlan({
       ...base,
       status: 'awaiting',
       turnState: { kind: 'running' } as never,
     });
 
-    expect(awaiting.primary?.label).toBe('Answer in chat');
-    expect(awaiting.overflow.map((action) => action.kind)).toEqual(['forceResolve']);
+    expect(one.primary?.label).toBe('Answer in chat');
+    expect(one.overflow).toEqual([]);
+    expect(many.overflow.map((action) => action.label)).toEqual(['Mark all resolved']);
     expect(busy.overflow).toEqual([]);
   });
 

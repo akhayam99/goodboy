@@ -14,6 +14,10 @@ export type ResolverActionKind =
   | 'run'
   | 'rerun'
   | 'fix'
+  | 'rework'
+  | 'redo'
+  | 'custom'
+  | 'verdict'
   | 'forceClose'
   | 'forceResolve';
 
@@ -150,6 +154,17 @@ const MARK_RESOLVED: ResolverAction = {
   opensInspector: false,
 };
 
+const MARK_ALL_RESOLVED: ResolverAction = {
+  ...MARK_RESOLVED,
+  label: 'Mark all resolved',
+  confirm: {
+    role: 'alert',
+    title: 'Mark every open thread resolved?',
+    description: 'Closes each thread on GitHub with the reply it carries, in one go.',
+    confirmLabel: 'Mark all resolved',
+  },
+};
+
 const pushAction = ({
   label,
   isEnabled,
@@ -205,6 +220,22 @@ const explainAction = ({
   opensInspector: true,
 });
 
+const bulkExplain = ({
+  params,
+  laneLabel,
+}: {
+  readonly params: Params;
+  readonly laneLabel: string;
+}): ResolverAction | null => {
+  const threadCount = agentThreadIds(params.agent).length;
+  if (params.surface === 'lane') {
+    return explainAction({ label: laneLabel, isEnabled: threadCount > 0 });
+  }
+  return params.tally.total > 1
+    ? explainAction({ label: 'Post & close all', isEnabled: threadCount > 0 })
+    : null;
+};
+
 const canForceClose = ({ agent, status }: Pick<Params, 'agent' | 'status'>): boolean =>
   status === 'running' || agent.status === 'running';
 
@@ -220,6 +251,16 @@ const canForceResolve = ({
     return false;
   }
   return status === 'awaiting' || status === 'failed' || status === 'done' || status === 'stopped';
+};
+
+const manualResolve = (params: Params): ResolverAction | null => {
+  if (!canForceResolve(params)) {
+    return null;
+  }
+  if (params.surface === 'lane') {
+    return MARK_RESOLVED;
+  }
+  return params.tally.total > 1 ? MARK_ALL_RESOLVED : null;
 };
 
 const canPush = ({ tally, commitSha }: Pick<Params, 'tally' | 'commitSha'>): boolean =>
@@ -300,15 +341,12 @@ const statusBlock = (params: Params): Block => {
     case 'analyzed':
       return {
         primary: PROCEED,
-        secondary: explainAction({ label: 'Post & close', isEnabled: threadCount > 0 }),
+        secondary: bulkExplain({ params, laneLabel: 'Post & close' }),
         note: null,
       };
     case 'wontfix':
       return {
-        primary: explainAction({
-          label: 'Post explanation & close',
-          isEnabled: threadCount > 0,
-        }),
+        primary: bulkExplain({ params, laneLabel: 'Post explanation & close' }),
         secondary: null,
         note: null,
       };
@@ -319,7 +357,7 @@ const statusBlock = (params: Params): Block => {
     case 'done':
       return {
         primary: RUN_AGAIN,
-        secondary: canForceResolve(params) ? MARK_RESOLVED : null,
+        secondary: manualResolve(params),
         note: null,
       };
     default: {
@@ -345,8 +383,9 @@ export const resolverActionPlan = (params: Params): ResolverActionPlan => {
   if (canForceClose(params)) {
     overflow.push(FORCE_CLOSE);
   }
-  if (canForceResolve(params) && block.secondary?.kind !== 'forceResolve') {
-    overflow.push(MARK_RESOLVED);
+  const manual = manualResolve(params);
+  if (manual !== null && block.secondary?.kind !== 'forceResolve') {
+    overflow.push(manual);
   }
   return { ...block, overflow };
 };

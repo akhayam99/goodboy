@@ -14,7 +14,7 @@ type Props = {
 
 const LABEL_CLASS = 'shrink-0 text-2xs text-muted-foreground/70';
 
-export const ResolverThreadRowHeader = ({
+export const ResolverThreadCardHeader = ({
   settlement,
   position,
   summary,

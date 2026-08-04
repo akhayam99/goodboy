@@ -731,3 +731,217 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getAllByRole('button', { name: 'Squash through HEAD' })).toHaveLength(1);
   });
 });
+
+describe('AgentInspector (resolver decisions)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    h.runtime.events = [];
+    h.listTurnEventsForAgent.mockResolvedValue([]);
+    h.listBranchCommits.mockResolvedValue([COMMIT]);
+    reset();
+  });
+
+  afterEach(cleanup);
+
+  const withWontfix = () =>
+    reset({
+      resolverState: { [SETTLED_ID]: 'wontfix' },
+      outcomes: {
+        [SETTLED_ID]: { PRRT_3: { kind: 'wontfix', reason: 'the branch is unreachable' } },
+      },
+    });
+
+  const sentContent = (): string => {
+    const args: unknown = h.sendTurn.mock.calls.at(0)?.at(0);
+    return (args as { content: string } | undefined)?.content ?? '';
+  };
+
+  it('offers the three ways out of a no-change verdict, in plain language', () => {
+    withWontfix();
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText(/judged this thread not worth a change/)).toBeDefined();
+    expect(screen.queryByTestId('resolver-missing-verdicts')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Post & close' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Fix it anyway' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Ask for a new reply' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Write something else' })).toBeDefined();
+  });
+
+  it('follows the suggestion and closes the thread with the reason it wrote', async () => {
+    withWontfix();
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Post & close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post & close' }));
+
+    await vi.waitFor(() => expect(h.resolveGithubThread).toHaveBeenCalledTimes(1));
+    expect(h.resolveGithubThread).toHaveBeenCalledWith(SESSION_ID, 'PRRT_3', {
+      reason: 'the branch is unreachable',
+    });
+    expect(h.resolveAgentThreads).not.toHaveBeenCalled();
+  });
+
+  it('refuses the suggestion and asks for the fix, naming the thread itself', async () => {
+    withWontfix();
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix it anyway' }));
+
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, SETTLED_ID);
+    expect(sentContent()).toContain('PRRT_3');
+  });
+
+  it('sends something else entirely when neither way out fits', async () => {
+    withWontfix();
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Write something else' }));
+    fireEvent.change(screen.getByLabelText('Instructions for thread 1'), {
+      target: { value: 'split the guard into its own helper' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+    expect(sentContent()).toContain('PRRT_3');
+    expect(sentContent()).toContain('split the guard into its own helper');
+    expect(h.resolveGithubThread).not.toHaveBeenCalled();
+  });
+
+  it('previews the drafted reply, reworks it on demand, and closes with the edited one', async () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'analyzed' },
+      outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'analyzed', reply: 'Already guarded' } } },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText(/drafted an answer/)).toBeDefined();
+    expect(screen.getByText('Already guarded')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for a new reply' }));
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+    expect(sentContent()).toContain('PRRT_3');
+
+    fireEvent.click(screen.getByLabelText('Edit reply for thread 1'));
+    fireEvent.change(screen.getByLabelText('Reply for thread 1'), {
+      target: { value: 'The guard already covers the empty case' },
+    });
+    fireEvent.blur(screen.getByLabelText('Reply for thread 1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Post & close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post & close' }));
+
+    await vi.waitFor(() => expect(h.resolveGithubThread).toHaveBeenCalledTimes(1));
+    expect(h.resolveGithubThread).toHaveBeenCalledWith(SESSION_ID, 'PRRT_3', {
+      reply: 'The guard already covers the empty case',
+    });
+  });
+
+  it('adds a committed fix to the batch without running the batch', async () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'committed' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'resolved', commitSha: 'abc1234def', reply: 'guarded the null case' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText(/committed a fix for this thread/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Add to batch' }));
+
+    await vi.waitFor(() => expect(h.queueResolution).toHaveBeenCalledTimes(1));
+    expect(h.queueResolution).toHaveBeenCalledWith(SESSION_ID, {
+      threadId: 'PRRT_3',
+      commitSha: 'abc1234def',
+      prNumber: 7,
+      outcome: 'resolved',
+      reply: 'guarded the null case',
+    });
+    expect(h.resolveAgentThreads).not.toHaveBeenCalled();
+  });
+
+  it('sends hints back instead of keeping a change nobody wants', async () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'committed' },
+      outcomes: {
+        [SETTLED_ID]: { PRRT_3: { kind: 'resolved', commitSha: 'abc1234def', reply: 'done' } },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Redo with hints' }));
+    fireEvent.change(screen.getByLabelText('Instructions for thread 1'), {
+      target: { value: 'keep the public signature' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+    expect(sentContent()).toContain('PRRT_3');
+    expect(sentContent()).toContain('keep the public signature');
+    expect(h.queueResolution).not.toHaveBeenCalled();
+  });
+
+  it('lets each thread of a multi-thread resolver decide on its own', async () => {
+    reset({
+      settledThreadIds: ['PRRT_3', 'PRRT_4'],
+      resolverState: { [SETTLED_ID]: 'awaiting' },
+      outcomes: {
+        [SETTLED_ID]: {
+          PRRT_3: { kind: 'resolved', commitSha: 'abc1234def', reply: 'guarded the null case' },
+          PRRT_4: { kind: 'wontfix', reason: 'the branch is unreachable' },
+        },
+      },
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getAllByTestId('resolver-thread-card')).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to batch' }));
+
+    await vi.waitFor(() => expect(h.queueResolution).toHaveBeenCalledTimes(1));
+    expect(h.queueResolution).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ threadId: 'PRRT_3' }),
+    );
+    expect(h.resolveGithubThread).not.toHaveBeenCalled();
+    expect(h.resolveAgentThreads).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Post & close' })).toBeDefined();
+  });
+
+  it('says so when the agent reported no outcome, and offers the way out of it', async () => {
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByTestId('resolver-missing-verdicts')).toBeDefined();
+    expect(screen.getByText(/stopped without saying what to do on this thread/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for the verdict' }));
+
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+    expect(sentContent()).toContain('PRRT_3');
+    expect(sentContent()).toContain('comment-resolved');
+  });
+
+  it('asks for every missing outcome at once when several threads stay silent', async () => {
+    reset({
+      settledThreadIds: ['PRRT_3', 'PRRT_4'],
+      resolverState: { [SETTLED_ID]: 'awaiting' },
+      outcomes: {},
+    });
+    renderInspector(SETTLED_ID);
+
+    expect(screen.getByText(/on any of its 2 threads/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for the 2 verdicts' }));
+
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+    expect(sentContent()).toContain('PRRT_3');
+    expect(sentContent()).toContain('PRRT_4');
+  });
+
+  it('keeps the notice away while the resolver is still working', () => {
+    renderInspector(RUNNING_ID);
+
+    expect(screen.queryByTestId('resolver-missing-verdicts')).toBeNull();
+  });
+});
