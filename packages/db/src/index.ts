@@ -40,6 +40,7 @@ export {
   getSessionById,
   listSessionsForWorkspace,
   listArchivedSessionsForWorkspace,
+  listArchivedSessionRefs,
   renameSession,
   deleteSession,
   softDeleteSession,
@@ -48,6 +49,7 @@ export {
   unarchiveSession,
   updateSessionConfig,
   type SessionConfigUpdate,
+  type ArchivedSessionRef,
 } from './queries/session';
 export {
   listWorkflowsForSession,
@@ -78,8 +80,12 @@ export {
   listTurnEventsForAgent,
   listTurnEventsForSession,
   listAgentRunIdsForSession,
+  getTurnEventStatsForSessions,
+  deleteTurnEventsForSessions,
   type PendingTurnEventInsert,
+  type TurnEventStorageStats,
 } from './queries/turn-event';
+export { getDatabaseSizeBytes, vacuumDatabase } from './queries/storage';
 export {
   upsertContextSlot,
   listContextSlotsForSession,

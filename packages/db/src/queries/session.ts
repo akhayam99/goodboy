@@ -358,6 +358,30 @@ export const listArchivedSessionsForWorkspace = async (
   return hydrateSessions(db, rows);
 };
 
+export type ArchivedSessionRef = {
+  readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
+};
+
+type ArchivedSessionRefRow = {
+  id: string;
+  workspace_id: string;
+};
+
+export const listArchivedSessionRefs = async ({
+  db,
+}: {
+  readonly db: Database;
+}): Promise<ReadonlyArray<ArchivedSessionRef>> => {
+  const rows = await db.select<ArchivedSessionRefRow>(
+    'SELECT id, workspace_id FROM sessions WHERE archived_at IS NOT NULL AND deleted_at IS NULL ORDER BY archived_at DESC',
+  );
+  return rows.map((row) => ({
+    sessionId: row.id as SessionId,
+    workspaceId: row.workspace_id as WorkspaceId,
+  }));
+};
+
 export const renameSession = async (
   db: Database,
   id: SessionId,

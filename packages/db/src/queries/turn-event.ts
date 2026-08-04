@@ -133,6 +133,57 @@ export const countUserTextEvents = async ({
   return rows[0]?.count ?? 0;
 };
 
+type SessionScopedTurnEventParams = {
+  readonly db: Database;
+  readonly sessionIds: ReadonlyArray<SessionId>;
+};
+
+export type TurnEventStorageStats = {
+  readonly rowCount: number;
+  readonly payloadBytes: number;
+};
+
+type StatsRow = {
+  row_count: number;
+  payload_bytes: number | null;
+};
+
+export const getTurnEventStatsForSessions = async ({
+  db,
+  sessionIds,
+}: SessionScopedTurnEventParams): Promise<TurnEventStorageStats> => {
+  if (sessionIds.length === 0) {
+    return { rowCount: 0, payloadBytes: 0 };
+  }
+  const placeholders = sessionIds.map(() => '?').join(', ');
+  const rows = await db.select<StatsRow>(
+    `SELECT COUNT(*) AS row_count, SUM(LENGTH(payload)) AS payload_bytes
+     FROM turn_events
+     WHERE session_id IN (${placeholders})`,
+    sessionIds,
+  );
+  const row = rows[0];
+  return {
+    rowCount: row?.row_count ?? 0,
+    payloadBytes: row?.payload_bytes ?? 0,
+  };
+};
+
+export const deleteTurnEventsForSessions = async ({
+  db,
+  sessionIds,
+}: SessionScopedTurnEventParams): Promise<number> => {
+  if (sessionIds.length === 0) {
+    return 0;
+  }
+  const placeholders = sessionIds.map(() => '?').join(', ');
+  const result = await db.execute(
+    `DELETE FROM turn_events WHERE session_id IN (${placeholders})`,
+    sessionIds,
+  );
+  return result.rowsAffected;
+};
+
 export const listAgentRunIdsForSession = async (
   db: Database,
   sessionId: SessionId,
