@@ -39,6 +39,10 @@ const run = (outcome: WorkflowOrchestrationOutcome, orchestrationReason?: string
     ...(orchestrationReason != null && { orchestrationReason }),
   }) as WorkflowRun;
 
+const openList = () => {
+  fireEvent.click(screen.getByTestId('workflow-orchestrator-decisions-toggle'));
+};
+
 describe('WorkflowOrchestratorTldr', () => {
   it('renders nothing when no step carries a reason and the run has no outcome', () => {
     const { container } = render(<WorkflowOrchestratorTldr steps={[step(0, 'Scout')]} />);
@@ -46,7 +50,7 @@ describe('WorkflowOrchestratorTldr', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('lists one compact line per decided step', () => {
+  it('counts the decisions and keeps the list behind the fold', () => {
     render(
       <WorkflowOrchestratorTldr
         steps={[
@@ -55,6 +59,13 @@ describe('WorkflowOrchestratorTldr', () => {
         ]}
       />,
     );
+
+    expect(screen.getByTestId('workflow-orchestrator-decisions-toggle').textContent).toContain(
+      '2 decisions',
+    );
+    expect(screen.queryByText('the codebase is unknown')).toBeNull();
+
+    openList();
 
     expect(screen.getByText('Scout')).toBeDefined();
     expect(screen.getByText('the codebase is unknown')).toBeDefined();
@@ -72,10 +83,11 @@ describe('WorkflowOrchestratorTldr', () => {
         ]}
       />,
     );
+    openList();
 
     expect(screen.queryByText('first reason')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'show 1 earlier' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show 1 earlier' }));
 
     expect(screen.getByText('first reason')).toBeDefined();
   });
@@ -83,6 +95,7 @@ describe('WorkflowOrchestratorTldr', () => {
   it('expands a step row into the full reason without truncation', () => {
     const reason = 'the scout report left the data model open, so a plan step comes first';
     render(<WorkflowOrchestratorTldr steps={[step(0, 'Scout', reason)]} />);
+    openList();
 
     expect(screen.getByText(reason).className).toContain('truncate');
 
@@ -95,9 +108,10 @@ describe('WorkflowOrchestratorTldr', () => {
 
   it('collapses an expanded step row again', () => {
     render(<WorkflowOrchestratorTldr steps={[step(0, 'Scout', 'a long rationale')]} />);
+    openList();
     fireEvent.click(screen.getByRole('button', { name: 'Why Scout' }));
 
-    fireEvent.click(screen.getByRole('button', { expanded: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Why Scout' }));
 
     expect(screen.getByText('a long rationale').className).toContain('truncate');
   });
@@ -109,9 +123,10 @@ describe('WorkflowOrchestratorTldr', () => {
         run={run('blocked', 'the migration needs a human call')}
       />,
     );
+    openList();
 
     const closing = screen.getByTestId('workflow-orchestrator-closing');
-    expect(closing.textContent).toContain('stopped, needs a human call');
+    expect(closing.textContent).toContain('Stopped, needs a human call');
 
     fireEvent.click(screen.getByRole('button', { name: /why the run ended/i }));
 
@@ -122,6 +137,7 @@ describe('WorkflowOrchestratorTldr', () => {
 
   it('omits the closing row when the run prop is absent or carries no reason', () => {
     render(<WorkflowOrchestratorTldr steps={[step(0, 'Scout', 'the codebase is unknown')]} />);
+    openList();
     expect(screen.queryByTestId('workflow-orchestrator-closing')).toBeNull();
     cleanup();
 
@@ -131,6 +147,7 @@ describe('WorkflowOrchestratorTldr', () => {
         run={run('done')}
       />,
     );
+    openList();
     expect(screen.queryByTestId('workflow-orchestrator-closing')).toBeNull();
   });
 });
