@@ -59,9 +59,11 @@ describe('formatDayLabel', () => {
 
   it('pins the Intl locale to en-US for both branches', () => {
     const original = Intl.DateTimeFormat;
-    const spy = vi
-      .spyOn(Intl, 'DateTimeFormat')
-      .mockImplementation((...args) => new original(...args));
+    const spy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function (
+      ...args: ConstructorParameters<typeof Intl.DateTimeFormat>
+    ) {
+      return new original(...args);
+    } as never);
     formatDayLabel(new Date(2026, 4, 12, 9, 0, 0).toISOString());
     formatDayLabel(new Date(2026, 2, 1, 9, 0, 0).toISOString());
     expect(spy.mock.calls.map((call) => call[0])).toEqual(['en-US', 'en-US']);

@@ -14,9 +14,11 @@ describe('formatCardTime', () => {
 
   it('pins the Intl locale to en-US', () => {
     const original = Intl.DateTimeFormat;
-    const spy = vi
-      .spyOn(Intl, 'DateTimeFormat')
-      .mockImplementation((...args) => new original(...args));
+    const spy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function (
+      ...args: ConstructorParameters<typeof Intl.DateTimeFormat>
+    ) {
+      return new original(...args);
+    } as never);
     formatCardTime('2026-05-14T09:30:45');
     expect(spy.mock.calls[0]?.[0]).toBe('en-US');
     spy.mockRestore();
