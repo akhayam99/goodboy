@@ -22,6 +22,12 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
     (state) => state.summarizerStatus?.[sessionId]?.status === 'running',
   );
   const openQuestions = useSessionOpenQuestions(sessionId);
+  const isAutoRun = useAppStore(
+    (state) =>
+      state.sessions
+        .find((session) => session.id === sessionId)
+        ?.workflowRuns.find((run) => run.id === workflowRunId)?.autoRun === true,
+  );
   const roleModels = useSessionRoleModels({ sessionId });
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
@@ -44,8 +50,9 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
     hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, workflowRunId),
     isSummarizerRunning,
     isTurnRunning,
+    isAutoRun,
   });
-  if (state.kind === 'complete') {
+  if (state.kind === 'complete' || state.kind === 'automatic') {
     return null;
   }
 
