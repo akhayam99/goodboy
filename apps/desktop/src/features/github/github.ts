@@ -5,6 +5,7 @@ import {
   ghRunJson,
   listAssignedIssues,
   listPrsForBranch,
+  updateIssueBody,
 } from '@goodboy/core';
 import type { GhRunner, GhResult, GhRunOptions, PrCacheStore } from '@goodboy/core';
 import type {
@@ -168,6 +169,32 @@ export const ghIssueByNumber = async (
     labels: raw.labels.map((label) => label.name),
     updatedAt: raw.updatedAt,
   };
+};
+
+type UpdateIssueBodyParams = {
+  readonly cwd: string;
+  readonly issueNumber: number;
+  readonly body: string;
+  readonly workspaceId?: string;
+};
+
+export const ghUpdateIssueBody = async ({
+  cwd,
+  issueNumber,
+  body,
+  workspaceId,
+}: UpdateIssueBodyParams): Promise<string> => {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
+  if (slug == null) {
+    throw new Error('could not detect a GitHub repository for this workspace');
+  }
+  return updateIssueBody({
+    runner: tauriGhRunner,
+    repoSlug: slug,
+    issueNumber,
+    body,
+    opts: { cwd, workspaceId },
+  });
 };
 
 export const ghPrDetailByNumber = async (
