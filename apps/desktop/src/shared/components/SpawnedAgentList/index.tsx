@@ -40,14 +40,14 @@ const statusIcon = (status: SpawnStatus) =>
 
 const statusLabel = (status: SpawnStatus): string =>
   status === 'running'
-    ? 'Running…'
+    ? 'running…'
     : status === 'completed'
-      ? 'Done'
+      ? 'done'
       : status === 'failed'
-        ? 'Stalled'
+        ? 'stalled'
         : status === 'planned'
-          ? 'Planned'
-          : 'Queued';
+          ? 'planned'
+          : 'queued';
 
 export const SpawnedAgentList = ({
   items,
