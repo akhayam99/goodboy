@@ -11,7 +11,7 @@ const { state, validateMock } = vi.hoisted(() => ({
     setCurrentWorkspace: vi.fn(async () => undefined),
     workspaces: [] as ReadonlyArray<{ id: string }>,
   },
-  validateMock: vi.fn(async () => ({ isRepo: true })),
+  validateMock: vi.fn(async () => ({ isRepo: true, resolvedPath: '/some/repo' })),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -62,7 +62,7 @@ beforeEach(() => {
   state.setCurrentWorkspace = vi.fn(async () => undefined);
   state.workspaces = [];
   validateMock.mockClear();
-  validateMock.mockResolvedValue({ isRepo: true });
+  validateMock.mockResolvedValue({ isRepo: true, resolvedPath: '/some/repo' });
   onboarding.wizardDone = true;
   onboarding.reopenWizard.mockClear();
 });
@@ -93,7 +93,7 @@ describe('WorkspaceLinkDialog', () => {
     const onClose = vi.fn();
     render(<WorkspaceLinkDialog open onClose={onClose} />);
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/repo'), {
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
       target: { value: '/some/repo' },
     });
     await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
@@ -110,7 +110,7 @@ describe('WorkspaceLinkDialog', () => {
     onboarding.wizardDone = false;
     render(<WorkspaceLinkDialog open onClose={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/repo'), {
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
       target: { value: '/some/repo' },
     });
     await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });

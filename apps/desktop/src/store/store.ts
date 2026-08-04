@@ -193,6 +193,7 @@ export type AppActions = {
     remoteUrl: string;
   }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
+  loadWorkspaceGitStatus(input: { workspaceId: WorkspaceId }): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   connectLinear(workspaceId: WorkspaceId, token: string): Promise<LinearViewer>;
   disconnectLinear(workspaceId: WorkspaceId): Promise<void>;
@@ -679,6 +680,7 @@ export const initialState: AppState = {
   ...createInitialSessionViewState({}),
   workspaces: [],
   workspaceIntegrations: {},
+  workspaceGitStatus: {},
   sessionExternalTasks: {},
   currentWorkspaceId: null,
   windowPresence: {},

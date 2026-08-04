@@ -16,7 +16,19 @@ const { state, validateMock } = vi.hoisted(() => ({
       kind?: 'repo' | 'composite' | 'simple';
     }>,
   },
-  validateMock: vi.fn(async () => ({ isRepo: true })),
+  validateMock: vi.fn<
+    (path: string) => Promise<{
+      isRepo: boolean;
+      rootPath: string | null;
+      resolvedPath: string | null;
+      error: string | null;
+    }>
+  >(async () => ({
+    isRepo: true,
+    rootPath: '/some/repo',
+    resolvedPath: '/some/repo',
+    error: null,
+  })),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -62,7 +74,12 @@ beforeEach(() => {
   state.workspaces = [];
   localStorage.clear();
   validateMock.mockClear();
-  validateMock.mockResolvedValue({ isRepo: true });
+  validateMock.mockResolvedValue({
+    isRepo: true,
+    rootPath: '/some/repo',
+    resolvedPath: '/some/repo',
+    error: null,
+  });
 });
 afterEach(cleanup);
 
@@ -77,7 +94,9 @@ describe('WorkspaceLinkForm', () => {
       />,
     );
     expect(screen.getByRole('tab', { name: 'Single project' })).toBeDefined();
-    expect(screen.getByText(/the directory needs a .git folder/i)).toBeDefined();
+    expect(
+      screen.getByText(/a git repository, or a folder you have not turned into one yet/i),
+    ).toBeDefined();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
@@ -117,11 +136,65 @@ describe('WorkspaceLinkForm', () => {
         modes={ALL_MODES}
       />,
     );
-    fireEvent.change(screen.getByPlaceholderText('/path/to/repo'), {
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
       target: { value: '/some/repo' },
     });
     await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });
     expect(validateMock).toHaveBeenCalledWith('/some/repo');
+  });
+
+  it('accepts a folder with no repository and says sessions wait for git', async () => {
+    validateMock.mockResolvedValue({
+      isRepo: false,
+      rootPath: null,
+      resolvedPath: '/some/fresh-idea',
+      error: 'not a git repository',
+    });
+    const onComplete = vi.fn();
+    render(
+      <WorkspaceLinkForm
+        onComplete={onComplete}
+        onCancel={vi.fn()}
+        showBreadcrumb={false}
+        modes={ALL_MODES}
+      />,
+    );
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
+      target: { value: '/some/fresh-idea' },
+    });
+
+    await waitFor(() => screen.getByText(/no git repository here yet/i), { timeout: 2000 });
+    fireEvent.click(screen.getByRole('button', { name: 'Add workspace' }));
+
+    await waitFor(() =>
+      expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/some/fresh-idea' }),
+    );
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the submit action blocked while the path does not exist', async () => {
+    validateMock.mockResolvedValue({
+      isRepo: false,
+      rootPath: null,
+      resolvedPath: null,
+      error: 'path does not exist: /nope',
+    });
+    render(
+      <WorkspaceLinkForm
+        onComplete={vi.fn()}
+        onCancel={vi.fn()}
+        showBreadcrumb={false}
+        modes={ALL_MODES}
+      />,
+    );
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
+      target: { value: '/nope' },
+    });
+
+    await waitFor(() => screen.getByText(/path does not exist/i), { timeout: 2000 });
+    expect(screen.getByRole('button', { name: 'Add workspace' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('creates a simple workspace from a prefilled editable directory', async () => {
@@ -169,7 +242,7 @@ describe('WorkspaceLinkForm', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/repo'), {
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
       target: { value: '/repos/solo' },
     });
     fireEvent.click(screen.getByRole('tab', { name: /multi project/i }));
@@ -223,7 +296,7 @@ describe('WorkspaceLinkForm', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/repo'), {
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
       target: { value: '/repos/solo' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -244,7 +317,7 @@ describe('WorkspaceLinkForm', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText('/path/to/repo'), {
+    fireEvent.change(screen.getByPlaceholderText('/path/to/project'), {
       target: { value: '/repos/solo' },
     });
     await waitFor(() => screen.getByText(/valid git repository/i), { timeout: 2000 });

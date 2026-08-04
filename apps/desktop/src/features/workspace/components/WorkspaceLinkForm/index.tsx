@@ -47,6 +47,11 @@ type Props = {
 
 type Mode = WorkspaceLinkMode;
 
+type PathProbe =
+  | { readonly kind: 'repo' }
+  | { readonly kind: 'folder' }
+  | { readonly kind: 'invalid'; readonly message: string };
+
 const DEFAULT_SIMPLE_NAME = 'My workspace';
 const WORKSPACE_LINK_DRAFT_VERSION = 1;
 
@@ -221,8 +226,7 @@ export const WorkspaceLinkForm = ({
   const [mode, setMode] = useState<Mode>(modes[0] ?? 'single');
   const [path, setPath] = useState('');
   const [validating, setValidating] = useState(false);
-  const [validPath, setValidPath] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [probe, setProbe] = useState<PathProbe | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<ReadonlyArray<string>>([]);
@@ -345,14 +349,12 @@ export const WorkspaceLinkForm = ({
   useEffect(() => {
     if (path.length === 0) {
       setValidating(false);
-      setValidPath(false);
-      setValidationError(null);
+      setProbe(null);
       return;
     }
 
     setValidating(true);
-    setValidPath(false);
-    setValidationError(null);
+    setProbe(null);
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void validateGitRepo(path)
@@ -361,19 +363,20 @@ export const WorkspaceLinkForm = ({
             return;
           }
           if (result.isRepo) {
-            setValidPath(true);
-            setValidationError(null);
+            setProbe({ kind: 'repo' });
             return;
           }
-          setValidPath(false);
-          setValidationError(result.error ?? 'Not a git repository.');
+          if (result.resolvedPath != null && result.resolvedPath !== '') {
+            setProbe({ kind: 'folder' });
+            return;
+          }
+          setProbe({ kind: 'invalid', message: result.error ?? 'Folder not found.' });
         })
         .catch(() => {
           if (cancelled) {
             return;
           }
-          setValidPath(false);
-          setValidationError('Could not validate path.');
+          setProbe({ kind: 'invalid', message: 'Could not check that path.' });
         })
         .finally(() => {
           if (!cancelled) {
@@ -482,8 +485,7 @@ export const WorkspaceLinkForm = ({
       await setCurrentWorkspace(workspace.id);
       clearPersistedDraft();
       setPath('');
-      setValidPath(false);
-      setValidationError(null);
+      setProbe(null);
       onComplete({ mode: 'single' });
     } catch (error) {
       setSubmitError(formatError(error));
@@ -573,8 +575,9 @@ export const WorkspaceLinkForm = ({
   const multiDisabled =
     busy || selectedWorkspaces.length < 2 || containerPath.trim().length === 0 || !mountsValid;
   const simpleDisabled = busy || simpleName.trim().length === 0 || simplePath.trim().length === 0;
+  const singleDisabled = busy || probe === null || probe.kind === 'invalid';
   const primaryDisabled =
-    mode === 'single' ? busy || !validPath : mode === 'multi' ? multiDisabled : simpleDisabled;
+    mode === 'single' ? singleDisabled : mode === 'multi' ? multiDisabled : simpleDisabled;
   const previewMounts = selectedWorkspaces.map(
     (workspace) => mountNames[workspace.id] ?? lastPathSegment({ path: workspace.rootPath }),
   );
@@ -592,7 +595,7 @@ export const WorkspaceLinkForm = ({
           : 'Create workspace';
   const sectionHint =
     mode === 'single'
-      ? 'Work in one git repository.'
+      ? 'Work in one project folder, with or without git already set up.'
       : mode === 'multi'
         ? 'Link related repositories so one session can work across all of them.'
         : 'Use agents, workflows, and shared context in a standalone project space.';
@@ -663,8 +666,8 @@ export const WorkspaceLinkForm = ({
 
         {mode === 'single' ? (
           <FieldRow
-            label="Repository path"
-            help="The directory needs a .git folder."
+            label="Project path"
+            help="A git repository, or a folder you have not turned into one yet."
             layout="stacked"
           >
             <div className="flex w-full gap-2">
@@ -673,26 +676,35 @@ export const WorkspaceLinkForm = ({
                   ref={pathInputRef}
                   autoFocus
                   value={path}
-                  placeholder="/path/to/repo"
+                  placeholder="/path/to/project"
                   onChange={(event) => setPath(event.target.value)}
                   disabled={busy}
-                  aria-label="Repository path"
+                  aria-label="Project path"
                 />
-                {validating ? (
+                {validating && (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <StatusDot tone="info" size="sm" pulsing />
                     Checking…
                   </span>
-                ) : validPath ? (
+                )}
+                {!validating && probe?.kind === 'repo' && (
                   <span className="flex items-center gap-1 text-xs text-success">
                     <Check size={11} aria-hidden />
                     Valid git repository
                   </span>
-                ) : validationError != null && path.length > 0 ? (
-                  <span role="alert" className="text-xs text-danger">
-                    {validationError}
+                )}
+                {!validating && probe?.kind === 'folder' && (
+                  <span className="flex items-start gap-1 text-xs leading-relaxed text-warning">
+                    <AlertTriangle size={11} aria-hidden className="shrink-0" />
+                    No git repository here yet. Goodboy will show you the commands to create one,
+                    and sessions stay unavailable until you have.
                   </span>
-                ) : null}
+                )}
+                {!validating && probe?.kind === 'invalid' && path.length > 0 && (
+                  <span role="alert" className="text-xs text-danger">
+                    {probe.message}
+                  </span>
+                )}
               </div>
               <Button variant="secondary" onClick={() => void onPick()} disabled={busy}>
                 Browse

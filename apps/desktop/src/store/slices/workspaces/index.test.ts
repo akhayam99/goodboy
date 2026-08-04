@@ -285,7 +285,24 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 
 vi.mock('../../../shared/lib/repo', () => ({
-  validateGitRepo: vi.fn(async () => ({ isRepo: true, rootPath: '/tmp/repo' })),
+  validateGitRepo: vi.fn(async () => ({
+    isRepo: true,
+    rootPath: '/tmp/repo',
+    resolvedPath: '/tmp/repo',
+    error: null,
+  })),
+  workspaceGitStatus: vi.fn(async () => ({
+    state: 'ready',
+    branch: 'main',
+    headSubject: 'base',
+    ahead: 0,
+    behind: 0,
+    staged: 0,
+    unstaged: 0,
+    untracked: 0,
+    changed: 0,
+    hasUpstream: true,
+  })),
   initRepoWithRemote: vi.fn(async () => ({
     rootPath: '/tmp/study-space',
     remoteUrl: 'https://github.com/acme/widgets.git',
@@ -463,6 +480,7 @@ function resetRepoMocks(repo: RepoModule) {
   vi.mocked(repo.validateGitRepo).mockResolvedValue({
     isRepo: true,
     rootPath: '/tmp/study-space',
+    resolvedPath: '/tmp/study-space',
     error: null,
   });
   vi.mocked(repo.initRepoWithRemote).mockReset();
@@ -505,6 +523,7 @@ describe('store contract', () => {
       resetState = {
         workspaces: [],
         workspaceIntegrations: {},
+        workspaceGitStatus: {},
         sessionExternalTasks: {},
         currentWorkspaceId: null,
         sessions: [],
@@ -594,6 +613,75 @@ describe('store contract', () => {
       expect(wsList[0]?.id).toBe(created.id);
       expect(wsList[0]?.name).toBe('app');
       expect(wsList[0]?.rootPath).toBe('/tmp/repo');
+    });
+
+    it('addWorkspace registers a dev workspace on a folder that has no git repository', async () => {
+      const store = await getStore();
+      const repo = await import('../../../shared/lib/repo');
+      resetRepoMocks(repo);
+      vi.mocked(repo.validateGitRepo).mockResolvedValueOnce({
+        isRepo: false,
+        rootPath: null,
+        resolvedPath: '/private/tmp/fresh-idea',
+        error: 'not a git repository',
+      });
+
+      const created = await store.getState().addWorkspace({ rootPath: '/tmp/fresh-idea' });
+
+      expect(created).toMatchObject({ kind: 'repo', rootPath: '/private/tmp/fresh-idea' });
+      expect(store.getState().workspaces[0]?.kind).toBe('repo');
+      expect(repo.initRepoWithRemote).not.toHaveBeenCalled();
+    });
+
+    it('addWorkspace still refuses a path that does not exist on disk', async () => {
+      const store = await getStore();
+      const repo = await import('../../../shared/lib/repo');
+      resetRepoMocks(repo);
+      vi.mocked(repo.validateGitRepo).mockResolvedValueOnce({
+        isRepo: false,
+        rootPath: null,
+        resolvedPath: null,
+        error: 'path does not exist: /tmp/nope',
+      });
+
+      await expect(store.getState().addWorkspace({ rootPath: '/tmp/nope' })).rejects.toThrow(
+        /path does not exist/,
+      );
+      expect(store.getState().workspaces).toHaveLength(0);
+    });
+
+    it('loadWorkspaceGitStatus stores the git state of a dev workspace root', async () => {
+      const store = await getStore();
+      const repo = await import('../../../shared/lib/repo');
+      vi.mocked(repo.workspaceGitStatus).mockResolvedValueOnce({
+        state: 'absent',
+        branch: null,
+        headSubject: null,
+        ahead: 0,
+        behind: 0,
+        staged: 0,
+        unstaged: 0,
+        untracked: 3,
+        changed: 3,
+        hasUpstream: false,
+      });
+      store.setState({ workspaces: [buildWorkspace({ rootPath: '/tmp/fresh-idea' })] });
+
+      await store.getState().loadWorkspaceGitStatus({ workspaceId: WS_ID });
+
+      expect(repo.workspaceGitStatus).toHaveBeenCalledWith({ workspacePath: '/tmp/fresh-idea' });
+      expect(store.getState().workspaceGitStatus[WS_ID]?.state).toBe('absent');
+    });
+
+    it('loadWorkspaceGitStatus skips workspaces that are not git backed', async () => {
+      const store = await getStore();
+      const repo = await import('../../../shared/lib/repo');
+      store.setState({ workspaces: [buildWorkspace({ kind: 'simple' })] });
+
+      await store.getState().loadWorkspaceGitStatus({ workspaceId: WS_ID });
+
+      expect(repo.workspaceGitStatus).not.toHaveBeenCalled();
+      expect(store.getState().workspaceGitStatus[WS_ID]).toBeUndefined();
     });
 
     it('addSimpleWorkspace accepts a non-repository directory and persists its kind', async () => {
@@ -739,7 +827,12 @@ describe('store contract', () => {
       });
       vi.mocked(repo.validateGitRepo).mockImplementationOnce(async () => {
         calls.push('validate');
-        return { isRepo: true, rootPath: '/tmp/study-space', error: null };
+        return {
+          isRepo: true,
+          rootPath: '/tmp/study-space',
+          resolvedPath: '/tmp/study-space',
+          error: null,
+        };
       });
       vi.mocked(db.updateWorkspaceKind).mockImplementationOnce(async () => {
         calls.push('kind');
@@ -776,6 +869,7 @@ describe('store contract', () => {
       vi.mocked(repo.validateGitRepo).mockResolvedValueOnce({
         isRepo: true,
         rootPath: '/private/tmp/study-space',
+        resolvedPath: '/private/tmp/study-space',
         error: null,
       });
       store.setState({
@@ -805,6 +899,7 @@ describe('store contract', () => {
       vi.mocked(repo.validateGitRepo).mockResolvedValueOnce({
         isRepo: false,
         rootPath: null,
+        resolvedPath: '/tmp/study-space',
         error: 'not a git repository',
       });
       store.setState({

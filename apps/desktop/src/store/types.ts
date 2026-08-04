@@ -41,6 +41,7 @@ import type {
   Workflow,
   WorkflowRunId,
   Workspace,
+  WorkspaceGitStatus,
   WorkspaceId,
   WorkspaceIntegration,
   WorkspaceScript,
@@ -166,6 +167,7 @@ export type AppState = AppSliceState & {
   readonly workspaceIntegrations: Readonly<
     Record<WorkspaceId, ReadonlyArray<WorkspaceIntegration>>
   >;
+  readonly workspaceGitStatus: Readonly<Record<WorkspaceId, WorkspaceGitStatus>>;
   readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly windowPresence: Readonly<Record<string, WorkspaceId | null>>;
