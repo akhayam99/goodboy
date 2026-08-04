@@ -54,13 +54,34 @@ struct LifecycleExitPayload {
 // ---------------------------------------------------------------------------
 
 type PtySlot = Arc<Mutex<Option<PtyRun>>>;
+type ActiveProviders = Arc<Mutex<HashMap<String, String>>>;
 
 #[derive(Default)]
-pub struct ProviderLifecycleRegistry(Arc<Mutex<HashMap<String, PtySlot>>>);
+pub struct ProviderLifecycleRegistry {
+    runs: Arc<Mutex<HashMap<String, PtySlot>>>,
+    active: ActiveProviders,
+}
 
 impl ProviderLifecycleRegistry {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+
+fn reserve_provider(active: &Mutex<HashMap<String, String>>, provider_id: &str, run_id: &str) -> bool {
+    let Ok(mut map) = active.lock() else {
+        return false;
+    };
+    if map.contains_key(provider_id) {
+        return false;
+    }
+    map.insert(provider_id.to_string(), run_id.to_string());
+    true
+}
+
+fn release_provider(active: &Mutex<HashMap<String, String>>, run_id: &str) {
+    if let Ok(mut map) = active.lock() {
+        map.retain(|_, active_run| active_run != run_id);
     }
 }
 
@@ -74,6 +95,8 @@ pub enum LifecycleError {
     Poisoned,
     #[error("io error: {0}")]
     Io(String),
+    #[error("a lifecycle run is already active for provider: {0}")]
+    Busy(String),
 }
 
 crate::util::impl_error_serialize!(LifecycleError);
@@ -83,6 +106,7 @@ impl LifecycleError {
         match self {
             LifecycleError::Poisoned => "poisoned",
             LifecycleError::Io(_) => "io",
+            LifecycleError::Busy(_) => "busy",
         }
     }
 }
@@ -131,10 +155,63 @@ pub async fn provider_lifecycle_run(
     run_id: String,
     cols: u16,
     rows: u16,
+    env: Option<HashMap<String, String>>,
 ) -> Result<(), LifecycleError> {
-    let registry_arc = Arc::clone(&registry.0);
+    let registry_arc = Arc::clone(&registry.runs);
+    let active_arc = Arc::clone(&registry.active);
 
     tauri::async_runtime::spawn_blocking(move || {
+        if !reserve_provider(&active_arc, &provider_id, &run_id) {
+            return Err(LifecycleError::Busy(provider_id));
+        }
+        let started = start_lifecycle_pty(StartParams {
+            app,
+            registry_arc,
+            active_arc: Arc::clone(&active_arc),
+            provider_id,
+            action,
+            command,
+            run_id: run_id.clone(),
+            cols,
+            rows,
+            env,
+        });
+        if started.is_err() {
+            release_provider(&active_arc, &run_id);
+        }
+        started
+    })
+    .await
+    .map_err(|e| LifecycleError::Io(e.to_string()))?
+}
+
+struct StartParams {
+    app: AppHandle,
+    registry_arc: Arc<Mutex<HashMap<String, PtySlot>>>,
+    active_arc: ActiveProviders,
+    provider_id: String,
+    action: String,
+    command: String,
+    run_id: String,
+    cols: u16,
+    rows: u16,
+    env: Option<HashMap<String, String>>,
+}
+
+fn start_lifecycle_pty(params: StartParams) -> Result<(), LifecycleError> {
+    let StartParams {
+        app,
+        registry_arc,
+        active_arc,
+        provider_id,
+        action,
+        command,
+        run_id,
+        cols,
+        rows,
+        env,
+    } = params;
+    {
         let pty_system = native_pty_system();
         let pair = pty_system
             .openpty(PtySize {
@@ -160,6 +237,9 @@ pub async fn provider_lifecycle_run(
         }
         if let Ok(user) = std::env::var("USER") {
             cmd.env("USER", user);
+        }
+        for (key, value) in env.unwrap_or_default() {
+            cmd.env(key, value);
         }
 
         let child = pair
@@ -251,12 +331,11 @@ pub async fn provider_lifecycle_run(
             if let Ok(mut map) = registry_r.lock() {
                 map.remove(&run_id_r);
             }
+            release_provider(&active_arc, &run_id_r);
         });
 
         Ok(())
-    })
-    .await
-    .map_err(|e| LifecycleError::Io(e.to_string()))?
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -274,7 +353,7 @@ pub fn provider_lifecycle_write(
         .map_err(|e| LifecycleError::Io(e.to_string()))?;
 
     let slot = {
-        let map = registry.0.lock().map_err(|_| LifecycleError::Poisoned)?;
+        let map = registry.runs.lock().map_err(|_| LifecycleError::Poisoned)?;
         map.get(&run_id).cloned()
     };
 
@@ -300,7 +379,7 @@ pub fn provider_lifecycle_resize(
     rows: u16,
 ) -> Result<(), LifecycleError> {
     let slot = {
-        let map = registry.0.lock().map_err(|_| LifecycleError::Poisoned)?;
+        let map = registry.runs.lock().map_err(|_| LifecycleError::Poisoned)?;
         map.get(&run_id).cloned()
     };
 
@@ -332,7 +411,7 @@ pub fn provider_lifecycle_cancel(
     run_id: String,
 ) -> Result<(), LifecycleError> {
     let slot = {
-        let map = registry.0.lock().map_err(|_| LifecycleError::Poisoned)?;
+        let map = registry.runs.lock().map_err(|_| LifecycleError::Poisoned)?;
         map.get(&run_id).cloned()
     };
     if let Some(slot) = slot {
@@ -343,4 +422,39 @@ pub fn provider_lifecycle_cancel(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn second_run_for_the_same_provider_is_refused() {
+        let active: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+        assert!(reserve_provider(&active, "anthropic", "run-1"));
+        assert!(!reserve_provider(&active, "anthropic", "run-2"));
+    }
+
+    #[test]
+    fn a_different_provider_runs_in_parallel() {
+        let active: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+        assert!(reserve_provider(&active, "anthropic", "run-1"));
+        assert!(reserve_provider(&active, "codex", "run-2"));
+    }
+
+    #[test]
+    fn releasing_a_run_frees_its_provider() {
+        let active: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+        reserve_provider(&active, "anthropic", "run-1");
+        release_provider(&active, "run-1");
+        assert!(reserve_provider(&active, "anthropic", "run-2"));
+    }
+
+    #[test]
+    fn releasing_a_stale_run_leaves_the_active_one_alone() {
+        let active: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+        reserve_provider(&active, "anthropic", "run-1");
+        release_provider(&active, "run-0");
+        assert!(!reserve_provider(&active, "anthropic", "run-2"));
+    }
 }
