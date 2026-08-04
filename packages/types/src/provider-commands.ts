@@ -12,7 +12,7 @@ export type ProviderPlatformCommands = {
 
 export type ProviderLifecycleCommands = {
   readonly install: ProviderPlatformCommands;
-  readonly login: string;
+  readonly login?: string;
   readonly logout: string;
 };
 
@@ -23,8 +23,8 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Partial<Record<ProviderId, ProviderLif
       linux: 'npm install -g @anthropic-ai/claude-code',
       win32: 'npm install -g @anthropic-ai/claude-code',
     },
-    login: 'claude /login',
-    logout: 'claude /logout',
+    login: 'claude auth login --claudeai',
+    logout: 'claude auth logout',
   },
   cursor: {
     install: {
@@ -50,10 +50,18 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Partial<Record<ProviderId, ProviderLif
       linux: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
       win32: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
     },
-    login: 'agy login',
     logout: 'rm -rf ~/.gemini/antigravity-cli && echo "antigravity credentials removed"',
   },
   opencode: {
+    install: {
+      darwin: 'npm install -g opencode-ai',
+      linux: 'npm install -g opencode-ai',
+      win32: 'npm install -g opencode-ai',
+    },
+    login: 'opencode auth login',
+    logout: 'opencode auth logout',
+  },
+  openrouter: {
     install: {
       darwin: 'npm install -g opencode-ai',
       linux: 'npm install -g opencode-ai',
