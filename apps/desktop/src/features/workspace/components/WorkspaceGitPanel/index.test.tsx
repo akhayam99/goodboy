@@ -57,7 +57,8 @@ describe('WorkspaceGitPanel init guide', () => {
 
     fireEvent.click(screen.getByLabelText('copy command: Create the repository'));
 
-    expect(writeTextSpy).toHaveBeenCalledExactlyOnceWith(`git -C "${ROOT}" init -b main`);
+    expect(writeTextSpy).toHaveBeenCalledTimes(1);
+    expect(writeTextSpy).toHaveBeenCalledWith(`git -C "${ROOT}" init -b main`);
     expect(invokeSpy).not.toHaveBeenCalled();
     expect(openInEditorSpy).not.toHaveBeenCalled();
   });
