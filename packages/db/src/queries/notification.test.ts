@@ -5,6 +5,7 @@ import { migrations } from '../migrations';
 import { migrate } from '../migrations/runner';
 import {
   NOTIFICATION_LIST_LIMIT,
+  countNotifications,
   deleteNotification,
   insertNotification,
   listNotifications,
@@ -96,5 +97,32 @@ describe('notification queries', () => {
 
     expect(rows).toHaveLength(NOTIFICATION_LIST_LIMIT);
     expect(rows[0]?.id).toBe(`n${total - 1}`);
+  });
+
+  it('counts every row, including unread ones the list cap cuts off', async () => {
+    const db = await seed({});
+    const total = NOTIFICATION_LIST_LIMIT + 5;
+    for (let index = 0; index < total; index += 1) {
+      await insertNotification(
+        db,
+        buildNotification({
+          id: `n${index}`,
+          ts: new Date(Date.UTC(2026, 0, 1, 0, 0, index)).toISOString() as IsoDateTime,
+          read: index !== 0,
+        }),
+      );
+    }
+
+    const listed = await listNotifications(db);
+    const counts = await countNotifications(db);
+
+    expect(listed.some((row) => row.id === 'n0')).toBe(false);
+    expect(counts).toEqual({ total, unread: 1 });
+  });
+
+  it('counts zero on an empty table', async () => {
+    const db = await seed({});
+
+    expect(await countNotifications(db)).toEqual({ total: 0, unread: 0 });
   });
 });
