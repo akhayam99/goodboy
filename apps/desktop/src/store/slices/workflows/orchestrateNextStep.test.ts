@@ -3,9 +3,11 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  ProviderRunId,
   Session,
   SessionId,
   StepId,
+  TelemetryRecord,
   Workflow,
   WorkflowId,
   WorkflowRunId,
@@ -22,6 +24,11 @@ const {
   listOpenQuestionsSpy,
   updateOutcomeSpy,
   updateErrorSpy,
+  insertProviderRunSpy,
+  updateProviderRunStatusSpy,
+  insertTelemetrySpy,
+  summarizeSessionSpy,
+  summarizeWorkspaceSpy,
 } = vi.hoisted(() => ({
   decideSpy: vi.fn(),
   invokeWorkflowUpsertSpy: vi.fn(),
@@ -29,6 +36,11 @@ const {
   listOpenQuestionsSpy: vi.fn(async () => []),
   updateOutcomeSpy: vi.fn(async () => undefined),
   updateErrorSpy: vi.fn(async () => undefined),
+  insertProviderRunSpy: vi.fn(async () => undefined),
+  updateProviderRunStatusSpy: vi.fn(async () => undefined),
+  insertTelemetrySpy: vi.fn(async () => undefined),
+  summarizeSessionSpy: vi.fn(async () => ({ estimatedCostUsd: 0 })),
+  summarizeWorkspaceSpy: vi.fn(async () => ({ estimatedCostUsd: 0 })),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
@@ -45,6 +57,11 @@ vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
   updateWorkflowRunOrchestrationError: updateErrorSpy,
+  insertProviderRun: insertProviderRunSpy,
+  updateProviderRunStatus: updateProviderRunStatusSpy,
+  insertTelemetry: insertTelemetrySpy,
+  summarizeSessionTelemetry: summarizeSessionSpy,
+  summarizeWorkspaceTelemetry: summarizeWorkspaceSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -68,6 +85,22 @@ const WORKFLOW_ID = 'workflow-1' as WorkflowId;
 const WORKFLOW_RUN_ID = 'workflow-run-1' as WorkflowRunId;
 const AGENT_ID = 'agent-1' as AgentId;
 const NOW = '2026-07-30T00:00:00.000Z' as IsoDateTime;
+
+const NO_USAGE = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedInputTokens: 0,
+  cacheCreationInputTokens: 0,
+  estimatedCostUsd: 0,
+};
+
+const BILLED_USAGE = {
+  inputTokens: 4200,
+  outputTokens: 310,
+  cachedInputTokens: 0,
+  cacheCreationInputTokens: 0,
+  estimatedCostUsd: 0.0123,
+};
 
 const workflow = (): Workflow => ({
   id: WORKFLOW_ID,
@@ -145,6 +178,8 @@ const baseState = (): State => {
     sessionBranches: { [SESSION_ID]: 'ak/workflow' },
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     transcripts: { [AGENT_ID]: [] },
+    sessionTelemetry: {},
+    agentRunHistory: {},
     agentTurnState: {},
     agentModelOverride: {},
     agentKindOverride: {},
@@ -189,6 +224,7 @@ beforeEach(() => {
 describe('orchestrateNextStep', () => {
   it('appends a real step and agent, emits the decision, and activates it', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'The implementation is ready.',
@@ -229,6 +265,7 @@ describe('orchestrateNextStep', () => {
 
   it('suffixes a colliding step name', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'Inspect again.',
@@ -250,6 +287,7 @@ describe('orchestrateNextStep', () => {
 
   it('spawns a decided scout step on the scout role model, not on an expensive one', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'Survey first.',
@@ -276,6 +314,7 @@ describe('orchestrateNextStep', () => {
 
   it('still spawns a decided step on the model the orchestrator picked for it', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'This one is hard.',
@@ -303,6 +342,7 @@ describe('orchestrateNextStep', () => {
 
   it('offers the orchestrator the routing pool instead of the whole provider catalog', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: { action: 'done', reason: 'all set' },
     });
     const state = baseState();
@@ -316,6 +356,7 @@ describe('orchestrateNextStep', () => {
 
   it('falls back to the role default when the picked model is outside the pool', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'This one is hard.',
@@ -343,6 +384,7 @@ describe('orchestrateNextStep', () => {
 
   it('tells the operator which pick it refused', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: {
         action: 'next',
         reason: 'This one is hard.',
@@ -369,8 +411,93 @@ describe('orchestrateNextStep', () => {
     );
   });
 
+  it('bills the decision to the step it opened so the run cost includes it', async () => {
+    decideSpy.mockResolvedValue({
+      decision: {
+        action: 'next',
+        reason: 'The implementation is ready.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Implement the mapped change.',
+        },
+      },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const records = (state['sessionTelemetry'] as Record<string, ReadonlyArray<TelemetryRecord>>)[
+      SESSION_ID
+    ]!;
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      kind: 'turn',
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      inputTokens: 4200,
+      outputTokens: 310,
+      estimatedCostUsd: 0.0123,
+    });
+    const history = state['agentRunHistory'] as Record<string, ReadonlyArray<string>>;
+    expect(history['agent-2']).toEqual([records[0]!.runId]);
+    expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('bills a decision that only closed the run to the last agent', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const history = state['agentRunHistory'] as Record<string, ReadonlyArray<string>>;
+    expect(history[AGENT_ID]).toHaveLength(1);
+  });
+
+  it('keeps the turn the agent already paid for alongside the decision', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    state['sessionPhaseRuns'] = {
+      [SESSION_ID]: [{ ...completedAgent(), runId: 'own-run' as ProviderRunId }],
+    };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const history = state['agentRunHistory'] as Record<string, ReadonlyArray<string>>;
+    expect(history[AGENT_ID]?.[0]).toBe('own-run');
+    expect(history[AGENT_ID]).toHaveLength(2);
+  });
+
+  it('persists nothing when the decision burned no tokens', async () => {
+    decideSpy.mockResolvedValue({
+      decision: { action: 'done', reason: 'All required tests pass.' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(insertTelemetrySpy).not.toHaveBeenCalled();
+  });
+
   it('emits done and stops without adding a step', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: { action: 'done', reason: 'All required tests pass.' },
     });
     const state = baseState();
@@ -417,6 +544,7 @@ describe('orchestrateNextStep', () => {
 
   it('notifies when blocked', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: { action: 'blocked', reason: 'A product choice is required.' },
     });
     const state = baseState();
@@ -471,6 +599,7 @@ describe('orchestrateNextStep', () => {
     expect(updated.orchestrationOutcome).toBeUndefined();
 
     decideSpy.mockResolvedValueOnce({
+      usage: NO_USAGE,
       decision: { action: 'done', reason: 'All required tests pass.' },
     });
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
@@ -481,6 +610,7 @@ describe('orchestrateNextStep', () => {
 
   it('targets the run latest agent over the session selection for decision events', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: { action: 'done', reason: 'All required tests pass.' },
     });
     const state = baseState();
@@ -498,6 +628,7 @@ describe('orchestrateNextStep', () => {
 
   it('falls back to the session selection when the run has no agents', async () => {
     decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
       decision: { action: 'done', reason: 'All required tests pass.' },
     });
     const state = baseState();
@@ -515,7 +646,11 @@ describe('orchestrateNextStep', () => {
   });
 
   it('keeps the run alive when the decision is unparseable', async () => {
-    decideSpy.mockResolvedValue({ decision: null });
+    decideSpy.mockResolvedValue({
+      decision: null,
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
     const state = baseState();
     const { set, get } = harness(state);
 
@@ -534,6 +669,7 @@ describe('orchestrateNextStep', () => {
       'the decision could not be parsed, use next step to retry',
       { sessionId: SESSION_ID },
     );
+    expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
   });
 
   it('guards re-entrant decisions for the same run', async () => {
@@ -543,7 +679,7 @@ describe('orchestrateNextStep', () => {
     });
     decideSpy.mockImplementation(async () => {
       await gate;
-      return { decision: { action: 'done', reason: 'Complete.' } };
+      return { decision: { action: 'done', reason: 'Complete.' }, usage: NO_USAGE };
     });
     const state = baseState();
     const { set, get } = harness(state);
@@ -574,8 +710,8 @@ describe('orchestrateNextStep', () => {
 
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
-      model: 'haiku-4.5',
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
     });
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
@@ -595,8 +731,8 @@ describe('orchestrateNextStep', () => {
     ];
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
-      model: 'haiku-4.5',
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
     });
     const { set, get } = harness(state);
 
@@ -610,7 +746,7 @@ describe('orchestrateNextStep', () => {
   it('routes the decision through the provider handed by the caller', async () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
+      usage: NO_USAGE,
       model: 'gpt-5.6',
     });
     const state = baseState();
@@ -628,7 +764,7 @@ describe('orchestrateNextStep', () => {
   it('routes the decision through the model pinned on the run', async () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
+      usage: NO_USAGE,
       model: 'gpt-5.6',
     });
     const state = baseState();
@@ -656,8 +792,8 @@ describe('orchestrateNextStep', () => {
   it('tells the orchestrator how much of the step budget is spent', async () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
-      usage: {},
-      model: 'haiku-4.5',
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
     });
     const state = baseState();
     const { set, get } = harness(state);

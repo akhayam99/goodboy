@@ -42,6 +42,7 @@ import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
+import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import type { GetFn, SetFn } from './types';
 
 export type OrchestrateOptions = {
@@ -96,14 +97,14 @@ const emitDecision = ({
   reason,
   stepName,
   preferredAgentId,
-}: EmitParams): void => {
+}: EmitParams): AgentId | null => {
   const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
   const agentId =
     preferredAgentId ??
     [...runAgents].sort((left, right) => right.ordinal - left.ordinal)[0]?.id ??
     get().selectedAgentId[sessionId];
   if (agentId == null) {
-    return;
+    return null;
   }
   const event: TurnEvent = {
     kind: 'orchestrator_decision',
@@ -114,6 +115,7 @@ const emitDecision = ({
     at: new Date().toISOString() as IsoDateTime,
   };
   get().appendTurnEvent(agentId, sessionId, event);
+  return agentId;
 };
 
 type PersistOutcomeParams = {
@@ -418,12 +420,21 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           message: `${routing.providerId}/${routing.model} replied with something that is not a decision`,
         });
-        emitDecision({
+        const unparseableAgentId = emitDecision({
           get,
           sessionId,
           workflowRunId,
           action: 'blocked',
           reason: 'the orchestrator reply could not be parsed, retry to continue',
+        });
+        await recordOrchestratorUsage({
+          set,
+          get,
+          sessionId,
+          agentId: unparseableAgentId,
+          provider: routing.providerId,
+          model: result.model,
+          usage: result.usage,
         });
         void get().emitNotification(
           'error',
@@ -476,6 +487,15 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           stepName: agent.name,
           preferredAgentId: agent.id,
         });
+        await recordOrchestratorUsage({
+          set,
+          get,
+          sessionId,
+          agentId: agent.id,
+          provider: routing.providerId,
+          model: result.model,
+          usage: result.usage,
+        });
         await get().activateWorkflowAgent(sessionId, agent.id, undefined, 'agent');
         return;
       }
@@ -486,12 +506,21 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         outcome: decision.action,
         reason: decision.reason,
       });
-      emitDecision({
+      const terminalAgentId = emitDecision({
         get,
         sessionId,
         workflowRunId,
         action: decision.action,
         reason: decision.reason,
+      });
+      await recordOrchestratorUsage({
+        set,
+        get,
+        sessionId,
+        agentId: terminalAgentId,
+        provider: routing.providerId,
+        model: result.model,
+        usage: result.usage,
       });
       if (decision.action === 'done') {
         void get().emitNotification(
