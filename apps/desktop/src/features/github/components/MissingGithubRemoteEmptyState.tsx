@@ -2,10 +2,11 @@ import { IntegrationConnectPanel } from '../../integrations/components/Integrati
 
 type Props = {
   readonly compact?: boolean;
+  readonly wrapped?: boolean;
 };
 
-export const MissingGithubRemoteEmptyState = ({ compact = false }: Props) => (
-  <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>
+export const MissingGithubRemoteEmptyState = ({ compact = false, wrapped = true }: Props) => {
+  const panel = (
     <IntegrationConnectPanel
       provider="github"
       description="This repository does not have a GitHub remote. Add one with Git before reviewing pull requests and issues here."
@@ -16,5 +17,13 @@ export const MissingGithubRemoteEmptyState = ({ compact = false }: Props) => (
         Goodboy does not change repository remotes from this screen.
       </p>
     </IntegrationConnectPanel>
-  </div>
-);
+  );
+
+  if (!wrapped) {
+    return panel;
+  }
+
+  return (
+    <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>{panel}</div>
+  );
+};

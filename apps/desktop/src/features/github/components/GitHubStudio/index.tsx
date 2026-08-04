@@ -163,6 +163,7 @@ export const GitHubStudio = ({
               hasGithubRemote={remoteKind === 'github'}
               onConnected={() => void githubConnection.refresh()}
               shouldAutoFocus
+              wrapped={false}
             />
           </div>
         ) : tab === 'pull-requests' ? (
