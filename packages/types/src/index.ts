@@ -39,6 +39,8 @@ export type {
   SessionExternalTaskProvider,
   TurnState,
   Workspace,
+  WorkspaceGitState,
+  WorkspaceGitStatus,
   WorkspaceKind,
   WorkspaceMember,
   WorkflowRun,

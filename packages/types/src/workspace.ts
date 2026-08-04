@@ -14,6 +14,21 @@ import type { ClaudePermissionMode } from './permission';
 
 export type WorkspaceKind = 'repo' | 'composite' | 'simple';
 
+export type WorkspaceGitState = 'missing' | 'absent' | 'unborn' | 'ready';
+
+export type WorkspaceGitStatus = Readonly<{
+  state: WorkspaceGitState;
+  branch: string | null;
+  headSubject: string | null;
+  ahead: number;
+  behind: number;
+  staged: number;
+  unstaged: number;
+  untracked: number;
+  changed: number;
+  hasUpstream: boolean;
+}>;
+
 export type WorkspaceMember = Readonly<{
   workspaceId: WorkspaceId;
   rootPath: string;
