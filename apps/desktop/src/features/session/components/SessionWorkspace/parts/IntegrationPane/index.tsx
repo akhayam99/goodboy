@@ -117,6 +117,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <FocusedTaskBody
             provider={provider}
+            sessionId={sessionId}
             workspaceId={workspaceId}
             task={focusedTask}
             isConnected={connection.isConnected}

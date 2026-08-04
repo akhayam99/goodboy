@@ -8,6 +8,7 @@ import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@
 type Store = {
   readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
+  readonly sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
   readonly linkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly unlinkSessionExternalTask: ReturnType<typeof vi.fn>;
   readonly connectLinear: ReturnType<typeof vi.fn>;
@@ -28,6 +29,7 @@ const h = vi.hoisted(() => ({
   store: {
     sessionExternalTasks: {},
     workspaceIntegrations: {},
+    sessions: [],
     linkSessionExternalTask: vi.fn(async () => undefined),
     unlinkSessionExternalTask: vi.fn(async () => undefined),
     connectLinear: vi.fn(async () => undefined),
