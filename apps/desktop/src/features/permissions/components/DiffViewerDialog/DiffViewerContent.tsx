@@ -1017,6 +1017,7 @@ export const DiffViewerContent = ({
                   <FileDiffCard
                     key={file.path}
                     file={file}
+                    layoutMode="unified"
                     registerRef={registerFileRef({ path: file.path })}
                     reviewState={reviewStateByPath.get(file.path) ?? 'none'}
                     onToggleReviewed={(next) => toggleReviewed(file, next)}

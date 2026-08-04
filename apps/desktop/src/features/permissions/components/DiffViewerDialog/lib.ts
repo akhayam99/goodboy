@@ -25,6 +25,8 @@ export const STATUS_COLOR: Record<FileDiffStatus, string> = {
 export const INITIAL_VISIBLE_LINES = 1000;
 export const VISIBLE_LINES_STEP = 2000;
 
+export const DIFF_SCROLL_CONTENT_CLASS = 'sticky left-0 box-border w-[var(--diff-card-width)]';
+
 export const TOOLBAR_ICON_BTN =
   'rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
