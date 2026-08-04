@@ -192,6 +192,30 @@ describe('WorkflowRow detail dashboard', () => {
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
   });
 
+  it('puts the lifecycle actions in the header, ahead of the run body', () => {
+    renderDetail();
+
+    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+    const title = screen.getByRole('heading', { name: 'Refactor' });
+    const steps = screen.getByTestId('workflow-step-graph');
+
+    expect(title.compareDocumentPosition(lifecycleSlot)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(lifecycleSlot.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('separates the autorun toggle from the destructive cluster', () => {
+    renderDetail();
+
+    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+    const toggle = screen.getByTestId('workflow-autorun-toggle');
+    const remove = screen.getByRole('button', { name: 'Delete' });
+
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.className).toContain('rounded-full');
+    expect(lifecycleSlot.querySelector('[role="separator"]')).not.toBeNull();
+    expect(toggle.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('keeps completed detail navigation non-empty without lifecycle actions in it', () => {
     const completedAgents = agents.map((agent) => ({ ...agent, status: 'completed' as const }));
     renderDetail({ agentsOverride: completedAgents });

@@ -1,5 +1,5 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn, formatUsd, formatUsdPrecise, MetaRow, StatusDot } from '@goodboy/ui';
+import { cn, Divider, formatUsdPrecise, MetaRow, StatusDot } from '@goodboy/ui';
 import { ChevronDown, ChevronRight, ChevronUp, Play, Undo2, Zap, ZapOff } from 'lucide-react';
 import type {
   Agent,
@@ -19,6 +19,7 @@ import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRole
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
+import { WorkflowAutorunToggle } from '../../../../../features/workflows/components/WorkflowAutorunToggle';
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
 import { GoalAttachmentsStrip } from '../../../../../features/context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { CostBadge } from '../../../../providers/components/CostBadge';
@@ -160,8 +161,8 @@ export const WorkflowRow = ({
     <div
       className={cn(
         'grid grid-cols-[minmax(0,1fr)_auto]',
-        isDetail && expanded && 'grid-rows-[auto_1fr_auto] gap-y-4',
-        isDetail && !expanded && 'grid-rows-[auto_auto] gap-y-4',
+        isDetail && expanded && 'grid-rows-[auto_1fr] gap-y-4',
+        isDetail && !expanded && 'grid-rows-[auto]',
         !isDetail && expanded && 'grid-rows-[auto_auto] gap-y-1.5',
         !isDetail && !expanded && 'grid-rows-[auto]',
         isDiscarded && 'opacity-70',
@@ -240,17 +241,43 @@ export const WorkflowRow = ({
           </button>
         )}
         {isDetail ? (
-          <CardActionSlot
-            label="Workflow navigation actions"
-            className="col-start-2 row-start-1 self-start"
-          >
-            <CardAction
-              icon={expanded ? ChevronDown : ChevronRight}
-              label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
-              expanded={expanded}
-              onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
-            />
-          </CardActionSlot>
+          <div className="col-start-2 row-start-1 flex items-start gap-2 self-start">
+            <CardActionSlot label="Workflow navigation actions">
+              <CardAction
+                icon={expanded ? ChevronDown : ChevronRight}
+                label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
+                expanded={expanded}
+                onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
+              />
+            </CardActionSlot>
+            <CardActionSlot label="Workflow lifecycle actions" className="gap-2">
+              {isQueuedManual ? (
+                <GhostActionButton
+                  icon={Play}
+                  label="Start"
+                  tone="success"
+                  onClick={() => void startWorkflowRun(task.id, run.id)}
+                />
+              ) : null}
+              {!isDiscarded && !isCompleted ? (
+                <WorkflowAutorunToggle
+                  isOn={run.autoRun}
+                  onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                />
+              ) : null}
+              <Divider orientation="vertical" className="h-5 self-center" />
+              {isDiscarded ? (
+                <GhostActionButton
+                  icon={Undo2}
+                  label="Restore"
+                  onClick={() => void restoreWorkflow(task.id, run.id)}
+                />
+              ) : (
+                <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
+              )}
+              <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
+            </CardActionSlot>
+          </div>
         ) : (
           <div className="col-start-2 row-start-1 flex items-start gap-1">
             {!isDiscarded ? (
@@ -490,42 +517,6 @@ export const WorkflowRow = ({
             </div>
           ) : null}
         </div>
-      ) : null}
-      {isDetail ? (
-        <CardActionSlot
-          label="Workflow lifecycle actions"
-          className={cn('col-start-2 self-end', expanded ? 'row-start-3' : 'row-start-2')}
-        >
-          {isQueuedManual ? (
-            <GhostActionButton
-              icon={Play}
-              label="Start"
-              tone="success"
-              onClick={() => void startWorkflowRun(task.id, run.id)}
-            />
-          ) : null}
-          {!isDiscarded && !isCompleted ? (
-            <GhostActionButton
-              icon={run.autoRun ? Zap : ZapOff}
-              label="Autorun"
-              tone={run.autoRun ? 'primary' : 'neutral'}
-              pressed={run.autoRun}
-              highlighted={run.autoRun}
-              ariaLabel={run.autoRun ? 'Autorun on' : 'Autorun off'}
-              onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-            />
-          ) : null}
-          {isDiscarded ? (
-            <GhostActionButton
-              icon={Undo2}
-              label="Restore"
-              onClick={() => void restoreWorkflow(task.id, run.id)}
-            />
-          ) : (
-            <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-          )}
-          <WorkflowDeleteButton onConfirm={() => void onDeleteWorkflow(run.id)} />
-        </CardActionSlot>
       ) : null}
     </div>
   );
