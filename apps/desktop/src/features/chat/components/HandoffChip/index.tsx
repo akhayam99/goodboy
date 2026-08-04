@@ -5,6 +5,7 @@ import { extractHandoff } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { TranscriptShell } from '../TranscriptShell';
+import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { tintClasses } from '@goodboy/ui';
 
 const accent = tintClasses('info');
@@ -20,6 +21,7 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
   const sessionNudge = useAppStore((s) => s.sessionNudges[sessionId] ?? null);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
+  const announceAgentStarted = useAgentStartedToast();
 
   if (!handoff || !session) {
     return null;
@@ -33,15 +35,21 @@ export const HandoffChip = ({ assistantText, sessionId }: Props) => {
     sessionNudge?.kind === 'handoff-suggested' && sessionNudge.targetKind === handoff.kind;
 
   const onClick = () => {
-    if (isActiveNudge) {
-      void acceptHandoff(sessionId);
-      return;
-    }
-    void spawnAgent(sessionId, {
-      kindOverride: handoff.kind,
-      ...(handoff.planId ? { triggeredPlanId: handoff.planId as PlanId } : {}),
-      focus: 'agent',
-    });
+    void (async () => {
+      const agentId = isActiveNudge
+        ? await acceptHandoff(sessionId)
+        : await spawnAgent(sessionId, {
+            kindOverride: handoff.kind,
+            ...(handoff.planId ? { triggeredPlanId: handoff.planId as PlanId } : {}),
+            focus: 'none',
+          });
+      announceAgentStarted({
+        sessionId,
+        agentId,
+        title: `${meta.label} started`,
+        message: 'The agent is picking this up. You can keep working.',
+      });
+    })();
   };
   return (
     <TranscriptShell

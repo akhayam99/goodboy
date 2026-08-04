@@ -19,6 +19,7 @@ import { PlanListPanel } from './PlanListPanel';
 import { PlanProvenance } from './PlanProvenance';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -39,6 +40,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const { showToast } = useToast();
+  const announceAgentStarted = useAgentStartedToast();
 
   const [selectedId, setSelectedId] = useState<PlanId | null>(initialPlanId ?? null);
   const [listOpen, setListOpen] = useState(false);
@@ -105,8 +107,14 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
     }
     setSpawning(true);
     try {
-      await runPlan(sessionId, selected.id);
+      const agentId = await runPlan(sessionId, selected.id);
       flushEdit();
+      announceAgentStarted({
+        sessionId,
+        agentId,
+        title: 'Implementer started',
+        message: 'An agent is running this plan. You can keep working.',
+      });
     } finally {
       setSpawning(false);
     }

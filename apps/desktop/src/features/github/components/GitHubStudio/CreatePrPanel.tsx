@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { SessionId } from '@goodboy/types';
+import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import {
   Button,
   Checkbox,
@@ -15,13 +15,14 @@ import {
 } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight, GitBranch, PenLine, Sparkles } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
+import { closingIssueReferences } from '../../closingIssueReferences';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { BranchCombobox } from '../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../worktree/worktree';
-import { useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 
@@ -83,6 +84,19 @@ export const CreatePrPanel = ({
   const branchOptions = useMemo<ReadonlyArray<LocalBranchInfo>>(
     () => branches.map((name) => ({ name, inUse: false, hasUncommitted: false })),
     [branches],
+  );
+
+  const linkedTasks = useAppStore(
+    (s) => s.sessionExternalTasks[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionExternalTask>),
+  );
+  const references = useMemo(
+    () =>
+      closingIssueReferences({
+        tasks: linkedTasks,
+        branch,
+        body: mode === 'manual' ? body : '',
+      }),
+    [body, branch, linkedTasks, mode],
   );
 
   useEffect(() => {
@@ -148,6 +162,11 @@ export const CreatePrPanel = ({
           : []),
         `- Write a clear, conventional title and a concise description from the committed changes.`,
         `- Session goal: "${defaultTitle}".`,
+        ...(references.length > 0
+          ? [
+              `- End the description with these lines exactly, so GitHub links the issues:\n${references.map((reference) => reference.line).join('\n')}`,
+            ]
+          : []),
         `- If this project defines a PR-creation skill, command, or template (look under .claude/), follow it.`,
         `- Open it as a ${draft ? 'draft' : 'ready-for-review'} PR.`,
         `Then run \`gh pr create\` to open it and report the PR URL.`,
@@ -269,6 +288,36 @@ export const CreatePrPanel = ({
                   disabled={busy !== null}
                 />
               </FieldRow>
+            )}
+            {references.length > 0 && (
+              <>
+                <Divider />
+                <FieldRow
+                  label="Issue links"
+                  help="Added to the description so GitHub closes these issues when this merges."
+                >
+                  <ul className="flex flex-col gap-1.5">
+                    {references.map((reference) => (
+                      <li key={reference.number} className="flex items-center gap-2">
+                        <code
+                          data-testid="pr-issue-reference"
+                          className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-2xs text-foreground"
+                        >
+                          {reference.line}
+                        </code>
+                        <a
+                          href={reference.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="truncate text-2xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {reference.identifier}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </FieldRow>
+              </>
             )}
             <Divider />
             <FieldRow
