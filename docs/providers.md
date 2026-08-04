@@ -133,7 +133,7 @@ Verify: `codex --version`
 codex login
 ```
 
-Goodboy opens an external terminal for the OAuth flow.
+Goodboy runs this in a hidden PTY and opens the printed URL itself. No external terminal.
 
 ### Disconnect
 
@@ -336,11 +336,11 @@ Goodboy detects provider binaries via `$PATH`. If a CLI is installed but the pro
 
 ### OAuth callback failure
 
-The login flow opens a system terminal and a browser. If the browser does not open or the callback hangs:
+The login flow runs in a hidden PTY and Goodboy opens the browser from the URL the CLI prints. If the browser does not open or the callback hangs:
 
-1. Run the login command manually in a terminal (e.g. `claude auth login --claudeai`).
-2. Complete the flow there.
-3. Return to Goodboy and click **refresh**. The identity should populate.
+1. Open **Show details** on the connect card and use **Open the link again**, or read the command and run it yourself.
+2. After 120s of waiting Goodboy offers **Run in my terminal**, which hands the same command to your system terminal.
+3. Complete the flow there. The auth probe keeps polling for 60s after the CLI exits, so Goodboy picks the result up on its own.
 
 ### Subscription rate-limit errors
 
