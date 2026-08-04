@@ -31,7 +31,7 @@ export const resolveWorkflowAdvance = ({
     return { kind: 'complete' };
   }
   const step = chain.kind === 'blocked' ? chain.failedStep : chain.step;
-  if (hasOpenQuestions && !isAutoRun) {
+  if (hasOpenQuestions) {
     return { kind: 'blocked', reason: 'questions', step };
   }
   if (isSummarizerRunning && !isAutoRun) {

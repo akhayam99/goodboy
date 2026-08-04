@@ -118,17 +118,28 @@ describe('resolveWorkflowAdvance', () => {
     expect(state).toEqual({ kind: 'automatic', step: workflow.steps[1] });
   });
 
-  it('hides the transient blockers autorun passes on its own', () => {
+  it('hides the busy summarizer, which autorun waits out on its own', () => {
     const state = resolveWorkflowAdvance({
       workflow,
       agents: agents('running', 'pending'),
       ...gate,
-      hasOpenQuestions: true,
       isSummarizerRunning: true,
       isAutoRun: true,
     });
 
     expect(state).toMatchObject({ kind: 'automatic' });
+  });
+
+  it('surfaces an open question under autorun, which will never clear it', () => {
+    const state = resolveWorkflowAdvance({
+      workflow,
+      agents: agents('completed', 'pending'),
+      ...gate,
+      hasOpenQuestions: true,
+      isAutoRun: true,
+    });
+
+    expect(state).toEqual({ kind: 'blocked', reason: 'questions', step: workflow.steps[1] });
   });
 
   it('keeps the skip control under autorun, where automation has stopped for good', () => {

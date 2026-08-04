@@ -50,9 +50,12 @@ Nothing advances until the gate passes. `resolveWorkflowAdvance` in
 3. `failed-step`: `classifyWorkflowChain` reports the current step failed.
 4. `turn-running`: a step agent is still running.
 
-`automatic` is what `auto_run` turns every non-complete case into, except a failed step:
-under autorun the manual advance controls do not render, because automation is about to
-make that click, and only the skip control survives where automation has stopped for good.
+`automatic` is what `auto_run` collapses the summarizer and turn-running cases into: the
+manual advance controls do not render, because automation is about to make that click. An
+open question and a failed step both survive autorun, because automation bails on both:
+`maybeAutoAdvanceWorkflow` skips a run with open questions, and it only activates the next
+agent when every agent is `completed` or `skipped`, which a `failed` one never is. Either
+way the run needs a human, so the control stays on screen.
 
 The control is `ChatWorkflowAdvance` under
 `features/session/components/SessionWorkspace/parts/`, rendering `WorkflowNextStepCta`
