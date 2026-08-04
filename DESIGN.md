@@ -311,12 +311,44 @@ before sending, a running total after.
   reveal the same actions. Icon actions use the shared `Tooltip` component,
   never the native `title` attribute. Destructive actions keep their two-step
   confirmation.
+- **A card in a collection keeps the card grammar; the sole occupant of a pane
+  gets a header toolbar.** The two slots above are the grammar of a card sitting
+  in a list, where a reader sweeps many of them and lifecycle actions must not
+  compete with the next card's title. Once a record is rendered alone in a pane
+  (the focused workflow run inside `FocusedPane`), it is a pane, not a card: its
+  lifecycle and destructive actions move up to the header row beside the title,
+  where a toolbar is expected and nothing is scrolled past to reach it. The
+  guards are what keep that row safe: a mode toggle is a labelled pill with a
+  pressed state, destructive actions stay ghost with danger tone on hover, a
+  `<Divider>` and a gap separate the toggle from the destructive cluster, the
+  toggle sits nearest the title and the destructive action at the far edge, and
+  the order never changes.
+- **One status owner per card.** A card says its state once. When a card carries
+  a state strip, the strip owns the live sentence and the title pill drops back
+  to the run outcome; the meta line keeps counts and spend and does not repeat
+  what the strip already says.
+- **Automation owns its advance.** With a hands-free mode on (workflow autorun),
+  manual advance controls do not render: a button offering the click automation
+  is about to make teaches the user that the mode does not work. The exception
+  is the point where automation has stopped for good and says why (a failed
+  step): there the recovery control stays. Precedent: GitHub Actions never
+  offers "run the next job" mid-run, only approval gates and re-run; Vercel
+  shows "Promote to production" only when auto-promotion is off.
 
 ## Motion
 
 - All motion is gated by `motion-safe:` and respects `prefers-reduced-motion`.
 - Motion **confirms**: a value rolled, a panel slid, a turn started. It never
   decorates. An animation that carries no meaning is cut.
+- **Motion names who is working, and for how long.** A surface generating
+  something right now (seconds) takes the moving border plus a pulsing dot: the
+  wait is short and the motion is spent. A surface idle by design while
+  something else runs (minutes to hours) stays static and alive by information
+  instead: it names the step it waits on and ticks an elapsed counter in
+  `tabular-nums`. A surface waiting on the user gets no motion at all, a
+  `warning` tone and an explicit ask, because motion signals machine agency and
+  animating "waiting for you" assigns the work to the wrong party. A surface
+  that shimmers for hours teaches that its motion means nothing.
 
 ## Accessibility
 
