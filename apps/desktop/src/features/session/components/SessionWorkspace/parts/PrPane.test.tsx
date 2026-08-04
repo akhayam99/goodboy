@@ -21,6 +21,7 @@ type Store = {
   workspaceIntegrations: Record<string, ReadonlyArray<{ readonly provider: string }>>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
+  readonly editPr: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
   sessionMounts: Record<string, ReadonlyArray<never>>;
   sessionActiveMount: Record<string, WorkspaceId>;
@@ -40,6 +41,7 @@ const h = vi.hoisted(() => ({
     workspaceIntegrations: {},
     refreshSessionPr: vi.fn(),
     selectSessionPr: vi.fn(),
+    editPr: vi.fn(async () => undefined),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
     sessionMounts: {},
     sessionActiveMount: {},
@@ -133,6 +135,41 @@ const session: Session = {
   updatedAt: DATE,
 };
 
+type GithubPrStateParams = {
+  readonly body: string;
+  readonly linkedIssues?: ReadonlyArray<{
+    readonly number: number;
+    readonly title: string;
+    readonly url: string;
+    readonly closes: boolean;
+  }>;
+};
+
+const githubPrState = ({ body, linkedIssues = [] }: GithubPrStateParams) => {
+  const pr = { ...PULL_REQUEST, body } satisfies PullRequestState;
+  h.store.sessionGithub = {
+    [SESSION_ID]: {
+      pr,
+      linkedIssues,
+      detail: { checks: [], comments: [] },
+      loading: false,
+      error: null,
+    },
+  };
+  h.store.sessionGithubPrs = { [SESSION_ID]: [pr] };
+};
+
+const issueTask = (overrides: Partial<SessionExternalTask>): SessionExternalTask => ({
+  sessionId: SESSION_ID,
+  provider: 'github',
+  externalId: '9',
+  identifier: `#${overrides.externalId ?? '9'}`,
+  url: 'https://github.com/acme/goodboy/issues/9',
+  title: 'Harden token refresh',
+  createdAt: DATE,
+  ...overrides,
+});
+
 beforeEach(() => {
   h.store.sessionGithub = {};
   h.store.sessionGithubPrs = {};
@@ -155,6 +192,7 @@ beforeEach(() => {
   h.remoteKind = 'github';
   h.onSelectLens.mockReset();
   h.openUrl.mockClear();
+  h.store.editPr.mockClear();
   h.githubStatus = {
     available: true,
     mode: 'gh-cli',
@@ -599,6 +637,74 @@ describe('PrPane', () => {
     expect(screen.getByRole('button', { name: /Open in code host/i })).toBeDefined();
 
     expect(screen.queryByRole('region', { name: 'issue #7 details' })).toBeNull();
+  });
+
+  it('closes the loop by appending the issue the popover offered to the pull request body', async () => {
+    githubPrState({ body: 'Refactors authentication.' });
+    h.store.sessionExternalTasks = { [SESSION_ID]: [issueTask({ externalId: '9' })] };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link issue #9 to this pull request' }));
+
+    await waitFor(() => {
+      expect(h.store.editPr).toHaveBeenCalledWith(SESSION_ID, 42, {
+        body: 'Refactors authentication.\n\nCloses #9',
+      });
+    });
+  });
+
+  it('never offers an issue the body already closes', () => {
+    githubPrState({ body: 'Refactors authentication.\n\nCloses #9' });
+    h.store.sessionExternalTasks = { [SESSION_ID]: [issueTask({ externalId: '9' })] };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
+
+    expect(screen.queryByRole('button', { name: 'Link issue #9 to this pull request' })).toBeNull();
+    expect(
+      screen.getByText('Link the issue to the session first, from the integrations lens.'),
+    ).toBeDefined();
+  });
+
+  it('unlinks one issue without touching the other closing lines', async () => {
+    githubPrState({
+      body: 'Refactors authentication.\n\nCloses #9\nCloses #12',
+      linkedIssues: [
+        {
+          number: 9,
+          title: 'Harden token refresh',
+          url: 'https://github.com/acme/goodboy/issues/9',
+          closes: true,
+        },
+        {
+          number: 12,
+          title: 'Track auth rollout',
+          url: 'https://github.com/acme/goodboy/issues/12',
+          closes: true,
+        },
+      ],
+    });
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink issue #9' }));
+
+    await waitFor(() => {
+      expect(h.store.editPr).toHaveBeenCalledWith(SESSION_ID, 42, {
+        body: 'Refactors authentication.\n\nCloses #12',
+      });
+    });
+  });
+
+  it('renders no link affordance when the session has no GitHub issue to offer', () => {
+    githubPrState({ body: 'Refactors authentication.' });
+    h.store.sessionExternalTasks = {
+      [SESSION_ID]: [issueTask({ provider: 'linear', externalId: 'GB-4', identifier: 'GB-4' })],
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.queryByRole('button', { name: 'Link issue' })).toBeNull();
   });
 
   it('routes the open action to GitHub for GitHub sessions', () => {

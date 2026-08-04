@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { ArrowRight, GitBranch, GitFork, GitMerge } from 'lucide-react';
+import { ArrowRight, GitBranch, GitFork, GitMerge, Unlink } from 'lucide-react';
 import { Button, Eyebrow } from '@goodboy/ui';
 import type {
   LinkedIssue,
@@ -18,8 +18,12 @@ import { MissingGithubTokenEmptyState } from '../../../../github/components/Miss
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
 import { useGithubConnection } from '../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
+import { closingIssueReferences } from '../../../../github/closingIssueReferences';
+import { closingReferenceLines } from '../../../../github/closingReferenceLines';
+import { removeClosingReference } from '../../../../github/removeClosingReference';
 import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
+import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
 import { workspaceMountName } from '../../../../../shared/utils/workspaceMountName';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
@@ -37,6 +41,7 @@ import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
 import { openUrl } from '../../../../../shared/lib/editor';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
 import { buildWorkItems, type WorkItem, type WorkItemGroups } from '../../../workItems';
+import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
 
 type Props = {
   readonly session: Session;
@@ -214,11 +219,13 @@ const GithubPrCard = ({
   tabs?: ReactNode;
 }) => {
   const sessionId = session.id as SessionId;
+  const [unlinkingIssueNumber, setUnlinkingIssueNumber] = useState<number | null>(null);
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const branchPrs = useAppStore((s) => s.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
   const selectedPrNumber = useAppStore((s) => s.sessionSelectedPrNumber[sessionId] ?? null);
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
+  const editPr = useAppStore((s) => s.editPr);
   const branch = useSessionRepo({ sessionId })?.branch ?? null;
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workspaceIntegrations = useAppStore(
@@ -269,6 +276,37 @@ const GithubPrCard = ({
     currentBranch: branch,
     branchPrs: branchPrs.length > 0 ? branchPrs : pr != null ? [pr] : [],
   });
+
+  const githubTasks = codeHostTasks.filter((task) => task.provider === 'github');
+  const linkedIssueNumbers = new Set(linkedIssues.map((issue) => issue.number));
+  const linkCandidates =
+    pr === null
+      ? []
+      : closingIssueReferences({ tasks: githubTasks, branch, body: pr.body }).filter(
+          (reference) => !linkedIssueNumbers.has(reference.number),
+        );
+  const unlinkableIssueNumbers =
+    pr === null ? new Set<number>() : closingReferenceLines({ body: pr.body });
+  const linkIssueAction =
+    pr !== null && githubTasks.length > 0 ? (
+      <LinkIssueToPrPopover
+        sessionId={sessionId}
+        prNumber={pr.number}
+        body={pr.body}
+        candidates={linkCandidates}
+      />
+    ) : null;
+
+  const handleUnlinkIssue = async (issueNumber: number) => {
+    if (pr === null) {
+      return;
+    }
+    setUnlinkingIssueNumber(issueNumber);
+    await editPr(sessionId, pr.number, {
+      body: removeClosingReference({ body: pr.body, number: issueNumber }),
+    }).catch(() => undefined);
+    setUnlinkingIssueNumber(null);
+  };
 
   const shell = ({ children }: { readonly children: ReactNode }) => (
     <StudioDetailLayout
@@ -390,7 +428,13 @@ const GithubPrCard = ({
         selectedNumber={pr.number}
         onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
       />
-      <LinkedIssuesSection issues={linkedIssues} />
+      <LinkedIssuesSection
+        issues={linkedIssues}
+        action={linkIssueAction}
+        unlinkableNumbers={unlinkableIssueNumbers}
+        unlinkingNumber={unlinkingIssueNumber}
+        onUnlink={(issueNumber) => void handleUnlinkIssue(issueNumber)}
+      />
       <WorkItemsSections groups={workItems} workspace={workspace} onSelectLens={onSelectLens} />
       {error ? (
         <span className="text-2xs text-danger" title={error}>
@@ -469,15 +513,28 @@ const LinkedPullRequestsSection = ({
 
 type LinkedIssuesSectionProps = {
   readonly issues: ReadonlyArray<LinkedIssue>;
+  readonly action?: ReactNode;
+  readonly unlinkableNumbers?: ReadonlySet<number>;
+  readonly unlinkingNumber?: number | null;
+  readonly onUnlink?: (issueNumber: number) => void;
 };
 
-const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
-  if (issues.length === 0) {
+const LinkedIssuesSection = ({
+  issues,
+  action = null,
+  unlinkableNumbers,
+  unlinkingNumber = null,
+  onUnlink,
+}: LinkedIssuesSectionProps) => {
+  if (issues.length === 0 && action === null) {
     return null;
   }
   return (
     <div className="flex flex-col gap-1.5">
-      <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
+        {action}
+      </div>
       <div className="flex flex-col gap-1">
         {issues.map((issue) => (
           <LinkedWorkRow
@@ -488,11 +545,25 @@ const LinkedIssuesSection = ({ issues }: LinkedIssuesSectionProps) => {
             navigation="external"
             onClick={() => void openUrl(issue.url)}
             actions={
-              <ExternalRefActions
-                url={issue.url}
-                label={`issue #${issue.number}`}
-                hostLabel="GitHub"
-              />
+              <span className="inline-flex shrink-0 items-center gap-0.5">
+                {unlinkableNumbers?.has(issue.number) === true && onUnlink != null && (
+                  <span className="opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                    <GhostActionButton
+                      icon={Unlink}
+                      tone="danger"
+                      label="Unlink"
+                      ariaLabel={`Unlink issue #${issue.number}`}
+                      disabled={unlinkingNumber !== null}
+                      onClick={() => onUnlink(issue.number)}
+                    />
+                  </span>
+                )}
+                <ExternalRefActions
+                  url={issue.url}
+                  label={`issue #${issue.number}`}
+                  hostLabel="GitHub"
+                />
+              </span>
             }
           />
         ))}
