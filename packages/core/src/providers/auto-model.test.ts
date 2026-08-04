@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { autoModelForRole } from './auto-model';
+import { autoModelForRole, recommendedModelForRole } from './auto-model';
 import { CURSOR_MODELS } from './cursor/models';
 
 describe('autoModelForRole', () => {
@@ -82,6 +82,19 @@ describe('autoModelForRole', () => {
     it('cursor provider: picks a real expensive slug for a high-tier role', () => {
       const result = autoModelForRole({ role: 'planner', providers: ['cursor'] });
       expect(result).toEqual({ provider: 'cursor', model: 'opus-5' });
+    });
+
+    it('substitutes a coding role with Opus, never the storytelling model', () => {
+      const prefs = {
+        implementer: { providerId: 'cursor' as const, model: 'gpt-5.6', effort: 'high' as const },
+      };
+      expect(autoModelForRole({ role: 'implementer', providers: ['anthropic'], prefs })).toEqual({
+        provider: 'anthropic',
+        model: 'opus-5',
+      });
+      expect(recommendedModelForRole({ role: 'implementer', provider: 'anthropic', prefs })).toBe(
+        'opus-5',
+      );
     });
   });
 });
