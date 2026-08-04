@@ -1,0 +1,15 @@
+export const RESOLVER_KICKOFF_LABELS = {
+  headline: /^(?:Resolve|Analyze) \d+ threads? on PR #\d+/,
+  threadHeader: /^Thread (\d+) of (\d+)$/,
+  threadId: '- thread id: ',
+  author: '- author: ',
+  location: '- location: ',
+  link: '- link: ',
+  comment: '- comment:',
+  replyFrom: /^- reply from (.+):$/,
+  quote: '>',
+  instructions: 'What to do',
+  reporting: 'How to report each thread',
+  replyContract: 'Reply contract',
+  operatorNotes: 'Operator notes',
+} as const;
