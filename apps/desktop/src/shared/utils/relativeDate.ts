@@ -1,4 +1,4 @@
-import { APP_LOCALE } from './format';
+import { APP_LOCALE } from './appLocale';
 
 export const formatRelativeDuration = (fromIso: string, toIso?: string): string => {
   const fromMs = Date.parse(fromIso);

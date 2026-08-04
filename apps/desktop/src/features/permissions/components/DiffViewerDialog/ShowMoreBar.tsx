@@ -1,6 +1,6 @@
 import { ChevronsDown } from 'lucide-react';
 import { Divider } from '@goodboy/ui';
-import { formatInteger } from '../../../../shared/utils/format';
+import { formatInteger } from '../../../../shared/utils/formatInteger';
 
 type Props = {
   step: number;

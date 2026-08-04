@@ -1,4 +1,5 @@
-import { formatShortDate, formatWeekday } from '../../../../shared/utils/format';
+import { formatShortDate } from '../../../../shared/utils/formatShortDate';
+import { formatWeekday } from '../../../../shared/utils/formatWeekday';
 
 export const dayKey = (iso: string): string => {
   const d = new Date(iso);

@@ -15,7 +15,7 @@ import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { Sparkline } from '../../../../shared/components/Sparkline';
-import { formatInteger } from '../../../../shared/utils/format';
+import { formatInteger } from '../../../../shared/utils/formatInteger';
 
 type Props = {
   readonly cacheEfficiency: QueryResult<ReadonlyArray<CacheEfficiencyEntry>>;

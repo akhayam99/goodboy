@@ -7,7 +7,7 @@ import { formatTokens } from '../../../../../features/session/agent-row-format';
 import { contextUsageTone } from '../../../../../features/session/contextUsageTone';
 import { contextWindowFor } from '../../../../../features/session/contextWindowFor';
 import { ProviderIcon } from '../../../../../features/providers/components/ProviderIcon';
-import { formatInteger } from '../../../../../shared/utils/format';
+import { formatInteger } from '../../../../../shared/utils/formatInteger';
 
 export type ProviderContextUsage = {
   readonly provider: ProviderName;

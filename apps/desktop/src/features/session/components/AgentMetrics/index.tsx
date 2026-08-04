@@ -7,7 +7,7 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { contextUsageTone } from '../../contextUsageTone';
 import { formatTokens } from '../../agent-row-format';
-import { formatInteger } from '../../../../shared/utils/format';
+import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { AgentDuration } from './AgentDuration';
 import { contextUsageSummary } from './contextUsageSummary';
 

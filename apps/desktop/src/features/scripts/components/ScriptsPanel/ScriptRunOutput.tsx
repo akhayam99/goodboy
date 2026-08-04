@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollFade, cn } from '@goodboy/ui';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { ScriptRunRecord } from '../../scripts';
-import { formatClockTime } from '../../../../shared/utils/format';
+import { formatClockTime } from '../../../../shared/utils/formatClockTime';
 import { SCRIPT_RUN_PRESENTATION } from './scriptRunPresentation';
 
 type Props = {

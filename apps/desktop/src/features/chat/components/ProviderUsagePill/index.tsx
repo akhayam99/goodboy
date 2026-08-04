@@ -2,7 +2,7 @@ import { Gauge } from 'lucide-react';
 import { cn, formatUsd } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatShortDayMonth } from '../../../../shared/utils/format';
+import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
 
 function nextMonthlyResetLabel(now = new Date()): string {
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);

@@ -59,7 +59,7 @@ import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/s
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
-import { formatInteger } from '../../../shared/utils/format';
+import { formatInteger } from '../../../shared/utils/formatInteger';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';

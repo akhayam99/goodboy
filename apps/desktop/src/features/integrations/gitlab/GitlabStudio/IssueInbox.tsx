@@ -10,7 +10,7 @@ import {
 import { MessagesSquare, Search } from 'lucide-react';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { formatShortDayMonth } from '../../../../shared/utils/format';
+import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
 import type { GitlabIssueGroup } from './useGitlabIssues';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 

@@ -1,4 +1,5 @@
-import { formatAbsoluteDate, formatShortDayMonth } from '../../shared/utils/format';
+import { formatAbsoluteDate } from '../../shared/utils/formatAbsoluteDate';
+import { formatShortDayMonth } from '../../shared/utils/formatShortDayMonth';
 
 type Params = {
   readonly iso: string;
