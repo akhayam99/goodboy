@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { ScrollFade } from '@goodboy/ui';
+import { ScrollFade, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 import { AgentsSection } from './AgentsSection';
 import { findScrollParent } from './findScrollParent';
 import { LegendSection } from './LegendSection';
@@ -70,8 +71,8 @@ export const GuideContent = ({ onJump, onVisible, registerScrollTo }: Props) => 
   };
 
   return (
-    <ScrollFade className="h-full w-full" viewportClassName="px-8 py-6">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-12">
+    <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
+      <div className={cn('flex flex-col gap-12', PANE_RHYTHM.column, PANE_RHYTHM.measure.reading)}>
         <div ref={anchor('overview')}>
           <OverviewSection onJump={onJump} />
         </div>
