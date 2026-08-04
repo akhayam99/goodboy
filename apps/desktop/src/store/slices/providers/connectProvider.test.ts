@@ -277,6 +277,27 @@ describe('connectProvider', () => {
     expect(mocks.invokeProviderLifecycleCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('kills the pty when cancel lands before the run id reaches the store', async () => {
+    const h = harness();
+    let release: () => void = () => undefined;
+    mocks.invokeProviderLifecycleRun.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          release = () => resolve(undefined);
+        }),
+    );
+    const pending = h.connect('anthropic');
+    await vi.advanceTimersByTimeAsync(0);
+    await h.cancel('anthropic');
+    expect(mocks.invokeProviderLifecycleCancel).not.toHaveBeenCalled();
+
+    release();
+    await pending;
+
+    expect(h.phase()).toBe('cancelled');
+    expect(mocks.invokeProviderLifecycleCancel).toHaveBeenCalledTimes(1);
+  });
+
   it('cancelling stops every timer the run owns', async () => {
     const h = harness();
     await h.connect('anthropic');

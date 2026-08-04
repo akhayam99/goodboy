@@ -104,6 +104,7 @@ const attachRun = async ({
   });
   stopExit = unlistenExit;
   run.unlisten.push(unlistenOutput, unlistenExit);
+  run.runId = runId;
   await invokeProviderLifecycleRun({
     providerId,
     action,
@@ -113,6 +114,10 @@ const attachRun = async ({
     rows: PTY_ROWS,
     env,
   });
+  if (isOwnedRun({ providerId, run })) {
+    return runId;
+  }
+  void invokeProviderLifecycleCancel(runId);
   return runId;
 };
 
@@ -168,7 +173,9 @@ const runInstall = async ({ set, get, providerId, run }: StepParams): Promise<bo
         settle(true);
       },
     });
-    run.runId = runId;
+    if (!isOwnedRun({ providerId, run })) {
+      return false;
+    }
     patchConnect({ set, providerId, patch: { runId } });
   } catch (err) {
     disposeConnectRun({ providerId });
@@ -392,7 +399,9 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
       onOutput,
       onExit,
     });
-    run.runId = runId;
+    if (!isOwnedRun({ providerId, run })) {
+      return;
+    }
     patchConnect({ set, providerId, patch: { runId } });
   } catch (err) {
     disposeConnectRun({ providerId });
