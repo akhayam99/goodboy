@@ -120,7 +120,7 @@ const renderBar = (overrides: BarOverrides = {}) =>
 describe('AppTopBar', () => {
   it('renders settings button', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
-    expect(screen.getByRole('button', { name: 'open settings' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open settings' })).toBeDefined();
   });
 
   it('keeps set-once preferences out of the bar, except theme', () => {
@@ -224,13 +224,13 @@ describe('AppTopBar', () => {
 
   it('settings button has active state when settings studio is open', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: 'settings' });
-    const btn = screen.getByRole('button', { name: 'open settings' });
+    const btn = screen.getByRole('button', { name: 'Open settings' });
     expect(btn.className).toContain('bg-foreground');
   });
 
   it('settings button is normal when a different studio is open', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: 'workflow' });
-    const btn = screen.getByRole('button', { name: 'open settings' });
+    const btn = screen.getByRole('button', { name: 'Open settings' });
     expect(btn.className).not.toContain('bg-foreground');
   });
 

@@ -116,7 +116,7 @@ export const AppTopBar = ({
             <button
               type="button"
               onClick={onOpenSettings}
-              aria-label="open settings"
+              aria-label="Open settings"
               className={cn(
                 'flex items-center justify-center rounded p-1.5 transition-colors',
                 activeStudio === 'settings'

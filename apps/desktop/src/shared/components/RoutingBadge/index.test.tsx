@@ -35,7 +35,7 @@ describe('RoutingBadge', () => {
   it('keeps the raw id reachable as the title for support', () => {
     render(<RoutingBadge provider="anthropic" model="claude-sonnet-4-5" />);
 
-    expect(screen.getByTitle('model: claude-sonnet-4-5')).toBeDefined();
+    expect(screen.getByTitle('Model: claude-sonnet-4-5')).toBeDefined();
   });
 
   it('renders provider, model and effort as separate chips in the full variant', () => {
@@ -89,9 +89,9 @@ describe('RoutingBadge', () => {
       <RoutingBadge provider="anthropic" model="claude-opus-4-5" effort="high" />,
     );
 
-    const modelSpan = screen.getByTitle('model: claude-opus-4-5');
+    const modelSpan = screen.getByTitle('Model: claude-opus-4-5');
     const glyph = container.querySelector('svg');
-    const effortSpan = screen.getByTitle('effort');
+    const effortSpan = screen.getByTitle('Effort');
 
     expect(glyph).not.toBeNull();
     expect(

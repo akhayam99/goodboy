@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Divider, EmptyState, Eyebrow, ScrollFade } from '@goodboy/ui';
+import { Divider, Eyebrow, ScrollFade, cn } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import {
   agentHasUnread,
@@ -33,6 +33,8 @@ import { HeaderBand } from './HeaderBand';
 import { LinkedWorkSection } from './LinkedWorkSection';
 import { NextUpCard } from './NextUpCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 
 type Props = {
   readonly session: Session;
@@ -199,8 +201,15 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   };
 
   return (
-    <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
-      <div className="animate-fade-in mx-auto flex max-w-5xl flex-col gap-6">
+    <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
+      <div
+        className={cn(
+          'animate-fade-in flex flex-col',
+          PANE_RHYTHM.column,
+          PANE_RHYTHM.stack,
+          PANE_RHYTHM.measure.pane,
+        )}
+      >
         <HeaderBand session={session} stage={stage} />
         <Divider />
         <section aria-label="Next up" className="flex flex-col gap-2">
@@ -208,12 +217,11 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
           {nextUp !== null ? (
             <NextUpCard item={nextUp} onAct={() => actOnNextUp({ item: nextUp })} />
           ) : (
-            <EmptyState
+            <LensEmptyState
               icon={CONCEPT_ICONS.nextUp}
               tone={CONCEPT_TONE.nextUp}
-              title="Nothing needs you right now."
-              size="inline"
-              className="rounded-lg bg-muted/20 px-3.5 py-2.5"
+              title="Nothing needs you right now"
+              description="Every agent, question, and review on this session is settled. Start work from the activity below."
             />
           )}
         </section>

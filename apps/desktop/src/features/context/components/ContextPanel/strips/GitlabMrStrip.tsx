@@ -32,7 +32,7 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
         <button
           type="button"
           onClick={openPane}
-          title="open merge request"
+          title="Open merge request"
           className={cn(
             'flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ring-1 transition-colors hover:bg-foreground/5',
             mr
@@ -61,7 +61,7 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
           <ArrowUpRight size={12} aria-hidden className="shrink-0 opacity-70" />
         </button>
         <RefreshIconButton
-          label="refresh MR status"
+          label="Refresh MR status"
           iconSize={12}
           onClick={() => void refreshSessionMr(sessionId, { force: true })}
           isLoading={loading}

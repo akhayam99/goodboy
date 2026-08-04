@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import {
   Button,
   Chip,
+  Divider,
   EmptyState,
   Eyebrow,
   ScrollFade,
@@ -53,7 +54,7 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
       <div className="flex shrink-0 items-center gap-1.5 px-3 pb-1 pt-3">
         <Eyebrow label={scope === 'others' ? 'From teammates' : 'All open'} />
         <span className="text-2xs tabular-nums text-muted-foreground/50">{rows.length}</span>
-        <span aria-hidden className="ml-1 h-px flex-1 bg-border-soft" />
+        <Divider className="flex-1" />
         {rows.length > 0 ? (
           <RefreshIconButton
             label="Refresh pull requests"
@@ -101,7 +102,9 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
           <EmptyState
             icon={CONCEPT_ICONS.review}
             tone={CONCEPT_TONE.review}
-            title={scope === 'others' ? 'No open PRs from teammates' : 'No open pull requests'}
+            title={
+              scope === 'others' ? 'No open pull requests from teammates' : 'No open pull requests'
+            }
             description={
               scope === 'others'
                 ? 'Pull requests by other authors will show up here.'

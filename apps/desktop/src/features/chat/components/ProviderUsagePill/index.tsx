@@ -2,10 +2,11 @@ import { Gauge } from 'lucide-react';
 import { cn, formatUsd } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
 
 function nextMonthlyResetLabel(now = new Date()): string {
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return next.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).toLowerCase();
+  return formatShortDayMonth({ iso: next.getTime() }).toLowerCase();
 }
 
 export const ProviderUsagePill = ({ provider }: { provider: ProviderId }) => {

@@ -50,7 +50,11 @@ export const resolveLifecycleCommand = (
   if (action === 'install') {
     return entry.install[platform];
   }
-  return entry[action];
+  const command = entry[action];
+  if (command === undefined) {
+    throw new Error(`no ${action} command for provider: ${providerId}`);
+  }
+  return command;
 };
 
 export const invokeProviderLifecycleRun = (args: {
@@ -60,6 +64,7 @@ export const invokeProviderLifecycleRun = (args: {
   runId: string;
   cols: number;
   rows: number;
+  env?: Readonly<Record<string, string>>;
 }): Promise<void> => {
   return invoke<void>('provider_lifecycle_run', args);
 };

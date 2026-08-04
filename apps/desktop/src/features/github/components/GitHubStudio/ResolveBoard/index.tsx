@@ -110,7 +110,7 @@ export const ResolveBoard = ({
 
         <div className="ml-auto">
           <ResolveConfigPopover
-            ariaLabel="configure batch resolvers"
+            ariaLabel="Configure batch resolvers"
             config={defaults}
             connectedProviders={connectedProviders}
             primaryLabel="Apply to all cards"
@@ -121,7 +121,7 @@ export const ResolveBoard = ({
                 type="button"
                 onClick={popoverToggle}
                 aria-expanded={open}
-                title="apply one resolver configuration to every comment"
+                title="Apply one resolver configuration to every comment"
                 className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1 text-xs transition-colors hover:bg-muted/50"
               >
                 <Sliders size={12} aria-hidden className="text-muted-foreground" />

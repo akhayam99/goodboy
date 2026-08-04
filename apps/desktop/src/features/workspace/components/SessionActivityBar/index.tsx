@@ -159,7 +159,7 @@ export const SessionActivityBar = ({
                   setTab(next);
                 }}
                 aria-pressed={isArchivedView}
-                title={isArchivedView ? 'hide archived sessions' : 'show archived sessions'}
+                title={isArchivedView ? 'Hide archived sessions' : 'Show archived sessions'}
                 className={cn(
                   'flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium transition-colors',
                   isArchivedView
@@ -179,8 +179,8 @@ export const SessionActivityBar = ({
               variant="secondary"
               size="sm"
               onClick={onNewSession}
-              aria-label="create new session"
-              title={`new session (${shortcutGlyphs('session.new')})`}
+              aria-label="Create new session"
+              title={`Create new session (${shortcutGlyphs('session.new')})`}
               className="group relative mb-1 w-full justify-center gap-1.5 px-2 text-xs"
             >
               <Plus size={13} aria-hidden />
@@ -205,7 +205,7 @@ export const SessionActivityBar = ({
                     type="button"
                     onClick={() => toggleGroup(group.key)}
                     aria-expanded={!collapsed}
-                    title={collapsed ? 'expand group' : 'collapse group'}
+                    title={collapsed ? 'Expand group' : 'Collapse group'}
                     className="group mt-3 flex w-full items-center gap-1 rounded px-0.5 text-left first:mt-1"
                   >
                     <ChevronRight
@@ -363,7 +363,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
         {sessionCost > 0 && (
           <CostBadge
             value={sessionCost}
-            title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
+            title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
             className="shrink-0 text-2xs font-medium text-muted-foreground/55"
           />
         )}
@@ -377,9 +377,9 @@ const SessionActivityItem = memo(function SessionActivityItem({
         type="button"
         role="checkbox"
         aria-checked={selected === true}
-        aria-label={`select ${session.goal}`}
+        aria-label={`Select ${session.goal}`}
         onClick={(event) => onToggleSelect(session.id as SessionId, event)}
-        title={selected ? 'deselect session' : 'select session · shift-click to extend'}
+        title={selected ? 'Deselect session' : 'Select session · shift-click to extend'}
         className={cn(
           'flex size-4 shrink-0 items-center justify-center rounded border motion-safe:transition-colors',
           selected

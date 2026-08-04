@@ -24,7 +24,7 @@ export const InspectorSplit = ({ open, panel, children }: Props) => {
             onChange={setPanelWidth}
             onReset={() => setPanelWidth(320)}
             side="right"
-            ariaLabel="resize inspector panel"
+            ariaLabel="Resize inspector panel"
           />
           <div className="flex min-h-0 shrink-0 flex-col" style={{ width: panelWidth }}>
             {panel}

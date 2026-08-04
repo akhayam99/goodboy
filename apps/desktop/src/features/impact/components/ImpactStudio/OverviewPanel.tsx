@@ -45,7 +45,6 @@ export const OverviewPanel = ({
     <StudioPanel
       title="Overview"
       subtitle="What orchestration shipped and how quickly work reached done"
-      maxWidthClass="max-w-5xl"
     >
       <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
       <ErrorStrip
@@ -62,6 +61,8 @@ export const OverviewPanel = ({
           title="No activity in this window"
           description="Run sessions to see shipped outcomes, flow time, and efficiency."
           bordered
+          size="lg"
+          headingLevel={2}
         />
       ) : null}
       {data !== null && data.sessionCount > 0 ? (

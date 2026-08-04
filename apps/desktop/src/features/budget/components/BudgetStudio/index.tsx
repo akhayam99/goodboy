@@ -183,7 +183,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
       closeLabel="close budget studio"
       headerAccessory={
         <SegmentedTabs
-          ariaLabel="budget window"
+          ariaLabel="Budget window"
           options={BUDGET_WINDOW_OPTIONS}
           value={windowId}
           onChange={setWindowId}

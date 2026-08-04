@@ -128,7 +128,7 @@ describe('ChatWorkflowAdvance', () => {
     expect(cta.className).toContain('border-warning');
     fireEvent.click(cta);
     expect(store.activateWorkflowAgent).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'start anyway' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start anyway' }));
     expect(store.activateWorkflowAgent).toHaveBeenCalledWith(
       SESSION_ID,
       'agent-1',

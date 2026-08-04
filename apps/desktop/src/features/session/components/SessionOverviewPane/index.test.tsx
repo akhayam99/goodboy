@@ -275,7 +275,7 @@ describe('SessionOverviewPane header band', () => {
     hooks.stage = { stage: 'building', reason: 'agents are working' } as SessionStageInfo;
     renderPane();
     expect(screen.getByRole('heading', { name: /refactor auth/i })).toBeDefined();
-    expect(screen.getByText('Building')).toBeDefined();
+    expect(screen.getByText('building')).toBeDefined();
     expect(screen.getByText('agents are working')).toBeDefined();
     expect(screen.queryByText('My workspace')).toBeNull();
     expect(screen.queryByText('Shortcuts')).toBeNull();
@@ -331,14 +331,14 @@ describe('SessionOverviewPane header band', () => {
       ],
     };
     renderPane();
-    expect(screen.getByLabelText('definition of done').textContent).toBe(
+    expect(screen.getByLabelText('Definition of done').textContent).toBe(
       'Done when PR #123 merges and LIN-456 closes',
     );
   });
 
   it('says nothing when nothing is linked, rather than repeating the goal above it', () => {
     renderPane();
-    expect(screen.queryByLabelText('definition of done')).toBeNull();
+    expect(screen.queryByLabelText('Definition of done')).toBeNull();
   });
 });
 
@@ -504,7 +504,7 @@ describe('SessionOverviewPane next up', () => {
   it('says nothing needs you when the session is idle and complete', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
     renderPane();
-    expect(screen.getByText('Nothing needs you right now.')).toBeDefined();
+    expect(screen.getByText('Nothing needs you right now')).toBeDefined();
   });
 });
 

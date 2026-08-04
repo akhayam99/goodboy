@@ -239,7 +239,7 @@ describe('StudioDetailLayout', () => {
       </StudioDetailLayout>,
     );
 
-    const handle = screen.getByRole('separator', { name: 'resize studio detail rail' });
+    const handle = screen.getByRole('separator', { name: 'Resize studio detail rail' });
     expect(handle.getAttribute('aria-valuenow')).toBe('420');
 
     fireEvent.keyDown(handle, { key: 'ArrowLeft' });

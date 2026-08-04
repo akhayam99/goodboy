@@ -3,7 +3,7 @@ import type { BreadcrumbCrumb } from './buildBreadcrumb';
 
 export const AppBreadcrumb = ({ crumbs }: { crumbs: BreadcrumbCrumb[] }) => {
   return (
-    <nav className="flex min-w-0 items-center gap-1" aria-label="breadcrumb">
+    <nav className="flex min-w-0 items-center gap-1" aria-label="Breadcrumb">
       {crumbs.map((crumb, index) => {
         const isLast = index === crumbs.length - 1;
         return (

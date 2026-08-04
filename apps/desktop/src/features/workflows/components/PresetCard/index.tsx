@@ -62,8 +62,8 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
               setConfirming(false);
               onDelete();
             }}
-            title="confirm delete"
-            aria-label={`confirm delete ${template.name}`}
+            title="Confirm delete"
+            aria-label={`Confirm delete ${template.name}`}
             className="rounded-md p-0.5 text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10"
           >
             <Check size={12} aria-hidden />
@@ -74,8 +74,8 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
               e.stopPropagation();
               setConfirming(false);
             }}
-            title="cancel"
-            aria-label="cancel delete"
+            title="Cancel delete"
+            aria-label="Cancel delete"
             className="rounded-md p-0.5 text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <X size={12} aria-hidden />
@@ -88,8 +88,8 @@ export const PresetCard = ({ template, active, approved, onSelect, onDelete }: P
             e.stopPropagation();
             setConfirming(true);
           }}
-          title="delete workflow"
-          aria-label={`delete ${template.name}`}
+          title="Delete workflow"
+          aria-label={`Delete ${template.name}`}
           className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground/0 focus-visible:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:bg-danger/10 group-focus-within:text-muted-foreground group-hover:text-muted-foreground hover:!text-danger"
         >
           <Trash2 size={12} aria-hidden />

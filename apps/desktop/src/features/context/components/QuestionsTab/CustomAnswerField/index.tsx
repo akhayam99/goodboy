@@ -21,7 +21,7 @@ export const CustomAnswerField = ({
       <button
         type="button"
         onClick={onToggle}
-        title="add custom answer"
+        title="Add custom answer"
         className={cn(
           'inline-flex items-center gap-1 rounded-full border border-dashed border-border/60 px-2.5 py-1',
           'text-xs text-muted-foreground transition-[color,background-color,border-color,transform] duration-150',

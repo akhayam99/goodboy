@@ -32,7 +32,7 @@ describe('RoleSelect', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
-    const options = within(screen.getByRole('listbox', { name: 'agent role' }));
+    const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
 
     expect(options.getAllByRole('button').map((option) => option.textContent)).toEqual([
       'Scout',
@@ -46,7 +46,7 @@ describe('RoleSelect', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
-    const options = within(screen.getByRole('listbox', { name: 'agent role' }));
+    const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
 
     expect(options.getAllByRole('button').map((option) => option.textContent)).toEqual([
       'Scout',

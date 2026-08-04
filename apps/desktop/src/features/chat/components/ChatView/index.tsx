@@ -22,7 +22,8 @@ import type {
   TurnEvent,
   TurnProviderOverride,
 } from '@goodboy/types';
-import { Button, Divider, ScrollFade } from '@goodboy/ui';
+import { Button, Divider, ScrollFade, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -555,7 +556,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           open={diffJumpFile !== null}
           onClose={() => setDiffJumpFile(null)}
           sessionId={session.id}
-          title="worktree diff"
+          title="Worktree diff"
           loader={diffLoader}
           workingDir={diffWorktreePath ?? undefined}
           jumpToFile={diffJumpFile ?? undefined}
@@ -577,7 +578,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             <TranscriptSkeleton />
           ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 && isProviderDisconnected ? (
             <div className="flex h-full items-center justify-center">
-              <div className="mx-auto w-full max-w-[880px]">
+              <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}>
                 <AuthRequiredCallout
                   providerId={provider}
                   identity={providerIdentity}
@@ -598,7 +599,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             </div>
           ) : (
             <ul
-              className="mx-auto flex w-full max-w-[880px] flex-col gap-2.5"
+              className={cn('flex flex-col gap-2.5', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
               aria-live="polite"
               aria-relevant="additions"
             >
@@ -628,8 +629,8 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         {!pinned && (
           <button
             type="button"
-            aria-label="jump to latest"
-            title="jump to latest"
+            aria-label="Jump to latest"
+            title="Jump to latest"
             className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
               const el = scrollerRef.current;
@@ -680,7 +681,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         open={diffJumpFile !== null}
         onClose={() => setDiffJumpFile(null)}
         sessionId={session.id}
-        title="worktree diff"
+        title="Worktree diff"
         loader={diffLoader}
         workingDir={diffWorktreePath ?? undefined}
         jumpToFile={diffJumpFile ?? undefined}

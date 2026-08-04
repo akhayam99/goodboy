@@ -218,8 +218,8 @@ export const FileDiffCard = ({
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
-            title={collapsed ? 'expand file' : 'collapse file'}
-            aria-label={collapsed ? 'expand file' : 'collapse file'}
+            title={collapsed ? 'Expand file' : 'Collapse file'}
+            aria-label={collapsed ? 'Expand file' : 'Collapse file'}
             className={TOOLBAR_ICON_BTN}
           >
             <ChevronRight
@@ -251,7 +251,7 @@ export const FileDiffCard = ({
           {reviewState === 'stale' ? (
             <span
               className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground"
-              title="this file changed since you last reviewed it"
+              title="This file changed since you last reviewed it"
             >
               previously reviewed
             </span>
@@ -280,7 +280,7 @@ export const FileDiffCard = ({
                 <button
                   type="button"
                   onClick={onOpenInEditor}
-                  aria-label="open file in editor"
+                  aria-label="Open file in editor"
                   className={TOOLBAR_ICON_BTN}
                 >
                   <ExternalLink size={12} aria-hidden />
@@ -295,7 +295,7 @@ export const FileDiffCard = ({
                     setCollapsed(false);
                     setFileLevelComposerOpen(true);
                   }}
-                  aria-label="add file note"
+                  aria-label="Add file note"
                   className={TOOLBAR_ICON_BTN}
                 >
                   <MessageSquarePlus size={12} aria-hidden />
@@ -305,7 +305,7 @@ export const FileDiffCard = ({
             <button
               type="button"
               onClick={handleToggleReviewed}
-              title={isReviewed ? 'mark as not reviewed' : 'mark as reviewed'}
+              title={isReviewed ? 'Mark as not reviewed' : 'Mark as reviewed'}
               className={cn(
                 'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-3xs font-medium transition-colors',
                 isReviewed

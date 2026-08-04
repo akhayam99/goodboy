@@ -60,7 +60,7 @@ describe('RoutingIndicator', () => {
         connectedProviders={[]}
       />,
     );
-    await waitFor(() => screen.getByTitle('model: cursor-pro'));
+    await waitFor(() => screen.getByTitle('Model: cursor-pro'));
     expect(screen.getByText(/budget exceeded for claude/i)).toBeTruthy();
   });
 });

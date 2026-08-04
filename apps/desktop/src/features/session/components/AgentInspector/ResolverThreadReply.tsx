@@ -37,7 +37,7 @@ export const ResolverThreadReply = ({
             <GhostActionButton
               icon={Pencil}
               label="Edit"
-              ariaLabel={`edit ${ariaLabel}`}
+              ariaLabel={`Edit ${ariaLabel.charAt(0).toLowerCase()}${ariaLabel.slice(1)}`}
               onClick={() => setIsEditing(true)}
             />
           ) : null

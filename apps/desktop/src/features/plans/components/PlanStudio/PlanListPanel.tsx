@@ -25,7 +25,7 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
         onChange={setWidth}
         onReset={() => setWidth(320)}
         side="right"
-        ariaLabel="resize plan list"
+        ariaLabel="Resize plan list"
       />
       <div className="flex shrink-0 flex-col" style={{ width }}>
         <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2.5">
@@ -33,7 +33,7 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
           <button
             type="button"
             onClick={onClose}
-            aria-label="close plan list"
+            aria-label="Close plan list"
             className="rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
           >
             <X size={14} aria-hidden />

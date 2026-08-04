@@ -44,7 +44,7 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
       type="button"
       disabled={disabled}
       onClick={() => void handle()}
-      title="re-run the turn so the agent retries the tool with the new rule in place"
+      title="Re-run the turn so the agent retries the tool with the new rule in place"
       className={cn(
         'flex items-center gap-1 rounded border border-primary/40 px-2 py-0.5 text-2xs font-medium text-primary transition-colors hover:bg-primary/10',
         disabled && 'cursor-not-allowed opacity-50',

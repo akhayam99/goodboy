@@ -50,7 +50,7 @@ export const RightSizeCard = ({
     <NudgeCard
       severity="info"
       icon={<Sparkles size={12} aria-hidden />}
-      ariaLabel="model right-sizing suggestion"
+      ariaLabel="Model right-sizing suggestion"
       testId="right-size-card"
       autoFocusPrimary
       title={

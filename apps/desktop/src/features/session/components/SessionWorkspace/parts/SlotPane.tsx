@@ -164,6 +164,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
       <PaneShell
         title={SLOT_TITLE[slotKey]}
         description={SLOT_DESCRIPTION[slotKey]}
+        measure="reading"
         actions={
           <>
             {hasValue ? (
@@ -178,8 +179,8 @@ export const SlotPane = ({ session, slotKey }: Props) => {
               <button
                 type="button"
                 onClick={toggleHistory}
-                title="view history"
-                aria-label={`view history for ${SLOT_TITLE[slotKey]}`}
+                title={`View history for ${SLOT_TITLE[slotKey]}`}
+                aria-label={`View history for ${SLOT_TITLE[slotKey]}`}
                 className={cn(
                   'rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',
                   historyOpen && 'bg-foreground/5 text-foreground',
@@ -191,7 +192,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
           </>
         }
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+        <>
           {slot === undefined && loading.slots ? (
             <div className="flex flex-col gap-2">
               <div className="h-4 w-full rounded bg-muted/50" />
@@ -268,7 +269,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
           {slotKey === 'goal' ? (
             <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
           ) : null}
-        </div>
+        </>
       </PaneShell>
     </InspectorSplit>
   );

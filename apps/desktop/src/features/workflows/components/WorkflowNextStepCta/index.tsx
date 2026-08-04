@@ -97,7 +97,7 @@ export const WorkflowNextStepCta = ({
           onClick={() => setPendingForce(true)}
           disabled={busy}
           data-testid="workflow-force-next-step-cta"
-          title={`step blocked: ${chain.failedStep.name}`}
+          title={`Step blocked: ${chain.failedStep.name}`}
           className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <AlertTriangle size={12} aria-hidden className="shrink-0" />
@@ -109,7 +109,7 @@ export const WorkflowNextStepCta = ({
             icon={<AlertTriangle size={12} />}
             title="Skip the blocked step and start the next agent?"
             description={`${chain.failedStep.name} did not finish. Its output will not be carried forward.`}
-            confirmLabel="skip and continue"
+            confirmLabel="Skip and continue"
             cancelLabel="cancel"
             isBusy={busy}
             onConfirm={() => void doForce()}
@@ -184,7 +184,7 @@ export const WorkflowNextStepCta = ({
           effort={routing.effort}
         />
         {consumesActivePlan ? (
-          <span className="shrink-0" title="advancing will consume the active plan">
+          <span className="shrink-0" title="Advancing will consume the active plan">
             <CONCEPT_ICONS.plans size={11} aria-hidden />
           </span>
         ) : null}
@@ -195,7 +195,7 @@ export const WorkflowNextStepCta = ({
           icon={<AlertTriangle size={12} />}
           title="Start the next agent anyway?"
           description={WORKFLOW_BLOCK_COPY[blockReason]}
-          confirmLabel="start anyway"
+          confirmLabel="Start anyway"
           cancelLabel="wait"
           isBusy={busy}
           onConfirm={() => void doAdvance()}

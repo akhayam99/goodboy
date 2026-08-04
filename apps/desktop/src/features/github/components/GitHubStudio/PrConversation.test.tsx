@@ -41,7 +41,7 @@ const renderConversation = (comments: ReadonlyArray<PrComment>) =>
 describe('PrConversation', () => {
   it('collapses a resolved thread to a single disclosure row', () => {
     renderConversation([comment({ resolved: true, body: LONG_BODY })]);
-    const row = screen.getByRole('button', { name: 'resolved thread by ak' });
+    const row = screen.getByRole('button', { name: 'Resolved thread by ak' });
     expect(row.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByText('line four')).toBeNull();
     fireEvent.click(row);

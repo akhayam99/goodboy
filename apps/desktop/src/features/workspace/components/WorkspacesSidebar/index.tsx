@@ -54,8 +54,8 @@ export const WorkspacesSidebar = ({ onNavigate }: Props) => {
               void setCurrentSession(null);
               onNavigate?.();
             }}
-            aria-label="back to board"
-            title={`back to board (${shortcutGlyphs('session.board')})`}
+            aria-label="Back to board"
+            title={`Back to board (${shortcutGlyphs('session.board')})`}
             className={cn(
               'group relative flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium',
               'ring-1 motion-safe:transition-colors',

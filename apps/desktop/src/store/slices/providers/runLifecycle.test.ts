@@ -102,4 +102,66 @@ describe('runLifecycle', () => {
     );
     expect(refreshProviders).toHaveBeenCalledOnce();
   });
+
+  it('writes an openrouter lifecycle exit status to both shared binary slots', async () => {
+    const refreshProviders = vi.fn(async () => undefined);
+    let state: Record<string, unknown> = {
+      providerLifecycle: { ...INITIAL_LIFECYCLE_MAP },
+      providerStatus: null,
+      cursorStatus: null,
+      codexStatus: null,
+      geminiStatus: null,
+      authResults: null,
+      providers: [],
+      providerCredentials: [],
+      refreshProviders,
+    };
+    const set = vi.fn(
+      (
+        update:
+          | Record<string, unknown>
+          | ((current: Record<string, unknown>) => Record<string, unknown>),
+      ) => {
+        const patch = typeof update === 'function' ? update(state) : update;
+        state = { ...state, ...patch };
+      },
+    );
+    const get = vi.fn(() => state);
+
+    await runLifecycle(set as never, get as never, {
+      providerId: 'openrouter',
+      action: 'logout',
+    });
+    const invocation = lifecycleMocks.invokeProviderLifecycleRun.mock.calls[0]?.[0];
+    if (invocation === undefined) {
+      throw new Error('expected a lifecycle invocation');
+    }
+
+    const status = {
+      id: 'openrouter',
+      binary: 'opencode',
+      available: true,
+      version: '1.2.3',
+      error: null,
+    };
+    lifecycleMocks.exitHandler?.({
+      runId: invocation.runId,
+      providerId: 'openrouter',
+      action: 'logout',
+      exitCode: 0,
+      status,
+      auth: { state: 'disconnected', identity: null },
+    });
+
+    expect(providerMocks.buildProviderList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        opencode: { ...status, id: 'opencode' },
+        openrouter: status,
+      }),
+      expect.objectContaining({
+        openrouter: { state: 'disconnected', identity: null },
+      }),
+      new Set(),
+    );
+  });
 });

@@ -82,7 +82,7 @@ export const ResolverOverflowMenu = ({
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
-        aria-label="more resolver actions"
+        aria-label="More resolver actions"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={cn(
@@ -95,7 +95,7 @@ export const ResolverOverflowMenu = ({
       {isOpen && (
         <Popover
           role="menu"
-          ariaLabel="more resolver actions"
+          ariaLabel="More resolver actions"
           className="absolute right-0 top-full z-40 mt-1 w-72 py-1"
         >
           {armedAction !== null && (

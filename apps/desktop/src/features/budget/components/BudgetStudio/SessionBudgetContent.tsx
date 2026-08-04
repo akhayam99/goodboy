@@ -38,14 +38,18 @@ export const SessionBudgetContent = ({
   );
   const turnCount = records.filter((record) => record.kind === 'turn').length;
   const isStudio = density === 'studio';
-  const formatSpend = isStudio ? formatUsdPrecise : formatUsd;
+  const formatSpend = formatUsd;
   const showsTurns = isStudio && onOpenSession != null;
 
   return (
     <div className={cn('flex flex-col', isStudio ? 'gap-6' : 'gap-4')}>
       <div className={cn('grid gap-3', isStudio ? 'grid-cols-3' : 'grid-cols-1 sm:grid-cols-3')}>
-        <StatCard label="session cost" value={formatSpend(sessionCost)} />
-        <StatCard label="summarizer" value={formatSpend(summarizer)} />
+        <div title={formatUsdPrecise(sessionCost)}>
+          <StatCard label="session cost" value={formatSpend(sessionCost)} />
+        </div>
+        <div title={formatUsdPrecise(summarizer)}>
+          <StatCard label="summarizer" value={formatSpend(summarizer)} />
+        </div>
         <StatCard label="turns" value={String(turnCount)} />
       </div>
       <CapEditor

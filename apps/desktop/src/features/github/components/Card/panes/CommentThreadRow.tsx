@@ -21,7 +21,7 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
     : head.resolved
       ? 'resolved'
       : 'open';
-  const statusLabel = status === 'open' ? 'open' : status === 'resolved' ? 'resolved' : 'comment';
+  const statusLabel = status === 'open' ? 'Open' : status === 'resolved' ? 'Resolved' : 'Comment';
   const bot = isBot(head.author);
 
   return (
@@ -60,8 +60,8 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
               <button
                 type="button"
                 onClick={onSpawn}
-                title="create agent to resolve this comment"
-                aria-label="create agent to resolve this comment"
+                title="Create agent to resolve this comment"
+                aria-label="Create agent to resolve this comment"
                 className="inline-flex items-center gap-0.5 rounded border border-accent/30 bg-accent/5 px-1.5 py-px text-3xs font-medium text-accent transition-colors hover:bg-accent/15"
               >
                 <Sparkles size={9} aria-hidden />
@@ -71,8 +71,8 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
             <button
               type="button"
               onClick={() => onOpenUrl(head.url)}
-              title="open comment in browser"
-              aria-label="open comment in browser"
+              title="Open comment in browser"
+              aria-label="Open comment in browser"
               className={TAB_ICON_BTN}
             >
               <ExternalLink size={9} aria-hidden />
@@ -97,7 +97,7 @@ export const CommentThreadRow = ({ thread, expanded, onToggle, onOpenUrl, onSpaw
             'text-left text-2xs text-foreground/90 hover:text-foreground',
             expanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2',
           )}
-          title={expanded ? 'collapse' : 'expand'}
+          title={expanded ? 'Collapse' : 'Expand'}
         >
           {head.body.trim() || '(empty)'}
         </button>

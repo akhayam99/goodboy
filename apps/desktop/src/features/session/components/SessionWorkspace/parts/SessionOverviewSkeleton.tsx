@@ -1,4 +1,5 @@
-import { ScrollFade, Skeleton, SkeletonText } from '@goodboy/ui';
+import { ScrollFade, Skeleton, SkeletonText, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 
 const ACTIVITY_ROWS = [0, 1];
 const LINKED_WORK_ROWS = [0, 1];
@@ -9,9 +10,14 @@ type Props = {
 
 export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
   return (
-    <ScrollFade className="h-full" viewportClassName="px-8 py-7" fadeSize={24}>
+    <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
       <div
-        className="mx-auto flex max-w-5xl flex-col gap-6"
+        className={cn(
+          'flex flex-col',
+          PANE_RHYTHM.column,
+          PANE_RHYTHM.stack,
+          PANE_RHYTHM.measure.pane,
+        )}
         role="status"
         aria-label="Loading session overview"
       >

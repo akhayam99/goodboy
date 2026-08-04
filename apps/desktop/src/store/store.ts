@@ -105,7 +105,11 @@ import type { SpawnFocus } from './slices/session-view/spawnFocus';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { createPermissionsSlice } from './slices/permissions';
-import { createProvidersSlice, INITIAL_LIFECYCLE_MAP } from './slices/providers';
+import {
+  createProvidersSlice,
+  INITIAL_CONNECT_MAP,
+  INITIAL_LIFECYCLE_MAP,
+} from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
@@ -172,10 +176,11 @@ export type AppActions = {
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
   refreshProviders(): Promise<void>;
-  installProvider(providerId: ProviderId): Promise<void>;
-  loginProvider(providerId: ProviderId): Promise<void>;
   logoutProvider(providerId: ProviderId): Promise<void>;
   cancelProviderLifecycle(providerId: ProviderId): Promise<void>;
+  connectProvider(providerId: ProviderId): Promise<void>;
+  cancelProviderConnect(providerId: ProviderId): Promise<void>;
+  dismissProviderConnect(providerId: ProviderId): void;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   addCompositeWorkspace(input: {
     name?: string;
@@ -686,6 +691,7 @@ export const initialState: AppState = {
     openrouter: null,
   }),
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
+  providerConnect: INITIAL_CONNECT_MAP,
   providerCredentials: [],
   hydrated: false,
   bootPhase: 'pending',

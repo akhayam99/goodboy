@@ -54,7 +54,7 @@ export const ResolveCard = ({
           checked={checked && !claimed}
           disabled={claimed}
           onChange={onToggle}
-          ariaLabel={`include comment by ${head.author}`}
+          ariaLabel={`Include comment by ${head.author}`}
           className="mt-0.5"
         />
         <div className="min-w-0 flex-1">
@@ -68,8 +68,8 @@ export const ResolveCard = ({
                 <button
                   type="button"
                   onClick={onOpenThread}
-                  title="open the full thread"
-                  aria-label="open the full thread"
+                  title="Open the full thread"
+                  aria-label="Open the full thread"
                   className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <ExternalLink size={12} aria-hidden />
@@ -99,7 +99,7 @@ export const ResolveCard = ({
               <button
                 type="button"
                 onClick={() => onOpenResolver?.(link.agent.id as AgentId)}
-                title="open the resolver working on this comment"
+                title="Open the resolver working on this comment"
                 className="inline-flex items-center gap-1 rounded-md border border-info/40 bg-info/10 px-2 py-1 text-2xs font-semibold text-info transition-colors hover:bg-info/20"
               >
                 Open resolver
@@ -108,7 +108,7 @@ export const ResolveCard = ({
             ) : (
               <>
                 <ResolveConfigPopover
-                  ariaLabel="configure resolver"
+                  ariaLabel="Configure resolver"
                   config={config}
                   connectedProviders={connectedProviders}
                   primaryLabel="Resolve comment"
@@ -136,8 +136,8 @@ export const ResolveCard = ({
                   onClick={onResolve}
                   title={
                     failed
-                      ? 'retry the resolver for this comment'
-                      : 'spawn a resolver for this comment now'
+                      ? 'Retry the resolver for this comment'
+                      : 'Spawn a resolver for this comment now'
                   }
                   className={cn(
                     'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-semibold transition-colors',

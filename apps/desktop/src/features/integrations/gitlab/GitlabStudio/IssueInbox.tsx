@@ -10,6 +10,7 @@ import {
 import { MessagesSquare, Search } from 'lucide-react';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
 import type { GitlabIssueGroup } from './useGitlabIssues';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
@@ -21,14 +22,6 @@ type Props = {
   readonly error: string | null;
   readonly onRefresh: () => void;
 };
-
-function shortDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return '';
-  }
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
 
 export const IssueInbox = ({
   groups,
@@ -145,14 +138,14 @@ export const IssueInbox = ({
                           </span>
                           <span className="min-w-0 flex-1 truncate text-xs">{row.issue.title}</span>
                           <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">
-                            {shortDate(row.issue.updatedAt)}
+                            {formatShortDayMonth({ iso: row.issue.updatedAt })}
                           </span>
                           <InboxStatusIcons
                             sessionIcon={
                               row.sessionId != null ? (
                                 <MessagesSquare
                                   size={11}
-                                  aria-label="session launched"
+                                  aria-label="Session launched"
                                   className="text-success"
                                 />
                               ) : null

@@ -87,8 +87,8 @@ const AttachmentImage = ({ attachment, workingDir }: AttachmentImageProps) => {
       <button
         type="button"
         onClick={() => setPreviewOpen(true)}
-        title={`preview ${attachment.fileName}`}
-        aria-label={`preview ${attachment.fileName}`}
+        title={`Preview ${attachment.fileName}`}
+        aria-label={`Preview ${attachment.fileName}`}
         className="cursor-zoom-in"
       >
         <img
@@ -146,9 +146,7 @@ const AttachmentFileCard = ({ attachment, workingDir }: AttachmentFileCardProps)
       >
         <Icon size={16} aria-hidden className="shrink-0 text-muted-foreground" />
         <span className="truncate text-xs text-foreground/80">{attachment.fileName}</span>
-        {loading ? (
-          <span className="shrink-0 text-2xs text-muted-foreground">loading...</span>
-        ) : null}
+        {loading ? <Skeleton className="h-3 w-10 shrink-0 rounded" /> : null}
       </button>
       {previewOpen && src !== null ? (
         <ImageLightbox
@@ -224,7 +222,7 @@ const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
   return (
     <span
       className="inline-flex items-center gap-1"
-      title={`sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
+      title={`Sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
     >
       <Icon size={11} aria-hidden style={{ color: brandColor(provider) }} />
       <span>{label}</span>

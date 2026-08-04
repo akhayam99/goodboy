@@ -52,7 +52,7 @@ export const WorkspaceIdentityRow = () => {
           {currentWorkspace.name}
         </span>
         {hasUnreadElsewhere ? (
-          <StatusDot tone="warning" size="sm" title="activity in another workspace" />
+          <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
         ) : null}
         <ChevronsUpDown
           size={12}

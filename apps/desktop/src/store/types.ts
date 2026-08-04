@@ -61,7 +61,7 @@ import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { ChangelogState } from './slices/changelog/state';
-import type { ProviderLifecycleMap } from './slices/providers';
+import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ReviewPrsState } from './slices/review-prs/types';
 import type {
   DiffFocus,
@@ -181,6 +181,7 @@ export type AppState = AppSliceState & {
   readonly authResults: ProviderAuthResults | null;
   readonly providers: ReadonlyArray<ProviderInfo>;
   readonly providerLifecycle: ProviderLifecycleMap;
+  readonly providerConnect: ProviderConnectMap;
   readonly providerCredentials: ReadonlyArray<ProviderCredential>;
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;

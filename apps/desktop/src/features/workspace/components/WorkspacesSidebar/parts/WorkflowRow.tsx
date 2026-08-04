@@ -258,7 +258,7 @@ export const WorkflowRow = ({
           >
             <CardAction
               icon={expanded ? ChevronDown : ChevronRight}
-              label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+              label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
               expanded={expanded}
               onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
             />
@@ -270,7 +270,7 @@ export const WorkflowRow = ({
                 {isQueuedManual ? (
                   <CardAction
                     icon={Play}
-                    label="start workflow now"
+                    label="Start workflow now"
                     tone="success"
                     onClick={() => void startWorkflowRun(task.id, run.id)}
                   />
@@ -278,7 +278,7 @@ export const WorkflowRow = ({
                 {!isCompleted ? (
                   <CardAction
                     icon={run.autoRun ? Zap : ZapOff}
-                    label={run.autoRun ? 'autorun on' : 'autorun off'}
+                    label={run.autoRun ? 'Autorun on' : 'Autorun off'}
                     tone="primary"
                     pressed={run.autoRun}
                     highlighted={run.autoRun}
@@ -291,7 +291,7 @@ export const WorkflowRow = ({
             <CardActionSlot label="Workflow navigation actions">
               <CardAction
                 icon={expanded ? ChevronDown : ChevronRight}
-                label={`${expanded ? 'collapse' : 'expand'} ${name} workflow`}
+                label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
                 expanded={expanded}
                 onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
               />
@@ -299,13 +299,13 @@ export const WorkflowRow = ({
                 <>
                   <CardAction
                     icon={ChevronUp}
-                    label="move workflow up"
+                    label="Move workflow up"
                     disabled={!canMoveUp}
                     onClick={() => void onReorderWorkflow(run.id, 'up')}
                   />
                   <CardAction
                     icon={ChevronDown}
-                    label="move workflow down"
+                    label="Move workflow down"
                     disabled={!canMoveDown}
                     onClick={() => void onReorderWorkflow(run.id, 'down')}
                   />
@@ -418,7 +418,7 @@ export const WorkflowRow = ({
                               type="button"
                               onClick={() => toggleClusterExpand(run.id)}
                               aria-expanded={clustersExpanded}
-                              aria-label={`${clustersExpanded ? 'collapse' : 'expand'} clusters for ${run.name}`}
+                              aria-label={`${clustersExpanded ? 'Collapse' : 'Expand'} clusters for ${run.name}`}
                               className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50 transition-colors hover:text-muted-foreground"
                             >
                               {clustersExpanded ? (
@@ -522,7 +522,7 @@ export const WorkflowRow = ({
               tone={run.autoRun ? 'primary' : 'neutral'}
               pressed={run.autoRun}
               highlighted={run.autoRun}
-              ariaLabel={run.autoRun ? 'autorun on' : 'autorun off'}
+              ariaLabel={run.autoRun ? 'Autorun on' : 'Autorun off'}
               onClick={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
             />
           ) : null}

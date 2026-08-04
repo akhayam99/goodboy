@@ -1,4 +1,5 @@
 import { Divider, ScrollFade } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { classifyAgent } from '../../agent-kind';
@@ -58,7 +59,7 @@ export const AgentInspector = ({ sessionId, agentId, onClose }: Props) => {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <InspectorHeader title={agent.name} closeLabel="close agent inspector" onClose={onClose} />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-3 py-3">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
         <div className="flex flex-col gap-4">
           <IdentitySection
             agent={agent}

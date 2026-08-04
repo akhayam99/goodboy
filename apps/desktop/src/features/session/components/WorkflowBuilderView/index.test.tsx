@@ -324,7 +324,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     await draftPlan();
     expandStep(0);
 
-    fireEvent.change(screen.getByLabelText('expected output'), {
+    fireEvent.change(screen.getByLabelText('Expected output'), {
       target: { value: 'a ranked risk list' },
     });
 

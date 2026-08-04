@@ -42,7 +42,7 @@ export const LinkTicketPopover = ({ sessionId, workspaceId, provider, providerLa
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel={`link ${providerLabel} issue`}
+            ariaLabel={`Link ${providerLabel} issue`}
             className={cn(popupClassName, 'p-3')}
             style={popupStyle}
           >

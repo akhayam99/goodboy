@@ -132,8 +132,8 @@ export const WorkflowStepCard = ({
         }
       }}
       disabled={disabled}
-      aria-label="reorder step, or use up and down arrow keys"
-      title="Drag to reorder (or arrow keys)"
+      aria-label="Reorder step (drag or arrow keys)"
+      title="Reorder step (drag or arrow keys)"
       className="flex shrink-0 cursor-grab touch-none items-center self-stretch rounded-l-lg px-1 text-muted-foreground/30 transition-colors hover:bg-muted/40 hover:text-muted-foreground active:cursor-grabbing disabled:cursor-not-allowed"
     >
       <GripVertical size={14} aria-hidden />
@@ -163,8 +163,8 @@ export const WorkflowStepCard = ({
       type="button"
       onClick={onRemove}
       disabled={disabled}
-      aria-label="remove step"
-      title="remove step"
+      aria-label="Remove step"
+      title="Remove step"
       className="absolute right-1.5 top-1.5 z-10 inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
     >
       <Trash2 size={13} aria-hidden />
@@ -191,7 +191,7 @@ export const WorkflowStepCard = ({
           <button
             type="button"
             onClick={onExpand}
-            aria-label={`step ${ordinal + 1}: ${displayName}`}
+            aria-label={`Step ${ordinal + 1}: ${displayName}`}
             title="Open this step to edit it"
             className="flex min-w-0 flex-1 flex-col gap-1 py-2 pl-1 pr-8 text-left"
           >
@@ -244,8 +244,8 @@ export const WorkflowStepCard = ({
                   type="button"
                   onClick={onPolish}
                   disabled={disabled || polishing || promptPrefix.trim().length === 0}
-                  aria-label="polish step instruction"
-                  title="Polish this step's instruction"
+                  aria-label="Polish step instruction"
+                  title="Polish step instruction"
                   className={cn(
                     'absolute right-1.5 top-1.5 inline-flex items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
                     polishing && 'animate-border-pulse',
@@ -266,7 +266,7 @@ export const WorkflowStepCard = ({
                   minRows={1}
                   maxRows={4}
                   disabled={disabled}
-                  aria-label="expected output"
+                  aria-label="Expected output"
                   className="text-2xs leading-relaxed"
                 />
               </div>
@@ -281,7 +281,7 @@ export const WorkflowStepCard = ({
               <div className="col-span-2 flex flex-col gap-1">
                 <FieldLabel>Provider, model, effort</FieldLabel>
                 <RoutingPicker
-                  ariaLabel={`routing for step ${ordinal + 1}`}
+                  ariaLabel={`Routing for step ${ordinal + 1}`}
                   connectedProviders={connectedProviders}
                   provider={providerValue}
                   model={model}

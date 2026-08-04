@@ -49,7 +49,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
             <span className="max-w-[10rem] truncate">{t.title}</span>
             <button
               type="button"
-              aria-label={`close ${t.title}`}
+              aria-label={`Close ${t.title}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onClose(t.id);
@@ -63,7 +63,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
       })}
       <button
         type="button"
-        aria-label="new terminal"
+        aria-label="New terminal"
         onClick={onSpawn}
         className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
       >

@@ -107,7 +107,7 @@ export const SessionGitActions = ({ session, density = 'full' }: Props) => {
   return (
     <OverflowMenu
       items={items}
-      label="branch actions"
+      label="Branch actions"
       align="left"
       side="top"
       triggerClassName={triggerClassName}

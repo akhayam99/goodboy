@@ -200,11 +200,11 @@ export const StageBoardCard = memo(function StageBoardCard({
           {sessionCost > 0 && (
             <CostBadge
               value={sessionCost}
-              title={`session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
+              title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
               className="shrink-0 text-2xs font-medium tabular-nums text-muted-foreground"
             />
           )}
-          {isAutoMode && <Chip tone="danger" size="sm" label="auto" className="shrink-0" />}
+          {isAutoMode && <Chip tone="danger" size="sm" label="Auto" className="shrink-0" />}
         </span>
       </span>
 
@@ -224,7 +224,7 @@ export const StageBoardCard = memo(function StageBoardCard({
                 role="checkbox"
                 tabIndex={0}
                 aria-checked={selected === true}
-                aria-label={`select ${session.goal}`}
+                aria-label={`Select ${session.goal}`}
                 onClick={(event) => {
                   event.stopPropagation();
                   onToggleSelect(id, event);
@@ -263,13 +263,13 @@ export const StageBoardCard = memo(function StageBoardCard({
             ))}
             <CardAction
               icon={Code}
-              label="open in editor"
+              label="Open in editor"
               onClick={() => nav.openIDE(session)}
               disabled={worktreePath == null}
             />
             <CardAction
               icon={SquareTerminal}
-              label="open terminal"
+              label="Open terminal"
               onClick={() => nav.openTerminal(session)}
             />
           </span>
@@ -284,16 +284,16 @@ export const StageBoardCard = memo(function StageBoardCard({
           <CardAction
             icon={RotateCcw}
             tone="primary"
-            label="restore"
+            label="Restore"
             onClick={() => onRestore?.(session)}
           />
         ) : (
-          <CardAction icon={Archive} label="archive" onClick={() => onArchive?.(session)} />
+          <CardAction icon={Archive} label="Archive" onClick={() => onArchive?.(session)} />
         )}
         <CardAction
           icon={Trash2}
           tone="danger"
-          label="delete"
+          label="Delete"
           onClick={() => onDelete?.(session)}
         />
       </CardActionSlot>

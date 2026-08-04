@@ -111,7 +111,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       {open ? (
         <div
           role="dialog"
-          aria-label="permission mode"
+          aria-label="Permission mode"
           className="absolute bottom-full left-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-subtle py-1.5 text-xs shadow-lg ring-1 ring-border-soft"
         >
           <div className="flex items-center px-2.5 pb-0.5 pt-1">

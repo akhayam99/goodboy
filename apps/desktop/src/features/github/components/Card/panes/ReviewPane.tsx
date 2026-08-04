@@ -101,7 +101,7 @@ export const ReviewPane = ({
           type="button"
           onClick={onSpawnFromReviewChanges}
           className="inline-flex w-fit items-center gap-1 rounded border border-accent/30 bg-accent/5 px-2 py-0.5 text-3xs font-medium text-accent hover:bg-accent/10"
-          title="create agent to resolve all requested changes"
+          title="Create agent to resolve all requested changes"
         >
           <Sparkles size={10} aria-hidden />
           resolve all requested changes

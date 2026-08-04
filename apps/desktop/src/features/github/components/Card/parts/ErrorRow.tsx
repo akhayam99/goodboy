@@ -16,8 +16,8 @@ export const ErrorRow = ({ message, onRetry }: Props) => {
       <button
         type="button"
         onClick={onRetry}
-        title="retry"
-        aria-label="retry"
+        title="Retry"
+        aria-label="Retry"
         className={TAB_ICON_BTN}
       >
         <RefreshCw size={10} aria-hidden />

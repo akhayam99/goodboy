@@ -56,8 +56,8 @@ export const ResolverThreadVerdictRow = ({
 
   const onHeaderClick = isExpandable ? () => setOpen((value) => !value) : onOpen;
   const headerLabel = isExpandable
-    ? `${open ? 'collapse' : 'expand'} thread ${position}`
-    : `open thread ${position} in the resolver inspector`;
+    ? `${open ? 'Collapse' : 'Expand'} thread ${position}`
+    : `Open thread ${position} in the resolver inspector`;
 
   const header = (
     <div className="flex min-w-0 items-center gap-2 pr-2">

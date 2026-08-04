@@ -28,7 +28,7 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
       type="button"
       onClick={() => onOpen(run)}
       className="min-w-0 flex-1 text-left"
-      aria-label={`go to ${run.scriptName} in ${run.sessionGoal}`}
+      aria-label={`Go to ${run.scriptName} in ${run.sessionGoal}`}
     >
       <span className="block truncate text-xs font-medium text-foreground">{run.scriptName}</span>
       <span className="block truncate text-2xs text-muted-foreground">{run.sessionGoal}</span>
@@ -39,7 +39,7 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
     <button
       type="button"
       onClick={() => onStop(run)}
-      aria-label={`stop ${run.scriptName}`}
+      aria-label={`Stop ${run.scriptName}`}
       className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
     >
       <Square size={11} aria-hidden />

@@ -186,9 +186,9 @@ describe('WorkflowRow detail dashboard', () => {
     const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
 
     expect(
-      navigationSlot.contains(screen.getByRole('button', { name: 'collapse Refactor workflow' })),
+      navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'autorun off' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Autorun off' }))).toBe(true);
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
   });
 
@@ -201,9 +201,9 @@ describe('WorkflowRow detail dashboard', () => {
 
     expect(navigationSlot.children).toHaveLength(1);
     expect(
-      navigationSlot.contains(screen.getByRole('button', { name: 'collapse Refactor workflow' })),
+      navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
-    expect(screen.queryByRole('button', { name: 'autorun off' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Autorun off' })).toBeNull();
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete' }))).toBe(true);
   });
 
@@ -221,7 +221,7 @@ describe('WorkflowRow detail dashboard', () => {
 
     expect(screen.getByText('just the auth module')).toBeDefined();
     expect(screen.queryByText('template goal')).toBeNull();
-    const goal = screen.getByRole('region', { name: 'what you asked for' });
+    const goal = screen.getByRole('region', { name: 'What you asked for' });
     expect(goal.className).not.toContain('rounded');
     expect(goal.className).not.toContain('bg-');
     expect(goal.className).not.toContain('ring-');
@@ -250,7 +250,7 @@ describe('WorkflowRow detail dashboard', () => {
   it('places workflow attachments between the goal and the steps', () => {
     renderDetail();
 
-    const goal = screen.getByRole('region', { name: 'what you asked for' });
+    const goal = screen.getByRole('region', { name: 'What you asked for' });
     const attachments = screen.getByTestId('goal-attachments');
     const steps = screen.getByTestId('workflow-step-graph');
 

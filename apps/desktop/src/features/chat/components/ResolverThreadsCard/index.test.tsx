@@ -98,7 +98,7 @@ describe('ResolverThreadsCard', () => {
     h.wontfix.mockReturnValue([{ threadId: 'PRRT_2', reason: 'already covered upstream' }]);
 
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /expand resolver findings/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Expand resolver findings/ }));
 
     expect(screen.getByTestId('resolver-thread-verdict-0')).toBeDefined();
     expect(screen.getByTestId('resolver-thread-verdict-1')).toBeDefined();
@@ -111,7 +111,7 @@ describe('ResolverThreadsCard', () => {
     h.resolved.mockReturnValue([{ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' }]);
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'open commit abcdef1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open commit abcdef1' }));
 
     expect(h.openDiffLens).toHaveBeenCalledWith('s', {
       kind: 'commit',
@@ -130,7 +130,7 @@ describe('ResolverThreadsCard', () => {
     const row = screen.getByTestId('resolver-thread-verdict');
     expect(within(row).queryByText('isReviewThreadId')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'expand thread 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Expand thread 1' }));
 
     expect(within(row).getByText('isReviewThreadId').tagName).toBe('CODE');
     expect(row.textContent).not.toContain('<<');
@@ -141,7 +141,7 @@ describe('ResolverThreadsCard', () => {
 
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
 
-    expect(screen.queryByRole('button', { name: /expand thread/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Expand thread/ })).toBeNull();
   });
 
   it('deep-links a verdict line into the resolver inspector for the shared agent', () => {
@@ -159,9 +159,9 @@ describe('ResolverThreadsCard', () => {
         agentId={'agent-1' as never}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /expand resolver findings/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Expand resolver findings/ }));
     fireEvent.click(
-      screen.getByRole('button', { name: 'open thread 2 in the resolver inspector' }),
+      screen.getByRole('button', { name: 'Open thread 2 in the resolver inspector' }),
     );
 
     expect(h.selectAgent).toHaveBeenCalledWith('s', 'agent-1');
@@ -192,7 +192,7 @@ describe('ResolverThreadsCard', () => {
     h.pending = [{ threadId: 'PRRT_2' }];
 
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
-    fireEvent.click(screen.getByRole('button', { name: /expand resolver findings/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Expand resolver findings/ }));
 
     expect(screen.getByText('fix committed, thread closed')).toBeDefined();
     expect(screen.getByText('fix committed, reply queued')).toBeDefined();

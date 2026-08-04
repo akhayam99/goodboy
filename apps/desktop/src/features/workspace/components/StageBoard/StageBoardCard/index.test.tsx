@@ -326,8 +326,8 @@ describe('StageBoardCard footer', () => {
     render(<StageBoardCard session={autoSession} nav={nav} />);
     const agents = screen.getByLabelText('2 agents');
     const task = screen.getByLabelText('GB-123 from Linear');
-    const cost = document.querySelector('[title="session spend: $1.25 (excludes summarizer)"]');
-    const auto = screen.getByText('auto');
+    const cost = document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]');
+    const auto = screen.getByText('Auto');
     const footer = agents.closest('[data-tooltip]')?.parentElement;
     expect(agents.querySelector('.lucide-bot')).not.toBeNull();
     expect(screen.queryByText('GB-123')).toBeNull();

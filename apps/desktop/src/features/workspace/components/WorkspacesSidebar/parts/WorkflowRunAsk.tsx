@@ -15,7 +15,7 @@ export const WorkflowRunAsk = ({ goal, processText }: Props) => {
   }
 
   return (
-    <section aria-label="what you asked for" className="flex flex-col gap-2">
+    <section aria-label="What you asked for" className="flex flex-col gap-2">
       <SectionHeader label="Goal" />
       {goal !== '' ? (
         <Markdown text={goal} className="text-xs leading-relaxed text-foreground" />

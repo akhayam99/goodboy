@@ -176,7 +176,7 @@ describe('ResolverCard', () => {
 
   it('keeps duration and last update on the one fact line', () => {
     const meta = within(renderCard().getByTestId('agent-metrics-inline'));
-    expect(meta.getByTitle(/^started .+2026/)).toBeTruthy();
+    expect(meta.getByTitle(/^Started .+2026/)).toBeTruthy();
     expect(meta.getByText(/^updated /)).toBeTruthy();
   });
 

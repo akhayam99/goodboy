@@ -77,14 +77,14 @@ export const AgentRow = ({
     telemetry == null
       ? null
       : lastTurnContextTokens == null
-        ? `last turn: ${formatCost(telemetry.estimatedCostUsd)}`
-        : `last turn: ${lastTurnContextTokens} tokens · ${formatCost(telemetry.estimatedCostUsd)}`;
+        ? `Last turn: ${formatCost(telemetry.estimatedCostUsd)}`
+        : `Last turn: ${lastTurnContextTokens} tokens · ${formatCost(telemetry.estimatedCostUsd)}`;
   const titleParts = [
-    `agent ${run.ordinal + 1}`,
-    `status: ${run.status}`,
-    isSelected ? 'selected: chat shows this agent' : 'click to switch chat to this agent',
-    telemetry != null ? `provider: ${telemetry.provider}` : null,
-    telemetry != null ? `model: ${modelLabel(telemetry.model)}` : null,
+    `Agent ${run.ordinal + 1}`,
+    `Status: ${run.status}`,
+    isSelected ? 'Selected: chat shows this agent' : 'Click to switch chat to this agent',
+    telemetry != null ? `Provider: ${telemetry.provider}` : null,
+    telemetry != null ? `Model: ${modelLabel(telemetry.model)}` : null,
     lastTurn,
   ].filter((part): part is string => part !== null);
   const isMarkDoneAvailable =
@@ -153,7 +153,7 @@ export const AgentRow = ({
               {isMarkDoneAvailable && (
                 <AgentCardAction
                   icon={CircleCheck}
-                  label="mark agent done"
+                  label="Mark agent done"
                   tone="success"
                   reveal
                   onClick={() => onMarkDone?.()}
@@ -163,7 +163,7 @@ export const AgentRow = ({
             <span className="flex size-6 shrink-0 items-center justify-center">
               <AgentCardAction
                 icon={Trash2}
-                label="delete agent"
+                label="Delete agent"
                 tone="danger"
                 highlighted={isConfirmingDelete}
                 reveal={!isConfirmingDelete}
@@ -176,7 +176,7 @@ export const AgentRow = ({
       status={
         <AgentKindChip
           kind={kind}
-          title={`agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
+          title={`Agent ${run.ordinal + 1}: ${AGENT_KIND_PALETTE[kind].label}`}
         />
       }
       meta={

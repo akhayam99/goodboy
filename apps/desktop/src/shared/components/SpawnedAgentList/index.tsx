@@ -27,7 +27,7 @@ type Props = {
 
 const statusIcon = (status: SpawnStatus) =>
   status === 'running' ? (
-    <StatusDot tone="info" size="md" pulsing ariaLabel="running" />
+    <StatusDot tone="info" size="md" pulsing ariaLabel="Running" />
   ) : status === 'completed' ? (
     <span className={cn('flex size-4 items-center justify-center rounded-full', successAccent.bg)}>
       <Check size={10} className={successAccent.icon} aria-hidden />

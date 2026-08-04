@@ -36,7 +36,7 @@ export const SpawnedChildrenCard = ({ spawned, onAdvance }: Props) => {
           meta={`${total}`}
           open={open}
           onToggle={() => setOpen((value) => !value)}
-          aria-label={open ? 'collapse spawned agents' : 'expand spawned agents'}
+          aria-label={open ? 'Collapse spawned agents' : 'Expand spawned agents'}
         />
       }
     >

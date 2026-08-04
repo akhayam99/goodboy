@@ -32,7 +32,7 @@ export const DiffToolbar = ({
   viewSelector,
   presentation = 'bar',
 }: Props) => {
-  const titleText = title ?? (prNumber !== undefined ? `pr #${prNumber} diff` : 'diff');
+  const titleText = title ?? (prNumber !== undefined ? `PR #${prNumber} diff` : 'Diff');
   const ahead = status?.ahead ?? 0;
   const behind = status?.behind ?? 0;
   const hasAheadBehind = status?.hasUpstream === true && (ahead > 0 || behind > 0);
@@ -81,8 +81,8 @@ export const DiffToolbar = ({
             <span className="truncate font-mono">{status.branch}</span>
             {hasAheadBehind ? (
               <span className="flex shrink-0 items-center gap-1 tabular-nums">
-                {ahead > 0 ? <span title="unpushed commits">↑{ahead}</span> : null}
-                {behind > 0 ? <span title="behind upstream">↓{behind}</span> : null}
+                {ahead > 0 ? <span title="Unpushed commits">↑{ahead}</span> : null}
+                {behind > 0 ? <span title="Behind upstream">↓{behind}</span> : null}
               </span>
             ) : null}
           </span>
@@ -94,8 +94,8 @@ export const DiffToolbar = ({
               type="button"
               onClick={onRefresh}
               disabled={refreshing}
-              title="refresh git state"
-              aria-label="refresh git state"
+              title="Refresh git state"
+              aria-label="Refresh git state"
               className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
             >
               <RefreshCw size={12} aria-hidden />
@@ -105,8 +105,8 @@ export const DiffToolbar = ({
             <button
               type="button"
               onClick={onClose}
-              title="close"
-              aria-label="close"
+              title="Close"
+              aria-label="Close"
               className={TOOLBAR_ICON_BTN}
             >
               <X size={13} />

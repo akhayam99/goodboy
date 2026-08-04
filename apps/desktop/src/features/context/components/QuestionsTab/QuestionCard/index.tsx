@@ -93,8 +93,8 @@ export const QuestionCard = ({
             'group-hover:opacity-100 motion-reduce:opacity-60',
             animate && 'opacity-100',
           )}
-          title="dismiss question"
-          aria-label="dismiss question"
+          title="Dismiss question"
+          aria-label="Dismiss question"
         >
           {animate ? <Check size={12} className="text-success" /> : <X size={12} />}
         </button>

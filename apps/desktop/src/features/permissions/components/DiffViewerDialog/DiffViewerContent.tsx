@@ -797,7 +797,7 @@ export const DiffViewerContent = ({
                   {status != null && status.commitsBehindMain > 0 ? (
                     <span
                       className="text-muted-foreground/70"
-                      title="commits on main not in this branch"
+                      title="Commits on main not in this branch"
                     >
                       behind main by {status.commitsBehindMain}
                     </span>
@@ -868,8 +868,8 @@ export const DiffViewerContent = ({
                   <button
                     type="button"
                     onClick={() => setRefreshTick((tick) => tick + 1)}
-                    title="refresh git state"
-                    aria-label="refresh git state"
+                    title="Refresh git state"
+                    aria-label="Refresh git state"
                     className={cn(TOOLBAR_ICON_BTN, 'disabled:opacity-50')}
                   >
                     <RefreshCw size={12} aria-hidden />
@@ -907,8 +907,8 @@ export const DiffViewerContent = ({
                     <button
                       type="button"
                       onClick={onClose}
-                      title="close"
-                      aria-label="close"
+                      title="Close"
+                      aria-label="Close"
                       className={TOOLBAR_ICON_BTN}
                     >
                       <X size={13} />
@@ -923,8 +923,8 @@ export const DiffViewerContent = ({
                   <button
                     type="button"
                     onClick={onClose}
-                    title="close"
-                    aria-label="close"
+                    title="Close"
+                    aria-label="Close"
                     className={TOOLBAR_ICON_BTN}
                   >
                     <X size={13} />
@@ -1060,7 +1060,7 @@ export const DiffViewerContent = ({
           onPropose={() => void handleProposeFixes()}
           routing={
             <RoutingPicker
-              ariaLabel="resolver routing"
+              ariaLabel="Resolver routing"
               connectedProviders={connectedProviderIds}
               provider={resolverRouting.provider}
               model={resolverRouting.model}

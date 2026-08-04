@@ -129,7 +129,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   size="sm"
                   value={theme}
                   onChange={(e) => setTheme(e.target.value === 'light' ? 'light' : 'dark')}
-                  aria-label="theme"
+                  aria-label="Theme"
                 >
                   <option value="dark">Dark</option>
                   <option value="light">Light</option>
@@ -148,7 +148,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   size="sm"
                   value={editorBinary}
                   onChange={(e) => void onChangeEditor(e.target.value)}
-                  aria-label="default editor"
+                  aria-label="Default editor"
                 >
                   {editorOptions.map((editor) => (
                     <option key={editor.binary} value={editor.binary}>

@@ -40,6 +40,20 @@ export const gitlabFetchAssignedIssues = async (
   return invoke<GitlabIssue[]>('gitlab_fetch_assigned_issues', { workspaceId, host });
 };
 
+export const gitlabFetchIssue = async (
+  workspaceId: WorkspaceId,
+  host: string,
+  projectPath: string,
+  issueIid: number,
+): Promise<GitlabIssue> => {
+  return invoke<GitlabIssue>('gitlab_fetch_issue', {
+    workspaceId,
+    host,
+    projectPath,
+    issueIid,
+  });
+};
+
 export const issueIdentifier = (issue: GitlabIssue): string =>
   issue.references.full ?? `#${issue.iid}`;
 

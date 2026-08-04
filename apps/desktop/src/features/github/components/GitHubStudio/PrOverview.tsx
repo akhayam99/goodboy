@@ -89,8 +89,8 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               <button
                 type="button"
                 onClick={() => setEditing('title')}
-                title="edit title"
-                aria-label="edit title"
+                title="Edit title"
+                aria-label="Edit title"
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />

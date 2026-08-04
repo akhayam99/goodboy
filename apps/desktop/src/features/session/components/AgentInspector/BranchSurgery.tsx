@@ -75,7 +75,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
             {commit.pushed ? (
               <span
                 className="pl-5 text-2xs italic text-muted-foreground/60"
-                title="rewriting it would need a force push"
+                title="Rewriting it would need a force push"
               >
                 already pushed
               </span>

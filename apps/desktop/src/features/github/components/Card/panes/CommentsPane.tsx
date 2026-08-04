@@ -50,7 +50,7 @@ export const CommentsPane = ({ comments, pr, onOpenUrl, onSpawnFromComment }: Pr
         type="button"
         onClick={() => onOpenUrl(pr.url)}
         className="inline-flex items-center gap-0.5 text-3xs text-muted-foreground/70 hover:text-foreground"
-        title="open general comments on GitHub"
+        title="Open general comments on GitHub"
       >
         {generalCount} general comment{generalCount === 1 ? '' : 's'}
         <ExternalLink size={9} aria-hidden />

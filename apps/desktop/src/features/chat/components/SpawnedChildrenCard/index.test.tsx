@@ -44,9 +44,9 @@ describe('SpawnedChildrenCard', () => {
 
   it('collapses and expands the record from the header', () => {
     render(<SpawnedChildrenCard spawned={spawned} />);
-    fireEvent.click(screen.getByLabelText('collapse spawned agents'));
+    fireEvent.click(screen.getByLabelText('Collapse spawned agents'));
     expect(screen.queryByText('do 0')).toBeNull();
-    fireEvent.click(screen.getByLabelText('expand spawned agents'));
+    fireEvent.click(screen.getByLabelText('Expand spawned agents'));
     expect(screen.getByText('do 0')).toBeTruthy();
   });
 

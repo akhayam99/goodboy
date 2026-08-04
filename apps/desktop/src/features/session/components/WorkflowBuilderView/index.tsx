@@ -31,6 +31,7 @@ import {
   cn,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import {
   PlannerClient,
   type PlannerOutput,
@@ -781,7 +782,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           <ScrollFade className="min-h-0 flex-1">
             <div
               key={stage}
-              className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-7 motion-safe:animate-fade-in"
+              className={cn(
+                'flex max-w-2xl flex-col motion-safe:animate-fade-in',
+                PANE_RHYTHM.column,
+                PANE_RHYTHM.stack,
+                PANE_RHYTHM.body,
+              )}
             >
               {stage === 0 ? (
                 <>
@@ -811,7 +817,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                               type="button"
                               onClick={onUndoGoal}
                               disabled={blocked || polishing}
-                              aria-label="undo goal change"
+                              aria-label="Undo goal change"
                               className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <Undo2 size={10} aria-hidden /> Undo
@@ -821,7 +827,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             type="button"
                             onClick={() => void onPolishGoal()}
                             disabled={blocked || polishing || goalText.trim().length === 0}
-                            aria-label="polish goal"
+                            aria-label="Polish goal"
                             className={cn(
                               'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
                               polishing && 'animate-border-pulse',
@@ -916,7 +922,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                       label="Approach"
                       action={
                         <SegmentedTabs
-                          ariaLabel="workflow approach"
+                          ariaLabel="Workflow approach"
                           options={[
                             {
                               value: 'preset',
@@ -972,7 +978,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             <div
                               className="flex flex-col gap-1.5"
                               role="radiogroup"
-                              aria-label="presets"
+                              aria-label="Presets"
                             >
                               {presets.map((t) => {
                                 const tSteps = sortedSteps(t);
@@ -1083,7 +1089,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <div className="flex justify-end px-1">
                             <div className="w-64">
                               <RoutingPicker
-                                ariaLabel="planner routing"
+                                ariaLabel="Planner routing"
                                 connectedProviders={connectedProviders}
                                 provider={plannerProviderOverride}
                                 model={plannerModelOverride}
@@ -1179,7 +1185,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             {stepCount} step{stepCount === 1 ? '' : 's'}
                           </span>
                         </div>
-                        <ol className="flex flex-col" aria-label="workflow steps">
+                        <ol className="flex flex-col" aria-label="Workflow steps">
                           {steps.map((st, i) => (
                             <Fragment key={st.key}>
                               <StepFlowConnector
@@ -1384,7 +1390,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           <Divider />
 
           <footer className="shrink-0">
-            <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-6 py-4">
+            <div
+              className={cn(
+                'flex max-w-2xl items-center justify-between gap-3',
+                PANE_RHYTHM.column,
+                PANE_RHYTHM.dock,
+              )}
+            >
               <div className="flex min-w-0 items-center gap-2">
                 {!draftEmpty ? (
                   <Button
@@ -1392,7 +1404,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     size="md"
                     onClick={resetDraft}
                     disabled={busy}
-                    aria-label="reset workflow draft"
+                    aria-label="Reset workflow draft"
                     className="gap-1.5 text-muted-foreground"
                   >
                     <RotateCcw size={14} aria-hidden />

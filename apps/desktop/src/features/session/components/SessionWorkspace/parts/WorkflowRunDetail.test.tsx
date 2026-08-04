@@ -12,6 +12,7 @@ type AgentsSectionMockProps = {
 
 vi.mock('@goodboy/ui', () => ({
   ScrollFade: ({ children }: { readonly children: React.ReactNode }) => <div>{children}</div>,
+  cn: (...parts: ReadonlyArray<unknown>) => parts.filter(Boolean).join(' '),
 }));
 
 vi.mock('../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', () => ({

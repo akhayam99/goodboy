@@ -41,9 +41,8 @@ export const SessionPanel = ({
   return (
     <StudioPanel
       title={goal}
-      subtitle={isCurrent ? 'current session' : 'session spend'}
+      subtitle={isCurrent ? 'Current session' : 'Session spend'}
       action={<OpenSessionButton sessionId={sessionId} onOpened={onOpened} variant="secondary" />}
-      maxWidthClass="max-w-5xl"
     >
       <ErrorStrip
         label="session telemetry"

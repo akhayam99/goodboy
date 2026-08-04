@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Divider } from '@goodboy/ui';
+import { Divider, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import type { AgentHomeLens } from '../../../agent-kind';
 import { AgentBreadcrumb } from './AgentBreadcrumb';
@@ -38,7 +39,12 @@ export const agentOverlayHeader = ({
   }
   return (
     <>
-      <div className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-2 px-3">
+      <div
+        className={cn(
+          'flex h-[var(--chat-header-h)] shrink-0 items-center gap-2',
+          PANE_RHYTHM.inset,
+        )}
+      >
         <AgentBreadcrumb
           sessionId={sessionId}
           selectedAgentId={selectedAgentId}

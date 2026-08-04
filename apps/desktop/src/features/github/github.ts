@@ -1,5 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
-import { detectRepoSlug, fetchPrDetail, listAssignedIssues, listPrsForBranch } from '@goodboy/core';
+import {
+  detectRepoSlug,
+  fetchPrDetail,
+  ghRunJson,
+  listAssignedIssues,
+  listPrsForBranch,
+} from '@goodboy/core';
 import type { GhRunner, GhResult, GhRunOptions, PrCacheStore } from '@goodboy/core';
 import type {
   GhTokenStatus,
@@ -126,6 +132,43 @@ export const ghAssignedIssues = async (
   slug: string,
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<GithubIssue>> => listAssignedIssues(tauriGhRunner, slug, opts);
+
+const ISSUE_VIEW_FIELDS = 'number,title,body,url,state,labels,updatedAt';
+
+type RawGithubIssueView = {
+  number: number;
+  title: string;
+  body: string | null;
+  url: string;
+  state: string;
+  labels: ReadonlyArray<{ name: string }>;
+  updatedAt: string;
+};
+
+export const ghIssueByNumber = async (
+  cwd: string,
+  issueNumber: number,
+  workspaceId?: string,
+): Promise<GithubIssue> => {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
+  if (slug == null) {
+    throw new Error('could not detect a GitHub repository for this workspace');
+  }
+  const raw = await ghRunJson<RawGithubIssueView>(
+    tauriGhRunner,
+    ['issue', 'view', String(issueNumber), '--repo', slug, '--json', ISSUE_VIEW_FIELDS],
+    { cwd, workspaceId },
+  );
+  return {
+    number: raw.number,
+    title: raw.title,
+    body: raw.body ?? '',
+    url: raw.url,
+    state: raw.state,
+    labels: raw.labels.map((label) => label.name),
+    updatedAt: raw.updatedAt,
+  };
+};
 
 export const ghPrDetailByNumber = async (
   cwd: string,

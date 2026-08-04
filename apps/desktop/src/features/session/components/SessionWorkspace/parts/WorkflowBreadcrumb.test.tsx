@@ -130,7 +130,7 @@ describe('WorkflowBreadcrumb', () => {
 
     expect(screen.getByText('1/2 clusters')).toBeTruthy();
     fireEvent.click(screen.getByTitle('1/2 clusters. Switch agent.'));
-    expect(screen.getByRole('menu', { name: 'switch agent' }).textContent).not.toContain(
+    expect(screen.getByRole('menu', { name: 'Switch agent' }).textContent).not.toContain(
       'parallel branch',
     );
   });
@@ -171,7 +171,7 @@ describe('WorkflowBreadcrumb', () => {
 
     fireEvent.click(screen.getByTitle('Implement. Switch step.'));
 
-    expect(screen.getByRole('menu', { name: 'switch step' }).textContent).toContain('Review');
+    expect(screen.getByRole('menu', { name: 'Switch step' }).textContent).toContain('Review');
   });
 
   it('lists the root and every child in the agent menu', () => {
@@ -179,7 +179,7 @@ describe('WorkflowBreadcrumb', () => {
 
     fireEvent.click(screen.getByTitle('1/2 clusters. Switch agent.'));
 
-    const menu = screen.getByRole('menu', { name: 'switch agent' });
+    const menu = screen.getByRole('menu', { name: 'Switch agent' });
     expect(menu.textContent).toContain('cluster one');
     expect(menu.textContent).toContain('cluster two');
     expect(h.selectAgent).not.toHaveBeenCalled();

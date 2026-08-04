@@ -10,6 +10,7 @@ import {
 import { GitMerge, Search } from 'lucide-react';
 import type { GitlabMergeRequest } from '../client';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
 import type { GitlabMrGroup } from './useGitlabMrs';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
@@ -20,18 +21,6 @@ type Props = {
   readonly loading: boolean;
   readonly error: string | null;
   readonly onRefresh: () => void;
-};
-
-type DateParams = {
-  readonly iso: string;
-};
-
-const shortDate = ({ iso }: DateParams): string => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
 export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefresh }: Props) => {
@@ -147,7 +136,7 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefre
                               ·
                             </span>
                             <span className="shrink-0 tabular-nums text-muted-foreground/50">
-                              {shortDate({ iso: mr.updatedAt })}
+                              {formatShortDayMonth({ iso: mr.updatedAt })}
                             </span>
                             <InboxStatusIcons
                               className="ml-auto"

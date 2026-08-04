@@ -67,7 +67,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
           variant="secondary"
           size="sm"
           onClick={() => setPending('archive')}
-          title="archive selected sessions"
+          title="Archive selected sessions"
           className="shrink-0 gap-1 px-2 text-xs"
         >
           <Archive size={11} aria-hidden />
@@ -79,7 +79,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
           variant="secondary"
           size="sm"
           onClick={() => void onRestore()}
-          title="restore selected sessions"
+          title="Restore selected sessions"
           className="shrink-0 gap-1 px-2 text-xs"
         >
           <RotateCcw size={11} aria-hidden />
@@ -90,7 +90,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
         variant="danger"
         size="sm"
         onClick={() => setPending('delete')}
-        title="delete selected sessions"
+        title="Delete selected sessions"
         className="shrink-0 gap-1 px-2 text-xs"
       >
         <Trash2 size={11} aria-hidden />
@@ -100,7 +100,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
         variant="ghost"
         size="sm"
         onClick={onSelectAll}
-        title="select every session in view"
+        title="Select every session in view"
         className="shrink-0 px-2 text-xs"
       >
         All
@@ -109,7 +109,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
         variant="ghost"
         size="sm"
         onClick={onClear}
-        title="clear selection"
+        title="Clear selection"
         className="shrink-0 px-2 text-xs"
       >
         Clear

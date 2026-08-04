@@ -127,6 +127,8 @@ export type {
   ProviderPlatformCommands,
 } from './provider-commands';
 export { PROVIDER_LIFECYCLE_COMMANDS } from './provider-commands';
+export type { ProviderConnectCapability, ProviderConnectTier } from './provider-connect';
+export { PROVIDER_CONNECT_CAPABILITIES } from './provider-connect';
 export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
 export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
 export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';

@@ -172,7 +172,7 @@ describe('ReviewInboxList', () => {
     setItems([pr({ id: 'github:1', mine: true })]);
     renderList('others');
 
-    expect(screen.getByText('No open PRs from teammates')).toBeDefined();
+    expect(screen.getByText('No open pull requests from teammates')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Refresh pull requests' })).toBeNull();
     h.refreshReviewPrs.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));

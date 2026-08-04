@@ -147,7 +147,7 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
                 <button
                   type="button"
                   onClick={() => setListOpen((open) => !open)}
-                  title="browse the other plans in this session"
+                  title="Browse the other plans in this session"
                   className={cn(
                     'inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground',
                     listOpen && 'bg-foreground/5 text-foreground',

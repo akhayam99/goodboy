@@ -22,7 +22,7 @@ const CONFIG: CardConfig = {
 const renderPopover = (over: Partial<Parameters<typeof ResolveConfigPopover>[0]> = {}) =>
   render(
     <ResolveConfigPopover
-      ariaLabel="configure resolver"
+      ariaLabel="Configure resolver"
       config={CONFIG}
       connectedProviders={['anthropic' as ProviderId]}
       primaryLabel="Resolve comment"
@@ -46,10 +46,10 @@ afterEach(cleanup);
 describe('ResolveConfigPopover', () => {
   it('opens a portaled dialog with mode, instructions and routing sections', () => {
     renderPopover();
-    expect(screen.queryByRole('dialog', { name: 'configure resolver' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Configure resolver' })).toBeNull();
 
     open();
-    const dialog = screen.getByRole('dialog', { name: 'configure resolver' });
+    const dialog = screen.getByRole('dialog', { name: 'Configure resolver' });
     expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
     expect(screen.getByText('Mode')).toBeDefined();
     expect(screen.getByText('Instructions')).toBeDefined();
@@ -80,7 +80,7 @@ describe('ResolveConfigPopover', () => {
     open();
     fireEvent.click(screen.getByRole('button', { name: 'Resolve comment' }));
     expect(onPrimary).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('dialog', { name: 'configure resolver' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Configure resolver' })).toBeNull();
   });
 
   it('reports a model pick with the viewed provider', () => {
