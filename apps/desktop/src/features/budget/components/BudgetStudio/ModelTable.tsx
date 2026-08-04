@@ -1,4 +1,4 @@
-import { EmptyState, formatTokens, formatUsdPrecise } from '@goodboy/ui';
+import { EmptyState, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { ModelBreakdownEntry } from './lib';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -11,7 +11,7 @@ type Props = {
 
 export const ModelTable = ({
   entries,
-  formatSpent = formatUsdPrecise,
+  formatSpent = formatUsd,
   borderedEmptyState = true,
 }: Props) => {
   if (entries.length === 0) {
@@ -52,7 +52,10 @@ export const ModelTable = ({
             <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
               {formatTokens(entry.tokensOut)}
             </td>
-            <td className="px-3 py-2 text-right font-mono tabular-nums font-medium text-foreground">
+            <td
+              title={formatUsdPrecise(entry.spentUsd)}
+              className="px-3 py-2 text-right font-mono tabular-nums font-medium text-foreground"
+            >
               {formatSpent(entry.spentUsd)}
             </td>
           </tr>

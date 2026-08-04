@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Chip, EmptyState, formatTokens, formatUsdPrecise } from '@goodboy/ui';
+import { Chip, EmptyState, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
@@ -26,7 +26,7 @@ const PAGE_SIZE = 10;
 export const TurnsTable = ({
   turns,
   showSession,
-  formatSpent = formatUsdPrecise,
+  formatSpent = formatUsd,
   onOpenSession,
 }: Props) => {
   const [sortKey, setSortKey] = useState<SortKey>(() => {
@@ -119,7 +119,10 @@ export const TurnsTable = ({
                     <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
                       {formatTokens(record.outputTokens)}
                     </td>
-                    <td className="px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground">
+                    <td
+                      title={formatUsdPrecise(record.estimatedCostUsd)}
+                      className="px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground"
+                    >
                       {formatSpent(record.estimatedCostUsd)}
                     </td>
                     <td className="px-2 py-2">
