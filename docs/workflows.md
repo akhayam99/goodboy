@@ -42,13 +42,17 @@ Authoring: `WorkflowStudio` and `WorkflowBuilderView`, both via `workflow_upsert
 ## How a run advances
 
 Nothing advances until the gate passes. `resolveWorkflowAdvance` in
-`apps/desktop/src/features/workflows/advanceGate.ts` returns `complete`, `ready` or
-`blocked` with exactly one of four reasons, tested in this order:
+`apps/desktop/src/features/workflows/advanceGate.ts` returns `complete`, `automatic`,
+`ready` or `blocked` with exactly one of four reasons, tested in this order:
 
 1. `questions`: the run has unanswered open questions.
 2. `summarizer`: the step summary is still being written.
 3. `failed-step`: `classifyWorkflowChain` reports the current step failed.
 4. `turn-running`: a step agent is still running.
+
+`automatic` is what `auto_run` turns every non-complete case into, except a failed step:
+under autorun the manual advance controls do not render, because automation is about to
+make that click, and only the skip control survives where automation has stopped for good.
 
 The control is `ChatWorkflowAdvance` under
 `features/session/components/SessionWorkspace/parts/`, rendering `WorkflowNextStepCta`
