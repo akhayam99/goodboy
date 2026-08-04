@@ -16,7 +16,7 @@ export const StudioPanel = ({
   title,
   subtitle,
   action,
-  maxWidthClass = PANE_RHYTHM.measure.reading,
+  maxWidthClass = PANE_RHYTHM.measure.pane,
   children,
 }: Props) => {
   return (

@@ -44,11 +44,7 @@ export const EfficiencyPanel = ({
   const accepted = nudgeData?.find((entry) => entry.outcome === 'accepted')?.count ?? 0;
   const nudgeTotal = nudgeData?.reduce((sum, entry) => sum + entry.count, 0) ?? 0;
   return (
-    <StudioPanel
-      title="Efficiency"
-      subtitle="Token reuse, context growth, and right-sized runs"
-      maxWidthClass="max-w-5xl"
-    >
+    <StudioPanel title="Efficiency" subtitle="Token reuse, context growth, and right-sized runs">
       <ErrorStrip label="cache efficiency" error={cacheEfficiency.error} onRetry={onRetry} />
       <ErrorStrip label="context growth" error={contextGrowth.error} onRetry={onRetry} />
       <ErrorStrip label="turn distribution" error={turns.error} onRetry={onRetry} />

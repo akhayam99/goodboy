@@ -12,6 +12,7 @@ import { SortChip } from './SortChip';
 type Props = {
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly showSession: boolean;
+  readonly formatSpent?: (value: number) => string;
   readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
@@ -22,7 +23,12 @@ type HandleSortKeyParams = {
 const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
 const PAGE_SIZE = 10;
 
-export const TurnsTable = ({ turns, showSession, onOpenSession }: Props) => {
+export const TurnsTable = ({
+  turns,
+  showSession,
+  formatSpent = formatUsdPrecise,
+  onOpenSession,
+}: Props) => {
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const stored = localStorage.getItem(SORT_KEY_STORAGE);
     return stored === 'expensive' ? 'expensive' : 'recent';
@@ -92,7 +98,7 @@ export const TurnsTable = ({ turns, showSession, onOpenSession }: Props) => {
                           shape="badge"
                           label={record.kind}
                           width="md"
-                    className="uppercase"
+                          className="uppercase"
                         />
                       </span>
                     </td>
@@ -114,7 +120,7 @@ export const TurnsTable = ({ turns, showSession, onOpenSession }: Props) => {
                       {formatTokens(record.outputTokens)}
                     </td>
                     <td className="px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground">
-                      {formatUsdPrecise(record.estimatedCostUsd)}
+                      {formatSpent(record.estimatedCostUsd)}
                     </td>
                     <td className="px-2 py-2">
                       <button

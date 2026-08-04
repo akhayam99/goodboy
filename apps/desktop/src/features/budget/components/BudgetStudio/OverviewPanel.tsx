@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { StatCard, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { EmptyState, StatCard, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { BudgetAlert, SessionId } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import { PanelLoading } from '../../../../shared/components/PanelLoading';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -66,13 +67,10 @@ export const OverviewPanel = ({
   const models = useMemo(() => buildModelBreakdown(records), [records]);
   const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
   const totalSpend = providers.reduce((sum, p) => sum + p.spentUsd, 0);
+  const isEmpty = sessionCount === 0 && providers.length === 0 && recordCount === 0;
 
   return (
-    <StudioPanel
-      title="Overview"
-      subtitle={`workspace spend across ${sessionCount} sessions`}
-      maxWidthClass="max-w-5xl"
-    >
+    <StudioPanel title="Overview" subtitle={`Workspace spend across ${sessionCount} sessions`}>
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip label="budget alerts" error={alertsResult.error} onRetry={onRetryAlerts} />
       <ErrorStrip
@@ -81,49 +79,67 @@ export const OverviewPanel = ({
         onRetry={onRetryTelemetry}
       />
       {isLoading && <PanelLoading label="Loading budget data" />}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="workspace total" value={formatUsdPrecise(workspaceCost)} />
-        <StatCard label="sessions" value={String(sessionCount)} />
-        <StatCard label="total tokens" value={formatTokens(totalTokens)} />
-        <StatCard label="avg / turn" value={formatUsdPrecise(avgPerTurn)} />
-      </div>
-
-      {alerts.some((alert) => alert.dismissedAt == null) ? (
-        <StudioWidget label="alerts">
-          <AlertBanner alerts={alerts} onDismiss={onDismissAlert} />
-        </StudioWidget>
-      ) : null}
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {providers.length > 0 && (
-          <StudioWidget label="spend by provider" hint="share of workspace total">
-            <div className="flex flex-col gap-3">
-              {providers.map((entry) => {
-                return (
-                  <SpendBar
-                    key={entry.provider}
-                    label={providerLabel(entry.provider)}
-                    valueLabel={formatUsd(entry.spentUsd)}
-                    pct={totalSpend > 0 ? entry.spentUsd / totalSpend : 0}
-                    icon={<ProviderIcon provider={entry.provider} size={14} />}
-                    onClick={() => onSelect({ kind: 'provider', provider: entry.provider })}
-                  />
-                );
-              })}
+      {isEmpty ? (
+        <EmptyState
+          icon={CONCEPT_ICONS.budget}
+          tone={CONCEPT_TONE.budget}
+          title="No spend recorded yet"
+          description="Run sessions to see workspace spend, provider mix, and cost per turn."
+          bordered
+          size="lg"
+          headingLevel={2}
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div title={formatUsdPrecise(workspaceCost)}>
+              <StatCard label="workspace total" value={formatUsd(workspaceCost)} />
             </div>
-          </StudioWidget>
-        )}
+            <StatCard label="sessions" value={String(sessionCount)} />
+            <StatCard label="total tokens" value={formatTokens(totalTokens)} />
+            <div title={formatUsdPrecise(avgPerTurn)}>
+              <StatCard label="avg / turn" value={formatUsd(avgPerTurn)} />
+            </div>
+          </div>
 
-        <StudioWidget label="cost per turn">
-          <Sparkline values={turnCosts} />
-        </StudioWidget>
+          {alerts.some((alert) => alert.dismissedAt == null) ? (
+            <StudioWidget label="alerts">
+              <AlertBanner alerts={alerts} onDismiss={onDismissAlert} />
+            </StudioWidget>
+          ) : null}
 
-        <StudioWidget label="by model" className="lg:col-span-2">
-          <ModelTable entries={models} />
-        </StudioWidget>
-      </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {providers.length > 0 && (
+              <StudioWidget label="spend by provider" hint="share of workspace total">
+                <div className="flex flex-col gap-3">
+                  {providers.map((entry) => {
+                    return (
+                      <SpendBar
+                        key={entry.provider}
+                        label={providerLabel(entry.provider)}
+                        valueLabel={formatUsd(entry.spentUsd)}
+                        pct={totalSpend > 0 ? entry.spentUsd / totalSpend : 0}
+                        icon={<ProviderIcon provider={entry.provider} size={14} />}
+                        onClick={() => onSelect({ kind: 'provider', provider: entry.provider })}
+                      />
+                    );
+                  })}
+                </div>
+              </StudioWidget>
+            )}
 
-      <TurnsTable turns={turns} showSession onOpenSession={onOpenSession} />
+            <StudioWidget label="cost per turn">
+              <Sparkline values={turnCosts} />
+            </StudioWidget>
+
+            <StudioWidget label="by model" className="lg:col-span-2">
+              <ModelTable entries={models} />
+            </StudioWidget>
+          </div>
+
+          <TurnsTable turns={turns} showSession onOpenSession={onOpenSession} />
+        </>
+      )}
     </StudioPanel>
   );
 };
