@@ -568,6 +568,36 @@ describe('store contract', () => {
       expect(store.getState().unknownPayloadCounts['anthropic:foo']).toBe(1);
     });
 
+    it('a deleted agent does not come back when the buffered events flush', async () => {
+      const store = await getStore();
+      store.setState({
+        sessions: [buildSession()],
+        sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: AGENT_ID })] },
+      });
+      const first: TurnEvent = {
+        kind: 'assistant_text',
+        runId: RUN_ID,
+        delta: 'a',
+        at: NOW,
+      } as TurnEvent;
+      const second: TurnEvent = {
+        kind: 'assistant_text',
+        runId: RUN_ID,
+        delta: 'b',
+        at: NOW,
+      } as TurnEvent;
+      vi.useFakeTimers();
+      try {
+        store.getState().appendTurnEvent(AGENT_ID, SESSION_ID, first);
+        store.getState().appendTurnEvent(AGENT_ID, SESSION_ID, second);
+        await store.getState().deleteAgent(SESSION_ID, AGENT_ID);
+        vi.advanceTimersByTime(64);
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(store.getState().transcripts[AGENT_ID]).toBeUndefined();
+    });
+
     it('provider_session_init stamps providerSessionId on the run and persists once', async () => {
       const store = await getStore();
       store.setState({

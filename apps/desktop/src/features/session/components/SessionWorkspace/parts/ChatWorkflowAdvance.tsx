@@ -17,7 +17,6 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
-  const agentTurnState = useAppStore((state) => state.agentTurnState);
   const isSummarizerRunning = useAppStore(
     (state) => state.summarizerStatus?.[sessionId]?.status === 'running',
   );
@@ -39,10 +38,13 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
       ),
     [phaseRuns, workflowRunId],
   );
-  const isTurnRunning = stepAgents.some((agent) => {
-    const turn = agentTurnState?.[agent.id];
-    return agent.status === 'running' || turn?.kind === 'running' || turn?.kind === 'starting';
-  });
+  const hasRunningTurn = useAppStore((state) =>
+    stepAgents.some((agent) => {
+      const turn = state.agentTurnState[agent.id];
+      return turn?.kind === 'running' || turn?.kind === 'starting';
+    }),
+  );
+  const isTurnRunning = hasRunningTurn || stepAgents.some((agent) => agent.status === 'running');
 
   const state = resolveWorkflowAdvance({
     workflow,

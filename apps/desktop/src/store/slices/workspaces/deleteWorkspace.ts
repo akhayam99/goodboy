@@ -3,6 +3,7 @@ import { disconnectWorkspace as disconnectWorkspaceInDb } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
+import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
 export const deleteWorkspace = (set: SetFn, get: GetFn) => {
@@ -34,6 +35,9 @@ export const deleteWorkspace = (set: SetFn, get: GetFn) => {
     const now = new Date().toISOString() as IsoDateTime;
     const prevWorkspaces = state.workspaces;
 
+    if (wasCurrentWorkspace) {
+      clearPendingTurnEvents();
+    }
     set((s) => {
       const nextArchived = { ...s.archivedSessions };
       delete nextArchived[id];

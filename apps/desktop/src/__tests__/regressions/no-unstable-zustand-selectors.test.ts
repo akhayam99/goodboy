@@ -55,10 +55,24 @@ const UNSTABLE_TAIL_PATTERNS: ReadonlyArray<RegExp> = [
   /\{\s*\.\.\.[^}]*\}\s*$/,
 ];
 
+const HOT_SLICE_KEYS: ReadonlySet<string> = new Set([
+  'transcripts',
+  'agentTurnState',
+  'agentRunHistory',
+  'unknownPayloadCounts',
+]);
+
+const WHOLE_SLICE_TAIL = /^(?:state|s|store)\.([A-Za-z_$][\w$]*)$/;
+
 type BadCall = {
   readonly file: string;
   readonly line: number;
   readonly snippet: string;
+};
+
+type FileReport = {
+  readonly unstable: ReadonlyArray<BadCall>;
+  readonly wholeSlice: ReadonlyArray<BadCall>;
 };
 
 function lineOf(content: string, idx: number): number {
@@ -72,9 +86,19 @@ function selectorTail(body: string): string {
   return expr.replace(/[;,]\s*$/, '').trim();
 }
 
-function checkFile(path: string): BadCall[] {
+function hotSliceKey(body: string): string | null {
+  const tail = selectorTail(body).replace(/\)+$/, '').trim();
+  const key = tail.match(WHOLE_SLICE_TAIL)?.[1] ?? null;
+  if (key === null || !HOT_SLICE_KEYS.has(key)) {
+    return null;
+  }
+  return key;
+}
+
+function checkFile(path: string): FileReport {
   const content = readFileSync(path, 'utf-8');
-  const bad: BadCall[] = [];
+  const unstable: BadCall[] = [];
+  const wholeSlice: BadCall[] = [];
   let match: RegExpExecArray | null;
   while ((match = USE_APP_STORE_CALL.exec(content)) !== null) {
     const openParen = match.index + match[0].length - 1;
@@ -83,10 +107,18 @@ function checkFile(path: string): BadCall[] {
       continue;
     }
     const { body } = extracted;
-    if (body.includes('useShallow(')) {
+    if (SAFE_OPT_OUT_COMMENT.test(body)) {
       continue;
     }
-    if (SAFE_OPT_OUT_COMMENT.test(body)) {
+    const at = {
+      file: relative(SRC_ROOT, path).split(sep).join('/'),
+      line: lineOf(content, match.index),
+    };
+    if (hotSliceKey(body) !== null) {
+      wholeSlice.push({ ...at, snippet: selectorTail(body).replace(/\s+/g, ' ').slice(0, 140) });
+      continue;
+    }
+    if (body.includes('useShallow(')) {
       continue;
     }
     const tail = selectorTail(body);
@@ -94,20 +126,32 @@ function checkFile(path: string): BadCall[] {
     if (!isUnstable) {
       continue;
     }
-    bad.push({
-      file: relative(SRC_ROOT, path).split(sep).join('/'),
-      line: lineOf(content, match.index),
-      snippet: tail.replace(/\s+/g, ' ').slice(0, 140),
-    });
+    unstable.push({ ...at, snippet: tail.replace(/\s+/g, ' ').slice(0, 140) });
   }
-  return bad;
+  return { unstable, wholeSlice };
 }
 
 describe('no unstable useAppStore selectors without useShallow', () => {
   const files = listSourceFiles(SRC_ROOT);
+  const reports = files.map(checkFile);
+
+  it('no useAppStore call subscribes to a whole write-heavy slice', () => {
+    const bad = reports.flatMap((report) => report.wholeSlice);
+    if (bad.length > 0) {
+      const lines = bad.map((b) => `  - ${b.file}:${b.line}\n      ${b.snippet}`);
+      throw new Error(
+        `Found ${bad.length} useAppStore selector(s) subscribing to a whole slice that is ` +
+          `rewritten while a turn streams (${[...HOT_SLICE_KEYS].join(', ')}). Every consumer ` +
+          `then re-renders for every agent of every session. Select the keys the component ` +
+          `needs instead, or add a "useShallow not needed: ..." comment if you have proof the ` +
+          `component really needs the whole map.\n\n${lines.join('\n')}`,
+      );
+    }
+    expect(bad).toEqual([]);
+  });
 
   it('every useAppStore call that derives a non-primitive uses useShallow', () => {
-    const bad = files.flatMap(checkFile);
+    const bad = reports.flatMap((report) => report.unstable);
     if (bad.length > 0) {
       const lines = bad.map((b) => `  - ${b.file}:${b.line}\n      ${b.snippet}`);
       throw new Error(

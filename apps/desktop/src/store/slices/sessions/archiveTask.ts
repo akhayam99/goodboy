@@ -1,6 +1,7 @@
 import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
 import { archiveSession as archiveSessionInDb } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { dropPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
 export const archiveTask = (set: SetFn, get: GetFn) => {
@@ -41,6 +42,9 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       throw err;
     }
 
+    dropPendingTurnEvents({
+      agentIds: (get().sessionPhaseRuns[sessionId] ?? []).map((agent) => agent.id),
+    });
     set((state) => {
       const phaseRuns = state.sessionPhaseRuns[sessionId] ?? [];
       const nextTranscripts = { ...state.transcripts };

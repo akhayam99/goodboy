@@ -4,6 +4,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentMarkViewed } from '../../../features/workflows/workflows';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { EMPTY_LOADING } from '../../session-mutators';
+import { flushTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 import { stampAgentSubtreeViewed } from './stampAgentSubtreeViewed';
 
@@ -79,6 +80,8 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
     });
     const INITIAL_LIMIT = 50;
     const tInitial = performance.now();
+    flushTurnEvents();
+    const liveLengthAtInitialRead = get().transcripts[agentId]?.length ?? null;
     try {
       const [messages, events] = await Promise.all([
         listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
@@ -90,8 +93,10 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
       );
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
+        const hasLiveAppend =
+          (state.transcripts[agentId]?.length ?? null) !== liveLengthAtInitialRead;
         return {
-          transcripts: { ...state.transcripts, [agentId]: events },
+          ...(hasLiveAppend ? {} : { transcripts: { ...state.transcripts, [agentId]: events } }),
           messages: { ...state.messages, [sessionId]: messages },
           sessionLoading: {
             ...state.sessionLoading,
@@ -107,6 +112,8 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
       void get().refreshUnreadWorkspaces();
       if (events.length === INITIAL_LIMIT) {
         const tFull = performance.now();
+        flushTurnEvents();
+        const liveLengthAtFullRead = get().transcripts[agentId]?.length ?? null;
         void Promise.all([
           listMessagesForAgent(tauriDatabase, agentId),
           listTurnEventsForAgent(tauriDatabase, agentId),
@@ -118,6 +125,9 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
             );
             set((state) => {
               const current = state.transcripts[agentId];
+              if ((current?.length ?? null) !== liveLengthAtFullRead) {
+                return {};
+              }
               if (current && current.length > fullEvents.length) {
                 return {};
               }

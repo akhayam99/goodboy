@@ -7,6 +7,7 @@ import { formatError } from '../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildSessionMounts } from '../worktrees/buildSessionMounts';
 import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';
+import { dropPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
 export const deleteTask = (set: SetFn, get: GetFn) => {
@@ -78,6 +79,9 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     const sessionGoal = session.goal;
     const sessionWorkspaceId = session.workspaceId;
     await deleteSessionFromDb(tauriDatabase, sessionId);
+    dropPendingTurnEvents({
+      agentIds: (get().sessionPhaseRuns[sessionId] ?? []).map((agent) => agent.id),
+    });
     set((state) => {
       const phaseRuns = state.sessionPhaseRuns[sessionId] ?? [];
       const nextTranscripts = { ...state.transcripts };
