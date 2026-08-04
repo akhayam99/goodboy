@@ -220,6 +220,27 @@ pub async fn gitlab_fetch_assigned_issues(
     .await
 }
 
+#[tauri::command]
+pub async fn gitlab_fetch_issue(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    issue_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabIssue, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    get_json(
+        &host,
+        &token,
+        &format!(
+            "/projects/{}/issues/{}",
+            encode_project_path(&project_path),
+            issue_iid
+        ),
+    )
+    .await
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitlabMrAuthor {
     pub username: String,
