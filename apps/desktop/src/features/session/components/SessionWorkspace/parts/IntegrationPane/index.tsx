@@ -6,7 +6,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { InlineConfirm } from '@goodboy/ui';
+import { InlineConfirm, cn } from '@goodboy/ui';
 import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
@@ -18,6 +18,7 @@ import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '../../../../../../shared/components/GhostActionButton';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
+import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
 import { FocusedTaskBody } from './FocusedTaskBody';
 import { IntegrationTaskCard } from './IntegrationTaskCard';
 import { integrationTaskKey } from './integrationTaskKey';
@@ -109,7 +110,9 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     return (
       <div className="flex h-full min-h-0 min-w-0 flex-col bg-background">
         {unlinkError != null ? (
-          <p className="shrink-0 px-6 pt-3 text-xs text-danger">{unlinkError}</p>
+          <p className={cn('shrink-0 pt-3 text-xs text-danger', PANE_RHYTHM.inset)}>
+            {unlinkError}
+          </p>
         ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <FocusedTaskBody

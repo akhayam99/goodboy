@@ -131,8 +131,8 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, actions = nul
       }
     >
       {loading || groups.length > 0 ? (
-        <div className="flex min-h-[460px] items-stretch gap-3">
-          <div className="flex min-h-0 w-80 shrink-0 flex-col gap-2">
+        <div className="flex items-stretch gap-3">
+          <div className="flex w-80 shrink-0 flex-col gap-2">
             <h2 className="text-sm font-semibold text-foreground">Files</h2>
             <PathSummaryList
               groups={groups}
@@ -144,7 +144,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, actions = nul
             />
           </div>
           <Divider orientation="vertical" />
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
             <h2 className="text-sm font-semibold text-foreground">
               {selectedGroup?.relativePath ?? 'History'}
             </h2>
