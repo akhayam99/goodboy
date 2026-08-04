@@ -1,5 +1,5 @@
 import type { FileConflict } from '@goodboy/core';
-import type { Notification, TelemetrySummary } from '@goodboy/db';
+import type { Notification, NotificationCounts, TelemetrySummary } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
@@ -262,6 +262,7 @@ export type AppState = AppSliceState & {
   readonly workflowRunAttachments: Readonly<Record<WorkflowRunId, ReadonlyArray<GoalAttachment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly notificationsLoading: boolean;
+  readonly notificationCounts: NotificationCounts;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
   readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;

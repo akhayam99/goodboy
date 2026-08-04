@@ -7,6 +7,7 @@ import type { Notification } from '@goodboy/db';
 const { state } = vi.hoisted(() => ({
   state: {
     notifications: [] as ReadonlyArray<Notification>,
+    notificationCounts: { total: 0, unread: 0 },
     notificationsLoading: false,
     loadNotifications: vi.fn(async () => undefined),
     markNotificationRead: vi.fn(async () => undefined),
@@ -47,8 +48,17 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
     ...overrides,
   }) as unknown as Notification;
 
+const seedNotifications = (notifications: ReadonlyArray<Notification>) => {
+  state.notifications = notifications;
+  state.notificationCounts = {
+    total: notifications.length,
+    unread: notifications.filter((n) => !n.read).length,
+  };
+};
+
 beforeEach(() => {
   state.notifications = [];
+  state.notificationCounts = { total: 0, unread: 0 };
   state.notificationsLoading = false;
   state.loadNotifications = vi.fn(async () => undefined);
   state.markNotificationRead = vi.fn(async () => undefined);
@@ -66,7 +76,7 @@ const renderStudio = () =>
 
 describe('NotificationsStudio', () => {
   it('renders the full body of a notification without a clamp', () => {
-    state.notifications = [buildNotification()];
+    seedNotifications([buildNotification()]);
     renderStudio();
 
     const body = screen.getByText(/expected a decision marker and found prose instead/i);
@@ -79,9 +89,9 @@ describe('NotificationsStudio', () => {
     state.summarizerStatus = {
       'session-1': { status: 'error', lastAttempt: { turnInput: 'in', turnOutput: 'out' } },
     };
-    state.notifications = [
+    seedNotifications([
       buildNotification({ action: { kind: 'retry-summarizer', sessionId: 'session-1' } as never }),
-    ];
+    ]);
     renderStudio();
 
     await act(async () => {
@@ -92,10 +102,10 @@ describe('NotificationsStudio', () => {
   });
 
   it('marks only the notification whose row was clicked', async () => {
-    state.notifications = [
+    seedNotifications([
       buildNotification({ id: 'n1', title: 'first' }),
       buildNotification({ id: 'n2', title: 'second' }),
-    ];
+    ]);
     renderStudio();
 
     await act(async () => {
@@ -108,7 +118,7 @@ describe('NotificationsStudio', () => {
   });
 
   it('marks every notification read from the toolbar', async () => {
-    state.notifications = [buildNotification({ id: 'n1' }), buildNotification({ id: 'n2' })];
+    seedNotifications([buildNotification({ id: 'n1' }), buildNotification({ id: 'n2' })]);
     renderStudio();
 
     await act(async () => {
@@ -120,7 +130,7 @@ describe('NotificationsStudio', () => {
   });
 
   it('requires the confirm step before deleting every notification', async () => {
-    state.notifications = [buildNotification()];
+    seedNotifications([buildNotification()]);
     renderStudio();
 
     await act(async () => {
@@ -137,7 +147,7 @@ describe('NotificationsStudio', () => {
   });
 
   it('dismisses a single notification', async () => {
-    state.notifications = [buildNotification({ id: 'n7', title: 'only one' })];
+    seedNotifications([buildNotification({ id: 'n7', title: 'only one' })]);
     renderStudio();
 
     await act(async () => {
@@ -148,16 +158,25 @@ describe('NotificationsStudio', () => {
   });
 
   it('separates unread from read on the card surface', () => {
-    state.notifications = [
+    seedNotifications([
       buildNotification({ id: 'n1', title: 'unread one', read: false }),
       buildNotification({ id: 'n2', title: 'read one', read: true }),
-    ];
+    ]);
     renderStudio();
 
     const unread = screen.getByText('unread one').closest('li');
     const read = screen.getByText('read one').closest('li');
     expect(unread?.className).toContain('bg-elevated');
     expect(read?.className).not.toContain('bg-elevated');
+  });
+
+  it('reports the true totals when the list cap hides older rows', () => {
+    state.notifications = [buildNotification({ id: 'n204', read: true })];
+    state.notificationCounts = { total: 205, unread: 1 };
+    renderStudio();
+
+    expect(screen.getByText('205 in total, 1 unread, showing the newest 1')).toBeDefined();
+    expect(screen.getByRole('button', { name: /mark all read/i })).toBeDefined();
   });
 
   it('shows the empty state when there is nothing to catch up on', () => {

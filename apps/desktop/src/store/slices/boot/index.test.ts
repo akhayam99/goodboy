@@ -125,6 +125,8 @@ vi.mock('@goodboy/db', () => ({
   updateNudgeEventOutcome: updateNudgeOutcomeSpy,
   insertNotification: insertNotificationSpy,
   listNotifications: listNotificationsSpy,
+  countNotifications: vi.fn(async () => ({ total: 0, unread: 0 })),
+  NOTIFICATION_LIST_LIMIT: 200,
   markAllNotificationsRead: vi.fn(async () => undefined),
   markNotificationRead: vi.fn(async () => undefined),
   deleteNotification: vi.fn(async () => undefined),

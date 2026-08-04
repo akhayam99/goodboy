@@ -33,6 +33,7 @@ const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
 
 export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
+  const notificationCounts = useAppStore((s) => s.notificationCounts);
   const notificationsLoading = useAppStore((s) => s.notificationsLoading);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
@@ -98,7 +99,7 @@ export const NotificationCenter = () => {
     }
   };
 
-  const unread = notifications.filter((n) => !n.read).length;
+  const { total, unread } = notificationCounts;
 
   return (
     <div role="region" aria-label="Notifications" aria-live="polite">
@@ -139,8 +140,7 @@ export const NotificationCenter = () => {
               >
                 <header className="flex items-center justify-between gap-2 px-3 py-2">
                   <span className="text-xs font-semibold text-foreground">
-                    {notifications.length}{' '}
-                    {notifications.length === 1 ? 'notification' : 'notifications'}
+                    {total} {total === 1 ? 'notification' : 'notifications'}
                   </span>
                   {notifications.length > 0 && (
                     <button

@@ -17,6 +17,7 @@ type Props = {
 
 export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
   const notifications = useAppStore((state) => state.notifications);
+  const notificationCounts = useAppStore((state) => state.notificationCounts);
   const isLoading = useAppStore((state) => state.notificationsLoading);
   const loadNotifications = useAppStore((state) => state.loadNotifications);
   const markNotificationRead = useAppStore((state) => state.markNotificationRead);
@@ -29,11 +30,13 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
     void loadNotifications();
   }, [loadNotifications]);
 
-  const unreadCount = notifications.filter((notification) => !notification.read).length;
+  const { total, unread } = notificationCounts;
+  const shownNote =
+    total > notifications.length ? `, showing the newest ${notifications.length}` : '';
   const subtitle =
-    notifications.length === 0
+    total === 0
       ? 'Everything this workspace reported, in full'
-      : `${notifications.length} in total, ${unreadCount} unread`;
+      : `${total} in total, ${unread} unread${shownNote}`;
 
   return (
     <StudioShell
@@ -52,7 +55,7 @@ export const NotificationsStudio = ({ workspaceName, onClose }: Props) => {
           action={
             notifications.length > 0 ? (
               <InboxToolbar
-                unreadCount={unreadCount}
+                unreadCount={unread}
                 isArmed={isArmed}
                 onArm={() => setIsArmed(true)}
                 onDisarm={() => setIsArmed(false)}

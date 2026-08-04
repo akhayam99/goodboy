@@ -776,6 +776,7 @@ export const initialState: AppState = {
   workflowRunAttachments: {},
   notifications: [],
   notificationsLoading: false,
+  notificationCounts: { total: 0, unread: 0 },
   sessionPlans: {},
   sessionNudges: {},
   planConsumptions: {},

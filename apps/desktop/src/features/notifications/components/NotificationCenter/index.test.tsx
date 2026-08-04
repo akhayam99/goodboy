@@ -8,6 +8,8 @@ import type { Notification } from '@goodboy/db';
 const { state } = vi.hoisted(() => ({
   state: {
     notifications: [] as ReadonlyArray<Notification>,
+    notificationCounts: { total: 0, unread: 0 },
+    notificationsLoading: false,
     loadNotifications: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
     clearNotifications: vi.fn(async () => undefined),
@@ -35,6 +37,8 @@ import { NotificationCenter } from './index';
 
 beforeEach(() => {
   state.notifications = [];
+  state.notificationCounts = { total: 0, unread: 0 };
+  state.notificationsLoading = false;
   state.loadNotifications = vi.fn(async () => undefined);
   state.markNotificationsRead = vi.fn(async () => undefined);
   state.clearNotifications = vi.fn(async () => undefined);
@@ -103,8 +107,32 @@ describe('NotificationCenter', () => {
         ts: new Date().toISOString(),
       } as unknown as Notification,
     ];
+    state.notificationCounts = { total: 1, unread: 1 };
     render(<NotificationCenter />);
     expect(screen.getByRole('button', { name: /^notifications, 1 unread$/i })).toBeDefined();
+  });
+
+  it('counts unread notifications the list cap cut off', async () => {
+    const total = 205;
+    state.notifications = Array.from({ length: 200 }, (_, i) => ({
+      id: `n${total - 1 - i}`,
+      read: true,
+      severity: 'info',
+      title: `title ${total - 1 - i}`,
+      body: 'b',
+      ts: new Date(Date.UTC(2026, 0, 1, 0, 0, total - 1 - i)).toISOString(),
+    })) as unknown as ReadonlyArray<Notification>;
+    state.notificationCounts = { total, unread: 1 };
+
+    render(<NotificationCenter />);
+
+    expect(state.notifications.some((n) => !n.read)).toBe(false);
+    expect(screen.getByRole('button', { name: /^notifications, 1 unread$/i })).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /notifications, 1 unread/i }));
+    });
+    expect(screen.getByText('205 notifications')).toBeDefined();
   });
 
   it('retry with picker dispatches retryStepSummary with the selected override', async () => {
