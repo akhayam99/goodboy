@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { ChevronRight, CornerLeftUp, GitBranch } from 'lucide-react';
 import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
-import { Divider } from '@goodboy/ui';
+import { Divider, cn } from '@goodboy/ui';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import {
   AGENT_KIND_META,
@@ -115,7 +116,10 @@ export const ChatBreadcrumb = ({ session }: Props) => {
   return (
     <>
       <nav
-        className="flex h-[var(--chat-header-h)] shrink-0 items-center justify-between gap-2 px-3 text-2xs text-muted-foreground"
+        className={cn(
+          'flex h-[var(--chat-header-h)] shrink-0 items-center justify-between gap-2 text-2xs text-muted-foreground',
+          PANE_RHYTHM.inset,
+        )}
         aria-label="chat breadcrumb"
       >
         <div className="flex min-w-0 items-center gap-1.5">
