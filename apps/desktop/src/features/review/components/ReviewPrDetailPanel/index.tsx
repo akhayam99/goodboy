@@ -147,7 +147,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
         ) : (
           <div className="flex flex-col gap-4">
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Review locally checks out the branch in an isolated worktree and starts a read-only
+              Review locally checks out the branch into a private local copy and starts a read-only
               review agent. Draft comments stay local until you publish them.
             </p>
             <div className="flex items-center gap-3">
