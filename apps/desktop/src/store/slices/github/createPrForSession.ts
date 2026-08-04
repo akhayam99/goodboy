@@ -1,5 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
+import { appendClosingReferences } from '../../../features/github/appendClosingReferences';
+import { closingIssueReferences } from '../../../features/github/closingIssueReferences';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 
@@ -30,11 +32,19 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       );
     }
 
+    const linkedTasks = get().sessionExternalTasks[sessionId] ?? [];
     const args = ['pr', 'create'];
     const hasFields = opts?.title !== undefined || opts?.body !== undefined;
     if (hasFields) {
+      const body = opts?.body ?? '';
       args.push('--title', opts?.title?.trim() || session.goal);
-      args.push('--body', opts?.body ?? '');
+      args.push(
+        '--body',
+        appendClosingReferences({
+          body,
+          references: closingIssueReferences({ tasks: linkedTasks, branch: repo.branch, body }),
+        }),
+      );
     } else {
       args.push('--fill');
     }
@@ -59,6 +69,21 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       throw new Error(errMsg);
     }
     await get().refreshSessionPr(sessionId, { force: true });
+    const filled = hasFields ? null : (get().sessionGithub[sessionId]?.pr ?? null);
+    if (filled != null) {
+      const references = closingIssueReferences({
+        tasks: linkedTasks,
+        branch: repo.branch,
+        body: filled.body,
+      });
+      if (references.length > 0) {
+        await get()
+          .editPr(sessionId, filled.number, {
+            body: appendClosingReferences({ body: filled.body, references }),
+          })
+          .catch(() => undefined);
+      }
+    }
     void get().emitNotification(
       'pr-created',
       'success',

@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { SessionId, TaskModelPreferences } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  SessionExternalTask,
+  SessionId,
+  TaskModelPreferences,
+} from '@goodboy/types';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 
 type SpawnAgent = (
@@ -8,8 +13,18 @@ type SpawnAgent = (
   args: Readonly<Record<string, unknown>>,
 ) => Promise<string>;
 
+type CreatePr = (
+  sessionId: SessionId,
+  opts: {
+    readonly title: string;
+    readonly body: string;
+    readonly base: string;
+    readonly draft: boolean;
+  },
+) => Promise<void>;
+
 type Store = {
-  readonly createPrForSession: ReturnType<typeof vi.fn>;
+  readonly createPrForSession: ReturnType<typeof vi.fn<CreatePr>>;
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
   readonly selectAgent: ReturnType<typeof vi.fn>;
   readonly setCurrentSession: ReturnType<typeof vi.fn>;
@@ -18,6 +33,7 @@ type Store = {
   readonly sessionActiveMount: Record<string, string>;
   readonly sessionWorktrees: Record<string, ReadonlyArray<string>>;
   readonly sessions: ReadonlyArray<{ id: SessionId; workspaceId: string }>;
+  sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   readonly workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: 'repo' }>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
 };
@@ -49,7 +65,7 @@ const h = vi.hoisted(() => ({
     }),
   ),
   store: {
-    createPrForSession: vi.fn(async () => undefined),
+    createPrForSession: vi.fn<CreatePr>(async () => undefined),
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-2'),
     selectAgent: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
@@ -58,12 +74,14 @@ const h = vi.hoisted(() => ({
     sessionActiveMount: {},
     sessionWorktrees: { 'session-2': ['/repo/.goodboy/worktrees/card-config'] },
     sessions: [{ id: 'session-2' as SessionId, workspaceId: 'workspace-1' }],
+    sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
     workspaceOverrides: {},
   } satisfies Store,
 }));
 
 vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
 }));
 
@@ -103,8 +121,22 @@ vi.mock('../../../session/components/AgentSpawnConfig', () => ({
 }));
 
 import { CreatePrPanel } from './CreatePrPanel';
+import { closingIssueReferences } from '../../closingIssueReferences';
+import { appendClosingReferences } from '../../appendClosingReferences';
 
 const SESSION_ID = 'session-2' as SessionId;
+
+const linkedIssue = (overrides: Partial<SessionExternalTask>): SessionExternalTask => ({
+  sessionId: SESSION_ID,
+  provider: 'github',
+  externalId: '41',
+  identifier: '#41',
+  url: 'https://github.com/acme/web/issues/41',
+  title: 'Broken card',
+  branch: 'ak/card-config',
+  createdAt: '2026-08-04T00:00:00.000Z' as IsoDateTime,
+  ...overrides,
+});
 
 const renderPanel = () =>
   render(
@@ -128,6 +160,7 @@ beforeEach(() => {
   h.store.setCurrentSession.mockClear();
   h.showToast.mockClear();
   h.store.workspaceOverrides = {};
+  h.store.sessionExternalTasks = {};
   h.ghBaseBranches.mockClear();
   h.ghBaseBranches.mockImplementation(async () => ({ defaultBranch: 'main', branches: ['main'] }));
 });
@@ -311,5 +344,63 @@ describe('CreatePrPanel', () => {
       provider: 'codex',
       model: 'gpt-5.4-mini',
     });
+  });
+
+  it('previews the closing reference for an issue linked on the session branch, and only that one', async () => {
+    h.store.sessionExternalTasks = {
+      'session-2': [
+        linkedIssue({}),
+        linkedIssue({ externalId: '52', identifier: '#52', branch: 'ak/other' }),
+        linkedIssue({ provider: 'linear', externalId: 'GRO-9', identifier: 'GRO-9' }),
+      ],
+    };
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+
+    expect(screen.getAllByTestId('pr-issue-reference').map((node) => node.textContent)).toEqual([
+      'Closes #41',
+    ]);
+  });
+
+  it('previews exactly the block the store appends to the body it is given', async () => {
+    h.store.sessionExternalTasks = { 'session-2': [linkedIssue({})] };
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Pull request description' }), {
+      target: { value: 'Documents the change.' },
+    });
+    const previewed = screen
+      .getAllByTestId('pr-issue-reference')
+      .map((node) => node.textContent)
+      .join('\n');
+    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+
+    await waitFor(() => expect(h.store.createPrForSession).toHaveBeenCalledOnce());
+    const sent = h.store.createPrForSession.mock.calls[0]![1];
+    const stored = appendClosingReferences({
+      body: sent.body,
+      references: closingIssueReferences({
+        tasks: h.store.sessionExternalTasks['session-2']!,
+        branch: 'ak/card-config',
+        body: sent.body,
+      }),
+    });
+    expect(stored).toBe(`${sent.body}\n\n${previewed}`);
+  });
+
+  it('hides the preview when nothing will be referenced', async () => {
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+    expect(screen.queryByTestId('pr-issue-reference')).toBeNull();
+  });
+
+  it('tells the drafting agent to write the closing references it previewed', async () => {
+    h.store.sessionExternalTasks = { 'session-2': [linkedIssue({})] };
+    renderPanel();
+    switchToAgentMode();
+    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
+
+    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
+    expect(h.store.spawnAgent.mock.calls[0]![1].initialPrompt).toContain('Closes #41');
   });
 });
