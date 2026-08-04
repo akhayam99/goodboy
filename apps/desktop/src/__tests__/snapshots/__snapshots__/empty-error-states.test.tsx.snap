@@ -388,7 +388,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                 class="shrink-0"
               >
                 <div
-                  aria-label="branch source"
+                  aria-label="Branch source"
                   class="gap-1 rounded-lg border border-border-soft/60 bg-subtle/30 p-1 inline-flex items-center"
                   role="tablist"
                 >
@@ -474,10 +474,10 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                     value=""
                   />
                   <button
-                    aria-label="Generate branch name"
+                    aria-label="Generate branch name from goal"
                     class="shrink-0 rounded-md border border-border p-2 text-xs motion-safe:transition-colors cursor-not-allowed text-muted-foreground/30"
                     disabled=""
-                    title="Generate from goal"
+                    title="Generate branch name from goal"
                     type="button"
                   >
                     <svg
@@ -612,12 +612,12 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
 
 exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
 <div
-  aria-label="notifications"
+  aria-label="Notifications"
   aria-live="polite"
   role="region"
 >
   <button
-    aria-label="notifications"
+    aria-label="Notifications"
     class="relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
     type="button"
   >
@@ -941,12 +941,6 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
       class="flex flex-col gap-1.5"
     >
       <button
-        class="rounded border border-border px-3 py-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted"
-        type="button"
-      >
-        › open logs
-      </button>
-      <button
         class="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
         type="button"
       >
@@ -1015,12 +1009,6 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
     <div
       class="flex flex-col gap-1.5"
     >
-      <button
-        class="rounded border border-border px-3 py-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted"
-        type="button"
-      >
-        › open logs
-      </button>
       <button
         class="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
         type="button"
@@ -1431,7 +1419,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                 class="shrink-0"
               >
                 <div
-                  aria-label="branch source"
+                  aria-label="Branch source"
                   class="gap-1 rounded-lg border border-border-soft/60 bg-subtle/30 p-1 inline-flex items-center"
                   role="tablist"
                 >
@@ -1517,10 +1505,10 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                     value=""
                   />
                   <button
-                    aria-label="Generate branch name"
+                    aria-label="Generate branch name from goal"
                     class="shrink-0 rounded-md border border-border p-2 text-xs motion-safe:transition-colors cursor-not-allowed text-muted-foreground/30"
                     disabled=""
-                    title="Generate from goal"
+                    title="Generate branch name from goal"
                     type="button"
                   >
                     <svg

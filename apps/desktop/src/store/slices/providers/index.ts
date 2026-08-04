@@ -2,8 +2,6 @@ import { cancelProviderConnect } from './cancelProviderConnect';
 import { cancelProviderLifecycle } from './cancelProviderLifecycle';
 import { connectProvider } from './connectProvider';
 import { dismissProviderConnect } from './dismissProviderConnect';
-import { installProvider } from './installProvider';
-import { loginProvider } from './loginProvider';
 import { logoutProvider } from './logoutProvider';
 import { refreshProviderStatus } from './refreshProviderStatus';
 import { refreshProviders } from './refreshProviders';
@@ -24,8 +22,6 @@ export const createProvidersSlice = (set: SetFn, get: GetFn) => {
   return {
     refreshProviderStatus: refreshProviderStatus(set),
     refreshProviders: refreshProviders(set, get),
-    installProvider: installProvider(set, get),
-    loginProvider: loginProvider(set, get),
     logoutProvider: logoutProvider(set, get),
     cancelProviderLifecycle: cancelProviderLifecycle(set, get),
     connectProvider: connectProvider(set, get),

@@ -176,8 +176,6 @@ export type AppActions = {
   saveSetting(key: string, value: string): Promise<void>;
   refreshProviderStatus(status: ProviderStatus): void;
   refreshProviders(): Promise<void>;
-  installProvider(providerId: ProviderId): Promise<void>;
-  loginProvider(providerId: ProviderId): Promise<void>;
   logoutProvider(providerId: ProviderId): Promise<void>;
   cancelProviderLifecycle(providerId: ProviderId): Promise<void>;
   connectProvider(providerId: ProviderId): Promise<void>;

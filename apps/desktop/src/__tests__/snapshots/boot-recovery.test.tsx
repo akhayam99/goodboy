@@ -40,9 +40,8 @@ describe('BootSplash error recovery', () => {
     expect(onSkip).toHaveBeenCalledOnce();
   });
 
-  it('renders open logs and report issue buttons', () => {
+  it('renders the report issue button', () => {
     render(<BootSplash phase="error" error="oops" />);
-    expect(screen.getByRole('button', { name: /open logs/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /report on github/i })).toBeDefined();
   });
 

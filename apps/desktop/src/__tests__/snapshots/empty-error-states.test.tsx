@@ -76,8 +76,6 @@ vi.mock('../../store', () => ({
       markNotificationsRead: vi.fn(),
       clearNotifications: vi.fn(),
       refreshProviders: vi.fn(),
-      installProvider: vi.fn(),
-      loginProvider: vi.fn(),
       logoutProvider: vi.fn(),
       cancelProviderLifecycle: vi.fn(),
       loadSkills: vi.fn(),
