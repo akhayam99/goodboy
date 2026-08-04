@@ -8,7 +8,8 @@ on:
 # Build the macOS universal (.dmg) on tag push and publish it as a draft
 # GitHub Release. Signing + notarization run automatically when the APPLE_*
 # secrets are present; if they are unset the build still produces an unsigned
-# .dmg. See docs/release.md.
+# .dmg. The release body and the updater's latest.json notes both come from
+# CHANGELOG.md. See docs/release.md.
 
 permissions:
   contents: write
@@ -24,6 +25,38 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: extract release notes
+        id: release_notes
+        # Reads the section for this tag out of CHANGELOG.md (stripping an
+        # -rc.N dry-run suffix first) and fails the build if it's missing, so
+        # a release can no longer ship with an empty body. See CHANGELOG.md.
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          version="${version%-rc.*}"
+          heading="## Goodboy v${version}"
+          notes="$(awk -v heading="$heading" '
+            $0 == heading { found=1; lines[++n] = $0; next }
+            found && /^## / { exit }
+            found { lines[++n] = $0 }
+            END {
+              start = 1; end = n
+              while (start <= end && lines[start] ~ /^[[:space:]]*$/) start++
+              while (end >= start && lines[end] ~ /^[[:space:]]*$/) end--
+              for (i = start; i <= end; i++) print lines[i]
+            }
+          ' CHANGELOG.md)"
+          if [ -z "$notes" ]; then
+            echo "::error::No CHANGELOG.md entry found for '$heading' (tag $GITHUB_REF_NAME). Add it before tagging."
+            exit 1
+          fi
+          delimiter="RELEASE_NOTES_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "body<<$delimiter"
+            echo "$notes"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
 
       - name: setup pnpm
         uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v4
@@ -69,13 +102,15 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           # Updater signing: tauri-action signs the update artifacts and emits
           # latest.json (attached to the release) so the in-app updater can
-          # verify and apply new versions.
+          # verify and apply new versions. Its "notes" field is releaseBody,
+          # same string as the GitHub release body below.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
           releaseName: 'Goodboy ${{ github.ref_name }}'
+          releaseBody: ${{ steps.release_notes.outputs.body }}
           releaseDraft: true
           prerelease: false
           args: --target universal-apple-darwin

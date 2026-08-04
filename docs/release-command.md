@@ -25,7 +25,10 @@ Below, `X` is the new version and `X-1` is the current latest.
 1. Bump `X-1` -> `X` in ALL 5 files: `package.json`,
    `apps/desktop/package.json`, `apps/desktop/src-tauri/tauri.conf.json`,
    `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/Cargo.lock`
-   (the `goodboy-desktop` package entry).
+   (the `goodboy-desktop` package entry). In the same commit, add the `## Goodboy
+   vX` section to `CHANGELOG.md` (see "Release notes" below) — the release
+   build reads its body from there and fails if the section is missing, so this
+   is not optional.
 2. Branch `ak/chore-release-vX` (NOT the worktree codename; see branch-naming
    convention). Commit `chore(repo): bump version to X`, push, open PR.
 3. Wait for ALL CI checks green (`gh pr checks`). Then merge server-side
@@ -45,6 +48,12 @@ Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`, NOT
 
 ## Release notes (from source, not memory)
 
+Notes live in `CHANGELOG.md`, written BEFORE the tag exists (step 1 above), not
+edited onto the release after the build. `.github/workflows/release.yml` reads
+the `## Goodboy vX` section verbatim as both the GitHub release body and the
+in-app updater's `latest.json` notes, and fails the build if that section is
+missing.
+
 - Get the ACTUAL merged PRs since `X-1`:
   `gh pr list --state merged --base main --json number,title,mergedAt` filtered to
   `mergedAt` after the `X-1` release timestamp (`gh release view vX-1`).
@@ -62,8 +71,9 @@ Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`, NOT
 
 ### Format (match the curated changelog of v0.1.7 through v0.1.11)
 
-- Title: `Goodboy vX`. NO codename (release names were dropped from v0.1.8 on).
-- Body opens with `## Goodboy vX` then a one-line lead summary of the release.
+- Section heading: `## Goodboy vX`. NO codename (release names were dropped
+  from v0.1.8 on). Add the new section above the previous one (newest first).
+- Right under the heading, a one-line lead summary of the release.
 - Each feature is an `### sentence-case heading` with its PR ref(s) in parens at
   the end of the heading, e.g. `### Attachments stick across agent switches (#796)`.
   Multiple PRs: `(#794, #793)`.
@@ -74,7 +84,7 @@ Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`, NOT
 
 ## Finish
 
-6. Apply notes (`gh release edit vX --notes-file ...`), then STOP and show the
-   draft for review before publishing. On the go-ahead:
+6. Once the draft release exists (step 5), its body and `latest.json` are
+   already filled in from `CHANGELOG.md` — review the draft, then publish:
    `gh release edit vX --draft=false`, then confirm `homebrew.yml` fires and
    succeeds (`gh run list --workflow=homebrew.yml`).
