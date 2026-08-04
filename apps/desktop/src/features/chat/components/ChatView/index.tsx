@@ -556,7 +556,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           open={diffJumpFile !== null}
           onClose={() => setDiffJumpFile(null)}
           sessionId={session.id}
-          title="worktree diff"
+          title="Worktree diff"
           loader={diffLoader}
           workingDir={diffWorktreePath ?? undefined}
           jumpToFile={diffJumpFile ?? undefined}
@@ -630,7 +630,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           <button
             type="button"
             aria-label="jump to latest"
-            title="jump to latest"
+            title="Jump to latest"
             className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background/90 ring-1 ring-border-soft transition-colors hover:bg-muted"
             onClick={() => {
               const el = scrollerRef.current;
@@ -681,7 +681,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         open={diffJumpFile !== null}
         onClose={() => setDiffJumpFile(null)}
         sessionId={session.id}
-        title="worktree diff"
+        title="Worktree diff"
         loader={diffLoader}
         workingDir={diffWorktreePath ?? undefined}
         jumpToFile={diffJumpFile ?? undefined}

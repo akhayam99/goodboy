@@ -2,7 +2,7 @@
 
 exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workflow CTA 1`] = `
 <div
-  class="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center gap-5 px-6 py-16 text-center"
+  class="flex flex-col items-center justify-center gap-5 px-6 py-16 text-center mx-auto w-full max-w-[640px]"
 >
   <div
     class="flex items-center justify-center"

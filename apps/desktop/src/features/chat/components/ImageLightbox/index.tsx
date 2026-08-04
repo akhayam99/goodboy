@@ -70,7 +70,7 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
       <button
         type="button"
         onClick={requestClose}
-        title="close (esc)"
+        title="Close (esc)"
         aria-label="close image preview"
         className={`absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/95 text-foreground shadow-lg ring-1 ring-border-soft transition-all duration-[180ms] ease-out hover:bg-background ${
           visible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'

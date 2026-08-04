@@ -179,7 +179,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
               <button
                 type="button"
                 onClick={toggleHistory}
-                title="view history"
+                title="View history"
                 aria-label={`view history for ${SLOT_TITLE[slotKey]}`}
                 className={cn(
                   'rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground',

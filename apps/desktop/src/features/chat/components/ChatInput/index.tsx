@@ -423,7 +423,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               <button
                 type="button"
                 onClick={() => void cancelCurrentTurn(session.id)}
-                title="cancel turn"
+                title="Cancel turn"
                 aria-label="cancel turn"
                 className="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
               >
@@ -450,7 +450,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={providerDisconnected}
-                title="attach files"
+                title="Attach files"
                 aria-label="attach files"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -471,7 +471,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   wrapperRef.current?.querySelector('textarea')?.focus();
                 }}
                 disabled={providerDisconnected}
-                title="run a workspace script"
+                title="Run a workspace script"
                 aria-label="run a workspace script"
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >

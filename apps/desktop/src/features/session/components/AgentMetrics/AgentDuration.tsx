@@ -15,7 +15,7 @@ export const AgentDuration = ({ run }: Props) => {
 
   if (run.startedAt == null) {
     return (
-      <span className="font-mono text-muted-foreground/50" title="not started yet">
+      <span className="font-mono text-muted-foreground/50" title="Not started yet">
         0
       </span>
     );

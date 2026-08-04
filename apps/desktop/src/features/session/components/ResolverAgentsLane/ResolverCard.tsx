@@ -81,8 +81,8 @@ export const ResolverCard = ({
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
   const rowTitle = [
     agent.name,
-    `origin: ${origin.label}`,
-    isSelected ? 'selected: chat shows this resolver' : 'click to open its chat',
+    `Origin: ${origin.label}`,
+    isSelected ? 'Selected: chat shows this resolver' : 'Click to open its chat',
   ].join('\n');
 
   return (

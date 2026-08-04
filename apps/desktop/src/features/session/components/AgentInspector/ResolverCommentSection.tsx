@@ -28,7 +28,7 @@ export const ResolverCommentSection = ({ origin, diffComment, links }: Props) =>
       </span>
       {!origin.isRecorded && (
         <span
-          title="reconstructed from the resolver's links, not recorded at spawn time"
+          title="Reconstructed from the resolver's links, not recorded at spawn time"
           className="text-2xs text-muted-foreground/60"
         >
           inferred

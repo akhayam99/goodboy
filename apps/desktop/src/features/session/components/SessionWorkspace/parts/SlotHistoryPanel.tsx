@@ -46,7 +46,7 @@ const HistoryEntry = ({
           <button
             type="button"
             onClick={() => onRestore(entry)}
-            title="restore this version"
+            title="Restore this version"
             aria-label="restore"
             className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
           >

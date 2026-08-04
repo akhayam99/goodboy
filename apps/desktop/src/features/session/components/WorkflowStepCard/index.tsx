@@ -164,7 +164,7 @@ export const WorkflowStepCard = ({
       onClick={onRemove}
       disabled={disabled}
       aria-label="remove step"
-      title="remove step"
+      title="Remove step"
       className="absolute right-1.5 top-1.5 z-10 inline-flex items-center justify-center rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-danger focus-visible:opacity-100 disabled:cursor-not-allowed disabled:opacity-30 group-hover:opacity-100"
     >
       <Trash2 size={13} aria-hidden />
