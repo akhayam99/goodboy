@@ -173,9 +173,16 @@ persisted preference.
 
 ### Utility studios
 
-Settings, budget, providers, impact, Linear, Sentry, GitLab, workflow, guide
-are modal overlays, all built on `StudioShell`'s fullscreen variant. They are
-not part of the breadcrumb IA and are exited via their close button or Esc.
+Settings, budget, providers, impact, changelog, notifications, Linear, Sentry,
+GitLab, workflow, guide are modal overlays, all built on `StudioShell`'s
+fullscreen variant. They are not part of the breadcrumb IA and are exited via
+their close button or Esc.
+
+Most utility studios have a footer entry. The notifications studio does not:
+its only entrance is the `Show more` row at the bottom of the bell popover in
+the top bar, which dispatches `goodboy:open-notifications-studio`. There is no
+footer button, no shortcut, and no command palette entry for it, because the
+bell already carries the unread count that makes the page worth opening.
 
 ### Workspace creation
 

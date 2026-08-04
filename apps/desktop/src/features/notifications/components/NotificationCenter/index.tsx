@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, CheckCircle, AlertCircle, AlertTriangle, Info, Trash2 } from 'lucide-react';
+import { ArrowRight, Bell, Trash2 } from 'lucide-react';
 import {
   Button,
   Divider,
@@ -10,10 +10,11 @@ import {
   Skeleton,
   Tooltip,
   cn,
+  tintClasses,
 } from '@goodboy/ui';
 import { Fragment } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Notification, NotificationAction, NotificationSeverity } from '@goodboy/db';
+import type { Notification, NotificationAction } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -21,32 +22,8 @@ import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-
-function severityIcon(severity: NotificationSeverity, size = 13) {
-  switch (severity) {
-    case 'success':
-      return <CheckCircle size={size} aria-hidden />;
-    case 'warning':
-      return <AlertTriangle size={size} aria-hidden />;
-    case 'error':
-      return <AlertCircle size={size} aria-hidden />;
-    default:
-      return <Info size={size} aria-hidden />;
-  }
-}
-
-function severityClass(severity: NotificationSeverity): string {
-  switch (severity) {
-    case 'success':
-      return 'text-success';
-    case 'warning':
-      return 'text-warning';
-    case 'error':
-      return 'text-danger';
-    default:
-      return 'text-info';
-  }
-}
+import { NOTIFICATION_SEVERITY } from '../../severity';
+import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 
 const DROPDOWN_WIDTH = 320;
 const VIEWPORT_MARGIN = 8;
@@ -232,6 +209,24 @@ export const NotificationCenter = () => {
                     </ul>
                   </ScrollFade>
                 )}
+                {notifications.length > 0 && (
+                  <>
+                    <Divider />
+                    <footer className="flex items-center justify-end px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+                        }}
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      >
+                        Show more
+                        <ArrowRight size={11} aria-hidden />
+                      </button>
+                    </footer>
+                  </>
+                )}
               </Popover>
             </>,
             document.body,
@@ -261,10 +256,13 @@ const NotificationItem = ({ notification: n, onNavigated }: NotificationItemProp
   const sessionId = n.sessionId;
   const agentId = n.action?.kind === 'retry-step-summary' ? n.action.agentId : null;
 
+  const severity = NOTIFICATION_SEVERITY[n.severity];
+  const SeverityIcon = severity.icon;
+
   const body = (
     <>
-      <span className={cn('mt-0.5 shrink-0', severityClass(n.severity))}>
-        {severityIcon(n.severity)}
+      <span className={cn('mt-0.5 shrink-0', tintClasses(severity.tone).icon)}>
+        <SeverityIcon size={13} aria-hidden />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-xs font-medium leading-snug text-foreground">{n.title}</span>

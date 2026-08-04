@@ -88,6 +88,35 @@ describe('AppFooter', () => {
     expect(onOpenChangelog).toHaveBeenCalledOnce();
   });
 
+  it('keeps notifications out of the footer, the bell owns that studio', () => {
+    render(
+      <AppFooter
+        activeStudio="notifications"
+        onOpenWorkflows={vi.fn()}
+        onOpenProviders={vi.fn()}
+        onOpenBudget={vi.fn()}
+        onOpenImpact={vi.fn()}
+        onOpenChangelog={vi.fn()}
+        onOpenGithub={vi.fn()}
+        onOpenLinear={vi.fn()}
+        onOpenSentry={vi.fn()}
+        onOpenGitlab={vi.fn()}
+        githubEnabled={false}
+        linearEnabled={false}
+        sentryEnabled={false}
+        gitlabEnabled={false}
+        isSimpleWorkspace={false}
+        onConvertToDevProject={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/notification/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /notification/i })).toBeNull();
+    for (const button of screen.getAllByRole('button')) {
+      expect(button.className).not.toContain('bg-muted text-foreground');
+    }
+  });
+
   it('keeps studio buttons muted at rest and gives the active one a subtle surface', () => {
     render(
       <AppFooter

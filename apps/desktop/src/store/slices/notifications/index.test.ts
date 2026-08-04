@@ -45,6 +45,8 @@ const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | n
   async () => null,
 );
 const insertNotificationSpy = vi.fn(async () => undefined);
+const markNotificationReadSpy = vi.fn(async () => undefined);
+const deleteNotificationSpy = vi.fn(async () => undefined);
 const insertNudgeEventSpy = vi.fn(async () => undefined);
 const updateNudgeOutcomeSpy = vi.fn(async () => undefined);
 const insertDiffCommentSpy = vi.fn(async () => undefined);
@@ -125,6 +127,8 @@ vi.mock('@goodboy/db', () => ({
   insertNotification: insertNotificationSpy,
   listNotifications: vi.fn(async () => []),
   markAllNotificationsRead: vi.fn(async () => undefined),
+  markNotificationRead: markNotificationReadSpy,
+  deleteNotification: deleteNotificationSpy,
   clearAllNotifications: vi.fn(async () => undefined),
   listDiffCommentsForSession: listDiffCommentsSpy,
   insertDiffComment: insertDiffCommentSpy,
@@ -552,6 +556,32 @@ describe('store contract', () => {
       });
       await store.getState().markNotificationsRead();
       expect(store.getState().notifications.every((n) => n.read)).toBe(true);
+    });
+
+    it('markNotificationRead flips read=true on that entry alone', async () => {
+      const store = await getStore();
+      store.setState({
+        notifications: [{ id: 'n1', read: false } as never, { id: 'n2', read: false } as never],
+      });
+      await store.getState().markNotificationRead('n2');
+      const ns = store.getState().notifications;
+      expect(ns.find((n) => n.id === 'n1')?.read).toBe(false);
+      expect(ns.find((n) => n.id === 'n2')?.read).toBe(true);
+      expect(markNotificationReadSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'n2' }) as never,
+      );
+    });
+
+    it('dismissNotification drops that entry alone', async () => {
+      const store = await getStore();
+      store.setState({
+        notifications: [{ id: 'n1' } as never, { id: 'n2' } as never],
+      });
+      await store.getState().dismissNotification('n1');
+      expect(store.getState().notifications.map((n) => n.id)).toEqual(['n2']);
+      expect(deleteNotificationSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'n1' }) as never,
+      );
     });
 
     it('clearNotifications empties the array', async () => {

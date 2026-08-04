@@ -428,6 +428,42 @@ describe('NotificationCenter', () => {
     expect(state.setCurrentSession).not.toHaveBeenCalled();
   });
 
+  it('opens the notifications studio from the show more entry', async () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-notifications-studio', listener);
+    state.notifications = [
+      {
+        id: 'n1',
+        read: true,
+        severity: 'info',
+        title: 'something happened',
+        body: 'b',
+        ts: new Date().toISOString(),
+      } as unknown as Notification,
+    ];
+
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /show more/i }));
+    });
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('something happened')).toBeNull();
+    window.removeEventListener('goodboy:open-notifications-studio', listener);
+  });
+
+  it('hides the show more entry when there is nothing to show', async () => {
+    render(<NotificationCenter />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+
+    expect(screen.queryByRole('button', { name: /show more/i })).toBeNull();
+  });
+
   it('keeps a long notification list inside a bounded scroll viewport', async () => {
     state.notifications = Array.from({ length: 30 }, (_, i) => ({
       id: `n${i}`,
