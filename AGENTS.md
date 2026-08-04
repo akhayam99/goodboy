@@ -79,6 +79,12 @@ Full rules with examples in [docs/typescript/](./docs/typescript/) (index at [do
 - `satisfies` over `as` for const validation. Exhaustiveness with `never` in `switch` defaults. Discriminated unions for state machines, branded types for IDs (owned by `packages/types`).
 - No prop spreading without an explicit type.
 
+### Store selectors and memoization
+
+- A `useAppStore` selector returns a primitive or a reference the store already owns. Deriving a fresh object, array, or `Set` inside one needs `useShallow`, or a `useShallow not needed: <proof>` comment.
+- Never subscribe to a whole write-heavy slice (`(s) => s.transcripts`): select the keys the component needs, so a stream chunk for one agent does not re-render every other consumer. `useShallow` does not fix this, it only hides it. `src/__tests__/regressions/no-unstable-zustand-selectors.test.ts` fails on both cases, with file and line.
+- Wrap a list row in `memo` only when its props are primitives or stable references, and `useMemo` the per-render work behind it (parsing, registry building, sorting). `memo` on a row that takes a fresh object every render costs more than it saves.
+
 ### Styling
 
 Full rules in [docs/styling.md](./docs/styling.md). The hard ones:
