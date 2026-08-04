@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { Check, ChevronRight, type LucideIcon } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 
 type Stage = 0 | 1 | 2;
 
@@ -21,7 +22,7 @@ const STAGE_META: ReadonlyArray<{ readonly label: string; readonly icon: LucideI
 export const StepperRail = ({ current, canReach, disabled, onJump }: Props) => (
   <nav
     aria-label="workflow builder steps"
-    className="flex shrink-0 items-center justify-center gap-0.5 px-6 py-3"
+    className={cn('flex shrink-0 items-center justify-center gap-0.5', PANE_RHYTHM.header)}
   >
     {STAGE_META.map((meta, i) => {
       const step = i as Stage;

@@ -31,6 +31,7 @@ import {
   cn,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import {
   PlannerClient,
   type PlannerOutput,
@@ -781,7 +782,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           <ScrollFade className="min-h-0 flex-1">
             <div
               key={stage}
-              className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-7 motion-safe:animate-fade-in"
+              className={cn(
+                'flex max-w-2xl flex-col motion-safe:animate-fade-in',
+                PANE_RHYTHM.column,
+                PANE_RHYTHM.stack,
+                PANE_RHYTHM.body,
+              )}
             >
               {stage === 0 ? (
                 <>
@@ -1384,7 +1390,13 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           <Divider />
 
           <footer className="shrink-0">
-            <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-6 py-4">
+            <div
+              className={cn(
+                'flex max-w-2xl items-center justify-between gap-3',
+                PANE_RHYTHM.column,
+                PANE_RHYTHM.dock,
+              )}
+            >
               <div className="flex min-w-0 items-center gap-2">
                 {!draftEmpty ? (
                   <Button
