@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlaskConical, RefreshCw, Smartphone, Unplug } from 'lucide-react';
 import { Divider, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import { StudioShell } from '../../shared/components/StudioShell';
+import { formatError } from '../../shared/lib/errors';
 import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge';
 import { clearMobileSharedSessions } from './mobileConfinement';
 
@@ -43,7 +44,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
       setInfo(next);
       await refreshStatus();
     } catch (e) {
-      setError(String(e));
+      setError(formatError(e));
       setInfo(null);
     } finally {
       setLoading(false);
@@ -59,7 +60,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
       window.dispatchEvent(new CustomEvent('goodboy:bridge-paired-changed'));
       await mint();
     } catch (e) {
-      setError(String(e));
+      setError(formatError(e));
     } finally {
       setRevoking(false);
     }
