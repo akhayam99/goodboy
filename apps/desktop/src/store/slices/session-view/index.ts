@@ -5,6 +5,7 @@ import { setSessionSort } from './setSessionSort';
 import {
   lensGo,
   openDiffLens,
+  openExternalTaskLens,
   setActiveLens,
   setDiffFocus,
   setFocusedGithubIssueNumber,
@@ -24,6 +25,7 @@ export { readPersistedLens } from './workSurfaceStorage';
 export { LENS_KINDS } from './types';
 export type { GroupedSessions, SessionViewSlice } from './types';
 export type {
+  FocusedExternalTask,
   SessionStudio,
   LensKind,
   LensHistory,
@@ -48,6 +50,7 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setSessionStudio: setSessionStudio(set),
     setDiffFocus: setDiffFocus(set),
     openDiffLens: openDiffLens(get),
+    openExternalTaskLens: openExternalTaskLens(set, get),
     beginSessionCreation: beginSessionCreation(set),
     endSessionCreation: endSessionCreation(set),
   };
