@@ -1,4 +1,5 @@
 import type { FileConflict } from '@goodboy/core';
+import type { OrphanWorktree } from '../features/worktree/worktree';
 import type { Notification, NotificationCounts, TelemetrySummary } from '@goodboy/db';
 import type {
   Agent,
@@ -191,6 +192,7 @@ export type AppState = AppSliceState & {
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
   readonly sessionWorktrees: Readonly<Record<string, ReadonlyArray<string>>>;
+  readonly orphanWorktrees: Readonly<Record<string, ReadonlyArray<OrphanWorktree>>>;
   readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMount>>>;
   readonly sessionActiveMount: Readonly<Record<string, WorkspaceId>>;
   readonly sessionBranches: Readonly<Record<string, string>>;

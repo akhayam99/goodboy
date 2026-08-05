@@ -332,9 +332,11 @@ vi.mock('../../../features/scripts/scripts', () => ({
   listenScriptExit: vi.fn(async () => () => undefined),
 }));
 
+const invokeTerminalCloseSpy = vi.fn(async () => undefined);
+
 vi.mock('../../../features/terminal/terminal', () => ({
   invokeTerminalOpen: vi.fn(async () => undefined),
-  invokeTerminalClose: vi.fn(async () => undefined),
+  invokeTerminalClose: invokeTerminalCloseSpy,
   invokeTerminalWrite: vi.fn(async () => undefined),
   invokeTerminalResize: vi.fn(async () => undefined),
 }));
@@ -594,9 +596,24 @@ describe('store contract', () => {
       const store = await getStore();
       store.getState().addTerminalTab(SESSION_ID, null);
       store.getState().addTerminalTab(SESSION_ID, null);
-      store.getState().closeSessionTerminals(SESSION_ID);
+      await store.getState().closeSessionTerminals(SESSION_ID);
       expect(store.getState().terminalTabs[SESSION_ID]).toBeUndefined();
       expect(store.getState().activeTerminalTab[SESSION_ID]).toBeUndefined();
+    });
+
+    it('closeSessionTerminals settles only once every shell has been told to close', async () => {
+      const store = await getStore();
+      store.getState().addTerminalTab(SESSION_ID, null);
+      let shellIsDown = false;
+      invokeTerminalCloseSpy.mockImplementationOnce(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        shellIsDown = true;
+        return undefined;
+      });
+
+      await store.getState().closeSessionTerminals(SESSION_ID);
+
+      expect(shellIsDown).toBe(true);
     });
   });
 });

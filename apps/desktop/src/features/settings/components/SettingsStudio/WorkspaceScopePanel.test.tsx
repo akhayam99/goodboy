@@ -12,6 +12,11 @@ const { state, toastMock } = vi.hoisted(() => ({
     setWorkspaceOverrides: vi.fn(async () => undefined),
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
+    orphanWorktrees: {} as Record<
+      string,
+      ReadonlyArray<{ path: string; name: string; sizeBytes: number }>
+    >,
+    removeOrphanWorktrees: vi.fn(async () => undefined),
   },
   toastMock: vi.fn(),
 }));
@@ -54,6 +59,8 @@ beforeEach(() => {
   state.setWorkspaceOverrides = vi.fn(async () => undefined);
   state.workspaceIntegrations = {};
   state.providers = [];
+  state.orphanWorktrees = {};
+  state.removeOrphanWorktrees = vi.fn(async () => undefined);
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -76,5 +83,27 @@ describe('WorkspaceScopePanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
     expect(screen.getByRole('button', { name: /confirm/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /cancel/i })).toBeDefined();
+  });
+
+  it('hides the leftover folders section when there is nothing to clean', () => {
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    expect(screen.queryByText(/session folders left on disk/i)).toBeNull();
+  });
+
+  it('asks twice before deleting the folders it found', () => {
+    state.orphanWorktrees = {
+      'ws-1': [{ path: '/repo/.goodboy/worktrees/gb-ghost', name: 'gb-ghost', sizeBytes: 2048 }],
+    };
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+
+    expect(screen.getByText('gb-ghost')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /delete 1 folders \(2 kb\)/i }));
+
+    expect(state.removeOrphanWorktrees).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }));
+    expect(state.removeOrphanWorktrees).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      paths: ['/repo/.goodboy/worktrees/gb-ghost'],
+    });
   });
 });

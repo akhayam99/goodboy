@@ -672,7 +672,12 @@ export type AppActions = {
   closeTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
   setActiveTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
   setTerminalTabStatus(sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void;
-  closeSessionTerminals(sessionId: SessionId): void;
+  closeSessionTerminals(sessionId: SessionId): Promise<void>;
+  reconcileOrphanWorktrees(): Promise<void>;
+  removeOrphanWorktrees(params: {
+    workspaceId: WorkspaceId;
+    paths: ReadonlyArray<string>;
+  }): Promise<void>;
 };
 
 export type AppStore = AppState & AppActions;
@@ -714,6 +719,7 @@ export const initialState: AppState = {
   transcripts: {},
   messages: {},
   sessionWorktrees: {},
+  orphanWorktrees: {},
   sessionMounts: {},
   sessionActiveMount: {},
   sessionBranches: {},

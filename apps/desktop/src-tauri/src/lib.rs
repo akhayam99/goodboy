@@ -136,6 +136,8 @@ pub fn run() {
       session_dir::simple_session_dir_exists,
       worktree::worktree_create,
       worktree::worktree_remove,
+      worktree::worktree_orphans,
+      worktree::worktree_orphan_remove,
       worktree::worktree_list,
       worktree::worktree_remote_url,
       worktree::worktree_exists,

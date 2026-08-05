@@ -40,6 +40,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(async () => () => undefined),
 }));
 
+const listWorkspacesSpy = vi.fn(async () => [] as ReadonlyArray<Workspace>);
 const dbSetSettingSpy = vi.fn(async () => undefined);
 const dbGetSettingSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | null>>(
   async () => null,
@@ -91,7 +92,7 @@ vi.mock('@goodboy/db', () => ({
   listSessionsForWorkspace: vi.fn(async () => []),
   listArchivedSessionsForWorkspace: vi.fn(async () => []),
   listTelemetryForSession: vi.fn(async () => []),
-  listWorkspaces: vi.fn(async () => []),
+  listWorkspaces: listWorkspacesSpy,
   listWorktreesForSession: vi.fn(async () => []),
   listWorktreesForSessions: vi.fn(async () => new Map()),
   listAgentsForSessions: vi.fn(async () => new Map()),
@@ -262,12 +263,18 @@ vi.mock('../../../features/workflows/workflows', () => ({
 const createWorktreeSpy = vi.fn();
 const removeWorktreeSpy = vi.fn(async () => undefined);
 const changeWorktreeBranchSpy = vi.fn(async () => undefined);
+const scanOrphanWorktreesSpy = vi.fn(
+  async () => [] as ReadonlyArray<{ path: string; name: string; sizeBytes: number }>,
+);
+const removeOrphanWorktreeSpy = vi.fn(async () => undefined);
 
 vi.mock('../../../features/worktree/worktree', () => ({
   createWorktree: createWorktreeSpy,
   removeWorktree: removeWorktreeSpy,
   changeWorktreeBranch: changeWorktreeBranchSpy,
   worktreeChangedFiles: vi.fn(async () => []),
+  scanOrphanWorktrees: scanOrphanWorktreesSpy,
+  removeOrphanWorktree: removeOrphanWorktreeSpy,
 }));
 
 vi.mock('../../../shared/lib/repo', () => ({
@@ -546,6 +553,30 @@ describe('store contract', () => {
       const store = await getStore();
       await store.getState().hydrate();
       expect(listNotificationsSpy).toHaveBeenCalled();
+    });
+
+    it('offers to clean the session folders left behind on disk', async () => {
+      const store = await getStore();
+      listWorkspacesSpy.mockResolvedValueOnce([
+        {
+          id: 'ws-1' as WorkspaceId,
+          name: 'demo',
+          rootPath: '/repo',
+          kind: 'repo',
+          createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+          updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        },
+      ]);
+      scanOrphanWorktreesSpy.mockResolvedValueOnce([
+        { path: '/repo/.goodboy/worktrees/gb-ghost', name: 'gb-ghost', sizeBytes: 2048 },
+      ]);
+
+      await store.getState().hydrate();
+
+      await vi.waitFor(() => {
+        expect(store.getState().orphanWorktrees['ws-1']).toHaveLength(1);
+      });
+      expect(insertNotificationSpy).toHaveBeenCalled();
     });
   });
 });
