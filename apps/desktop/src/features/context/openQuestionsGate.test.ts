@@ -5,13 +5,16 @@ import type {
   OpenQuestionId,
   SessionId,
   WorkflowId,
+  WorkflowRunId,
 } from '@goodboy/types';
-import { hasOrphanOpenQuestions, workflowHasOpenQuestions } from './openQuestionsGate';
+import { workflowHasOpenQuestions, workflowRunHasOpenQuestions } from './openQuestionsGate';
 
 const NOW = '2026-05-26T00:00:00.000Z' as IsoDateTime;
 const SESSION = 'sess_1' as SessionId;
 const WF_A = 'wf_a' as WorkflowId;
 const WF_B = 'wf_b' as WorkflowId;
+const RUN_A = 'run_a' as WorkflowRunId;
+const RUN_B = 'run_b' as WorkflowRunId;
 
 function q(id: string, opts: Partial<OpenQuestion> = {}): OpenQuestion {
   return {
@@ -53,16 +56,25 @@ describe('workflowHasOpenQuestions', () => {
   });
 });
 
-describe('hasOrphanOpenQuestions', () => {
-  it('detects an orphan question', () => {
-    expect(hasOrphanOpenQuestions([q('q1')])).toBe(true);
+describe('workflowRunHasOpenQuestions', () => {
+  it('returns true when the run has an open question of its own', () => {
+    expect(workflowRunHasOpenQuestions([q('q1', { workflowRunId: RUN_A })], RUN_A)).toBe(true);
   });
 
-  it('rejects questions tied to any workflow', () => {
-    expect(hasOrphanOpenQuestions([q('q1', { workflowId: WF_A })])).toBe(false);
+  it('returns false when only ANOTHER run has open questions', () => {
+    expect(workflowRunHasOpenQuestions([q('q1', { workflowRunId: RUN_B })], RUN_A)).toBe(false);
   });
 
-  it('ignores answered orphans', () => {
-    expect(hasOrphanOpenQuestions([q('q1', { status: 'answered' })])).toBe(false);
+  it('lets an orphan question from a free agent through instead of halting every run', () => {
+    expect(workflowRunHasOpenQuestions([q('q1')], RUN_A)).toBe(false);
+    expect(workflowRunHasOpenQuestions([q('q1')], RUN_B)).toBe(false);
+  });
+
+  it('ignores answered and dismissed questions of its own run', () => {
+    const qs = [
+      q('q1', { workflowRunId: RUN_A, status: 'answered' }),
+      q('q2', { workflowRunId: RUN_A, status: 'dismissed' }),
+    ];
+    expect(workflowRunHasOpenQuestions(qs, RUN_A)).toBe(false);
   });
 });

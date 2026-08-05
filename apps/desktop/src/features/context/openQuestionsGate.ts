@@ -23,13 +23,9 @@ export const workflowRunHasOpenQuestions = (
     if (q.status !== 'open') {
       continue;
     }
-    if (!q.workflowRunId || q.workflowRunId === workflowRunId) {
+    if (q.workflowRunId === workflowRunId) {
       return true;
     }
   }
   return false;
-};
-
-export const hasOrphanOpenQuestions = (questions: ReadonlyArray<OpenQuestion>): boolean => {
-  return questions.some((q) => q.status === 'open' && !q.workflowId);
 };

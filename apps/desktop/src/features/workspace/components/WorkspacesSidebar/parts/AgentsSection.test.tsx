@@ -195,8 +195,10 @@ vi.mock(
 vi.mock('../../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
 vi.mock('../../../../providers/components/CostBadge', () => ({ CostBadge: () => null }));
 
-vi.mock('../../../../../features/workflows/components/WorkflowNextStepCta', () => ({
+vi.mock('../../../../../features/workflows/pickNextWorkflowStep', () => ({
   pickNextWorkflowStep: () => null,
+}));
+vi.mock('../../../../../features/workflows/components/WorkflowNextStepCta', () => ({
   WorkflowNextStepCta: () => null,
 }));
 vi.mock('../../../../../features/context/openQuestionsGate', () => ({

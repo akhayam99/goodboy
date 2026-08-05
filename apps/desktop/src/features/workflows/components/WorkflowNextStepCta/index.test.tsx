@@ -14,7 +14,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { WorkflowNextStepCta, pickNextWorkflowStep } from './index';
+import { WorkflowNextStepCta } from './index';
 
 afterEach(cleanup);
 
@@ -54,59 +54,6 @@ function preCreated(...statuses: Agent['status'][]): Agent[] {
   const stepIds = ['s1', 's2', 's3'] as const;
   return statuses.map((status, i) => run(stepIds[i] as StepId, status, i));
 }
-
-describe('pickNextWorkflowStep', () => {
-  it('returns first step when all pre-created agents are pending', () => {
-    expect(pickNextWorkflowStep(wf(), preCreated('pending', 'pending', 'pending'))?.id).toBe('s1');
-  });
-
-  it('returns null while current step is running', () => {
-    expect(pickNextWorkflowStep(wf(), preCreated('running', 'pending', 'pending'))).toBeNull();
-  });
-
-  it('advances to next step once previous one is completed', () => {
-    expect(pickNextWorkflowStep(wf(), preCreated('completed', 'pending', 'pending'))?.id).toBe(
-      's2',
-    );
-  });
-
-  it('skips ahead past multiple completed steps to the next pending one', () => {
-    expect(pickNextWorkflowStep(wf(), preCreated('completed', 'completed', 'pending'))?.id).toBe(
-      's3',
-    );
-  });
-
-  it('returns null when all steps are completed', () => {
-    expect(
-      pickNextWorkflowStep(wf(), preCreated('completed', 'completed', 'completed')),
-    ).toBeNull();
-  });
-
-  it('returns null when an earlier step failed (cannot advance over failure)', () => {
-    expect(pickNextWorkflowStep(wf(), preCreated('failed', 'pending', 'pending'))).toBeNull();
-  });
-
-  it('treats skipped steps as done for advancement', () => {
-    expect(pickNextWorkflowStep(wf(), preCreated('skipped', 'pending', 'pending'))?.id).toBe('s2');
-  });
-
-  it('returns null when open questions are pending, even if otherwise actionable', () => {
-    const runs = preCreated('completed', 'pending', 'pending');
-    expect(pickNextWorkflowStep(wf(), runs, { hasOpenQuestions: true })).toBeNull();
-  });
-
-  it('returns null while summarizer is busy', () => {
-    const runs = preCreated('completed', 'pending', 'pending');
-    expect(pickNextWorkflowStep(wf(), runs, { summarizerBusy: true })).toBeNull();
-  });
-
-  it('allows advancement when gate flags are explicitly false', () => {
-    const runs = preCreated('completed', 'pending', 'pending');
-    expect(
-      pickNextWorkflowStep(wf(), runs, { hasOpenQuestions: false, summarizerBusy: false })?.id,
-    ).toBe('s2');
-  });
-});
 
 describe('WorkflowNextStepCta', () => {
   const ctaRuns: Agent[] = [run('s1' as StepId, 'pending', 0), run('s2' as StepId, 'pending', 1)];

@@ -10,7 +10,7 @@ import type {
   Workflow,
 } from '@goodboy/types';
 import { useAppStore, useSessionHasUnread } from '../../../../../../store';
-import { pickNextWorkflowStep } from '../../../../../workflows/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../../../../workflows/pickNextWorkflowStep';
 import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestionsGate';
 import type { BoardNavigation } from '../../useBoardNavigation';
 

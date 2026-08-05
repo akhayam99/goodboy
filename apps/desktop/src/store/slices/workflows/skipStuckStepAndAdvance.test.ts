@@ -97,6 +97,7 @@ const nextAgent: Agent = {
 const buildHarness = (turnKind: 'idle' | 'running' | 'unseeded') => {
   const activateWorkflowAgent = vi.fn();
   const orchestrateNextStep = vi.fn();
+  const emitNotification = vi.fn(async () => undefined);
   const state = {
     sessions: [session],
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
@@ -105,6 +106,7 @@ const buildHarness = (turnKind: 'idle' | 'running' | 'unseeded') => {
       turnKind === 'unseeded' ? {} : { [STUCK]: { kind: turnKind, lastActivityAt: NOW } },
     activateWorkflowAgent,
     orchestrateNextStep,
+    emitNotification,
     refreshUnreadWorkspaces: vi.fn(),
   };
   const set = vi.fn();
@@ -116,6 +118,7 @@ const buildHarness = (turnKind: 'idle' | 'running' | 'unseeded') => {
     ),
     activateWorkflowAgent,
     orchestrateNextStep,
+    emitNotification,
   };
 };
 
@@ -219,6 +222,22 @@ describe('skipStuckStepAndAdvance', () => {
     );
     expect(activateWorkflowAgent).not.toHaveBeenCalled();
     expect(orchestrateNextStep).toHaveBeenCalledWith(SESSION_ID, RUN_ID, { bypassGate: true });
+  });
+
+  it('names the failure instead of dropping it when the skip cannot be written', async () => {
+    invokeAgentUpdateStatusSpy.mockRejectedValue(new Error('agent row is gone'));
+    const { run, activateWorkflowAgent, emitNotification } = buildHarness('idle');
+
+    await expect(run(SESSION_ID, RUN_ID)).resolves.toBeUndefined();
+
+    expect(activateWorkflowAgent).not.toHaveBeenCalled();
+    expect(emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'the blocked step was not skipped',
+      'agent row is gone',
+      { sessionId: SESSION_ID },
+    );
   });
 
   it('leaves a dynamic run alone once the orchestrator already closed it', async () => {

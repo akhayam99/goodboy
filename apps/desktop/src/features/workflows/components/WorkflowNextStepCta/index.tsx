@@ -2,7 +2,14 @@ import { useMemo, useState } from 'react';
 import { AlertTriangle, Play } from 'lucide-react';
 import { InlineConfirm, cn } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
-import type { Agent, RoleModelPreferences, Step, Workflow } from '@goodboy/types';
+import type {
+  Agent,
+  ModelEffort,
+  ProviderId,
+  RoleModelPreferences,
+  Step,
+  Workflow,
+} from '@goodboy/types';
 import type { VerbosityLevel } from '../../../../features/settings/verbosity';
 import { inferAgentKindFromName } from '../../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../resolveStepRouting';
@@ -28,37 +35,9 @@ export type Props = {
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
   readonly roleModels?: RoleModelPreferences | null;
-};
-
-export type PickNextWorkflowStepGate = {
-  readonly hasOpenQuestions?: boolean;
-  readonly summarizerBusy?: boolean;
-};
-
-export const pickNextWorkflowStep = (
-  workflow: Workflow,
-  runs: ReadonlyArray<Agent>,
-  gate?: PickNextWorkflowStepGate,
-): Step | null => {
-  if (gate?.hasOpenQuestions || gate?.summarizerBusy) {
-    return null;
-  }
-  const sorted = [...workflow.steps].sort((a, b) => a.ordinal - b.ordinal);
-  for (const step of sorted) {
-    const agent = runs.find((r) => r.stepId === step.id);
-    if (!agent || agent.status !== 'pending') {
-      continue;
-    }
-    const prevSteps = sorted.filter((s) => s.ordinal < step.ordinal);
-    const allDone = prevSteps.every((s) =>
-      runs.some((r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped')),
-    );
-    if (allDone) {
-      return step;
-    }
-    return null;
-  }
-  return null;
+  readonly agentModel?: string | null;
+  readonly agentProvider?: ProviderId | null;
+  readonly agentEffort?: ModelEffort | null;
 };
 
 export const WorkflowNextStepCta = ({
@@ -70,13 +49,23 @@ export const WorkflowNextStepCta = ({
   consumesActivePlan = false,
   className,
   roleModels = null,
+  agentModel = null,
+  agentProvider = null,
+  agentEffort = null,
 }: Props) => {
   const [busy, setBusy] = useState(false);
   const [pendingForce, setPendingForce] = useState(false);
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
-  const routing = resolveStepRouting({ step: next, kind, roleModels });
+  const routing = resolveStepRouting({
+    step: next,
+    kind,
+    roleModels,
+    agentModel,
+    agentProvider,
+    agentEffort,
+  });
   const advance = useStartAnywayConfirm({
     blockReason,
     onStart: async ({ isConfirmed }) => {

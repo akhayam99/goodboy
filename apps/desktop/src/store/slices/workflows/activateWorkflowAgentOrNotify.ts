@@ -1,6 +1,6 @@
 import type { AgentId, PlanId, SessionId } from '@goodboy/types';
 import type { SpawnFocus } from '../session-view/spawnFocus';
-import { WorkflowGateError } from './workflowActivationGate';
+import { notifyWorkflowGateBlock } from './notifyWorkflowGateBlock';
 import type { GetFn } from './types';
 
 type Params = {
@@ -22,12 +22,7 @@ export const activateWorkflowAgentOrNotify = async ({
     await get().activateWorkflowAgent({ sessionId, agentId, explicitPlanId, focus });
     return true;
   } catch (error) {
-    if (!(error instanceof WorkflowGateError)) {
-      throw error;
-    }
-    void get().emitNotification('error', 'warning', 'workflow step held back', error.message, {
-      sessionId,
-    });
+    notifyWorkflowGateBlock({ error, sessionId, emitNotification: get().emitNotification });
     return false;
   }
 };

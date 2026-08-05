@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useAppStore } from '../../../store';
+import { formatError } from '../../../shared/lib/errors';
 import type { WorkflowBlockReason } from '../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../blockCopy';
 
@@ -19,6 +21,7 @@ export const useStartAnywayConfirm = ({
 }: Params) => {
   const [isBusy, setIsBusy] = useState(false);
   const [isArmed, setIsArmed] = useState(false);
+  const emitNotification = useAppStore((state) => state.emitNotification);
 
   const start = async ({ isConfirmed }: StartParams) => {
     if (isBusy) {
@@ -28,6 +31,13 @@ export const useStartAnywayConfirm = ({
     setIsArmed(false);
     try {
       await onStart({ isConfirmed });
+    } catch (error) {
+      void emitNotification(
+        'error',
+        'warning',
+        'the next step did not start',
+        formatError(error),
+      ).catch(() => undefined);
     } finally {
       setIsBusy(false);
     }

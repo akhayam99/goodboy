@@ -20,7 +20,7 @@ vi.mock('../../../../../../store', () => ({
   useSessionHasUnread: () => state.hasUnread,
 }));
 
-vi.mock('../../../../../workflows/components/WorkflowNextStepCta', () => ({
+vi.mock('../../../../../workflows/pickNextWorkflowStep', () => ({
   pickNextWorkflowStep: pickNextMock,
 }));
 

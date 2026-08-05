@@ -2,7 +2,9 @@ import { useMemo } from 'react';
 import type { Agent, SessionId, Step, Workflow, WorkflowRunId } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../../store';
+import { notifyWorkflowGateBlock } from '../../../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { workflowRunHasOpenQuestions } from '../../../../context/openQuestionsGate';
+import { agentRoutingOverrides } from '../../../../workflows/agentRoutingOverrides';
 import { resolveWorkflowAdvance } from '../../../../workflows/advanceGate';
 import { WorkflowNextStepCta } from '../../../../workflows/components/WorkflowNextStepCta';
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
@@ -35,6 +37,7 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
   const roleModels = useSessionRoleModels({ sessionId });
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
+  const emitNotification = useAppStore((state) => state.emitNotification);
 
   const stepAgents = useMemo(
     () =>
@@ -59,6 +62,24 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
     isTurnRunning,
     isAutoRun,
   });
+  const nextStepId = state.kind === 'complete' ? null : state.step.id;
+  const pendingAgent =
+    stepAgents.find((agent) => agent.stepId === nextStepId && agent.status === 'pending') ?? null;
+  const modelOverride = useAppStore((store) =>
+    pendingAgent != null ? (store.agentModelOverride[pendingAgent.id] ?? null) : null,
+  );
+  const providerOverride = useAppStore((store) =>
+    pendingAgent != null ? (store.agentProviderOverride[pendingAgent.id] ?? null) : null,
+  );
+  const effortOverride = useAppStore((store) =>
+    pendingAgent != null ? (store.agentEffortOverride[pendingAgent.id] ?? null) : null,
+  );
+  const routing = agentRoutingOverrides({
+    agent: pendingAgent,
+    modelOverride,
+    providerOverride,
+    effortOverride,
+  });
   if (state.kind === 'complete' || state.kind === 'automatic') {
     return null;
   }
@@ -70,12 +91,16 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
     if (pending == null) {
       return;
     }
-    await activateWorkflowAgent({
-      sessionId,
-      agentId: pending.id,
-      focus: 'agent',
-      bypassGate: isConfirmed,
-    });
+    try {
+      await activateWorkflowAgent({
+        sessionId,
+        agentId: pending.id,
+        focus: 'agent',
+        bypassGate: isConfirmed,
+      });
+    } catch (error) {
+      notifyWorkflowGateBlock({ error, sessionId, emitNotification });
+    }
   };
 
   return (
@@ -83,6 +108,9 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
       workflow={workflow}
       runs={stepAgents}
       roleModels={roleModels}
+      agentModel={routing.agentModel}
+      agentProvider={routing.agentProvider}
+      agentEffort={routing.agentEffort}
       blockReason={state.kind === 'blocked' ? state.reason : null}
       onAdvance={({ step, isConfirmed }) => void onAdvance({ step, isConfirmed })}
       onForceAdvance={() =>

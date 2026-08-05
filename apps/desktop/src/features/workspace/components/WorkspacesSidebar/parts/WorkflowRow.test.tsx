@@ -22,7 +22,7 @@ const storeMocks = vi.hoisted(() => ({ renameWorkflow: vi.fn(async () => undefin
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: unknown) => T) =>
-    selector({ renameWorkflow: storeMocks.renameWorkflow }),
+    selector({ renameWorkflow: storeMocks.renameWorkflow, agentEffortOverride: {} }),
 }));
 
 vi.mock(

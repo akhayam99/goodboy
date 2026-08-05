@@ -53,6 +53,7 @@ import { useShortcut } from './shared/keyboard/useShortcut';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
 import { useCommitLinkInterceptor } from './shared/hooks/useCommitLinkInterceptor';
+import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import { isBranchlessSession } from './shared/utils/isBranchlessSession';
 import {
   useAppStore,
@@ -176,6 +177,7 @@ export const App = () => {
   useUpdaterPolling();
   useWindowPresence();
   useZoomShortcuts();
+  useUnhandledRejectionNotice();
 
   useEffect(() => {
     const onOpenSettings = (event: Event) => {

@@ -14,6 +14,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 import { inferAgentKindFromName, type AgentKind } from '../../../../../features/session/agent-kind';
+import { agentRoutingOverrides } from '../../../../../features/workflows/agentRoutingOverrides';
 import { resolveStepRouting } from '../../../../../features/workflows/resolveStepRouting';
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
@@ -165,6 +166,18 @@ export const WorkflowRow = ({
   );
   const stepById = new Map(workflow.steps.map((step) => [step.id, step]));
   const hasOrchestratorStrip = isDynamic && !isDiscarded && expanded;
+  const ctaAgent =
+    wfAgents.find((agent) => agent.stepId === actionableStepId && agent.status === 'pending') ??
+    null;
+  const ctaEffortOverride = useAppStore((s) =>
+    ctaAgent != null ? (s.agentEffortOverride[ctaAgent.id] ?? null) : null,
+  );
+  const ctaRouting = agentRoutingOverrides({
+    agent: ctaAgent,
+    modelOverride: ctaAgent != null ? (agentModelOverride[ctaAgent.id] ?? null) : null,
+    providerOverride: ctaAgent != null ? (agentProviderOverride[ctaAgent.id] ?? null) : null,
+    effortOverride: ctaEffortOverride,
+  });
   return (
     <div
       className={cn(
@@ -533,6 +546,9 @@ export const WorkflowRow = ({
                 workflow={workflow}
                 runs={wfAgents}
                 roleModels={roleModels}
+                agentModel={ctaRouting.agentModel}
+                agentProvider={ctaRouting.agentProvider}
+                agentEffort={ctaRouting.agentEffort}
                 blockReason={wfBlockReason}
                 onAdvance={({ step, isConfirmed }) => {
                   const pending = wfAgents.find(
