@@ -98,7 +98,7 @@ describe('buildMrConversation', () => {
 
     const thread = conversation.threads[0]!;
     expect(thread.filePath).toBe('src/a.ts');
-    expect(threadAnchor(thread)).toBe('src/a.ts:12');
+    expect(threadAnchor({ thread })).toBe('src/a.ts:12');
   });
 
   it('sorts the newest thread first', () => {

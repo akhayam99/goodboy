@@ -13,7 +13,7 @@ type Props = {
 
 export const MrThreadCard = ({ thread, onReply }: Props) => {
   const [isReplyOpen, setIsReplyOpen] = useState(false);
-  const anchor = threadAnchor(thread);
+  const anchor = threadAnchor({ thread });
 
   return (
     <div className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">

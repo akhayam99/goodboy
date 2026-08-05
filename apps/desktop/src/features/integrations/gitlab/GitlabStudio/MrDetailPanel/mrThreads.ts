@@ -17,7 +17,15 @@ export type MrConversation = {
   readonly systemNoteCount: number;
 };
 
-const filePathOf = (note: GitlabMrNote): string | null => {
+type NoteParams = {
+  readonly note: GitlabMrNote;
+};
+
+type AnchorParams = {
+  readonly thread: MrThread;
+};
+
+const filePathOf = ({ note }: NoteParams): string | null => {
   const position = note.position;
   if (position == null) {
     return null;
@@ -26,7 +34,7 @@ const filePathOf = (note: GitlabMrNote): string | null => {
   return path != null && path !== '' ? path : null;
 };
 
-const lineOf = (note: GitlabMrNote): number | null => {
+const lineOf = ({ note }: NoteParams): number | null => {
   const position = note.position;
   if (position == null) {
     return null;
@@ -34,11 +42,11 @@ const lineOf = (note: GitlabMrNote): number | null => {
   return position.newLine ?? position.oldLine;
 };
 
-export const threadAnchor = (thread: MrThread): string | null => {
+export const threadAnchor = ({ thread }: AnchorParams): string | null => {
   if (thread.filePath == null) {
     return null;
   }
-  const line = lineOf(thread.head);
+  const line = lineOf({ note: thread.head });
   return line == null ? thread.filePath : `${thread.filePath}:${line}`;
 };
 
@@ -63,7 +71,7 @@ export const buildMrConversation = ({ discussions }: Params): MrConversation => 
       id: discussion.id,
       head,
       replies,
-      filePath: filePathOf(head),
+      filePath: filePathOf({ note: head }),
       isResolved: resolvable.length > 0 && resolvable.every((note) => note.resolved === true),
     });
   }
