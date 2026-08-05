@@ -1,9 +1,7 @@
 import { Button, EmptyState, Markdown, Skeleton, SkeletonText } from '@goodboy/ui';
-import { ExternalLink } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
-import { openUrl } from '../../../../shared/lib/editor';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import type { ReleaseNote } from '../../changelog';
 import { formatReleaseDate } from '../../formatReleaseDate';
@@ -22,16 +20,9 @@ export const ReleaseDetail = ({ release, view, staleError, staleSince, onRetry }
     view === 'ready' && release != null
       ? formatReleaseDate({ iso: release.publishedAt, style: 'full' })
       : undefined;
-  const action =
-    view === 'ready' && release != null ? (
-      <Button size="sm" variant="secondary" onClick={() => void openUrl(release.htmlUrl)}>
-        <ExternalLink size={12} aria-hidden />
-        Open on GitHub
-      </Button>
-    ) : undefined;
 
   return (
-    <StudioPanel title={release?.version ?? 'Release notes'} subtitle={subtitle} action={action}>
+    <StudioPanel title={release?.version ?? 'Release notes'} subtitle={subtitle}>
       {view === 'loading' ? (
         <div className="flex flex-col gap-5" role="status" aria-label="Loading releases">
           <Skeleton className="h-6 w-36" />

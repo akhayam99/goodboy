@@ -354,7 +354,7 @@ describe('AgentInspector (resolver)', () => {
     expect(screen.getByText('Review comment')).toBeDefined();
     expect(screen.queryByText('inferred')).toBeNull();
     expect(screen.getByText('this needs a guard clause')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Open on GitHub/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Open thread/ })).toBeDefined();
   });
 
   it('reads the verdict the agent wrote once it stops working', () => {

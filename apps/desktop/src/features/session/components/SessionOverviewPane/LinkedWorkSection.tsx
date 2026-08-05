@@ -6,7 +6,6 @@ import type { LensKind } from '../../../../store';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
-import { openUrl } from '../../../../shared/lib/editor';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { PROVIDER_LENS } from '../../../integrations/providerLens';
@@ -26,6 +25,7 @@ const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
 export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
+  const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
   const workspace = useAppStore((s) => {
     const session = s.sessions.find((candidate) => candidate.id === sessionId);
     return s.workspaces.find((candidate) => candidate.id === session?.workspaceId) ?? null;
@@ -58,6 +58,10 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
     },
   ];
   const hasLinkedWork = linkedIssues.length > 0 || externalTasks.length > 0;
+  const openLinkedIssue = (issueNumber: number) => {
+    setFocusedGithubIssueNumber(sessionId, issueNumber);
+    onSelectLens('github_issue');
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -83,9 +87,9 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
               leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
               identifier={`#${issue.number}`}
               title={issue.title ?? 'GitHub issue'}
-              onClick={() => void openUrl(issue.url)}
-              navigation="external"
-              tooltip={`Open issue #${issue.number} in GitHub`}
+              onClick={() => openLinkedIssue(issue.number)}
+              navigation="internal"
+              tooltip={`Open issue #${issue.number}`}
               actions={
                 <ExternalRefActions
                   url={issue.url}

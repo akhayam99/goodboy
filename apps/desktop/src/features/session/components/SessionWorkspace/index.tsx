@@ -145,6 +145,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     () => sessionExternalTasks.find((task) => task.provider === 'github') ?? null,
     [sessionExternalTasks],
   );
+  const githubIssueNumber =
+    focusedGithubIssueNumber ?? (githubTask != null ? Number(githubTask.externalId) : null);
   const selectedRootAgent = useMemo(() => {
     if (selectedAgentId == null) {
       return null;
@@ -381,12 +383,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   />
                 ) : null}
                 {lens === 'github_issue' ? (
-                  githubTask != null ? (
+                  githubIssueNumber != null ? (
                     <GithubTaskDetail
                       workspaceId={session.workspaceId}
                       rootPath={projectWorktreePath}
-                      task={githubTask}
-                      issueNumber={focusedGithubIssueNumber ?? Number(githubTask.externalId)}
+                      {...(githubTask != null && { task: githubTask })}
+                      issueNumber={githubIssueNumber}
                     />
                   ) : (
                     <PaneShell

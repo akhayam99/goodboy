@@ -1,7 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { ArrowRight, GitBranch, GitFork, GitMerge, Unlink } from 'lucide-react';
 import { Button, Eyebrow, Skeleton } from '@goodboy/ui';
-import type { LinkedIssue, PullRequestState, Session, SessionId, Workspace } from '@goodboy/types';
+import type {
+  LinkedIssue,
+  PullRequestState,
+  Session,
+  SessionExternalTask,
+  SessionId,
+  Workspace,
+} from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { PROVIDER_LENS } from '../../../../integrations/providerLens';
@@ -32,7 +39,6 @@ import { useSessionRepo } from '../../../../../store/slices/worktrees/useSession
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
-import { openUrl } from '../../../../../shared/lib/editor';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
 import { branchRequests } from '../../../branchRequests';
 import { buildWorkItems, type WorkItem, type WorkItemGroups } from '../../../workItems';
@@ -227,6 +233,7 @@ const GithubPrCard = ({
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const editPr = useAppStore((s) => s.editPr);
+  const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
   const branch = useSessionRepo({ sessionId })?.branch ?? null;
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workspaceIntegrations = useAppStore(
@@ -303,6 +310,18 @@ const GithubPrCard = ({
       />
     ) : null;
 
+  const openLinkedIssue = (issueNumber: number) => {
+    setFocusedGithubIssueNumber(sessionId, issueNumber);
+    onSelectLens('github_issue');
+  };
+
+  const openWorkItem = (task: SessionExternalTask) => {
+    if (task.provider === 'github') {
+      setFocusedGithubIssueNumber(sessionId, Number(task.externalId));
+    }
+    onSelectLens(PROVIDER_LENS[task.provider]);
+  };
+
   const handleUnlinkIssue = async (issueNumber: number) => {
     if (pr === null) {
       return;
@@ -365,7 +384,7 @@ const GithubPrCard = ({
     const hasLinkedWork = linkedIssues.length > 0 || codeHostTasks.length > 0;
     const openAction = (
       <Button size="sm" onClick={onOpenStudio}>
-        Open in code host
+        Draft a pull request
         <ArrowRight size={13} aria-hidden className="shrink-0 opacity-70" />
       </Button>
     );
@@ -385,8 +404,12 @@ const GithubPrCard = ({
     return shell({
       children: (
         <>
-          <LinkedIssuesSection issues={linkedIssues} />
-          <WorkItemsSections groups={workItems} workspace={workspace} onSelectLens={onSelectLens} />
+          <LinkedIssuesSection issues={linkedIssues} onOpenIssue={openLinkedIssue} />
+          <WorkItemsSections
+            groups={workItems}
+            workspace={workspace}
+            onOpenWorkItem={openWorkItem}
+          />
           <LensEmptyState
             tone={CONCEPT_TONE.pr}
             icon={CONCEPT_ICONS.pr}
@@ -440,12 +463,13 @@ const GithubPrCard = ({
       />
       <LinkedIssuesSection
         issues={linkedIssues}
+        onOpenIssue={openLinkedIssue}
         action={linkIssueAction}
         unlinkableNumbers={unlinkableIssueNumbers}
         unlinkingNumber={unlinkingIssueNumber}
         onUnlink={(issueNumber) => void handleUnlinkIssue(issueNumber)}
       />
-      <WorkItemsSections groups={workItems} workspace={workspace} onSelectLens={onSelectLens} />
+      <WorkItemsSections groups={workItems} workspace={workspace} onOpenWorkItem={openWorkItem} />
       {error ? (
         <span className="text-2xs text-danger" title={error}>
           {error}
@@ -523,6 +547,7 @@ const LinkedPullRequestsSection = ({
 
 type LinkedIssuesSectionProps = {
   readonly issues: ReadonlyArray<LinkedIssue>;
+  readonly onOpenIssue: (issueNumber: number) => void;
   readonly action?: ReactNode;
   readonly unlinkableNumbers?: ReadonlySet<number>;
   readonly unlinkingNumber?: number | null;
@@ -531,6 +556,7 @@ type LinkedIssuesSectionProps = {
 
 const LinkedIssuesSection = ({
   issues,
+  onOpenIssue,
   action = null,
   unlinkableNumbers,
   unlinkingNumber = null,
@@ -552,8 +578,8 @@ const LinkedIssuesSection = ({
             leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
             identifier={`#${issue.number}`}
             title={issue.title ?? 'GitHub issue'}
-            navigation="external"
-            onClick={() => void openUrl(issue.url)}
+            navigation="internal"
+            onClick={() => onOpenIssue(issue.number)}
             actions={
               <span className="inline-flex shrink-0 items-center gap-0.5">
                 {unlinkableNumbers?.has(issue.number) === true && onUnlink != null && (
@@ -585,22 +611,22 @@ const LinkedIssuesSection = ({
 type WorkItemsSectionsProps = {
   readonly groups: WorkItemGroups;
   readonly workspace: Workspace | null;
-  readonly onSelectLens: (lens: LensKind) => void;
+  readonly onOpenWorkItem: (task: SessionExternalTask) => void;
 };
 
-const WorkItemsSections = ({ groups, workspace, onSelectLens }: WorkItemsSectionsProps) => (
+const WorkItemsSections = ({ groups, workspace, onOpenWorkItem }: WorkItemsSectionsProps) => (
   <>
     <WorkItemsSection
       label="External tasks"
       items={groups.current}
       workspace={workspace}
-      onSelectLens={onSelectLens}
+      onOpenWorkItem={onOpenWorkItem}
     />
     <WorkItemsSection
       label={`Completed work (${groups.history.length})`}
       items={groups.history}
       workspace={workspace}
-      onSelectLens={onSelectLens}
+      onOpenWorkItem={onOpenWorkItem}
     />
   </>
 );
@@ -609,10 +635,10 @@ type WorkItemsSectionProps = {
   readonly label: string;
   readonly items: ReadonlyArray<WorkItem>;
   readonly workspace: Workspace | null;
-  readonly onSelectLens: (lens: LensKind) => void;
+  readonly onOpenWorkItem: (task: SessionExternalTask) => void;
 };
 
-const WorkItemsSection = ({ label, items, workspace, onSelectLens }: WorkItemsSectionProps) => {
+const WorkItemsSection = ({ label, items, workspace, onOpenWorkItem }: WorkItemsSectionProps) => {
   if (items.length === 0) {
     return null;
   }
@@ -626,17 +652,9 @@ const WorkItemsSection = ({ label, items, workspace, onSelectLens }: WorkItemsSe
             task={task}
             branchLabel={branch ?? undefined}
             appearance="row"
-            navigation={task.provider === 'github' ? 'external' : 'internal'}
-            ariaLabel={
-              task.provider === 'github'
-                ? `open ${task.identifier} in GitHub`
-                : `open ${task.identifier} integration`
-            }
-            onClick={
-              task.provider === 'github'
-                ? () => void openUrl(task.url)
-                : () => onSelectLens(PROVIDER_LENS[task.provider])
-            }
+            navigation="internal"
+            ariaLabel={`open ${task.identifier} integration`}
+            onClick={() => onOpenWorkItem(task)}
             repoLabel={
               workspaceMountName({
                 workspace,

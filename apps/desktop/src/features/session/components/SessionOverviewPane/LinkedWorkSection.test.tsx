@@ -29,6 +29,7 @@ type Store = {
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<Workspace>;
+  readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
 };
 
 const { store, mocks } = vi.hoisted(() => ({
@@ -37,6 +38,7 @@ const { store, mocks } = vi.hoisted(() => ({
     sessionExternalTasks: {},
     sessions: [],
     workspaces: [],
+    setFocusedGithubIssueNumber: vi.fn(),
   } as Store,
   mocks: {
     openUrl: vi.fn(async () => undefined),
@@ -59,6 +61,7 @@ beforeEach(() => {
   store.sessionExternalTasks = {};
   store.sessions = [];
   store.workspaces = [];
+  store.setFocusedGithubIssueNumber.mockClear();
   mocks.openUrl.mockClear();
 });
 
@@ -79,7 +82,7 @@ describe('LinkedWorkSection', () => {
     expect(screen.getByRole('button', { name: 'Link work' })).toBeDefined();
   });
 
-  it('renders every linked issue and opens it externally instead of routing to the PR lens', () => {
+  it('renders every linked issue and routes it internally to the github issue lens', () => {
     store.sessionGithub = {
       'sess-1': {
         linkedIssues: [
@@ -97,8 +100,9 @@ describe('LinkedWorkSection', () => {
     expect(screen.getByText('#9')).toBeDefined();
     expect(screen.getByText('Second issue')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /#9 Second issue/i }));
-    expect(onSelectLens).not.toHaveBeenCalled();
-    expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/issues/9');
+    expect(store.setFocusedGithubIssueNumber).toHaveBeenCalledWith('sess-1', 9);
+    expect(onSelectLens).toHaveBeenCalledWith('github_issue');
+    expect(mocks.openUrl).not.toHaveBeenCalled();
 
     const secondIssueRow = screen.getByRole('button', { name: /#9 Second issue/i }).closest('div');
     expect(secondIssueRow).not.toBeNull();
