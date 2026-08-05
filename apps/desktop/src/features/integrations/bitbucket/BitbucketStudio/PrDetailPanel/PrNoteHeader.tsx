@@ -1,5 +1,6 @@
-import { IssueNoteAvatar } from '../../../components/IssueNoteAvatar';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { NoteAvatar } from '../../../../../shared/components/NoteAvatar';
+import { NoteHeader } from '../../../../../shared/components/NoteHeader';
 import type { BitbucketComment } from '../../client';
 
 type Props = {
@@ -11,15 +12,17 @@ export const PrNoteHeader = ({ comment }: Props) => {
   const age = formatRelativeAge({ fromIso: comment.createdOn });
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <IssueNoteAvatar url={comment.user?.avatarUrl ?? null} alt={name} />
-      <span className="font-medium text-foreground">{name}</span>
-      {age !== '' && (
-        <>
-          <span className="opacity-50">·</span>
-          <span>{age}</span>
-        </>
-      )}
-    </div>
+    <NoteHeader
+      avatar={<NoteAvatar url={comment.user?.avatarUrl ?? null} alt={name} />}
+      author={name}
+      timestamp={
+        age !== '' && (
+          <>
+            <span className="opacity-50">·</span>
+            <span>{age}</span>
+          </>
+        )
+      }
+    />
   );
 };

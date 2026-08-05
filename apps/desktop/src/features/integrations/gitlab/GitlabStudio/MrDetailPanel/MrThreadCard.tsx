@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Divider, Markdown } from '@goodboy/ui';
 import { MessageSquareReply } from 'lucide-react';
 import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
-import { MrNoteComposer } from './MrNoteComposer';
+import { NoteComposer } from '../../../../../shared/components/NoteComposer';
 import { MrNoteHeader } from './MrNoteHeader';
 import { threadAnchor, type MrThread } from './mrThreads';
 
@@ -51,7 +51,7 @@ export const MrThreadCard = ({ thread, onReply }: Props) => {
         </button>
       )}
       {onReply != null && isReplyOpen && (
-        <MrNoteComposer
+        <NoteComposer
           placeholder="Write a reply"
           submitLabel="Reply"
           minRows={2}

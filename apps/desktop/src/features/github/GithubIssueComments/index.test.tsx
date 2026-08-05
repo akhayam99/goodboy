@@ -51,6 +51,41 @@ describe('GithubIssueComments', () => {
     expect(screen.getByText('Merged.')).toBeDefined();
   });
 
+  it('renders a real avatar src and accessible name for the comment author', () => {
+    const comment: GithubIssueComment = {
+      ...COMMENT,
+      authorAvatarUrl: 'https://github.example/avatars/ada.png',
+    };
+    render(
+      <GithubIssueComments comments={[comment]} isLoading={false} error={null} onPost={null} />,
+    );
+
+    const avatar = screen.getByRole('img', { name: 'ada' });
+    expect(avatar.getAttribute('src')).toBe('https://github.example/avatars/ada.png');
+  });
+
+  it('falls back to the author initial when there is no avatar url', () => {
+    render(
+      <GithubIssueComments comments={[COMMENT]} isLoading={false} error={null} onPost={null} />,
+    );
+
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByText('A')).toBeDefined();
+  });
+
+  it('renders a relative timestamp for each comment', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-26T10:00:00Z'));
+
+    render(
+      <GithubIssueComments comments={[COMMENT]} isLoading={false} error={null} onPost={null} />,
+    );
+
+    expect(screen.getByText('3d ago')).toBeDefined();
+
+    vi.useRealTimers();
+  });
+
   it('posts the draft and clears the composer', async () => {
     const onPost = vi.fn(async () => {});
     render(

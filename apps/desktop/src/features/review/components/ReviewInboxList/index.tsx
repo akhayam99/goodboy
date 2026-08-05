@@ -15,7 +15,7 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
-import { AuthorAvatar } from '../AuthorAvatar';
+import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
 
@@ -150,7 +150,12 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
                       <span className="min-w-0 flex-1 truncate text-xs">{pr.title}</span>
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <AuthorAvatar author={pr.author} avatarUrl={pr.authorAvatarUrl} />
+                      <NoteAvatar
+                        url={pr.authorAvatarUrl}
+                        alt=""
+                        initialsSource={pr.author}
+                        size="xs"
+                      />
                       <span className="min-w-0 truncate text-2xs text-muted-foreground/70">
                         {pr.author}
                       </span>
