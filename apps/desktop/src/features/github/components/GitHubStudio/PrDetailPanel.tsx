@@ -377,9 +377,14 @@ export const PrDetailPanel = ({
     }
     setBusy('review');
     try {
-      await publishPrReview(sessionId, { verdict, body, target: verdictTarget });
-      showToast('success', VERDICT_TOAST[verdict]);
+      const result = await publishPrReview(sessionId, { verdict, body, target: verdictTarget });
       onMutated();
+      const failure = result.failed[0];
+      if (failure != null) {
+        showToast('error', `Review not posted: ${failure.error}`);
+        return;
+      }
+      showToast('success', VERDICT_TOAST[verdict]);
     } catch (err) {
       showToast('error', formatError(err));
     } finally {

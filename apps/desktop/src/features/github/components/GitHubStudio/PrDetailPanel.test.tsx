@@ -127,7 +127,13 @@ const h = vi.hoisted(() => {
       closePr: vi.fn(async () => undefined),
       reopenPr: vi.fn(async () => undefined),
       requestReview: vi.fn(async () => undefined),
-      publishPrReview: vi.fn(async () => ({ published: 0, stale: [], failed: [] })),
+      publishPrReview: vi.fn(
+        async (): Promise<{
+          published: number;
+          stale: ReadonlyArray<{ id: string }>;
+          failed: ReadonlyArray<{ draft: { id: string }; error: string }>;
+        }> => ({ published: 0, stale: [], failed: [] }),
+      ),
       editPr: vi.fn(async () => undefined),
       spawnAgent: vi.fn(async () => 'agent-1'),
       selectAgent: vi.fn(async () => undefined),
@@ -376,6 +382,25 @@ describe('PrDetailPanel', () => {
     await waitFor(() =>
       expect(h.showToast).toHaveBeenCalledWith('success', 'Pull request approved'),
     );
+  });
+
+  it('never claims success when the publish reports failed comments', async () => {
+    h.store.publishPrReview.mockResolvedValueOnce({
+      published: 0,
+      stale: [],
+      failed: [{ draft: { id: 'draft-1' }, error: 'resource not accessible by integration' }],
+    });
+
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Approve pull request' }));
+
+    await waitFor(() =>
+      expect(h.showToast).toHaveBeenCalledWith(
+        'error',
+        'Review not posted: resource not accessible by integration',
+      ),
+    );
+    expect(h.showToast).not.toHaveBeenCalledWith('success', expect.anything());
   });
 
   it('drives the active pr and switcher selection through store state', () => {
