@@ -1,14 +1,23 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { FileText, MessageSquare } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { HeaderBand, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import type { SegmentedTabOption } from '@goodboy/ui';
+import {
+  HeaderBand,
+  StudioDetailLayout,
+  StudioDetailTabs,
+} from '../../../../shared/components/StudioDetail';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { gitlabIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
+import { useGitlabIssueNotes } from '../useGitlabIssueNotes';
+import { IssueConversation } from '../IssueConversation';
 
 type Fit = 'fill' | 'bleed' | 'flow';
+type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: GitlabIssue;
@@ -17,8 +26,15 @@ type Props = {
   readonly fit?: Fit;
 };
 
+const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
+  { value: 'overview', label: 'Overview', icon: FileText },
+  { value: 'conversation', label: 'Conversation', icon: MessageSquare },
+];
+
 export const GitlabIssueDetail = ({ issue, workspaceId, headerActions, fit = 'fill' }: Props) => {
+  const [section, setSection] = useState<IssueSection>('overview');
   const { description, save } = useGitlabIssueDescription({ issue, workspaceId });
+  const notes = useGitlabIssueNotes({ issue, workspaceId });
 
   return (
     <StudioDetailLayout
@@ -42,9 +58,27 @@ export const GitlabIssueDetail = ({ issue, workspaceId, headerActions, fit = 'fi
           }
         />
       }
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Issue sections"
+          options={SECTION_OPTIONS}
+          value={section}
+          onChange={setSection}
+        />
+      }
       properties={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
     >
-      <DescriptionSection text={description} onSave={save} />
+      {section === 'overview' ? (
+        <DescriptionSection text={description} onSave={save} />
+      ) : (
+        <IssueConversation
+          notes={notes.notes}
+          isLoading={notes.isLoading}
+          error={notes.error}
+          onRetry={notes.reload}
+          onPost={notes.post}
+        />
+      )}
     </StudioDetailLayout>
   );
 };

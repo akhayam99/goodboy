@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
-import { gitlabUpdateIssueDescription, type GitlabIssue } from '../client';
+import {
+  gitlabCreateIssueNote,
+  gitlabListIssueNotes,
+  gitlabUpdateIssueDescription,
+  type GitlabIssue,
+} from '../client';
 import { GitlabIssueDetail } from './index';
 
 type StoreGitlabIntegration = { provider: string; config: { host: string } };
@@ -19,9 +24,13 @@ vi.mock('../../../../store', () => ({
 vi.mock('../client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../client')>()),
   gitlabUpdateIssueDescription: vi.fn(),
+  gitlabListIssueNotes: vi.fn(async () => []),
+  gitlabCreateIssueNote: vi.fn(async () => 1),
 }));
 
 const updateDescription = vi.mocked(gitlabUpdateIssueDescription);
+const listIssueNotes = vi.mocked(gitlabListIssueNotes);
+const createIssueNote = vi.mocked(gitlabCreateIssueNote);
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
 const ISSUE: GitlabIssue = {
@@ -40,6 +49,10 @@ const ISSUE: GitlabIssue = {
 
 beforeEach(() => {
   updateDescription.mockReset();
+  listIssueNotes.mockReset();
+  listIssueNotes.mockResolvedValue([]);
+  createIssueNote.mockReset();
+  createIssueNote.mockResolvedValue(1);
   h.store.workspaceIntegrations = {
     [WORKSPACE_ID]: [{ provider: 'gitlab', config: { host: 'https://gitlab.com' } }],
   };
@@ -116,5 +129,53 @@ describe('GitlabIssueDetail', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     fireEvent.click(screen.getByTestId('description-body'));
     expect(screen.queryByRole('textbox', { name: 'Edit description' })).toBeNull();
+  });
+
+  it('renders the conversation notes without the system notes', async () => {
+    listIssueNotes.mockResolvedValue([
+      {
+        id: 1,
+        body: 'This needs a repro',
+        system: false,
+        author: { username: 'bob', name: 'Bob', avatarUrl: null },
+        createdAt: '2026-07-22T10:00:00Z',
+      },
+      {
+        id: 2,
+        body: 'changed the milestone to v1.4',
+        system: true,
+        author: null,
+        createdAt: '2026-07-22T10:01:00Z',
+      },
+    ]);
+    render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
+
+    await waitFor(() => expect(screen.getByText('This needs a repro')).toBeDefined());
+    expect(screen.queryByText('changed the milestone to v1.4')).toBeNull();
+    expect(screen.getByText('1 system event hidden')).toBeDefined();
+  });
+
+  it('posts a note through the GitLab client and reloads the conversation', async () => {
+    render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
+    await waitFor(() => expect(listIssueNotes).toHaveBeenCalledOnce());
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Write a note' }), {
+      target: { value: 'Reproduced on main' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+
+    await waitFor(() =>
+      expect(createIssueNote).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        host: 'https://gitlab.com',
+        projectPath: 'acme/web',
+        issueIid: 7,
+        body: 'Reproduced on main',
+      }),
+    );
+    await waitFor(() => expect(listIssueNotes).toHaveBeenCalledTimes(2));
   });
 });

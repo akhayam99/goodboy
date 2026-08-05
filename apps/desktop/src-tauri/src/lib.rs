@@ -276,6 +276,8 @@ pub fn run() {
             gitlab::gitlab_fetch_assigned_issues,
             gitlab::gitlab_fetch_issue,
             gitlab::gitlab_update_issue,
+            gitlab::gitlab_list_issue_notes,
+            gitlab::gitlab_create_issue_note,
             gitlab::gitlab_fetch_assigned_mrs,
             gitlab::gitlab_fetch_project_mrs,
             gitlab::gitlab_mr_for_branch,

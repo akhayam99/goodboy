@@ -336,6 +336,55 @@ export const gitlabReplyToMrDiscussion = async ({
   });
 };
 
+export type GitlabIssueNote = {
+  id: number;
+  body: string;
+  system: boolean;
+  author: GitlabMrAuthor | null;
+  createdAt: string;
+};
+
+type IssueTarget = {
+  readonly workspaceId: WorkspaceId;
+  readonly host: string;
+  readonly projectPath: string;
+  readonly issueIid: number;
+};
+
+export const gitlabListIssueNotes = async ({
+  workspaceId,
+  host,
+  projectPath,
+  issueIid,
+}: IssueTarget): Promise<ReadonlyArray<GitlabIssueNote>> => {
+  return invoke<ReadonlyArray<GitlabIssueNote>>('gitlab_list_issue_notes', {
+    workspaceId,
+    host,
+    projectPath,
+    issueIid,
+  });
+};
+
+type CreateIssueNoteParams = IssueTarget & {
+  readonly body: string;
+};
+
+export const gitlabCreateIssueNote = async ({
+  workspaceId,
+  host,
+  projectPath,
+  issueIid,
+  body,
+}: CreateIssueNoteParams): Promise<number> => {
+  return invoke<number>('gitlab_create_issue_note', {
+    workspaceId,
+    host,
+    projectPath,
+    issueIid,
+    body,
+  });
+};
+
 export const gitlabMrApprovalState = async ({
   workspaceId,
   host,
