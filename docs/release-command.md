@@ -26,7 +26,7 @@ Below, `X` is the new version and `X-1` is the current latest.
    `apps/desktop/package.json`, `apps/desktop/src-tauri/tauri.conf.json`,
    `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/Cargo.lock`
    (the `goodboy-desktop` package entry). In the same commit, add the `## Goodboy
-vX` section to `CHANGELOG.md` (see "Release notes" below) — the release
+vX` section to `CHANGELOG.md` (see "Release notes" below): the release
    build reads its body from there and fails if the section is missing, so this
    is not optional.
 2. Branch `ak/chore-release-vX` (NOT the worktree codename; see branch-naming
@@ -40,8 +40,8 @@ vX` section to `CHANGELOG.md` (see "Release notes" below) — the release
 4. rc dry-run: `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
    Wait for `release.yml` to finish green. VERIFY notarization: download the dmg,
    `hdiutil attach`, run `spctl -a -vvv` (expect `accepted, source=Notarized
-Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`, NOT
-   Serenis `FC96QL5F9R`). Detach. Then delete the rc (release + remote tag +
+Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`; any
+   other team is a failure). Detach. Then delete the rc (release + remote tag +
    local tag).
 5. Cut real: `git tag vX <merge-sha> && git push origin vX`. Wait for the build
    to produce the draft release (dmg + app.tar.gz + .sig + latest.json).
@@ -87,6 +87,6 @@ missing.
 ## Finish
 
 6. Once the draft release exists (step 5), its body and `latest.json` are
-   already filled in from `CHANGELOG.md` — review the draft, then publish:
+   already filled in from `CHANGELOG.md`: review the draft, then publish:
    `gh release edit vX --draft=false`, then confirm `homebrew.yml` fires and
    succeeds (`gh run list --workflow=homebrew.yml`).
