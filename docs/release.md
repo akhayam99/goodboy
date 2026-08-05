@@ -19,7 +19,7 @@ published to GitHub Releases and Homebrew.
 The git tag is the source of truth for the release name. The version baked into
 the build comes from `tauri.conf.json`, so the two must match.
 
-## Step 1: bump the version
+## Step 1: bump the version and write the notes
 
 Set the same version in all four places (they must match the tag, minus the `v`):
 
@@ -27,6 +27,10 @@ Set the same version in all four places (they must match the tag, minus the `v`)
 - `apps/desktop/package.json`
 - `apps/desktop/src-tauri/tauri.conf.json` (`version`)
 - `apps/desktop/src-tauri/Cargo.toml` (`package.version`)
+
+Add a `## Goodboy vX` section to `CHANGELOG.md` above the previous release (see
+`docs/release-command.md` → "Release notes" for the format and sourcing rules).
+The release build reads its body from this section and fails if it's missing.
 
 Land the bump on `main` via PR.
 
@@ -65,8 +69,9 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Review the draft release the workflow creates, write the notes, then **publish**.
-Publishing fires the Homebrew cask bump.
+The draft release the workflow creates already has its notes filled in from
+`CHANGELOG.md`. Review the draft, then **publish**. Publishing fires the
+Homebrew cask bump.
 
 ## Signing and notarization
 
@@ -105,7 +110,9 @@ Apple code-signing). The public key lives in `tauri.conf.json`
 (`plugins.updater.pubkey`); the private key + password are repo secrets
 `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 `tauri-action` uses them to sign the `.app.tar.gz` and emit `latest.json`,
-which it attaches to the release.
+which it attaches to the release. `latest.json`'s `notes` field is the same
+`CHANGELOG.md` section used for the release body (see "Step 1" above), so the
+updater shows the same notes as the GitHub release.
 
 Because `latest.json` points at `releases/latest`, only a **published**
 (non-draft) release is visible to clients. The updater config must ship inside a

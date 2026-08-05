@@ -11,6 +11,7 @@ out/
 
 # tauri
 src-tauri/target/
+/target/
 
 # env
 .env
