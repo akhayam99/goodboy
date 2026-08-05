@@ -4,7 +4,7 @@ import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../store';
 import type { WorkspaceId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
-import { Avatar } from '../Card/parts/Avatar';
+import { Avatar } from '../Avatar';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {

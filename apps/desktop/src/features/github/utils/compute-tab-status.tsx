@@ -16,8 +16,10 @@ import type {
   PrReviewRequest,
   PullRequestState,
 } from '@goodboy/types';
-import { groupThreads } from '../../comment-threads';
-import { latestTerminalReviewsByAuthor, type GithubTabKey } from './lib';
+import { groupThreads } from '../comment-threads';
+import { latestTerminalReviewsByAuthor } from './latest-terminal-reviews-by-author';
+
+type PrTabKey = 'ci' | 'comments' | 'review';
 
 export type TabStatus = {
   readonly tone: 'success' | 'warning' | 'danger' | 'info' | 'muted';
@@ -29,7 +31,7 @@ export type TabStatus = {
 export const computeTabStatus = (
   pr: PullRequestState,
   detail: PrDetail | null,
-): Record<GithubTabKey, TabStatus | null> => {
+): Record<PrTabKey, TabStatus | null> => {
   return {
     ci: computeCiStatus(pr, detail?.checks ?? []),
     comments: computeCommentsStatus(detail?.comments ?? []),

@@ -10,7 +10,7 @@ import {
   MinusCircle,
   XCircle,
 } from 'lucide-react';
-import { formatDuration } from '../Card/lib';
+import { formatDuration } from '../../utils/format-duration';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {

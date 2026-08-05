@@ -2,7 +2,7 @@ import { EmptyState, Markdown, Skeleton } from '@goodboy/ui';
 import type { GithubIssueComment } from '@goodboy/types';
 import { formatRelativeDuration } from '../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-import { Avatar } from '../components/Card/parts/Avatar';
+import { Avatar } from '../components/Avatar';
 import { GithubIssueCommentComposer } from './GithubIssueCommentComposer';
 
 type Props = {
