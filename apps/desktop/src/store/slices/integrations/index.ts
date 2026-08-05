@@ -1,7 +1,9 @@
+import { connectBitbucket } from './connectBitbucket';
 import { connectGitlab } from './connectGitlab';
 import { connectJira } from './connectJira';
 import { connectLinear } from './connectLinear';
 import { connectSentry } from './connectSentry';
+import { disconnectBitbucket } from './disconnectBitbucket';
 import { disconnectGitlab } from './disconnectGitlab';
 import { disconnectJira } from './disconnectJira';
 import { disconnectLinear } from './disconnectLinear';
@@ -20,5 +22,7 @@ export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
     disconnectGitlab: disconnectGitlab(set),
     connectJira: connectJira(set, get),
     disconnectJira: disconnectJira(set),
+    connectBitbucket: connectBitbucket(set, get),
+    disconnectBitbucket: disconnectBitbucket(set),
   };
 };

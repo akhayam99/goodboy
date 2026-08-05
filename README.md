@@ -80,6 +80,13 @@ labels, description and the comment thread, all readable in the app. Launch a
 session from one and the key lands on the branch. Writing back to Jira,
 commenting, assigning, moving status, is not there yet.
 
+**Bitbucket, connect only so far.** Bitbucket Cloud is a code host you can
+connect from onboarding or the integrations panel: a workspace slug, your
+Atlassian account email and an API token, verified against the account and the
+workspace before anything is stored. The pull request inbox, the diff and the
+review verbs are wired in the backend but have no screen yet, so connecting is
+all you can do with it in this build.
+
 **Cost meter that taps your shoulder.** Every session shows what it's costing
 as it runs. Goodboy nudges you before you burn Opus on a one-liner.
 

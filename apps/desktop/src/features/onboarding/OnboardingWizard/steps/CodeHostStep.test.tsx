@@ -16,6 +16,12 @@ vi.mock('../../../integrations/gitlab/GitlabFormBody', () => ({
   ),
 }));
 
+vi.mock('../../../integrations/bitbucket/BitbucketFormBody', () => ({
+  BitbucketFormBody: ({ workspaceId }: { workspaceId: WorkspaceId }) => (
+    <div data-testid="bitbucket-form">{workspaceId}</div>
+  ),
+}));
+
 const WS_ID = 'ws-1' as WorkspaceId;
 
 afterEach(cleanup);
@@ -29,6 +35,7 @@ describe('CodeHostStep', () => {
         workspaceId={WS_ID}
         githubConnected={false}
         gitlabConnected={false}
+        bitbucketConnected={false}
         onConnected={vi.fn()}
       />,
     );
@@ -42,6 +49,7 @@ describe('CodeHostStep', () => {
           workspaceId={WS_ID}
           githubConnected={false}
           gitlabConnected={false}
+          bitbucketConnected={false}
           onConnected={vi.fn()}
         />,
       );
@@ -56,11 +64,42 @@ describe('CodeHostStep', () => {
           workspaceId={WS_ID}
           githubConnected={false}
           gitlabConnected={false}
+          bitbucketConnected={false}
           onConnected={vi.fn()}
         />,
       );
       fireEvent.click(screen.getByRole('tab', { name: /gitlab/i }));
       expect(screen.getByTestId('gitlab-form').textContent).toBe(WS_ID);
+      expect(screen.queryByTestId('github-form')).toBeNull();
+    });
+
+    it('swaps to the Bitbucket form when its segment is selected', () => {
+      render(
+        <CodeHostStep
+          workspaceId={WS_ID}
+          githubConnected={false}
+          gitlabConnected={false}
+          bitbucketConnected={false}
+          onConnected={vi.fn()}
+        />,
+      );
+      fireEvent.click(screen.getByRole('tab', { name: /bitbucket/i }));
+      expect(screen.getByTestId('bitbucket-form').textContent).toBe(WS_ID);
+      expect(screen.queryByTestId('github-form')).toBeNull();
+      expect(screen.queryByTestId('gitlab-form')).toBeNull();
+    });
+
+    it('defaults to Bitbucket when only Bitbucket is connected', () => {
+      render(
+        <CodeHostStep
+          workspaceId={WS_ID}
+          githubConnected={false}
+          gitlabConnected={false}
+          bitbucketConnected
+          onConnected={vi.fn()}
+        />,
+      );
+      expect(screen.getByTestId('bitbucket-form').textContent).toBe(WS_ID);
       expect(screen.queryByTestId('github-form')).toBeNull();
     });
 
@@ -70,6 +109,7 @@ describe('CodeHostStep', () => {
           workspaceId={WS_ID}
           githubConnected={false}
           gitlabConnected
+          bitbucketConnected={false}
           onConnected={vi.fn()}
         />,
       );
@@ -85,6 +125,7 @@ describe('CodeHostStep', () => {
           workspaceId={null}
           githubConnected={false}
           gitlabConnected={false}
+          bitbucketConnected={false}
           onConnected={vi.fn()}
         />,
       );
@@ -94,6 +135,7 @@ describe('CodeHostStep', () => {
       expect(screen.getByText(/Add a workspace first to connect a code host/i)).toBeDefined();
       expect(screen.queryByTestId('github-form')).toBeNull();
       expect(screen.queryByTestId('gitlab-form')).toBeNull();
+      expect(screen.queryByTestId('bitbucket-form')).toBeNull();
     });
 
     it('dispatches goodboy:add-workspace when the Add workspace button is clicked', () => {

@@ -144,6 +144,7 @@ import { initialChangelogState } from './slices/changelog/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
+import type { BitbucketConnection } from '../features/integrations/bitbucket/client';
 import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
@@ -217,6 +218,13 @@ export type AppActions = {
     apiToken: string;
   }): Promise<JiraUser>;
   disconnectJira(params: { workspaceId: WorkspaceId }): Promise<void>;
+  connectBitbucket(params: {
+    workspaceId: WorkspaceId;
+    workspaceSlug: string;
+    email: string;
+    apiToken: string;
+  }): Promise<BitbucketConnection>;
+  disconnectBitbucket(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
