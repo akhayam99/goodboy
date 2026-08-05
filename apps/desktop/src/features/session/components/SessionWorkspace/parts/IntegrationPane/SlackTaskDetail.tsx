@@ -5,6 +5,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components
 import { SlackThreadDetail } from '../../../../../integrations/slack/SlackThreadDetail';
 import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
 import { useSlackThread } from '../../../../../integrations/slack/useSlackThread';
+import { useSlackThreadActions } from '../../../../../integrations/slack/useSlackThreadActions';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -14,6 +15,12 @@ type Props = {
 export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
   const parsed = parseSlackThreadExternalId({ externalId: task.externalId });
   const thread = useSlackThread({
+    workspaceId,
+    channelId: parsed?.channelId ?? '',
+    threadTs: parsed?.threadTs ?? '',
+    isEnabled: parsed != null,
+  });
+  const actions = useSlackThreadActions({
     workspaceId,
     channelId: parsed?.channelId ?? '',
     threadTs: parsed?.threadTs ?? '',
@@ -56,6 +63,7 @@ export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
       isLoading={thread.isLoading}
       error={thread.error}
       onRetry={thread.refetch}
+      actions={actions}
       fit="fill"
     />
   );

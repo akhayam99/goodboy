@@ -13,3 +13,12 @@ export type SlackChannelParams = SlackWorkspaceParams & {
 export type SlackThreadParams = SlackChannelParams & {
   readonly threadTs: string;
 };
+
+export type SlackReplyParams = SlackThreadParams & {
+  readonly text: string;
+};
+
+export type SlackReactionParams = SlackThreadParams & {
+  readonly messageTs: string;
+  readonly name: string;
+};
