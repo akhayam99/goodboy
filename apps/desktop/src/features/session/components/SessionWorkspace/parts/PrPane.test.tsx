@@ -21,6 +21,7 @@ type Store = {
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   workspaceIntegrations: Record<string, ReadonlyArray<{ readonly provider: string }>>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
+  readonly refreshSessionBitbucketPr: ReturnType<typeof vi.fn>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly editPr: ReturnType<typeof vi.fn>;
   readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
@@ -44,6 +45,7 @@ const h = vi.hoisted(() => ({
     sessionPhaseRuns: {},
     workspaceIntegrations: {},
     refreshSessionPr: vi.fn(),
+    refreshSessionBitbucketPr: vi.fn(async () => undefined),
     selectSessionPr: vi.fn(),
     editPr: vi.fn(async () => undefined),
     setFocusedGithubIssueNumber: vi.fn(),
@@ -213,6 +215,7 @@ beforeEach(() => {
   h.store.editPr.mockClear();
   h.store.setFocusedGithubIssueNumber.mockClear();
   h.store.openExternalTaskLens.mockClear();
+  h.store.refreshSessionBitbucketPr.mockClear();
   h.githubStatus = {
     available: true,
     mode: 'gh-cli',
@@ -304,6 +307,33 @@ describe('PrPane', () => {
     expect(screen.getAllByText('Refactor authentication').length).toBeGreaterThan(0);
     expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'GitLab' })).toBeDefined();
+  });
+
+  it('resolves the branch to a Bitbucket pull request when the workspace has Bitbucket connected', () => {
+    h.remoteKind = 'other';
+    h.store.workspaceIntegrations = { [session.workspaceId]: [{ provider: 'bitbucket' }] };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(h.store.refreshSessionBitbucketPr).toHaveBeenCalledWith(SESSION_ID, { silent: true });
+  });
+
+  it('leaves Bitbucket alone when the workspace never connected it', () => {
+    h.remoteKind = 'other';
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(h.store.refreshSessionBitbucketPr).not.toHaveBeenCalled();
+  });
+
+  it('does not resolve the Bitbucket pull request twice once it has an answer', () => {
+    h.remoteKind = 'other';
+    h.store.workspaceIntegrations = { [session.workspaceId]: [{ provider: 'bitbucket' }] };
+    h.store.sessionBitbucketPr = { [SESSION_ID]: { pr: null, fetchedAt: DATE } };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(h.store.refreshSessionBitbucketPr).not.toHaveBeenCalled();
   });
 
   it('names Bitbucket and shows its strip when it is the only host with a pull request', () => {

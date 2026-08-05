@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArrowRight, GitBranch, GitFork, GitMerge, GitPullRequest, Unlink } from 'lucide-react';
 import { Button, Eyebrow, Skeleton } from '@goodboy/ui';
 import type {
@@ -150,6 +150,28 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
   const phaseRuns = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
   const bitbucketPr = useAppStore((state) => state.sessionBitbucketPr[sessionId]?.pr ?? null);
+  const hasBitbucketIntegration = useAppStore(
+    (state) =>
+      state.workspaceIntegrations[session.workspaceId]?.some(
+        (integration) => integration.provider === 'bitbucket',
+      ) === true,
+  );
+  const hasResolvedBitbucket = useAppStore(
+    (state) => state.sessionBitbucketPr[sessionId]?.fetchedAt != null,
+  );
+  const refreshSessionBitbucketPr = useAppStore((state) => state.refreshSessionBitbucketPr);
+  const discoverBitbucketPullRequest = () => {
+    if (!hasBitbucketIntegration || hasResolvedBitbucket) {
+      return;
+    }
+    void refreshSessionBitbucketPr(sessionId, { silent: true });
+  };
+  useEffect(discoverBitbucketPullRequest, [
+    hasBitbucketIntegration,
+    hasResolvedBitbucket,
+    refreshSessionBitbucketPr,
+    sessionId,
+  ]);
   const [selectedProvider, setSelectedProvider] = useState<PullRequestProvider | null>(null);
   const availability = useMemo(
     () => ({
