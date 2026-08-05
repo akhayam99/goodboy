@@ -52,6 +52,8 @@ import type {
 import type { AgentKind } from '../features/session/agent-kind';
 import type { ResolverState } from '../features/workspace/components/WorkspacesSidebar/lib';
 import type { GitlabMergeRequest } from '../features/integrations/gitlab/client';
+import type { BitbucketRepo } from '../features/integrations/bitbucket/client';
+import type { SessionBitbucketPrEntry } from './slices/bitbucket-pr/state';
 import type {
   ProviderAuthResults,
   ProviderInfo,
@@ -243,6 +245,9 @@ export type AppState = AppSliceState & {
   readonly sessionGithubPrs: Readonly<Record<SessionId, ReadonlyArray<PullRequestState>>>;
   readonly sessionSelectedPrNumber: Readonly<Record<SessionId, number | null>>;
   readonly sessionGitlabMr: Readonly<Record<SessionId, SessionGitlabMrState>>;
+  readonly sessionBitbucketPr: Readonly<Record<SessionId, SessionBitbucketPrEntry>>;
+  readonly sessionBitbucketRepo: Readonly<Record<SessionId, BitbucketRepo>>;
+  readonly sessionSelectedBitbucketPrId: Readonly<Record<SessionId, number | null>>;
   readonly reviewPrs: Readonly<Record<WorkspaceId, ReviewPrsState>>;
   readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
   readonly sessionPendingResolutions: Readonly<Record<SessionId, ReadonlyArray<PendingResolution>>>;

@@ -83,6 +83,11 @@ import { createFileVersionsSlice } from './slices/file-versions';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import { createGitlabMrSlice } from './slices/gitlab-mr';
+import {
+  createBitbucketPrSlice,
+  initialBitbucketPrState,
+  type RefreshSessionBitbucketPrOptions,
+} from './slices/bitbucket-pr';
 import { createReviewPrsSlice } from './slices/review-prs';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import type {
@@ -563,6 +568,11 @@ export type AppActions = {
     opts?: { title?: string; description?: string; targetBranch?: string; draft?: boolean },
   ): Promise<void>;
   mergeMrForSession(sessionId: SessionId): Promise<void>;
+  refreshSessionBitbucketPr(
+    sessionId: SessionId,
+    opts?: RefreshSessionBitbucketPrOptions,
+  ): Promise<void>;
+  selectSessionBitbucketPr(sessionId: SessionId, pullRequestId: number | null): Promise<void>;
   closePr(sessionId: SessionId, prNumber?: number): Promise<void>;
   reopenPr(sessionId: SessionId, prNumber?: number): Promise<void>;
   editPr(
@@ -779,6 +789,7 @@ export const initialState: AppState = {
   sessionGithubPrs: {},
   sessionSelectedPrNumber: {},
   sessionGitlabMr: {},
+  ...initialBitbucketPrState,
   reviewPrs: {},
   reviewDrafts: {},
   sessionPendingResolutions: {},
@@ -834,6 +845,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createAttachmentsSlice(set, get),
   ...createGithubSlice(set, get),
   ...createGitlabMrSlice(set, get),
+  ...createBitbucketPrSlice(set, get),
   ...createReviewPrsSlice(set, get),
   ...createReviewDraftsSlice(set, get),
   ...createIntegrationsSlice(set, get),
