@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, cn, Popover, Select, Textarea } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
-import { PR_ACTION_BUTTON } from './prActionButton';
+import { HOST_ACTION_BUTTON } from '../../../../shared/utils/hostActionButton';
 
 export type PrVerdictSubmission = {
   readonly verdict: PublishPrReviewVerdict;
@@ -37,7 +37,7 @@ export const PrVerdictAction = ({ canReview, isBusy, isSubmitting, onSubmit }: P
             : 'Could not read the repository from the pull request link'
         }
         className={cn(
-          PR_ACTION_BUTTON,
+          HOST_ACTION_BUTTON,
           'border-border-soft text-foreground hover:border-border hover:bg-muted/50',
           isSubmitting && 'animate-border-pulse',
         )}

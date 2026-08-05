@@ -3,7 +3,7 @@ import type { PullRequestState } from '@goodboy/types';
 import { cn, Divider, InlineConfirm, tintClasses, type Tone } from '@goodboy/ui';
 import { GitMerge, GitPullRequestDraft, Plus, RotateCcw, Send, XCircle } from 'lucide-react';
 import { PrVerdictAction, type PrVerdictSubmission } from './PrVerdictAction';
-import { PR_ACTION_BUTTON } from './prActionButton';
+import { HOST_ACTION_BUTTON } from '../../../../shared/utils/hostActionButton';
 
 export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | 'review' | null;
 
@@ -120,7 +120,7 @@ export const PrActionBar = ({
           type="button"
           onClick={onMarkReady}
           disabled={busy !== null}
-          className={cn(PR_ACTION_BUTTON, TONE.success, spin('ready') && 'animate-border-pulse')}
+          className={cn(HOST_ACTION_BUTTON, TONE.success, spin('ready') && 'animate-border-pulse')}
         >
           <Send size={13} aria-hidden />
           Mark ready
@@ -130,7 +130,11 @@ export const PrActionBar = ({
           type="button"
           onClick={onConvertDraft}
           disabled={busy !== null}
-          className={cn(PR_ACTION_BUTTON, TONE.warning, spin('undraft') && 'animate-border-pulse')}
+          className={cn(
+            HOST_ACTION_BUTTON,
+            TONE.warning,
+            spin('undraft') && 'animate-border-pulse',
+          )}
         >
           <GitPullRequestDraft size={13} aria-hidden />
           Convert to draft
@@ -142,7 +146,7 @@ export const PrActionBar = ({
           type="button"
           onClick={onClose}
           disabled={busy !== null}
-          className={cn(PR_ACTION_BUTTON, TONE.danger, spin('close') && 'animate-border-pulse')}
+          className={cn(HOST_ACTION_BUTTON, TONE.danger, spin('close') && 'animate-border-pulse')}
         >
           <XCircle size={13} aria-hidden />
           Close
@@ -155,7 +159,11 @@ export const PrActionBar = ({
             type="button"
             onClick={onReopen}
             disabled={busy !== null}
-            className={cn(PR_ACTION_BUTTON, TONE.success, spin('reopen') && 'animate-border-pulse')}
+            className={cn(
+              HOST_ACTION_BUTTON,
+              TONE.success,
+              spin('reopen') && 'animate-border-pulse',
+            )}
           >
             <RotateCcw size={13} aria-hidden />
             Reopen
@@ -163,7 +171,7 @@ export const PrActionBar = ({
           <button
             type="button"
             onClick={onCreateNew}
-            className={cn(PR_ACTION_BUTTON, TONE.primary)}
+            className={cn(HOST_ACTION_BUTTON, TONE.primary)}
           >
             <Plus size={13} aria-hidden />
             Create new PR

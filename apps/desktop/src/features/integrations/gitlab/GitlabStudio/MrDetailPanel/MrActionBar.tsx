@@ -1,7 +1,7 @@
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import { GitPullRequestDraft, RotateCcw, Send, ThumbsDown, ThumbsUp, XCircle } from 'lucide-react';
 import type { GitlabMergeRequest, GitlabMrApprovalState } from '../../client';
-import { MR_ACTION_BUTTON } from './mrActionButton';
+import { HOST_ACTION_BUTTON } from '../../../../../shared/utils/hostActionButton';
 
 export type MrActionBusy = 'draft' | 'close' | 'reopen' | null;
 
@@ -95,7 +95,7 @@ export const MrActionBar = ({
             approveHandler?.();
           }}
           className={cn(
-            MR_ACTION_BUTTON,
+            HOST_ACTION_BUTTON,
             hasApproved ? TONE.neutral : TONE.success,
             isApprovalBusy && 'animate-border-pulse',
             isApproveBlocked && 'opacity-50',
@@ -121,7 +121,7 @@ export const MrActionBar = ({
           onClick={onToggleDraft}
           disabled={isDisabled}
           className={cn(
-            MR_ACTION_BUTTON,
+            HOST_ACTION_BUTTON,
             mr.draft ? TONE.success : TONE.warning,
             busy === 'draft' && 'animate-border-pulse',
           )}
@@ -145,7 +145,11 @@ export const MrActionBar = ({
           type="button"
           onClick={onClose}
           disabled={isDisabled}
-          className={cn(MR_ACTION_BUTTON, TONE.danger, busy === 'close' && 'animate-border-pulse')}
+          className={cn(
+            HOST_ACTION_BUTTON,
+            TONE.danger,
+            busy === 'close' && 'animate-border-pulse',
+          )}
         >
           <XCircle size={13} aria-hidden />
           Close
@@ -158,7 +162,7 @@ export const MrActionBar = ({
           onClick={onReopen}
           disabled={isDisabled}
           className={cn(
-            MR_ACTION_BUTTON,
+            HOST_ACTION_BUTTON,
             TONE.success,
             busy === 'reopen' && 'animate-border-pulse',
           )}

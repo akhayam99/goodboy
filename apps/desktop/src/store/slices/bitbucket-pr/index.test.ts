@@ -6,11 +6,32 @@ import type { BitbucketPullRequest } from '../../../features/integrations/bitbuc
 const pullRequestForBranchSpy = vi.fn();
 const getPullRequestSpy = vi.fn();
 const remoteUrlSpy = vi.fn(async () => 'git@bitbucket.org:acme/rocket.git');
+const writeSpies = {
+  approve: vi.fn(),
+  unapprove: vi.fn(),
+  requestChanges: vi.fn(),
+  unrequestChanges: vi.fn(),
+  merge: vi.fn(),
+  decline: vi.fn(),
+  comment: vi.fn(),
+  reply: vi.fn(),
+};
 
 vi.mock('../../../features/integrations/bitbucket/client', () => ({
   bitbucketPullRequestForBranch: (...args: ReadonlyArray<unknown>) =>
     pullRequestForBranchSpy(...args),
   bitbucketGetPullRequest: (...args: ReadonlyArray<unknown>) => getPullRequestSpy(...args),
+  bitbucketApprovePullRequest: (...args: ReadonlyArray<unknown>) => writeSpies.approve(...args),
+  bitbucketUnapprovePullRequest: (...args: ReadonlyArray<unknown>) => writeSpies.unapprove(...args),
+  bitbucketRequestChanges: (...args: ReadonlyArray<unknown>) => writeSpies.requestChanges(...args),
+  bitbucketUnrequestChanges: (...args: ReadonlyArray<unknown>) =>
+    writeSpies.unrequestChanges(...args),
+  bitbucketMergePullRequest: (...args: ReadonlyArray<unknown>) => writeSpies.merge(...args),
+  bitbucketDeclinePullRequest: (...args: ReadonlyArray<unknown>) => writeSpies.decline(...args),
+  bitbucketCreatePullRequestComment: (...args: ReadonlyArray<unknown>) =>
+    writeSpies.comment(...args),
+  bitbucketReplyToPullRequestComment: (...args: ReadonlyArray<unknown>) =>
+    writeSpies.reply(...args),
 }));
 
 vi.mock('../../../features/worktree/worktree', () => ({
@@ -155,5 +176,88 @@ describe('bitbucket-pr slice', () => {
 
     expect(pullRequestForBranchSpy).not.toHaveBeenCalled();
     expect(store.getState().sessionBitbucketPr).toEqual({});
+  });
+});
+
+const REPO = {
+  workspaceId: WORKSPACE_ID,
+  workspaceSlug: 'acme',
+  repoSlug: 'rocket',
+  email: 'dev@acme.test',
+};
+
+const TARGET = { sessionId: SESSION_ID, repo: REPO, pullRequestId: 12 };
+
+describe('bitbucket-pr write verbs', () => {
+  beforeEach(() => {
+    getPullRequestSpy.mockReset();
+    getPullRequestSpy.mockResolvedValue(buildPr(12));
+    pullRequestForBranchSpy.mockReset();
+    Object.values(writeSpies).forEach((spy) => spy.mockReset());
+  });
+
+  it.each([
+    ['approveBitbucketPr', 'approve'],
+    ['unapproveBitbucketPr', 'unapprove'],
+    ['requestBitbucketPrChanges', 'requestChanges'],
+    ['withdrawBitbucketPrChanges', 'unrequestChanges'],
+    ['mergeBitbucketPr', 'merge'],
+    ['declineBitbucketPr', 'decline'],
+  ] as const)('%s calls the %s client function for that pull request', async (action, spyKey) => {
+    const store = buildStore();
+
+    await store.slice[action](TARGET);
+
+    expect(writeSpies[spyKey]).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      workspaceSlug: 'acme',
+      repoSlug: 'rocket',
+      email: 'dev@acme.test',
+      pullRequestId: 12,
+    });
+    const others = Object.entries(writeSpies).filter(([key]) => key !== spyKey);
+    others.forEach(([, spy]) => expect(spy).not.toHaveBeenCalled());
+  });
+
+  it('re-reads the pull request it just wrote to, by id, instead of the branch one', async () => {
+    const store = buildStore();
+
+    await store.slice.approveBitbucketPr(TARGET);
+
+    expect(getPullRequestSpy).toHaveBeenCalledWith(expect.objectContaining({ pullRequestId: 12 }));
+    expect(pullRequestForBranchSpy).not.toHaveBeenCalled();
+    expect(
+      (store.getState().sessionBitbucketPr as Record<string, { pr: BitbucketPullRequest | null }>)[
+        SESSION_ID
+      ]?.pr?.id,
+    ).toBe(12);
+  });
+
+  it('a reply carries the parent comment id and a top level comment does not', async () => {
+    const store = buildStore();
+
+    await store.slice.commentOnBitbucketPr({ ...TARGET, body: 'looks good' });
+    await store.slice.replyToBitbucketPrComment({
+      ...TARGET,
+      body: 'agreed',
+      parentCommentId: 5,
+    });
+
+    expect(writeSpies.comment).toHaveBeenCalledWith(
+      expect.objectContaining({ pullRequestId: 12, body: 'looks good' }),
+    );
+    expect(writeSpies.comment.mock.calls[0]?.[0]).not.toHaveProperty('parentCommentId');
+    expect(writeSpies.reply).toHaveBeenCalledWith(
+      expect.objectContaining({ pullRequestId: 12, parentCommentId: 5, body: 'agreed' }),
+    );
+  });
+
+  it('a failed write raises to the caller and skips the refresh', async () => {
+    writeSpies.merge.mockRejectedValueOnce(new Error('bitbucket said no'));
+    const store = buildStore();
+
+    await expect(store.slice.mergeBitbucketPr(TARGET)).rejects.toThrow('bitbucket said no');
+
+    expect(getPullRequestSpy).not.toHaveBeenCalled();
   });
 });

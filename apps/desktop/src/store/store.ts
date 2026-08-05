@@ -86,6 +86,9 @@ import { createGitlabMrSlice } from './slices/gitlab-mr';
 import {
   createBitbucketPrSlice,
   initialBitbucketPrState,
+  type BitbucketPrCommentParams,
+  type BitbucketPrReplyParams,
+  type BitbucketPrWriteParams,
   type RefreshSessionBitbucketPrOptions,
 } from './slices/bitbucket-pr';
 import { createReviewPrsSlice } from './slices/review-prs';
@@ -573,6 +576,14 @@ export type AppActions = {
     opts?: RefreshSessionBitbucketPrOptions,
   ): Promise<void>;
   selectSessionBitbucketPr(sessionId: SessionId, pullRequestId: number | null): Promise<void>;
+  approveBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
+  unapproveBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
+  requestBitbucketPrChanges(params: BitbucketPrWriteParams): Promise<void>;
+  withdrawBitbucketPrChanges(params: BitbucketPrWriteParams): Promise<void>;
+  mergeBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
+  declineBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
+  commentOnBitbucketPr(params: BitbucketPrCommentParams): Promise<void>;
+  replyToBitbucketPrComment(params: BitbucketPrReplyParams): Promise<void>;
   closePr(sessionId: SessionId, prNumber?: number): Promise<void>;
   reopenPr(sessionId: SessionId, prNumber?: number): Promise<void>;
   editPr(

@@ -13,6 +13,12 @@ type Params = {
   readonly target: BitbucketPullRequestTarget | null;
 };
 
+type Loaded = {
+  readonly pullRequestId: number | null;
+  readonly comments: ReadonlyArray<BitbucketComment>;
+  readonly checks: ReadonlyArray<PrCheckRun>;
+};
+
 type Result = Readonly<{
   comments: ReadonlyArray<BitbucketComment>;
   checks: ReadonlyArray<PrCheckRun>;
@@ -21,23 +27,25 @@ type Result = Readonly<{
   reload: () => void;
 }>;
 
+const EMPTY: Loaded = { pullRequestId: null, comments: [], checks: [] };
+
 export const useBitbucketPrDetail = ({ target }: Params): Result => {
-  const [comments, setComments] = useState<ReadonlyArray<BitbucketComment>>([]);
-  const [checks, setChecks] = useState<ReadonlyArray<PrCheckRun>>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loaded, setLoaded] = useState<Loaded>(EMPTY);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const wantedId = target?.pullRequestId ?? null;
+  const isStale = loaded.pullRequestId !== wantedId;
 
   useEffect(() => {
     if (target == null) {
-      setComments([]);
-      setChecks([]);
-      setIsLoading(false);
+      setLoaded(EMPTY);
+      setIsFetching(false);
       setError(null);
       return;
     }
     let isCancelled = false;
-    setIsLoading(true);
+    setIsFetching(true);
     setError(null);
     Promise.all([
       bitbucketListPullRequestComments(target),
@@ -47,16 +55,19 @@ export const useBitbucketPrDetail = ({ target }: Params): Result => {
         if (isCancelled) {
           return;
         }
-        setComments(nextComments.filter((comment) => comment.deleted === false));
-        setChecks(bitbucketCheckRuns({ statuses }));
-        setIsLoading(false);
+        setLoaded({
+          pullRequestId: target.pullRequestId,
+          comments: nextComments.filter((comment) => comment.deleted === false),
+          checks: bitbucketCheckRuns({ statuses }),
+        });
+        setIsFetching(false);
       })
       .catch((fetchError: unknown) => {
         if (isCancelled) {
           return;
         }
         setError(formatError(fetchError));
-        setIsLoading(false);
+        setIsFetching(false);
       });
     return () => {
       isCancelled = true;
@@ -64,5 +75,11 @@ export const useBitbucketPrDetail = ({ target }: Params): Result => {
   }, [target, tick]);
 
   const reload = useCallback(() => setTick((value) => value + 1), []);
-  return { comments, checks, isLoading, error, reload };
+  return {
+    comments: isStale ? [] : loaded.comments,
+    checks: isStale ? [] : loaded.checks,
+    isLoading: isFetching || (wantedId != null && isStale && error == null),
+    error,
+    reload,
+  };
 };

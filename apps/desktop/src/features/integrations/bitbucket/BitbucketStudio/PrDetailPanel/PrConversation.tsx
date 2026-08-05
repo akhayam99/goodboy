@@ -1,17 +1,38 @@
+import { useMemo } from 'react';
 import { EmptyState, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../../shared/components/ErrorStrip';
+import { NoteComposer } from '../../../../../shared/components/NoteComposer';
 import type { BitbucketComment } from '../../client';
-import { PrCommentCard } from './PrCommentCard';
+import { bitbucketPrThreads } from './bitbucketPrThreads';
+import { PrThreadCard } from './PrThreadCard';
+
+type ReplyParams = {
+  readonly parentCommentId: number;
+  readonly body: string;
+};
 
 type Props = {
   readonly comments: ReadonlyArray<BitbucketComment>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly postBlockReason: string | null;
   readonly onRetry: () => void;
+  readonly onPost: ((body: string) => Promise<void>) | null;
+  readonly onReply: ((params: ReplyParams) => Promise<void>) | null;
 };
 
-export const PrConversation = ({ comments, isLoading, error, onRetry }: Props) => {
+export const PrConversation = ({
+  comments,
+  isLoading,
+  error,
+  postBlockReason,
+  onRetry,
+  onPost,
+  onReply,
+}: Props) => {
+  const threads = useMemo(() => bitbucketPrThreads({ comments }), [comments]);
+
   if (isLoading) {
     return (
       <div role="status" aria-label="Loading the conversation" className="flex flex-col gap-3">
@@ -30,26 +51,39 @@ export const PrConversation = ({ comments, isLoading, error, onRetry }: Props) =
     return <ErrorStrip label="the conversation" error={new Error(error)} onRetry={onRetry} />;
   }
 
-  if (comments.length === 0) {
-    return (
-      <EmptyState
-        icon={CONCEPT_ICONS.comments}
-        tone={CONCEPT_TONE.comments}
-        title="No comments yet"
-        description="Comments on this pull request show up here. Replying comes from Bitbucket for now."
-        size="inline"
-        className="py-5"
-      />
-    );
-  }
-
   return (
-    <ul className="flex flex-col gap-2.5">
-      {comments.map((comment) => (
-        <li key={comment.id}>
-          <PrCommentCard comment={comment} />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-4">
+      {threads.length === 0 ? (
+        <EmptyState
+          icon={CONCEPT_ICONS.comments}
+          tone={CONCEPT_TONE.comments}
+          title="No comments yet"
+          description="Comments on this pull request show up here. Write the first one below."
+          size="inline"
+          className="py-5"
+        />
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {threads.map((thread) => (
+            <li key={thread.head.id}>
+              <PrThreadCard
+                thread={thread}
+                onReply={
+                  onReply == null
+                    ? null
+                    : (body: string) => onReply({ parentCommentId: thread.head.id, body })
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      {onPost != null && (
+        <NoteComposer placeholder="Write a comment" submitLabel="Comment" onSubmit={onPost} />
+      )}
+      {postBlockReason != null && (
+        <p className="text-2xs text-muted-foreground">{postBlockReason}</p>
+      )}
+    </div>
   );
 };
