@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PendingResolution } from '@goodboy/types';
+import type { IsoDateTime, PendingResolution, SessionId } from '@goodboy/types';
 import { resolverThreadSettlements } from './resolverThreadSettlements';
 
 const NO_PENDING: ReadonlyArray<PendingResolution> = [];
@@ -57,5 +57,29 @@ describe('resolverThreadSettlements', () => {
     expect(settlement?.kind).toBe('wontfix');
     expect(settlement?.reason).toBe('covered elsewhere');
     expect(settlement?.isClosed).toBe(true);
+  });
+
+  it('never reads a queued row without a stored verdict as resolved', () => {
+    const legacy = {
+      id: 'pending-legacy',
+      sessionId: 'session-1' as SessionId,
+      prNumber: 1,
+      threadId: 'PRRT_1',
+      commitSha: 'abcdef1234567890',
+      reply: 'legacy resolver reply',
+      outcome: null,
+      createdAt: '2026-05-28T00:00:00.000Z' as IsoDateTime,
+    } satisfies PendingResolution;
+
+    const [settlement] = resolverThreadSettlements({
+      threadIds: ['PRRT_1'],
+      outcomes: {},
+      pendingResolutions: [legacy],
+      closedThreadIds: NOTHING_CLOSED,
+    });
+
+    expect(settlement?.kind).toBe('open');
+    expect(settlement?.isQueued).toBe(true);
+    expect(settlement?.reply).toBe('legacy resolver reply');
   });
 });
