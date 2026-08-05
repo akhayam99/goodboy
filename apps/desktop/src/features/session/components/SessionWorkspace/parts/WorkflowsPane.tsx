@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BookmarkPlus, Check } from 'lucide-react';
+import { CountToggle } from '@goodboy/ui';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -15,7 +16,6 @@ import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../shared/components/PaneShell/FocusedPane';
 import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
-import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
 import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
 
 type Props = {
@@ -129,14 +129,16 @@ export const WorkflowsPane = ({ session }: Props) => {
         />
       ) : null}
       {active.length > 0 ? <ul className="flex flex-col gap-2">{active.map(renderCard)}</ul> : null}
-      <FiledItemsToggle
-        noun="completed"
-        items="workflows"
-        count={completed.length + discarded.length}
-        isShown={showFiled}
-        icon={Check}
-        onChange={setShowFiled}
-      />
+      <div className="flex justify-center">
+        <CountToggle
+          label="Completed"
+          itemsLabel="workflows"
+          count={completed.length + discarded.length}
+          isShown={showFiled}
+          icon={Check}
+          onChange={setShowFiled}
+        />
+      </div>
       {showFiled && completed.length > 0 ? (
         <ul className="flex flex-col gap-2">{completed.map(renderCard)}</ul>
       ) : null}

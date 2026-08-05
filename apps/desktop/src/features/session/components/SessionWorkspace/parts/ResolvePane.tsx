@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { CircleCheck } from 'lucide-react';
+import { CountToggle } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { ResolverAgentsLane } from '../../ResolverAgentsLane';
 import { AgentInspector } from '../../AgentInspector';
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
 import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
 
 type Props = {
@@ -54,14 +54,16 @@ export const ResolvePane = ({
           showCompleted={showCompleted}
           onCompletedCountChange={setCompletedCount}
           filedToggle={
-            <FiledItemsToggle
-              noun="completed"
-              items="resolvers"
-              count={completedCount}
-              isShown={showCompleted}
-              icon={CircleCheck}
-              onChange={onShowCompletedChange}
-            />
+            <div className="flex justify-center">
+              <CountToggle
+                label="Completed"
+                itemsLabel="resolvers"
+                count={completedCount}
+                isShown={showCompleted}
+                icon={CircleCheck}
+                onChange={onShowCompletedChange}
+              />
+            </div>
           }
         />
       </PaneShell>
