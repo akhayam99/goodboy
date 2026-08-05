@@ -56,6 +56,12 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
     sentence: 'Last decision failed',
     showsMessage: true,
   },
+  questions: {
+    phase: 'needs-answer',
+    tone: 'warning',
+    sentence: 'Paused · an open question needs your answer',
+    showsMessage: false,
+  },
 };
 
 const isDone = (agent: Agent): boolean =>
@@ -94,7 +100,8 @@ export const resolveOrchestratorState = ({
     };
   }
   const stop = run.orchestrationStop;
-  if (stop != null) {
+  const isAnsweredQuestionStop = stop?.kind === 'questions' && hasOpenQuestions === false;
+  if (stop != null && isAnsweredQuestionStop === false) {
     const presentation = STOP_PRESENTATION[stop.kind];
     return {
       ...base,

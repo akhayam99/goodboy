@@ -12,14 +12,17 @@ import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
 import { useStartAnywayConfirm } from '../../useStartAnywayConfirm';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
+export type AdvanceParams = {
+  readonly step: Step;
+  readonly model: string;
+  readonly verbosity: VerbosityLevel | undefined;
+  readonly isConfirmed: boolean;
+};
+
 export type Props = {
   readonly workflow: Workflow;
   readonly runs: ReadonlyArray<Agent>;
-  readonly onAdvance: (
-    step: Step,
-    model: string,
-    verbosity: VerbosityLevel | undefined,
-  ) => void | Promise<void>;
+  readonly onAdvance: (params: AdvanceParams) => void | Promise<void>;
   readonly onForceAdvance?: () => void | Promise<void>;
   readonly blockReason?: WorkflowBlockReason | null;
   readonly consumesActivePlan?: boolean;
@@ -76,11 +79,16 @@ export const WorkflowNextStepCta = ({
   const routing = resolveStepRouting({ step: next, kind, roleModels });
   const advance = useStartAnywayConfirm({
     blockReason,
-    onStart: async () => {
+    onStart: async ({ isConfirmed }) => {
       if (next == null) {
         return;
       }
-      await onAdvance(next, routing.model, next.verbosity);
+      await onAdvance({
+        step: next,
+        model: routing.model,
+        verbosity: next.verbosity,
+        isConfirmed,
+      });
     },
   });
   const doForce = async () => {

@@ -2,6 +2,7 @@ import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
 import { updateSessionWorkflowTriggerMode } from '@goodboy/db';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import type { GetFn, SetFn } from './types';
 
 export const startWorkflowRun = (set: SetFn, get: GetFn) => {
@@ -49,7 +50,12 @@ export const startWorkflowRun = (set: SetFn, get: GetFn) => {
       .sort((a, b) => a.ordinal - b.ordinal)
       .find((r) => r.status === 'pending');
     if (firstPending) {
-      await get().activateWorkflowAgent(sessionId, firstPending.id, undefined, 'none');
+      await activateWorkflowAgentOrNotify({
+        get,
+        sessionId,
+        agentId: firstPending.id,
+        focus: 'none',
+      });
       return;
     }
     if (run.executionMode === 'dynamic') {

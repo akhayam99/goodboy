@@ -41,6 +41,9 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
     if (turn?.kind === 'running' || turn?.kind === 'starting') {
       return;
     }
+    if (stuckAgent.status === 'running' && turn === undefined) {
+      return;
+    }
     await invokeAgentUpdateStatus(stuckAgent.id, { status: 'skipped', completedAt: nowIso() });
     const refreshed = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
@@ -53,12 +56,17 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
         (candidate) => candidate.stepId === nextChain.step.id && candidate.status === 'pending',
       );
       if (nextAgent != null) {
-        await get().activateWorkflowAgent(sessionId, nextAgent.id, undefined, 'agent');
+        await get().activateWorkflowAgent({
+          sessionId,
+          agentId: nextAgent.id,
+          focus: 'agent',
+          bypassGate: true,
+        });
         return;
       }
     }
     if (run.executionMode === 'dynamic' && run.orchestrationOutcome == null) {
-      await get().orchestrateNextStep(sessionId, workflowRunId);
+      await get().orchestrateNextStep(sessionId, workflowRunId, { bypassGate: true });
     }
   };
 };

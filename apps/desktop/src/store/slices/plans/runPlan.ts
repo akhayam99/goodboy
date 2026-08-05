@@ -73,7 +73,12 @@ export const runPlan = (get: GetFn) => {
         focus: 'none',
       });
     }
-    await get().activateWorkflowAgent(sessionId, stepAgent.id, planId, 'none');
+    await get().activateWorkflowAgent({
+      sessionId,
+      agentId: stepAgent.id,
+      explicitPlanId: planId,
+      focus: 'none',
+    });
     return stepAgent.id;
   };
 };

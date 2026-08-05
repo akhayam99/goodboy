@@ -5,6 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import { BUDGET_BLOCK_MESSAGE, isBudgetBlocked } from './budgetBlock';
 import { persistOrchestrationStop } from './orchestrateNextStep';
+import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import type { GetFn, SetFn } from './types';
 
 const advanceInFlight = new Set<SessionId>();
@@ -127,7 +128,12 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     }
     return;
   }
-  await get().activateWorkflowAgent(sessionId, nextPendingAgent.id, undefined, 'agent');
+  await activateWorkflowAgentOrNotify({
+    get,
+    sessionId,
+    agentId: nextPendingAgent.id,
+    focus: 'agent',
+  });
   void get().emitNotification(
     'agent-auto-spawn',
     'info',

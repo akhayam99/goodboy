@@ -70,7 +70,7 @@ export const PipelineSection = ({
       onAdvance: async (step) => {
         const agent = workflowAgents.find((r) => r.stepId === step.id);
         if (agent?.status === 'pending') {
-          await activateWorkflowAgent(sessionId, agent.id, undefined, 'none');
+          await activateWorkflowAgent({ sessionId, agentId: agent.id, focus: 'none' });
         }
       },
     };

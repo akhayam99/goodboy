@@ -44,11 +44,14 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
+import { findWorkflowActivationBlock } from './workflowActivationGate';
+import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
   readonly extraHints?: string;
+  readonly bypassGate?: boolean;
 };
 
 const orchestrationInFlight = new Set<WorkflowRunId>();
@@ -349,6 +352,18 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         });
         return;
       }
+      if (options?.bypassGate !== true) {
+        const blocked = await findWorkflowActivationBlock({ sessionId, workflowRunId });
+        if (blocked !== null) {
+          await persistOrchestrationStop({
+            set,
+            sessionId,
+            workflowRunId,
+            stop: { kind: 'questions', message: WORKFLOW_BLOCK_COPY[blocked] },
+          });
+          return;
+        }
+      }
       if (workflow.steps.length >= ORCHESTRATOR_STEP_HARD_CAP) {
         const reason = `the run reached the hard cap of ${ORCHESTRATOR_STEP_HARD_CAP} steps without closing. Review what the steps produced and start a new run for what is left.`;
         await persistOrchestrationOutcome({
@@ -518,7 +533,12 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           model: result.model,
           usage: result.usage,
         });
-        await get().activateWorkflowAgent(sessionId, agent.id, undefined, 'agent');
+        await get().activateWorkflowAgent({
+          sessionId,
+          agentId: agent.id,
+          focus: 'agent',
+          bypassGate: true,
+        });
         return;
       }
       await persistOrchestrationOutcome({

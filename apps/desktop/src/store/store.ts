@@ -126,6 +126,7 @@ import { createOverridesSlice } from './slices/overrides';
 import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
 import type { OrchestrateOptions } from './slices/workflows/orchestrateNextStep';
+import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWorkflowAgent';
 import { createSettingsSlice } from './slices/settings';
 import { createConflictsSlice } from './slices/conflicts';
 import { createTranscriptsSlice } from './slices/transcripts';
@@ -281,12 +282,7 @@ export type AppActions = {
     sessionId: SessionId,
     workflowRunIds: ReadonlyArray<WorkflowRunId>,
   ): Promise<void>;
-  activateWorkflowAgent(
-    sessionId: SessionId,
-    agentId: AgentId,
-    explicitPlanId?: PlanId,
-    focus?: SpawnFocus,
-  ): Promise<void>;
+  activateWorkflowAgent(params: ActivateWorkflowAgentParams): Promise<void>;
   advanceClusterImplementation(
     sessionId: SessionId,
     childAgentId: AgentId,

@@ -135,6 +135,7 @@ import {
   isSessionMobileShared,
 } from './mobileConfinement';
 import type { SessionId } from '@goodboy/types';
+import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
 
 const invokeMock = vi.mocked(invoke);
 
@@ -424,7 +425,11 @@ describe('advanceStep workflow advancement', () => {
     });
     const res = await executeBridgeCommand(cmd('advanceStep', { sessionId: 's1' }));
     expect(res.ok).toBe(true);
-    expect(h.activateWorkflowAgent).toHaveBeenCalledWith('s1', 'ag2', undefined, 'agent');
+    expect(h.activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: 's1',
+      agentId: 'ag2',
+      focus: 'none',
+    });
     expect(isSessionMobileShared('s1' as SessionId)).toBe(true);
   });
 
@@ -434,7 +439,11 @@ describe('advanceStep workflow advancement', () => {
     });
     const res = await executeBridgeCommand(cmd('advanceStep', { sessionId: 's1' }));
     expect(res.ok).toBe(true);
-    expect(h.activateWorkflowAgent).toHaveBeenCalledWith('s1', 'ag1', undefined, 'agent');
+    expect(h.activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: 's1',
+      agentId: 'ag1',
+      focus: 'none',
+    });
   });
 
   it('refuses to skip ahead when an earlier step is still running', async () => {
@@ -448,6 +457,21 @@ describe('advanceStep workflow advancement', () => {
     expect(res.ok).toBe(false);
     expect(res.error).toMatch(/no workflow step is ready/i);
     expect(h.activateWorkflowAgent).not.toHaveBeenCalled();
+  });
+
+  it('surfaces the engine gate refusal instead of forcing the step from the phone', async () => {
+    h.state.value = workflowStore({
+      phaseRuns: [
+        { id: 'ag1', workflowRunId: 'run1', stepId: 'step1', status: 'completed' },
+        { id: 'ag2', workflowRunId: 'run1', stepId: 'step2', status: 'pending' },
+      ],
+    });
+    h.activateWorkflowAgent.mockRejectedValueOnce(new WorkflowGateError({ reason: 'questions' }));
+
+    const res = await executeBridgeCommand(cmd('advanceStep', { sessionId: 's1' }));
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/open questions are waiting/i);
   });
 
   it('errors when the session has no workflow at all', async () => {

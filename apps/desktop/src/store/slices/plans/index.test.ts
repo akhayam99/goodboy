@@ -174,12 +174,12 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
       expect(state.spawnAgent).not.toHaveBeenCalled();
       expect(state.activateWorkflowAgent).toHaveBeenCalledTimes(1);
-      expect(state.activateWorkflowAgent).toHaveBeenCalledWith(
-        SESSION_ID,
-        IMPL_AGENT_ID,
-        PLAN_ID,
-        'none',
-      );
+      expect(state.activateWorkflowAgent).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        agentId: IMPL_AGENT_ID,
+        explicitPlanId: PLAN_ID,
+        focus: 'none',
+      });
     });
 
     it('does not insert a duplicate agent for a step that already has a pending slot', async () => {
@@ -214,7 +214,12 @@ describe('runPlan, workflow-aware spawn routing', () => {
         expect(
           state.activateWorkflowAgent,
           `alias "${name}" should activate the slot`,
-        ).toHaveBeenCalledWith(SESSION_ID, IMPL_AGENT_ID, PLAN_ID, 'none');
+        ).toHaveBeenCalledWith({
+          sessionId: SESSION_ID,
+          agentId: IMPL_AGENT_ID,
+          explicitPlanId: PLAN_ID,
+          focus: 'none',
+        });
       }
     });
 
@@ -236,12 +241,12 @@ describe('runPlan, workflow-aware spawn routing', () => {
         await slice.runPlan(SESSION_ID, PLAN_ID);
 
         expect(state.spawnAgent).not.toHaveBeenCalled();
-        expect(state.activateWorkflowAgent).toHaveBeenCalledWith(
-          SESSION_ID,
-          IMPL_AGENT_ID,
-          PLAN_ID,
-          'none',
-        );
+        expect(state.activateWorkflowAgent).toHaveBeenCalledWith({
+          sessionId: SESSION_ID,
+          agentId: IMPL_AGENT_ID,
+          explicitPlanId: PLAN_ID,
+          focus: 'none',
+        });
       },
     );
   });
@@ -560,12 +565,12 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
       const agentId = await slice.runPlan(SESSION_ID, PLAN_ID);
 
-      expect(state.activateWorkflowAgent).toHaveBeenCalledWith(
-        SESSION_ID,
-        IMPL_AGENT_ID,
-        PLAN_ID,
-        'none',
-      );
+      expect(state.activateWorkflowAgent).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        agentId: IMPL_AGENT_ID,
+        explicitPlanId: PLAN_ID,
+        focus: 'none',
+      });
       expect(agentId).toBe(IMPL_AGENT_ID);
     });
 
@@ -675,8 +680,8 @@ describe('runPlan, workflow-aware spawn routing', () => {
         await slice.runPlan(SESSION_ID, PLAN_ID);
 
         if (state.activateWorkflowAgent.mock.calls.length > 0) {
-          const [, , planId] = state.activateWorkflowAgent.mock.calls[0]!;
-          expect(planId, `${name} must route the clicked plan`).toBe(PLAN_ID);
+          const [params] = state.activateWorkflowAgent.mock.calls[0]!;
+          expect(params.explicitPlanId, `${name} must route the clicked plan`).toBe(PLAN_ID);
         } else {
           const [, args] = state.spawnAgent.mock.calls[0]!;
           expect(args.triggeredPlanId, `${name} must carry triggeredPlanId`).toBe(PLAN_ID);

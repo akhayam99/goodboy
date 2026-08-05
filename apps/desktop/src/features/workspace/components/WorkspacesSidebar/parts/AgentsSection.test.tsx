@@ -661,17 +661,17 @@ describe('AgentsSection step start gate', () => {
     );
   }
 
-  it('starts the step agent when the run is not blocked', () => {
+  it('starts the step agent when the run is not blocked, without asking the engine to bypass', () => {
     renderSection();
 
     fireEvent.click(screen.getByRole('button', { name: 'start wf-1' }));
 
-    expect(h.state.activateWorkflowAgent).toHaveBeenCalledWith(
-      SESSION_ID,
-      'wf-1',
-      undefined,
-      'agent',
-    );
+    expect(h.state.activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'wf-1',
+      focus: 'agent',
+      bypassGate: false,
+    });
   });
 
   it('refuses an unconfirmed start while questions are open, and says why', () => {
@@ -684,17 +684,17 @@ describe('AgentsSection step start gate', () => {
     expect(screen.getByText('Open questions are waiting for an answer.')).toBeDefined();
   });
 
-  it('starts the blocked step once the override is explicit', () => {
+  it('bypasses the engine gate only once the operator confirmed the blocked start', () => {
     h.gate.hasOpenQuestions = true;
     renderSection();
 
     fireEvent.click(screen.getByRole('button', { name: 'force wf-1' }));
 
-    expect(h.state.activateWorkflowAgent).toHaveBeenCalledWith(
-      SESSION_ID,
-      'wf-1',
-      undefined,
-      'agent',
-    );
+    expect(h.state.activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'wf-1',
+      focus: 'agent',
+      bypassGate: true,
+    });
   });
 });
