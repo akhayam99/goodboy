@@ -2,6 +2,7 @@ import type { AgentId, PlanId, SessionId } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { inferAgentKindFromName, kindConsumesPlan } from '../../../features/session/agent-kind';
 import { pickNextWorkflowStep } from '../../../features/workflows/components/WorkflowNextStepCta';
+import { activateWorkflowAgentOrNotify } from '../workflows/activateWorkflowAgentOrNotify';
 import type { GetFn } from './types';
 
 export const runPlan = (get: GetFn) => {
@@ -73,7 +74,8 @@ export const runPlan = (get: GetFn) => {
         focus: 'none',
       });
     }
-    await get().activateWorkflowAgent({
+    await activateWorkflowAgentOrNotify({
+      get,
       sessionId,
       agentId: stepAgent.id,
       explicitPlanId: planId,

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { Agent, Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
 import type { LensKind } from '../../../../store';
+import { WorkflowGateError } from '../../../../store/slices/workflows/workflowActivationGate';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import type { SpawnNode } from '../../../orchestration/components/SpawnTree/lib';
 import type { RunLaneModel } from '../../../orchestration/hooks/useWorkspaceRuns';
@@ -27,6 +28,7 @@ export const PipelineSection = ({
   const sessionId = session.id as SessionId;
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
+  const emitNotification = useAppStore((s) => s.emitNotification);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -69,8 +71,18 @@ export const PipelineSection = ({
       hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
       onAdvance: async (step) => {
         const agent = workflowAgents.find((r) => r.stepId === step.id);
-        if (agent?.status === 'pending') {
+        if (agent?.status !== 'pending') {
+          return;
+        }
+        try {
           await activateWorkflowAgent({ sessionId, agentId: agent.id, focus: 'none' });
+        } catch (error) {
+          if (!(error instanceof WorkflowGateError)) {
+            throw error;
+          }
+          void emitNotification('error', 'warning', 'workflow step held back', error.message, {
+            sessionId,
+          });
         }
       },
     };
