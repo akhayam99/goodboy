@@ -176,7 +176,7 @@ export const PrDetailPanel = ({
           files={diff.files}
           isLoading={diff.isLoading}
           error={diff.error}
-          onRetry={detail.reload}
+          onRetry={diff.reload}
         />
       )}
       {section === 'checks' && (
