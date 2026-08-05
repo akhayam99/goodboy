@@ -150,7 +150,7 @@ export const WorkflowComposer = ({
                 disabled={saving || formatting}
               >
                 <Sparkles size={13} aria-hidden />
-                {formatting ? 'Formatting…' : 'Format with AI'}
+                {formatting ? 'Formatting…' : 'Format'}
               </Button>
             ) : null}
             <Button
