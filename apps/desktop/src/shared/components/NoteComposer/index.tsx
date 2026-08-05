@@ -6,10 +6,17 @@ type Props = {
   readonly placeholder: string;
   readonly submitLabel: string;
   readonly minRows?: number;
+  readonly hint?: string;
   readonly onSubmit: (body: string) => Promise<void>;
 };
 
-export const NoteComposer = ({ placeholder, submitLabel, minRows = 3, onSubmit }: Props) => {
+export const NoteComposer = ({
+  placeholder,
+  submitLabel,
+  minRows = 3,
+  hint = 'Markdown supported',
+  onSubmit,
+}: Props) => {
   const [draft, setDraft] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +56,7 @@ export const NoteComposer = ({ placeholder, submitLabel, minRows = 3, onSubmit }
             {error}
           </p>
         ) : (
-          <p className="text-2xs text-muted-foreground">Markdown supported</p>
+          <p className="text-2xs text-muted-foreground">{hint}</p>
         )}
         <Button
           size="sm"

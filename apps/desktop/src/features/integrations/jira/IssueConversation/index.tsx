@@ -64,7 +64,12 @@ export const IssueConversation = ({ comments, isLoading, error, onRetry, onPost 
         </p>
       )}
       {onPost != null && (
-        <NoteComposer placeholder="Write a comment" submitLabel="Comment" onSubmit={onPost} />
+        <NoteComposer
+          placeholder="Write a comment"
+          submitLabel="Comment"
+          hint="Plain text, one paragraph per line"
+          onSubmit={onPost}
+        />
       )}
     </div>
   );

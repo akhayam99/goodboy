@@ -77,6 +77,16 @@ const ISSUE: JiraIssue = {
 
 const WORKSPACE = 'workspace-1' as WorkspaceId;
 
+const OTHER: JiraIssue = {
+  ...ISSUE,
+  id: '10099',
+  key: 'ENG-900',
+  summary: 'Inbox forgets the scope',
+  assignee: null,
+  updated: '2026-07-04T10:00:00.000Z',
+  url: 'https://acme.atlassian.net/browse/ENG-900',
+};
+
 const mount = () => render(<JiraIssueDetail issue={ISSUE} workspaceId={WORKSPACE} />);
 
 beforeEach(() => {
@@ -198,5 +208,61 @@ describe('JiraIssueDetail', () => {
 
     await waitFor(() => expect(setAssignee).toHaveBeenCalled());
     expect(setAssignee.mock.calls[0]?.[0].accountId).toBeNull();
+  });
+
+  it('writes to the issue on screen after the inbox switches, never the previous one', async () => {
+    listAssignableUsers.mockResolvedValue([ADA]);
+    listTransitions.mockResolvedValue([
+      { id: '31', name: 'Ready for review', to: null, hasScreen: false },
+    ]);
+    getIssue.mockResolvedValueOnce({ ...ISSUE, status: 'In Review' });
+    const view = render(<JiraIssueDetail issue={ISSUE} workspaceId={WORKSPACE} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Move' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ready for review' }));
+    expect(await screen.findByText('In Review')).toBeDefined();
+
+    getIssue.mockResolvedValue(OTHER);
+    view.rerender(<JiraIssueDetail issue={OTHER} workspaceId={WORKSPACE} />);
+    await screen.findByText('Inbox forgets the scope');
+    expect(screen.queryByText('Session rail drops focus')).toBeNull();
+    expect(screen.getByText('ENG-900')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unassigned' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ada Lovelace' }));
+    await waitFor(() =>
+      expect(setAssignee).toHaveBeenCalledWith(
+        expect.objectContaining({ issueKey: 'ENG-900', accountId: 'a2' }),
+      ),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ready for review' }));
+    await waitFor(() =>
+      expect(transitionIssue).toHaveBeenCalledWith(
+        expect.objectContaining({ issueKey: 'ENG-900', transitionId: '31' }),
+      ),
+    );
+
+    expect(listTransitions).toHaveBeenCalledWith(expect.objectContaining({ issueKey: 'ENG-900' }));
+    expect(listAssignableUsers).toHaveBeenCalledWith(
+      expect.objectContaining({ issueKey: 'ENG-900' }),
+    );
+    expect(getIssue).toHaveBeenCalledWith(expect.objectContaining({ issueKey: 'ENG-900' }));
+  });
+
+  it('tells the studio to refresh its rail after a write', async () => {
+    const onIssueWritten = vi.fn();
+    listTransitions.mockResolvedValue([
+      { id: '31', name: 'Ready for review', to: null, hasScreen: false },
+    ]);
+    render(
+      <JiraIssueDetail issue={ISSUE} workspaceId={WORKSPACE} onIssueWritten={onIssueWritten} />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Move' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ready for review' }));
+
+    await waitFor(() => expect(onIssueWritten).toHaveBeenCalled());
   });
 });

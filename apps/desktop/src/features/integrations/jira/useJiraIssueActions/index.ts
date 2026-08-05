@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import {
   jiraGetIssue,
@@ -12,6 +12,7 @@ import { useJiraConfig } from '../useJiraConfig';
 type Params = {
   readonly issue: JiraIssue;
   readonly workspaceId: WorkspaceId;
+  readonly onWritten?: (() => void) | null;
 };
 
 type Result = {
@@ -21,24 +22,33 @@ type Result = {
   readonly saveDescription: ((next: string) => Promise<void>) | null;
 };
 
-export const useJiraIssueActions = ({ issue, workspaceId }: Params): Result => {
+type Held = {
+  readonly signature: string;
+  readonly issue: JiraIssue;
+};
+
+type SignatureParams = {
+  readonly issue: JiraIssue;
+};
+
+const issueSignature = ({ issue }: SignatureParams): string => `${issue.id}:${issue.updated}`;
+
+export const useJiraIssueActions = ({ issue, workspaceId, onWritten }: Params): Result => {
   const config = useJiraConfig({ workspaceId });
   const siteUrl = config?.siteUrl ?? null;
   const email = config?.email ?? null;
   const issueKey = issue.key;
-  const [fresh, setFresh] = useState<JiraIssue | null>(null);
-
-  useEffect(() => {
-    setFresh(null);
-  }, [issue.id, issue.updated]);
+  const signature = issueSignature({ issue });
+  const [held, setHeld] = useState<Held | null>(null);
 
   const refresh = useCallback(async () => {
     if (siteUrl == null || email == null) {
       return;
     }
     const next = await jiraGetIssue({ workspaceId, siteUrl, email, issueKey });
-    setFresh(next);
-  }, [workspaceId, siteUrl, email, issueKey]);
+    setHeld({ signature, issue: next });
+    onWritten?.();
+  }, [workspaceId, siteUrl, email, issueKey, signature, onWritten]);
 
   const assign = useCallback(
     async (accountId: string | null) => {
@@ -82,7 +92,7 @@ export const useJiraIssueActions = ({ issue, workspaceId }: Params): Result => {
   const isReady = siteUrl != null && email != null;
 
   return {
-    issue: fresh ?? issue,
+    issue: held != null && held.signature === signature ? held.issue : issue,
     assign: isReady ? assign : null,
     transition: isReady ? transition : null,
     saveDescription: isReady ? saveDescription : null,

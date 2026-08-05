@@ -21,20 +21,20 @@ export const useJiraTransitions = ({ issueKey, workspaceId }: Params): Result =>
   const siteUrl = config?.siteUrl ?? null;
   const email = config?.email ?? null;
   const [transitions, setTransitions] = useState<ReadonlyArray<JiraTransition>>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [settledKey, setSettledKey] = useState<string | null>(null);
+  const fetchKey = `${siteUrl ?? ''}|${email ?? ''}|${issueKey}|${reloadToken}`;
 
   useEffect(() => {
     setTransitions([]);
     setError(null);
     if (siteUrl == null || email == null || issueKey === '') {
-      setIsLoading(false);
+      setSettledKey(fetchKey);
       return;
     }
 
     let isCancelled = false;
-    setIsLoading(true);
     jiraListTransitions({ workspaceId, siteUrl, email, issueKey })
       .then((next) => {
         if (isCancelled) {
@@ -52,17 +52,17 @@ export const useJiraTransitions = ({ issueKey, workspaceId }: Params): Result =>
         if (isCancelled) {
           return;
         }
-        setIsLoading(false);
+        setSettledKey(fetchKey);
       });
 
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, siteUrl, email, issueKey, reloadToken]);
+  }, [workspaceId, siteUrl, email, issueKey, fetchKey]);
 
   const reload = useCallback(() => {
     setReloadToken((token) => token + 1);
   }, []);
 
-  return { transitions, isLoading, error, reload };
+  return { transitions, isLoading: settledKey !== fetchKey, error, reload };
 };

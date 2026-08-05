@@ -28,6 +28,7 @@ type Props = {
   readonly headerActions?: ReactNode;
   readonly dock?: ReactNode;
   readonly fit?: Fit;
+  readonly onIssueWritten?: (() => void) | null;
 };
 
 const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
@@ -41,9 +42,10 @@ export const JiraIssueDetail = ({
   headerActions,
   dock,
   fit = 'fill',
+  onIssueWritten,
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
-  const actions = useJiraIssueActions({ issue, workspaceId });
+  const actions = useJiraIssueActions({ issue, workspaceId, onWritten: onIssueWritten });
   const live = actions.issue;
   const conversation = useJiraIssueComments({ issue: live, workspaceId });
 

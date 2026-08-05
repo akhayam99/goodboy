@@ -22,20 +22,21 @@ export const useJiraAssignableUsers = ({ issueKey, workspaceId, isEnabled }: Par
   const siteUrl = config?.siteUrl ?? null;
   const email = config?.email ?? null;
   const [users, setUsers] = useState<ReadonlyArray<JiraUser>>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [settledKey, setSettledKey] = useState<string | null>(null);
+  const fetchKey = `${siteUrl ?? ''}|${email ?? ''}|${issueKey}|${reloadToken}`;
 
   useEffect(() => {
     if (!isEnabled) {
       return;
     }
     if (siteUrl == null || email == null || issueKey === '') {
+      setSettledKey(fetchKey);
       return;
     }
 
     let isCancelled = false;
-    setIsLoading(true);
     setError(null);
     jiraListAssignableUsers({ workspaceId, siteUrl, email, issueKey })
       .then((next) => {
@@ -54,17 +55,17 @@ export const useJiraAssignableUsers = ({ issueKey, workspaceId, isEnabled }: Par
         if (isCancelled) {
           return;
         }
-        setIsLoading(false);
+        setSettledKey(fetchKey);
       });
 
     return () => {
       isCancelled = true;
     };
-  }, [workspaceId, siteUrl, email, issueKey, isEnabled, reloadToken]);
+  }, [workspaceId, siteUrl, email, issueKey, isEnabled, fetchKey]);
 
   const reload = useCallback(() => {
     setReloadToken((token) => token + 1);
   }, []);
 
-  return { users, isLoading, error, reload };
+  return { users, isLoading: isEnabled && settledKey !== fetchKey, error, reload };
 };

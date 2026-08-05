@@ -11,10 +11,17 @@ type Props = {
   readonly issue: JiraIssue | null;
   readonly sessionId: SessionId | null;
   readonly workspaceId: WorkspaceId;
+  readonly onIssueWritten: () => void;
   readonly onClose: () => void;
 };
 
-export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
+export const IssueDetailPanel = ({
+  issue,
+  sessionId,
+  workspaceId,
+  onIssueWritten,
+  onClose,
+}: Props) => {
   if (issue == null) {
     return (
       <div className="flex h-full items-center justify-center px-8">
@@ -35,6 +42,7 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
     <JiraIssueDetail
       issue={issue}
       workspaceId={workspaceId}
+      onIssueWritten={onIssueWritten}
       dock={
         <LaunchSessionPanel
           key={issue.id}

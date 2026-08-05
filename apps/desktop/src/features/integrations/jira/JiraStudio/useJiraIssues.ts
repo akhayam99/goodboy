@@ -182,5 +182,9 @@ export const useJiraIssues = ({
     [issues, sessionIdByIssueId],
   );
 
-  return { groups, isLoading, error, refetch: () => void fetchIssues() };
+  const refetch = useCallback(() => {
+    void fetchIssues();
+  }, [fetchIssues]);
+
+  return { groups, isLoading, error, refetch };
 };
