@@ -132,8 +132,8 @@ slot. Always visible on the board and inside a session.
 
 Layout:
 
-- Left: integration tools (GitHub, GitLab, Linear, Jira, Sentry), each gated by
-  enablement.
+- Left: integration tools (GitHub, GitLab, Linear, Jira, Slack, Sentry), each
+  gated by enablement.
 - Right: common studios (workflows, providers, budget, impact).
 
 Navigation chrome stays muted while inactive across footer launchers, session
@@ -174,7 +174,7 @@ persisted preference.
 ### Utility studios
 
 Settings, budget, providers, impact, changelog, notifications, Linear, Jira,
-Sentry, GitLab, workflow, guide are modal overlays, all built on `StudioShell`'s
+Slack, Sentry, GitLab, workflow, guide are modal overlays, all built on `StudioShell`'s
 fullscreen variant. They are not part of the breadcrumb IA and are exited via
 their close button or Esc.
 
@@ -257,9 +257,9 @@ only the preview, not the form.
 
 Sections, top to bottom: issue source (conditional), goal, attachments, branch.
 The issue-source section is derived from the workspace's connected integrations
-via `resolveIssueSources` (Linear, GitHub, GitLab, Jira, Sentry) and the whole section
-is a hand-curated allowlist, not the provider union: Bitbucket is a code host in
-Goodboy and has no issue picker, so it is deliberately absent. The section
+via `resolveIssueSources` (Linear, GitHub, GitLab, Jira, Sentry, Slack) and the
+whole section is a hand-curated allowlist, not the provider union: Bitbucket is
+a code host in Goodboy and has no issue picker, so it is deliberately absent. The section
 is hidden when none of them is connected. Picking an issue fills the goal from
 the issue and the branch slug from its identifier, and counts as a manual slug
 edit, so later goal typing no longer re-slugs it.
