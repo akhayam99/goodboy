@@ -147,6 +147,7 @@ vi.mock('@goodboy/db', () => ({
   getGithubPrCache: vi.fn(async () => null),
   upsertGithubPrCache: vi.fn(async () => undefined),
   deleteGithubPrCache: vi.fn(async () => undefined),
+  listProviderCredentials: vi.fn(async () => []),
 }));
 
 vi.mock('../../../shared/lib/db', () => ({
@@ -186,6 +187,9 @@ vi.mock('../../../features/providers/providers', () => ({
   checkProviderAuth: vi.fn(async () => ({ state: 'connected', identity: 'test' })),
   getCursorStatus: vi.fn(async () => null),
   getCodexStatus: vi.fn(async () => null),
+  getGeminiStatus: vi.fn(async () => null),
+  getOpenCodeStatus: vi.fn(async () => null),
+  getOpenRouterStatus: vi.fn(async () => null),
   getProviderStatus: vi.fn(async () => null),
 }));
 
@@ -535,7 +539,7 @@ describe('store contract', () => {
       await store.getState().hydrate();
       const s = store.getState();
       expect(s.hydrated).toBe(true);
-      expect(s.bootPhase === 'ready' || s.bootPhase === 'error').toBe(true);
+      expect(s.bootPhase).toBe('ready');
     });
 
     it('loads notifications at boot without waiting for the bell to mount', async () => {
