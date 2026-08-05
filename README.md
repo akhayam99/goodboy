@@ -5,7 +5,7 @@
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&label=ci)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?label=release&color=06b6d4)](https://github.com/akhayam99/goodboy/releases/latest)
 [![stars](https://img.shields.io/github/stars/akhayam99/goodboy?label=stars&color=06b6d4)](https://github.com/akhayam99/goodboy/stargazers)
-[![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20OpenCode%20%C2%B7%20OpenRouter-06b6d4)](#providers)
+[![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20OpenCode%20%C2%B7%20OpenRouter%20%C2%B7%20Moonshot-06b6d4)](#providers)
 [![platform](https://img.shields.io/badge/macOS-Intel%20%26%20Apple%20Silicon-111111)](#install)
 [![license](https://img.shields.io/github/license/akhayam99/goodboy?color=06b6d4)](./LICENSE)
 
@@ -45,8 +45,8 @@ hand when the agents get it wrong. The next agent shows up already briefed.
 
 **Provider swap mid-task, without amnesia.** Each turn is rebuilt from the
 shared context, never resumed from a vendor's session blob. Drop Claude
-halfway, hand the same task to Cursor, Codex, Gemini, OpenCode or OpenRouter,
-watch it pick up clean.
+halfway, hand the same task to Cursor, Codex, Gemini, OpenCode, OpenRouter or
+Moonshot, watch it pick up clean.
 
 **Workflows for the multi-step stuff.** Refactor incoming? Line up a sequence:
 a cheap model to scout the area, a smart one to plan it, a mid one to
@@ -97,9 +97,9 @@ spend.
 ## Providers
 
 Bring the subscription you already pay for. Goodboy drives the official CLIs
-locally, on your existing plan. OpenRouter is the one exception: an API-key
-provider that runs through the OpenCode runtime, with the key held in your OS
-keychain.
+locally, on your existing plan. OpenRouter and Moonshot are the exceptions:
+API-key providers that run through the OpenCode runtime, with the key held in
+your OS keychain.
 
 | Provider                 | CLI                                                            | Subscription                   |
 | ------------------------ | -------------------------------------------------------------- | ------------------------------ |
@@ -109,6 +109,7 @@ keychain.
 | **Google (Antigravity)** | `curl -fsSL https://antigravity.google/cli/install.sh \| bash` | Google AI Pro                  |
 | **OpenCode** (beta)      | `npm i -g opencode-ai`                                         | None, zero-key models included |
 | **OpenRouter** (beta)    | Runs through the OpenCode runtime, no separate install         | OpenRouter API key             |
+| **Moonshot AI** (beta)   | Runs through the OpenCode runtime, no separate install         | Moonshot API key               |
 
 One connected CLI is enough to start. Full guide:
 [docs/providers.md](./docs/providers.md).
