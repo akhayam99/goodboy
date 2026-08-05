@@ -290,6 +290,7 @@ export type AppState = AppSliceState & {
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
+  readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
   readonly terminalTabs: Readonly<Record<SessionId, readonly TerminalTab[]>>;
   readonly activeTerminalTab: Readonly<Record<SessionId, TerminalTabId | null>>;

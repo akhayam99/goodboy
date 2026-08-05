@@ -18,6 +18,7 @@ export const LENS_LABEL: Record<LensKind, string> = {
   linear: 'Linear',
   sentry: 'Sentry',
   gitlab_issues: 'GitLab issues',
+  github_issue: 'GitHub issue',
 };
 
 export const SIMPLE_LENSES = new Set<LensKind>([

@@ -21,6 +21,8 @@ type Store = {
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
   focusedPlanId: Record<string, string | null>;
+  focusedGithubIssueNumber: Record<string, number | null>;
+  sessionExternalTasks: Record<string, ReadonlyArray<unknown>>;
   sessionGithub: Record<string, unknown>;
   sessionPendingResolutions: Record<string, ReadonlyArray<{ threadId: string }>>;
   sessionResolvedThreads: Record<string, ReadonlyArray<string>>;
@@ -61,6 +63,8 @@ const { store, hooks } = vi.hoisted(() => ({
     phaseTemplates: {},
     sessionWorkflows: {},
     focusedPlanId: {},
+    focusedGithubIssueNumber: {},
+    sessionExternalTasks: {},
     sessionGithub: {},
     sessionPendingResolutions: {},
     sessionResolvedThreads: {},
@@ -174,6 +178,11 @@ vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/SlotPane', () => ({ SlotPane: () => null }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
+vi.mock('./parts/IntegrationPane/GithubTaskDetail', () => ({
+  GithubTaskDetail: ({ issueNumber }: { issueNumber: number }) => (
+    <div data-testid="github-task-detail">{issueNumber}</div>
+  ),
+}));
 vi.mock('../../../../shared/components/PaneShell', () => ({
   PaneShell: ({ title, meta, children }: PaneShellMockProps) => (
     <div>
@@ -232,6 +241,8 @@ beforeEach(() => {
   store.phaseTemplates = {};
   store.sessionWorkflows = {};
   store.focusedPlanId = {};
+  store.focusedGithubIssueNumber = {};
+  store.sessionExternalTasks = {};
   store.sessionGithub = {};
   store.sessionPendingResolutions = {};
   store.sessionResolvedThreads = {};
@@ -798,5 +809,49 @@ describe('SessionWorkspace overview', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Overview' }));
 
     expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, null);
+  });
+});
+
+describe('SessionWorkspace github issue lens', () => {
+  const githubTask = {
+    sessionId: SESSION_ID,
+    provider: 'github',
+    externalId: '42',
+    identifier: '#42',
+    title: 'Add issue dashboard',
+    url: 'https://github.com/goodboy/goodboy/issues/42',
+    createdAt: '2026-07-22T12:00:00.000Z',
+  };
+
+  it('renders the linked issue when no issue is focused', () => {
+    store.activeLens = { [SESSION_ID]: 'github_issue' };
+    store.selectedAgentId = {};
+    store.sessionExternalTasks = { [SESSION_ID]: [githubTask] };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('github-task-detail').textContent).toBe('42');
+  });
+
+  it('shows the focused issue instead of the linked task when one is set', () => {
+    store.activeLens = { [SESSION_ID]: 'github_issue' };
+    store.selectedAgentId = {};
+    store.sessionExternalTasks = { [SESSION_ID]: [githubTask] };
+    store.focusedGithubIssueNumber = { [SESSION_ID]: 99 };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('github-task-detail').textContent).toBe('99');
+  });
+
+  it('shows an empty state when no github issue is linked', () => {
+    store.activeLens = { [SESSION_ID]: 'github_issue' };
+    store.selectedAgentId = {};
+    store.sessionExternalTasks = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByText('No GitHub issue linked')).toBeDefined();
+    expect(screen.queryByTestId('github-task-detail')).toBeNull();
   });
 });

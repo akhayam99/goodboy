@@ -9,13 +9,14 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string | null;
   readonly task: SessionExternalTask;
+  readonly issueNumber?: number;
 };
 
-export const GithubTaskDetail = ({ workspaceId, rootPath, task }: Props) => {
+export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: Props) => {
   const { issue, isLoading, error, refetch } = useGithubIssue({
     workspaceId,
     rootPath,
-    issueNumber: Number(task.externalId),
+    issueNumber: issueNumber ?? Number(task.externalId),
   });
 
   if (issue != null) {
