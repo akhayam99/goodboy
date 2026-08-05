@@ -1,5 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { classifyAgent } from '../../../features/session/agent-kind';
+import { formatError } from '../../../shared/lib/errors';
 import type { GetFn, SetFn } from './types';
 
 const resolverStartsPending = new Map<SessionId, AgentId>();
@@ -41,6 +42,15 @@ export const activateNextResolver = (set: SetFn, get: GetFn) => {
     });
     void get()
       .sendTurn({ sessionId, agentId: next.id, content: kickoff })
+      .catch((error: unknown) => {
+        void get().emitNotification(
+          'error',
+          'error',
+          'resolver failed to start',
+          formatError(error),
+          { sessionId },
+        );
+      })
       .finally(() => {
         if (resolverStartsPending.get(sessionId) === next.id) {
           resolverStartsPending.delete(sessionId);

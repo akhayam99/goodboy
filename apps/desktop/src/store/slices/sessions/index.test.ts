@@ -15,6 +15,7 @@ import type {
   PlanId,
   Message,
   MessageId,
+  PendingResolution,
   PlanWithCount,
   ProviderRunId,
   Session,
@@ -65,6 +66,9 @@ const listWorkspaceScriptsSpy = vi.fn(async () => [] as ReadonlyArray<WorkspaceS
 const upsertWorkspaceScriptSpy = vi.fn(async () => undefined);
 const deleteWorkspaceScriptSpy = vi.fn(async () => undefined);
 const deleteFileVersionsForSessionSpy = vi.fn(async () => undefined);
+const listPendingResolutionsForSessionSpy = vi.fn(
+  async () => [] as ReadonlyArray<PendingResolution>,
+);
 
 vi.mock('@goodboy/db', () => ({
   getSetting: dbGetSettingSpy,
@@ -151,6 +155,10 @@ vi.mock('@goodboy/db', () => ({
   getGithubPrCache: vi.fn(async () => null),
   upsertGithubPrCache: vi.fn(async () => undefined),
   deleteGithubPrCache: vi.fn(async () => undefined),
+  listPendingResolutionsForSession: listPendingResolutionsForSessionSpy,
+  queuePendingResolution: vi.fn(async () => undefined),
+  deletePendingResolution: vi.fn(async () => undefined),
+  markPendingResolutionReplyPosted: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../shared/lib/db', () => ({
@@ -451,6 +459,7 @@ describe('store contract', () => {
     listWorkspaceScriptsSpy.mockResolvedValue([]);
     listIntegrationsForWorkspaceSpy.mockResolvedValue([]);
     listDiffCommentsSpy.mockResolvedValue([]);
+    listPendingResolutionsForSessionSpy.mockResolvedValue([]);
     dbGetSettingSpy.mockResolvedValue(null);
     ghStatusSpy.mockResolvedValue({ available: true, mode: 'gh-cli', scopes: [] });
 
@@ -588,6 +597,29 @@ describe('store contract', () => {
         expect(store.getState().resolverThreadOutcomes[AGENT_ID]).toEqual({
           PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
         });
+      });
+    });
+
+    it('loads pending resolutions on activation, so a session landing on a lens other than Overview still sees the retry strip', async () => {
+      const store = await getStore();
+      store.setState({ sessionPendingResolutions: {} });
+      const pending: PendingResolution = {
+        id: 'pending-1',
+        sessionId: SESSION_ID,
+        prNumber: 7,
+        threadId: 'PRRT_2',
+        commitSha: '',
+        reply: null,
+        outcome: 'wontfix',
+        replyPostedAt: null,
+        createdAt: NOW,
+      };
+      listPendingResolutionsForSessionSpy.mockResolvedValue([pending]);
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      await vi.waitFor(() => {
+        expect(store.getState().sessionPendingResolutions[SESSION_ID]).toEqual([pending]);
       });
     });
 

@@ -224,6 +224,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           }));
           markDone('agents');
           void get().hydrateResolverOutcomes(id);
+          void get().loadPendingResolutions(id);
 
           if (!get().selectedAgentId[id]) {
             set((state) => ({
