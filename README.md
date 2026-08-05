@@ -80,16 +80,18 @@ labels, description and the comment thread, all readable in the app. Launch a
 session from one and the key lands on the branch. Writing back to Jira,
 commenting, assigning, moving status, is not there yet.
 
-**Bitbucket, read and route.** Connect Bitbucket Cloud from onboarding or the
-integrations panel with a workspace slug, your Atlassian account email and an
-API token, all verified against the account and the workspace before anything
-is stored. From there a session's pull request lens shows the Bitbucket request
-for its branch beside any GitHub or GitLab one, and the studio behind it lists
-the repository's pull requests with the description, the changed files, the
-build statuses read as plain language, and the review comments. You can start a
-session from a pull request, or link one to the session you are in. Approving,
-merging, declining and replying still happen on Bitbucket: those verbs land
-next. Bitbucket issues are out of scope, Atlassian points issue tracking at
+**Bitbucket, read, act and route.** Connect Bitbucket Cloud from onboarding or
+the integrations panel with a workspace slug, your Atlassian account email and
+an API token, all verified against the account and the workspace before
+anything is stored. From there a session's pull request lens shows the
+Bitbucket request for its branch beside any GitHub or GitLab one, and the
+studio behind it lists the repository's pull requests with the description, the
+changed files, the build statuses read as plain language, and the review
+comments. From the same screen you approve or take your approval back, ask for
+changes or withdraw the ask, comment, reply on a thread, and merge or decline
+behind a confirmation. Merging uses whatever strategy the repository is set to,
+Goodboy does not pick one for you, and declining is closed to reopening from
+here. Bitbucket issues are out of scope, Atlassian points issue tracking at
 Jira and Goodboy follows that. Goodboy does not read a `bitbucket.org` git
 remote either, the workspace integration is how it finds your pull requests.
 
