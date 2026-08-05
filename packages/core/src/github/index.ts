@@ -26,7 +26,12 @@ export { fetchPrDiff, parseUnifiedDiff } from './diff';
 
 export { fetchPrDetail } from './details';
 
-export { listAssignedIssues, updateIssueBody } from './issues';
+export {
+  createIssueComment,
+  listAssignedIssues,
+  listIssueComments,
+  updateIssueBody,
+} from './issues';
 
 export {
   addReviewThreadReply,

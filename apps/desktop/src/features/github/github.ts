@@ -1,9 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
+  createIssueComment,
   detectRepoSlug,
   fetchPrDetail,
   ghRunJson,
   listAssignedIssues,
+  listIssueComments,
   listPrsForBranch,
   updateIssueBody,
 } from '@goodboy/core';
@@ -11,6 +13,7 @@ import type { GhRunner, GhResult, GhRunOptions, PrCacheStore } from '@goodboy/co
 import type {
   GhTokenStatus,
   GithubIssue,
+  GithubIssueComment,
   GithubPrCacheEntry,
   PrDetail,
   PullRequestState,
@@ -189,6 +192,55 @@ export const ghUpdateIssueBody = async ({
     throw new Error('could not detect a GitHub repository for this workspace');
   }
   return updateIssueBody({
+    runner: tauriGhRunner,
+    repoSlug: slug,
+    issueNumber,
+    body,
+    opts: { cwd, workspaceId },
+  });
+};
+
+type IssueCommentsParams = {
+  readonly cwd: string;
+  readonly issueNumber: number;
+  readonly workspaceId?: string;
+};
+
+export const ghIssueComments = async ({
+  cwd,
+  issueNumber,
+  workspaceId,
+}: IssueCommentsParams): Promise<ReadonlyArray<GithubIssueComment>> => {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
+  if (slug == null) {
+    throw new Error('could not detect a GitHub repository for this workspace');
+  }
+  return listIssueComments({
+    runner: tauriGhRunner,
+    repoSlug: slug,
+    issueNumber,
+    opts: { cwd, workspaceId },
+  });
+};
+
+type CreateIssueCommentParams = {
+  readonly cwd: string;
+  readonly issueNumber: number;
+  readonly body: string;
+  readonly workspaceId?: string;
+};
+
+export const ghCreateIssueComment = async ({
+  cwd,
+  issueNumber,
+  body,
+  workspaceId,
+}: CreateIssueCommentParams): Promise<GithubIssueComment> => {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
+  if (slug == null) {
+    throw new Error('could not detect a GitHub repository for this workspace');
+  }
+  return createIssueComment({
     runner: tauriGhRunner,
     repoSlug: slug,
     issueNumber,

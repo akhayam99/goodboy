@@ -21,6 +21,15 @@ export type GithubIssue = {
   updatedAt: string;
 };
 
+export type GithubIssueComment = {
+  id: string;
+  author: string;
+  authorAvatarUrl: string | null;
+  body: string;
+  createdAt: string;
+  url: string;
+};
+
 export type PullRequestStateKind = 'draft' | 'open' | 'approved' | 'queued' | 'merged' | 'closed';
 
 export type PullRequestChecks = 'pending' | 'success' | 'failure' | null;

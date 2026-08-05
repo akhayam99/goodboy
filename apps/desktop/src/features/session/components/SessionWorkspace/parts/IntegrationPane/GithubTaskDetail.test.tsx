@@ -14,6 +14,10 @@ vi.mock('../../../../../github/useGithubIssue', () => ({
   useGithubIssue: vi.fn(),
 }));
 
+vi.mock('../../../../../github/useGithubIssueComments', () => ({
+  useGithubIssueComments: () => ({ comments: [], isLoading: false, error: null, post: null }),
+}));
+
 const useGithubIssueMock = vi.mocked(useGithubIssue);
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 

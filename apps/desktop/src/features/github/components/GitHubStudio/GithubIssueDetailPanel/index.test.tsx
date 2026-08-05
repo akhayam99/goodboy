@@ -26,6 +26,9 @@ vi.mock('../../../../../store', () => ({
 vi.mock('../../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
+vi.mock('../../../useGithubIssueComments', () => ({
+  useGithubIssueComments: () => ({ comments: [], isLoading: false, error: null, post: null }),
+}));
 vi.mock('../../../../worktree/useBranchConflict', () => ({ useBranchConflict: () => null }));
 vi.mock('../../../../worktree/worktree', () => ({ removeWorktree: vi.fn() }));
 
