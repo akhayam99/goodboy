@@ -158,10 +158,23 @@ describe('PlanStudio', () => {
 });
 
 describe('PlanStudio subpage', () => {
-  it('fills the pane (relative, not a fixed overlay)', () => {
+  it('fills the pane (not a fixed overlay) when a plan is focused', () => {
+    state.plans = [
+      {
+        id: 'plan-1',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'First plan',
+        bodyMd: 'body one',
+        status: 'active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 0,
+      },
+    ];
+    state.focusedPlanId = { 'sess-1': 'plan-1' };
     const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
     const shell = container.firstElementChild as HTMLElement;
-    expect(shell.className).toContain('relative');
+    expect(shell.className).toContain('h-full');
     expect(shell.className).not.toContain('fixed');
     expect(shell.className).not.toContain('z-50');
     expect(container.querySelector('.max-w-5xl')).not.toBeNull();
