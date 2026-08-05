@@ -321,6 +321,10 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
 
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null);
+  useEffect(() => {
+    setMergeDialogOpen(false);
+    setDiffJumpFile(null);
+  }, [selectedAgentId]);
   const diffLoader = useMemo(
     () =>
       diffWorktreePath != null && !isBranchless ? () => worktreeDiff(diffWorktreePath) : undefined,
