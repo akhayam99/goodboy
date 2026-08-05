@@ -88,6 +88,9 @@ export const pushAllResolutions = (set: SetFn, get: GetFn) => {
             const replyAlreadyPosted = resolution.replyPostedAt != null;
             switch (outcome) {
               case null: {
+                if (replyAlreadyPosted) {
+                  break;
+                }
                 const posted = await postThreadReply({
                   get,
                   sessionId,

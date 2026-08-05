@@ -1,4 +1,8 @@
-import { deletePendingResolution, listPendingResolutionsForSession } from '@goodboy/db';
+import {
+  deletePendingResolution,
+  listPendingResolutionsForSession,
+  queuePendingResolution,
+} from '@goodboy/db';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { closedThreadIds } from '../../../features/session/closedThreadIds';
@@ -135,14 +139,28 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
             return false;
           }
         }
+        const prNumber = get().sessionGithub[sessionId]?.pr?.number ?? null;
         let closed = 0;
         let failed = 0;
         let lastError = '';
         for (const target of targets) {
           try {
-            const replyAlreadyPosted =
-              persisted.find((resolution) => resolution.threadId === target.threadId)
-                ?.replyPostedAt != null;
+            const existing = persisted.find(
+              (resolution) => resolution.threadId === target.threadId,
+            );
+            const replyAlreadyPosted = existing?.replyPostedAt != null;
+            if (existing === undefined && prNumber !== null) {
+              await queuePendingResolution({
+                db: tauriDatabase,
+                id: crypto.randomUUID(),
+                sessionId,
+                prNumber,
+                threadId: target.threadId,
+                commitSha: target.closure.commitSha ?? '',
+                reply: target.closure.reply ?? null,
+                outcome: null,
+              });
+            }
             await markThreadResolvedNoPush({
               set,
               get,

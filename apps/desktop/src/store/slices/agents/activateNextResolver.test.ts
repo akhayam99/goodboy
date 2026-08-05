@@ -142,6 +142,50 @@ describe('activateNextResolver', () => {
     await Promise.resolve();
   });
 
+  it('lets the chain hand off to the next resolver from inside the finishing turn', async () => {
+    const started: AgentId[] = [];
+    const state: Record<string, unknown> = {
+      sessionPhaseRuns: {
+        [SID]: [resolver({ id: FIRST, ordinal: 1 }), resolver({ id: SECOND, ordinal: 2 })],
+      },
+      agentKindOverride: {},
+      pendingResolverKickoff: { [FIRST]: 'fix comment one', [SECOND]: 'fix comment two' },
+    };
+    const get = (() => state) as unknown as GetFn;
+    const set = ((u: unknown) => {
+      const patch =
+        typeof u === 'function'
+          ? (u as (s: Record<string, unknown>) => Record<string, unknown>)(state)
+          : (u as Record<string, unknown>);
+      Object.assign(state, patch);
+    }) as unknown as SetFn;
+
+    const sendTurn = vi.fn(async ({ agentId }: { agentId: AgentId }) => {
+      started.push(agentId);
+      const setStatus = (status: Agent['status']) => {
+        const runs = (state.sessionPhaseRuns as Record<string, ReadonlyArray<Agent>>)[SID] ?? [];
+        state.sessionPhaseRuns = {
+          ...(state.sessionPhaseRuns as Record<string, ReadonlyArray<Agent>>),
+          [SID]: runs.map((agent) => (agent.id === agentId ? { ...agent, status } : agent)),
+        };
+      };
+      setStatus('running');
+      await Promise.resolve();
+      setStatus('completed');
+      if (agentId === FIRST) {
+        await activateNextResolver(set, get)(SID);
+      }
+    });
+    state.sendTurn = sendTurn;
+    state.selectAgent = vi.fn(async () => undefined);
+
+    await activateNextResolver(set, get)(SID);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(started).toEqual([FIRST, SECOND]);
+  });
+
   it('ignores a force closed resolver when picking the next one', async () => {
     const { get, set, sendTurn } = makeStore({
       agents: [

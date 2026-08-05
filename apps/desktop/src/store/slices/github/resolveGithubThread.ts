@@ -66,25 +66,30 @@ export const resolveGithubThread = (set: SetFn, get: GetFn) => {
           let replyAlreadyPosted = false;
           if (persistFirst) {
             const before = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
-            replyAlreadyPosted =
-              before.find((resolution) => resolution.threadId === threadId)?.replyPostedAt != null;
-            await queuePendingResolution({
-              db: tauriDatabase,
-              id: crypto.randomUUID(),
-              sessionId,
-              prNumber,
-              threadId,
-              commitSha: closure?.commitSha ?? '',
-              reply: closure?.reply ?? null,
-              outcome: null,
-            });
-            const queued = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
-            set((state) => ({
-              sessionPendingResolutions: {
-                ...state.sessionPendingResolutions,
-                [sessionId]: queued,
-              },
-            }));
+            const existing = before.find((resolution) => resolution.threadId === threadId);
+            replyAlreadyPosted = existing?.replyPostedAt != null;
+            if (existing === undefined) {
+              await queuePendingResolution({
+                db: tauriDatabase,
+                id: crypto.randomUUID(),
+                sessionId,
+                prNumber,
+                threadId,
+                commitSha: closure?.commitSha ?? '',
+                reply: closure?.reply ?? null,
+                outcome: null,
+              });
+              const queued = await listPendingResolutionsForSession({
+                db: tauriDatabase,
+                sessionId,
+              });
+              set((state) => ({
+                sessionPendingResolutions: {
+                  ...state.sessionPendingResolutions,
+                  [sessionId]: queued,
+                },
+              }));
+            }
           }
           await markThreadResolvedNoPush({
             set,
