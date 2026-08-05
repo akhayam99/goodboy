@@ -25,6 +25,7 @@ import type { LocalBranchInfo } from '../../../worktree/worktree';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
+import { openUrl } from '../../../../shared/lib/editor';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -305,14 +306,13 @@ export const CreatePrPanel = ({
                         >
                           {reference.line}
                         </code>
-                        <a
-                          href={reference.url}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => void openUrl(reference.url)}
                           className="truncate text-2xs text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {reference.identifier}
-                        </a>
+                        </button>
                       </li>
                     ))}
                   </ul>

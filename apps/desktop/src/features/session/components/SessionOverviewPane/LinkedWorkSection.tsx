@@ -6,6 +6,7 @@ import type { LensKind } from '../../../../store';
 import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
+import { openUrl } from '../../../../shared/lib/editor';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { PROVIDER_LENS } from '../../../integrations/providerLens';
@@ -82,7 +83,9 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
               leading={{ kind: 'icon', icon: GitBranch, tone: 'info', label: 'GitHub' }}
               identifier={`#${issue.number}`}
               title={issue.title ?? 'GitHub issue'}
-              onClick={() => onSelectLens('pr')}
+              onClick={() => void openUrl(issue.url)}
+              navigation="external"
+              tooltip={`Open issue #${issue.number} in GitHub`}
               actions={
                 <ExternalRefActions
                   url={issue.url}

@@ -3,6 +3,7 @@ import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { openUrl } from '../../../../shared/lib/editor';
 
 type Props = {
   readonly inputId?: string;
@@ -176,17 +177,18 @@ export const IssuePicker = ({
           onKeyDown={onKeyDown}
         />
         {value != null && value.url !== '' && (
-          <a
-            href={value.url}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
             tabIndex={-1}
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              void openUrl(value.url);
+            }}
             aria-label="Open issue in browser"
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ExternalLink size={12} aria-hidden />
-          </a>
+          </button>
         )}
         <button
           type="button"
