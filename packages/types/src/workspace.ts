@@ -115,6 +115,7 @@ export type WorkflowRun = Readonly<{
   chainAfterId?: WorkflowRunId;
   goal?: string;
   discardedAt?: IsoDateTime;
+  createdAt?: IsoDateTime;
 }>;
 
 export type Session = Readonly<{
