@@ -66,6 +66,7 @@ import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useWorkspaceRemoteHostKind } from './features/worktree/useWorkspaceRemoteHostKind';
 import { resolveSessionRepo } from './store/slices/worktrees/resolveSessionRepo';
+import { resolveOpenDiffViewerEvent } from './store/slices/session-view/openDiffViewerEvent';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { SessionSidebarCollapsedContext } from './features/workspace/hooks/useSessionSidebarVisibility/collapsed';
 
@@ -217,13 +218,14 @@ export const App = () => {
     };
     const onOpenDiffViewer = (event: Event) => {
       const detail = (event as CustomEvent<{ sessionId?: SessionId; workingDir?: string }>).detail;
-      if (!detail?.sessionId) {
+      const resolved = resolveOpenDiffViewerEvent({ detail });
+      if (resolved === null) {
         return;
       }
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
       setWorkspaceSettingsFocus(undefined);
-      useAppStore.getState().setActiveLens(detail.sessionId, 'files');
+      useAppStore.getState().openDiffLens(resolved.sessionId, resolved.focus);
     };
     const onOpenProviderStudio = (event: Event) => {
       const detail = (
