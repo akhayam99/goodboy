@@ -8,15 +8,16 @@ import { useGithubIssue } from '../../../../../github/useGithubIssue';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string | null;
-  readonly task: SessionExternalTask;
+  readonly task?: SessionExternalTask;
   readonly issueNumber?: number;
 };
 
 export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: Props) => {
+  const resolvedIssueNumber = issueNumber ?? Number(task?.externalId);
   const { issue, isLoading, error, refetch } = useGithubIssue({
     workspaceId,
     rootPath,
-    issueNumber: issueNumber ?? Number(task.externalId),
+    issueNumber: resolvedIssueNumber,
   });
 
   if (issue != null) {
@@ -36,10 +37,10 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: P
         <HeaderBand
           meta={
             <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-              {task.identifier}
+              {task?.identifier ?? `#${resolvedIssueNumber}`}
             </span>
           }
-          title={task.title}
+          title={task?.title ?? 'GitHub issue'}
         />
       }
     >

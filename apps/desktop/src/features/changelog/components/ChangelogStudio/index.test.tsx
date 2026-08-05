@@ -9,7 +9,6 @@ const mocks = vi.hoisted(() => ({
   loadChangelog: vi.fn(async () => undefined),
   reloadChangelog: vi.fn(async () => undefined),
   installedVersion: null as string | null,
-  openUrl: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -24,8 +23,6 @@ vi.mock('../../../../store', () => ({
 vi.mock('../../hooks/useInstalledVersion', () => ({
   useInstalledVersion: () => mocks.installedVersion,
 }));
-
-vi.mock('../../../../shared/lib/editor', () => ({ openUrl: mocks.openUrl }));
 
 import { ChangelogStudio } from './index';
 
@@ -76,7 +73,7 @@ describe('ChangelogStudio', () => {
     expect(newerRow?.textContent).not.toContain('installed');
   });
 
-  it('opens the newest release and links it out through the system browser', () => {
+  it('renders the newest release body in full, with no redundant external link', () => {
     mocks.state = {
       changelogReleases: [buildRelease('v0.1.56', '2026-07-10T10:00:00Z')],
       changelogStatus: 'ready',
@@ -87,10 +84,7 @@ describe('ChangelogStudio', () => {
     renderStudio();
 
     expect(screen.getByRole('heading', { name: 'v0.1.56' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /Open on GitHub/ }));
-    expect(mocks.openUrl).toHaveBeenCalledWith(
-      'https://github.com/akhayam99/goodboy/releases/tag/v0.1.56',
-    );
+    expect(screen.queryByRole('button', { name: /Open on GitHub/ })).toBeNull();
   });
 
   it('offers a retry and no release list when the fetch failed with no cache', () => {

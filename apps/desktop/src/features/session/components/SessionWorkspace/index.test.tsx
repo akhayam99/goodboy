@@ -854,4 +854,16 @@ describe('SessionWorkspace github issue lens', () => {
     expect(screen.getByText('No GitHub issue linked')).toBeDefined();
     expect(screen.queryByTestId('github-task-detail')).toBeNull();
   });
+
+  it('renders the focused issue with no linked task at all', () => {
+    store.activeLens = { [SESSION_ID]: 'github_issue' };
+    store.selectedAgentId = {};
+    store.sessionExternalTasks = {};
+    store.focusedGithubIssueNumber = { [SESSION_ID]: 12 };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('github-task-detail').textContent).toBe('12');
+    expect(screen.queryByText('No GitHub issue linked')).toBeNull();
+  });
 });

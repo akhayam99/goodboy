@@ -58,7 +58,7 @@ export const ResolverThreadCardHeader = ({
           onClick={onOpenThread}
           className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground"
         >
-          Open on GitHub
+          Open thread
           <ArrowRight size={10} aria-hidden className="opacity-70" />
         </button>
       )}

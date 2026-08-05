@@ -22,6 +22,7 @@ type Store = {
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly editPr: ReturnType<typeof vi.fn>;
+  readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
   sessionMounts: Record<string, ReadonlyArray<never>>;
   sessionActiveMount: Record<string, WorkspaceId>;
@@ -42,6 +43,7 @@ const h = vi.hoisted(() => ({
     refreshSessionPr: vi.fn(),
     selectSessionPr: vi.fn(),
     editPr: vi.fn(async () => undefined),
+    setFocusedGithubIssueNumber: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
     sessionMounts: {},
     sessionActiveMount: {},
@@ -193,6 +195,7 @@ beforeEach(() => {
   h.onSelectLens.mockReset();
   h.openUrl.mockClear();
   h.store.editPr.mockClear();
+  h.store.setFocusedGithubIssueNumber.mockClear();
   h.githubStatus = {
     available: true,
     mode: 'gh-cli',
@@ -564,9 +567,10 @@ describe('PrPane', () => {
     expect(screen.getByText('main')).toBeDefined();
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'open #7 in GitHub' }));
-    expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/goodboy/issues/7');
-    expect(h.onSelectLens).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'open #7 integration' }));
+    expect(h.store.setFocusedGithubIssueNumber).toHaveBeenCalledWith(SESSION_ID, 7);
+    expect(h.onSelectLens).toHaveBeenCalledWith('github_issue');
+    expect(h.openUrl).not.toHaveBeenCalled();
     expect(screen.getAllByRole('link', { name: 'Open in GitHub' })).toHaveLength(3);
   });
 
@@ -611,7 +615,7 @@ describe('PrPane', () => {
     expect(screen.getByText('web')).toBeDefined();
   });
 
-  it('keeps linked issues and external tasks visible without a pull request', () => {
+  it('routes linked issues and external tasks to the github issue lens without a pull request', () => {
     h.store.sessionGithub = {
       [SESSION_ID]: {
         pr: null,
@@ -646,13 +650,16 @@ describe('PrPane', () => {
 
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /#7 Track auth rollout/i }));
-    expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/goodboy/issues/7');
-    fireEvent.click(screen.getByRole('button', { name: 'open #9 in GitHub' }));
-    expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/goodboy/issues/9');
-    expect(h.onSelectLens).not.toHaveBeenCalled();
+    expect(h.store.setFocusedGithubIssueNumber).toHaveBeenCalledWith(SESSION_ID, 7);
+    expect(h.onSelectLens).toHaveBeenCalledWith('github_issue');
+
+    fireEvent.click(screen.getByRole('button', { name: 'open #9 integration' }));
+    expect(h.store.setFocusedGithubIssueNumber).toHaveBeenCalledWith(SESSION_ID, 9);
+    expect(h.onSelectLens.mock.calls).toEqual([['github_issue'], ['github_issue']]);
+    expect(h.openUrl).not.toHaveBeenCalled();
     expect(screen.getByText('No pull or merge request yet')).toBeDefined();
     expect(screen.getByText('ak/refactor-auth')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Open in code host/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Draft a pull request/i })).toBeDefined();
 
     expect(screen.queryByRole('region', { name: 'issue #7 details' })).toBeNull();
   });
@@ -734,7 +741,7 @@ describe('PrPane', () => {
     window.addEventListener('goodboy:open-gitlab-mr', gitlabListener);
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
-    const cta = screen.getByRole('button', { name: /Open in code host/i });
+    const cta = screen.getByRole('button', { name: /Draft a pull request/i });
     fireEvent.click(cta);
     window.removeEventListener('goodboy:open-github-session', githubListener);
     window.removeEventListener('goodboy:open-gitlab-mr', gitlabListener);
@@ -776,7 +783,7 @@ describe('PrPane', () => {
     expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
     expect(screen.getByText(/does not have a GitHub remote/i)).toBeDefined();
     expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
-    expect(screen.queryByRole('button', { name: /Open in code host/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Draft a pull request/i })).toBeNull();
   });
 
   it('clears the token empty state after connecting a repository with a GitHub remote', async () => {
@@ -794,6 +801,6 @@ describe('PrPane', () => {
     await waitFor(() => {
       expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
     });
-    expect(screen.getByRole('button', { name: /Open in code host/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Draft a pull request/i })).toBeDefined();
   });
 });
