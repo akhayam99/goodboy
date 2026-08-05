@@ -212,8 +212,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       if (get().currentWorkspaceId === id && Object.keys(sessionBranches).length === 0) {
         set({ boardReady: true });
       }
-      // eslint-disable-next-line no-console
-      console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
+      if (import.meta.env.DEV) {
+        console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
+      }
 
       void (async (): Promise<void> => {
         const tWsDefer = performance.now();
@@ -271,8 +272,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           phaseTemplates: { ...state.phaseTemplates, [id]: mergedTemplates },
           stepLibrary: { ...state.stepLibrary, [id]: stepLibrary },
         }));
-        // eslint-disable-next-line no-console
-        console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
+        if (import.meta.env.DEV) {
+          console.log(`[perf] workspace:deferred ${(performance.now() - tWsDefer).toFixed(0)}ms`);
+        }
       })();
       void get().loadWorkspaceOverrides(id);
     } else {

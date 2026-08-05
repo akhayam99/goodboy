@@ -48,8 +48,9 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
 
     const cached = get().transcripts[agentId];
     if (cached) {
-      // eslint-disable-next-line no-console
-      console.log(`[perf] selectAgent:${agentId} cached`);
+      if (import.meta.env.DEV) {
+        console.log(`[perf] selectAgent:${agentId} cached`);
+      }
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         return {
@@ -87,10 +88,11 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
         listMessagesForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
         listTurnEventsForAgent(tauriDatabase, agentId, { limit: INITIAL_LIMIT }),
       ]);
-      // eslint-disable-next-line no-console
-      console.log(
-        `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
-      );
+      if (import.meta.env.DEV) {
+        console.log(
+          `[perf] selectAgent:initial ${(performance.now() - tInitial).toFixed(0)}ms (${events.length} events)`,
+        );
+      }
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         const hasLiveAppend =
@@ -119,10 +121,11 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
           listTurnEventsForAgent(tauriDatabase, agentId),
         ])
           .then(([fullMessages, fullEvents]) => {
-            // eslint-disable-next-line no-console
-            console.log(
-              `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
-            );
+            if (import.meta.env.DEV) {
+              console.log(
+                `[perf] selectAgent:full ${(performance.now() - tFull).toFixed(0)}ms (${fullEvents.length} events)`,
+              );
+            }
             set((state) => {
               const current = state.transcripts[agentId];
               if ((current?.length ?? null) !== liveLengthAtFullRead) {
