@@ -35,8 +35,8 @@ type Props = {
   readonly file: FileDiff;
   readonly layoutMode: DiffLayoutMode;
   readonly drafts: ReadonlyArray<PrReviewDraft>;
-  readonly onAddDraft: (target: ReviewLineTarget, body: string) => void;
-  readonly onAskAgent: (target: ReviewLineTarget) => void;
+  readonly onAddDraft: ((target: ReviewLineTarget, body: string) => void) | null;
+  readonly onAskAgent: ((target: ReviewLineTarget) => void) | null;
 };
 
 type TargetParams = {
@@ -89,6 +89,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
 
   const isSplit = layoutMode === 'split';
   const columnCount = isSplit ? 6 : 4;
+  const canComment = onAddDraft != null && onAskAgent != null;
 
   const isTargetActive = ({ target }: TargetParams): boolean =>
     target != null &&
@@ -229,11 +230,11 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                                 isNewActive={isTargetActive({ target: newTarget })}
                                 hasOldDraft={isDraftedTarget({ target: oldTarget })}
                                 hasNewDraft={isDraftedTarget({ target: newTarget })}
-                                onToggleComposer={toggleComposer}
+                                onToggleComposer={canComment ? toggleComposer : null}
                                 onAskAgent={onAskAgent}
                               />
                             </tr>
-                            {activeTarget != null ? (
+                            {activeTarget != null && onAddDraft != null ? (
                               <tr>
                                 <td colSpan={columnCount} className="bg-background px-3 py-2">
                                   <LineComposer
@@ -289,7 +290,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                                       : 'border-transparent',
                               )}
                             >
-                              {target != null ? (
+                              {target != null && canComment ? (
                                 <span className="flex items-center gap-0.5">
                                   <button
                                     type="button"
@@ -309,7 +310,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => onAskAgent(target)}
+                                    onClick={() => onAskAgent?.(target)}
                                     title="Ask the agent about this line"
                                     aria-label={`Ask the agent about line ${target.line}`}
                                     className="flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
@@ -352,7 +353,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                                 : line.text}
                             </td>
                           </tr>
-                          {isActive && target != null ? (
+                          {isActive && target != null && onAddDraft != null ? (
                             <tr>
                               <td colSpan={columnCount} className="bg-background px-3 py-2">
                                 <LineComposer

@@ -535,7 +535,8 @@ export const PrDetailPanel = ({
           ) : (
             <PrChecks
               checks={detail?.checks ?? []}
-              pr={activePr}
+              fallbackUrl={activePr.url}
+              hostLabel="GitHub"
               onOpenUrl={(url) => void openUrl(url)}
             />
           )}

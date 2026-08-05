@@ -5,15 +5,15 @@ import type { ReviewLineTarget } from './ReviewFileDiff';
 type Props = {
   readonly target: ReviewLineTarget | null;
   readonly isActive: boolean;
-  readonly onToggleComposer: (target: ReviewLineTarget) => void;
-  readonly onAskAgent: (target: ReviewLineTarget) => void;
+  readonly onToggleComposer: ((target: ReviewLineTarget) => void) | null;
+  readonly onAskAgent: ((target: ReviewLineTarget) => void) | null;
 };
 
 const ACTION_BTN =
   'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground';
 
 export const ReviewLineActions = ({ target, isActive, onToggleComposer, onAskAgent }: Props) => {
-  if (target === null) {
+  if (target === null || onToggleComposer === null || onAskAgent === null) {
     return null;
   }
   return (
