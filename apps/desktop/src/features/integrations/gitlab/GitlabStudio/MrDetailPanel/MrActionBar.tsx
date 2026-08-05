@@ -21,11 +21,36 @@ const TONE = {
   warning: actionTone({ tone: 'warning' }),
 } as const;
 
+type ApprovalReasonParams = {
+  readonly approval: GitlabMrApprovalState | null;
+  readonly approvalError: string | null;
+  readonly hasApproved: boolean;
+};
+
+const approvalBlockReason = ({
+  approval,
+  approvalError,
+  hasApproved,
+}: ApprovalReasonParams): string | null => {
+  if (approval == null) {
+    return approvalError ?? 'Could not load approval status for this merge request.';
+  }
+  if (hasApproved) {
+    return null;
+  }
+  if (approval.userCanApprove === false) {
+    return 'You do not have permission to approve this merge request.';
+  }
+  return null;
+};
+
 type Props = {
   readonly mr: GitlabMergeRequest;
   readonly busy: MrActionBusy;
   readonly approval: GitlabMrApprovalState | null;
   readonly isApprovalBusy: boolean;
+  readonly isSupported: boolean;
+  readonly approvalError: string | null;
   readonly canAct: boolean;
   readonly onApprove: (() => void) | null;
   readonly onUnapprove: (() => void) | null;
@@ -39,6 +64,8 @@ export const MrActionBar = ({
   busy,
   approval,
   isApprovalBusy,
+  isSupported,
+  approvalError,
   canAct,
   onApprove,
   onUnapprove,
@@ -51,18 +78,27 @@ export const MrActionBar = ({
   const hasApproved = approval?.userHasApproved === true;
   const approveHandler = hasApproved ? onUnapprove : onApprove;
   const isDisabled = busy !== null || !canAct;
+  const approvalReason = approvalBlockReason({ approval, approvalError, hasApproved });
+  const isApproveBlocked = isDisabled || isApprovalBusy || approvalReason != null;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {isOpen && approval != null && approveHandler != null && (
+      {isOpen && isSupported && (
         <button
           type="button"
-          onClick={approveHandler}
-          disabled={isDisabled || isApprovalBusy}
+          aria-disabled={isApproveBlocked}
+          title={approvalReason ?? undefined}
+          onClick={() => {
+            if (isApproveBlocked) {
+              return;
+            }
+            approveHandler?.();
+          }}
           className={cn(
             MR_ACTION_BUTTON,
             hasApproved ? TONE.neutral : TONE.success,
             isApprovalBusy && 'animate-border-pulse',
+            isApproveBlocked && 'opacity-50',
           )}
         >
           {hasApproved ? (

@@ -287,6 +287,8 @@ export const MrDetailPanel = ({
               busy={actionBusy}
               approval={approvals.approval}
               isApprovalBusy={approvals.isSubmitting}
+              isSupported={approvals.isSupported}
+              approvalError={approvals.error}
               canAct={canAct}
               onApprove={approvals.approve == null ? null : () => void approvals.approve?.()}
               onUnapprove={approvals.unapprove == null ? null : () => void approvals.unapprove?.()}
