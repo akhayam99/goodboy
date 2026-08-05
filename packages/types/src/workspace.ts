@@ -149,7 +149,7 @@ export type WorkspaceScript = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceIntegrationProvider = 'linear' | 'sentry' | 'gitlab';
+export type WorkspaceIntegrationProvider = 'linear' | 'sentry' | 'gitlab' | 'jira';
 
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
@@ -170,10 +170,19 @@ export type GitlabIntegrationConfig = Readonly<{
   host: string;
 }>;
 
+export type JiraIntegrationConfig = Readonly<{
+  siteUrl: string;
+  email: string;
+  projectKey: string;
+  accountId?: string;
+  displayName?: string;
+}>;
+
 export type WorkspaceIntegrationConfig =
   | LinearIntegrationConfig
   | SentryIntegrationConfig
-  | GitlabIntegrationConfig;
+  | GitlabIntegrationConfig
+  | JiraIntegrationConfig;
 
 type WorkspaceIntegrationBase = Readonly<{
   id: WorkspaceIntegrationId;
@@ -201,10 +210,17 @@ export type GitlabWorkspaceIntegration = WorkspaceIntegrationBase &
     config: GitlabIntegrationConfig;
   }>;
 
+export type JiraWorkspaceIntegration = WorkspaceIntegrationBase &
+  Readonly<{
+    provider: 'jira';
+    config: JiraIntegrationConfig;
+  }>;
+
 export type WorkspaceIntegration =
   | LinearWorkspaceIntegration
   | SentryWorkspaceIntegration
-  | GitlabWorkspaceIntegration;
+  | GitlabWorkspaceIntegration
+  | JiraWorkspaceIntegration;
 
 export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab' | 'github';
 
