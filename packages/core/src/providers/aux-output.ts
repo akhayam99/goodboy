@@ -312,7 +312,8 @@ export const extractAuxOutput = ({ providerId, stdout }: Params): AuxOutput => {
       return extractCodexStream(lines);
     }
     case 'opencode':
-    case 'openrouter': {
+    case 'openrouter':
+    case 'moonshot': {
       const lines = readJsonLines(trimmed);
       if (!hasEventOfType(lines, OPENCODE_EVENT_TYPES)) {
         return plainText({ text: trimmed, envelopeDecoded: true });

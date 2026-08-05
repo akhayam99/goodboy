@@ -12,6 +12,11 @@ describe('provider model display', () => {
     expect(getModelDescriptor('openrouter/openai/gpt-5.4')?.family).toBe('gpt');
   });
 
+  it('resolves Moonshot models to their own provider, not OpenRouter', () => {
+    expect(getModelProvider('moonshotai/kimi-k3')).toBe('moonshot');
+    expect(getModelDescriptor('moonshotai/kimi-k3')?.contextWindow).toBe(1_048_576);
+  });
+
   it('resolves variant and combo slugs to authored windows', () => {
     expect(getModelDescriptor('gpt-5.6-sol')?.contextWindow).toBe(1_000_000);
     expect(getModelDescriptor('gpt-5.4-mini')?.contextWindow).toBe(400_000);

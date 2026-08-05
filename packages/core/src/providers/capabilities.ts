@@ -40,6 +40,12 @@ export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistry
     supportsStream: true,
     supportsCheapModel: true,
   },
+  moonshot: {
+    models: MODEL_CATALOGS.moonshot.map((model) => catalogDescriptor({ model })),
+    supportsTools: true,
+    supportsStream: true,
+    supportsCheapModel: false,
+  },
 };
 
 type Params = {

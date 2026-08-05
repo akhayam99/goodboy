@@ -111,6 +111,26 @@ describe('OpenCodeAdapter', () => {
     expect(adapter.id).toBe('openrouter');
   });
 
+  it('reports the moonshot catalog, never the opencode free tier', async () => {
+    const adapter = new OpenCodeAdapter({ providerId: 'moonshot', now: () => AT });
+    expect(adapter.id).toBe('moonshot');
+    expect(adapter.capabilities.availableModels).toEqual(['kimi-k3']);
+    expect(adapter.capabilities.defaultModel).toBe('kimi-k3');
+  });
+
+  it('sends the moonshot cli id without an openrouter prefix', async () => {
+    const child = new FakeChild([]);
+    const spawnFn = vi.fn((_binary: string, _args: ReadonlyArray<string>) => child);
+    const adapter = new OpenCodeAdapter({
+      providerId: 'moonshot',
+      now: () => AT,
+      spawnFn: spawnFn as never,
+    });
+    await collect({ adapter, request: requestFor({ model: 'kimi-k3' }) });
+    expect(spawnFn.mock.calls[0]?.[1]).toContain('moonshotai/kimi-k3');
+    expect(spawnFn.mock.calls[0]?.[1]).not.toContain('openrouter/moonshotai/kimi-k3');
+  });
+
   it('detects the bare opencode version', async () => {
     const child = new FakeChild(['1.14.48']);
     const adapter = new OpenCodeAdapter({ spawnFn: (() => child) as never });

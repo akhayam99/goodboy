@@ -8,6 +8,7 @@ const catalogCliId = (model: CatalogModel): string => {
     case 'gemini':
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return model.cliId;
     case 'codex': {
       const variant = model.variants[0];

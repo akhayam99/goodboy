@@ -17,6 +17,7 @@ const PROVIDERS = [
   'gemini',
   'opencode',
   'openrouter',
+  'moonshot',
 ] satisfies ReadonlyArray<ProviderId>;
 
 export const resolveModelForProvider = ({ provider, modelId }: Params): string => {

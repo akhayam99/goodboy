@@ -16,7 +16,11 @@ export const getMidModel = (providerId: ProviderId): string => {
     .reduce<{
       id: string;
       weight: number;
-    } | null>((best, model) => (best == null || model.weight > best.weight ? { id: model.id, weight: model.weight } : best), null);
+    } | null>(
+      (best, model) =>
+        best == null || model.weight > best.weight ? { id: model.id, weight: model.weight } : best,
+      null,
+    );
   return strongestMid?.id ?? getDefaultTurnModel({ id: providerId });
 };
 
@@ -32,6 +36,7 @@ export const getDefaultBinary = (providerId: ProviderId): string => {
       return 'agy';
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return 'opencode';
     default: {
       const _exhaustive: never = providerId;

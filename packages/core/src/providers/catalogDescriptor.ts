@@ -24,6 +24,7 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   auto: 4,
   'gemini-3.1-pro': 20,
   'gemini-3.5-flash': 5,
+  'kimi-k3': 12,
 };
 
 const effortFor = ({ model }: Params) => {
@@ -33,6 +34,7 @@ const effortFor = ({ model }: Params) => {
     case 'gemini':
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return model.efforts.length > 0 ? model.efforts : null;
     case 'cursor': {
       const efforts = model.combos.map((combo) => combo.effort).filter((effort) => effort != null);

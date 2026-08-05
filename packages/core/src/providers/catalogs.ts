@@ -4,6 +4,7 @@ import { CODEX_CATALOG } from './codex/catalog';
 import { CURSOR_CATALOG } from './cursor/catalog';
 import { GEMINI_CATALOG } from './gemini/catalog';
 import { OPENCODE_CATALOG } from './opencode/catalog';
+import { MOONSHOT_CATALOG } from './moonshot/catalog';
 import { OPENROUTER_CATALOG } from './openrouter/catalog';
 
 export const MODEL_CATALOGS = {
@@ -13,4 +14,5 @@ export const MODEL_CATALOGS = {
   gemini: GEMINI_CATALOG,
   opencode: OPENCODE_CATALOG,
   openrouter: OPENROUTER_CATALOG,
+  moonshot: MOONSHOT_CATALOG,
 } satisfies ModelCatalogs;

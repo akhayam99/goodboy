@@ -23,6 +23,7 @@ const selectionFor = ({ model, effort }: SelectionParams): ModelSelection => {
     case 'anthropic':
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return { key: model.key, effort: effort ?? model.defaultEffort };
     case 'codex':
       return {
