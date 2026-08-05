@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Unlink } from 'lucide-react';
 import type {
   SessionExternalTask,
@@ -53,10 +53,19 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [isUnlinkArmed, setIsUnlinkArmed] = useState(false);
-  const [focusedTaskKey, setFocusedTaskKey] = useState<string | null>(null);
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY,
   );
+  const openedTask = useAppStore((state) => state.focusedExternalTask[sessionId] ?? null);
+  const openedTaskKey =
+    openedTask?.provider === provider ? integrationTaskKey({ task: openedTask }) : null;
+  const [focusedTaskKey, setFocusedTaskKey] = useState<string | null>(openedTaskKey);
+  useEffect(() => {
+    if (openedTaskKey == null) {
+      return;
+    }
+    setFocusedTaskKey(openedTaskKey);
+  }, [openedTaskKey]);
   const unlinkSessionExternalTask = useAppStore((state) => state.unlinkSessionExternalTask);
   const integrations = useAppStore(
     (state) => state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY,

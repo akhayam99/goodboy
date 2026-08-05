@@ -30,6 +30,7 @@ type Store = {
   sessions: ReadonlyArray<Session>;
   workspaces: ReadonlyArray<Workspace>;
   readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
+  readonly openExternalTaskLens: ReturnType<typeof vi.fn>;
 };
 
 const { store, mocks } = vi.hoisted(() => ({
@@ -39,6 +40,7 @@ const { store, mocks } = vi.hoisted(() => ({
     sessions: [],
     workspaces: [],
     setFocusedGithubIssueNumber: vi.fn(),
+    openExternalTaskLens: vi.fn(),
   } as Store,
   mocks: {
     openUrl: vi.fn(async () => undefined),
@@ -62,6 +64,7 @@ beforeEach(() => {
   store.sessions = [];
   store.workspaces = [];
   store.setFocusedGithubIssueNumber.mockClear();
+  store.openExternalTaskLens.mockClear();
   mocks.openUrl.mockClear();
 });
 
@@ -110,7 +113,7 @@ describe('LinkedWorkSection', () => {
     expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/issues/9');
   });
 
-  it('routes every external task to its provider lens', () => {
+  it('routes every external task to its provider lens with that issue focused', () => {
     store.sessionExternalTasks = {
       'sess-1': [
         {
@@ -152,7 +155,14 @@ describe('LinkedWorkSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open ENG-42 integration' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open GOODBOY-7 integration' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open acme/repo#3 integration' }));
-    expect(onSelectLens.mock.calls).toEqual([['linear'], ['sentry'], ['gitlab_issues']]);
+    expect(
+      store.openExternalTaskLens.mock.calls.map(([, task]) => [task.provider, task.externalId]),
+    ).toEqual([
+      ['linear', 'linear-42'],
+      ['sentry', 'sentry-7'],
+      ['gitlab', 'gitlab-3'],
+    ]);
+    expect(onSelectLens).not.toHaveBeenCalled();
   });
 
   it('navigates from the link menu to each provider lens', () => {

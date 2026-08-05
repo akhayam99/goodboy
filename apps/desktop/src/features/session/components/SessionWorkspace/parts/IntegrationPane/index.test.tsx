@@ -11,8 +11,15 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
+type FocusedExternalTask = {
+  readonly provider: string;
+  readonly externalId: string;
+  readonly mountWorkspaceId: string | null;
+};
+
 type Store = {
   readonly sessionExternalTasks: Readonly<Record<string, ReadonlyArray<SessionExternalTask>>>;
+  readonly focusedExternalTask: Readonly<Record<string, FocusedExternalTask | null>>;
   readonly sessionGithubPrs: Readonly<Record<string, ReadonlyArray<PullRequestState>>>;
   readonly sessionGitlabMr: Readonly<Record<string, unknown>>;
   readonly workspaceIntegrations: Readonly<Record<string, ReadonlyArray<{ provider: string }>>>;
@@ -36,6 +43,7 @@ type TaskDetailProps = {
 const h = vi.hoisted(() => ({
   store: {
     sessionExternalTasks: {},
+    focusedExternalTask: {},
     sessionGithubPrs: {},
     sessionGitlabMr: {},
     workspaceIntegrations: {},
@@ -87,6 +95,17 @@ vi.mock('./SentryTaskDetail', () => ({
     <div data-testid="task-detail">
       <a href="https://sentry.io/issues/12345" aria-label="Open in Sentry">
         Sentry detail {task.externalId}
+      </a>
+      <button type="button" aria-label="Copy issue link" />
+    </div>
+  ),
+}));
+
+vi.mock('./GitlabTaskDetail', () => ({
+  GitlabTaskDetail: ({ task }: TaskDetailProps) => (
+    <div data-testid="task-detail">
+      <a href="https://gitlab.com/acme/web/-/issues/3" aria-label="Open in GitLab">
+        GitLab detail {task.externalId}
       </a>
       <button type="button" aria-label="Copy issue link" />
     </div>
@@ -161,6 +180,15 @@ const MERGED_PR: PullRequestState = {
   body: '',
   updatedAt: CREATED_AT,
 };
+const GITLAB_TASK: SessionExternalTask = {
+  sessionId: SESSION_ID,
+  provider: 'gitlab',
+  externalId: 'acme/web#3',
+  identifier: 'acme/web#3',
+  title: 'Restore the pipeline',
+  url: 'https://gitlab.com/acme/web/-/issues/3',
+  createdAt: CREATED_AT,
+};
 const SENTRY_TASK: SessionExternalTask = {
   sessionId: SESSION_ID,
   provider: 'sentry',
@@ -173,9 +201,10 @@ const SENTRY_TASK: SessionExternalTask = {
 
 beforeEach(() => {
   h.store.sessionExternalTasks = { [SESSION_ID]: [TASK] };
+  h.store.focusedExternalTask = {};
   h.store.sessionGithubPrs = {};
   h.store.workspaceIntegrations = {
-    [WORKSPACE_ID]: [{ provider: 'linear' }, { provider: 'sentry' }],
+    [WORKSPACE_ID]: [{ provider: 'linear' }, { provider: 'sentry' }, { provider: 'gitlab' }],
   };
   h.store.linkSessionExternalTask.mockClear();
   h.store.unlinkSessionExternalTask.mockClear();
@@ -235,6 +264,45 @@ describe('IntegrationPane', () => {
 
       expect(screen.getAllByRole('link', { name: `Open in ${host}` })).toHaveLength(1);
       expect(screen.getAllByRole('button', { name: 'Copy issue link' })).toHaveLength(1);
+    },
+  );
+
+  it.each([
+    ['linear', TASK, 'Linear detail GB-42'],
+    ['sentry', SENTRY_TASK, 'Sentry detail 12345'],
+    ['gitlab', GITLAB_TASK, 'GitLab detail acme/web#3'],
+  ] as const)(
+    'opens the %s issue the session focused from another surface',
+    (provider, task, detailText) => {
+      h.store.sessionExternalTasks = { [SESSION_ID]: [task] };
+      h.store.focusedExternalTask = {
+        [SESSION_ID]: { provider, externalId: task.externalId, mountWorkspaceId: null },
+      };
+
+      render(
+        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
+      );
+
+      expect(screen.getByText(detailText)).toBeDefined();
+      expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+    },
+  );
+
+  it.each([
+    ['linear', TASK, 'Linear detail GB-42'],
+    ['sentry', SENTRY_TASK, 'Sentry detail 12345'],
+    ['gitlab', GITLAB_TASK, 'GitLab detail acme/web#3'],
+  ] as const)(
+    'lists the %s issues when the lens opens with nothing focused',
+    (provider, task, detailText) => {
+      h.store.sessionExternalTasks = { [SESSION_ID]: [task] };
+
+      render(
+        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
+      );
+
+      expect(screen.getByRole('button', { name: `View ${task.identifier}` })).toBeDefined();
+      expect(screen.queryByText(detailText)).toBeNull();
     },
   );
 

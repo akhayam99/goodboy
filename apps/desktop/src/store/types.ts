@@ -68,6 +68,7 @@ import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/provider
 import type { ReviewPrsState } from './slices/review-prs/types';
 import type {
   DiffFocus,
+  FocusedExternalTask,
   LensHistory,
   LensKind,
   SessionCreation,
@@ -291,6 +292,7 @@ export type AppState = AppSliceState & {
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
+  readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
   readonly terminalTabs: Readonly<Record<SessionId, readonly TerminalTab[]>>;
   readonly activeTerminalTab: Readonly<Record<SessionId, TerminalTabId | null>>;

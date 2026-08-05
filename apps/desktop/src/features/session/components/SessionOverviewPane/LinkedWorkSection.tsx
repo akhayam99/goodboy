@@ -8,7 +8,6 @@ import { ExternalRefActions } from '../../../../shared/components/ExternalRefAct
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
-import { PROVIDER_LENS } from '../../../integrations/providerLens';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -26,6 +25,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
+  const openExternalTaskLens = useAppStore((s) => s.openExternalTaskLens);
   const workspace = useAppStore((s) => {
     const session = s.sessions.find((candidate) => candidate.id === sessionId);
     return s.workspaces.find((candidate) => candidate.id === session?.workspaceId) ?? null;
@@ -113,7 +113,7 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
                   mountWorkspaceId: task.mountWorkspaceId,
                 }) ?? undefined
               }
-              onClick={() => onSelectLens(PROVIDER_LENS[task.provider])}
+              onClick={() => openExternalTaskLens(sessionId, task)}
             />
           ))}
         </div>

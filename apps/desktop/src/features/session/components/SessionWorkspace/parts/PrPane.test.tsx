@@ -23,6 +23,7 @@ type Store = {
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly editPr: ReturnType<typeof vi.fn>;
   readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
+  readonly openExternalTaskLens: ReturnType<typeof vi.fn>;
   readonly sessionBranches: Record<string, string>;
   sessionMounts: Record<string, ReadonlyArray<never>>;
   sessionActiveMount: Record<string, WorkspaceId>;
@@ -44,6 +45,7 @@ const h = vi.hoisted(() => ({
     selectSessionPr: vi.fn(),
     editPr: vi.fn(async () => undefined),
     setFocusedGithubIssueNumber: vi.fn(),
+    openExternalTaskLens: vi.fn(),
     sessionBranches: { 'session-1': 'ak/refactor-auth' },
     sessionMounts: {},
     sessionActiveMount: {},
@@ -196,6 +198,7 @@ beforeEach(() => {
   h.openUrl.mockClear();
   h.store.editPr.mockClear();
   h.store.setFocusedGithubIssueNumber.mockClear();
+  h.store.openExternalTaskLens.mockClear();
   h.githubStatus = {
     available: true,
     mode: 'gh-cli',
@@ -568,8 +571,10 @@ describe('PrPane', () => {
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByRole('button', { name: /#7 Track auth rollout/i })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'open #7 integration' }));
-    expect(h.store.setFocusedGithubIssueNumber).toHaveBeenCalledWith(SESSION_ID, 7);
-    expect(h.onSelectLens).toHaveBeenCalledWith('github_issue');
+    expect(h.store.openExternalTaskLens).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ provider: 'github', externalId: '7' }),
+    );
     expect(h.openUrl).not.toHaveBeenCalled();
     expect(screen.getAllByRole('link', { name: 'Open in GitHub' })).toHaveLength(3);
   });
@@ -654,8 +659,11 @@ describe('PrPane', () => {
     expect(h.onSelectLens).toHaveBeenCalledWith('github_issue');
 
     fireEvent.click(screen.getByRole('button', { name: 'open #9 integration' }));
-    expect(h.store.setFocusedGithubIssueNumber).toHaveBeenCalledWith(SESSION_ID, 9);
-    expect(h.onSelectLens.mock.calls).toEqual([['github_issue'], ['github_issue']]);
+    expect(h.store.openExternalTaskLens).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ provider: 'github', externalId: '9' }),
+    );
+    expect(h.onSelectLens.mock.calls).toEqual([['github_issue']]);
     expect(h.openUrl).not.toHaveBeenCalled();
     expect(screen.getByText('No pull or merge request yet')).toBeDefined();
     expect(screen.getByText('ak/refactor-auth')).toBeDefined();

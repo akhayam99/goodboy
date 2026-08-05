@@ -11,7 +11,6 @@ import type {
 } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
-import { PROVIDER_LENS } from '../../../../integrations/providerLens';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { MissingGithubRemoteEmptyState } from '../../../../github/components/MissingGithubRemoteEmptyState';
 import { MissingGithubTokenEmptyState } from '../../../../github/components/MissingGithubTokenEmptyState';
@@ -234,6 +233,7 @@ const GithubPrCard = ({
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const editPr = useAppStore((s) => s.editPr);
   const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
+  const openExternalTaskLens = useAppStore((s) => s.openExternalTaskLens);
   const branch = useSessionRepo({ sessionId })?.branch ?? null;
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workspaceIntegrations = useAppStore(
@@ -316,10 +316,7 @@ const GithubPrCard = ({
   };
 
   const openWorkItem = (task: SessionExternalTask) => {
-    if (task.provider === 'github') {
-      setFocusedGithubIssueNumber(sessionId, Number(task.externalId));
-    }
-    onSelectLens(PROVIDER_LENS[task.provider]);
+    openExternalTaskLens(sessionId, task);
   };
 
   const handleUnlinkIssue = async (issueNumber: number) => {

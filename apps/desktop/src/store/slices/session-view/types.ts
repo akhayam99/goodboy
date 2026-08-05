@@ -3,6 +3,8 @@ import type {
   IsoDateTime,
   PlanId,
   Session,
+  SessionExternalTask,
+  SessionExternalTaskProvider,
   SessionGroupKey,
   SessionId,
   SessionPrGroup,
@@ -58,6 +60,12 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
 export type DiffFocus =
   | { readonly kind: 'commit'; readonly sha: string; readonly path: string | null }
   | { readonly kind: 'working'; readonly path: string | null };
+
+export type FocusedExternalTask = {
+  readonly provider: SessionExternalTaskProvider;
+  readonly externalId: string;
+  readonly mountWorkspaceId: WorkspaceId | null;
+};
 
 export type SessionStudio =
   | { readonly kind: 'workflow' }
@@ -115,6 +123,7 @@ type SessionViewSliceState = {
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
+  readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
@@ -132,6 +141,7 @@ type SessionViewSliceActions = {
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
+  openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
