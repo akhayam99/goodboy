@@ -7,6 +7,42 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.61
+
+A linked GitHub issue opens inside the session now, from every place that lists one. A plan run that gets held back says so instead of doing nothing, and a resolver verdict survives a restart.
+
+### [#1223, #1224] Linked GitHub issues open where the work is
+
+A GitHub issue linked to a session was the last integration object that sent you to a browser tab. Linear, Sentry and GitLab already routed theirs internally. The GitHub issue view had been write-complete for a while, comments and description edits included, but the only way to reach it was one tab inside the GitHub studio, so every other surface fell back to a link.
+
+There is now a GitHub issue lens, and every entry point goes through it: the linked issues parsed from a pull request body's "Closes #N" lines, the work items on the pull request pane, and the linked work list on the session overview. The lens takes an issue number directly, so an issue mentioned by a pull request opens even when nothing links it to the session as a task. In the session overview, the two lists that used to disagree with each other now behave the same way.
+
+Two labels stopped lying while we were in there. The resolver thread card said "Open on GitHub" for a click that never left the app, and the pull request pane said "Open in code host" for a button that opens the create-PR panel in place. The changelog's release view dropped its "Open on GitHub" button, which duplicated a body already rendered underneath it.
+
+One entry point stays external on purpose: the issue links preview inside the create-PR form, because navigating away from a half-written pull request would discard the draft. Assigning an issue and moving its status are still not built, on any source.
+
+### [#1220] A plan run that is held back says so
+
+v0.1.60 moved the open-question gate into the engine, and the plan run path was never wired to it. Pressing Run plan with an unanswered question in the session did nothing at all: no run, no error, no message. The rejection had nowhere to land, because the app has no global handler for one.
+
+The plan run now goes through the same wrapper the workflow paths use, so a blocked run raises the notification that was already written for it. The pipeline lane on the session overview carried the identical unguarded call, unreachable today but one refactor away from repeating this, and it is guarded now too.
+
+A held-back run also stops reporting itself as started. The wrapper swallowed the refusal but the caller still returned an agent id, so an "Implementer started" toast fired for a run that never began, right underneath the warning saying it had not. The same false announcement on the auto-advance path is gone as well.
+
+### [#1221] A resolver verdict survives a restart
+
+A queued resolution stored its verdict only in memory. Restart the app before pushing, and the verdict was gone: push-all read nothing, found the reply had already been posted, did nothing about the thread, and deleted the row on its way out. The review thread stayed open on GitHub and disappeared from the pending queue with no notice.
+
+The verdict is now written with the row. Where the thread came from an agent's settlement, it is carried through directly. Where it came from a single-thread resolve, it is derived from what was actually posted: a commit means resolved, a stated reason means wontfix, a reply on its own means analyzed, and a resolve that posted nothing records no verdict rather than inventing one.
+
+This also fixes the display it fed. A queued thread used to read as open after a restart even when it carried a real verdict, because the same missing value was standing in for one.
+
+### Smaller fixes
+
+- [#1222] The session goal editor keeps what you wrote when you close it. Escape and Cancel used to wipe the draft outright, and an unsaved draft now carries a marker next to the trigger
+- [#1222] Editing the goal field directly no longer leaves a stale expanded draft behind that a later save would write back over the newer text
+- [#1222] Six performance logs stopped printing to the console in release builds
+
 ## Goodboy v0.1.60
 
 GitLab stops being a read-only mirror: the merge request conversation, its approvals, and issue comments all live here now. The open-question gate moved into the engine, and a retried resolution no longer posts the same reply twice.
