@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SessionId, TaskModelPreferences, WorkspaceId } from '@goodboy/types';
-import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
-import type { GitlabMergeRequest } from '../client';
+import type { AgentSpawnConfigValue } from '../../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
+import type { GitlabMergeRequest } from '../../client';
 
 type SpawnAgent = (
   sessionId: SessionId,
@@ -39,6 +39,8 @@ type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 type MrParams = {
   readonly mergeStatus?: GitlabMergeRequest['mergeStatus'];
   readonly webUrl?: string;
+  readonly title?: string;
+  readonly draft?: boolean;
 };
 
 const h = vi.hoisted(() => ({
@@ -49,6 +51,9 @@ const h = vi.hoisted(() => ({
     hint: 'Mention the rollout order.',
   } satisfies AgentSpawnConfigValue,
   gitlabMergeMr: vi.fn(async () => undefined),
+  gitlabListMrDiscussions: vi.fn(async () => [] as ReadonlyArray<unknown>),
+  gitlabMrApprovalState: vi.fn(async () => null),
+  gitlabUpdateMrState: vi.fn<(params: Readonly<Record<string, unknown>>) => Promise<unknown>>(),
   showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
   store: {
     sessions: [
@@ -71,20 +76,26 @@ const h = vi.hoisted(() => ({
   } satisfies Store,
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 
-vi.mock('../client', async () => {
-  const actual = await vi.importActual<typeof import('../client')>('../client');
-  return { ...actual, gitlabMergeMr: h.gitlabMergeMr };
+vi.mock('../../client', async () => {
+  const actual = await vi.importActual<typeof import('../../client')>('../../client');
+  return {
+    ...actual,
+    gitlabMergeMr: h.gitlabMergeMr,
+    gitlabListMrDiscussions: h.gitlabListMrDiscussions,
+    gitlabMrApprovalState: h.gitlabMrApprovalState,
+    gitlabUpdateMrState: h.gitlabUpdateMrState,
+  };
 });
 
-vi.mock('../../../session/components/AgentSpawnConfig', () => ({
+vi.mock('../../../../session/components/AgentSpawnConfig', () => ({
   AgentSpawnConfig: ({ onChange, disabled }: ConfigProps) => (
     <button type="button" disabled={disabled} onClick={() => onChange(h.config)}>
       Choose agent config
@@ -92,7 +103,7 @@ vi.mock('../../../session/components/AgentSpawnConfig', () => ({
   ),
 }));
 
-import { MrDetailPanel } from './MrDetailPanel';
+import { MrDetailPanel } from './index';
 
 const SESSION_ID = 'session-3' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -100,17 +111,19 @@ const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const makeMr = ({
   mergeStatus = 'can_be_merged',
   webUrl = 'https://gitlab.com/acme/web/-/merge_requests/4',
+  title = 'Add merge request dashboard',
+  draft = false,
 }: MrParams = {}): GitlabMergeRequest => ({
   id: 12,
   iid: 4,
   projectId: 3,
-  title: 'Add merge request dashboard',
+  title,
   description: null,
   state: 'opened',
   webUrl,
   sourceBranch: 'ak/mr-dashboard',
   targetBranch: 'main',
-  draft: false,
+  draft,
   hasConflicts: false,
   mergeStatus,
   updatedAt: '2026-07-22T10:00:00Z',
@@ -118,6 +131,12 @@ const makeMr = ({
 
 beforeEach(() => {
   h.gitlabMergeMr.mockClear();
+  h.gitlabListMrDiscussions.mockClear();
+  h.gitlabListMrDiscussions.mockResolvedValue([]);
+  h.gitlabMrApprovalState.mockClear();
+  h.gitlabMrApprovalState.mockResolvedValue(null);
+  h.gitlabUpdateMrState.mockClear();
+  h.gitlabUpdateMrState.mockResolvedValue(makeMr({ title: 'Draft: Add merge request dashboard' }));
   h.store.refreshSessionMr.mockClear();
   h.store.createMrForSession.mockClear();
   h.store.spawnAgent.mockClear();
@@ -305,6 +324,114 @@ describe('MrDetailPanel', () => {
     expect(
       (screen.getByRole('button', { name: 'Merge request' }) as HTMLButtonElement).disabled,
     ).toBe(true);
+  });
+
+  it('renders the discussion threads without the system notes', async () => {
+    h.gitlabListMrDiscussions.mockResolvedValue([
+      {
+        id: 'disc-1',
+        individualNote: false,
+        notes: [
+          {
+            id: 1,
+            body: 'This needs a guard clause',
+            system: false,
+            author: { username: 'bob', name: 'Bob', avatarUrl: null },
+            createdAt: '2026-07-22T10:00:00Z',
+            resolvable: true,
+            resolved: false,
+            position: null,
+          },
+          {
+            id: 2,
+            body: 'changed title from foo to bar',
+            system: true,
+            author: null,
+            createdAt: '2026-07-22T10:01:00Z',
+            resolvable: false,
+            resolved: null,
+            position: null,
+          },
+        ],
+      },
+    ]);
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
+
+    await waitFor(() => expect(screen.getByText('This needs a guard clause')).toBeDefined());
+    expect(screen.queryByText('changed title from foo to bar')).toBeNull();
+    expect(screen.getByText('1 system event hidden')).toBeDefined();
+  });
+
+  it('toggles the draft prefix on the title and reflects the answer', async () => {
+    h.gitlabUpdateMrState.mockResolvedValue(
+      makeMr({ title: 'Draft: Add merge request dashboard', draft: true }),
+    );
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Convert to draft' }));
+
+    await waitFor(() =>
+      expect(h.gitlabUpdateMrState).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        host: 'https://gitlab.com',
+        projectPath: 'acme/web',
+        mrIid: 4,
+        title: 'Draft: Add merge request dashboard',
+      }),
+    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Mark ready' })).toBeDefined());
+  });
+
+  it('closes the merge request through the state command', async () => {
+    h.gitlabUpdateMrState.mockResolvedValue({ ...makeMr(), state: 'closed' });
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    await waitFor(() =>
+      expect(h.gitlabUpdateMrState).toHaveBeenCalledWith(
+        expect.objectContaining({ stateEvent: 'close', mrIid: 4 }),
+      ),
+    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Reopen' })).toBeDefined());
+  });
+
+  it('hides the approval row when the GitLab instance has no approvals endpoint', async () => {
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(h.gitlabMrApprovalState).toHaveBeenCalledOnce());
+    expect(screen.queryByText('Approvals')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
   });
 
   it('disables merge when the MR project path cannot be parsed', () => {
