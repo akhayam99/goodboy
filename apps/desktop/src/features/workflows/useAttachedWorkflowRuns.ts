@@ -25,7 +25,7 @@ export const useAttachedWorkflowRuns = ({ session }: Params) => {
     }
 
     return [...session.workflowRuns]
-      .sort((first, second) => first.ordinal - second.ordinal)
+      .sort((first, second) => second.ordinal - first.ordinal)
       .flatMap((run) => {
         const workflow = workflowById.get(run.workflowId) ?? null;
         return workflow == null ? [] : [{ run, workflow }];

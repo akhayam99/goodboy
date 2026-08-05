@@ -195,18 +195,18 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
 
   const onReorderWorkflow = useCallback(
     async (runId: WorkflowRunId, direction: 'up' | 'down') => {
-      const ids = [...task.workflowRuns].sort((a, b) => a.ordinal - b.ordinal).map((r) => r.id);
-      const idx = ids.indexOf(runId);
+      const shown = [...task.workflowRuns].sort((a, b) => b.ordinal - a.ordinal).map((r) => r.id);
+      const idx = shown.indexOf(runId);
       if (idx === -1) {
         return;
       }
       const swap = direction === 'up' ? idx - 1 : idx + 1;
-      if (swap < 0 || swap >= ids.length) {
+      if (swap < 0 || swap >= shown.length) {
         return;
       }
-      [ids[idx], ids[swap]] = [ids[swap]!, ids[idx]!];
+      [shown[idx], shown[swap]] = [shown[swap]!, shown[idx]!];
       try {
-        await reorderSessionWorkflows(task.id, ids);
+        await reorderSessionWorkflows(task.id, [...shown].reverse());
       } catch (err) {
         setSpawnError(formatError(err));
       }

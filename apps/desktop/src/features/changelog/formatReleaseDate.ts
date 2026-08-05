@@ -1,5 +1,5 @@
 import { formatAbsoluteDate } from '../../shared/utils/formatAbsoluteDate';
-import { formatShortDayMonth } from '../../shared/utils/formatShortDayMonth';
+import { formatAdaptiveAge } from '../../shared/utils/relativeDate';
 
 type Params = {
   readonly iso: string;
@@ -8,7 +8,7 @@ type Params = {
 
 export const formatReleaseDate = ({ iso, style }: Params): string => {
   if (style === 'short') {
-    return formatShortDayMonth({ iso });
+    return formatAdaptiveAge({ iso });
   }
   return formatAbsoluteDate({ iso });
 };

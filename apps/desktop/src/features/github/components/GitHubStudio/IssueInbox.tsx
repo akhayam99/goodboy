@@ -10,7 +10,7 @@ import {
 import { MessagesSquare, Search } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
+import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import type { GithubIssueGroup } from './useGithubIssues';
 import { InboxStatusIcons } from '../../../integrations/components/InboxStatusIcons';
 
@@ -134,7 +134,7 @@ export const IssueInbox = ({
                           </span>
                           <span className="min-w-0 flex-1 truncate text-xs">{row.issue.title}</span>
                           <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">
-                            {formatShortDayMonth({ iso: row.issue.updatedAt })}
+                            {formatAdaptiveAge({ iso: row.issue.updatedAt })}
                           </span>
                           <InboxStatusIcons
                             sessionIcon={

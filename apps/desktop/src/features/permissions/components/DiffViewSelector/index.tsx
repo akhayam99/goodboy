@@ -5,6 +5,7 @@ import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
+import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 
 type Props = {
   readonly view: DiffView;
@@ -37,10 +38,6 @@ type Section = {
 type ViewLabelParams = {
   readonly view: DiffView;
   readonly commits: ReadonlyArray<BranchCommit>;
-};
-
-type RelativeTimeParams = {
-  readonly timestamp: number;
 };
 
 type ViewEqualsParams = {
@@ -84,32 +81,6 @@ const viewLabel = ({ view, commits }: ViewLabelParams): string => {
   }
 
   return 'branch vs main';
-};
-
-const relativeTime = ({ timestamp }: RelativeTimeParams): string => {
-  const now = Date.now() / 1000;
-  const delta = Math.max(0, now - timestamp);
-  if (delta < 60) {
-    return `${Math.floor(delta)}s`;
-  }
-
-  if (delta < 3600) {
-    return `${Math.floor(delta / 60)}min`;
-  }
-
-  if (delta < 86400) {
-    return `${Math.floor(delta / 3600)}h`;
-  }
-
-  if (delta < 86400 * 7) {
-    return `${Math.floor(delta / 86400)}d`;
-  }
-
-  if (delta < 86400 * 30) {
-    return `${Math.floor(delta / (86400 * 7))}w`;
-  }
-
-  return `${Math.floor(delta / (86400 * 30))}mo`;
 };
 
 const viewEquals = ({ left, right }: ViewEqualsParams): boolean => {
@@ -417,7 +388,7 @@ export const DiffViewSelector = ({
                                   </span>
                                 )}
                                 <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">
-                                  {relativeTime({ timestamp: row.commit.timestamp })}
+                                  {formatAdaptiveAge({ iso: row.commit.timestamp * 1000 })}
                                 </span>
                               </>
                             ) : (

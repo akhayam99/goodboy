@@ -30,26 +30,6 @@ export const DIFF_SCROLL_CONTENT_CLASS = 'sticky left-0 box-border w-[var(--diff
 export const TOOLBAR_ICON_BTN =
   'rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground' as const;
 
-export const relativeTime = (iso: string): string => {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) {
-    return '';
-  }
-  const diff = Date.now() - then;
-  const min = Math.round(diff / 60000);
-  if (min < 1) {
-    return 'just now';
-  }
-  if (min < 60) {
-    return `${min}m ago`;
-  }
-  const hr = Math.round(min / 60);
-  if (hr < 24) {
-    return `${hr}h ago`;
-  }
-  return `${Math.round(hr / 24)}d ago`;
-};
-
 export const lineAnchor = (line: DiffHunkLine): DiffCommentAnchor | null => {
   if (line.kind === 'del') {
     return line.oldLine !== null ? { side: 'old', lineNumber: line.oldLine } : null;
