@@ -2,11 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { PullRequestState } from '@goodboy/types';
 import type { ActionBusy } from './PrActionBar';
+import type { PrVerdictSubmission } from './PrVerdictAction';
 
 type Params = {
   readonly canMerge?: boolean;
+  readonly canReview?: boolean;
   readonly busy?: ActionBusy;
   readonly onMerge?: () => Promise<void>;
+  readonly onSubmitVerdict?: (submission: PrVerdictSubmission) => void;
 };
 
 const PR = {
@@ -28,15 +31,19 @@ import { PrActionBar } from './PrActionBar';
 
 const renderActionBar = ({
   canMerge = true,
+  canReview = true,
   busy = null,
   onMerge = vi.fn(async () => undefined),
+  onSubmitVerdict = vi.fn(),
 }: Params = {}) =>
   render(
     <PrActionBar
       pr={PR}
       busy={busy}
       canMerge={canMerge}
+      canReview={canReview}
       mergeReason={canMerge ? 'squash merge this PR' : 'PR has conflicts, resolve them first'}
+      onSubmitVerdict={onSubmitVerdict}
       onMarkReady={vi.fn()}
       onConvertDraft={vi.fn()}
       onClose={vi.fn()}
@@ -65,6 +72,46 @@ describe('PrActionBar', () => {
     await waitFor(() =>
       expect(screen.queryByRole('group', { name: 'Squash merge this pull request?' })).toBeNull(),
     );
+  });
+
+  it('approves from the bar without asking for a summary', () => {
+    const onSubmitVerdict = vi.fn();
+    renderActionBar({ onSubmitVerdict });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+
+    expect(onSubmitVerdict).toHaveBeenCalledWith({ verdict: 'approve', body: '' });
+  });
+
+  it('holds request changes until a summary is written', () => {
+    const onSubmitVerdict = vi.fn();
+    renderActionBar({ onSubmitVerdict });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Review verdict' }), {
+      target: { value: 'request_changes' },
+    });
+
+    expect(screen.getByRole('button', { name: 'Submit review' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Review summary' }), {
+      target: { value: 'split this helper' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+
+    expect(onSubmitVerdict).toHaveBeenCalledWith({
+      verdict: 'request_changes',
+      body: 'split this helper',
+    });
+  });
+
+  it('disables the review action while another write is in flight', () => {
+    renderActionBar({ busy: 'merge' });
+
+    expect(screen.getByRole('button', { name: 'Review' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('keeps merge gating on the launch action', () => {

@@ -1,6 +1,13 @@
 import type { PrReviewDraft } from '@goodboy/types';
+import type { ReviewTarget } from './resolveReviewTarget';
 
 export type PublishPrReviewVerdict = 'comment' | 'approve' | 'request_changes';
+
+export type PublishPrReviewOpts = {
+  readonly verdict: PublishPrReviewVerdict;
+  readonly body: string;
+  readonly target?: ReviewTarget;
+};
 
 export type PublishPrReviewResult = {
   readonly published: number;

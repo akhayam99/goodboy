@@ -27,6 +27,7 @@ import { groupThreads, type CommentThread } from '../../comment-threads';
 import { PullRequestChip } from '../PullRequestChip';
 import { CreatePrPanel } from './CreatePrPanel';
 import { PrActionBar, type ActionBusy } from './PrActionBar';
+import type { PrVerdictSubmission } from './PrVerdictAction';
 import { PrChecks } from './PrChecks';
 import { PrConversation } from './PrConversation';
 import { ResolveBoard } from './ResolveBoard';
@@ -38,6 +39,16 @@ import { SectionBody } from './SectionBody';
 import type { PrSection } from './prSection';
 import { prSectionOptions } from './prSectionOptions';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
+import { githubReviewTarget } from '../../../../store/slices/review-drafts/githubReviewTarget';
+import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
+import { useToast } from '../../../../app/components/Toast';
+import { formatError } from '../../../../shared/lib/errors';
+
+const VERDICT_TOAST = {
+  comment: 'Comment posted on the pull request',
+  approve: 'Pull request approved',
+  request_changes: 'Changes requested on the pull request',
+} satisfies Record<PublishPrReviewVerdict, string>;
 
 type Props = {
   readonly sessionId: SessionId | null;
@@ -75,6 +86,7 @@ export const PrDetailPanel = ({
   const closePr = useAppStore((s) => s.closePr);
   const reopenPr = useAppStore((s) => s.reopenPr);
   const requestReview = useAppStore((s) => s.requestReview);
+  const publishPrReview = useAppStore((s) => s.publishPrReview);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
@@ -89,6 +101,7 @@ export const PrDetailPanel = ({
     [resolverIndex],
   );
 
+  const { showToast } = useToast();
   const [busy, setBusy] = useState<ActionBusy>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [section, setSection] = useState<PrSection>('overview');
@@ -356,6 +369,28 @@ export const PrDetailPanel = ({
       : 'squash merge this PR';
   const num = activePr.number;
   const hasStateActions = !isTerminal || isClosed;
+  const verdictTarget = githubReviewTarget({ url: activePr.url, prNumber: num });
+
+  const submitVerdict = async ({ verdict, body }: PrVerdictSubmission) => {
+    if (busy != null || verdictTarget == null) {
+      return;
+    }
+    setBusy('review');
+    try {
+      const result = await publishPrReview(sessionId, { verdict, body, target: verdictTarget });
+      onMutated();
+      const failure = result.failed[0];
+      if (failure != null) {
+        showToast('error', `Review not posted: ${failure.error}`);
+        return;
+      }
+      showToast('success', VERDICT_TOAST[verdict]);
+    } catch (err) {
+      showToast('error', formatError(err));
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const header = (
     <>
@@ -400,7 +435,9 @@ export const PrDetailPanel = ({
           pr={activePr}
           busy={busy}
           canMerge={canMerge}
+          canReview={verdictTarget != null}
           mergeReason={mergeReason}
+          onSubmitVerdict={(submission) => void submitVerdict(submission)}
           onMarkReady={() => void run('ready', () => markPrReady(sessionId, num))}
           onConvertDraft={() => void run('undraft', () => convertPrToDraft(sessionId, num))}
           onClose={() => void run('close', () => closePr(sessionId, num))}

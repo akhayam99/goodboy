@@ -233,6 +233,28 @@ describe('review-drafts slice', () => {
     ]);
   });
 
+  it('publishes against the explicit target instead of the first linked task', async () => {
+    const secondTask: SessionExternalTask = {
+      ...githubTask,
+      externalId: '77',
+      identifier: '#77',
+      url: 'https://github.com/acme/api/pull/77',
+    };
+    const { slice } = buildHarness({
+      sessionExternalTasks: { [SESSION_ID]: [githubTask, secondTask] },
+    });
+
+    await slice.publishPrReview(SESSION_ID, {
+      verdict: 'approve',
+      body: '',
+      target: { provider: 'github', repo: 'acme/api', prNumber: 77 },
+    });
+
+    expect(ghPrDiffSpy.mock.calls[0]?.slice(0, 2)).toEqual(['acme/api', 77]);
+    expect(fetchPrNodeIdSpy.mock.calls[0]?.slice(1, 3)).toEqual(['acme/api', 77]);
+    expect(addPullRequestReviewSpy.mock.calls[0]?.[1].event).toBe('APPROVE');
+  });
+
   it('excludes stale drafts from the published review and flags them in state', async () => {
     const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-stale', line: 99 } })];
     const { slice, getState } = buildHarness({ reviewDrafts: { [SESSION_ID]: drafts } });
