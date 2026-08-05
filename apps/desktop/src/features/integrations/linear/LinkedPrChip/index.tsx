@@ -26,7 +26,8 @@ export const LinkedPrChip = ({ pr }: Props) => {
     (canonicalPr?.url === pr.url ? canonicalPr : null);
 
   const open = () => {
-    if (sessionId == null || sessionPr == null) {
+    const isUnderStudio = document.querySelector('[data-studio-overlay]') != null;
+    if (sessionId == null || sessionPr == null || isUnderStudio) {
       void openUrl(pr.url);
       return;
     }
@@ -38,7 +39,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
     <button
       type="button"
       onClick={open}
-      title={sessionPr == null ? pr.url : `Show pull request #${pr.number} in this session`}
+      title={pr.url}
       className={cn(
         'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-opacity hover:opacity-80',
         prStatusTone({ status: pr.status }),

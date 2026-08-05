@@ -94,4 +94,23 @@ describe('LinkedPrChip', () => {
     expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/other/pull/9');
     expect(h.store.setActiveLens).not.toHaveBeenCalled();
   });
+
+  it('falls back to the browser while a studio overlay covers the session', () => {
+    h.store.sessionGithubPrs = { 'session-1': [SESSION_PR] };
+    const overlay = document.createElement('div');
+    overlay.setAttribute('data-studio-overlay', '');
+    document.body.appendChild(overlay);
+
+    render(
+      <LinkedPrChip
+        pr={{ url: SESSION_PR.url, number: 42, repo: 'acme/goodboy', status: 'open' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(h.openUrl).toHaveBeenCalledWith(SESSION_PR.url);
+    expect(h.store.setActiveLens).not.toHaveBeenCalled();
+    expect(h.store.selectSessionPr).not.toHaveBeenCalled();
+    overlay.remove();
+  });
 });
