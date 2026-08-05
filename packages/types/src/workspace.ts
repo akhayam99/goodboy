@@ -238,7 +238,13 @@ export type WorkspaceIntegration =
   | JiraWorkspaceIntegration
   | BitbucketWorkspaceIntegration;
 
-export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab' | 'github' | 'jira';
+export type SessionExternalTaskProvider =
+  | 'linear'
+  | 'sentry'
+  | 'gitlab'
+  | 'github'
+  | 'jira'
+  | 'bitbucket';
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;

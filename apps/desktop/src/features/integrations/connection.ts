@@ -31,6 +31,7 @@ export const resolveIntegrationConnection = ({
   const hasSentry = integrations.some((integration) => integration.provider === 'sentry');
   const hasGitlab = integrations.some((integration) => integration.provider === 'gitlab');
   const hasJira = integrations.some((integration) => integration.provider === 'jira');
+  const hasBitbucket = integrations.some((integration) => integration.provider === 'bitbucket');
   const hasGithubRemote = remoteKind === 'github';
   const hasGitlabRemote = remoteKind === 'gitlab';
 
@@ -58,10 +59,18 @@ export const resolveIntegrationConnection = ({
       isConnected = hasGithubRemote && isGithubAuthenticated;
       hasLinkedTask = externalTasks.some((task) => task.provider === 'github');
       break;
+    case 'bitbucket':
+      isConnected = hasBitbucket;
+      hasLinkedTask = externalTasks.some((task) => task.provider === 'bitbucket');
+      break;
     case 'pr':
-      isConnected = (hasGithubRemote && isGithubAuthenticated) || (hasGitlabRemote && hasGitlab);
+      isConnected =
+        (hasGithubRemote && isGithubAuthenticated) ||
+        (hasGitlabRemote && hasGitlab) ||
+        hasBitbucket;
       hasLinkedTask = externalTasks.some(
-        (task) => task.provider === 'github' || task.provider === 'gitlab',
+        (task) =>
+          task.provider === 'github' || task.provider === 'gitlab' || task.provider === 'bitbucket',
       );
       break;
     default: {

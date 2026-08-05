@@ -7,4 +7,5 @@ export const PROVIDER_LENS: Record<SessionExternalTaskProvider, LensKind> = {
   gitlab: 'gitlab_issues',
   jira: 'jira_issues',
   github: 'github_issue',
+  bitbucket: 'pr',
 };

@@ -126,6 +126,9 @@ export const fetchIssueCandidates = async ({
         branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
       }));
     }
+    case 'bitbucket': {
+      return [];
+    }
     default: {
       const unreachable: never = provider;
       return unreachable;
