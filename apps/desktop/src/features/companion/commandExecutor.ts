@@ -244,6 +244,7 @@ async function fetchIssuesFor(
         return (await gitlabFetchAssignedIssues(workspaceId, host)).map(normalizeGitlab);
       }
       case 'jira':
+      case 'bitbucket':
         return [];
       default: {
         const unexpected: never = provider;
@@ -349,6 +350,8 @@ async function resolveIssueForSession(
     }
     case 'jira':
       throw new BridgeSafeError(`jira issue creation is not available from mobile: ${identifier}`);
+    case 'bitbucket':
+      throw new BridgeSafeError(`bitbucket does not expose issues to Goodboy: ${identifier}`);
     default: {
       const unexpected: never = provider;
       throw new BridgeSafeError(`unsupported issue provider: ${String(unexpected)}`);
