@@ -8,9 +8,9 @@ type Params = {
 export const statusCategoryTone = ({ statusCategory }: Params): StateTone => {
   switch (statusCategory) {
     case 'new':
-      return 'info';
+      return 'neutral';
     case 'indeterminate':
-      return 'warning';
+      return 'info';
     case 'done':
       return 'success';
     case '':
