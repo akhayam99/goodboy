@@ -34,6 +34,7 @@ type Props = {
   readonly turns: number;
   readonly turnsLoading: boolean;
   readonly onStart: () => void;
+  readonly onForceStart: () => void;
   readonly onSelect: () => void;
   readonly onRenameStart: () => void;
   readonly onRenameCommit: (name: string) => void;
@@ -58,6 +59,7 @@ export const WorkflowStepRow = ({
   turns,
   turnsLoading,
   onStart,
+  onForceStart,
   onSelect,
   onRenameStart,
   onRenameCommit,
@@ -273,7 +275,7 @@ export const WorkflowStepRow = ({
             tone="warning"
             onClick={() => {
               setPendingConfirm(false);
-              onStart();
+              onForceStart();
             }}
           />
         </div>

@@ -1,15 +1,6 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
 import { cn, Divider, formatUsdPrecise, Input, MetaRow, StatusDot } from '@goodboy/ui';
-import {
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Pencil,
-  Play,
-  Undo2,
-  Zap,
-  ZapOff,
-} from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronUp, Pencil, Undo2, Zap, ZapOff } from 'lucide-react';
 import type {
   Agent,
   AgentId,
@@ -38,9 +29,11 @@ import { CardActionSlot } from '../../../../../shared/components/CardActionSlot'
 import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
+import type { StartStepAgentParams } from './useAgentsSection';
 import { workflowKindName } from '../lib';
 import type { ProviderContextUsage } from './ContextWindowBar';
 import { WorkflowRunAsk } from './WorkflowRunAsk';
+import { WorkflowRunStartButton } from './WorkflowRunStartButton';
 import { WorkflowStepRow } from './WorkflowStepRow';
 import { ScoutSubtree } from './ScoutSubtree';
 import { ClusterChildRow } from './ClusterChildRow';
@@ -82,7 +75,7 @@ type Props = {
   readonly providerUsageByAgentId: ReadonlyMap<string, ReadonlyArray<ProviderContextUsage>>;
   readonly turnsByAgentId: ReadonlyMap<string, number>;
   readonly isTranscriptLoading: boolean;
-  readonly onStartStepAgent: (agent: Agent, model?: string) => Promise<void>;
+  readonly onStartStepAgent: (params: StartStepAgentParams) => Promise<void>;
   readonly onPickAgent: (id: AgentId) => void;
   readonly setEditingId: Dispatch<SetStateAction<AgentId | null>>;
   readonly onRenameCommit: (id: AgentId, name: string) => Promise<void>;
@@ -296,11 +289,10 @@ export const WorkflowRow = ({
             </CardActionSlot>
             <CardActionSlot label="Workflow lifecycle actions" className="gap-2">
               {isQueuedManual ? (
-                <GhostActionButton
-                  icon={Play}
-                  label="Start"
-                  tone="success"
-                  onClick={() => void startWorkflowRun(task.id, run.id)}
+                <WorkflowRunStartButton
+                  variant="detail"
+                  blockReason={wfBlockReason}
+                  onStart={() => startWorkflowRun(task.id, run.id)}
                 />
               ) : null}
               {!isDiscarded && !isCompleted ? (
@@ -327,11 +319,10 @@ export const WorkflowRow = ({
             {!isDiscarded ? (
               <CardActionSlot label="Workflow lifecycle actions">
                 {isQueuedManual ? (
-                  <CardAction
-                    icon={Play}
-                    label="Start workflow now"
-                    tone="success"
-                    onClick={() => void startWorkflowRun(task.id, run.id)}
+                  <WorkflowRunStartButton
+                    variant="sidebar"
+                    blockReason={wfBlockReason}
+                    onStart={() => startWorkflowRun(task.id, run.id)}
                   />
                 ) : null}
                 {!isCompleted ? (
@@ -453,7 +444,10 @@ export const WorkflowRow = ({
                           contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
                           turns={turnsByAgentId.get(run.id) ?? 0}
                           turnsLoading={run.id === selectedAgentId && isTranscriptLoading}
-                          onStart={() => void onStartStepAgent(run)}
+                          onStart={() => void onStartStepAgent({ agent: run })}
+                          onForceStart={() =>
+                            void onStartStepAgent({ agent: run, isConfirmed: true })
+                          }
                           onSelect={() => onPickAgent(run.id)}
                           onRenameStart={() => setEditingId(run.id)}
                           onRenameCommit={(name) => void onRenameCommit(run.id, name)}
@@ -547,7 +541,7 @@ export const WorkflowRow = ({
                   if (pending == null) {
                     return;
                   }
-                  void onStartStepAgent(pending);
+                  void onStartStepAgent({ agent: pending, isConfirmed: true });
                 }}
                 onForceAdvance={() =>
                   void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })

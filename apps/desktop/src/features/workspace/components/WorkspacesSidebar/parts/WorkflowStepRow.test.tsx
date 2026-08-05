@@ -104,6 +104,7 @@ const renderRow = ({
       turns={ranAlready ? 5 : 0}
       turnsLoading={false}
       onStart={() => undefined}
+      onForceStart={() => undefined}
       onSelect={() => undefined}
       onRenameStart={() => undefined}
       onRenameCommit={() => undefined}

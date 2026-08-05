@@ -16,6 +16,7 @@ import type {
 
 const h = vi.hoisted(() => {
   const state: Record<string, unknown> = {};
+  const gate = { hasOpenQuestions: false };
   const detachWorkflowFromSession = vi.fn(async () => undefined);
   const setPanelSectionExpanded = vi.fn((sessionId: string, section: string, expanded: boolean) => {
     const prev = (state.sessionPanelExpanded ?? {}) as Record<string, Record<string, boolean>>;
@@ -24,7 +25,7 @@ const h = vi.hoisted(() => {
       [sessionId]: { ...prev[sessionId], [section]: expanded },
     };
   });
-  return { state, detachWorkflowFromSession, setPanelSectionExpanded };
+  return { state, gate, detachWorkflowFromSession, setPanelSectionExpanded };
 });
 
 vi.mock('../../../../../store', () => ({
@@ -159,8 +160,20 @@ vi.mock('./WorkflowStartButton', () => ({
   WorkflowStartButton: () => <div data-testid="wf-start" />,
 }));
 vi.mock('./WorkflowStepRow', () => ({
-  WorkflowStepRow: ({ run }: { run: Agent }) => (
-    <div data-testid={`workflow-step-${run.id}`}>{run.name}</div>
+  WorkflowStepRow: ({
+    run,
+    onStart,
+    onForceStart,
+  }: {
+    run: Agent;
+    onStart: () => void;
+    onForceStart: () => void;
+  }) => (
+    <div data-testid={`workflow-step-${run.id}`}>
+      {run.name}
+      <button type="button" onClick={onStart}>{`start ${run.id}`}</button>
+      <button type="button" onClick={onForceStart}>{`force ${run.id}`}</button>
+    </div>
   ),
 }));
 vi.mock('./ScoutSubtree', () => ({ ScoutSubtree: () => null }));
@@ -187,7 +200,7 @@ vi.mock('../../../../../features/workflows/components/WorkflowNextStepCta', () =
   WorkflowNextStepCta: () => null,
 }));
 vi.mock('../../../../../features/context/openQuestionsGate', () => ({
-  workflowRunHasOpenQuestions: () => false,
+  workflowRunHasOpenQuestions: () => h.gate.hasOpenQuestions,
 }));
 vi.mock('../../../../../features/session/agent-row-format', () => ({
   computeLatestTelemetryByAgentId: () => new Map(),
@@ -237,6 +250,7 @@ function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
 }
 
 function reset() {
+  h.gate.hasOpenQuestions = false;
   Object.keys(h.state).forEach((k) => delete h.state[k]);
   Object.assign(h.state, {
     currentSessionId: null,
@@ -592,5 +606,95 @@ describe('AgentsSection collapse defaults', () => {
 
     expect(screen.getByTestId('toggle-agents').textContent).toBe('expanded');
     expect(screen.queryByTestId('spawn')).not.toBeNull();
+  });
+});
+
+describe('AgentsSection step start gate', () => {
+  const RUN_ID = 'run-1' as WorkflowRunId;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    reset();
+    h.state.sessionWorkflows = {
+      [SESSION_ID]: [
+        {
+          id: 'wf-def-1',
+          workspaceId: WS_ID,
+          name: 'review',
+          steps: [{ id: 'step-1' as StepId, name: 'implement' }],
+          createdAt: NOW,
+          updatedAt: NOW,
+        },
+      ],
+    };
+    h.state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        buildAgent({
+          id: 'wf-1' as AgentId,
+          workflowRunId: RUN_ID,
+          stepId: 'step-1' as StepId,
+          status: 'pending',
+        }),
+      ],
+    };
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  function renderSection() {
+    render(
+      <AgentsSection
+        task={buildSession({
+          workflowRuns: [
+            {
+              id: RUN_ID,
+              workflowId: 'wf-def-1',
+              ordinal: 0,
+              triggerMode: 'immediate',
+              autoRun: false,
+            } as never,
+          ],
+        })}
+      />,
+    );
+  }
+
+  it('starts the step agent when the run is not blocked', () => {
+    renderSection();
+
+    fireEvent.click(screen.getByRole('button', { name: 'start wf-1' }));
+
+    expect(h.state.activateWorkflowAgent).toHaveBeenCalledWith(
+      SESSION_ID,
+      'wf-1',
+      undefined,
+      'agent',
+    );
+  });
+
+  it('refuses an unconfirmed start while questions are open, and says why', () => {
+    h.gate.hasOpenQuestions = true;
+    renderSection();
+
+    fireEvent.click(screen.getByRole('button', { name: 'start wf-1' }));
+
+    expect(h.state.activateWorkflowAgent).not.toHaveBeenCalled();
+    expect(screen.getByText('Open questions are waiting for an answer.')).toBeDefined();
+  });
+
+  it('starts the blocked step once the override is explicit', () => {
+    h.gate.hasOpenQuestions = true;
+    renderSection();
+
+    fireEvent.click(screen.getByRole('button', { name: 'force wf-1' }));
+
+    expect(h.state.activateWorkflowAgent).toHaveBeenCalledWith(
+      SESSION_ID,
+      'wf-1',
+      undefined,
+      'agent',
+    );
   });
 });

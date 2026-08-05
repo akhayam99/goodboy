@@ -15,6 +15,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 
 const storeMocks = vi.hoisted(() => ({ renameWorkflow: vi.fn(async () => undefined) }));
 
@@ -115,20 +116,26 @@ type RenderParams = {
   readonly runOverride?: WorkflowRun;
   readonly agentsOverride?: ReadonlyArray<Agent>;
   readonly actionableStepId?: string | null;
+  readonly blockReason?: WorkflowBlockReason | null;
   readonly childrenByParentId?: ReadonlyMap<string, Agent[]>;
   readonly clusterExpand?: ReadonlyMap<string, boolean>;
   readonly onDeleteWorkflow?: (runId: WorkflowRunId) => Promise<void>;
   readonly onPickAgent?: (agentId: AgentId) => void;
+  readonly startWorkflowRun?: (sessionId: SessionId, runId: WorkflowRunId) => Promise<void>;
+  readonly variant?: 'sidebar' | 'detail';
 };
 
 const renderDetail = ({
   runOverride = run,
   agentsOverride = agents,
   actionableStepId = 'step-2',
+  blockReason = null,
   childrenByParentId = new Map(),
   clusterExpand = new Map(),
   onDeleteWorkflow = vi.fn(async () => undefined),
   onPickAgent = vi.fn(),
+  startWorkflowRun = vi.fn(async () => undefined),
+  variant = 'detail',
 }: RenderParams = {}) =>
   render(
     <WorkflowRow
@@ -139,15 +146,15 @@ const renderDetail = ({
       attachedRuns={[{ run: runOverride, workflow }]}
       agentsByRunId={new Map([[RUN_ID, [...agentsOverride]]])}
       actionableStepIdByRunId={new Map([[RUN_ID, actionableStepId]])}
-      blockReasonByRunId={new Map([[RUN_ID, null]])}
+      blockReasonByRunId={new Map([[RUN_ID, blockReason]])}
       countUnread={() => 0}
       focusedWorkflowRunId={null}
       workflowExpand={undefined}
       workflowNameByRunId={new Map()}
       forceExpanded
-      variant="detail"
+      variant={variant}
       toggleWorkflowExpand={vi.fn()}
-      startWorkflowRun={vi.fn(async () => undefined)}
+      startWorkflowRun={startWorkflowRun}
       setWorkflowRunAutoRun={vi.fn(async () => undefined)}
       onReorderWorkflow={vi.fn(async () => undefined)}
       onDiscardWorkflow={vi.fn(async () => undefined)}
@@ -320,6 +327,57 @@ describe('WorkflowRow detail dashboard', () => {
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
     expect(onDeleteWorkflow).toHaveBeenCalledWith(RUN_ID);
+  });
+});
+
+describe('WorkflowRow manual start gate', () => {
+  const queuedRun: WorkflowRun = { ...run, triggerMode: 'manual' };
+
+  it('starts a queued run straight away when nothing blocks it', async () => {
+    const startWorkflowRun = vi.fn(async () => undefined);
+    renderDetail({ runOverride: queuedRun, agentsOverride: [], startWorkflowRun });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await Promise.resolve();
+
+    expect(startWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('names the blocker and starts only after an explicit override', async () => {
+    const startWorkflowRun = vi.fn(async () => undefined);
+    renderDetail({
+      runOverride: queuedRun,
+      agentsOverride: [],
+      blockReason: 'questions',
+      startWorkflowRun,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const confirm = screen.getByRole('group', { name: 'Start this workflow anyway?' });
+
+    expect(confirm.textContent).toMatch(/open questions are waiting/i);
+    expect(startWorkflowRun).not.toHaveBeenCalled();
+
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Start anyway' }));
+    await Promise.resolve();
+
+    expect(startWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('gates the sidebar start action the same way', () => {
+    const startWorkflowRun = vi.fn(async () => undefined);
+    renderDetail({
+      runOverride: queuedRun,
+      agentsOverride: [],
+      blockReason: 'questions',
+      startWorkflowRun,
+      variant: 'sidebar',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow now' }));
+
+    expect(screen.getByRole('group', { name: 'Start this workflow anyway?' })).toBeDefined();
+    expect(startWorkflowRun).not.toHaveBeenCalled();
   });
 });
 

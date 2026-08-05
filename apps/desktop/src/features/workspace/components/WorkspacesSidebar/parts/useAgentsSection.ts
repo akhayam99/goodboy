@@ -21,6 +21,7 @@ import {
   resolveWorkflowAdvance,
   type WorkflowBlockReason,
 } from '../../../../../features/workflows/advanceGate';
+import { WORKFLOW_BLOCK_COPY } from '../../../../../features/workflows/blockCopy';
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
 import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
 import { useAgentMetrics } from '../../../../../features/session/hooks/useAgentMetrics';
@@ -32,6 +33,12 @@ import { workflowKindName } from '../lib';
 type Params = {
   readonly task: Session;
   readonly workflowRunId: WorkflowRunId | undefined;
+};
+
+export type StartStepAgentParams = {
+  readonly agent: Agent;
+  readonly model?: string;
+  readonly isConfirmed?: boolean;
 };
 
 export const useAgentsSection = ({ task, workflowRunId }: Params) => {
@@ -241,8 +248,14 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
-  const onStartStepAgent = async (agent: Agent, model?: string) => {
+  const onStartStepAgent = async ({ agent, model, isConfirmed = false }: StartStepAgentParams) => {
     setSpawnError(null);
+    const blockReason =
+      agent.workflowRunId != null ? (blockReasonByRunId.get(agent.workflowRunId) ?? null) : null;
+    if (agent.status === 'pending' && blockReason != null && !isConfirmed) {
+      setSpawnError(WORKFLOW_BLOCK_COPY[blockReason]);
+      return;
+    }
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     try {
       if (agent.status === 'pending') {
