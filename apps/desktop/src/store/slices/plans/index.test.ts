@@ -255,7 +255,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
   });
 
   describe('workflow gate rejects the activation (open questions block the run)', () => {
-    it('notifies instead of throwing, and does not free-spawn', async () => {
+    it('notifies instead of throwing, resolves to null, and does not free-spawn', async () => {
       const state = defaultState({
         activateWorkflowAgent: vi.fn(async () => {
           throw new WorkflowGateError({ reason: 'questions' });
@@ -263,7 +263,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       });
       const slice = buildSlice(state);
 
-      await expect(slice.runPlan(SESSION_ID, PLAN_ID)).resolves.toBe(IMPL_AGENT_ID);
+      await expect(slice.runPlan(SESSION_ID, PLAN_ID)).resolves.toBeNull();
 
       expect(state.activateWorkflowAgent).toHaveBeenCalledWith({
         sessionId: SESSION_ID,

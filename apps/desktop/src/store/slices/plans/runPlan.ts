@@ -74,13 +74,13 @@ export const runPlan = (get: GetFn) => {
         focus: 'none',
       });
     }
-    await activateWorkflowAgentOrNotify({
+    const activated = await activateWorkflowAgentOrNotify({
       get,
       sessionId,
       agentId: stepAgent.id,
       explicitPlanId: planId,
       focus: 'none',
     });
-    return stepAgent.id;
+    return activated ? stepAgent.id : null;
   };
 };

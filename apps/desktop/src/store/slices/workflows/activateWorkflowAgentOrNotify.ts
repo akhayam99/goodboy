@@ -17,9 +17,10 @@ export const activateWorkflowAgentOrNotify = async ({
   agentId,
   explicitPlanId,
   focus,
-}: Params): Promise<void> => {
+}: Params): Promise<boolean> => {
   try {
     await get().activateWorkflowAgent({ sessionId, agentId, explicitPlanId, focus });
+    return true;
   } catch (error) {
     if (!(error instanceof WorkflowGateError)) {
       throw error;
@@ -27,5 +28,6 @@ export const activateWorkflowAgentOrNotify = async ({
     void get().emitNotification('error', 'warning', 'workflow step held back', error.message, {
       sessionId,
     });
+    return false;
   }
 };
