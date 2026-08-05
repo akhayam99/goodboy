@@ -2,7 +2,7 @@ import { EmptyState, Markdown, Skeleton } from '@goodboy/ui';
 import type { GithubIssueComment } from '@goodboy/types';
 import { formatRelativeDuration } from '../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-import { Avatar } from '../components/Avatar';
+import { NoteAvatar } from '../../../shared/components/NoteAvatar';
 import { GithubIssueCommentComposer } from './GithubIssueCommentComposer';
 
 type Props = {
@@ -47,7 +47,7 @@ export const GithubIssueComments = ({ comments, isLoading, error, onPost }: Prop
             return (
               <div key={comment.id} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
                 <div className="flex items-center gap-2 text-2xs text-muted-foreground">
-                  <Avatar url={comment.authorAvatarUrl} alt={comment.author} />
+                  <NoteAvatar url={comment.authorAvatarUrl} alt={comment.author} size="xs" />
                   <span className="font-medium text-foreground">{comment.author}</span>
                   {relativeDate !== '' && <span>{relativeDate} ago</span>}
                 </div>

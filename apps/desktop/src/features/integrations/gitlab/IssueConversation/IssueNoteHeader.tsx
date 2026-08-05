@@ -1,6 +1,6 @@
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
 import type { GitlabIssueNote } from '../client';
-import { IssueNoteAvatar } from '../../components/IssueNoteAvatar';
 
 type Props = {
   readonly note: GitlabIssueNote;
@@ -12,7 +12,7 @@ export const IssueNoteHeader = ({ note }: Props) => {
 
   return (
     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <IssueNoteAvatar url={note.author?.avatarUrl ?? null} alt={name} />
+      <NoteAvatar url={note.author?.avatarUrl ?? null} alt={name} />
       <span className="font-medium text-foreground">{name}</span>
       {age !== '' && (
         <>

@@ -1,23 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { JiraComment } from '../client';
+import type { JiraComment, JiraUser } from '../client';
 import { IssueConversation } from './index';
+
+const AUTHOR: JiraUser = {
+  accountId: 'acc-1',
+  displayName: 'Ada Lovelace',
+  emailAddress: null,
+  active: true,
+  avatarUrls: {
+    '24x24': 'https://jira.example/avatars/ada-24.png',
+    '48x48': 'https://jira.example/avatars/ada-48.png',
+  },
+};
 
 const COMMENT: JiraComment = {
   id: '1',
   body: 'Pipeline is green.',
   created: '2026-08-01T10:00:00Z',
   updated: '2026-08-01T10:00:00Z',
-  author: {
-    accountId: 'acc-1',
-    displayName: 'Ada Lovelace',
-    emailAddress: null,
-    active: true,
-    avatarUrls: {
-      '24x24': 'https://jira.example/avatars/ada-24.png',
-      '48x48': 'https://jira.example/avatars/ada-48.png',
-    },
-  },
+  author: AUTHOR,
 };
 
 beforeEach(() => {
@@ -49,7 +51,7 @@ describe('IssueConversation (jira)', () => {
   it('falls back to the author initial when there is no avatar url', () => {
     const comment: JiraComment = {
       ...COMMENT,
-      author: { ...COMMENT.author, displayName: 'Bo', avatarUrls: null },
+      author: { ...AUTHOR, displayName: 'Bo', avatarUrls: null },
     };
     render(
       <IssueConversation

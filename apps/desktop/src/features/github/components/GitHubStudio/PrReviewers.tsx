@@ -4,7 +4,7 @@ import { CircleDashed } from 'lucide-react';
 import { EmptyState } from '@goodboy/ui';
 import { RailBlock } from '../../../../shared/components/StudioDetail';
 import { latestTerminalReviewsByAuthor } from '../../utils/latest-terminal-reviews-by-author';
-import { Avatar } from '../Avatar';
+import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
 import { ReviewStateIcon } from '../ReviewStateIcon';
 import { ReviewerPicker } from './ReviewerPicker';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -57,7 +57,7 @@ export const PrReviewers = ({
           {reviewed.map((review) => (
             <li key={review.author} className="flex items-center gap-1.5 text-xs text-foreground">
               <ReviewStateIcon state={review.state} size={12} />
-              <Avatar url={review.authorAvatarUrl} alt={review.author} />
+              <NoteAvatar url={review.authorAvatarUrl} alt={review.author} size="xs" />
               <span className="min-w-0 flex-1 truncate">{review.author}</span>
             </li>
           ))}
@@ -67,7 +67,7 @@ export const PrReviewers = ({
               className="flex items-center gap-1.5 text-xs text-muted-foreground"
             >
               <CircleDashed size={12} aria-hidden className="shrink-0 text-info" />
-              <Avatar url={request.avatarUrl} alt={request.login} />
+              <NoteAvatar url={request.avatarUrl} alt={request.login} size="xs" />
               <span className="min-w-0 flex-1 truncate">{request.login}</span>
               <span className="shrink-0 text-3xs uppercase tracking-wide opacity-60">awaiting</span>
             </li>
