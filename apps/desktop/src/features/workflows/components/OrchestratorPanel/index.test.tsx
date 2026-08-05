@@ -6,6 +6,8 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
   SessionId,
   Step,
   StepId,
@@ -63,6 +65,17 @@ const step = (ordinal: number, orchestratorReason: string): Step =>
     promptPrefix: '',
     orchestratorReason,
   }) as Step;
+
+const openQuestion = (): OpenQuestion => ({
+  id: 'oq-1' as OpenQuestionId,
+  sessionId: SESSION_ID,
+  workflowRunId: RUN_ID,
+  text: 'which database?',
+  suggestedAnswers: [],
+  userAnswer: null,
+  status: 'open',
+  createdAt: '2025-01-01T00:00:00.000Z' as IsoDateTime,
+});
 
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 const EMPTY_STEPS: ReadonlyArray<Step> = [];
@@ -239,6 +252,7 @@ describe('OrchestratorPanel state ladder', () => {
   });
 
   it('reads a question stop as a question to answer, with no retry on offer', () => {
+    storeState['sessionOpenQuestions'] = { [SESSION_ID]: [openQuestion()] };
     renderPanel({
       runOverride: run({
         orchestrationStop: {
@@ -253,6 +267,23 @@ describe('OrchestratorPanel state ladder', () => {
     fireEvent.click(screen.getByTestId('orchestrator-answer-question'));
 
     expect(storeState['setActiveLens']).toHaveBeenCalledWith(SESSION_ID, 'questions');
+  });
+
+  it('offers the next step again once the question behind the stop is answered', () => {
+    renderPanel({
+      runOverride: run({
+        orchestrationStop: {
+          kind: 'questions',
+          message: 'Open questions are waiting for an answer.',
+        },
+      }),
+      agents: [agent(0, 'completed')],
+    });
+
+    expect(sentence()).toContain('ready to continue');
+    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
+
+    expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
   it('shows the failure with its reason and offers a retry', () => {

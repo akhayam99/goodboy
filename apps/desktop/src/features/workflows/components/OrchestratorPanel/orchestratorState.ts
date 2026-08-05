@@ -100,7 +100,8 @@ export const resolveOrchestratorState = ({
     };
   }
   const stop = run.orchestrationStop;
-  if (stop != null) {
+  const isAnsweredQuestionStop = stop?.kind === 'questions' && hasOpenQuestions === false;
+  if (stop != null && isAnsweredQuestionStop === false) {
     const presentation = STOP_PRESENTATION[stop.kind];
     return {
       ...base,
