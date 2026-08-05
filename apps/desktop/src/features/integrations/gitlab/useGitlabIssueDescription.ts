@@ -2,22 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { gitlabUpdateIssueDescription, type GitlabIssue } from './client';
+import { projectPathFromIssue } from './issueProjectPath';
 
 type Params = {
-  readonly issue: GitlabIssue;
+  readonly issue: GitlabIssue | null;
   readonly workspaceId: WorkspaceId;
 };
 
 type Result = {
   readonly description: string;
   readonly save: ((next: string) => Promise<void>) | null;
-};
-
-const projectPathFrom = (issue: GitlabIssue): string | null => {
-  const full = issue.references?.full ?? '';
-  const index = full.indexOf('#');
-  const path = (index >= 0 ? full.slice(0, index) : full).trim();
-  return path === '' ? null : path;
 };
 
 export const useGitlabIssueDescription = ({ issue, workspaceId }: Params): Result => {
@@ -28,16 +22,16 @@ export const useGitlabIssueDescription = ({ issue, workspaceId }: Params): Resul
     return integration != null ? integration.config.host : null;
   });
   const [saved, setSaved] = useState<string | null>(null);
-  const projectPath = projectPathFrom(issue);
-  const issueIid = issue.iid;
+  const projectPath = issue == null ? null : projectPathFromIssue({ issue });
+  const issueIid = issue?.iid ?? null;
 
   useEffect(() => {
     setSaved(null);
-  }, [issueIid, issue.description]);
+  }, [issueIid, issue?.description]);
 
   const save = useCallback(
     async (next: string) => {
-      if (host == null || projectPath == null) {
+      if (host == null || projectPath == null || issueIid == null) {
         return;
       }
       const description = await gitlabUpdateIssueDescription({
@@ -53,7 +47,7 @@ export const useGitlabIssueDescription = ({ issue, workspaceId }: Params): Resul
   );
 
   return {
-    description: saved ?? issue.description ?? '',
-    save: host == null || projectPath == null ? null : save,
+    description: saved ?? issue?.description ?? '',
+    save: host == null || projectPath == null || issueIid == null ? null : save,
   };
 };

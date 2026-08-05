@@ -1,10 +1,14 @@
-import { EmptyState, Markdown } from '@goodboy/ui';
+import { useState } from 'react';
+import { EmptyState } from '@goodboy/ui';
+import { FileText, MessageSquare } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { SegmentedTabOption } from '@goodboy/ui';
 import {
-  DetailSection,
   HeaderBand,
   StudioDetailLayout,
+  StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
+import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { gitlabIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
@@ -13,6 +17,9 @@ import { goalFromIssue } from '../goal-from-issue';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { gitlabBranchSlug } from './useGitlabIssues';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
+import { useGitlabIssueNotes } from '../useGitlabIssueNotes';
+import { IssueConversation } from '../IssueConversation';
 
 type Props = {
   readonly issue: GitlabIssue | null;
@@ -21,7 +28,18 @@ type Props = {
   readonly onClose: () => void;
 };
 
+type IssueSection = 'overview' | 'conversation';
+
+const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
+  { value: 'overview', label: 'Overview', icon: FileText },
+  { value: 'conversation', label: 'Conversation', icon: MessageSquare },
+];
+
 export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Props) => {
+  const [section, setSection] = useState<IssueSection>('overview');
+  const { description, save } = useGitlabIssueDescription({ issue, workspaceId });
+  const notes = useGitlabIssueNotes({ issue, workspaceId });
+
   if (!issue) {
     return (
       <div className="flex h-full items-center justify-center px-8">
@@ -72,16 +90,28 @@ export const IssueDetailPanel = ({ issue, sessionId, workspaceId, onClose }: Pro
           actions={<ExternalRefActions url={issue.webUrl} label="issue" hostLabel="GitLab" />}
         />
       }
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Issue sections"
+          options={SECTION_OPTIONS}
+          value={section}
+          onChange={setSection}
+        />
+      }
       dock={launch}
       properties={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
     >
-      <DetailSection label="description" variant="frameless">
-        {issue.description ? (
-          <Markdown text={issue.description} className="text-sm leading-relaxed" />
-        ) : (
-          <p className="text-sm italic text-muted-foreground/60">No description.</p>
-        )}
-      </DetailSection>
+      {section === 'overview' ? (
+        <DescriptionSection text={description} onSave={save} />
+      ) : (
+        <IssueConversation
+          notes={notes.notes}
+          isLoading={notes.isLoading}
+          error={notes.error}
+          onRetry={notes.reload}
+          onPost={notes.post}
+        />
+      )}
     </StudioDetailLayout>
   );
 };

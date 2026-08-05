@@ -751,6 +751,59 @@ pub async fn gitlab_reply_to_mr_discussion(
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabIssueNote {
+    pub id: i64,
+    #[serde(default)]
+    pub body: String,
+    #[serde(default)]
+    pub system: bool,
+    #[serde(default)]
+    pub author: Option<GitlabMrAuthor>,
+    #[serde(rename = "createdAt", alias = "created_at", default)]
+    pub created_at: String,
+}
+
+#[tauri::command]
+pub async fn gitlab_list_issue_notes(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    issue_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Vec<GitlabIssueNote>, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    get_json_paged(
+        &host,
+        &token,
+        &format!("/projects/{encoded}/issues/{issue_iid}/notes?order_by=created_at&sort=asc"),
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn gitlab_create_issue_note(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    issue_iid: i64,
+    body: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<i64, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let note: GitlabNote = send_json(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/issues/{issue_iid}/notes"),
+        &serde_json::json!({ "body": body }),
+    )
+    .await?;
+    Ok(note.id)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GitlabApproval {
     pub user: GitlabMrAuthor,
 }
@@ -1273,6 +1326,43 @@ mod tests {
         assert_eq!(issue.updated_at, "2026-05-21T10:00:00Z");
         assert_eq!(issue.references.full, "acme/web#7");
         assert!(issue.description.is_none());
+    }
+
+    #[test]
+    fn issue_note_deserializes_snake_case_payload_with_system_flag() {
+        let raw = r#"{
+            "id": 5,
+            "body": "changed the milestone",
+            "system": true,
+            "created_at": "2026-07-22T10:00:00Z",
+            "author": { "username": "bob", "name": "Bob" }
+        }"#;
+        let note: GitlabIssueNote = serde_json::from_str(raw).unwrap();
+        assert!(note.system);
+        assert_eq!(note.author.unwrap().username, "bob");
+        assert_eq!(note.created_at, "2026-07-22T10:00:00Z");
+    }
+
+    #[test]
+    fn issue_note_defaults_missing_fields_on_a_bare_payload() {
+        let note: GitlabIssueNote = serde_json::from_str(r#"{ "id": 1 }"#).unwrap();
+        assert_eq!(note.body, "");
+        assert!(!note.system);
+        assert!(note.author.is_none());
+    }
+
+    #[test]
+    fn issue_note_serializes_to_camel_case_for_the_frontend() {
+        let note = GitlabIssueNote {
+            id: 1,
+            body: "looks good".into(),
+            system: false,
+            author: None,
+            created_at: "2026-07-22T10:00:00Z".into(),
+        };
+        let value = serde_json::to_value(&note).unwrap();
+        assert_eq!(value["createdAt"], "2026-07-22T10:00:00Z");
+        assert_eq!(value["body"], "looks good");
     }
 
     #[test]
