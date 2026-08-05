@@ -11,6 +11,7 @@ mod external_terminal;
 mod file_versions;
 mod github;
 mod gitlab;
+mod jira;
 mod linear;
 mod parallel_groups;
 mod path_env;
@@ -72,6 +73,7 @@ pub fn run() {
     let linear_token_cache = linear::LinearTokenCache::new();
     let sentry_token_cache = sentry::SentryTokenCache::new();
     let gitlab_token_cache = gitlab::GitlabTokenCache::new();
+    let jira_token_cache = jira::JiraTokenCache::new();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -91,6 +93,7 @@ pub fn run() {
         .manage(linear_token_cache)
         .manage(sentry_token_cache)
         .manage(gitlab_token_cache)
+        .manage(jira_token_cache)
         .setup(|app| {
             #[cfg(desktop)]
             app.handle()
@@ -295,6 +298,17 @@ pub fn run() {
             gitlab::gitlab_approve_mr,
             gitlab::gitlab_unapprove_mr,
             gitlab::gitlab_update_mr_state,
+            jira::jira_validate_connection,
+            jira::jira_disconnect,
+            jira::jira_list_issues,
+            jira::jira_get_issue,
+            jira::jira_list_comments,
+            jira::jira_create_comment,
+            jira::jira_update_issue,
+            jira::jira_set_assignee,
+            jira::jira_list_assignable_users,
+            jira::jira_list_transitions,
+            jira::jira_transition_issue,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   GitlabIntegrationConfig,
+  JiraIntegrationConfig,
   LinearIntegrationConfig,
   SentryIntegrationConfig,
   WorkspaceId,
@@ -265,7 +266,33 @@ describe('workspace_integrations queries', () => {
   it('rejects an unknown provider via the widened CHECK constraint', async () => {
     const db = await seed();
     await expect(
-      upsertWorkspaceIntegration(db, makeSentryIntegration({ provider: 'jira' as never })),
+      upsertWorkspaceIntegration(db, makeSentryIntegration({ provider: 'asana' as never })),
     ).rejects.toThrow(/CHECK constraint/);
+  });
+
+  it('round-trips a jira integration with its site url, email and project key', async () => {
+    const db = await seed();
+    const jiraConfig: JiraIntegrationConfig = {
+      siteUrl: 'https://acme.atlassian.net',
+      email: 'amin@acme.io',
+      projectKey: 'GB',
+      accountId: '5b10a2844c20165700ede21g',
+      displayName: 'Amin K',
+    };
+    await upsertWorkspaceIntegration(
+      db,
+      makeIntegration({
+        id: 'jira-1' as WorkspaceIntegrationId,
+        provider: 'jira',
+        config: jiraConfig,
+        credentialKey: `goodboy.workspace.${workspaceId}.jira`,
+      }),
+    );
+
+    const got = await getWorkspaceIntegration(db, workspaceId, 'jira');
+    expect(got!.provider).toBe('jira');
+    expect((got!.config as JiraIntegrationConfig).siteUrl).toBe('https://acme.atlassian.net');
+    expect((got!.config as JiraIntegrationConfig).projectKey).toBe('GB');
+    expect(got!.credentialKey).toBe(`goodboy.workspace.${workspaceId}.jira`);
   });
 });

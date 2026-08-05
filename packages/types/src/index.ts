@@ -29,6 +29,8 @@ export type {
   ContextSlotHistoryEntry,
   GitlabIntegrationConfig,
   GitlabWorkspaceIntegration,
+  JiraIntegrationConfig,
+  JiraWorkspaceIntegration,
   LinearIntegrationConfig,
   LinearWorkspaceIntegration,
   OrchestratorRouting,

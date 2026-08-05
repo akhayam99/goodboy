@@ -102,6 +102,7 @@ import { m101TelemetryOrchestratorKind } from './m101-telemetry-orchestrator-kin
 import { m102WorkflowOrchestrationStopKind } from './m102-workflow-orchestration-stop-kind';
 import { m103SessionExternalTaskBranch } from './m103-session-external-task-branch';
 import { m104PendingResolutionReplyPosted } from './m104-pending-resolution-reply-posted';
+import { m105IntegrationJiraProvider } from './m105-integration-jira-provider';
 import { m106MoonshotProviderRuns } from './m106-moonshot-provider-runs';
 
 export type Migration = {
@@ -214,5 +215,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 102, sql: m102WorkflowOrchestrationStopKind },
   { version: 103, sql: m103SessionExternalTaskBranch },
   { version: 104, sql: m104PendingResolutionReplyPosted },
+  { version: 105, sql: m105IntegrationJiraProvider },
   { version: 106, sql: m106MoonshotProviderRuns },
 ];
