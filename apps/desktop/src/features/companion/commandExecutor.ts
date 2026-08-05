@@ -229,18 +229,27 @@ async function fetchIssuesFor(
   provider: WorkspaceIntegrationProvider,
 ): Promise<NormalizedIssue[]> {
   try {
-    if (provider === 'linear') {
-      return (await linearFetchAssignedIssues(workspaceId)).map(normalizeLinear);
+    switch (provider) {
+      case 'linear':
+        return (await linearFetchAssignedIssues(workspaceId)).map(normalizeLinear);
+      case 'sentry': {
+        const page = await sentryFetchIssues(workspaceId);
+        return page.issues.map(normalizeSentry);
+      }
+      case 'gitlab': {
+        const host = gitlabHostFor(workspaceId);
+        if (!host) {
+          return [];
+        }
+        return (await gitlabFetchAssignedIssues(workspaceId, host)).map(normalizeGitlab);
+      }
+      case 'jira':
+        return [];
+      default: {
+        const unexpected: never = provider;
+        throw new BridgeSafeError(`unsupported issue provider: ${String(unexpected)}`);
+      }
     }
-    if (provider === 'sentry') {
-      const page = await sentryFetchIssues(workspaceId);
-      return page.issues.map(normalizeSentry);
-    }
-    const host = gitlabHostFor(workspaceId);
-    if (!host) {
-      return [];
-    }
-    return (await gitlabFetchAssignedIssues(workspaceId, host)).map(normalizeGitlab);
   } catch (e) {
     console.error(`[bridge] queryIssues ${provider} fetch failed`, e);
     return [];
@@ -279,62 +288,72 @@ async function resolveIssueForSession(
     title: string;
   };
 }> {
-  if (provider === 'linear') {
-    const issue = (await linearFetchAssignedIssues(workspaceId)).find(
-      (i) => i.identifier === identifier,
-    );
-    if (!issue) {
-      throw new BridgeSafeError(`linear issue not found: ${identifier}`);
+  switch (provider) {
+    case 'linear': {
+      const issue = (await linearFetchAssignedIssues(workspaceId)).find(
+        (i) => i.identifier === identifier,
+      );
+      if (!issue) {
+        throw new BridgeSafeError(`linear issue not found: ${identifier}`);
+      }
+      return {
+        goal: linearGoalFromIssue(issue),
+        externalTask: {
+          provider: 'linear',
+          externalId: issue.id,
+          identifier: issue.identifier,
+          url: issue.url,
+          title: issue.title,
+        },
+      };
     }
-    return {
-      goal: linearGoalFromIssue(issue),
-      externalTask: {
-        provider: 'linear',
-        externalId: issue.id,
-        identifier: issue.identifier,
-        url: issue.url,
-        title: issue.title,
-      },
-    };
-  }
-  if (provider === 'sentry') {
-    const page = await sentryFetchIssues(workspaceId);
-    const issue = page.issues.find((i) => (i.shortId ?? i.id) === identifier);
-    if (!issue) {
-      throw new BridgeSafeError(`sentry issue not found: ${identifier}`);
+    case 'sentry': {
+      const page = await sentryFetchIssues(workspaceId);
+      const issue = page.issues.find((i) => (i.shortId ?? i.id) === identifier);
+      if (!issue) {
+        throw new BridgeSafeError(`sentry issue not found: ${identifier}`);
+      }
+      const detail = await sentryFetchIssueDetail(workspaceId, issue.id).catch(() => null);
+      return {
+        goal: goalFromSentry(issue, detail),
+        externalTask: {
+          provider: 'sentry',
+          externalId: issue.id,
+          identifier: issue.shortId ?? issue.id,
+          url: issue.permalink ?? '',
+          title: issue.title,
+        },
+      };
     }
-    const detail = await sentryFetchIssueDetail(workspaceId, issue.id).catch(() => null);
-    return {
-      goal: goalFromSentry(issue, detail),
-      externalTask: {
-        provider: 'sentry',
-        externalId: issue.id,
-        identifier: issue.shortId ?? issue.id,
-        url: issue.permalink ?? '',
-        title: issue.title,
-      },
-    };
+    case 'gitlab': {
+      const host = gitlabHostFor(workspaceId);
+      if (!host) {
+        throw new BridgeSafeError('gitlab host not configured for this workspace');
+      }
+      const issue = (await gitlabFetchAssignedIssues(workspaceId, host)).find(
+        (i) => gitlabIssueIdentifier(i) === identifier,
+      );
+      if (!issue) {
+        throw new BridgeSafeError(`gitlab issue not found: ${identifier}`);
+      }
+      return {
+        goal: gitlabGoalFromIssue(issue),
+        externalTask: {
+          provider: 'gitlab',
+          externalId: String(issue.id),
+          identifier: gitlabIssueIdentifier(issue),
+          url: issue.webUrl,
+          title: issue.title,
+        },
+      };
+    }
+    case 'jira':
+      throw new BridgeSafeError(`jira issue creation is not available from mobile: ${identifier}`);
+    default: {
+      const unexpected: never = provider;
+      throw new BridgeSafeError(`unsupported issue provider: ${String(unexpected)}`);
+    }
   }
-  const host = gitlabHostFor(workspaceId);
-  if (!host) {
-    throw new BridgeSafeError('gitlab host not configured for this workspace');
-  }
-  const issue = (await gitlabFetchAssignedIssues(workspaceId, host)).find(
-    (i) => gitlabIssueIdentifier(i) === identifier,
-  );
-  if (!issue) {
-    throw new BridgeSafeError(`gitlab issue not found: ${identifier}`);
-  }
-  return {
-    goal: gitlabGoalFromIssue(issue),
-    externalTask: {
-      provider: 'gitlab',
-      externalId: String(issue.id),
-      identifier: gitlabIssueIdentifier(issue),
-      url: issue.webUrl,
-      title: issue.title,
-    },
-  };
 }
 
 async function resolveIssueForSessionSafe(

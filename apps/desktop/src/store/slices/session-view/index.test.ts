@@ -730,6 +730,24 @@ describe('store contract', () => {
       expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
     });
 
+    it('focusedPlanId survives the switch to the plans lens and dies on any other', async () => {
+      const store = await getStore();
+      store.getState().setFocusedPlanId(SESSION_ID, PLAN_ID);
+      store.getState().setActiveLens(SESSION_ID, 'plans');
+      expect(store.getState().focusedPlanId[SESSION_ID]).toBe(PLAN_ID);
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      expect(store.getState().focusedPlanId[SESSION_ID]).toBeNull();
+    });
+
+    it('focusedGithubIssueNumber survives the switch to the github_issue lens and dies on any other', async () => {
+      const store = await getStore();
+      store.getState().setFocusedGithubIssueNumber(SESSION_ID, 9);
+      store.getState().setActiveLens(SESSION_ID, 'github_issue');
+      expect(store.getState().focusedGithubIssueNumber[SESSION_ID]).toBe(9);
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      expect(store.getState().focusedGithubIssueNumber[SESSION_ID]).toBeNull();
+    });
+
     it('openDiffLens lands on the files lens with the commit focus still set', async () => {
       const store = await getStore();
       store.getState().setActiveLens(SESSION_ID, 'agents');

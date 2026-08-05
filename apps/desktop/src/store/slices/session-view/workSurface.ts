@@ -41,6 +41,12 @@ export const setActiveLens = (set: SetFn) => {
             ? s.focusedWorkflowRunId
             : { ...s.focusedWorkflowRunId, [sessionId]: null },
         diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
+        focusedPlanId:
+          lens === 'plans' ? s.focusedPlanId : { ...s.focusedPlanId, [sessionId]: null },
+        focusedGithubIssueNumber:
+          lens === 'github_issue'
+            ? s.focusedGithubIssueNumber
+            : { ...s.focusedGithubIssueNumber, [sessionId]: null },
         focusedExternalTask: { ...s.focusedExternalTask, [sessionId]: null },
         lensHistory: {
           ...s.lensHistory,
