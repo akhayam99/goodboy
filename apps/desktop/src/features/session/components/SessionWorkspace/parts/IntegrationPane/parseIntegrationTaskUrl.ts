@@ -109,6 +109,8 @@ const parseProvider = ({ provider, segments }: ParseProviderParams): ProviderRes
       return parseGithub({ segments });
     case 'bitbucket':
       return parseBitbucket({ segments });
+    case 'slack':
+      return null;
     default: {
       const exhaustiveProvider: never = provider;
       return exhaustiveProvider;

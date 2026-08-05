@@ -20,6 +20,7 @@ const TASK_VERB: Record<SessionExternalTaskProvider, string> = {
   jira: 'closes',
   github: 'closes',
   bitbucket: 'merges',
+  slack: 'is answered',
 };
 
 type JoinParams = {

@@ -20,6 +20,7 @@ export const LENS_LABEL: Record<LensKind, string> = {
   gitlab_issues: 'GitLab issues',
   jira_issues: 'Jira issues',
   github_issue: 'GitHub issue',
+  slack_threads: 'Slack threads',
 };
 
 export const SIMPLE_LENSES = new Set<LensKind>([

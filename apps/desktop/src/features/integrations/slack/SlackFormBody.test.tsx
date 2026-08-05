@@ -1,0 +1,110 @@
+// @vitest-environment happy-dom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { SlackWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
+
+const { state } = vi.hoisted(() => ({
+  state: {
+    workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
+    connectSlack: vi.fn(async () => undefined),
+    disconnectSlack: vi.fn(async () => undefined),
+  },
+}));
+
+vi.mock('../../../store', () => ({
+  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+}));
+
+const WS_ID = 'ws-1' as WorkspaceId;
+
+const slackIntegration: SlackWorkspaceIntegration = {
+  id: 'wi-1' as never,
+  workspaceId: WS_ID,
+  provider: 'slack',
+  credentialKey: 'cred-1',
+  config: {
+    teamId: 'T01',
+    teamName: 'Acme',
+    botUserId: 'U09',
+    botUserName: 'goodboy',
+  },
+  createdAt: '2026-01-01T00:00:00.000Z' as never,
+  updatedAt: '2026-01-01T00:00:00.000Z' as never,
+};
+
+beforeEach(() => {
+  state.workspaceIntegrations = {};
+  state.connectSlack = vi.fn(async () => undefined);
+  state.disconnectSlack = vi.fn(async () => undefined);
+});
+afterEach(cleanup);
+
+import { SlackFormBody } from './SlackFormBody';
+
+describe('SlackFormBody', () => {
+  it('keeps Connect disabled until a token is pasted', () => {
+    render(<SlackFormBody workspaceId={WS_ID} />);
+    const connect = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
+    expect(connect.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText(/bot token/i), { target: { value: ' xoxb-secret ' } });
+    expect(connect.disabled).toBe(false);
+  });
+
+  it('trims the pasted token before connecting', async () => {
+    const onConnected = vi.fn();
+    render(<SlackFormBody workspaceId={WS_ID} onConnected={onConnected} />);
+    fireEvent.change(screen.getByLabelText(/bot token/i), { target: { value: ' xoxb-secret ' } });
+    fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
+    await waitFor(() =>
+      expect(state.connectSlack).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        botToken: 'xoxb-secret',
+      }),
+    );
+    await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
+  });
+
+  it('names every scope the bot token needs and where the token travels', () => {
+    render(<SlackFormBody workspaceId={WS_ID} />);
+    expect(screen.getByText('channels:read')).toBeDefined();
+    expect(screen.getByText('channels:history')).toBeDefined();
+    expect(screen.getByText('users:read')).toBeDefined();
+    expect(screen.getByText('chat:write')).toBeDefined();
+    expect(screen.getByText('reactions:write')).toBeDefined();
+    expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
+    expect(screen.queryByText(/never leaving this machine/i)).toBeNull();
+  });
+
+  it('shows the failure and skips onConnected when the probe is rejected', async () => {
+    const onConnected = vi.fn();
+    state.connectSlack = vi.fn(async () => {
+      throw new Error('slack rejected the token');
+    });
+    render(<SlackFormBody workspaceId={WS_ID} onConnected={onConnected} />);
+    fireEvent.change(screen.getByLabelText(/bot token/i), { target: { value: 'xoxb-bad' } });
+    fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
+    expect(await screen.findByText(/slack rejected the token/i)).toBeDefined();
+    expect(onConnected).not.toHaveBeenCalled();
+  });
+
+  describe('when Slack is already connected', () => {
+    beforeEach(() => {
+      state.workspaceIntegrations = { [WS_ID]: [slackIntegration] };
+    });
+
+    it('shows the team and the bot user instead of the form', () => {
+      render(<SlackFormBody workspaceId={WS_ID} />);
+      expect(screen.getByText(/Connected to Acme/i)).toBeDefined();
+      expect(screen.getByText('T01')).toBeDefined();
+      expect(screen.getByText('goodboy')).toBeDefined();
+      expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
+    });
+
+    it('disconnects Slack for the workspace', () => {
+      render(<SlackFormBody workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      expect(state.disconnectSlack).toHaveBeenCalledWith({ workspaceId: WS_ID });
+    });
+  });
+});

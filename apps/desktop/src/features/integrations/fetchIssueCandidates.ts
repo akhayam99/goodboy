@@ -126,7 +126,8 @@ export const fetchIssueCandidates = async ({
         branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
       }));
     }
-    case 'bitbucket': {
+    case 'bitbucket':
+    case 'slack': {
       return [];
     }
     default: {

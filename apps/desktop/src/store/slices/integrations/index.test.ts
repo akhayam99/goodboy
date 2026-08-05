@@ -322,6 +322,16 @@ vi.mock('../../../features/integrations/jira/client', () => ({
   jiraListIssues: vi.fn(async () => []),
 }));
 
+const slackValidateConnectionSpy = vi.fn();
+const slackConnectSpy = vi.fn(async () => undefined);
+const slackDisconnectSpy = vi.fn(async () => undefined);
+
+vi.mock('../../../features/integrations/slack/client', () => ({
+  slackValidateConnection: slackValidateConnectionSpy,
+  slackConnect: slackConnectSpy,
+  slackDisconnect: slackDisconnectSpy,
+}));
+
 const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
   available: true,
   mode: 'gh-cli',
@@ -872,6 +882,110 @@ describe('store contract', () => {
       await store.getState().disconnectJira({ workspaceId: WS_ID });
       expect(jiraDisconnectSpy).toHaveBeenCalledWith({ workspaceId: WS_ID });
       expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(expect.anything(), WS_ID, 'jira');
+      const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
+      expect(remaining.map((i) => i.provider)).toEqual(['linear']);
+    });
+
+    it('connectSlack probes the token, stores it, then caches the team it answered with', async () => {
+      const store = await getStore();
+      slackValidateConnectionSpy.mockResolvedValueOnce({
+        teamId: 'T01',
+        teamName: 'Acme',
+        botUserId: 'U09',
+        botUserName: 'goodboy',
+      });
+
+      const out = await store
+        .getState()
+        .connectSlack({ workspaceId: WS_ID, botToken: ' xoxb-secret ' });
+
+      expect(out.teamId).toBe('T01');
+      expect(slackValidateConnectionSpy).toHaveBeenCalledWith({ botToken: ' xoxb-secret ' });
+      expect(slackConnectSpy).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        botToken: ' xoxb-secret ',
+      });
+      const cached = store
+        .getState()
+        .workspaceIntegrations[WS_ID]?.find((i) => i.provider === 'slack');
+      expect(cached?.config).toEqual({
+        teamId: 'T01',
+        teamName: 'Acme',
+        botUserId: 'U09',
+        botUserName: 'goodboy',
+      });
+      expect(cached?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.slack`);
+    });
+
+    it('connectSlack never stores a token the probe rejected', async () => {
+      const store = await getStore();
+      slackValidateConnectionSpy.mockRejectedValueOnce(new Error('invalid_auth'));
+
+      await expect(
+        store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-bad' }),
+      ).rejects.toThrow(/invalid_auth/);
+
+      expect(slackConnectSpy).not.toHaveBeenCalled();
+      expect(upsertWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+      expect(store.getState().workspaceIntegrations[WS_ID] ?? []).toEqual([]);
+    });
+
+    it('connectSlack keeps the row identity when the same workspace reconnects', async () => {
+      const store = await getStore();
+      const existing: WorkspaceIntegration = {
+        id: 'sl-keep' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'slack',
+        config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
+        credentialKey: `goodboy.workspace.${WS_ID}.slack`,
+        createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
+      slackValidateConnectionSpy.mockResolvedValueOnce({
+        teamId: 'T01',
+        teamName: 'Acme',
+        botUserId: 'U09',
+        botUserName: 'goodboy',
+      });
+
+      await store.getState().connectSlack({ workspaceId: WS_ID, botToken: 'xoxb-secret' });
+
+      const rows = (store.getState().workspaceIntegrations[WS_ID] ?? []).filter(
+        (i) => i.provider === 'slack',
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.id).toBe('sl-keep');
+      expect(rows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
+      expect((rows[0]?.config as { teamName: string }).teamName).toBe('Acme');
+    });
+
+    it('disconnectSlack drops the cached token and only the slack row', async () => {
+      const store = await getStore();
+      const linear: WorkspaceIntegration = {
+        id: 'li-3' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'linear',
+        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
+        credentialKey: 'k',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      const slack: WorkspaceIntegration = {
+        id: 'sl-1' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'slack',
+        config: { teamId: 'T01', teamName: 'Acme', botUserId: 'U09' },
+        credentialKey: 's',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, slack] } });
+
+      await store.getState().disconnectSlack({ workspaceId: WS_ID });
+
+      expect(slackDisconnectSpy).toHaveBeenCalledWith({ workspaceId: WS_ID });
+      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(expect.anything(), WS_ID, 'slack');
       const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
       expect(remaining.map((i) => i.provider)).toEqual(['linear']);
     });

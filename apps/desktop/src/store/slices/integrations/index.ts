@@ -3,11 +3,13 @@ import { connectGitlab } from './connectGitlab';
 import { connectJira } from './connectJira';
 import { connectLinear } from './connectLinear';
 import { connectSentry } from './connectSentry';
+import { connectSlack } from './connectSlack';
 import { disconnectBitbucket } from './disconnectBitbucket';
 import { disconnectGitlab } from './disconnectGitlab';
 import { disconnectJira } from './disconnectJira';
 import { disconnectLinear } from './disconnectLinear';
 import { disconnectSentry } from './disconnectSentry';
+import { disconnectSlack } from './disconnectSlack';
 import { loadIntegrations } from './loadIntegrations';
 import type { GetFn, SetFn } from './types';
 
@@ -24,5 +26,7 @@ export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
     disconnectJira: disconnectJira(set),
     connectBitbucket: connectBitbucket(set, get),
     disconnectBitbucket: disconnectBitbucket(set),
+    connectSlack: connectSlack(set, get),
+    disconnectSlack: disconnectSlack(set),
   };
 };

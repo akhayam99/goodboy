@@ -22,6 +22,7 @@ const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
   github: 3,
   jira: 4,
   bitbucket: 5,
+  slack: 6,
 };
 
 export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {

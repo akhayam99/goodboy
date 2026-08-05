@@ -153,6 +153,7 @@ import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
 import type { BitbucketConnection } from '../features/integrations/bitbucket/client';
+import type { SlackConnection } from '../features/integrations/slack/client';
 import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
@@ -233,6 +234,8 @@ export type AppActions = {
     apiToken: string;
   }): Promise<BitbucketConnection>;
   disconnectBitbucket(params: { workspaceId: WorkspaceId }): Promise<void>;
+  connectSlack(params: { workspaceId: WorkspaceId; botToken: string }): Promise<SlackConnection>;
+  disconnectSlack(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
