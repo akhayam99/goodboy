@@ -130,8 +130,9 @@ pub fn db_wipe(state: State<'_, Db>) -> Result<(), DbError> {
     // doesn't need to know the file path or close the connection.
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let table_names: Vec<String> = {
-        let mut stmt = conn
-            .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")?;
+        let mut stmt = conn.prepare(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+        )?;
         let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
         rows.collect::<Result<Vec<_>, _>>()?
     };

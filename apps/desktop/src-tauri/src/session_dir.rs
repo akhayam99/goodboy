@@ -262,10 +262,7 @@ pub fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, Session
 pub fn session_dir_remove(args: RemoveArgs) -> Result<(), SessionDirError> {
     let base = absolute_path(expand_home(&args.base_path)?)?;
     let target = absolute_path(expand_home(&args.path)?)?;
-    let is_contained = match (
-        std::fs::canonicalize(&base),
-        std::fs::canonicalize(&target),
-    ) {
+    let is_contained = match (std::fs::canonicalize(&base), std::fs::canonicalize(&target)) {
         (Ok(resolved_base), Ok(resolved_target)) => {
             resolved_target.parent() == Some(resolved_base.as_path())
         }
@@ -354,8 +351,10 @@ mod tests {
         let first_created_at = marker.created_at.clone();
         let reused = session_dir_create(args()).unwrap();
         assert!(reused.reused);
-        let marker_after_reuse = std::fs::read(Path::new(&created.worktree_path).join(".goodboy")).unwrap();
-        let marker_after_reuse = serde_json::from_slice::<SessionMarker>(&marker_after_reuse).unwrap();
+        let marker_after_reuse =
+            std::fs::read(Path::new(&created.worktree_path).join(".goodboy")).unwrap();
+        let marker_after_reuse =
+            serde_json::from_slice::<SessionMarker>(&marker_after_reuse).unwrap();
         assert_eq!(marker_after_reuse.created_at, first_created_at);
         assert_eq!(marker_after_reuse.workspace_id, "workspace-1");
         std::fs::remove_dir_all(root).unwrap();
@@ -423,7 +422,9 @@ mod tests {
         .unwrap();
 
         assert_eq!(created.slug, "MatchAnalysis_20260514");
-        assert!(created.worktree_path.ends_with("/sessions/MatchAnalysis_20260514"));
+        assert!(created
+            .worktree_path
+            .ends_with("/sessions/MatchAnalysis_20260514"));
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -450,10 +451,7 @@ mod tests {
                 session_id: "session-1".to_string(),
                 workspace_id: "workspace-1".to_string(),
             });
-            assert!(matches!(
-                result,
-                Err(SessionDirError::InvalidDirectoryName)
-            ));
+            assert!(matches!(result, Err(SessionDirError::InvalidDirectoryName)));
         }
 
         let control_result = session_dir_create(CreateArgs {

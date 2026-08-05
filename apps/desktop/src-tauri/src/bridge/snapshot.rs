@@ -70,7 +70,8 @@ impl ChangeProbe {
 }
 
 fn read_data_version(conn: &Connection) -> i64 {
-    conn.query_row("PRAGMA data_version", [], |r| r.get(0)).unwrap_or(0)
+    conn.query_row("PRAGMA data_version", [], |r| r.get(0))
+        .unwrap_or(0)
 }
 
 fn open_ro() -> Result<Connection, BridgeError> {
@@ -85,16 +86,16 @@ fn open_ro() -> Result<Connection, BridgeError> {
 /// Runs a SELECT and maps each row to a JSON object using the statement's
 /// column names, preserving SQLite types via `db::value_to_json`.
 fn rows(conn: &Connection, sql: &str) -> Result<Vec<Value>, BridgeError> {
-    let mut stmt = conn.prepare(sql).map_err(|e| BridgeError::Db(e.to_string()))?;
+    let mut stmt = conn
+        .prepare(sql)
+        .map_err(|e| BridgeError::Db(e.to_string()))?;
     let names: Vec<String> = stmt.column_names().into_iter().map(String::from).collect();
     let mut q = stmt.query([]).map_err(|e| BridgeError::Db(e.to_string()))?;
     let mut out = Vec::new();
     while let Some(row) = q.next().map_err(|e| BridgeError::Db(e.to_string()))? {
         let mut rec = Map::new();
         for (i, name) in names.iter().enumerate() {
-            let rv = row
-                .get_ref(i)
-                .map_err(|e| BridgeError::Db(e.to_string()))?;
+            let rv = row.get_ref(i).map_err(|e| BridgeError::Db(e.to_string()))?;
             rec.insert(name.clone(), db::value_to_json(rv));
         }
         out.push(Value::Object(rec));
@@ -395,7 +396,8 @@ mod tests {
 
     #[test]
     fn embed_json_column_parses_text_into_structured_value() {
-        let rows = vec![json!({ "branch": "main", "pr_json": "{\"number\":7,\"state\":\"open\"}" })];
+        let rows =
+            vec![json!({ "branch": "main", "pr_json": "{\"number\":7,\"state\":\"open\"}" })];
         let out = embed_json_column(rows, "pr_json");
         assert_eq!(out[0]["pr_json"]["number"], json!(7));
         assert_eq!(out[0]["pr_json"]["state"], json!("open"));
@@ -403,7 +405,10 @@ mod tests {
 
     #[test]
     fn embed_json_column_leaves_non_json_and_missing_untouched() {
-        let rows = vec![json!({ "pr_json": "not json at all" }), json!({ "other": 1 })];
+        let rows = vec![
+            json!({ "pr_json": "not json at all" }),
+            json!({ "other": 1 }),
+        ];
         let out = embed_json_column(rows, "pr_json");
         assert_eq!(out[0]["pr_json"], json!("not json at all"));
         assert!(out[1].get("pr_json").is_none());
@@ -425,7 +430,9 @@ mod tests {
 
     #[test]
     fn chunk_b64_roundtrips_the_whole_body() {
-        let body: Vec<u8> = (0..(CHUNK_RAW_BYTES * 2 + 123)).map(|i| (i % 256) as u8).collect();
+        let body: Vec<u8> = (0..(CHUNK_RAW_BYTES * 2 + 123))
+            .map(|i| (i % 256) as u8)
+            .collect();
         let s = snap(body.clone());
         let mut reassembled = Vec::new();
         for i in 0..s.total_chunks() {

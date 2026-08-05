@@ -14,7 +14,6 @@ pub fn scrub_nested_session_env(command: &mut Command) {
         .env_remove("CLAUDE_AGENT_SDK_VERSION");
 }
 
-
 pub fn push_effort_args(provider_id: &str, effort: Option<&str>, args: &mut Vec<String>) {
     let Some(level) = effort else {
         return;
@@ -59,7 +58,10 @@ mod tests {
         push_effort_args("codex", Some("low"), &mut codex);
         assert_eq!(
             codex,
-            vec!["-c".to_string(), "model_reasoning_effort=\"low\"".to_string()]
+            vec![
+                "-c".to_string(),
+                "model_reasoning_effort=\"low\"".to_string()
+            ]
         );
 
         let mut opencode = Vec::new();

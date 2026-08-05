@@ -421,7 +421,17 @@ pub fn workflow_list(
         template_ids
     {
         let template = row_to_template(
-            &conn, id, ws, name, desc, goal, process, created, updated, deleted, is_preset != 0,
+            &conn,
+            id,
+            ws,
+            name,
+            desc,
+            goal,
+            process,
+            created,
+            updated,
+            deleted,
+            is_preset != 0,
             origin,
         )
         .map_err(PhaseError::Db)?;
@@ -431,10 +441,7 @@ pub fn workflow_list(
 }
 
 #[tauri::command]
-pub fn workflow_get(
-    state: State<'_, Db>,
-    id: String,
-) -> Result<Option<WorkflowRow>, PhaseError> {
+pub fn workflow_get(state: State<'_, Db>, id: String) -> Result<Option<WorkflowRow>, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, goal, process_text, created_at, updated_at,
@@ -463,8 +470,18 @@ pub fn workflow_get(
             let (rid, ws, name, desc, goal, process, created, updated, deleted, is_preset, origin) =
                 r.map_err(PhaseError::Db)?;
             let template = row_to_template(
-                &conn, rid, ws, name, desc, goal, process, created, updated, deleted,
-                is_preset != 0, origin,
+                &conn,
+                rid,
+                ws,
+                name,
+                desc,
+                goal,
+                process,
+                created,
+                updated,
+                deleted,
+                is_preset != 0,
+                origin,
             )
             .map_err(PhaseError::Db)?;
             Ok(Some(template))
@@ -524,10 +541,10 @@ pub fn workflow_upsert(
                  WHERE workspace_id = ?1 AND name = ?2 AND deleted_at IS NULL
                  LIMIT 1",
             )?;
-            let mut rows = stmt.query_map(
-                rusqlite::params![input.workspace_id, input.name],
-                |row| row.get(0),
-            )?;
+            let mut rows = stmt
+                .query_map(rusqlite::params![input.workspace_id, input.name], |row| {
+                    row.get(0)
+                })?;
             match rows.next() {
                 Some(r) => Some(r.map_err(PhaseError::Db)?),
                 None => None,
@@ -539,8 +556,7 @@ pub fn workflow_upsert(
     let name = resolve_live_name(&conn, &input.workspace_id, &input.name, &id)?;
 
     let created_at: String = {
-        let mut stmt =
-            conn.prepare("SELECT created_at FROM workflows WHERE id = ?1 LIMIT 1")?;
+        let mut stmt = conn.prepare("SELECT created_at FROM workflows WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => r.map_err(PhaseError::Db)?,
@@ -680,15 +696,11 @@ pub fn workflow_upsert(
 }
 
 #[tauri::command]
-pub fn workflow_delete(
-    state: State<'_, Db>,
-    id: String,
-) -> Result<(), PhaseError> {
+pub fn workflow_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
 
     let exists: bool = {
-        let mut stmt =
-            conn.prepare("SELECT 1 FROM workflows WHERE id = ?1 LIMIT 1")?;
+        let mut stmt = conn.prepare("SELECT 1 FROM workflows WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |_| Ok(()))?;
         rows.next().is_some()
     };
@@ -782,7 +794,17 @@ pub fn workflows_for_session(
     let mut result = Vec::with_capacity(rows.len());
     for (id, ws, name, desc, goal, process, created, updated, deleted, is_preset, origin) in rows {
         let template = row_to_template(
-            &conn, id, ws, name, desc, goal, process, created, updated, deleted, is_preset != 0,
+            &conn,
+            id,
+            ws,
+            name,
+            desc,
+            goal,
+            process,
+            created,
+            updated,
+            deleted,
+            is_preset != 0,
             origin,
         )
         .map_err(PhaseError::Db)?;
@@ -856,8 +878,7 @@ pub fn step_def_upsert(
     let now = crate::util::iso_now();
     let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
     let created_at: String = {
-        let mut stmt =
-            conn.prepare("SELECT created_at FROM step_library WHERE id = ?1 LIMIT 1")?;
+        let mut stmt = conn.prepare("SELECT created_at FROM step_library WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => r.map_err(PhaseError::Db)?,
@@ -1170,11 +1191,7 @@ pub fn agent_set_provider_session_id(
 // Stamps `last_viewed_at` when the user selects/views an agent in the sidebar.
 // Compared against `last_finished_at` to derive the unread indicator.
 #[tauri::command]
-pub fn agent_mark_viewed(
-    state: State<'_, Db>,
-    id: String,
-    at: String,
-) -> Result<(), PhaseError> {
+pub fn agent_mark_viewed(state: State<'_, Db>, id: String, at: String) -> Result<(), PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let affected = conn.execute(
         "UPDATE agents SET last_viewed_at = ?2 WHERE id = ?1",
@@ -1306,7 +1323,10 @@ mod tests {
         )
         .unwrap();
 
-        let sql = format!("SELECT {cols} FROM agents WHERE id = ?1", cols = AGENT_SESSION_COLS);
+        let sql = format!(
+            "SELECT {cols} FROM agents WHERE id = ?1",
+            cols = AGENT_SESSION_COLS
+        );
         let mut stmt = conn.prepare(&sql).unwrap();
         let row = stmt
             .query_row(rusqlite::params!["a1"], session_row_from_row)
@@ -1334,7 +1354,10 @@ mod tests {
         )
         .unwrap();
 
-        let sql = format!("SELECT {cols} FROM agents WHERE id = ?1", cols = AGENT_SESSION_COLS);
+        let sql = format!(
+            "SELECT {cols} FROM agents WHERE id = ?1",
+            cols = AGENT_SESSION_COLS
+        );
         let mut stmt = conn.prepare(&sql).unwrap();
         let row = stmt
             .query_row(rusqlite::params!["a2"], session_row_from_row)
@@ -1378,7 +1401,10 @@ mod tests {
         )
         .unwrap();
 
-        let sql = format!("SELECT {cols} FROM agents WHERE id = ?1", cols = AGENT_SESSION_COLS);
+        let sql = format!(
+            "SELECT {cols} FROM agents WHERE id = ?1",
+            cols = AGENT_SESSION_COLS
+        );
         let mut stmt = conn.prepare(&sql).unwrap();
         let row = stmt
             .query_row(rusqlite::params!["a3"], session_row_from_row)

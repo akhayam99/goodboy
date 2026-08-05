@@ -335,8 +335,12 @@ pub async fn linear_fetch_assigned_issues(
     if let Some(team_id) = team_id {
         filter["team"] = serde_json::json!({ "id": { "eq": team_id } });
     }
-    let resp: IssuesResponse =
-        graphql(&token, ISSUES_QUERY, Some(serde_json::json!({ "filter": filter }))).await?;
+    let resp: IssuesResponse = graphql(
+        &token,
+        ISSUES_QUERY,
+        Some(serde_json::json!({ "filter": filter })),
+    )
+    .await?;
     Ok(resp.issues.nodes)
 }
 

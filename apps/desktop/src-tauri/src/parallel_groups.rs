@@ -114,7 +114,11 @@ fn parse_digits(bytes: &[u8], start: usize, len: usize) -> i64 {
 fn datetime_to_epoch_secs(year: i64, month: u32, day: u32, hour: u32, min: u32, sec: u32) -> i64 {
     let mut days: i64 = 0;
     for y in 1970..year {
-        days += if crate::util::is_leap_year(y) { 366 } else { 365 };
+        days += if crate::util::is_leap_year(y) {
+            366
+        } else {
+            365
+        };
     }
     for m in 1..month {
         days += crate::util::days_in_month(year, m);
@@ -235,15 +239,11 @@ pub fn parallel_group_get(
 }
 
 #[tauri::command]
-pub fn parallel_group_delete(
-    state: State<'_, Db>,
-    id: String,
-) -> Result<(), ParallelPhaseError> {
+pub fn parallel_group_delete(state: State<'_, Db>, id: String) -> Result<(), ParallelPhaseError> {
     let conn = state.0.lock().map_err(|_| ParallelPhaseError::Poisoned)?;
 
     let exists: bool = {
-        let mut stmt =
-            conn.prepare("SELECT 1 FROM parallel_groups WHERE id = ?1 LIMIT 1")?;
+        let mut stmt = conn.prepare("SELECT 1 FROM parallel_groups WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |_| Ok(()))?;
         rows.next().is_some()
     };

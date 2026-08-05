@@ -134,14 +134,38 @@ mod tests {
 
     #[test]
     fn maps_the_command_opcodes() {
-        assert!(matches!(MobileAction::from_opcode(0x83), Some(MobileAction::AdvanceStep)));
-        assert!(matches!(MobileAction::from_opcode(0x84), Some(MobileAction::Send)));
-        assert!(matches!(MobileAction::from_opcode(0x85), Some(MobileAction::SpawnAgent)));
-        assert!(matches!(MobileAction::from_opcode(0x86), Some(MobileAction::ResolveComment)));
-        assert!(matches!(MobileAction::from_opcode(0x87), Some(MobileAction::QueryProviders)));
-        assert!(matches!(MobileAction::from_opcode(0x88), Some(MobileAction::SetContextSlot)));
-        assert!(matches!(MobileAction::from_opcode(0x8A), Some(MobileAction::MergePr)));
-        assert!(matches!(MobileAction::from_opcode(0x8B), Some(MobileAction::QueryIssues)));
+        assert!(matches!(
+            MobileAction::from_opcode(0x83),
+            Some(MobileAction::AdvanceStep)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x84),
+            Some(MobileAction::Send)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x85),
+            Some(MobileAction::SpawnAgent)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x86),
+            Some(MobileAction::ResolveComment)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x87),
+            Some(MobileAction::QueryProviders)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x88),
+            Some(MobileAction::SetContextSlot)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x8A),
+            Some(MobileAction::MergePr)
+        ));
+        assert!(matches!(
+            MobileAction::from_opcode(0x8B),
+            Some(MobileAction::QueryIssues)
+        ));
         assert!(matches!(
             MobileAction::from_opcode(0x8C),
             Some(MobileAction::CreateSessionFromIssue)
@@ -160,7 +184,9 @@ mod tests {
     fn rejects_read_server_and_unknown_opcodes() {
         // Server->client (0x01-0x09) and client read opcodes (0x80-0x82) are not
         // mobile actions and must never resolve to one.
-        for op in [0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0xFF] {
+        for op in [
+            0x00u8, 0x01, 0x05, 0x07, 0x08, 0x09, 0x80, 0x81, 0x82, 0x89, 0x8F, 0xFF,
+        ] {
             assert!(
                 MobileAction::from_opcode(op).is_none(),
                 "opcode {op:#x} must not map to a mobile action",
@@ -196,7 +222,11 @@ mod tests {
         // createSessionFromIssue (0x8C) and spawnWorkflow (0x8D) are WRITEs — they ACK.
         for op in [0x83u8, 0x84, 0x85, 0x86, 0x88, 0x8A, 0x8C, 0x8D] {
             let action = MobileAction::from_opcode(op).expect("opcode is a write command");
-            assert!(!action.is_query(), "{} must be a write, not a query", action.kind());
+            assert!(
+                !action.is_query(),
+                "{} must be a write, not a query",
+                action.kind()
+            );
             assert!(!action.kind().is_empty());
         }
     }

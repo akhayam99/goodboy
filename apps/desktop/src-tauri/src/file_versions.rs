@@ -215,7 +215,8 @@ pub fn file_versions_finalize_snapshot(
 }
 
 #[tauri::command]
-pub fn file_versions_list_staged_snapshots() -> Result<ListStagedSnapshotsResult, FileVersionsError> {
+pub fn file_versions_list_staged_snapshots() -> Result<ListStagedSnapshotsResult, FileVersionsError>
+{
     let root = file_versions_root()?;
     list_staged_snapshots_with_root(&root)
 }
@@ -242,8 +243,12 @@ fn begin_snapshot_with_root(
     root: &Path,
     args: BeginSnapshotArgs,
 ) -> Result<BeginSnapshotResult, FileVersionsError> {
-    validate_uuid(&args.session_id).then_some(()).ok_or(FileVersionsError::InvalidSessionId)?;
-    validate_uuid(&args.run_id).then_some(()).ok_or(FileVersionsError::InvalidRunId)?;
+    validate_uuid(&args.session_id)
+        .then_some(())
+        .ok_or(FileVersionsError::InvalidSessionId)?;
+    validate_uuid(&args.run_id)
+        .then_some(())
+        .ok_or(FileVersionsError::InvalidRunId)?;
     let session_root = ensure_session_root(&args.session_dir, &args.session_id)?;
     let run_dir = run_staging_dir(root, &args.session_id, &args.run_id);
     if run_dir.exists() {
@@ -268,10 +273,7 @@ fn begin_snapshot_with_root(
         run_id: args.run_id,
         manifest: manifest.clone(),
     };
-    fs::write(
-        run_dir.join(MANIFEST_FILE),
-        serde_json::to_vec(&metadata)?,
-    )?;
+    fs::write(run_dir.join(MANIFEST_FILE), serde_json::to_vec(&metadata)?)?;
     Ok(BeginSnapshotResult { manifest, skipped })
 }
 
@@ -279,8 +281,12 @@ fn finalize_snapshot_with_root(
     root: &Path,
     args: FinalizeSnapshotArgs,
 ) -> Result<FinalizeSnapshotResult, FileVersionsError> {
-    validate_uuid(&args.session_id).then_some(()).ok_or(FileVersionsError::InvalidSessionId)?;
-    validate_uuid(&args.run_id).then_some(()).ok_or(FileVersionsError::InvalidRunId)?;
+    validate_uuid(&args.session_id)
+        .then_some(())
+        .ok_or(FileVersionsError::InvalidSessionId)?;
+    validate_uuid(&args.run_id)
+        .then_some(())
+        .ok_or(FileVersionsError::InvalidRunId)?;
     let session_root = ensure_session_root(&args.session_dir, &args.session_id)?;
     let run_dir = run_staging_dir(root, &args.session_id, &args.run_id);
     if !run_dir.is_dir() {
@@ -335,8 +341,13 @@ fn finalize_snapshot_with_root(
     Ok(FinalizeSnapshotResult { kept })
 }
 
-fn restore_version_with_root(root: &Path, args: RestoreVersionArgs) -> Result<(), FileVersionsError> {
-    validate_uuid(&args.session_id).then_some(()).ok_or(FileVersionsError::InvalidSessionId)?;
+fn restore_version_with_root(
+    root: &Path,
+    args: RestoreVersionArgs,
+) -> Result<(), FileVersionsError> {
+    validate_uuid(&args.session_id)
+        .then_some(())
+        .ok_or(FileVersionsError::InvalidSessionId)?;
     let stored_name = validate_stored_name(&args.stored_name)?;
     let session_root = ensure_session_root(&args.session_dir, &args.session_id)?;
     let session_store = session_store_dir(root, &args.session_id);
@@ -350,7 +361,9 @@ fn restore_version_with_root(root: &Path, args: RestoreVersionArgs) -> Result<()
 }
 
 fn delete_version_with_root(root: &Path, args: DeleteVersionArgs) -> Result<(), FileVersionsError> {
-    validate_uuid(&args.session_id).then_some(()).ok_or(FileVersionsError::InvalidSessionId)?;
+    validate_uuid(&args.session_id)
+        .then_some(())
+        .ok_or(FileVersionsError::InvalidSessionId)?;
     let stored_name = validate_stored_name(&args.stored_name)?;
     let target = session_store_dir(root, &args.session_id).join(stored_name);
     match fs::remove_file(target) {
@@ -361,7 +374,9 @@ fn delete_version_with_root(root: &Path, args: DeleteVersionArgs) -> Result<(), 
 }
 
 fn purge_session_with_root(root: &Path, args: PurgeSessionArgs) -> Result<(), FileVersionsError> {
-    validate_uuid(&args.session_id).then_some(()).ok_or(FileVersionsError::InvalidSessionId)?;
+    validate_uuid(&args.session_id)
+        .then_some(())
+        .ok_or(FileVersionsError::InvalidSessionId)?;
     let session_dir = session_store_dir(root, &args.session_id);
     match fs::remove_dir_all(session_dir) {
         Ok(()) => Ok(()),
@@ -370,7 +385,9 @@ fn purge_session_with_root(root: &Path, args: PurgeSessionArgs) -> Result<(), Fi
     }
 }
 
-fn list_staged_snapshots_with_root(root: &Path) -> Result<ListStagedSnapshotsResult, FileVersionsError> {
+fn list_staged_snapshots_with_root(
+    root: &Path,
+) -> Result<ListStagedSnapshotsResult, FileVersionsError> {
     if !root.is_dir() {
         return Ok(ListStagedSnapshotsResult {
             runs: Vec::new(),
@@ -467,7 +484,9 @@ fn session_store_dir(root: &Path, session_id: &str) -> PathBuf {
 }
 
 fn run_staging_dir(root: &Path, session_id: &str, run_id: &str) -> PathBuf {
-    session_store_dir(root, session_id).join(STAGING_DIR).join(run_id)
+    session_store_dir(root, session_id)
+        .join(STAGING_DIR)
+        .join(run_id)
 }
 
 fn validate_stored_name(stored_name: &str) -> Result<String, FileVersionsError> {
@@ -497,8 +516,8 @@ fn ensure_session_root(session_dir: &str, session_id: &str) -> Result<PathBuf, F
         return Err(FileVersionsError::SessionMarkerMissing);
     }
     let marker_raw = fs::read(marker_path)?;
-    let marker =
-        serde_json::from_slice::<SessionMarker>(&marker_raw).map_err(|_| FileVersionsError::SessionMarkerInvalid)?;
+    let marker = serde_json::from_slice::<SessionMarker>(&marker_raw)
+        .map_err(|_| FileVersionsError::SessionMarkerInvalid)?;
     if marker.session_id != session_id {
         return Err(FileVersionsError::SessionMarkerMismatch);
     }
@@ -769,7 +788,10 @@ mod tests {
                 stored_name: "copy.bin".to_string(),
             },
         );
-        assert!(matches!(absolute, Err(FileVersionsError::InvalidRelativePath)));
+        assert!(matches!(
+            absolute,
+            Err(FileVersionsError::InvalidRelativePath)
+        ));
 
         let parent = restore_version_with_root(
             &store_root,
@@ -780,7 +802,10 @@ mod tests {
                 stored_name: "copy.bin".to_string(),
             },
         );
-        assert!(matches!(parent, Err(FileVersionsError::InvalidRelativePath)));
+        assert!(matches!(
+            parent,
+            Err(FileVersionsError::InvalidRelativePath)
+        ));
 
         let mismatch = restore_version_with_root(
             &store_root,
@@ -791,7 +816,10 @@ mod tests {
                 stored_name: "copy.bin".to_string(),
             },
         );
-        assert!(matches!(mismatch, Err(FileVersionsError::SessionMarkerMismatch)));
+        assert!(matches!(
+            mismatch,
+            Err(FileVersionsError::SessionMarkerMismatch)
+        ));
 
         let _ = fs::remove_dir_all(store_root);
         let _ = fs::remove_dir_all(session_root);
@@ -890,7 +918,9 @@ mod tests {
         assert!(finalize
             .kept
             .iter()
-            .all(|entry| session_store_dir(&store_root, SESSION_ID).join(&entry.stored_name).is_file()));
+            .all(|entry| session_store_dir(&store_root, SESSION_ID)
+                .join(&entry.stored_name)
+                .is_file()));
 
         let run_dir = run_staging_dir(&store_root, SESSION_ID, RUN_ID);
         assert!(!run_dir.exists());

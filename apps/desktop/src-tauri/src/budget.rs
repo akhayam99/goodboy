@@ -91,7 +91,10 @@ pub fn budget_rule_list(state: State<'_, Db>) -> Result<Vec<BudgetRule>, DbError
 #[tauri::command]
 pub fn budget_rule_delete(state: State<'_, Db>, id: String) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    conn.execute("DELETE FROM budget_rules WHERE id = ?1", rusqlite::params![id])?;
+    conn.execute(
+        "DELETE FROM budget_rules WHERE id = ?1",
+        rusqlite::params![id],
+    )?;
     Ok(())
 }
 
@@ -187,7 +190,11 @@ fn current_month_window_ms() -> (i64, i64) {
     let (year, month) = crate::util::epoch_seconds_to_year_month(now_s);
 
     let start_ms = crate::util::ymd_to_epoch_ms(year, month, 1);
-    let (ny, nm) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+    let (ny, nm) = if month == 12 {
+        (year + 1, 1)
+    } else {
+        (year, month + 1)
+    };
     let end_ms = crate::util::ymd_to_epoch_ms(ny, nm, 1) - 1;
 
     (start_ms, end_ms)
@@ -217,7 +224,11 @@ pub fn budget_emit_alerts(
             "SELECT id, cap_usd, alert_threshold_pct FROM budget_rules WHERE provider = ?1 AND period = ?2 LIMIT 1",
         )?;
         let mut rows = stmt.query_map(rusqlite::params![provider, period], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?, row.get::<_, f64>(2)?))
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, f64>(1)?,
+                row.get::<_, f64>(2)?,
+            ))
         })?;
         match rows.next() {
             Some(r) => Some(r.map_err(DbError::Sqlite)?),
@@ -237,7 +248,11 @@ pub fn budget_emit_alerts(
             |row| row.get(0),
         )?;
 
-        let pct = if cap_usd > 0.0 { (spent / cap_usd) * 100.0 } else { 0.0 };
+        let pct = if cap_usd > 0.0 {
+            (spent / cap_usd) * 100.0
+        } else {
+            0.0
+        };
 
         let alert_kind: Option<&str> = if pct >= 100.0 {
             Some("provider-exceeded")
@@ -276,7 +291,8 @@ pub fn budget_emit_alerts(
 
     // --- session budget check ---
     let session_cap: Option<f64> = {
-        let mut stmt = conn.prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
+        let mut stmt =
+            conn.prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![session_id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => Some(r.map_err(DbError::Sqlite)?),
@@ -291,7 +307,11 @@ pub fn budget_emit_alerts(
             |row| row.get(0),
         )?;
 
-        let pct = if cap_usd > 0.0 { (spent / cap_usd) * 100.0 } else { 0.0 };
+        let pct = if cap_usd > 0.0 {
+            (spent / cap_usd) * 100.0
+        } else {
+            0.0
+        };
 
         let alert_kind: Option<&str> = if pct >= 100.0 {
             Some("session-exceeded")
@@ -370,7 +390,11 @@ pub fn check_provider_budget(
     )?;
 
     let remaining = cap_usd - spent;
-    let pct = if cap_usd > 0.0 { (spent / cap_usd) * 100.0 } else { 0.0 };
+    let pct = if cap_usd > 0.0 {
+        (spent / cap_usd) * 100.0
+    } else {
+        0.0
+    };
 
     Ok(BudgetCheckResult {
         remaining_usd: remaining,
@@ -387,8 +411,8 @@ pub fn check_session_budget(
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
 
     let cap: Option<f64> = {
-        let mut stmt = conn
-            .prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
+        let mut stmt =
+            conn.prepare("SELECT soft_cap_usd FROM session_budgets WHERE session_id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![session_id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => Some(r.map_err(DbError::Sqlite)?),
@@ -411,7 +435,11 @@ pub fn check_session_budget(
     )?;
 
     let remaining = cap_usd - spent;
-    let pct = if cap_usd > 0.0 { (spent / cap_usd) * 100.0 } else { 0.0 };
+    let pct = if cap_usd > 0.0 {
+        (spent / cap_usd) * 100.0
+    } else {
+        0.0
+    };
 
     Ok(BudgetCheckResult {
         remaining_usd: remaining,

@@ -61,10 +61,7 @@ impl From<reqwest::Error> for GitlabError {
 fn api_base(host: &str) -> Result<String, GitlabError> {
     let trimmed = host.trim().trim_end_matches('/');
     if !(trimmed.starts_with("http://") || trimmed.starts_with("https://")) {
-        return Err(GitlabError::InvalidShape(format!(
-            "invalid host: {}",
-            host
-        )));
+        return Err(GitlabError::InvalidShape(format!("invalid host: {}", host)));
     }
     Ok(format!("{}/api/v4", trimmed))
 }
@@ -603,7 +600,10 @@ mod tests {
 
     #[test]
     fn api_base_appends_v4_for_gitlab_com() {
-        assert_eq!(api_base("https://gitlab.com").unwrap(), "https://gitlab.com/api/v4");
+        assert_eq!(
+            api_base("https://gitlab.com").unwrap(),
+            "https://gitlab.com/api/v4"
+        );
     }
 
     #[test]
@@ -684,7 +684,10 @@ mod tests {
         let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
         let author = mr.author.unwrap();
         assert_eq!(author.username, "alice");
-        assert_eq!(author.avatar_url.as_deref(), Some("https://gitlab.com/a.png"));
+        assert_eq!(
+            author.avatar_url.as_deref(),
+            Some("https://gitlab.com/a.png")
+        );
         let reviewers = mr.reviewers.unwrap();
         assert_eq!(reviewers[0].username, "bob");
         assert!(reviewers[0].avatar_url.is_none());
