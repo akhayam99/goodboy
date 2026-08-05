@@ -22,6 +22,7 @@ vi.mock('../../../shared/lib/db', () => ({
 }));
 
 import { createPlansSlice } from './index';
+import { WorkflowGateError } from '../workflows/workflowActivationGate';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WF_ID = 'wf-refactor' as WorkflowId;
@@ -118,6 +119,7 @@ type FakeState = {
   phaseTemplates: Record<WorkspaceId, ReadonlyArray<Workflow>>;
   spawnAgent: ReturnType<typeof vi.fn>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
+  emitNotification: ReturnType<typeof vi.fn>;
 };
 
 function buildSlice(state: FakeState) {
@@ -156,6 +158,7 @@ function defaultState(overrides: Partial<FakeState> = {}): FakeState {
     phaseTemplates: { [WS_ID]: [wf] },
     spawnAgent: vi.fn(async () => 'spawned' as AgentId),
     activateWorkflowAgent: vi.fn(async () => undefined),
+    emitNotification: vi.fn(async () => undefined),
     ...overrides,
   };
 }
@@ -249,6 +252,29 @@ describe('runPlan, workflow-aware spawn routing', () => {
         });
       },
     );
+  });
+
+  describe('workflow gate rejects the activation (open questions block the run)', () => {
+    it('notifies instead of throwing, resolves to null, and does not free-spawn', async () => {
+      const state = defaultState({
+        activateWorkflowAgent: vi.fn(async () => {
+          throw new WorkflowGateError({ reason: 'questions' });
+        }),
+      });
+      const slice = buildSlice(state);
+
+      await expect(slice.runPlan(SESSION_ID, PLAN_ID)).resolves.toBeNull();
+
+      expect(state.activateWorkflowAgent).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        agentId: IMPL_AGENT_ID,
+        explicitPlanId: PLAN_ID,
+        focus: 'none',
+      });
+      expect(state.emitNotification).toHaveBeenCalledTimes(1);
+      expect(state.emitNotification.mock.calls[0]![2]).toBe('workflow step held back');
+      expect(state.spawnAgent).not.toHaveBeenCalled();
+    });
   });
 
   describe('gate A, session has no workflows attached → free-spawn', () => {
