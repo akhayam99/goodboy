@@ -46,7 +46,18 @@ describe('hydrateSlackThreadTask', () => {
         threadTs: '1723456789.123456',
         channels: CHANNELS,
         messages: [message('1723456789.123456', 'deploy is stuck')],
-      }).identifier,
+      })?.identifier,
     ).toBe('#C999 › deploy is stuck');
+  });
+
+  it('refuses to hydrate a thread that came back with no messages', () => {
+    expect(
+      hydrateSlackThreadTask({
+        channelId: 'C024BE7LR',
+        threadTs: '1723456789.123456',
+        channels: CHANNELS,
+        messages: [],
+      }),
+    ).toBeNull();
   });
 });

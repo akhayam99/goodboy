@@ -18,10 +18,13 @@ export const hydrateSlackThreadTask = ({
   threadTs,
   channels,
   messages,
-}: Params): Result => {
+}: Params): Result | null => {
   const channelName = channels.find((channel) => channel.id === channelId)?.name ?? channelId;
   const root = messages.find((message) => message.ts === threadTs) ?? messages[0] ?? null;
-  const text = root?.text ?? '';
+  if (root == null) {
+    return null;
+  }
+  const text = root.text;
   return {
     identifier: slackThreadIdentifier({ channelName, text }),
     title: slackThreadTitle({ text }),

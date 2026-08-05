@@ -49,12 +49,16 @@ const hydrateSlackCandidate = async ({
     slackListChannels({ workspaceId }),
     slackGetThread({ workspaceId, channelId: parsed.channelId, threadTs: parsed.threadTs }),
   ]);
-  return hydrateSlackThreadTask({
+  const hydrated = hydrateSlackThreadTask({
     channelId: parsed.channelId,
     threadTs: parsed.threadTs,
     channels,
     messages,
   });
+  if (hydrated == null) {
+    throw new Error('That thread has no messages to read. It may have been deleted.');
+  }
+  return hydrated;
 };
 
 export const LinkIssueForm = ({
