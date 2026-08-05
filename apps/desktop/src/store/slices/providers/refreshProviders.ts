@@ -22,6 +22,7 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
         refreshProviderDetection({ id: 'opencode' }),
       ]);
     const openrouterStatus = { ...opencodeStatus, id: 'openrouter' };
+    const moonshotStatus = { ...opencodeStatus, id: 'moonshot' };
     const statuses: ProviderStatuses = {
       anthropic: providerStatus,
       cursor: cursorStatus,
@@ -29,16 +30,25 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
       gemini: geminiStatus,
       opencode: opencodeStatus,
       openrouter: openrouterStatus,
+      moonshot: moonshotStatus,
     };
-    const [anthropicAuth, cursorAuth, codexAuth, geminiAuth, opencodeAuth, openrouterAuth] =
-      await Promise.all([
-        checkProviderAuth('anthropic'),
-        checkProviderAuth('cursor'),
-        checkProviderAuth('codex'),
-        checkProviderAuth('gemini'),
-        checkProviderAuth('opencode'),
-        checkProviderAuth('openrouter'),
-      ]);
+    const [
+      anthropicAuth,
+      cursorAuth,
+      codexAuth,
+      geminiAuth,
+      opencodeAuth,
+      openrouterAuth,
+      moonshotAuth,
+    ] = await Promise.all([
+      checkProviderAuth('anthropic'),
+      checkProviderAuth('cursor'),
+      checkProviderAuth('codex'),
+      checkProviderAuth('gemini'),
+      checkProviderAuth('opencode'),
+      checkProviderAuth('openrouter'),
+      checkProviderAuth('moonshot'),
+    ]);
     const authResults: ProviderAuthResults = {
       anthropic: anthropicAuth,
       cursor: cursorAuth,
@@ -46,6 +56,7 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
       gemini: geminiAuth,
       opencode: opencodeAuth,
       openrouter: openrouterAuth,
+      moonshot: moonshotAuth,
     };
     if (
       previousCursorIdentity !== cursorAuth.identity ||

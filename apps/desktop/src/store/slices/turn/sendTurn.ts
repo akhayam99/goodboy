@@ -96,6 +96,16 @@ import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
 import type { GetFn, SetFn } from './types';
 
+const EFFORT_FLAG_BY_PROVIDER = {
+  anthropic: '--effort',
+  cursor: null,
+  codex: null,
+  gemini: null,
+  opencode: '--variant',
+  openrouter: '--variant',
+  moonshot: '--variant',
+} satisfies Readonly<Record<ProviderId, string | null>>;
+
 type Input = {
   sessionId: SessionId;
   agentId?: AgentId;
@@ -455,12 +465,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         { sessionId },
       );
     }
-    const explicitEffortFlag =
-      provider === 'anthropic'
-        ? '--effort'
-        : provider === 'opencode' || provider === 'openrouter'
-          ? '--variant'
-          : null;
+    const explicitEffortFlag = EFFORT_FLAG_BY_PROVIDER[provider];
     const effortFlagIndex =
       explicitEffortFlag == null ? -1 : resolvedModel.args.indexOf(explicitEffortFlag);
     const codexEffort = resolvedModel.args

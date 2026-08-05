@@ -26,6 +26,7 @@ const statusesFor = ({ available }: Params): ProviderStatuses => ({
   gemini: null,
   opencode: runtimeStatus({ available }),
   openrouter: { ...runtimeStatus({ available }), id: 'openrouter' },
+  moonshot: { ...runtimeStatus({ available }), id: 'moonshot' },
 });
 
 describe('OpenRouter provider connection', () => {
@@ -57,5 +58,20 @@ describe('OpenRouter provider connection', () => {
     expect(openrouter?.connection).toBe('connected');
     expect(openrouter?.binary).toBe('opencode');
     expect(openrouter?.version).toBe('1.14.48');
+  });
+});
+
+describe('Moonshot provider connection', () => {
+  it("builds Moonshot as linked from its own credential, not OpenRouter's", () => {
+    const providers = buildProviderList(
+      statusesFor({ available: true }),
+      {},
+      new Set<ProviderId>(['moonshot']),
+    );
+    const moonshot = providers.find((provider) => provider.id === 'moonshot');
+    const openrouter = providers.find((provider) => provider.id === 'openrouter');
+    expect(moonshot?.connection).toBe('connected');
+    expect(moonshot?.binary).toBe('opencode');
+    expect(openrouter?.connection).toBe('installed_disconnected');
   });
 });

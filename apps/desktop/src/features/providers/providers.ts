@@ -36,6 +36,7 @@ export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
   gemini: 'gemini',
   opencode: 'opencode',
   openrouter: 'openrouter',
+  moonshot: 'moonshot',
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
@@ -45,6 +46,7 @@ const PROVIDER_DOCS: Record<ProviderId, string> = {
   gemini: 'https://antigravity.google/cli',
   opencode: 'https://opencode.ai/docs',
   openrouter: 'https://openrouter.ai/docs',
+  moonshot: 'https://platform.moonshot.ai/docs',
 };
 
 const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
@@ -54,6 +56,7 @@ const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
   gemini: 'agy',
   opencode: 'opencode',
   openrouter: 'opencode',
+  moonshot: 'opencode',
 };
 
 const TAURI_GET_CMD: Record<ProviderId, string> = {
@@ -63,6 +66,7 @@ const TAURI_GET_CMD: Record<ProviderId, string> = {
   gemini: 'get_gemini_status',
   opencode: 'get_opencode_status',
   openrouter: 'get_openrouter_status',
+  moonshot: 'get_moonshot_status',
 };
 
 const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
@@ -72,6 +76,7 @@ const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
   gemini: 'refresh_gemini_status',
   opencode: 'refresh_opencode_status',
   openrouter: 'refresh_openrouter_status',
+  moonshot: 'refresh_moonshot_status',
 };
 
 const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
@@ -90,6 +95,7 @@ export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('
 export const getGeminiStatus = (): Promise<ProviderStatus> => getProviderStatus('gemini');
 export const getOpenCodeStatus = (): Promise<ProviderStatus> => getProviderStatus('opencode');
 export const getOpenRouterStatus = (): Promise<ProviderStatus> => getProviderStatus('openrouter');
+export const getMoonshotStatus = (): Promise<ProviderStatus> => getProviderStatus('moonshot');
 
 type RefreshParams = {
   readonly id: ProviderId;
@@ -197,6 +203,7 @@ export type ProviderStatuses = {
   readonly gemini: ProviderStatus | null;
   readonly opencode: ProviderStatus | null;
   readonly openrouter: ProviderStatus | null;
+  readonly moonshot: ProviderStatus | null;
 };
 
 export const buildProviderList = (
@@ -204,7 +211,15 @@ export const buildProviderList = (
   auth?: ProviderAuthResults,
   credentialProviderIds: ReadonlySet<ProviderId> = new Set(),
 ): ReadonlyArray<ProviderInfo> => {
-  const ids: ProviderId[] = ['anthropic', 'cursor', 'codex', 'gemini', 'opencode', 'openrouter'];
+  const ids: ProviderId[] = [
+    'anthropic',
+    'cursor',
+    'codex',
+    'gemini',
+    'opencode',
+    'openrouter',
+    'moonshot',
+  ];
   return ids.map((id) => {
     if (isApiProvider({ id })) {
       return apiProviderInfo({

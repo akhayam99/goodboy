@@ -41,7 +41,32 @@ fn probe_for(provider_id: &str, api_key: &str) -> Probe {
             url: "https://openrouter.ai/api/v1/auth/key",
             headers: vec![("authorization", format!("Bearer {api_key}"))],
         },
+        "moonshot" => Probe::Header {
+            url: "https://api.moonshot.ai/v1/models",
+            headers: vec![("authorization", format!("Bearer {api_key}"))],
+        },
         _ => Probe::Skip,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn moonshot_probes_its_own_model_list() {
+        match probe_for("moonshot", "sk-test") {
+            Probe::Header { url, headers } => {
+                assert_eq!(url, "https://api.moonshot.ai/v1/models");
+                assert_eq!(headers, vec![("authorization", "Bearer sk-test".to_string())]);
+            }
+            _ => panic!("moonshot must not fall through to Probe::Skip"),
+        }
+    }
+
+    #[test]
+    fn an_unknown_provider_still_skips_the_probe() {
+        assert!(matches!(probe_for("whatever", "sk-test"), Probe::Skip));
     }
 }
 

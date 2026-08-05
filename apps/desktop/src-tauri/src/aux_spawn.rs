@@ -30,7 +30,7 @@ pub fn push_effort_args(provider_id: &str, effort: Option<&str>, args: &mut Vec<
             args.push("-c".to_string());
             args.push(format!("model_reasoning_effort=\"{level}\""));
         }
-        "opencode" | "openrouter" => {
+        "opencode" | "openrouter" | "moonshot" => {
             args.push("--variant".to_string());
             args.push(level.to_string());
         }
@@ -67,6 +67,13 @@ mod tests {
         let mut opencode = Vec::new();
         push_effort_args("opencode", Some("max"), &mut opencode);
         assert_eq!(opencode, vec!["--variant".to_string(), "max".to_string()]);
+
+        let mut moonshot = Vec::new();
+        push_effort_args("moonshot", Some("medium"), &mut moonshot);
+        assert_eq!(
+            moonshot,
+            vec!["--variant".to_string(), "medium".to_string()]
+        );
 
         let mut gemini = Vec::new();
         push_effort_args("gemini", Some("high"), &mut gemini);

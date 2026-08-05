@@ -10,6 +10,7 @@ export const selectionForModel = ({ model, effort }: Params): ModelSelection => 
     case 'anthropic':
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return { key: model.key, effort };
     case 'codex':
       return { key: model.key, effort, variant: model.variants[0]?.id };

@@ -80,6 +80,7 @@ export const INITIAL_CONNECT_MAP: ProviderConnectMap = {
   gemini: IDLE_CONNECT,
   opencode: IDLE_CONNECT,
   openrouter: IDLE_CONNECT,
+  moonshot: IDLE_CONNECT,
 };
 
 export const ACTIVE_CONNECT_PHASES: ReadonlySet<ProviderConnectPhase> =
@@ -103,4 +104,5 @@ export const INITIAL_LIFECYCLE_MAP: ProviderLifecycleMap = {
   gemini: IDLE_LIFECYCLE,
   opencode: IDLE_LIFECYCLE,
   openrouter: IDLE_LIFECYCLE,
+  moonshot: IDLE_LIFECYCLE,
 };

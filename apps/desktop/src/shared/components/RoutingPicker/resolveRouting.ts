@@ -52,6 +52,7 @@ const effortsFor = ({ model, selection, fallback }: EffortParams): ReadonlyArray
     case 'gemini':
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return model.efforts;
     case 'cursor': {
       const thinking = selection.toggles?.thinking ?? model.combos[0]?.thinking ?? false;

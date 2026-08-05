@@ -22,6 +22,12 @@ import { IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types';
 const OUTPUT_TAIL_CAP = 4 * 1024;
 const ERROR_TAIL_CAP = 500;
 
+const OPENCODE_BINARY_PROVIDERS: ReadonlySet<ProviderId> = new Set<ProviderId>([
+  'opencode',
+  'openrouter',
+  'moonshot',
+]);
+
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
   if (action === 'install') {
     return 'installing';
@@ -183,20 +189,23 @@ export const runLifecycle = async (
     const errorTail =
       finalPhase === 'error' ? stripAnsi({ text: outputTail }).slice(-ERROR_TAIL_CAP) : null;
 
+    const sharesOpencodeBinary = OPENCODE_BINARY_PROVIDERS.has(providerId);
+
     set((state) => {
       const statuses: ProviderStatuses = {
         anthropic: providerId === 'anthropic' ? payload.status : state.providerStatus,
         cursor: providerId === 'cursor' ? payload.status : state.cursorStatus,
         codex: providerId === 'codex' ? payload.status : state.codexStatus,
         gemini: providerId === 'gemini' ? payload.status : state.geminiStatus,
-        opencode:
-          providerId === 'opencode' || providerId === 'openrouter'
-            ? { ...payload.status, id: 'opencode' }
-            : storedStatus({ providerId: 'opencode', providers: state.providers }),
-        openrouter:
-          providerId === 'opencode' || providerId === 'openrouter'
-            ? { ...payload.status, id: 'openrouter' }
-            : storedStatus({ providerId: 'openrouter', providers: state.providers }),
+        opencode: sharesOpencodeBinary
+          ? { ...payload.status, id: 'opencode' }
+          : storedStatus({ providerId: 'opencode', providers: state.providers }),
+        openrouter: sharesOpencodeBinary
+          ? { ...payload.status, id: 'openrouter' }
+          : storedStatus({ providerId: 'openrouter', providers: state.providers }),
+        moonshot: sharesOpencodeBinary
+          ? { ...payload.status, id: 'moonshot' }
+          : storedStatus({ providerId: 'moonshot', providers: state.providers }),
       };
       const authResults: ProviderAuthResults = {
         ...(state.authResults ?? {}),
