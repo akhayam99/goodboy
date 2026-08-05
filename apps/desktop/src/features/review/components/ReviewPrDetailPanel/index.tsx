@@ -153,9 +153,6 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
             <div className="flex items-center gap-3">
               {error != null ? <span className="text-xs text-danger">{error}</span> : null}
               <span className="flex-1" />
-              <Button variant="ghost" onClick={() => window.open(pr.url, '_blank')}>
-                Open in browser
-              </Button>
               <Button onClick={() => void reviewLocally()} disabled={busy}>
                 {busy ? 'Starting review session…' : 'Review locally'}
                 {!busy ? <ArrowRight size={13} aria-hidden /> : null}

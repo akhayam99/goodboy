@@ -79,7 +79,7 @@ describe('LinkedWorkSection', () => {
     expect(screen.getByRole('button', { name: 'Link work' })).toBeDefined();
   });
 
-  it('renders every linked issue and routes it to the PR lens', () => {
+  it('renders every linked issue and opens it externally instead of routing to the PR lens', () => {
     store.sessionGithub = {
       'sess-1': {
         linkedIssues: [
@@ -96,13 +96,9 @@ describe('LinkedWorkSection', () => {
     expect(screen.getByText('First issue')).toBeDefined();
     expect(screen.getByText('#9')).toBeDefined();
     expect(screen.getByText('Second issue')).toBeDefined();
-    const studioListener = vi.fn();
-    window.addEventListener('goodboy:open-github-studio', studioListener);
     fireEvent.click(screen.getByRole('button', { name: /#9 Second issue/i }));
-    window.removeEventListener('goodboy:open-github-studio', studioListener);
-    expect(onSelectLens).toHaveBeenCalledWith('pr');
-    expect(studioListener).not.toHaveBeenCalled();
-    expect(mocks.openUrl).not.toHaveBeenCalled();
+    expect(onSelectLens).not.toHaveBeenCalled();
+    expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/acme/repo/issues/9');
 
     const secondIssueRow = screen.getByRole('button', { name: /#9 Second issue/i }).closest('div');
     expect(secondIssueRow).not.toBeNull();
