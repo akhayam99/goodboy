@@ -7,6 +7,47 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.62
+
+Click a linked issue and you land on that issue, not on a list of them. The review thread behind a resolver reads in the chat card, and a workflow step that refuses to start finally says why.
+
+### [#1228] A linked Linear, Sentry or GitLab issue opens focused
+
+Clicking a named linked object from Linked work or from the pull request pane opened its provider lens on the full inbox, with nothing selected. You clicked one issue and got the list. GitHub was the only source that had a focus slot, so it was the only one that landed where you pointed.
+
+The three other sources have one now. A click carries the provider and the external id into the store, and the pane behind the Linear, Sentry and GitLab lenses opens that task's detail instead of the list. Opening the same lens from the rail still shows the list, because the focus clears the moment you change lens, so nothing you clicked earlier is waiting for you the next time you go looking.
+
+GitHub goes through the same action for symmetry, which fixes a smaller thing on the way: a session with two linked GitHub tasks used to always open the first one, and now it opens the one you clicked. A linked pull request chip inside a Linear issue routes to the pull request in the app rather than to a browser tab, and falls back to the browser when the session does not track that pull request or when a studio overlay is covering the surface it would navigate to.
+
+### [#1227] The review thread reads in the chat card
+
+When a resolve fans out, the card in the transcript listed each review thread by title and offered a button that left for a browser tab. The thread body was already in memory, fetched with the pull request detail, and the card showed none of it.
+
+The card now docks the real thread, collapsed, and opens it in place with the comment bodies, the authors and the resolved state. It reuses the same thread view the pull request conversation renders, so the two agree. When the pull request detail has not loaded yet, or the thread is not among the ones loaded, the card falls back to the summary it always showed with an honest link out. The resolver lane's jump to a source comment now also matches its way back to a thread in the app before falling back to the browser.
+
+Reading is all this ships. Replying and resolving from the docked thread stay where they are, in the queue that batches them, because moving them is a separate decision.
+
+### [#1230] A workflow step that will not start says so
+
+The advance button re-read the gate from the database, got refused, and showed nothing: the button reset, the run stalled, no message. The rejection had no catch anywhere along the chain, so it landed nowhere. This has now been the same failure twice.
+
+A refused advance raises the notification that was already written for it, addressed to the session, and the skip-a-stuck-step path got the same treatment. Underneath both, the app now has a global handler for a rejected promise that nothing caught, so a failure with no home surfaces instead of vanishing. Expect to see failures that were silent before.
+
+Two engine surfaces stopped lying while we were in there. One unanswered question from a free agent used to block every workflow run in the session, because a question with no run attached matched every run; only a question belonging to a run blocks that run now. And the next-step badge recomputed its model from your current preferences while the run used the model frozen when the agent was spawned, so changing a preference mid-session made the badge show a model that was not going to run. The badge reads the frozen value, on both the chat strip and the workflows list.
+
+### [#1231] Answer chips are in English
+
+A yes-no question from an agent rendered its two answer chips in Italian. The fallback that generates them when a question ships no answers of its own, which is most of the time, was written with Italian words in it. They read `yes` and `no` now, and the question patterns that trigger them are English only.
+
+Completed work on an integration lens also folds behind a count instead of listing every closed issue inline, matching how the workflows lens has always handled its finished items.
+
+### Smaller fixes
+
+- [#1226] Opening the diff from a resolver lands on a fresh view instead of whichever commit the previous resolver was looking at
+- [#1229] A resolution that failed to push loads with the session instead of waiting for you to visit the overview first, so the resolve lens shows its pending push and its rail marker without a detour
+- [#1229] A resolver that fails to start reports it, rather than failing silently
+- [#1231] The kind an agent gets assigned no longer prints a warning to the console in release builds
+
 ## Goodboy v0.1.61
 
 A linked GitHub issue opens inside the session now, from every place that lists one. A plan run that gets held back says so instead of doing nothing, and a resolver verdict survives a restart.
