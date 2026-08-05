@@ -149,7 +149,7 @@ export type WorkspaceScript = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceIntegrationProvider = 'linear' | 'sentry' | 'gitlab' | 'jira';
+export type WorkspaceIntegrationProvider = 'linear' | 'sentry' | 'gitlab' | 'jira' | 'bitbucket';
 
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
@@ -178,11 +178,20 @@ export type JiraIntegrationConfig = Readonly<{
   displayName?: string;
 }>;
 
+export type BitbucketIntegrationConfig = Readonly<{
+  workspaceSlug: string;
+  email: string;
+  workspaceName?: string;
+  accountId?: string;
+  displayName?: string;
+}>;
+
 export type WorkspaceIntegrationConfig =
   | LinearIntegrationConfig
   | SentryIntegrationConfig
   | GitlabIntegrationConfig
-  | JiraIntegrationConfig;
+  | JiraIntegrationConfig
+  | BitbucketIntegrationConfig;
 
 type WorkspaceIntegrationBase = Readonly<{
   id: WorkspaceIntegrationId;
@@ -216,11 +225,18 @@ export type JiraWorkspaceIntegration = WorkspaceIntegrationBase &
     config: JiraIntegrationConfig;
   }>;
 
+export type BitbucketWorkspaceIntegration = WorkspaceIntegrationBase &
+  Readonly<{
+    provider: 'bitbucket';
+    config: BitbucketIntegrationConfig;
+  }>;
+
 export type WorkspaceIntegration =
   | LinearWorkspaceIntegration
   | SentryWorkspaceIntegration
   | GitlabWorkspaceIntegration
-  | JiraWorkspaceIntegration;
+  | JiraWorkspaceIntegration
+  | BitbucketWorkspaceIntegration;
 
 export type SessionExternalTaskProvider = 'linear' | 'sentry' | 'gitlab' | 'github' | 'jira';
 
