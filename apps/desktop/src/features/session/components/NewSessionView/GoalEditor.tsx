@@ -60,7 +60,7 @@ export const GoalEditor = ({
             disabled={draft.trim().length === 0 || polishing}
           >
             <Sparkles size={13} aria-hidden />
-            Polish with AI
+            Polish
           </Button>
           <Button size="sm" onClick={onSave} disabled={polishing}>
             Save

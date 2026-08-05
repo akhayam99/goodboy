@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { CircleCheck, X } from 'lucide-react';
-import { Divider, ResizeHandle, ScrollFade, SelectableRow, cn } from '@goodboy/ui';
+import { CountToggle, Divider, ResizeHandle, ScrollFade, SelectableRow, cn } from '@goodboy/ui';
 import type { PlanId, PlanWithCount } from '@goodboy/types';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { fmtTimestamp } from './fmtTimestamp';
 import { planStatusBadge } from './planStatusBadge';
-import { FiledItemsToggle } from '../../../../shared/components/FiledItemsToggle';
 
 type Props = {
   readonly plans: ReadonlyArray<PlanWithCount>;
@@ -83,10 +82,10 @@ export const PlanListPanel = ({ plans, selectedId, onSelect, onClose }: Props) =
               );
             })}
           </ul>
-          <div className="px-3 pb-3">
-            <FiledItemsToggle
-              noun="consumed"
-              items="plans"
+          <div className="flex justify-center px-3 pb-3">
+            <CountToggle
+              label="Consumed"
+              itemsLabel="plans"
               count={filed.length}
               isShown={showFiled}
               icon={CircleCheck}

@@ -255,9 +255,15 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setValue(content);
     await scope.recordScopeOutcome('accepted');
     try {
-      await spawnAgent(session.id, { kindOverride: target, focus: 'agent' });
+      const agentId = await spawnAgent(session.id, { kindOverride: target, focus: 'none' });
+      announceAgentStarted({
+        sessionId: session.id,
+        agentId,
+        title: 'Agent started',
+        message: 'The agent is picking this up. You can keep working.',
+      });
     } catch {
-      // ignore
+      return;
     }
   };
 

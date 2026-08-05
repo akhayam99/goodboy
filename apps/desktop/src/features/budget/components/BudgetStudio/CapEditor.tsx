@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Input, formatUsd } from '@goodboy/ui';
+import { Trash2 } from 'lucide-react';
+import { Button, InlineConfirm, Input, formatUsd } from '@goodboy/ui';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 
@@ -22,6 +23,7 @@ export const CapEditor = ({
 }: Props) => {
   const [draft, setDraft] = useState(currentCapUsd !== null ? String(currentCapUsd) : '');
   const [busy, setBusy] = useState(false);
+  const [removeArmed, setRemoveArmed] = useState(false);
   const previousCapRef = useRef(currentCapUsd);
 
   useEffect(() => {
@@ -57,8 +59,26 @@ export const CapEditor = ({
       await onRemove();
     } finally {
       setBusy(false);
+      setRemoveArmed(false);
     }
   };
+
+  if (removeArmed && currentCapUsd !== null) {
+    return (
+      <StudioWidget label={label} hint={hint}>
+        <InlineConfirm
+          role="alert"
+          icon={<Trash2 size={12} aria-hidden />}
+          title={`Remove the ${formatUsd(currentCapUsd)} cap?`}
+          confirmLabel="Remove"
+          isBusy={busy}
+          autoDisarmMs={4000}
+          onConfirm={remove}
+          onCancel={() => setRemoveArmed(false)}
+        />
+      </StudioWidget>
+    );
+  }
 
   return (
     <StudioWidget label={label} hint={hint}>
@@ -83,7 +103,7 @@ export const CapEditor = ({
           {currentCapUsd !== null ? 'Update cap' : 'Set cap'}
         </Button>
         {currentCapUsd !== null && onRemove ? (
-          <Button variant="ghost" size="sm" disabled={busy} onClick={() => void remove()}>
+          <Button variant="ghost" size="sm" disabled={busy} onClick={() => setRemoveArmed(true)}>
             Remove
           </Button>
         ) : null}

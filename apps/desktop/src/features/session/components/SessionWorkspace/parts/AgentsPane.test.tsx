@@ -126,7 +126,7 @@ describe('AgentsPane', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Report completed agents' }));
-    const toggle = screen.getByRole('button', { name: 'Show completed (2)' });
+    const toggle = screen.getByRole('button', { name: 'Completed (2)' });
     const create = screen.getByTestId('header-spawn');
     const lane = screen.getByTestId('agents-lane');
     expect(create.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

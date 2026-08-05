@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { ArrowRight, GitBranch, GitFork, GitMerge, Unlink } from 'lucide-react';
-import { Button, Eyebrow } from '@goodboy/ui';
+import { Button, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { LinkedIssue, PullRequestState, Session, SessionId, Workspace } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
@@ -62,6 +62,20 @@ const hostTitle = ({ remoteKind, hasBothProviders }: HostTitleParams): string =>
   }
   return 'Code host work';
 };
+
+const PrPaneSkeleton = () => (
+  <div className="flex flex-col gap-4" role="status" aria-label="Loading pull request">
+    <div className="flex flex-col gap-1.5">
+      <Skeleton className="h-3 w-24 rounded" />
+      <Skeleton className="h-4 w-3/4 rounded" />
+    </div>
+    <div className="flex flex-col gap-1">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Skeleton key={i} className="h-9 w-full rounded-lg" />
+      ))}
+    </div>
+  </div>
+);
 
 const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
   branch == null ? null : (
@@ -242,6 +256,7 @@ const GithubPrCard = ({
   );
   const loading = github?.loading ?? false;
   const error = github?.error ?? null;
+  const isInitialLoad = loading && (github?.fetchedAt ?? null) == null;
   const checks = detail?.checks ?? EMPTY_ARRAY;
   const unresolved = (detail?.comments ?? []).filter(
     (c) => c.source === 'review' && c.resolved === false,
@@ -313,6 +328,10 @@ const GithubPrCard = ({
       {children}
     </StudioDetailLayout>
   );
+
+  if (isInitialLoad) {
+    return shell({ children: <PrPaneSkeleton /> });
+  }
 
   if (!pr && remoteKind !== 'github') {
     return shell({ children: <MissingGithubRemoteEmptyState /> });

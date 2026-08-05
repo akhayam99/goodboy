@@ -226,7 +226,7 @@ describe('review-drafts slice', () => {
     expect(markPublishedSpy).toHaveBeenCalledWith(
       expect.objectContaining({ ids: ['draft-1', 'draft-2'] }),
     );
-    expect(result).toEqual({ published: 2, stale: [], failed: [] });
+    expect(result).toEqual({ published: 2, stale: [], failed: [], mismatched: [] });
     expect(getState().reviewDrafts[SESSION_ID]?.map((draft) => draft.status)).toEqual([
       'published',
       'published',
@@ -318,6 +318,53 @@ describe('review-drafts slice', () => {
     expect(markPublishedSpy).toHaveBeenCalledWith(expect.objectContaining({ ids: ['draft-1'] }));
     expect(getState().reviewDrafts[SESSION_ID]?.map((draft) => draft.status)).toEqual([
       'published',
+      'draft',
+    ]);
+  });
+
+  it('leaves drafts untouched when the session relinks to a different pr (review board entry)', async () => {
+    const otherTask: SessionExternalTask = {
+      ...githubTask,
+      externalId: '77',
+      identifier: '#77',
+      url: 'https://github.com/acme/api/pull/77',
+    };
+    const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-2', line: 3 } })];
+    const { slice, getState } = buildHarness({
+      reviewDrafts: { [SESSION_ID]: drafts },
+      sessionExternalTasks: { [SESSION_ID]: [otherTask] },
+    });
+
+    const result = await slice.publishPrReview(SESSION_ID, { verdict: 'approve', body: 'lgtm' });
+
+    expect(ghPrDiffSpy.mock.calls[0]?.slice(0, 2)).toEqual(['acme/api', 77]);
+    expect(addPullRequestReviewSpy.mock.calls[0]?.[1].threads).toEqual([]);
+    expect(result.published).toBe(0);
+    expect(result.mismatched.map((draft) => draft.id)).toEqual(['draft-1', 'draft-2']);
+    expect(getState().reviewDrafts[SESSION_ID]?.map((draft) => draft.status)).toEqual([
+      'draft',
+      'draft',
+    ]);
+  });
+
+  it('leaves drafts untouched when the caller publishes against an explicit target that does not match (pr detail panel entry)', async () => {
+    const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-2', line: 3 } })];
+    const { slice, getState } = buildHarness({
+      reviewDrafts: { [SESSION_ID]: drafts },
+    });
+
+    const result = await slice.publishPrReview(SESSION_ID, {
+      verdict: 'approve',
+      body: 'lgtm',
+      target: { provider: 'github', repo: 'acme/other', prNumber: 99 },
+    });
+
+    expect(ghPrDiffSpy.mock.calls[0]?.slice(0, 2)).toEqual(['acme/other', 99]);
+    expect(addPullRequestReviewSpy.mock.calls[0]?.[1].threads).toEqual([]);
+    expect(result.published).toBe(0);
+    expect(result.mismatched.map((draft) => draft.id)).toEqual(['draft-1', 'draft-2']);
+    expect(getState().reviewDrafts[SESSION_ID]?.map((draft) => draft.status)).toEqual([
+      'draft',
       'draft',
     ]);
   });

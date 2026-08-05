@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { CircleCheck } from 'lucide-react';
+import { CountToggle } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentInspector } from '../../AgentInspector';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
 import { StandaloneAgentsLane } from '../../StandaloneAgentsLane';
 import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
 
 type Props = {
   readonly session: Session;
@@ -55,14 +55,16 @@ export const AgentsPane = ({
           showCompleted={showCompleted}
           onCompletedCountChange={setCompletedCount}
           filedToggle={
-            <FiledItemsToggle
-              noun="completed"
-              items="agents"
-              count={completedCount}
-              isShown={showCompleted}
-              icon={CircleCheck}
-              onChange={onShowCompletedChange}
-            />
+            <div className="flex justify-center">
+              <CountToggle
+                label="Completed"
+                itemsLabel="agents"
+                count={completedCount}
+                isShown={showCompleted}
+                icon={CircleCheck}
+                onChange={onShowCompletedChange}
+              />
+            </div>
           }
         />
       </PaneShell>

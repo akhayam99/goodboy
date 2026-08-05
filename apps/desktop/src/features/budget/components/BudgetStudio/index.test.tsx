@@ -172,6 +172,7 @@ describe('BudgetStudio', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /remove/i }));
+    fireEvent.click(screen.getByRole('button', { name: /remove/i }));
     expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
   });
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Bot, Check } from 'lucide-react';
+import { CountToggle, Skeleton } from '@goodboy/ui';
 import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
 import type {
   Agent,
@@ -31,7 +32,6 @@ import {
 } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { FiledItemsToggle } from '../../../../../shared/components/FiledItemsToggle';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 
 type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
@@ -236,7 +236,10 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const answered = useSessionAnsweredQuestions(sessionId);
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const workflows = useAppStore((s) => s.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY);
+  const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
   const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
+  const openLoaded = useAppStore((s) => s.sessionOpenQuestions[sessionId] !== undefined);
+  const answeredLoaded = useAppStore((s) => s.sessionAnsweredQuestions[sessionId] !== undefined);
   const drafts = useOpenQuestions((s) => s.drafts);
   const justAnswered = useOpenQuestions((s) => s.justAnswered);
   const toggleSuggestion = useOpenQuestions((s) => s.toggleSuggestion);
@@ -253,8 +256,9 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const [showAnswered, setShowAnswered] = useState(false);
 
   useEffect(() => {
+    void loadSessionOpenQuestions(sessionId);
     void loadSessionAnsweredQuestions(sessionId);
-  }, [sessionId, loadSessionAnsweredQuestions]);
+  }, [sessionId, loadSessionOpenQuestions, loadSessionAnsweredQuestions]);
 
   const pendingUndoQuestion =
     pendingUndo?.question.sessionId === sessionId ? pendingUndo.question : null;
@@ -313,6 +317,22 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
     [clearUndo, restoreDismissedOpenQuestion, sessionId],
   );
 
+  if (!openLoaded || !answeredLoaded) {
+    return (
+      <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
+        <div className="flex flex-col gap-2" role="status" aria-label="Loading questions">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3">
+              <Skeleton className="h-3 w-40 rounded" />
+              <Skeleton className="h-3 w-3/4 rounded" />
+              <Skeleton className="h-3 w-1/2 rounded" />
+            </div>
+          ))}
+        </div>
+      </PaneShell>
+    );
+  }
+
   if (open.length === 0 && answeredClusters.length === 0 && pendingUndoQuestion === null) {
     return (
       <PaneShell title="Questions" description="Decisions agents need from you to keep going.">
@@ -337,14 +357,16 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
             description={`Every question on this session is answered. Reveal the ${answered.length} answered ${answered.length === 1 ? 'one' : 'ones'} to reread them.`}
           />
         )}
-        <FiledItemsToggle
-          noun="answered"
-          items="questions"
-          count={answered.length}
-          isShown={showAnswered}
-          icon={Check}
-          onChange={setShowAnswered}
-        />
+        <div className="flex justify-center">
+          <CountToggle
+            label="Answered"
+            itemsLabel="questions"
+            count={answered.length}
+            isShown={showAnswered}
+            icon={Check}
+            onChange={setShowAnswered}
+          />
+        </div>
         {showAnswered ? (
           <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
         ) : null}
@@ -380,14 +402,16 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
             onSubmit={(pairs, ownerAgentId) => void handleSubmit(pairs, ownerAgentId)}
           />
         ))}
-        <FiledItemsToggle
-          noun="answered"
-          items="questions"
-          count={answered.length}
-          isShown={showAnswered}
-          icon={Check}
-          onChange={setShowAnswered}
-        />
+        <div className="flex justify-center">
+          <CountToggle
+            label="Answered"
+            itemsLabel="questions"
+            count={answered.length}
+            isShown={showAnswered}
+            icon={Check}
+            onChange={setShowAnswered}
+          />
+        </div>
         {showAnswered ? (
           <AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />
         ) : null}

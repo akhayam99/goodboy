@@ -186,7 +186,7 @@ describe('NewSessionView issue sources', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Polish with AI' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Polish' }));
 
     await waitFor(() => {
       const editor = screen.getByLabelText('Goal editor');
@@ -200,7 +200,7 @@ describe('NewSessionView issue sources', () => {
       target: { value: 'Keep this wording' },
     });
     h.invoke.mockRejectedValueOnce(new Error('provider unavailable'));
-    fireEvent.click(screen.getByRole('button', { name: 'Polish with AI' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Polish' }));
 
     await waitFor(() =>
       expect(h.showToast).toHaveBeenCalledWith(

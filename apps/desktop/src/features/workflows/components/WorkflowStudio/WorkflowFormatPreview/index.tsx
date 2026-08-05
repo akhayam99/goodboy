@@ -41,7 +41,7 @@ export const WorkflowFormatPreview = ({
       open={open}
       onClose={onClose}
       size="lg"
-      title="Format with AI"
+      title="Format the workflow"
       description="Describe the workflow in plain language, then review the steps before applying."
       footer={
         <>

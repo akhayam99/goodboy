@@ -95,14 +95,21 @@ export const ReviewBoardPane = ({ session }: Props) => {
     try {
       const result = await publishPrReview(sessionId, opts);
       const staleNote = result.stale.length > 0 ? `, ${result.stale.length} stale skipped` : '';
+      const mismatchedNote =
+        result.mismatched.length > 0
+          ? `, ${result.mismatched.length} left for a different pull request`
+          : '';
       if (result.failed.length > 0) {
-        showToast('error', `${result.failed.length} comments failed to publish${staleNote}`);
+        showToast(
+          'error',
+          `${result.failed.length} comments failed to publish${staleNote}${mismatchedNote}`,
+        );
       } else {
         const publishedNote =
           result.published > 0
             ? `${result.published} ${result.published === 1 ? 'comment' : 'comments'} published`
             : 'summary posted';
-        showToast('success', `Review published: ${publishedNote}${staleNote}`);
+        showToast('success', `Review published: ${publishedNote}${staleNote}${mismatchedNote}`);
       }
       await loadReviewDrafts(sessionId);
       refresh();

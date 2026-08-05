@@ -235,7 +235,7 @@ describe('PlanStudio subpage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Other plans (1)' }));
     expect(container.querySelectorAll('li')).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show consumed (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Consumed (1)' }));
     expect(container.querySelectorAll('li')).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('button', { name: /plan 2 consumed Alpha plan/i }));
