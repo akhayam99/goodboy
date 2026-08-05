@@ -32,7 +32,7 @@ import {
   Waypoints,
   Wrench,
 } from 'lucide-react';
-import { GithubIcon, GitlabIcon, LinearIcon, SentryIcon } from './brand-icons';
+import { GithubIcon, GitlabIcon, JiraIcon, LinearIcon, SentryIcon } from './brand-icons';
 
 export const CONCEPT_ICONS = {
   agents: Bot,
@@ -49,6 +49,7 @@ export const CONCEPT_ICONS = {
   guide: LifeBuoy,
   impact: TrendingUp,
   integrations: Link2,
+  jira: JiraIcon,
   linear: LinearIcon,
   notifications: Bell,
   plans: ClipboardList,
@@ -89,6 +90,7 @@ export const CONCEPT_TONE = {
   guide: 'info',
   impact: 'success',
   integrations: 'info',
+  jira: 'primary',
   linear: 'primary',
   notifications: 'warning',
   plans: 'success',

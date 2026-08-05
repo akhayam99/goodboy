@@ -1,7 +1,9 @@
 import { connectGitlab } from './connectGitlab';
+import { connectJira } from './connectJira';
 import { connectLinear } from './connectLinear';
 import { connectSentry } from './connectSentry';
 import { disconnectGitlab } from './disconnectGitlab';
+import { disconnectJira } from './disconnectJira';
 import { disconnectLinear } from './disconnectLinear';
 import { disconnectSentry } from './disconnectSentry';
 import { loadIntegrations } from './loadIntegrations';
@@ -16,5 +18,7 @@ export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
     disconnectSentry: disconnectSentry(set),
     connectGitlab: connectGitlab(set, get),
     disconnectGitlab: disconnectGitlab(set),
+    connectJira: connectJira(set, get),
+    disconnectJira: disconnectJira(set),
   };
 };

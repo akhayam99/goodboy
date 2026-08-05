@@ -17,6 +17,7 @@ const TASK_VERB: Record<SessionExternalTaskProvider, string> = {
   linear: 'closes',
   sentry: 'resolves',
   gitlab: 'closes',
+  jira: 'closes',
   github: 'closes',
 };
 

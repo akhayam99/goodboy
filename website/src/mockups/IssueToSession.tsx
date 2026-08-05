@@ -34,6 +34,15 @@ const ISSUES: ReadonlyArray<Issue> = [
     carried: 'stack trace carried over',
   },
   {
+    mark: 'jira',
+    source: 'Jira',
+    ref: 'ENG-142',
+    title: 'Session rail drops focus after a turn ends',
+    goal: 'Session rail drops focus after a turn ends',
+    branch: 'ak/eng-142-session-rail-focus',
+    carried: 'description and comments carried over',
+  },
+  {
     mark: 'github',
     source: 'GitHub',
     ref: '#214',

@@ -89,6 +89,7 @@ export const OnboardingWizard = () => {
     gitlabConnected,
     hasCodeHost,
     hasLinear,
+    hasJira,
     hasSentry,
     refreshGithubStatus,
   } = useOnboardingWizard();
@@ -203,10 +204,13 @@ export const OnboardingWizard = () => {
       ? { label: 'Continue', onClick: goNext, variant: 'primary' }
       : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
   } else if (step === 5) {
-    body = <TrackerStep workspaceId={workspaceId} linearConnected={hasLinear} />;
-    cta = hasLinear
-      ? { label: 'Continue', onClick: goNext, variant: 'primary' }
-      : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
+    body = (
+      <TrackerStep workspaceId={workspaceId} linearConnected={hasLinear} jiraConnected={hasJira} />
+    );
+    cta =
+      hasLinear || hasJira
+        ? { label: 'Continue', onClick: goNext, variant: 'primary' }
+        : { label: 'Skip for now', onClick: goNext, variant: 'secondary' };
   } else if (step === 6) {
     body = <SentryStep workspaceId={workspaceId} />;
     cta = hasSentry

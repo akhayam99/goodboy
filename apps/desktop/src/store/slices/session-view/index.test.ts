@@ -755,6 +755,7 @@ describe('store contract', () => {
       ['linear', 'linear'],
       ['sentry', 'sentry'],
       ['gitlab', 'gitlab_issues'],
+      ['jira', 'jira_issues'],
     ] as const)(
       'openExternalTaskLens lands on the %s lens with the clicked issue focused',
       async (provider, lens) => {
@@ -774,7 +775,7 @@ describe('store contract', () => {
       },
     );
 
-    it.each(['linear', 'sentry', 'gitlab_issues'] as const)(
+    it.each(['linear', 'sentry', 'gitlab_issues', 'jira_issues'] as const)(
       'opening the %s lens on its own focuses no issue',
       async (lens) => {
         const store = await getStore();
@@ -787,6 +788,7 @@ describe('store contract', () => {
       ['linear', 'linear'],
       ['sentry', 'sentry'],
       ['gitlab', 'gitlab_issues'],
+      ['jira', 'jira_issues'],
     ] as const)(
       'reopening the %s lens from the rail drops the issue a linked row had focused',
       async (provider, lens) => {

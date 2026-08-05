@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { FolderGit2, Kanban, ListChecks } from 'lucide-react';
+import { FolderGit2, ListChecks } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { LinearIcon } from '../../../../shared/components/brand-icons';
+import { JiraIcon, LinearIcon } from '../../../../shared/components/brand-icons';
+import { JiraFormBody } from '../../../integrations/jira/JiraFormBody';
 import { LinearFormBody } from '../../../integrations/linear/LinearFormBody';
 import { Segmented, type SegmentedOption } from '../Segmented';
 
@@ -11,9 +12,10 @@ type Tracker = 'linear' | 'jira';
 type Props = {
   readonly workspaceId: WorkspaceId | null;
   readonly linearConnected: boolean;
+  readonly jiraConnected: boolean;
 };
 
-export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
+export const TrackerStep = ({ workspaceId, linearConnected, jiraConnected }: Props) => {
   const [tracker, setTracker] = useState<Tracker>('linear');
 
   const options: ReadonlyArray<SegmentedOption<Tracker>> = [
@@ -24,7 +26,13 @@ export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
       color: 'var(--color-provider-linear)',
       connected: linearConnected,
     },
-    { value: 'jira', label: 'Jira', icon: Kanban, badge: 'soon', disabled: true },
+    {
+      value: 'jira',
+      label: 'Jira',
+      icon: JiraIcon,
+      color: 'var(--color-provider-jira)',
+      connected: jiraConnected,
+    },
   ];
 
   return (
@@ -41,8 +49,7 @@ export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
           Connect your issue tracker
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Link Linear so agents can pull issue context and ship against real tickets. Jira support
-          is on the way.
+          Link Linear or Jira so agents can pull issue context and ship against real tickets.
         </p>
       </div>
 
@@ -71,7 +78,11 @@ export const TrackerStep = ({ workspaceId, linearConnected }: Props) => {
             onChange={setTracker}
           />
           <div className="rounded-lg border border-border-soft/40 bg-subtle/20 p-4">
-            <LinearFormBody workspaceId={workspaceId} />
+            {tracker === 'jira' ? (
+              <JiraFormBody workspaceId={workspaceId} />
+            ) : (
+              <LinearFormBody workspaceId={workspaceId} />
+            )}
           </div>
         </div>
       )}

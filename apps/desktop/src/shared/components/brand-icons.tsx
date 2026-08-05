@@ -85,3 +85,10 @@ export const LinearIcon: LucideIcon = forwardRef<SVGSVGElement, LucideProps>((pr
   </svg>
 ));
 LinearIcon.displayName = 'LinearIcon';
+
+export const JiraIcon: LucideIcon = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
+  <svg ref={ref} {...svgProps(props)}>
+    <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84zM6.77 6.8a4.362 4.362 0 0 0 4.34 4.34h1.8v1.72a4.362 4.362 0 0 0 4.34 4.34V7.63c0-.463-.375-.84-.84-.84H6.77zM2 11.6c0 2.4 1.95 4.35 4.35 4.35h1.78v1.7c.003 2.4 1.95 4.345 4.35 4.35v-9.57a.84.84 0 0 0-.84-.84H2z" />
+  </svg>
+));
+JiraIcon.displayName = 'JiraIcon';

@@ -237,6 +237,12 @@ describe('parseIntegrationTaskUrl', () => {
     ).toMatchObject({ externalId: 'acme/web#7', identifier: 'acme/web#7' });
     expect(
       parseIntegrationTaskUrl({
+        provider: 'jira',
+        rawUrl: 'https://acme.atlassian.net/browse/ENG-142',
+      }),
+    ).toMatchObject({ externalId: 'ENG-142', identifier: 'ENG-142', title: 'ENG-142' });
+    expect(
+      parseIntegrationTaskUrl({
         provider: 'linear',
         rawUrl: 'not a valid URL/item-9',
       }),

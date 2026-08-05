@@ -5,5 +5,6 @@ export const PROVIDER_LENS: Record<SessionExternalTaskProvider, LensKind> = {
   linear: 'linear',
   sentry: 'sentry',
   gitlab: 'gitlab_issues',
+  jira: 'jira_issues',
   github: 'github_issue',
 };

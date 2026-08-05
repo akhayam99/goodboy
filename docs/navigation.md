@@ -132,7 +132,7 @@ slot. Always visible on the board and inside a session.
 
 Layout:
 
-- Left: integration tools (GitHub, GitLab, Linear, Sentry), each gated by
+- Left: integration tools (GitHub, GitLab, Linear, Jira, Sentry), each gated by
   enablement.
 - Right: common studios (workflows, providers, budget, impact).
 
@@ -173,8 +173,8 @@ persisted preference.
 
 ### Utility studios
 
-Settings, budget, providers, impact, changelog, notifications, Linear, Sentry,
-GitLab, workflow, guide are modal overlays, all built on `StudioShell`'s
+Settings, budget, providers, impact, changelog, notifications, Linear, Jira,
+Sentry, GitLab, workflow, guide are modal overlays, all built on `StudioShell`'s
 fullscreen variant. They are not part of the breadcrumb IA and are exited via
 their close button or Esc.
 
@@ -253,7 +253,7 @@ only the preview, not the form.
 
 Sections, top to bottom: issue source (conditional), goal, attachments, branch.
 The issue-source section is derived from the workspace's connected integrations
-via `resolveIssueSources` (Linear, GitHub, GitLab, Sentry) and the whole section
+via `resolveIssueSources` (Linear, GitHub, GitLab, Jira, Sentry) and the whole section
 is hidden when none of them is connected. Picking an issue fills the goal from
 the issue and the branch slug from its identifier, and counts as a manual slug
 edit, so later goal typing no longer re-slugs it.

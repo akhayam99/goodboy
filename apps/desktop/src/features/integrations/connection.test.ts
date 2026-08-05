@@ -36,6 +36,13 @@ describe('resolveIntegrationConnection', () => {
       externalTasks: [task({ provider: 'sentry' })],
       isGithubAuthenticated: false,
     });
+    const jiraConnected = resolveIntegrationConnection({
+      provider: 'jira',
+      integrations: [integration({ provider: 'jira' })],
+      remoteKind: 'other',
+      externalTasks: [],
+      isGithubAuthenticated: false,
+    });
     const unavailable = resolveIntegrationConnection({
       provider: 'gitlab',
       integrations: [],
@@ -44,9 +51,10 @@ describe('resolveIntegrationConnection', () => {
       isGithubAuthenticated: false,
     });
 
-    expect({ connected, linkedOnly, unavailable }).toEqual({
+    expect({ connected, linkedOnly, jiraConnected, unavailable }).toEqual({
       connected: { isConnected: true, isAvailable: true },
       linkedOnly: { isConnected: false, isAvailable: true },
+      jiraConnected: { isConnected: true, isAvailable: true },
       unavailable: { isConnected: false, isAvailable: false },
     });
   });

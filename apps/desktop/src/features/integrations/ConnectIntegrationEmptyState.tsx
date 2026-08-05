@@ -2,11 +2,12 @@ import type { ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { IntegrationConnectPanel } from './components/IntegrationConnectPanel';
 import { GitlabFormBody } from './gitlab/GitlabFormBody';
+import { JiraFormBody } from './jira/JiraFormBody';
 import { LinearFormBody } from './linear/LinearFormBody';
 import { SentryFormBody } from './sentry/SentryFormBody';
 
 type Props = {
-  readonly provider: 'linear' | 'sentry' | 'gitlab';
+  readonly provider: 'linear' | 'sentry' | 'gitlab' | 'jira';
   readonly workspaceId: WorkspaceId;
   readonly compact?: boolean;
   readonly shouldAutoFocus?: boolean;
@@ -17,6 +18,7 @@ const PROVIDER_DESCRIPTIONS: Record<Props['provider'], string> = {
   linear: 'Connect Linear to review issues from this workspace',
   sentry: 'Connect Sentry to review errors from this workspace',
   gitlab: 'Connect GitLab to review merge requests from this workspace',
+  jira: 'Connect Jira to review issues from this workspace',
 };
 
 const renderWrapped = ({
@@ -73,6 +75,23 @@ export const ConnectIntegrationEmptyState = ({
           headingLevel={compact ? undefined : 2}
         >
           <SentryFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
+        </IntegrationConnectPanel>
+      ),
+    });
+  }
+
+  if (provider === 'jira') {
+    return renderWrapped({
+      compact,
+      wrapped,
+      panel: (
+        <IntegrationConnectPanel
+          provider={provider}
+          description={PROVIDER_DESCRIPTIONS[provider]}
+          size={compact ? 'sm' : 'lg'}
+          headingLevel={compact ? undefined : 2}
+        >
+          <JiraFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
         </IntegrationConnectPanel>
       ),
     });

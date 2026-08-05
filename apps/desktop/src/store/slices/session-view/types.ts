@@ -34,6 +34,7 @@ export type LensKind =
   | 'linear'
   | 'sentry'
   | 'gitlab_issues'
+  | 'jira_issues'
   | 'github_issue';
 
 export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
@@ -54,6 +55,7 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'linear',
   'sentry',
   'gitlab_issues',
+  'jira_issues',
   'github_issue',
 ]);
 

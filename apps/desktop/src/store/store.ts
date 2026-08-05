@@ -144,6 +144,7 @@ import { initialChangelogState } from './slices/changelog/state';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
+import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
 export type { ProviderSpendEntry };
@@ -208,6 +209,14 @@ export type AppActions = {
   disconnectSentry(workspaceId: WorkspaceId): Promise<void>;
   connectGitlab(workspaceId: WorkspaceId, host: string, token: string): Promise<GitlabUser>;
   disconnectGitlab(workspaceId: WorkspaceId): Promise<void>;
+  connectJira(params: {
+    workspaceId: WorkspaceId;
+    siteUrl: string;
+    email: string;
+    projectKey: string;
+    apiToken: string;
+  }): Promise<JiraUser>;
+  disconnectJira(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;

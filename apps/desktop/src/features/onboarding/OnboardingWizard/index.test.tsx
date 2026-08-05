@@ -53,6 +53,7 @@ const baseState: OnboardingWizardState = {
   gitlabConnected: false,
   hasCodeHost: false,
   hasLinear: false,
+  hasJira: false,
   hasSentry: false,
   refreshGithubStatus: vi.fn(),
 };

@@ -38,6 +38,11 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
     colorClasses:
       'border-provider-gitlab/30 bg-provider-gitlab/5 text-provider-gitlab hover:border-provider-gitlab/60 hover:bg-provider-gitlab/10',
   },
+  jira: {
+    label: 'Jira',
+    colorClasses:
+      'border-provider-jira/30 bg-provider-jira/5 text-provider-jira hover:border-provider-jira/60 hover:bg-provider-jira/10',
+  },
   github: {
     label: 'GitHub',
     colorClasses:

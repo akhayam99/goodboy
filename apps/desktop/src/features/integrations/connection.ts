@@ -30,6 +30,7 @@ export const resolveIntegrationConnection = ({
   const hasLinear = integrations.some((integration) => integration.provider === 'linear');
   const hasSentry = integrations.some((integration) => integration.provider === 'sentry');
   const hasGitlab = integrations.some((integration) => integration.provider === 'gitlab');
+  const hasJira = integrations.some((integration) => integration.provider === 'jira');
   const hasGithubRemote = remoteKind === 'github';
   const hasGitlabRemote = remoteKind === 'gitlab';
 
@@ -48,6 +49,10 @@ export const resolveIntegrationConnection = ({
     case 'gitlab':
       isConnected = hasGitlab;
       hasLinkedTask = externalTasks.some((task) => task.provider === 'gitlab');
+      break;
+    case 'jira':
+      isConnected = hasJira;
+      hasLinkedTask = externalTasks.some((task) => task.provider === 'jira');
       break;
     case 'github':
       isConnected = hasGithubRemote && isGithubAuthenticated;

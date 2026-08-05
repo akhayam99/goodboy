@@ -19,7 +19,7 @@ Goodboy is the IDE of the next decade: a local-first workspace where the task is
 Four layers, in order of primacy. Reading top to bottom is how you work; reading bottom to top is how today's tools are built.
 
 1. **Task.** The thing you are actually doing. It has an origin (an issue, an alert, a review comment, an idea), a goal, a budget, a state, and a definition of done. Goodboy treats the task as a first-class object with its own worktree, branch, context, and history.
-2. **Integrations.** Where tasks come from and where they go back. GitHub, GitLab, Linear, Sentry today. The task is not complete when the code compiles, it is complete when the issue closes, the PR merges, the alert resolves. Integrations are not a side panel, they are the second layer of the product.
+2. **Integrations.** Where tasks come from and where they go back. GitHub, GitLab, Linear, Sentry, Jira today. The task is not complete when the code compiles, it is complete when the issue closes, the PR merges, the alert resolves. Integrations are not a side panel, they are the second layer of the product.
 3. **Code.** The diff, the worktree, the branch, the checks. The artifact the task produces. Goodboy owns the isolation (one worktree per session) and hands editing to your editor.
 4. **Chat.** The last mile. How you and the agents talk while the task moves. Necessary, but the least interesting layer, and the one every other tool mistakes for the whole product.
 
@@ -27,14 +27,14 @@ Every UI decision follows this order. A surface that shows chat before it shows 
 
 ## Company and workspaces
 
-Above the workspace sits the **company**: the container for everything shared across projects. It is where the integrations that are not project-specific live, because they are not per-repository facts: Slack, Teams, Google Calendar, Meet, Jira. One connection, one identity, available to every workspace under it.
+Above the workspace sits the **company**: the container for everything shared across projects. It is where the integrations that are not project-specific live, because they are not per-repository facts: Slack, Teams, Google Calendar, Meet. One connection, one identity, available to every workspace under it.
 
 The company layer is not implemented yet. It is the direction: today a workspace connects its own integrations, tomorrow it inherits the company ones and only declares what is genuinely local to the project. Nothing in the current model should assume the workspace is the top of the tree.
 
 Four nested layers:
 
 - A **company** owns the shared integration surface and the people in it. Direction, not yet shipped.
-- A **workspace** is the detail view of a project: a registered git repository plus the integrations specific to it (GitHub or GitLab for code review, Linear for planning, Sentry for production truth). It is the aggregator of every piece of work on that project, not just the sessions you opened today.
+- A **workspace** is the detail view of a project: a registered git repository plus the integrations specific to it (GitHub or GitLab for code review, Linear or Jira for planning, Sentry for production truth). It is the aggregator of every piece of work on that project, not just the sessions you opened today.
 - A **session** is a container for a goal: its own git worktree, branch, budget, and shared context. Its stage (attention / running / review / building / done) is derived from what the session actually holds, never set by hand. "Refactor authentication domain" is a session.
 - An **agent** is an independent chat thread inside a session. You spawn as many as you want, switch between them by clicking, and rename them inline. Each agent has its own provider, model, effort level, verbosity, and kind label.
 
@@ -44,9 +44,9 @@ A session always has at least one agent (auto-spawned at creation). Spawning mor
 
 The workspace is the aggregator of the project. That means every integration surface has to be readable inside Goodboy, not just linked out to a browser tab.
 
-- **Shipped, workspace scope.** GitHub (PR state, checks, review decisions, comments, diff), GitLab (merge requests), Linear (issues), Sentry (issues and events).
-- **In progress, workspace scope.** One page anatomy for every integration object instead of a hand-rolled scroll view per source: Linear issues, Sentry issues, GitHub issues and pull requests, and GitLab issues and merge requests all read through it, each driven by one ordered field set so the same fact lands in the same place on every page. Reading through that anatomy is done. Folding the compact cards onto the same field set is still ahead. Acting is no longer all a browser tab: commenting ships on GitHub issues, GitLab issues, GitLab merge requests, and pull request reviews, and resolving a review thread ships too. Assigning and transitioning status are unbuilt everywhere, and Sentry has no write path at all. Those are what still close the layer.
-- **Later, company scope.** Slack and Teams for the conversation a task came out of, Google Calendar and Meet for the meeting it was decided in, Jira for the organizations that plan there.
+- **Shipped, workspace scope.** GitHub (PR state, checks, review decisions, comments, diff), GitLab (merge requests), Linear (issues), Sentry (issues and events), Jira (issues, read only for now).
+- **In progress, workspace scope.** One page anatomy for every integration object instead of a hand-rolled scroll view per source: Linear issues, Sentry issues, GitHub issues and pull requests, GitLab issues and merge requests, and Jira issues all read through it, each driven by one ordered field set so the same fact lands in the same place on every page. Reading through that anatomy is done. Folding the compact cards onto the same field set is still ahead. Acting is no longer all a browser tab: commenting ships on GitHub issues, GitLab issues, GitLab merge requests, and pull request reviews, and resolving a review thread ships too. Assigning and transitioning status are unbuilt everywhere, Jira reads but does not write yet, and Sentry has no write path at all. Those are what still close the layer.
+- **Later, company scope.** Slack and Teams for the conversation a task came out of, Google Calendar and Meet for the meeting it was decided in.
 
 The rule for every integration: share the layout, never the logic. A Sentry issue and a GitHub pull request look coherent side by side because the page anatomy is one primitive, not because we pretended their data models are the same. They are not.
 

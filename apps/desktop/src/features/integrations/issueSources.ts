@@ -17,6 +17,7 @@ const SOURCES: ReadonlyArray<IssueSource> = [
   { provider: 'linear', label: 'Linear' },
   { provider: 'github', label: 'GitHub' },
   { provider: 'gitlab', label: 'GitLab' },
+  { provider: 'jira', label: 'Jira' },
   { provider: 'sentry', label: 'Sentry' },
 ];
 

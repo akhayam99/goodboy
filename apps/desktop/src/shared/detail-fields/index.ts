@@ -6,6 +6,7 @@ export { githubIssueFields } from './githubIssueFields';
 export { githubPullRequestFields } from './githubPullRequestFields';
 export { gitlabIssueFields } from './gitlabIssueFields';
 export { gitlabMergeRequestFields } from './gitlabMergeRequestFields';
+export { jiraIssueFields } from './jiraIssueFields';
 export {
   sessionPullRequestFields,
   type SessionPullRequestProperties,

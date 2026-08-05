@@ -8,6 +8,7 @@ import { ExternalRefActions } from '../../../../shared/components/ExternalRefAct
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -19,6 +20,7 @@ const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
   sentry: 1,
   gitlab: 2,
   github: 3,
+  jira: 4,
 };
 
 export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
@@ -55,6 +57,13 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
       label: 'GitLab issues',
       icon: GitFork,
       onClick: () => onSelectLens('gitlab_issues'),
+    },
+    {
+      kind: 'item',
+      key: 'jira',
+      label: 'Jira issues',
+      icon: CONCEPT_ICONS.jira,
+      onClick: () => onSelectLens('jira_issues'),
     },
   ];
   const hasLinkedWork = linkedIssues.length > 0 || externalTasks.length > 0;

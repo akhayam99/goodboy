@@ -313,6 +313,15 @@ vi.mock('../../../features/integrations/gitlab/client', () => ({
   issueIdentifier: vi.fn(),
 }));
 
+const jiraValidateConnectionSpy = vi.fn();
+const jiraDisconnectSpy = vi.fn(async () => undefined);
+
+vi.mock('../../../features/integrations/jira/client', () => ({
+  jiraValidateConnection: jiraValidateConnectionSpy,
+  jiraDisconnect: jiraDisconnectSpy,
+  jiraListIssues: vi.fn(async () => []),
+}));
+
 const ghStatusSpy: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
   available: true,
   mode: 'gh-cli',
@@ -768,6 +777,101 @@ describe('store contract', () => {
         WS_ID,
         'gitlab',
       );
+      const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
+      expect(remaining.map((i) => i.provider)).toEqual(['linear']);
+    });
+
+    it('connectJira caches the site, project and account details it validated', async () => {
+      const store = await getStore();
+      jiraValidateConnectionSpy.mockResolvedValueOnce({
+        accountId: 'acc-7',
+        displayName: 'Grace Hopper',
+      });
+      const out = await store.getState().connectJira({
+        workspaceId: WS_ID,
+        siteUrl: 'https://acme.atlassian.net',
+        email: 'grace@acme.com',
+        projectKey: 'ENG',
+        apiToken: 'ATATT-x',
+      });
+      expect(out.accountId).toBe('acc-7');
+      const cached = store
+        .getState()
+        .workspaceIntegrations[WS_ID]?.find((i) => i.provider === 'jira');
+      expect(cached?.config).toEqual({
+        accountId: 'acc-7',
+        displayName: 'Grace Hopper',
+        siteUrl: 'https://acme.atlassian.net',
+        email: 'grace@acme.com',
+        projectKey: 'ENG',
+      });
+      expect(cached?.credentialKey).toBe(`goodboy.workspace.${WS_ID}.jira`);
+    });
+
+    it('connectJira keeps the row identity and refreshes the project on reconnect', async () => {
+      const store = await getStore();
+      const existing: WorkspaceIntegration = {
+        id: 'ji-keep' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'jira',
+        config: {
+          siteUrl: 'https://acme.atlassian.net',
+          email: 'grace@acme.com',
+          projectKey: 'OLD',
+        },
+        credentialKey: `goodboy.workspace.${WS_ID}.jira`,
+        createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
+      jiraValidateConnectionSpy.mockResolvedValueOnce({
+        accountId: 'acc-7',
+        displayName: 'Grace Hopper',
+      });
+      await store.getState().connectJira({
+        workspaceId: WS_ID,
+        siteUrl: 'https://acme.atlassian.net',
+        email: 'grace@acme.com',
+        projectKey: 'ENG',
+        apiToken: 'ATATT-x',
+      });
+      const rows = (store.getState().workspaceIntegrations[WS_ID] ?? []).filter(
+        (i) => i.provider === 'jira',
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.id).toBe('ji-keep');
+      expect(rows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
+      expect((rows[0]?.config as { projectKey: string }).projectKey).toBe('ENG');
+    });
+
+    it('disconnectJira drops the cached token and only the jira row', async () => {
+      const store = await getStore();
+      const linear: WorkspaceIntegration = {
+        id: 'li-2' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'linear',
+        config: { workspaceUrlKey: 'k', viewerUserId: 'u', viewerName: 'n' },
+        credentialKey: 'k',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      const jira: WorkspaceIntegration = {
+        id: 'ji-1' as WorkspaceIntegrationId,
+        workspaceId: WS_ID,
+        provider: 'jira',
+        config: {
+          siteUrl: 'https://acme.atlassian.net',
+          email: 'grace@acme.com',
+          projectKey: 'ENG',
+        },
+        credentialKey: 'j',
+        createdAt: NOW,
+        updatedAt: NOW,
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [linear, jira] } });
+      await store.getState().disconnectJira({ workspaceId: WS_ID });
+      expect(jiraDisconnectSpy).toHaveBeenCalledWith({ workspaceId: WS_ID });
+      expect(deleteWorkspaceIntegrationSpy).toHaveBeenCalledWith(expect.anything(), WS_ID, 'jira');
       const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
       expect(remaining.map((i) => i.provider)).toEqual(['linear']);
     });
