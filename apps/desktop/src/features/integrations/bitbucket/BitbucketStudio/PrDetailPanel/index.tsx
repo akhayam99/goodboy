@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { EmptyState, Markdown } from '@goodboy/ui';
 import { FileDiff, FileText, ListChecks, MessageSquare } from 'lucide-react';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { BitbucketWorkspaceIntegration, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   DetailSection,
   HeaderBand,
@@ -25,10 +25,13 @@ import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
 import { goalFromPullRequest } from '../../goal-from-pull-request';
 import type { BitbucketPullRequest, BitbucketPullRequestState, BitbucketRepo } from '../../client';
+import { useAppStore } from '../../../../../store';
+import { PrActionBar } from '../PrActionBar';
 import { PrChanges } from './PrChanges';
 import { PrConversation } from './PrConversation';
 import { useBitbucketPrDetail } from './useBitbucketPrDetail';
 import { useBitbucketPrDiff } from './useBitbucketPrDiff';
+import { usePrActions } from './usePrActions';
 
 type PrSection = 'overview' | 'changes' | 'checks' | 'conversation';
 
@@ -59,6 +62,9 @@ const SECTION_OPTIONS = [
 
 const BRANCH_SLUG_MAX_LEN = 48;
 
+const POST_BLOCKED =
+  'Goodboy is still resolving this pull request on Bitbucket, so it cannot post a comment yet';
+
 export const PrDetailPanel = ({
   pullRequest,
   repo,
@@ -76,6 +82,21 @@ export const PrDetailPanel = ({
   );
   const detail = useBitbucketPrDetail({ target });
   const diff = useBitbucketPrDiff({ target, isEnabled: section === 'changes' });
+  const config = useAppStore((state) => {
+    const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
+      (candidate): candidate is BitbucketWorkspaceIntegration => candidate.provider === 'bitbucket',
+    );
+    return integration?.config ?? null;
+  });
+  const actions = usePrActions({
+    sessionId,
+    repo,
+    pullRequestId: pullRequest?.id ?? null,
+    onWritten: () => {
+      detail.reload();
+      onRefresh();
+    },
+  });
 
   if (pullRequest == null || repo == null) {
     return (
@@ -99,35 +120,51 @@ export const PrDetailPanel = ({
   return (
     <StudioDetailLayout
       header={
-        <HeaderBand
-          meta={
-            <IssueStateBadge tone={STATE_TONE[pullRequest.state]}>
-              #{pullRequest.id} · {pullRequest.state.toLowerCase()}
-            </IssueStateBadge>
-          }
-          title={pullRequest.title}
-          subtitle={
-            <BranchPair
-              headBranch={pullRequest.sourceBranch}
-              baseBranch={pullRequest.destinationBranch}
-            />
-          }
-          actions={
-            <>
-              <RefreshIconButton
-                label="refresh pull request"
-                iconSize={12}
-                isLoading={isLoading}
-                error={error}
-                onClick={() => {
-                  detail.reload();
-                  onRefresh();
-                }}
+        <>
+          <HeaderBand
+            meta={
+              <IssueStateBadge tone={STATE_TONE[pullRequest.state]}>
+                #{pullRequest.id} · {pullRequest.state.toLowerCase()}
+              </IssueStateBadge>
+            }
+            title={pullRequest.title}
+            subtitle={
+              <BranchPair
+                headBranch={pullRequest.sourceBranch}
+                baseBranch={pullRequest.destinationBranch}
               />
-              <ExternalRefActions url={webUrl} label="pull request" hostLabel="Bitbucket" />
-            </>
-          }
-        />
+            }
+            actions={
+              <>
+                <RefreshIconButton
+                  label="refresh pull request"
+                  iconSize={12}
+                  isLoading={isLoading}
+                  error={error}
+                  onClick={() => {
+                    detail.reload();
+                    onRefresh();
+                  }}
+                />
+                <ExternalRefActions url={webUrl} label="pull request" hostLabel="Bitbucket" />
+              </>
+            }
+          />
+          <PrActionBar
+            key={identifier}
+            pullRequest={pullRequest}
+            accountId={config?.accountId ?? null}
+            displayName={config?.displayName ?? null}
+            busy={actions.busy}
+            canAct={actions.canAct}
+            onApprove={actions.approve}
+            onUnapprove={actions.unapprove}
+            onRequestChanges={actions.requestChanges}
+            onWithdrawChanges={actions.withdrawChanges}
+            onMerge={actions.merge}
+            onDecline={actions.decline}
+          />
+        </>
       }
       tabs={
         <StudioDetailTabs
@@ -192,7 +229,10 @@ export const PrDetailPanel = ({
           comments={detail.comments}
           isLoading={detail.isLoading}
           error={detail.error}
+          postBlockReason={actions.canAct ? null : POST_BLOCKED}
           onRetry={detail.reload}
+          onPost={actions.comment}
+          onReply={actions.reply}
         />
       )}
     </StudioDetailLayout>

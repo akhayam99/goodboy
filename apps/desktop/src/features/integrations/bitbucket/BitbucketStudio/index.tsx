@@ -6,6 +6,7 @@ import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { useAppStore } from '../../../../store';
 import type { BitbucketPullRequest } from '../client';
+import { focusedBitbucketPr } from './focusedBitbucketPr';
 import { PrDetailPanel } from './PrDetailPanel';
 import { PrInbox } from './PrInbox';
 import { useBitbucketPrs } from './useBitbucketPrs';
@@ -28,6 +29,7 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
   const selectSessionBitbucketPr = useAppStore((state) => state.selectSessionBitbucketPr);
   const [focused, setFocused] = useState<BitbucketPullRequest | null>(null);
   const pullRequests = useBitbucketPrs({ repo });
+  const pullRequest = focusedBitbucketPr({ focused, sessionPr });
 
   useEffect(() => {
     void refreshSessionBitbucketPr(sessionId, { silent: true });
@@ -89,7 +91,7 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
             }
             detail={
               <PrDetailPanel
-                pullRequest={focused}
+                pullRequest={pullRequest}
                 repo={repo}
                 sessionId={sessionId}
                 workspaceId={workspaceId}
