@@ -129,6 +129,14 @@ export const setFocusedPlanId = (set: SetFn) => {
   };
 };
 
+export const setFocusedGithubIssueNumber = (set: SetFn) => {
+  return (sessionId: SessionId, issueNumber: number | null): void => {
+    set((s) => ({
+      focusedGithubIssueNumber: { ...s.focusedGithubIssueNumber, [sessionId]: issueNumber },
+    }));
+  };
+};
+
 export const setSessionStudio = (set: SetFn) => {
   return (sessionId: SessionId, studio: SessionStudio | null): void => {
     set((s) =>

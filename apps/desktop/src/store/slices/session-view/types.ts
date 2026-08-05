@@ -31,7 +31,8 @@ export type LensKind =
   | 'explore'
   | 'linear'
   | 'sentry'
-  | 'gitlab_issues';
+  | 'gitlab_issues'
+  | 'github_issue';
 
 export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'questions',
@@ -51,6 +52,7 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'linear',
   'sentry',
   'gitlab_issues',
+  'github_issue',
 ]);
 
 export type DiffFocus =
@@ -112,6 +114,7 @@ type SessionViewSliceState = {
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
+  readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
@@ -128,6 +131,7 @@ type SessionViewSliceActions = {
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus): void;

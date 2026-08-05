@@ -76,6 +76,7 @@ export const LENS_SHORTCUTS = {
   linear: 'lens.linear',
   sentry: 'lens.sentry',
   gitlab_issues: 'lens.gitlab_issues',
+  github_issue: 'lens.pr',
 } satisfies Readonly<Record<LensKind, ShortcutId>>;
 
 export const buildLensGroups = ({

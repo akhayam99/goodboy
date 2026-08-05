@@ -33,6 +33,7 @@ import { useSelectedAgentHome } from './hooks/useSelectedAgentHome';
 import { resolveOverlayHome } from './resolveOverlayHome';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
+import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
@@ -44,6 +45,8 @@ import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSessio
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { LENS_LABEL, SIMPLE_LENSES } from '../../lens-labels';
+import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type SessionWorkspaceProps = {
   readonly session: Session;
@@ -71,6 +74,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       : storedActiveLens;
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
+  const focusedGithubIssueNumber = useAppStore(
+    (s) => s.focusedGithubIssueNumber[sessionId] ?? null,
+  );
+  const sessionExternalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
@@ -134,6 +141,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showAgentOverlay = selectedAgentId != null && !showStudio;
   const showLens = selectedAgentId == null && !showStudio;
   const overlayHome = resolveOverlayHome({ lens, agentHome });
+  const githubTask = useMemo(
+    () => sessionExternalTasks.find((task) => task.provider === 'github') ?? null,
+    [sessionExternalTasks],
+  );
   const selectedRootAgent = useMemo(() => {
     if (selectedAgentId == null) {
       return null;
@@ -368,6 +379,28 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                     workspaceId={session.workspaceId}
                     provider="gitlab"
                   />
+                ) : null}
+                {lens === 'github_issue' ? (
+                  githubTask != null ? (
+                    <GithubTaskDetail
+                      workspaceId={session.workspaceId}
+                      rootPath={projectWorktreePath}
+                      task={githubTask}
+                      issueNumber={focusedGithubIssueNumber ?? Number(githubTask.externalId)}
+                    />
+                  ) : (
+                    <PaneShell
+                      title="GitHub issue"
+                      description="The GitHub issue linked to this session."
+                    >
+                      <LensEmptyState
+                        icon={CONCEPT_ICONS.github}
+                        tone={CONCEPT_TONE.github}
+                        title="No GitHub issue linked"
+                        description="Link a GitHub issue to this session to see it here."
+                      />
+                    </PaneShell>
+                  )
                 ) : null}
                 {lens === 'files' ? (
                   <FilesPane

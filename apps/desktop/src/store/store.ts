@@ -656,6 +656,7 @@ export type AppActions = {
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
   setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
+  setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus): void;
   beginSessionCreation(

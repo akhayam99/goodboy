@@ -87,4 +87,32 @@ describe('GithubTaskDetail', () => {
     expect(screen.getByText('Show assigned issues in GitHub Studio.')).toBeDefined();
     expect(screen.getByText('feature')).toBeDefined();
   });
+
+  it('falls back to the linked task number when no issue number is given', () => {
+    useGithubIssueMock.mockReturnValue({
+      issue: null,
+      isLoading: true,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(<GithubTaskDetail workspaceId={WORKSPACE_ID} rootPath="/repo" task={TASK} />);
+
+    expect(useGithubIssueMock).toHaveBeenCalledWith(expect.objectContaining({ issueNumber: 42 }));
+  });
+
+  it('uses the given issue number over the linked task number', () => {
+    useGithubIssueMock.mockReturnValue({
+      issue: null,
+      isLoading: true,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <GithubTaskDetail workspaceId={WORKSPACE_ID} rootPath="/repo" task={TASK} issueNumber={7} />,
+    );
+
+    expect(useGithubIssueMock).toHaveBeenCalledWith(expect.objectContaining({ issueNumber: 7 }));
+  });
 });
