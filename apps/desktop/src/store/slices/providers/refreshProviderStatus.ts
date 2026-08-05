@@ -36,6 +36,7 @@ export const refreshProviderStatus = (set: SetFn) => {
         gemini: state.geminiStatus,
         opencode: statusFor({ providers: state.providers, id: 'opencode' }),
         openrouter: statusFor({ providers: state.providers, id: 'openrouter' }),
+        moonshot: statusFor({ providers: state.providers, id: 'moonshot' }),
       };
       return {
         providerStatus: status,

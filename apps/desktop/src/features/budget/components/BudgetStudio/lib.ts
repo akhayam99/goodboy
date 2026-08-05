@@ -47,6 +47,7 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
   'gemini',
   'opencode',
   'openrouter',
+  'moonshot',
 ];
 export const toProviderId = (provider: string): ProviderId | null => {
   return PROVIDER_IDS.includes(provider as ProviderId) ? (provider as ProviderId) : null;

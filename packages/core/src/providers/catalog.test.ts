@@ -13,6 +13,7 @@ import { ANTHROPIC_AGENT_MODEL_IDS } from './claude/agent-model-ids';
 import { CODEX_AGENT_MODEL_IDS } from './codex/agent-model-ids';
 import { CURSOR_AGENT_MODEL_IDS } from './cursor/agent-model-ids';
 import { GEMINI_AGENT_MODEL_IDS } from './gemini/agent-model-ids';
+import { MOONSHOT_AGENT_MODEL_IDS } from './moonshot/agent-model-ids';
 import { OPENCODE_AGENT_MODEL_IDS } from './opencode/agent-model-ids';
 import { OPENROUTER_AGENT_MODEL_IDS } from './openrouter/agent-model-ids';
 import { resolveModelArgs } from './resolveModelArgs';
@@ -24,6 +25,7 @@ const ACCEPTED_IDS = {
   gemini: GEMINI_AGENT_MODEL_IDS,
   opencode: OPENCODE_AGENT_MODEL_IDS,
   openrouter: OPENROUTER_AGENT_MODEL_IDS,
+  moonshot: MOONSHOT_AGENT_MODEL_IDS,
 } satisfies Readonly<Record<ProviderId, ReadonlyArray<string>>>;
 
 type AssertParams = {
@@ -64,6 +66,7 @@ const selectionsFor = ({ model }: CrossParams): ReadonlyArray<ModelSelection> =>
     case 'gemini':
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return model.efforts.map((effort) => ({ key: model.key, effort }));
     default: {
       const exhaustive: never = model;

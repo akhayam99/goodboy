@@ -54,4 +54,11 @@ export const PROVIDER_CONNECT_CAPABILITIES = {
     loginEnv: {},
     manualReason: null,
   },
+  moonshot: {
+    tier: 'assisted',
+    hasAuthProbe: true,
+    opensBrowser: true,
+    loginEnv: {},
+    manualReason: null,
+  },
 } satisfies Readonly<Record<ProviderId, ProviderConnectCapability>>;

@@ -15,6 +15,7 @@ const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
   'gemini',
   'opencode',
   'openrouter',
+  'moonshot',
 ];
 
 export const ProvidersStep = () => {

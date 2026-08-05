@@ -13,6 +13,7 @@ export const selectionFromCliId = ({ provider, id }: Params): ModelSelection | n
       case 'gemini':
       case 'opencode':
       case 'openrouter':
+      case 'moonshot':
         if (model.cliId === id) {
           return { key: model.key };
         }

@@ -9,6 +9,7 @@ export const PROVIDER_LABEL: Record<ProviderId, string> = {
   gemini: 'Gemini',
   opencode: 'OpenCode',
   openrouter: 'OpenRouter',
+  moonshot: 'Moonshot',
 };
 
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;

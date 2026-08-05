@@ -27,6 +27,7 @@ function parseForProvider(
       return parseGeminiJsonLine(line, ctx);
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return parseOpenCodeJsonLine({ line, ctx });
     default: {
       const _exhaustive: never = provider;

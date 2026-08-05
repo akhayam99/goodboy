@@ -185,7 +185,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             v.push(args.prompt.to_string());
             v
         }
-        "opencode" | "openrouter" => {
+        "opencode" | "openrouter" | "moonshot" => {
             let _ = (
                 args.permission_mode,
                 args.allowed_tools,

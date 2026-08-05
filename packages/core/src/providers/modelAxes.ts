@@ -155,6 +155,7 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
     case 'gemini':
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return {
         effort: effortAxis({ label: 'Effort', efforts: model.efforts }),
         variant: null,

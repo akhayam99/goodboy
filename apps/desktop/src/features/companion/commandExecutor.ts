@@ -56,6 +56,7 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
   'gemini',
   'opencode',
   'openrouter',
+  'moonshot',
 ];
 
 const MOBILE_EDITABLE_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([

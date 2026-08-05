@@ -70,4 +70,13 @@ export const PROVIDER_LIFECYCLE_COMMANDS: Partial<Record<ProviderId, ProviderLif
     login: 'opencode auth login',
     logout: 'opencode auth logout',
   },
+  moonshot: {
+    install: {
+      darwin: 'npm install -g opencode-ai',
+      linux: 'npm install -g opencode-ai',
+      win32: 'npm install -g opencode-ai',
+    },
+    login: 'opencode auth login',
+    logout: 'opencode auth logout',
+  },
 };

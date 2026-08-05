@@ -17,6 +17,7 @@ export const defaultModelSelection = ({ provider, tier = 'turn' }: Params): Mode
     case 'gemini':
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return { key: model.key, effort: model.defaultEffort };
     case 'codex':
       return {

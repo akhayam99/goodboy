@@ -552,11 +552,39 @@ fn openrouter_credential(names: &[String]) -> Option<&String> {
         .find(|name| name.to_lowercase().replace(' ', "").contains("openrouter"))
 }
 
+fn moonshot_credential(names: &[String]) -> Option<&String> {
+    names
+        .iter()
+        .find(|name| name.to_lowercase().replace(' ', "").contains("moonshot"))
+}
+
 fn check_openrouter_auth() -> AuthState {
     match run_auth_command(&["opencode", "auth", "list"]) {
         Ok(out) => {
             let names = parse_opencode_credentials(out.primary_text());
             match openrouter_credential(&names) {
+                Some(name) => AuthState {
+                    state: AuthStateKind::Connected,
+                    identity: Some(name.clone()),
+                },
+                None => AuthState {
+                    state: AuthStateKind::Disconnected,
+                    identity: None,
+                },
+            }
+        }
+        Err(_) => AuthState {
+            state: AuthStateKind::Unknown,
+            identity: None,
+        },
+    }
+}
+
+fn check_moonshot_auth() -> AuthState {
+    match run_auth_command(&["opencode", "auth", "list"]) {
+        Ok(out) => {
+            let names = parse_opencode_credentials(out.primary_text());
+            match moonshot_credential(&names) {
                 Some(name) => AuthState {
                     state: AuthStateKind::Connected,
                     identity: Some(name.clone()),
@@ -677,11 +705,27 @@ pub fn get_openrouter_status(state: State<'_, OpencodeState>) -> ProviderStatus 
 }
 
 #[tauri::command]
+pub fn get_moonshot_status(state: State<'_, OpencodeState>) -> ProviderStatus {
+    let mut status = get_status(&state.0, "moonshot", "opencode");
+    status.id = "moonshot".to_string();
+    status
+}
+
+#[tauri::command]
 pub async fn refresh_openrouter_status(
     state: State<'_, OpencodeState>,
 ) -> Result<ProviderStatus, String> {
     let mut status = refresh_status(&state.0, detect_opencode).await?;
     status.id = "openrouter".to_string();
+    Ok(status)
+}
+
+#[tauri::command]
+pub async fn refresh_moonshot_status(
+    state: State<'_, OpencodeState>,
+) -> Result<ProviderStatus, String> {
+    let mut status = refresh_status(&state.0, detect_opencode).await?;
+    status.id = "moonshot".to_string();
     Ok(status)
 }
 
@@ -729,6 +773,7 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
         "gemini" => check_gemini_auth(),
         "opencode" => check_opencode_auth(),
         "openrouter" => check_openrouter_auth(),
+        "moonshot" => check_moonshot_auth(),
         _ => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
@@ -972,6 +1017,17 @@ mod tests {
     fn openrouter_ignores_environment_only_entries() {
         let names = parse_opencode_credentials(OPENCODE_EMPTY_LIST);
         assert!(openrouter_credential(&names).is_none());
+    }
+
+    #[test]
+    fn moonshot_matches_only_its_own_credential_row() {
+        let names = parse_opencode_credentials(OPENCODE_FILLED_LIST);
+        assert!(moonshot_credential(&names).is_none());
+        let with_moonshot = vec!["Moonshot AI".to_string(), "OpenRouter".to_string()];
+        assert_eq!(
+            moonshot_credential(&with_moonshot),
+            Some(&"Moonshot AI".to_string())
+        );
     }
 
     #[test]

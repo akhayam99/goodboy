@@ -12,11 +12,11 @@ The attempt lives in the store keyed by provider and survives the dialog closing
 
 What a provider supports is data, not UI branching: `PROVIDER_CONNECT_CAPABILITIES` in `packages/types/src/provider-connect.ts`.
 
-| Provider                 | Tier        | Why                                                                                                               |
-| ------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| anthropic, codex, cursor | `one-click` | drivable non-interactively and probe-confirmable                                                                  |
-| opencode, openrouter     | `assisted`  | `opencode auth login` is menu-driven, so the terminal appears when it stalls; the probe still confirms the ending |
-| gemini                   | `manual`    | `agy` ships no auth subcommand, so there is nothing to drive                                                      |
+| Provider                       | Tier        | Why                                                                                                               |
+| ------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| anthropic, codex, cursor       | `one-click` | drivable non-interactively and probe-confirmable                                                                  |
+| opencode, openrouter, moonshot | `assisted`  | `opencode auth login` is menu-driven, so the terminal appears when it stalls; the probe still confirms the ending |
+| gemini                         | `manual`    | `agy` ships no auth subcommand, so there is nothing to drive                                                      |
 
 ---
 
@@ -243,9 +243,9 @@ agy -p <PROMPT> --model <MODEL> --sandbox
 
 ---
 
-## opencode and OpenRouter (beta)
+## opencode, OpenRouter and Moonshot AI (beta)
 
-Both ride the same `opencode` binary; OpenRouter is the API-key provider routed through it.
+All three ride the same `opencode` binary. OpenRouter and Moonshot AI are the API-key providers routed through it, each addressing its own account rather than brokering through the other.
 
 ### Install
 
@@ -273,7 +273,17 @@ opencode auth logout
 opencode auth list
 ```
 
-Prints a boxed report of stored credentials, terminated by a `N credentials` row. Goodboy parses the credential names out of that section (each row is `<name>` followed by an ANSI-dimmed method, so the name is everything before the first escape sequence). No rows means disconnected. OpenRouter is connected when one of those rows names it. The `Environment` block below it lists providers reachable through env vars and is deliberately ignored: env-var credentials belong to Goodboy's own credential layer.
+Prints a boxed report of stored credentials, terminated by a `N credentials` row. Goodboy parses the credential names out of that section (each row is `<name>` followed by an ANSI-dimmed method, so the name is everything before the first escape sequence). No rows means disconnected. OpenRouter is connected when one of those rows names it, Moonshot when one names Moonshot. The `Environment` block below it lists providers reachable through env vars and is deliberately ignored: env-var credentials belong to Goodboy's own credential layer.
+
+### Model addressing
+
+opencode resolves providers live against models.dev, so the model id carries the provider. OpenRouter models are stored pre-slugged (`openrouter/anthropic/claude-sonnet-4.5`) and Moonshot models address Moonshot directly (`moonshotai/kimi-k3`). Because both already contain a `/`, neither gets an `OPENCODE_ROUTING` prefix.
+
+### Moonshot AI models
+
+- **Turn**: `kimi-k3` (`moonshotai/kimi-k3`), 1,048,576-token input context, 131,072-token output. Listed at $3.00/M input and $15.00/M output, the same bracket as Sonnet 4.5, so it carries `costTier: 'mid'`.
+- No cheap tier: Moonshot ships a single model, so auxiliary operations resolve to `kimi-k3` as well.
+- The API key lives under `MOONSHOT_API_KEY` and is validated against `https://api.moonshot.ai/v1/models` before the credential is stored.
 
 ---
 

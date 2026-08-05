@@ -13,6 +13,7 @@ export const PROVIDER_KIND = {
   gemini: 'cli',
   opencode: 'cli',
   openrouter: 'api',
+  moonshot: 'api',
 } satisfies Readonly<Record<ProviderId, ProviderKind>>;
 
 export const OPENCODE_ROUTING: Readonly<Partial<Record<ProviderId, OpenCodeRouting>>> = {

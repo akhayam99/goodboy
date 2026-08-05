@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import type {
   DetectResult,
   IsoDateTime,
+  ModelDescriptor,
   ProviderAdapter,
   ProviderCapabilities,
   ProviderId,
@@ -11,6 +12,7 @@ import type {
   TurnRequest,
 } from '@goodboy/types';
 import { streamChildEvents } from '../shared/stream-events';
+import { MOONSHOT_MODELS } from '../moonshot/constants';
 import { OPENROUTER_MODELS } from '../openrouter/constants';
 import { OPENCODE_MODELS } from './constants';
 import { computeOpenCodeCostUsd } from './cost';
@@ -18,7 +20,13 @@ import { parseJsonLine, resetOpenCodeParseState } from './parser';
 import { resolveModelArgs } from '../resolveModelArgs';
 import { resolveStoredModelSelection } from '../resolveStoredModelSelection';
 
-type OpenCodeProviderId = Extract<ProviderId, 'opencode' | 'openrouter'>;
+type OpenCodeProviderId = Extract<ProviderId, 'opencode' | 'openrouter' | 'moonshot'>;
+
+const MODELS_BY_PROVIDER = {
+  opencode: OPENCODE_MODELS,
+  openrouter: OPENROUTER_MODELS,
+  moonshot: MOONSHOT_MODELS,
+} satisfies Readonly<Record<OpenCodeProviderId, ReadonlyArray<ModelDescriptor>>>;
 
 export type OpenCodeAdapterDeps = {
   readonly providerId?: OpenCodeProviderId;
@@ -41,8 +49,8 @@ type ProviderParams = {
   readonly providerId: OpenCodeProviderId;
 };
 
-const modelsFor = ({ providerId }: ProviderParams) => {
-  return providerId === 'openrouter' ? OPENROUTER_MODELS : OPENCODE_MODELS;
+const modelsFor = ({ providerId }: ProviderParams): ReadonlyArray<ModelDescriptor> => {
+  return MODELS_BY_PROVIDER[providerId];
 };
 
 const capabilitiesFor = ({ providerId }: ProviderParams): ProviderCapabilities => {

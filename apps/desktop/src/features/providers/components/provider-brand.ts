@@ -4,6 +4,7 @@ import {
   ClaudeIcon,
   CursorIcon,
   GeminiIcon,
+  MoonshotIcon,
   OpenAIIcon,
   OpencodeIcon,
   OpenrouterIcon,
@@ -21,6 +22,7 @@ export const PROVIDER_BRAND: Record<ProviderId, ProviderBrand> = {
   gemini: { icon: GeminiIcon, cssVar: '--color-provider-gemini' },
   opencode: { icon: OpencodeIcon, cssVar: '--color-provider-opencode' },
   openrouter: { icon: OpenrouterIcon, cssVar: '--color-provider-openrouter' },
+  moonshot: { icon: MoonshotIcon, cssVar: '--color-provider-moonshot' },
 };
 
 export const brandColor = (providerId: ProviderId): string => {

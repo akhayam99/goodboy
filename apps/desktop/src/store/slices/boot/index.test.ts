@@ -191,6 +191,7 @@ vi.mock('../../../features/providers/providers', () => ({
   getGeminiStatus: vi.fn(async () => null),
   getOpenCodeStatus: vi.fn(async () => null),
   getOpenRouterStatus: vi.fn(async () => null),
+  getMoonshotStatus: vi.fn(async () => null),
   getProviderStatus: vi.fn(async () => null),
 }));
 
