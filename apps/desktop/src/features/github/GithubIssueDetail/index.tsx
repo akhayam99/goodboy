@@ -1,16 +1,25 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { FileText, MessageSquare } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
-import { HeaderBand, StudioDetailLayout } from '../../../shared/components/StudioDetail';
+import type { SegmentedTabOption } from '@goodboy/ui';
+import {
+  HeaderBand,
+  StudioDetailLayout,
+  StudioDetailTabs,
+} from '../../../shared/components/StudioDetail';
 import { githubIssueFields, resolveDetailFields } from '../../../shared/detail-fields';
 import { IssueStateBadge } from '../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../shared/components/ExternalRefActions';
 import { DescriptionSection } from '../../../shared/components/DescriptionSection';
+import { GithubIssueComments } from '../GithubIssueComments';
+import { useGithubIssueComments } from '../useGithubIssueComments';
 import {
   useGithubIssueDescription,
   type GithubIssueEditContext,
 } from '../useGithubIssueDescription';
 
 type Fit = 'fill' | 'bleed' | 'flow';
+type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: GithubIssue;
@@ -27,11 +36,31 @@ export const GithubIssueDetail = ({
   fit = 'fill',
   editContext,
 }: Props) => {
+  const [section, setSection] = useState<IssueSection>('overview');
   const { description, save } = useGithubIssueDescription({ issue, editContext });
+  const { comments, isLoading, error, post } = useGithubIssueComments({
+    workspaceId: editContext?.workspaceId ?? null,
+    rootPath: editContext?.rootPath ?? null,
+    issueNumber: issue.number,
+  });
   const properties = useMemo(
     () => resolveDetailFields({ registry: githubIssueFields, entity: issue }),
     [issue],
   );
+
+  const tabOptions: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
+    { value: 'overview', label: 'Overview', icon: FileText },
+    ...(editContext != null
+      ? [
+          {
+            value: 'conversation' as const,
+            label: 'Conversation',
+            icon: MessageSquare,
+            ...(comments.length > 0 && { badge: String(comments.length) }),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <StudioDetailLayout
@@ -55,10 +84,27 @@ export const GithubIssueDetail = ({
           }
         />
       }
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Issue sections"
+          value={section}
+          onChange={setSection}
+          options={tabOptions}
+        />
+      }
       dock={dock}
       properties={properties}
     >
-      <DescriptionSection text={description} onSave={save} />
+      {section === 'overview' ? (
+        <DescriptionSection text={description} onSave={save} />
+      ) : (
+        <GithubIssueComments
+          comments={comments}
+          isLoading={isLoading}
+          error={error}
+          onPost={post}
+        />
+      )}
     </StudioDetailLayout>
   );
 };

@@ -1,4 +1,4 @@
-import type { GithubIssue } from '@goodboy/types';
+import type { GithubIssue, GithubIssueComment } from '@goodboy/types';
 import type { GhRunner, GhRunOptions } from './gh';
 import { runJson } from './gh';
 
@@ -49,6 +49,71 @@ export const updateIssueBody = async ({
     opts,
   );
   return updated.body ?? '';
+};
+
+type RawIssueComment = {
+  id: number;
+  user: { login: string; avatar_url: string | null } | null;
+  body: string | null;
+  created_at: string;
+  html_url: string;
+};
+
+type ToIssueCommentParams = {
+  readonly raw: RawIssueComment;
+};
+
+const toIssueComment = ({ raw }: ToIssueCommentParams): GithubIssueComment => ({
+  id: String(raw.id),
+  author: raw.user?.login ?? 'unknown',
+  authorAvatarUrl: raw.user?.avatar_url ?? null,
+  body: raw.body ?? '',
+  createdAt: raw.created_at,
+  url: raw.html_url,
+});
+
+type ListIssueCommentsParams = {
+  readonly runner: GhRunner;
+  readonly repoSlug: string;
+  readonly issueNumber: number;
+  readonly opts?: GhRunOptions;
+};
+
+export const listIssueComments = async ({
+  runner,
+  repoSlug,
+  issueNumber,
+  opts = {},
+}: ListIssueCommentsParams): Promise<ReadonlyArray<GithubIssueComment>> => {
+  const raw = await runJson<ReadonlyArray<RawIssueComment>>(
+    runner,
+    ['api', `repos/${repoSlug}/issues/${issueNumber}/comments`, '--paginate'],
+    opts,
+  );
+  return raw.map((comment) => toIssueComment({ raw: comment }));
+};
+
+type CreateIssueCommentParams = {
+  readonly runner: GhRunner;
+  readonly repoSlug: string;
+  readonly issueNumber: number;
+  readonly body: string;
+  readonly opts?: GhRunOptions;
+};
+
+export const createIssueComment = async ({
+  runner,
+  repoSlug,
+  issueNumber,
+  body,
+  opts = {},
+}: CreateIssueCommentParams): Promise<GithubIssueComment> => {
+  const raw = await runJson<RawIssueComment>(
+    runner,
+    ['api', `repos/${repoSlug}/issues/${issueNumber}/comments`, '-X', 'POST', '-f', `body=${body}`],
+    opts,
+  );
+  return toIssueComment({ raw });
 };
 
 export const listAssignedIssues = async (

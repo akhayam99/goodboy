@@ -237,6 +237,7 @@ export type {
   GhTokenStatus,
   GithubPrCacheEntry,
   GithubIssue,
+  GithubIssueComment,
   LinkedIssue,
   PendingResolution,
   PendingResolutionOutcome,

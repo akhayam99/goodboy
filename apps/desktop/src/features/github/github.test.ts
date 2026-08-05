@@ -4,6 +4,8 @@ const h = vi.hoisted(() => ({
   detectRepoSlug: vi.fn(),
   ghRunJson: vi.fn(),
   updateIssueBody: vi.fn(),
+  listIssueComments: vi.fn(),
+  createIssueComment: vi.fn(),
 }));
 
 vi.mock('@goodboy/core', async (importOriginal) => {
@@ -13,15 +15,24 @@ vi.mock('@goodboy/core', async (importOriginal) => {
     detectRepoSlug: h.detectRepoSlug,
     ghRunJson: h.ghRunJson,
     updateIssueBody: h.updateIssueBody,
+    listIssueComments: h.listIssueComments,
+    createIssueComment: h.createIssueComment,
   };
 });
 
-import { ghIssueByNumber, ghUpdateIssueBody } from './github';
+import {
+  ghCreateIssueComment,
+  ghIssueByNumber,
+  ghIssueComments,
+  ghUpdateIssueBody,
+} from './github';
 
 afterEach(() => {
   h.detectRepoSlug.mockReset();
   h.ghRunJson.mockReset();
   h.updateIssueBody.mockReset();
+  h.listIssueComments.mockReset();
+  h.createIssueComment.mockReset();
 });
 
 describe('ghIssueByNumber', () => {
@@ -70,6 +81,63 @@ describe('ghIssueByNumber', () => {
       'could not detect a GitHub repository for this workspace',
     );
     expect(h.ghRunJson).not.toHaveBeenCalled();
+  });
+});
+
+describe('ghIssueComments', () => {
+  it('reads the comment thread of the detected repo', async () => {
+    h.detectRepoSlug.mockResolvedValueOnce('acme/web');
+    h.listIssueComments.mockResolvedValueOnce([]);
+
+    await ghIssueComments({ cwd: '/repo', issueNumber: 42, workspaceId: 'workspace-1' });
+
+    expect(h.listIssueComments).toHaveBeenCalledWith({
+      runner: expect.anything(),
+      repoSlug: 'acme/web',
+      issueNumber: 42,
+      opts: { cwd: '/repo', workspaceId: 'workspace-1' },
+    });
+  });
+
+  it('throws when no github repository can be detected', async () => {
+    h.detectRepoSlug.mockResolvedValueOnce(null);
+
+    await expect(ghIssueComments({ cwd: '/repo', issueNumber: 42 })).rejects.toThrow(
+      'could not detect a GitHub repository for this workspace',
+    );
+    expect(h.listIssueComments).not.toHaveBeenCalled();
+  });
+});
+
+describe('ghCreateIssueComment', () => {
+  it('posts the comment to the detected repo and returns it', async () => {
+    h.detectRepoSlug.mockResolvedValueOnce('acme/web');
+    h.createIssueComment.mockResolvedValueOnce({ id: '7', body: 'On it.' });
+
+    const comment = await ghCreateIssueComment({
+      cwd: '/repo',
+      issueNumber: 42,
+      body: 'On it.',
+      workspaceId: 'workspace-1',
+    });
+
+    expect(comment).toEqual({ id: '7', body: 'On it.' });
+    expect(h.createIssueComment).toHaveBeenCalledWith({
+      runner: expect.anything(),
+      repoSlug: 'acme/web',
+      issueNumber: 42,
+      body: 'On it.',
+      opts: { cwd: '/repo', workspaceId: 'workspace-1' },
+    });
+  });
+
+  it('throws without posting when no github repository can be detected', async () => {
+    h.detectRepoSlug.mockResolvedValueOnce(null);
+
+    await expect(
+      ghCreateIssueComment({ cwd: '/repo', issueNumber: 42, body: 'On it.' }),
+    ).rejects.toThrow('could not detect a GitHub repository for this workspace');
+    expect(h.createIssueComment).not.toHaveBeenCalled();
   });
 });
 
