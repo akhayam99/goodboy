@@ -83,4 +83,28 @@ describe('resolverThreadSettlements', () => {
     expect(settlement?.isQueued).toBe(true);
     expect(settlement?.reply).toBe('legacy resolver reply');
   });
+
+  it('shows the persisted verdict of a queued row after a restart, instead of open', () => {
+    const survivor = {
+      id: 'pending-survivor',
+      sessionId: 'session-1' as SessionId,
+      prNumber: 1,
+      threadId: 'PRRT_1',
+      commitSha: 'abcdef1234567890',
+      reply: 'fixed it',
+      outcome: 'resolved',
+      replyPostedAt: '2026-05-28T00:00:00.000Z' as IsoDateTime,
+      createdAt: '2026-05-28T00:00:00.000Z' as IsoDateTime,
+    } satisfies PendingResolution;
+
+    const [settlement] = resolverThreadSettlements({
+      threadIds: ['PRRT_1'],
+      outcomes: {},
+      pendingResolutions: [survivor],
+      closedThreadIds: NOTHING_CLOSED,
+    });
+
+    expect(settlement?.kind).toBe('resolved');
+    expect(settlement?.isQueued).toBe(true);
+  });
 });

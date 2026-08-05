@@ -3,7 +3,7 @@ import {
   listPendingResolutionsForSession,
   queuePendingResolution,
 } from '@goodboy/db';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, PendingResolutionOutcome, SessionId } from '@goodboy/types';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { closedThreadIds } from '../../../features/session/closedThreadIds';
 import { resolverThreadSettlements } from '../../../features/session/resolverThreadSettlements';
@@ -25,6 +25,7 @@ type Target = {
   readonly threadId: string;
   readonly closure: Closure;
   readonly shouldPush: boolean;
+  readonly outcome: PendingResolutionOutcome;
 };
 
 type ClosureParams = {
@@ -108,7 +109,12 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
             return [];
           }
           return [
-            { threadId: settlement.threadId, closure, shouldPush: settlement.kind === 'resolved' },
+            {
+              threadId: settlement.threadId,
+              closure,
+              shouldPush: settlement.kind === 'resolved',
+              outcome: settlement.kind,
+            },
           ];
         });
         const alreadyClosed = settlements.filter((settlement) => settlement.isClosed).length;
@@ -158,7 +164,7 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
                 threadId: target.threadId,
                 commitSha: target.closure.commitSha ?? '',
                 reply: target.closure.reply ?? null,
-                outcome: null,
+                outcome: target.outcome,
               });
             }
             await markThreadResolvedNoPush({

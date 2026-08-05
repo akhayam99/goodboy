@@ -786,6 +786,94 @@ describe('store contract', () => {
       });
     });
 
+    it('resolveGithubThread persists the derived verdict for a commit closure, not null', async () => {
+      const store = await getStore();
+      const openPr = {
+        number: 5,
+        title: 't',
+        state: 'open',
+        updatedAt: '2026-05-28T00:00:00.000Z',
+      } as PullRequestState;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        sessionGithub: {
+          [SESSION_ID]: {
+            pr: openPr,
+            linkedIssues: [],
+            fetchedAt: null,
+            loading: false,
+            error: null,
+            detail: null,
+            detailFetchedAt: null,
+            detailLoading: false,
+            detailError: null,
+          },
+        },
+      });
+
+      const ok = await store
+        .getState()
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { commitSha: 'abcdef1234567890' });
+
+      expect(ok).toBe(true);
+      expect(queuePendingResolutionSpy).toHaveBeenCalledWith({
+        db: expect.anything(),
+        id: expect.any(String),
+        sessionId: SESSION_ID,
+        prNumber: 5,
+        threadId: 'PRT_1',
+        commitSha: 'abcdef1234567890',
+        reply: null,
+        outcome: 'resolved',
+      });
+    });
+
+    it('resolveGithubThread persists the derived verdict for a reason-only closure, not null', async () => {
+      const store = await getStore();
+      const openPr = {
+        number: 5,
+        title: 't',
+        state: 'open',
+        updatedAt: '2026-05-28T00:00:00.000Z',
+      } as PullRequestState;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionGithub: {
+          [SESSION_ID]: {
+            pr: openPr,
+            linkedIssues: [],
+            fetchedAt: null,
+            loading: false,
+            error: null,
+            detail: null,
+            detailFetchedAt: null,
+            detailLoading: false,
+            detailError: null,
+          },
+        },
+      });
+
+      const ok = await store
+        .getState()
+        .resolveGithubThread(SESSION_ID, 'PRT_1', { reason: 'not applicable' });
+
+      expect(ok).toBe(true);
+      expect(queuePendingResolutionSpy).toHaveBeenCalledWith({
+        db: expect.anything(),
+        id: expect.any(String),
+        sessionId: SESSION_ID,
+        prNumber: 5,
+        threadId: 'PRT_1',
+        commitSha: '',
+        reply: null,
+        outcome: 'wontfix',
+      });
+    });
+
     it('resolveGithubThread never clobbers a verdict a caller already queued for the thread', async () => {
       const store = await getStore();
       const openPr = {
@@ -1595,6 +1683,40 @@ describe('store contract', () => {
       expect(result).toEqual({ pushed: false, resolved: 0, failed: 0 });
     });
 
+    it('pushAllResolutions resolves a row that survived a restart on a persisted verdict alone', async () => {
+      const store = await getStore();
+      const survivor = {
+        id: 'pending-survivor',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_1',
+        commitSha: 'abcdef1234567890',
+        reply: 'fixed it',
+        outcome: 'resolved',
+        replyPostedAt: NOW,
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        resolverThreadOutcomes: {},
+        sessionPendingResolutions: { [SESSION_ID]: [survivor] },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([survivor])
+        .mockResolvedValueOnce([]);
+
+      const result = await store.getState().pushAllResolutions(SESSION_ID);
+
+      expect(resolveThreadSpy).toHaveBeenCalledOnce();
+      expect(addReplySpy).not.toHaveBeenCalled();
+      expect(deletePendingResolutionSpy).toHaveBeenCalledOnce();
+      expect(result).toEqual({ pushed: true, resolved: 1, failed: 0 });
+    });
+
     it('pushAllResolutions fails only the fixes when the push is rejected', async () => {
       const store = await getStore();
       const fix = {
@@ -1878,7 +2000,7 @@ describe('store contract', () => {
         threadId: 'PRRT_1',
         commitSha: 'abcdef1234567890',
         reply: 'fixed it',
-        outcome: null,
+        outcome: 'resolved',
         replyPostedAt: NOW,
         createdAt: NOW,
       } satisfies PendingResolution;
@@ -1899,7 +2021,7 @@ describe('store contract', () => {
         threadId: 'PRRT_1',
         commitSha: 'abcdef1234567890',
         reply: 'fixed it',
-        outcome: null,
+        outcome: 'resolved',
       });
       expect(addReplySpy).toHaveBeenCalledOnce();
       expect(deletePendingResolutionSpy).not.toHaveBeenCalled();
