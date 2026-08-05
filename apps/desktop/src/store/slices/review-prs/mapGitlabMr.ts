@@ -1,23 +1,11 @@
-import type { PullRequestStateKind, ReviewablePr } from '@goodboy/types';
+import type { ReviewablePr } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
+import { gitlabMrStateKind } from '../../../features/integrations/gitlab/gitlabMrStateKind';
 
 type Params = {
   mr: GitlabMergeRequest;
   currentUserName: string;
   projectPath: string;
-};
-
-const deriveState = ({ mr }: { mr: GitlabMergeRequest }): PullRequestStateKind => {
-  if (mr.state === 'merged') {
-    return 'merged';
-  }
-  if (mr.state === 'closed' || mr.state === 'locked') {
-    return 'closed';
-  }
-  if (mr.draft) {
-    return 'draft';
-  }
-  return 'open';
 };
 
 export const mapGitlabMr = ({ mr, currentUserName, projectPath }: Params): ReviewablePr => {
@@ -33,7 +21,7 @@ export const mapGitlabMr = ({ mr, currentUserName, projectPath }: Params): Revie
     authorAvatarUrl: mr.author?.avatarUrl ?? null,
     mine: author !== '' && author === currentUserName,
     reviewRequested: (mr.reviewers ?? []).some((r) => r.username === currentUserName),
-    state: deriveState({ mr }),
+    state: gitlabMrStateKind({ mr }),
     baseBranch: mr.targetBranch,
     headBranch: mr.sourceBranch,
     isDraft: mr.draft,

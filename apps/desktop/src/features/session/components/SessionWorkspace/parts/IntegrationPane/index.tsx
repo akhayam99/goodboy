@@ -21,6 +21,7 @@ import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../../shared/components/PaneShell/FocusedPane';
 import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
+import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';
 import { FocusedTaskBody } from './FocusedTaskBody';
 import { integrationTaskKey } from './integrationTaskKey';
@@ -64,6 +65,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const githubConnection = useGithubConnection({ workspaceId });
   const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
   const branchPrs = useAppStore((state) => state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
+  const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const tasks = useMemo(
     () => externalTasks.filter((task) => task.provider === provider),
     [externalTasks, provider],
@@ -89,7 +91,11 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     />
   );
   const focusedTask = tasks.find((task) => integrationTaskKey({ task }) === focusedTaskKey) ?? null;
-  const workItems = buildWorkItems({ tasks, currentBranch: sessionBranch, branchPrs });
+  const workItems = buildWorkItems({
+    tasks,
+    currentBranch: sessionBranch,
+    branchPrs: branchRequests({ prs: branchPrs, mr: mergeRequest, branch: sessionBranch }),
+  });
 
   const handleUnlink = async ({ task }: UnlinkParams) => {
     const mountWorkspaceId = task.mountWorkspaceId;

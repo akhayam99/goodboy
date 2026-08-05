@@ -1,8 +1,10 @@
 import type { SessionExternalTask } from '@goodboy/types';
+import { CLOSING_KEYWORDS } from './closingKeywords';
 
 export type ClosingIssueReference = Readonly<{
   number: number;
   identifier: string;
+  title: string;
   url: string;
   line: string;
 }>;
@@ -12,8 +14,6 @@ type Params = {
   readonly branch: string | null;
   readonly body: string;
 };
-
-const CLOSING_KEYWORDS = 'close[sd]?|fix(?:es|ed)?|resolve[sd]?';
 
 export const closingIssueReferences = ({
   tasks,
@@ -46,6 +46,7 @@ export const closingIssueReferences = ({
     byNumber.set(number, {
       number,
       identifier: task.identifier,
+      title: task.title,
       url: task.url,
       line: `Closes #${number}`,
     });

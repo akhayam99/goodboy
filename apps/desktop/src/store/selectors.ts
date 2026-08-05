@@ -31,6 +31,7 @@ import type { AppState, SessionLoadingFlags, SummarizerSessionStatus } from './t
 import {
   deriveSessionStage,
   isPrReviewSession,
+  resolveSessionRequest,
   sortAndGroupSessions,
   type GroupedSessions,
 } from './slices/session-view';
@@ -81,6 +82,7 @@ type StageInfoState = Pick<
   | 'workspaces'
   | 'sessionBranches'
   | 'sessionGithub'
+  | 'sessionGitlabMr'
   | 'sessionOpenQuestions'
   | 'sessionPhaseRuns'
   | 'selectedAgentId'
@@ -116,9 +118,14 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
     workspaceKind: state.workspaces.find((workspace) => workspace.id === session.workspaceId)?.kind,
     branch: state.sessionBranches[sessionId],
   });
+  const request = resolveSessionRequest({
+    pr: state.sessionGithub[sessionId]?.pr ?? null,
+    mr: state.sessionGitlabMr[sessionId]?.mr ?? null,
+  });
   return deriveSessionStage({
     session,
-    pr: state.sessionGithub[sessionId]?.pr ?? null,
+    pr: request.pr,
+    requestLabel: request.requestLabel,
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
     hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
@@ -143,6 +150,9 @@ export const useSortedGroupedSessions = (
   const sessionGithub = useAppStore((s) =>
     needsGithub ? s.sessionGithub : (EMPTY_GITHUB_STATE as typeof s.sessionGithub),
   );
+  const sessionGitlabMr = useAppStore((s) =>
+    needsStage ? s.sessionGitlabMr : (EMPTY_GITHUB_STATE as typeof s.sessionGitlabMr),
+  );
   const sessionOpenQuestions = useAppStore((s) =>
     needsStage ? s.sessionOpenQuestions : (EMPTY_GITHUB_STATE as typeof s.sessionOpenQuestions),
   );
@@ -162,6 +172,7 @@ export const useSortedGroupedSessions = (
       workspaces,
       sessionBranches,
       sessionGithub,
+      sessionGitlabMr,
       sessionOpenQuestions,
       sessionPhaseRuns,
       selectedAgentId,
@@ -181,6 +192,7 @@ export const useSortedGroupedSessions = (
     workspaces,
     sessionBranches,
     sessionGithub,
+    sessionGitlabMr,
     sessionOpenQuestions,
     sessionPhaseRuns,
     selectedAgentId,
@@ -194,6 +206,7 @@ export const useStageGroupedSessions = (
 ): ReadonlyArray<GroupedSessions> => {
   const prefs = useSessionViewPrefs(workspaceId);
   const sessionGithub = useAppStore((s) => s.sessionGithub);
+  const sessionGitlabMr = useAppStore((s) => s.sessionGitlabMr);
   const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
@@ -205,6 +218,7 @@ export const useStageGroupedSessions = (
       workspaces,
       sessionBranches,
       sessionGithub,
+      sessionGitlabMr,
       sessionOpenQuestions,
       sessionPhaseRuns,
       selectedAgentId,
@@ -226,6 +240,7 @@ export const useStageGroupedSessions = (
     workspaces,
     sessionBranches,
     sessionGithub,
+    sessionGitlabMr,
     sessionOpenQuestions,
     sessionPhaseRuns,
     selectedAgentId,
