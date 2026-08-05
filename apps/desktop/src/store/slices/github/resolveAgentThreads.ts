@@ -140,7 +140,17 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
         let lastError = '';
         for (const target of targets) {
           try {
-            await markThreadResolvedNoPush(set, get, sessionId, target.threadId, target.closure);
+            const replyAlreadyPosted =
+              persisted.find((resolution) => resolution.threadId === target.threadId)
+                ?.replyPostedAt != null;
+            await markThreadResolvedNoPush({
+              set,
+              get,
+              sessionId,
+              threadId: target.threadId,
+              replyAlreadyPosted,
+              closure: target.closure,
+            });
             await deletePendingResolution({
               db: tauriDatabase,
               sessionId,

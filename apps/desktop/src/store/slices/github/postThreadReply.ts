@@ -34,7 +34,7 @@ export const postThreadReply = async ({
   sessionId,
   threadId,
   closure,
-}: Params): Promise<void> => {
+}: Params): Promise<boolean> => {
   const pendingReply = get().sessionPendingResolutions[sessionId]?.find(
     (resolution) => resolution.threadId === threadId,
   )?.reply;
@@ -51,7 +51,7 @@ export const postThreadReply = async ({
     pr?.url ?? null,
   );
   if (replyBody === null) {
-    return;
+    return false;
   }
   await addReviewThreadReply(
     tauriGhRunner,
@@ -59,4 +59,5 @@ export const postThreadReply = async ({
     replyBody,
     sessionThreadGhOptions({ get, sessionId }),
   );
+  return true;
 };

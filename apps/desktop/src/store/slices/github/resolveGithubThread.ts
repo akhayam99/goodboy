@@ -1,4 +1,10 @@
+import {
+  deletePendingResolution,
+  listPendingResolutionsForSession,
+  queuePendingResolution,
+} from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
@@ -55,7 +61,52 @@ export const resolveGithubThread = (set: SetFn, get: GetFn) => {
               return false;
             }
           }
-          await markThreadResolvedNoPush(set, get, sessionId, threadId, closure);
+          const prNumber = get().sessionGithub[sessionId]?.pr?.number ?? null;
+          const persistFirst = prNumber !== null;
+          let replyAlreadyPosted = false;
+          if (persistFirst) {
+            const before = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+            replyAlreadyPosted =
+              before.find((resolution) => resolution.threadId === threadId)?.replyPostedAt != null;
+            await queuePendingResolution({
+              db: tauriDatabase,
+              id: crypto.randomUUID(),
+              sessionId,
+              prNumber,
+              threadId,
+              commitSha: closure?.commitSha ?? '',
+              reply: closure?.reply ?? null,
+              outcome: null,
+            });
+            const queued = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+            set((state) => ({
+              sessionPendingResolutions: {
+                ...state.sessionPendingResolutions,
+                [sessionId]: queued,
+              },
+            }));
+          }
+          await markThreadResolvedNoPush({
+            set,
+            get,
+            sessionId,
+            threadId,
+            replyAlreadyPosted,
+            closure,
+          });
+          if (persistFirst) {
+            await deletePendingResolution({ db: tauriDatabase, sessionId, threadId });
+            const remaining = await listPendingResolutionsForSession({
+              db: tauriDatabase,
+              sessionId,
+            });
+            set((state) => ({
+              sessionPendingResolutions: {
+                ...state.sessionPendingResolutions,
+                [sessionId]: remaining,
+              },
+            }));
+          }
           await get().refreshSessionPrDetail(sessionId, { force: true });
           return true;
         } catch (err) {

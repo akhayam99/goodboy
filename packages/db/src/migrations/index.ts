@@ -101,6 +101,7 @@ import { m100WorkflowOrigin } from './m100-workflow-origin';
 import { m101TelemetryOrchestratorKind } from './m101-telemetry-orchestrator-kind';
 import { m102WorkflowOrchestrationStopKind } from './m102-workflow-orchestration-stop-kind';
 import { m103SessionExternalTaskBranch } from './m103-session-external-task-branch';
+import { m104PendingResolutionReplyPosted } from './m104-pending-resolution-reply-posted';
 
 export type Migration = {
   readonly version: number;
@@ -211,4 +212,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 101, sql: m101TelemetryOrchestratorKind },
   { version: 102, sql: m102WorkflowOrchestrationStopKind },
   { version: 103, sql: m103SessionExternalTaskBranch },
+  { version: 104, sql: m104PendingResolutionReplyPosted },
 ];

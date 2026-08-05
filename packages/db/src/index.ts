@@ -199,6 +199,7 @@ export {
 export {
   queuePendingResolution,
   listPendingResolutionsForSession,
+  markPendingResolutionReplyPosted,
   deletePendingResolution,
 } from './queries/pending-resolution';
 export {

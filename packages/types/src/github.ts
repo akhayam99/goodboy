@@ -173,5 +173,6 @@ export type PendingResolution = {
   commitSha: string;
   reply: string | null;
   outcome: PendingResolutionOutcome | null;
+  replyPostedAt: IsoDateTime | null;
   createdAt: IsoDateTime;
 };
