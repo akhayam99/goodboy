@@ -1,5 +1,6 @@
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
+import { NoteHeader } from '../../../../shared/components/NoteHeader';
 import type { JiraComment } from '../client';
 
 type Props = {
@@ -11,15 +12,17 @@ export const IssueNoteHeader = ({ comment }: Props) => {
   const name = comment.author?.displayName ?? 'Unknown';
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <NoteAvatar url={comment.author?.avatarUrls?.['24x24'] ?? null} alt={name} />
-      <span className="font-medium text-foreground">{name}</span>
-      {age !== '' && (
-        <>
-          <span className="opacity-50">·</span>
-          <span>{age}</span>
-        </>
-      )}
-    </div>
+    <NoteHeader
+      avatar={<NoteAvatar url={comment.author?.avatarUrls?.['24x24'] ?? null} alt={name} />}
+      author={name}
+      timestamp={
+        age !== '' && (
+          <>
+            <span className="opacity-50">·</span>
+            <span>{age}</span>
+          </>
+        )
+      }
+    />
   );
 };

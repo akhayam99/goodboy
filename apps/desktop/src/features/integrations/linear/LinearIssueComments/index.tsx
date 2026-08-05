@@ -1,6 +1,9 @@
-import { EmptyState, Markdown, Skeleton } from '@goodboy/ui';
+import { EmptyState } from '@goodboy/ui';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { NoteCard } from '../../../../shared/components/NoteCard';
+import { NoteHeader } from '../../../../shared/components/NoteHeader';
+import { NoteListSkeleton } from '../../../../shared/components/NoteListSkeleton';
 import type { LinearIssueComment } from '../client';
 
 type Props = {
@@ -11,17 +14,7 @@ type Props = {
 
 export const LinearIssueComments = ({ comments, isLoading, error }: Props) => {
   if (isLoading) {
-    return (
-      <div role="status" aria-label="Loading comments" className="flex flex-col gap-4">
-        {[0, 1, 2].map((row) => (
-          <div key={row} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
-            <Skeleton className="h-3 w-28 rounded" />
-            <Skeleton className="h-3 w-full rounded" />
-            <Skeleton className="h-3 w-2/3 rounded" />
-          </div>
-        ))}
-      </div>
-    );
+    return <NoteListSkeleton />;
   }
 
   if (error != null) {
@@ -46,15 +39,17 @@ export const LinearIssueComments = ({ comments, isLoading, error }: Props) => {
       {comments.map((comment) => {
         const relativeDate = formatRelativeDuration(comment.createdAt);
         return (
-          <div key={comment.id} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
-            <div className="flex items-center gap-2 text-2xs text-muted-foreground">
-              <span className="font-medium text-foreground">
-                {comment.user?.name ?? 'Unknown author'}
-              </span>
-              {relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
-            </div>
-            <Markdown text={comment.body} className="text-sm leading-relaxed" />
-          </div>
+          <NoteCard
+            key={comment.id}
+            header={
+              <NoteHeader
+                author={comment.user?.name ?? 'Unknown author'}
+                timestamp={relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
+                size="xs"
+              />
+            }
+            body={comment.body}
+          />
         );
       })}
     </div>
