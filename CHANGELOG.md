@@ -7,6 +7,48 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.63
+
+Jira is the fifth host Goodboy reads, and the first one you can assign and transition from without opening a browser tab. Moonshot joins the provider list with Kimi K3, and the Plans lens finally works like every other lens.
+
+### [#1233, #1236, #1237] Jira, end to end
+
+A Jira ticket used to be a URL you pasted somewhere. Now it is an object in the workspace. Connect a Jira Cloud site with your account email and an API token, and the left rail grows a Jira row next to Linear, Sentry and GitLab.
+
+What you see: the issue rendered in full, through the same page anatomy every other host already uses. Key, summary, description, status, type, priority, assignee, reporter, labels, dates, and the comment thread. Jira's rich text is converted to markdown on the way in, and the nodes we do not model flatten to their text rather than disappearing.
+
+What you can do to it: comment, assign or unassign, move it through its workflow, and edit the description. Assign and transition are the first of their kind anywhere in Goodboy, since no other connected host has ever had them. The move menu is built from the transitions Jira reports for that one issue, never from a fixed list of statuses, because every Jira project carries its own workflow. When the workflow cannot be read the control stays where it is and says why, instead of disappearing.
+
+Where it takes you: Start session on any issue opens a session with the goal and the branch name already seeded from the ticket, and the ticket linked to it. Pasting an `atlassian.net/browse/KEY` URL into Link work does the same.
+
+The limits. Jira Cloud only, no Data Center or Server. API token, no OAuth. One project key per workspace. Assignable users come back one page at a time, so on a large project the filter box searches the first page. A transition that needs a screen is offered and attempted plainly, and Jira's answer is shown as it comes. The mobile companion cannot list or create sessions from Jira issues yet.
+
+The honest part: none of these calls has run against a real Atlassian site. Every endpoint is tested against fixtures built from Atlassian's own documentation, which proves the request shapes agree with the docs and proves nothing about the docs. If the issue search behaves differently from its documented shape, the inbox will be empty and none of those tests will have caught it. Try it, break it, send the error back.
+
+### [#1235] Moonshot, with Kimi K3
+
+Moonshot is a provider in its own right, not a row in someone else's catalogue. Its own connect flow, its own key, its own mark in the picker. Kimi K3 shows up everywhere a model is picked, with the full effort ladder.
+
+It sits in the mid cost bracket, priced per token the same as Sonnet 4.5, and it is weighted so automatic routing can reach for it on mid-tier work without ever displacing the models that carry the code roles. A test now pins that band, so the next model added cannot quietly outrank them.
+
+Unverified here too: the model id comes from opencode's registry and has not been resolved against a live Moonshot account.
+
+### [#1234] Plans reads like every other lens
+
+Plans had a grammar of its own. Landing on it silently opened the last plan you happened to create, and the rest lived behind an Other plans button that slid a resizable panel in from the right, with its own close control. Nothing else in the app worked that way.
+
+It works like workflows now. No active plans shows an empty state, with the consumed ones behind a count you can reveal in place. Active plans show as a list. Clicking one opens it as a subpage with a breadcrumb and a back button. The right-hand panel is gone.
+
+Two things that were quietly broken are fixed by the same change. Clicking a plan chip in a transcript while already on the Plans lens did nothing at all, and neither did clicking Plans in the breadcrumb while a plan was open. Both read the store once at mount and never again. Both work now.
+
+### Smaller fixes
+
+- [#1237] The Jira comment box says plain text, because that is what Goodboy sends, and markdown you typed would have been stored literally
+- [#1237] Acting on an issue refreshes the row in the list beside it, so the detail and the list cannot show two different statuses at once
+- [#1237] Switching issues in the inbox right after a write no longer paints the previous issue's title under the new issue for a frame
+- [#1236] The onboarding tracker step offers Jira as a live choice instead of a greyed-out badge
+- [#1236] Connecting only Jira completes the tools step of the onboarding checklist, which used to need Linear or Sentry
+
 ## Goodboy v0.1.62
 
 Click a linked issue and you land on that issue, not on a list of them. The review thread behind a resolver reads in the chat card, and a workflow step that refuses to start finally says why.
