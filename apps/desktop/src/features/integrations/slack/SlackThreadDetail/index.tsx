@@ -7,6 +7,7 @@ import { buildThreadProperties } from '../buildThreadProperties';
 import { slackUserNames } from '../nameMaps';
 import { slackThreadTitle } from '../threadFormulas';
 import { ThreadConversation } from '../ThreadConversation';
+import type { SlackThreadActions } from '../useSlackThreadActions';
 
 type Fit = 'fill' | 'bleed' | 'flow';
 
@@ -20,6 +21,7 @@ type Props = {
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly onRetry: () => void;
+  readonly actions: SlackThreadActions;
   readonly fit?: Fit;
   readonly dock?: ReactNode;
 };
@@ -34,6 +36,7 @@ export const SlackThreadDetail = ({
   isLoading,
   error,
   onRetry,
+  actions,
   fit = 'fill',
   dock,
 }: Props) => {
@@ -74,6 +77,7 @@ export const SlackThreadDetail = ({
         isLoading={isLoading}
         error={error}
         onRetry={onRetry}
+        actions={actions}
       />
     </StudioDetailLayout>
   );

@@ -96,6 +96,8 @@ import {
   initialSlackThreadsState,
   type RefreshSlackThreadOptions,
   type SlackChannelParams,
+  type SlackReactionParams,
+  type SlackReplyParams,
   type SlackThreadParams,
   type SlackWorkspaceParams,
 } from './slices/slack-threads';
@@ -599,6 +601,8 @@ export type AppActions = {
   refreshSlackUsers(params: SlackWorkspaceParams): Promise<void>;
   refreshSlackThreadHeads(params: SlackChannelParams): Promise<void>;
   refreshSlackThread(params: SlackThreadParams, options?: RefreshSlackThreadOptions): Promise<void>;
+  replyToSlackThread(params: SlackReplyParams): Promise<void>;
+  addSlackReaction(params: SlackReactionParams): Promise<void>;
   closePr(sessionId: SessionId, prNumber?: number): Promise<void>;
   reopenPr(sessionId: SessionId, prNumber?: number): Promise<void>;
   editPr(

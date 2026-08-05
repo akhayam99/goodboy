@@ -14,6 +14,7 @@ import {
   slackThreadTitle,
 } from '../threadFormulas';
 import { useSlackThread } from '../useSlackThread';
+import { useSlackThreadActions } from '../useSlackThreadActions';
 import type { SlackThreadRow } from './useSlackThreads';
 
 type Props = {
@@ -28,6 +29,12 @@ export const ThreadDetailPanel = ({ row, workspaceId, sessionId, onClose }: Prop
   const threadTs = row?.head.threadTs ?? row?.head.ts ?? '';
   const [permalink, setPermalink] = useState<string | null>(null);
   const thread = useSlackThread({
+    workspaceId,
+    channelId,
+    threadTs,
+    isEnabled: channelId !== '' && threadTs !== '',
+  });
+  const actions = useSlackThreadActions({
     workspaceId,
     channelId,
     threadTs,
@@ -83,6 +90,7 @@ export const ThreadDetailPanel = ({ row, workspaceId, sessionId, onClose }: Prop
       isLoading={thread.isLoading}
       error={thread.error}
       onRetry={thread.refetch}
+      actions={actions}
       dock={
         <LaunchSessionPanel
           key={`${channelId}:${threadTs}`}
