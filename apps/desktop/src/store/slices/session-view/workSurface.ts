@@ -1,4 +1,4 @@
-import type { PlanId, SessionId } from '@goodboy/types';
+import type { PlanId, SessionExternalTask, SessionId } from '@goodboy/types';
 import type {
   DiffFocus,
   GetFn,
@@ -7,6 +7,7 @@ import type {
   SetFn,
   WorkSurfacePosition,
 } from './types';
+import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { amendTopPosition } from './amendTopPosition';
 import { workSurfaceFocus } from './workSurfaceFocus';
 import { writePersistedLens } from './workSurfaceStorage';
@@ -40,6 +41,7 @@ export const setActiveLens = (set: SetFn) => {
             ? s.focusedWorkflowRunId
             : { ...s.focusedWorkflowRunId, [sessionId]: null },
         diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
+        focusedExternalTask: { ...s.focusedExternalTask, [sessionId]: null },
         lensHistory: {
           ...s.lensHistory,
           [sessionId]: { entries, index: entries.length - 1 },
@@ -133,6 +135,26 @@ export const setFocusedGithubIssueNumber = (set: SetFn) => {
   return (sessionId: SessionId, issueNumber: number | null): void => {
     set((s) => ({
       focusedGithubIssueNumber: { ...s.focusedGithubIssueNumber, [sessionId]: issueNumber },
+    }));
+  };
+};
+
+export const openExternalTaskLens = (set: SetFn, get: GetFn) => {
+  return (sessionId: SessionId, task: SessionExternalTask): void => {
+    get().setActiveLens(sessionId, PROVIDER_LENS[task.provider]);
+    if (task.provider === 'github') {
+      get().setFocusedGithubIssueNumber(sessionId, Number(task.externalId));
+      return;
+    }
+    set((s) => ({
+      focusedExternalTask: {
+        ...s.focusedExternalTask,
+        [sessionId]: {
+          provider: task.provider,
+          externalId: task.externalId,
+          mountWorkspaceId: task.mountWorkspaceId ?? null,
+        },
+      },
     }));
   };
 };

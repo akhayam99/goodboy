@@ -16,6 +16,7 @@ import type {
   PlanWithCount,
   ProviderRunId,
   Session,
+  SessionExternalTask,
   SessionId,
   Skill,
   SkillId,
@@ -401,6 +402,19 @@ function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
   };
 }
 
+function buildExternalTask(overrides: Partial<SessionExternalTask> = {}): SessionExternalTask {
+  return {
+    sessionId: SESSION_ID,
+    provider: 'linear',
+    externalId: 'ENG-42',
+    identifier: 'ENG-42',
+    url: 'https://linear.app/acme/issue/ENG-42',
+    title: 'Track linked work',
+    createdAt: NOW,
+    ...overrides,
+  };
+}
+
 function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
   return {
     id: PLAN_ID,
@@ -515,6 +529,7 @@ describe('store contract', () => {
         lensHistory: {},
         workflowExpand: {},
         focusedPlanId: {},
+        focusedExternalTask: {},
         sessionStudio: {},
       };
     }
@@ -734,6 +749,67 @@ describe('store contract', () => {
       expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
       store.getState().lensGo(SESSION_ID, -1);
       expect(store.getState().activeLens[SESSION_ID]).toBe('resolve');
+    });
+
+    it.each([
+      ['linear', 'linear'],
+      ['sentry', 'sentry'],
+      ['gitlab', 'gitlab_issues'],
+    ] as const)(
+      'openExternalTaskLens lands on the %s lens with the clicked issue focused',
+      async (provider, lens) => {
+        const store = await getStore();
+        store
+          .getState()
+          .openExternalTaskLens(
+            SESSION_ID,
+            buildExternalTask({ provider, externalId: `${provider}-7` }),
+          );
+        expect(store.getState().activeLens[SESSION_ID]).toBe(lens);
+        expect(store.getState().focusedExternalTask[SESSION_ID]).toEqual({
+          provider,
+          externalId: `${provider}-7`,
+          mountWorkspaceId: null,
+        });
+      },
+    );
+
+    it.each(['linear', 'sentry', 'gitlab_issues'] as const)(
+      'opening the %s lens on its own focuses no issue',
+      async (lens) => {
+        const store = await getStore();
+        store.getState().setActiveLens(SESSION_ID, lens);
+        expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
+      },
+    );
+
+    it.each([
+      ['linear', 'linear'],
+      ['sentry', 'sentry'],
+      ['gitlab', 'gitlab_issues'],
+    ] as const)(
+      'reopening the %s lens from the rail drops the issue a linked row had focused',
+      async (provider, lens) => {
+        const store = await getStore();
+        store.getState().openExternalTaskLens(SESSION_ID, buildExternalTask({ provider }));
+        store.getState().setActiveLens(SESSION_ID, 'agents');
+        expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
+        store.getState().setActiveLens(SESSION_ID, lens);
+        expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
+      },
+    );
+
+    it('openExternalTaskLens sends a github task to the issue lens by its number', async () => {
+      const store = await getStore();
+      store
+        .getState()
+        .openExternalTaskLens(
+          SESSION_ID,
+          buildExternalTask({ provider: 'github', externalId: '9', identifier: '#9' }),
+        );
+      expect(store.getState().activeLens[SESSION_ID]).toBe('github_issue');
+      expect(store.getState().focusedGithubIssueNumber[SESSION_ID]).toBe(9);
+      expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
     });
 
     it('the open-diff-viewer event resolution cannot land on a stale commit after going back', async () => {
