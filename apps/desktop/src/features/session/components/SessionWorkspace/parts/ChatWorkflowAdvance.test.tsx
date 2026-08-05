@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { getModelDescriptor } from '@goodboy/core';
 import type {
   Agent,
   AgentId,
   IsoDateTime,
+  ProviderId,
   SessionId,
   StepId,
   Workflow,
@@ -24,8 +26,12 @@ type Store = {
   agentTurnState: Record<string, { kind: string }>;
   summarizerStatus: Record<string, { status: string }>;
   sessions: ReadonlyArray<StoreSession>;
+  agentModelOverride: Record<string, string>;
+  agentProviderOverride: Record<string, ProviderId>;
+  agentEffortOverride: Record<string, string>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
+  emitNotification: ReturnType<typeof vi.fn>;
 };
 
 const { store, gate } = vi.hoisted(() => ({
@@ -34,8 +40,12 @@ const { store, gate } = vi.hoisted(() => ({
     agentTurnState: {},
     summarizerStatus: {},
     sessions: [],
+    agentModelOverride: {},
+    agentProviderOverride: {},
+    agentEffortOverride: {},
     activateWorkflowAgent: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
+    emitNotification: vi.fn(async () => undefined),
   } as Store,
   gate: { hasOpenQuestions: false },
 }));
@@ -51,11 +61,13 @@ vi.mock('../../../../context/openQuestionsGate', () => ({
 }));
 
 import { ChatWorkflowAdvance } from './ChatWorkflowAdvance';
+import { WorkflowGateError } from '../../../../../store/slices/workflows/workflowActivationGate';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKFLOW_ID = 'workflow-1' as WorkflowId;
 const RUN_ID = 'run-1' as WorkflowRunId;
 const NOW = '2026-07-25T00:00:00.000Z' as IsoDateTime;
+const FROZEN_MODEL = 'opus-5';
 
 const workflow: Workflow = {
   id: WORKFLOW_ID,
@@ -98,8 +110,14 @@ beforeEach(() => {
   store.agentTurnState = {};
   store.summarizerStatus = {};
   store.sessions = withAutoRun(false);
+  store.agentModelOverride = {};
+  store.agentProviderOverride = {};
+  store.agentEffortOverride = {};
   store.activateWorkflowAgent.mockReset();
+  store.activateWorkflowAgent.mockResolvedValue(undefined);
   store.skipStuckStepAndAdvance.mockReset();
+  store.emitNotification.mockReset();
+  store.emitNotification.mockResolvedValue(undefined);
   gate.hasOpenQuestions = false;
 });
 
@@ -176,6 +194,46 @@ describe('ChatWorkflowAdvance', () => {
     renderStrip();
 
     expect(screen.getByTestId('workflow-force-next-step-cta')).toBeDefined();
+  });
+
+  it('names the blocker and frees the button when the engine rejects the advance', async () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    store.activateWorkflowAgent.mockRejectedValue(new WorkflowGateError({ reason: 'questions' }));
+    renderStrip();
+
+    fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
+
+    await waitFor(() => expect(store.emitNotification).toHaveBeenCalledTimes(1));
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'workflow step held back',
+      'Open questions are waiting for an answer.',
+      { sessionId: SESSION_ID },
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('workflow-next-step-cta').hasAttribute('disabled')).toBe(false),
+    );
+  });
+
+  it('shows the routing frozen on the pending agent, not the one preferences resolve today', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    const withoutOverride = render(
+      <ChatWorkflowAdvance sessionId={SESSION_ID} workflowRunId={RUN_ID} workflow={workflow} />,
+    );
+    const defaultLabel = withoutOverride
+      .getByTestId('workflow-next-step-cta')
+      .getAttribute('aria-label');
+    withoutOverride.unmount();
+
+    store.agentModelOverride = { 'agent-1': FROZEN_MODEL };
+    store.agentEffortOverride = { 'agent-1': 'xhigh' };
+    renderStrip();
+
+    const label = screen.getByTestId('workflow-next-step-cta').getAttribute('aria-label');
+    expect(label).toContain(getModelDescriptor(FROZEN_MODEL)?.label ?? FROZEN_MODEL);
+    expect(label).toContain('xhigh effort');
+    expect(label).not.toBe(defaultLabel);
   });
 
   it('renders nothing once every step is done', () => {

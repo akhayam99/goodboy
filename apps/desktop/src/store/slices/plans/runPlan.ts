@@ -1,7 +1,7 @@
 import type { AgentId, PlanId, SessionId } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { inferAgentKindFromName, kindConsumesPlan } from '../../../features/session/agent-kind';
-import { pickNextWorkflowStep } from '../../../features/workflows/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../../features/workflows/pickNextWorkflowStep';
 import { activateWorkflowAgentOrNotify } from '../workflows/activateWorkflowAgentOrNotify';
 import type { GetFn } from './types';
 

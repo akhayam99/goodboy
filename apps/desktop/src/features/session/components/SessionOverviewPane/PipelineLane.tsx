@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import { Chip } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { RunLaneModel } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { pickNextWorkflowStep } from '../../../workflows/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../../workflows/pickNextWorkflowStep';
 import type { LaneAdvance } from './LaneAdvance';
 import { StepBadge } from './StepBadge';
 

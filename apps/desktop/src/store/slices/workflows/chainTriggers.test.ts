@@ -354,6 +354,7 @@ describe('startWorkflowRun', () => {
       startWorkflowRun(set, get)(SESSION_ID, 'q' as WorkflowRunId),
     ).resolves.toBeUndefined();
 
+    expect(state['emitNotification']).toHaveBeenCalledTimes(1);
     expect(state['emitNotification']).toHaveBeenCalledWith(
       'error',
       'warning',

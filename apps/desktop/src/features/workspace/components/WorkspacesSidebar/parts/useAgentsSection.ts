@@ -16,7 +16,7 @@ import {
   useSessionLoading,
   useSessionOpenQuestions,
 } from '../../../../../store';
-import { pickNextWorkflowStep } from '../../../../../features/workflows/components/WorkflowNextStepCta';
+import { pickNextWorkflowStep } from '../../../../../features/workflows/pickNextWorkflowStep';
 import {
   resolveWorkflowAdvance,
   type WorkflowBlockReason,
