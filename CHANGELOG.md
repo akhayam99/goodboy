@@ -9,11 +9,15 @@ if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
 ## Goodboy v0.1.58
 
-Deleting a session no longer leaves an orphaned worktree behind, the issue-to-PR loop closes on GitHub and GitLab alike, and Linear and GitLab issue descriptions get the same in-app editor GitHub already had.
+Deleting a session no longer leaves an orphaned worktree behind, a new Storage section lets you see and reclaim what archived sessions cost on disk, the issue-to-PR loop closes on GitHub and GitLab alike, and Linear and GitLab issue descriptions get the same in-app editor GitHub already had.
 
 ### [#1202] Deleting a session cleans up its worktree, every time
 
 Deleting a session could fail with "Directory not empty" when a dev server was still running inside its worktree: git de-registered the folder anyway and it stayed on disk forever. Closing a session now kills every process in its terminal session, not just the shell, waits for the terminals to close before touching the filesystem, retries the removal and falls back to deleting the folder directly if it still won't budge, and reports the path if it truly can't. On startup, folders git or the app lost track of are found and offered up for cleanup, never removed automatically.
+
+### [#1203] See what archived sessions cost on disk, and reclaim it
+
+Settings gets a Storage section, above the danger zone, showing the database size and how much archived sessions' transcripts and worktrees add up to. Two explicit actions, each confirmed twice: prune archived transcripts (deletes their `turn_events` rows and vacuums the database so the file actually shrinks; the chat view of an unarchived session comes back empty, though the session's own messages stay in the database) and remove archived worktrees (drops the folders and keeps the branches, so a worktree can be recreated later). Nothing runs on a timer, nothing runs automatically.
 
 ### [#1205] The issue-to-PR loop closes on GitHub and GitLab
 
