@@ -534,7 +534,7 @@ export const WorkflowRow = ({
                 runs={wfAgents}
                 roleModels={roleModels}
                 blockReason={wfBlockReason}
-                onAdvance={(step, _model, _verbosity, isConfirmed) => {
+                onAdvance={({ step, isConfirmed }) => {
                   const pending = wfAgents.find(
                     (agent) => agent.stepId === step.id && agent.status === 'pending',
                   );

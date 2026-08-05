@@ -3,6 +3,8 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
   ProviderRunId,
   Session,
   SessionId,
@@ -33,7 +35,7 @@ const {
   decideSpy: vi.fn(),
   invokeWorkflowUpsertSpy: vi.fn(),
   invokeAgentInsertSpy: vi.fn(),
-  listOpenQuestionsSpy: vi.fn(async () => []),
+  listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
   updateOutcomeSpy: vi.fn(async () => undefined),
   updateStopSpy: vi.fn(async () => undefined),
   insertProviderRunSpy: vi.fn(async () => undefined),
@@ -150,6 +152,17 @@ const session = (): Session => ({
   updatedAt: NOW,
 });
 
+const openQuestion = (): OpenQuestion => ({
+  id: 'oq-1' as OpenQuestionId,
+  sessionId: SESSION_ID,
+  workflowRunId: WORKFLOW_RUN_ID,
+  text: 'which database?',
+  suggestedAnswers: [],
+  userAnswer: null,
+  status: 'open',
+  createdAt: NOW,
+});
+
 const completedAgent = (): Agent => ({
   id: AGENT_ID,
   sessionId: SESSION_ID,
@@ -249,6 +262,7 @@ describe('orchestrateNextStep', () => {
       sessionId: SESSION_ID,
       agentId: 'agent-2',
       focus: 'agent',
+      bypassGate: true,
     });
     expect(state['appendTurnEvent']).toHaveBeenCalledWith(
       'agent-2',
@@ -922,5 +936,48 @@ describe('orchestrateNextStep', () => {
     });
     const paused = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(paused.orchestrationStop?.kind).toBe('budget');
+  });
+
+  it('stops on an open question before mutating anything, and says so on the run', async () => {
+    listOpenQuestionsSpy.mockResolvedValue([openQuestion()]);
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).not.toHaveBeenCalled();
+    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
+    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+    expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
+      kind: 'questions',
+      message: expect.stringContaining('Open questions'),
+    });
+    const paused = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(paused.orchestrationStop?.kind).toBe('questions');
+  });
+
+  it('decides anyway when the operator forced a skip, which already cleared the gate', async () => {
+    listOpenQuestionsSpy.mockResolvedValue([openQuestion()]);
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'The implementation is ready.',
+        step: { name: 'Implement', role: 'implementer', promptPrefix: 'Implement it.' },
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, { bypassGate: true });
+
+    expect(decideSpy).toHaveBeenCalledTimes(1);
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'agent-2',
+      focus: 'agent',
+      bypassGate: true,
+    });
   });
 });

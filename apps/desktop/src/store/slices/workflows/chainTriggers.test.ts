@@ -54,6 +54,7 @@ vi.mock('../../../features/chat/turn', () => ({ cancelTurn: cancelTurnSpy }));
 import { attachWorkflowToSession } from './attachWorkflowToSession';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { startWorkflowRun } from './startWorkflowRun';
+import { WorkflowGateError } from './workflowActivationGate';
 import { discardWorkflow } from './discardWorkflow';
 
 const WS_ID = 'ws-1' as WorkspaceId;
@@ -304,6 +305,7 @@ describe('startWorkflowRun', () => {
       activateWorkflowAgent: vi.fn(async () => undefined),
       setFocusedWorkflowRun: vi.fn(),
       setActiveLens: vi.fn(),
+      emitNotification: vi.fn(async () => undefined),
     };
   }
 
@@ -338,6 +340,41 @@ describe('startWorkflowRun', () => {
     });
     expect(state['setFocusedWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, 'q');
     expect(state['setActiveLens']).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a gate refusal as a notification instead of throwing out of the run', async () => {
+    const run = makeRun('q', 'manual', { autoRun: false });
+    const state = baseState(run, [makeAgent('q' as WorkflowRunId, 's0', 'pending', 0)]);
+    state.activateWorkflowAgent = vi.fn(async () => {
+      throw new WorkflowGateError({ reason: 'questions' });
+    });
+    const { set, get } = harness(state);
+
+    await expect(
+      startWorkflowRun(set, get)(SESSION_ID, 'q' as WorkflowRunId),
+    ).resolves.toBeUndefined();
+
+    expect(state['emitNotification']).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'workflow step held back',
+      expect.stringContaining('Open questions'),
+      { sessionId: SESSION_ID },
+    );
+  });
+
+  it('lets a real failure keep propagating', async () => {
+    const run = makeRun('q', 'manual', { autoRun: false });
+    const state = baseState(run, [makeAgent('q' as WorkflowRunId, 's0', 'pending', 0)]);
+    state.activateWorkflowAgent = vi.fn(async () => {
+      throw new Error('provider exploded');
+    });
+    const { set, get } = harness(state);
+
+    await expect(startWorkflowRun(set, get)(SESSION_ID, 'q' as WorkflowRunId)).rejects.toThrow(
+      'provider exploded',
+    );
+    expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
   it('is a no-op for an already-immediate run', async () => {

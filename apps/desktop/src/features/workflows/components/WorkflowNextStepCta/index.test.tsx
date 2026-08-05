@@ -117,7 +117,10 @@ describe('WorkflowNextStepCta', () => {
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
     await Promise.resolve();
     expect(onAdvance).toHaveBeenCalled();
-    expect(onAdvance.mock.calls[0]?.[0]).toMatchObject({ id: 's1' });
+    expect(onAdvance.mock.calls[0]?.[0]).toMatchObject({
+      step: { id: 's1' },
+      isConfirmed: false,
+    });
   });
 
   it('names what blocks it and asks for confirmation when questions are open', () => {
@@ -164,7 +167,10 @@ describe('WorkflowNextStepCta', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start anyway' }));
     await Promise.resolve();
     expect(onAdvance).toHaveBeenCalledTimes(1);
-    expect(onAdvance.mock.calls[0]?.[0]).toMatchObject({ id: 's2' });
+    expect(onAdvance.mock.calls[0]?.[0]).toMatchObject({
+      step: { id: 's2' },
+      isConfirmed: true,
+    });
   });
 
   it('uses the primary tone when predecessors and gates are clear', () => {

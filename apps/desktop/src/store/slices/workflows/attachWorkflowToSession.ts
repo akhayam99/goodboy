@@ -15,6 +15,7 @@ import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import type { GetFn, SetFn } from './types';
 
 type Options = {
@@ -164,7 +165,8 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       } else if (autoRun) {
         void get().maybeAutoAdvanceWorkflow(sessionId);
       } else if (newAgents.length > 0) {
-        void get().activateWorkflowAgent({
+        void activateWorkflowAgentOrNotify({
+          get,
           sessionId,
           agentId: newAgents[0]!.id,
           focus: 'none',

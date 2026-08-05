@@ -66,7 +66,7 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
       }
     }
     if (run.executionMode === 'dynamic' && run.orchestrationOutcome == null) {
-      await get().orchestrateNextStep(sessionId, workflowRunId);
+      await get().orchestrateNextStep(sessionId, workflowRunId, { bypassGate: true });
     }
   };
 };

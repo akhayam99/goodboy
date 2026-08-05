@@ -218,7 +218,7 @@ describe('skipStuckStepAndAdvance', () => {
       expect.objectContaining({ status: 'skipped' }),
     );
     expect(activateWorkflowAgent).not.toHaveBeenCalled();
-    expect(orchestrateNextStep).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(orchestrateNextStep).toHaveBeenCalledWith(SESSION_ID, RUN_ID, { bypassGate: true });
   });
 
   it('leaves a dynamic run alone once the orchestrator already closed it', async () => {

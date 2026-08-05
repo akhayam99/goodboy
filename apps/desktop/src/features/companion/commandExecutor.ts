@@ -390,7 +390,7 @@ async function advanceNextWorkflowStep(sessionId: SessionId): Promise<void> {
           await store.activateWorkflowAgent({ sessionId, agentId: agent.id, focus: 'none' });
         } catch (e) {
           if (e instanceof WorkflowGateError) {
-            throw new BridgeSafeError(`step not ready: ${e.message}`);
+            throw new BridgeSafeError(e.message);
           }
           throw e;
         }

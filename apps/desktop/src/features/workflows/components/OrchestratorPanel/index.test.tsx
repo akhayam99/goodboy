@@ -238,6 +238,23 @@ describe('OrchestratorPanel state ladder', () => {
     expect(screen.getByTestId('orchestrator-review-budget')).toBeDefined();
   });
 
+  it('reads a question stop as a question to answer, with no retry on offer', () => {
+    renderPanel({
+      runOverride: run({
+        orchestrationStop: {
+          kind: 'questions',
+          message: 'Open questions are waiting for an answer.',
+        },
+      }),
+    });
+
+    expect(sentence()).toContain('Paused · an open question needs your answer');
+    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
+    fireEvent.click(screen.getByTestId('orchestrator-answer-question'));
+
+    expect(storeState['setActiveLens']).toHaveBeenCalledWith(SESSION_ID, 'questions');
+  });
+
   it('shows the failure with its reason and offers a retry', () => {
     renderPanel({
       runOverride: run({

@@ -56,6 +56,12 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
     sentence: 'Last decision failed',
     showsMessage: true,
   },
+  questions: {
+    phase: 'needs-answer',
+    tone: 'warning',
+    sentence: 'Paused · an open question needs your answer',
+    showsMessage: false,
+  },
 };
 
 const isDone = (agent: Agent): boolean =>

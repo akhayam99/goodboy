@@ -84,7 +84,7 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
       runs={stepAgents}
       roleModels={roleModels}
       blockReason={state.kind === 'blocked' ? state.reason : null}
-      onAdvance={(step, _model, _verbosity, isConfirmed) => void onAdvance({ step, isConfirmed })}
+      onAdvance={({ step, isConfirmed }) => void onAdvance({ step, isConfirmed })}
       onForceAdvance={() =>
         void skipStuckStepAndAdvance(sessionId, workflowRunId, { onlyWhenBlocked: true })
       }
