@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArchiveRestore, Eye, List, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
+import { ArchiveRestore, CircleCheck, Eye, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
 import {
+  CountToggle,
   Divider,
   InlineConfirm,
   Markdown,
@@ -10,23 +11,25 @@ import {
   Tooltip,
   cn,
 } from '@goodboy/ui';
-import type { Agent, PlanId, PlanWithCount, SessionId } from '@goodboy/types';
+import type { Agent, PlanWithCount, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { PaneShell } from '../../../../shared/components/PaneShell';
+import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
+import { WorkSurfaceBackButton } from '../../../../shared/components/WorkSurfaceBackButton';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import { planStatusBadge } from './planStatusBadge';
-import { PlanListPanel } from './PlanListPanel';
 import { PlanProvenance } from './PlanProvenance';
+import { PlanRailCard } from './PlanRailCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly initialPlanId?: PlanId;
 };
 
-export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
+export const PlanStudio = ({ sessionId }: Props) => {
   const plans = useSessionPlans(sessionId);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -38,34 +41,23 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const restorePlan = useAppStore((s) => s.restorePlan);
   const runPlan = useAppStore((s) => s.runPlan);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const { showToast } = useToast();
   const announceAgentStarted = useAgentStartedToast();
 
-  const [selectedId, setSelectedId] = useState<PlanId | null>(initialPlanId ?? null);
-  const [listOpen, setListOpen] = useState(false);
+  const [showConsumed, setShowConsumed] = useState(false);
   const [mode, setMode] = useState<'preview' | 'edit'>('preview');
   const [draft, setDraft] = useState('');
   const [spawning, setSpawning] = useState(false);
   const [replayArmed, setReplayArmed] = useState(false);
   const [deleteArmed, setDeleteArmed] = useState(false);
 
-  useEffect(() => {
-    if (selectedId === null && plans.length > 0) {
-      const fallback = plans[plans.length - 1];
-      if (fallback) setSelectedId(fallback.id);
-    }
-  }, [selectedId, plans]);
+  const selected: PlanWithCount | null = plans.find((p) => p.id === focusedPlanId) ?? null;
 
   useEffect(() => {
-    if (selectedId) void loadConsumptionsForPlan(selectedId);
-  }, [selectedId, loadConsumptionsForPlan]);
-
-  useEffect(() => {
-    setFocusedPlanId(sessionId, selectedId);
-  }, [sessionId, selectedId, setFocusedPlanId]);
-
-  const selected: PlanWithCount | null = plans.find((p) => p.id === selectedId) ?? null;
+    if (selected) void loadConsumptionsForPlan(selected.id);
+  }, [selected, loadConsumptionsForPlan]);
 
   useEffect(() => {
     if (selected && mode === 'preview') setDraft(planToSource(selected));
@@ -91,14 +83,6 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
   const openAgent = (agentId: Agent['id']) => {
     flushEdit();
     void selectAgent(sessionId, agentId);
-  };
-
-  const handleSelectPlan = (id: PlanId) => {
-    if (mode === 'edit') commitEdit();
-    setMode('preview');
-    setSelectedId(id);
-    setListOpen(false);
-    setDeleteArmed(false);
   };
 
   const handleTrigger = async () => {
@@ -143,239 +127,262 @@ export const PlanStudio = ({ sessionId, initialPlanId }: Props) => {
     openAgent(agentId);
   };
 
-  return (
-    <div className="relative flex h-full min-h-0 w-full bg-background">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="shrink-0">
-          <PaneShell
-            title="Plans"
-            description="Plans agents drafted for this session. Run one to spawn an executor."
-            actions={
-              plans.length > 1 ? (
-                <button
-                  type="button"
-                  onClick={() => setListOpen((open) => !open)}
-                  title="Browse the other plans in this session"
-                  className={cn(
-                    'inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground',
-                    listOpen && 'bg-foreground/5 text-foreground',
-                  )}
-                >
-                  <List size={13} aria-hidden />
-                  Other plans ({plans.length - 1})
-                </button>
-              ) : null
-            }
-          >
-            {plans.length === 0 ? (
-              <LensEmptyState
-                tone={CONCEPT_TONE.plans}
-                icon={CONCEPT_ICONS.plans}
-                title="No plans yet"
-                description="Plans appear here once an agent drafts one. Run a planning agent to get started."
-              />
-            ) : selected ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex shrink-0 items-start gap-3">
-                  <div className="flex min-w-0 flex-1 flex-col gap-1 text-2xs text-muted-foreground">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <h2 className="min-w-0 truncate text-sm font-medium text-foreground">
-                        {selected.title}
-                      </h2>
-                      <span
+  if (selected != null) {
+    return (
+      <FocusedPane
+        lens="Plans"
+        count={plans.length}
+        actions={<WorkSurfaceBackButton sessionId={sessionId} />}
+      >
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.header)}>
+            <div className="flex shrink-0 items-start gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-1 text-2xs text-muted-foreground">
+                <div className="flex min-w-0 items-center gap-2">
+                  <h2 className="min-w-0 truncate text-sm font-medium text-foreground">
+                    {selected.title}
+                  </h2>
+                  <span
+                    className={cn(
+                      'inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-2xs lowercase tracking-wide',
+                      planStatusBadge({ status: selected.status }).className,
+                    )}
+                  >
+                    {planStatusBadge({ status: selected.status }).label}
+                  </span>
+                </div>
+                <PlanProvenance
+                  creatorName={selectedAgentName}
+                  creatorAgentId={selected.agentId}
+                  creatorDeleted={creatorDeleted}
+                  createdAt={selected.createdAt}
+                  consumptions={consumptions}
+                  agents={agents}
+                  onAgentClick={handleAgentClick}
+                />
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  {selected.status !== 'discarded' ? (
+                    selected.status === 'consumed' ? (
+                      <button
+                        type="button"
+                        onClick={() => setReplayArmed(true)}
+                        disabled={spawning}
+                        title="Plan already ran, click to replay and confirm"
                         className={cn(
-                          'inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-2xs lowercase tracking-wide',
-                          planStatusBadge({ status: selected.status }).className,
+                          'inline-flex items-center justify-center gap-1.5 rounded-md border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/10',
+                          spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
                         )}
                       >
-                        {planStatusBadge({ status: selected.status }).label}
-                      </span>
-                    </div>
-                    <PlanProvenance
-                      creatorName={selectedAgentName}
-                      creatorAgentId={selected.agentId}
-                      creatorDeleted={creatorDeleted}
-                      createdAt={selected.createdAt}
-                      consumptions={consumptions}
-                      agents={agents}
-                      onAgentClick={handleAgentClick}
-                    />
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1.5">
-                    <div className="flex items-center gap-1.5">
-                      {selected.status !== 'discarded' ? (
-                        selected.status === 'consumed' ? (
-                          <button
-                            type="button"
-                            onClick={() => setReplayArmed(true)}
-                            disabled={spawning}
-                            title="Plan already ran, click to replay and confirm"
-                            className={cn(
-                              'inline-flex items-center justify-center gap-1.5 rounded-md border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/10',
-                              spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
-                            )}
-                          >
-                            <RotateCw size={12} aria-hidden />
-                            Replay
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => void handleTrigger()}
-                            disabled={spawning}
-                            className={cn(
-                              'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90',
-                              spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
-                            )}
-                            title={
-                              selected.status === 'active'
-                                ? 'Spawn new agent to execute this plan'
-                                : 'Replay this plan'
-                            }
-                          >
-                            {selected.status === 'active' ? (
-                              <Play size={12} aria-hidden className="fill-current" />
-                            ) : (
-                              <RotateCw size={12} aria-hidden />
-                            )}
-                            {selected.status === 'active' ? 'Start' : 'Replay'}
-                          </button>
-                        )
-                      ) : null}
-                      {selected.status === 'consumed' ? (
-                        <Tooltip content="Consumed plans cannot be deleted">
-                          <span
-                            className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
-                            aria-label="Consumed plans cannot be deleted"
-                          >
-                            <Trash2 size={13} aria-hidden />
-                          </span>
-                        </Tooltip>
-                      ) : selected.status === 'discarded' ? (
-                        <Tooltip content="Restore plan">
-                          <button
-                            type="button"
-                            onClick={() => handleRestore(selected)}
-                            aria-label="Restore plan"
-                            className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
-                          >
-                            <ArchiveRestore size={13} aria-hidden />
-                          </button>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip content="Delete plan (soft delete, click restore to recover)">
-                          <button
-                            type="button"
-                            onClick={() => setDeleteArmed(true)}
-                            aria-label="Delete plan"
-                            className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
-                          >
-                            <Trash2 size={13} aria-hidden />
-                          </button>
-                        </Tooltip>
-                      )}
-                    </div>
-                    <SegmentedTabs
-                      ariaLabel="Content mode"
-                      options={[
-                        { value: 'preview', label: 'Preview', icon: Eye },
-                        {
-                          value: 'edit',
-                          label: 'Edit',
-                          icon: Pencil,
-                          ...(selected.status === 'discarded' && {
-                            hint: 'Restore the plan to edit it',
-                          }),
-                          disabled: selected.status === 'discarded',
-                        },
-                      ]}
-                      value={mode}
-                      onChange={(nextMode) => {
-                        if (nextMode === 'preview' && mode === 'edit') {
-                          commitEdit();
+                        <RotateCw size={12} aria-hidden />
+                        Replay
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void handleTrigger()}
+                        disabled={spawning}
+                        className={cn(
+                          'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90',
+                          spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
+                        )}
+                        title={
+                          selected.status === 'active'
+                            ? 'Spawn new agent to execute this plan'
+                            : 'Replay this plan'
                         }
-                        setMode(nextMode);
-                      }}
-                      size="sm"
-                    />
-                  </div>
+                      >
+                        {selected.status === 'active' ? (
+                          <Play size={12} aria-hidden className="fill-current" />
+                        ) : (
+                          <RotateCw size={12} aria-hidden />
+                        )}
+                        {selected.status === 'active' ? 'Start' : 'Replay'}
+                      </button>
+                    )
+                  ) : null}
+                  {selected.status === 'consumed' ? (
+                    <Tooltip content="Consumed plans cannot be deleted">
+                      <span
+                        className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
+                        aria-label="Consumed plans cannot be deleted"
+                      >
+                        <Trash2 size={13} aria-hidden />
+                      </span>
+                    </Tooltip>
+                  ) : selected.status === 'discarded' ? (
+                    <Tooltip content="Restore plan">
+                      <button
+                        type="button"
+                        onClick={() => handleRestore(selected)}
+                        aria-label="Restore plan"
+                        className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
+                      >
+                        <ArchiveRestore size={13} aria-hidden />
+                      </button>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip content="Delete plan (soft delete, click restore to recover)">
+                      <button
+                        type="button"
+                        onClick={() => setDeleteArmed(true)}
+                        aria-label="Delete plan"
+                        className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
+                      >
+                        <Trash2 size={13} aria-hidden />
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
-                {deleteArmed ? (
-                  <InlineConfirm
-                    role="danger"
-                    icon={<Trash2 size={12} aria-hidden />}
-                    title={`Delete "${selected.title}"?`}
-                    description="Moves this plan to discarded plans, where it can still be restored."
-                    confirmLabel={`Delete ${selected.title}`}
-                    autoDisarmMs={4000}
-                    onConfirm={() => {
-                      handleDiscard(selected);
-                      setDeleteArmed(false);
-                    }}
-                    onCancel={() => setDeleteArmed(false)}
-                    className="shrink-0"
-                  />
-                ) : null}
-                {replayArmed && (
-                  <InlineConfirm
-                    role="alert"
-                    icon={<RotateCw size={12} aria-hidden />}
-                    title="Replay this plan?"
-                    description="It already ran once. Replaying spawns a new agent to execute it again."
-                    confirmLabel="Replay"
-                    autoDisarmMs={4000}
-                    isBusy={spawning}
-                    onConfirm={async () => {
-                      await handleTrigger();
-                      setReplayArmed(false);
-                    }}
-                    onCancel={() => setReplayArmed(false)}
-                    className="shrink-0"
-                  />
-                )}
+                <SegmentedTabs
+                  ariaLabel="Content mode"
+                  options={[
+                    { value: 'preview', label: 'Preview', icon: Eye },
+                    {
+                      value: 'edit',
+                      label: 'Edit',
+                      icon: Pencil,
+                      ...(selected.status === 'discarded' && {
+                        hint: 'Restore the plan to edit it',
+                      }),
+                      disabled: selected.status === 'discarded',
+                    },
+                  ]}
+                  value={mode}
+                  onChange={(nextMode) => {
+                    if (nextMode === 'preview' && mode === 'edit') {
+                      commitEdit();
+                    }
+                    setMode(nextMode);
+                  }}
+                  size="sm"
+                />
               </div>
-            ) : (
-              <LensEmptyState
-                tone={CONCEPT_TONE.plans}
-                icon={CONCEPT_ICONS.plans}
-                title="No plan selected"
-                description="Pick a plan from the list to preview, edit, or run it."
+            </div>
+            {deleteArmed ? (
+              <InlineConfirm
+                role="danger"
+                icon={<Trash2 size={12} aria-hidden />}
+                title={`Delete "${selected.title}"?`}
+                description="Moves this plan to discarded plans, where it can still be restored."
+                confirmLabel={`Delete ${selected.title}`}
+                autoDisarmMs={4000}
+                onConfirm={() => {
+                  handleDiscard(selected);
+                  setDeleteArmed(false);
+                }}
+                onCancel={() => setDeleteArmed(false)}
+                className="shrink-0"
+              />
+            ) : null}
+            {replayArmed && (
+              <InlineConfirm
+                role="alert"
+                icon={<RotateCw size={12} aria-hidden />}
+                title="Replay this plan?"
+                description="It already ran once. Replaying spawns a new agent to execute it again."
+                confirmLabel="Replay"
+                autoDisarmMs={4000}
+                isBusy={spawning}
+                onConfirm={async () => {
+                  await handleTrigger();
+                  setReplayArmed(false);
+                }}
+                onCancel={() => setReplayArmed(false)}
+                className="shrink-0"
               />
             )}
-          </PaneShell>
+          </div>
+          <Divider />
+          <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
+            <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+              {mode === 'edit' ? (
+                <Textarea
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  className="w-full font-mono text-xs"
+                  autoGrow
+                  minRows={12}
+                  maxRows={80}
+                />
+              ) : (
+                <Markdown text={selected.bodyMd} className="text-xs" />
+              )}
+            </div>
+          </ScrollFade>
         </div>
-        {selected ? (
-          <>
-            <Divider />
-            <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
-              <div className="mx-auto w-full max-w-5xl">
-                {mode === 'edit' ? (
-                  <Textarea
-                    autoFocus
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    className="w-full font-mono text-xs"
-                    autoGrow
-                    minRows={12}
-                    maxRows={80}
-                  />
-                ) : (
-                  <Markdown text={selected.bodyMd} className="text-xs" />
-                )}
-              </div>
-            </ScrollFade>
-          </>
-        ) : null}
-      </div>
-      {listOpen && plans.length > 1 ? (
-        <PlanListPanel
-          plans={plans}
-          selectedId={selectedId}
-          onSelect={handleSelectPlan}
-          onClose={() => setListOpen(false)}
+      </FocusedPane>
+    );
+  }
+
+  const active = plans.filter((plan) => plan.status === 'active');
+  const consumed = plans.filter((plan) => plan.status !== 'active');
+
+  return (
+    <PaneShell
+      title="Plans"
+      description="Plans agents drafted for this session. Run one to spawn an executor."
+      meta={plans.length > 0 ? plans.length : undefined}
+    >
+      {plans.length === 0 ? (
+        <LensEmptyState
+          tone={CONCEPT_TONE.plans}
+          icon={CONCEPT_ICONS.plans}
+          title="No plans yet"
+          description="Plans appear here once an agent drafts one. Run a planning agent to get started."
         />
       ) : null}
-    </div>
+      {plans.length > 0 && active.length === 0 ? (
+        <LensEmptyState
+          tone={CONCEPT_TONE.plans}
+          icon={CONCEPT_ICONS.plans}
+          title="Nothing active"
+          description="Every plan here already ran or was discarded. Show the consumed ones to reread them."
+          action={
+            <CountToggle
+              label="Consumed"
+              itemsLabel="plans"
+              count={consumed.length}
+              isShown={showConsumed}
+              icon={CircleCheck}
+              onChange={setShowConsumed}
+            />
+          }
+        />
+      ) : null}
+      {active.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {active.map((plan) => (
+            <li key={plan.id}>
+              <PlanRailCard plan={plan} onSelect={() => setFocusedPlanId(sessionId, plan.id)} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {active.length > 0 ? (
+        <div className="flex justify-center">
+          <CountToggle
+            label="Consumed"
+            itemsLabel="plans"
+            count={consumed.length}
+            isShown={showConsumed}
+            icon={CircleCheck}
+            onChange={setShowConsumed}
+          />
+        </div>
+      ) : null}
+      {showConsumed && consumed.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {consumed.map((plan) => (
+            <li key={plan.id}>
+              <PlanRailCard plan={plan} onSelect={() => setFocusedPlanId(sessionId, plan.id)} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </PaneShell>
   );
 };
 
