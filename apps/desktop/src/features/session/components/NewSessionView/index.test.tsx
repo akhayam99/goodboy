@@ -168,6 +168,109 @@ describe('NewSessionView issue sources', () => {
     expect(screen.queryByLabelText('Goal editor')).toBeNull();
   });
 
+  it('keeps the expanded draft after Cancel and shows it again on reopen', () => {
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: 'Original goal',
+        branchSlug: 'original-goal',
+        slugTouched: true,
+        folderName: 'Original goal',
+        folderNameTouched: false,
+        branchMode: 'new',
+        existingBranch: '',
+        issue: null,
+      },
+    };
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    fireEvent.change(screen.getByLabelText('Goal editor'), {
+      target: { value: 'Draft in progress' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(h.store.newSessionDrafts[WORKSPACE_ID]?.goal).toBe('Original goal');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    const editor = screen.getByLabelText('Goal editor');
+    if (!(editor instanceof HTMLTextAreaElement)) {
+      throw new Error('Expected the expanded goal editor to be a textarea');
+    }
+    expect(editor.value).toBe('Draft in progress');
+  });
+
+  it('reseeds from the goal on reopen when the draft was never edited', () => {
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: 'Original goal',
+        branchSlug: 'original-goal',
+        slugTouched: true,
+        folderName: 'Original goal',
+        folderNameTouched: false,
+        branchMode: 'new',
+        existingBranch: '',
+        issue: null,
+      },
+    };
+    const view = render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    fireEvent.change(screen.getByLabelText('Goal'), {
+      target: { value: 'Updated elsewhere' },
+    });
+    view.rerender(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    const editor = screen.getByLabelText('Goal editor');
+    if (!(editor instanceof HTMLTextAreaElement)) {
+      throw new Error('Expected the expanded goal editor to be a textarea');
+    }
+    expect(editor.value).toBe('Updated elsewhere');
+  });
+
+  it('shows an unsaved-edits badge while the expanded draft is dirty and clears it on save', () => {
+    h.store.newSessionDrafts = {
+      [WORKSPACE_ID]: {
+        goal: 'Original goal',
+        branchSlug: 'original-goal',
+        slugTouched: true,
+        folderName: 'Original goal',
+        folderNameTouched: false,
+        branchMode: 'new',
+        existingBranch: '',
+        issue: null,
+      },
+    };
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    fireEvent.change(screen.getByLabelText('Goal editor'), {
+      target: { value: 'Draft in progress' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByText('Unsaved edits')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open goal editor' }));
+    fireEvent.keyDown(screen.getByLabelText('Goal editor'), {
+      key: 'Enter',
+      ctrlKey: true,
+    });
+
+    expect(h.store.newSessionDrafts[WORKSPACE_ID]?.goal).toBe('Draft in progress');
+    expect(screen.queryByText('Unsaved edits')).toBeNull();
+  });
+
   it('polishes the expanded draft and warns without changing it on failure', async () => {
     h.store.newSessionDrafts = {
       [WORKSPACE_ID]: {

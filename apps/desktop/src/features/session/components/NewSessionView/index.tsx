@@ -85,8 +85,10 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const [busy, setBusy] = useState(false);
   const [goalEditorOpen, setGoalEditorOpen] = useState(false);
   const [goalEditorDraft, setGoalEditorDraft] = useState('');
+  const [goalEditorDirty, setGoalEditorDirty] = useState(false);
   const [goalPolishing, setGoalPolishing] = useState(false);
   const goalPolishRequestId = useRef(0);
+  const goalEditorBaseRef = useRef(goal);
 
   const {
     attachments,
@@ -241,7 +243,10 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const openGoalEditor = () => {
     goalPolishRequestId.current += 1;
     setGoalPolishing(false);
-    setGoalEditorDraft(goal);
+    if (!goalEditorDirty) {
+      goalEditorBaseRef.current = goal;
+      setGoalEditorDraft(goal);
+    }
     setGoalEditorOpen(true);
   };
 
@@ -249,12 +254,18 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
     goalPolishRequestId.current += 1;
     setGoalPolishing(false);
     setGoalEditorOpen(false);
-    setGoalEditorDraft('');
+  };
+
+  const updateGoalEditorDraft = (value: string) => {
+    setGoalEditorDraft(value);
+    setGoalEditorDirty(value !== goalEditorBaseRef.current);
   };
 
   const saveGoalEditor = () => {
     goalPolishRequestId.current += 1;
     setNewSessionDraft({ workspaceId, draft: { goal: goalEditorDraft } });
+    goalEditorBaseRef.current = goalEditorDraft;
+    setGoalEditorDirty(false);
     setGoalEditorOpen(false);
     setGoalEditorDraft('');
   };
@@ -282,7 +293,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           return;
         }
         if (result.accepted) {
-          setGoalEditorDraft(result.goal);
+          updateGoalEditorDraft(result.goal);
           return;
         }
         showToast('warning', 'Could not polish the goal, kept your wording', {
@@ -398,7 +409,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           <GoalEditor
             draft={goalEditorDraft}
             polishing={goalPolishing}
-            onDraftChange={setGoalEditorDraft}
+            onDraftChange={updateGoalEditorDraft}
             onCancel={cancelGoalEditor}
             onPolish={handlePolishGoal}
             onSave={saveGoalEditor}
@@ -420,6 +431,7 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
                   setNewSessionDraft({ workspaceId, draft: { goal: value } })
                 }
                 onOpenGoalEditor={openGoalEditor}
+                goalEditorDirty={goalEditorDirty}
                 attachments={attachments}
                 isDragging={isDragging}
                 composerRef={composerRef}
