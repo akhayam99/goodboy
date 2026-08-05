@@ -149,7 +149,13 @@ export type WorkspaceScript = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
-export type WorkspaceIntegrationProvider = 'linear' | 'sentry' | 'gitlab' | 'jira' | 'bitbucket';
+export type WorkspaceIntegrationProvider =
+  | 'linear'
+  | 'sentry'
+  | 'gitlab'
+  | 'jira'
+  | 'bitbucket'
+  | 'slack';
 
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
@@ -186,12 +192,20 @@ export type BitbucketIntegrationConfig = Readonly<{
   displayName?: string;
 }>;
 
+export type SlackIntegrationConfig = Readonly<{
+  teamId: string;
+  teamName: string;
+  botUserId: string;
+  botUserName?: string;
+}>;
+
 export type WorkspaceIntegrationConfig =
   | LinearIntegrationConfig
   | SentryIntegrationConfig
   | GitlabIntegrationConfig
   | JiraIntegrationConfig
-  | BitbucketIntegrationConfig;
+  | BitbucketIntegrationConfig
+  | SlackIntegrationConfig;
 
 type WorkspaceIntegrationBase = Readonly<{
   id: WorkspaceIntegrationId;
@@ -231,12 +245,19 @@ export type BitbucketWorkspaceIntegration = WorkspaceIntegrationBase &
     config: BitbucketIntegrationConfig;
   }>;
 
+export type SlackWorkspaceIntegration = WorkspaceIntegrationBase &
+  Readonly<{
+    provider: 'slack';
+    config: SlackIntegrationConfig;
+  }>;
+
 export type WorkspaceIntegration =
   | LinearWorkspaceIntegration
   | SentryWorkspaceIntegration
   | GitlabWorkspaceIntegration
   | JiraWorkspaceIntegration
-  | BitbucketWorkspaceIntegration;
+  | BitbucketWorkspaceIntegration
+  | SlackWorkspaceIntegration;
 
 export type SessionExternalTaskProvider =
   | 'linear'
@@ -244,7 +265,8 @@ export type SessionExternalTaskProvider =
   | 'gitlab'
   | 'github'
   | 'jira'
-  | 'bitbucket';
+  | 'bitbucket'
+  | 'slack';
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;

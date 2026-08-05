@@ -41,6 +41,8 @@ export type {
   SentryIntegrationConfig,
   SessionExternalTask,
   SessionExternalTaskProvider,
+  SlackIntegrationConfig,
+  SlackWorkspaceIntegration,
   TurnState,
   Workspace,
   WorkspaceGitState,

@@ -78,6 +78,7 @@ export const LENS_SHORTCUTS = {
   gitlab_issues: 'lens.gitlab_issues',
   jira_issues: 'lens.jira_issues',
   github_issue: 'lens.pr',
+  slack_threads: 'lens.slack_threads',
 } satisfies Readonly<Record<LensKind, ShortcutId>>;
 
 export const buildLensGroups = ({

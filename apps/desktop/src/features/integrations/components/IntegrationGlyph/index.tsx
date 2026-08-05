@@ -8,7 +8,8 @@ export type IntegrationGlyphProvider =
   | 'gitlab'
   | 'jira'
   | 'linear'
-  | 'sentry';
+  | 'sentry'
+  | 'slack';
 
 type IntegrationBrand = {
   readonly icon: LucideIcon;
@@ -27,6 +28,7 @@ const INTEGRATION_BRAND: Record<IntegrationGlyphProvider, IntegrationBrand> = {
   jira: { icon: CONCEPT_ICONS.jira, label: 'Jira', cssVar: '--color-provider-jira' },
   linear: { icon: CONCEPT_ICONS.linear, label: 'Linear', cssVar: '--color-provider-linear' },
   sentry: { icon: CONCEPT_ICONS.sentry, label: 'Sentry', cssVar: '--color-provider-sentry' },
+  slack: { icon: CONCEPT_ICONS.slack, label: 'Slack', cssVar: '--color-provider-slack' },
 };
 
 export const integrationLabel = ({ provider }: { provider: IntegrationGlyphProvider }): string =>
