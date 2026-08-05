@@ -69,7 +69,7 @@ done` works; nested-quote jq inside single quotes does not.
   (`### [#1241, #1243] Title`); match the file, not older docs.
 - Notarization check on the rc dmg: `spctl -a -vvv` expects
   `accepted, source=Notarized Developer ID`; `codesign -dv --verbose=4`
-  expects team `M3R9H4QX65`, never `FC96QL5F9R`.
+  expects team `M3R9H4QX65`; any other team is a failure.
 - Never tag while another tag build is in flight; check the previous
   version's `homebrew.yml` run finished.
 - `hdiutil` mounts a second copy at `/Volumes/Goodboy 1` when one is already
@@ -79,14 +79,12 @@ done` works; nested-quote jq inside single quotes does not.
 
 ## Audit and verification
 
-- Audit from a detached worktree pinned at `origin/main`; the local checkout
-  has been a full release behind more than once.
-- Never build a product plan without a scout pass; scouts have contradicted
-  every first plan (wrong file counts, dead work items, in-repo precedents
-  the plan ignored).
-- Tell every verifier to sabotage the implementation and confirm a test
-  fails, and to sabotage the wrapper as well as the pure function. Ask it to
-  re-derive the author's lists, never to check them.
+The standard itself (sabotage, re-derive, scout pass, serialized merges) is
+owned by `docs/autonomy/release-loop.md`; below are only the facts that doc
+does not carry.
+
+- The local checkout has been a full release behind more than once; that is
+  why audit worktrees pin at `origin/main`.
 - A test placed in a describe block does not necessarily exercise that
   block's branch, and a test written this round can assert the bug it was
   meant to catch. Both have shipped here; verifiers check for both.

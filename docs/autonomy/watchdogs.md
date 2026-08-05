@@ -15,17 +15,26 @@ by an agent's self-description.
 
 ## The ladder
 
-- **Release captain, every ~30 minutes of a running phase**: spawn a cheap
-  watchdog that checks each active sibling for observable progress since the
-  last check. A builder with no new commit, no test run and no scratch notes
-  across two checks is presumed stuck. The watchdog only reports; the captain
-  acts.
-- **Delivery lead, after 1 to 2 hours without news from a captain**: spawn a
-  watchdog that inspects the release's worktrees, branches, open PRs and CI
-  runs. A captain mid-build can be legitimately quiet for a while; a captain
+Cadences are targets, bounded by the harness: every role spawns its children
+foreground, so a parent blocked inside a synchronous call checks liveness at
+the next boundary it owns (between spawns, between phases, between poll
+iterations), not on a wall clock. When the harness offers background tasks
+with notifications or scheduled checks, the cadences below apply literally;
+otherwise they mean "at the first boundary after this much time has passed".
+
+- **Release captain, ~30 minutes into any running phase**: at the next
+  boundary, spawn a cheap watchdog that checks each active sibling's output
+  for observable progress since the last check (and, in a parallel batch,
+  ride one watchdog alongside the builders). A builder with no new commit, no
+  test run and no scratch notes across two checks is presumed stuck. The
+  watchdog only reports; the captain acts.
+- **Delivery lead, 1 to 2 hours without news from a captain**: when the
+  captain runs foreground, this check is the retry ladder applied to its
+  eventual return; when it runs as a background task, spawn a watchdog that
+  inspects the release's worktrees, branches, open PRs and CI runs. A captain
   quiet past two hours with no observable movement is presumed dead.
-- **Issue triage officer**: its ~30 minute polling loop doubles as its own
-  heartbeat; the delivery lead applies the same 2 hour rule to it.
+- **Issue triage officer**: its polling loop doubles as its own heartbeat;
+  the delivery lead applies the same 2 hour rule to it.
 
 ## Recovery, in order
 

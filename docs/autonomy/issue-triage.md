@@ -26,9 +26,10 @@ Run by the issue triage officer ([roles.md](./roles.md)) on two cadences:
 For each new or changed issue, in order:
 
 1. **Is it dangerous or forbidden?** Tracking, secrets, release infra,
-   anything in safety.md's forbidden list. Refuse politely, cite the vision or
-   the policy, close. Owner-authored: refuse the same way but leave it open
-   with a question, the owner may be probing direction.
+   anything in safety.md's forbidden list. Refuse politely in-thread, cite
+   the vision or the policy, close, and for secrets or release infrastructure
+   also add an owner-inbox entry. Owner-authored: refuse the same way but
+   leave it open with a question, the owner may be probing direction.
 2. **Is it off-topic or unidentifiable?** Thank the author, say why it does
    not fit, ask them to tag the owner if they believe it deserves a second
    look. Close. If the author is the owner, park it open and ask for
@@ -55,15 +56,18 @@ direct, concrete, no fluff, honest about limits. Warm to first-time
 reporters; "this feels off" is a valid bug report here and the reply treats it
 as one.
 
-Replies are posted under the agent's own account, never impersonating the
-owner. The reader must always be able to tell what the owner wrote personally
-from what the delivery organization wrote. If the posting account is not
-visibly a bot, the reply ends with a short plain line:
+The reader must always be able to tell what the owner wrote personally from
+what the delivery organization wrote. The target state is a dedicated machine
+account; creating one is an owner escalation, and until it exists the only
+credential the machine holds is the owner's own `gh` auth, so replies go out
+from the owner's handle. Every triage reply therefore ends with a short plain
+line naming the author honestly, adapted to the posting account:
 
-> Triaged by Goodboy's own delivery loop. Amin reads these too, tag
-> @akhayam99 to pull him in.
+> Written by Goodboy's own delivery loop, from Amin's account until it gets
+> one of its own. He reads these too.
 
-Adapt the tail to the fact, keep it one line, and never fake a human identity.
+One line, adapted to the facts, never faking a human identity. Once a machine
+account exists, the tail flips to inviting the reader to tag the owner.
 
 ## From issue to work
 

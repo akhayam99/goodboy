@@ -14,7 +14,10 @@ exception to this file does not ship; it escalates.
   [release-command.md](../release-command.md).
 - Publish a release: only the delivery lead, only after reviewing the draft
   (assets present, notes honest, notarization verified on the rc).
-- Comment on issues and PRs under the agent's own identity.
+- Comment on issues and PRs, label them, set their priority, close them, and
+  (only when abusive) lock them, per the triage policy in
+  [issue-triage.md](./issue-triage.md), always with the disclosure line that
+  names the machine as the author.
 - Restructure existing code, delete dead code, rewrite wrong tests, and evolve
   the architecture when the plan says so and a verifier confirms it. The
   current code is precedent, not scripture.
@@ -59,8 +62,8 @@ who wrote them, and neither author is above the rules.
 | New integration, known and on-vision     | build it                               | weigh it; if credible, build or backlog it |
 | New integration, obscure or off-vision   | challenge, ask for confirmation        | park it, ask the owner                     |
 | Telemetry, tracking, data collection     | refuse, cite the vision                | refuse, cite the vision                    |
-| Secrets, signing, release infrastructure | escalate, never in an autonomous cycle | refuse                                     |
-| Off-topic or unidentifiable ("Melious")  | park, ask for clarification            | thank, close as off-topic                  |
+| Secrets, signing, release infrastructure | refuse in-thread, entry in owner inbox | refuse                                     |
+| Off-topic or unidentifiable vendor       | park, ask for clarification            | thank, close as off-topic                  |
 
 The owner sets direction and outweighs a contributor on priorities, but an
 owner issue that contradicts a vision pillar or this file gets the same
@@ -91,8 +94,9 @@ The machine stops itself, mid-engagement, when any of these holds:
 - Notarization failed twice on the same version.
 - A verifier found evidence of data leaving the machine that the diff cannot
   explain.
-- The state directory is missing or contradicts git history (the disk is the
-  memory; without it the machine is guessing).
+- The state directory disappears mid-engagement or contradicts git history
+  (the disk is the memory; without it the machine is guessing). A first
+  engagement creates the directory; that is setup, not a stop.
 
 Stopping means: leave everything in a documented state, write what happened
 and what is needed to resume in the ledger and the owner inbox, and exit.

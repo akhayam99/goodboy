@@ -16,7 +16,7 @@ once, so pull the deep-dive only when the task touches it.
 | [VISION.md](../VISION.md)                               |   ✓   |    ✓    |             |          |            |    ✓     |     ✓      |
 | [DESIGN.md](../DESIGN.md)                               |       |    ✓    |      ✓      |    ✓     |            |    ✓     |     ✓      |
 | [AUTONOMY.md](../AUTONOMY.md) + [cluster](autonomy/)    |       |         |             |          |     ✓      |    ✓     |     ✓      |
-| [AGENTS.md](../AGENTS.md)                               |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
+| [AGENTS.md](../AGENTS.md)                               |   ✓   |    ✓    |      ✓      |    ✓     |            |    ✓     |     ✓      |
 | [CONVENTIONS.md](../CONVENTIONS.md)                     |       |    ✓    |      ✓      |    ✓     |     ✓      |    ✓     |     ✓      |
 | [glossary.md](glossary.md)                              |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
 | [typescript.md](typescript.md) + [cluster](typescript/) |       |         |      ✓      |    ✓     |            |          |            |
@@ -80,33 +80,33 @@ Every doc, its one-line purpose, and the roles that load it.
 
 ### Hubs (root)
 
-| Doc                                 | Purpose                                                                                                             | Roles                                                  |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [README.md](../README.md)           | Product overview, install, run, provider table.                                                                     | onboarding                                             |
-| [VISION.md](../VISION.md)           | The why, the mission, core concepts (workspaces, sessions, agents, workflows, shared context).                      | scout, planner, onboarding                             |
-| [DESIGN.md](../DESIGN.md)           | Surface principles: how Goodboy looks, reads, and feels. Points to styling.md for mechanics.                        | planner, implementer, reviewer, onboarding             |
-| [AGENTS.md](../AGENTS.md)           | Code hub. Working-memory floor: forbidden patterns checklist plus hard-rules summary. Points up to granular spokes. | all code roles, onboarding                             |
-| [AUTONOMY.md](../AUTONOMY.md)       | Autonomy hub: how Goodboy ships itself, the delivery org model and the floor. Points to docs/autonomy/.             | autonomy, pr-release, onboarding                       |
-| [CONVENTIONS.md](../CONVENTIONS.md) | Process and monorepo hub: pnpm, turbo, tsconfig, ci, git workflow, release.                                         | planner, implementer, reviewer, pr-release, onboarding |
+| Doc                                 | Purpose                                                                                                             | Roles                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [README.md](../README.md)           | Product overview, install, run, provider table.                                                                     | onboarding                                                       |
+| [VISION.md](../VISION.md)           | The why, the mission, core concepts (workspaces, sessions, agents, workflows, shared context).                      | scout, planner, autonomy, onboarding                             |
+| [DESIGN.md](../DESIGN.md)           | Surface principles: how Goodboy looks, reads, and feels. Points to styling.md for mechanics.                        | planner, implementer, reviewer, autonomy, onboarding             |
+| [AGENTS.md](../AGENTS.md)           | Code hub. Working-memory floor: forbidden patterns checklist plus hard-rules summary. Points up to granular spokes. | all code roles, autonomy, onboarding                             |
+| [AUTONOMY.md](../AUTONOMY.md)       | Autonomy hub: how Goodboy ships itself, the delivery org model and the floor. Points to docs/autonomy/.             | autonomy, pr-release, onboarding                                 |
+| [CONVENTIONS.md](../CONVENTIONS.md) | Process and monorepo hub: pnpm, turbo, tsconfig, ci, git workflow, release.                                         | planner, implementer, reviewer, pr-release, autonomy, onboarding |
 
 ### Spokes (`docs/`)
 
-| Doc                                                         | Purpose                                                                                           | Roles                                   |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| [glossary.md](glossary.md)                                  | Canonical term definitions for code, UI, docs, and issues.                                        | all                                     |
-| [autonomy.md](autonomy.md) + [autonomy/](autonomy/)         | Autonomy cluster: roles, safety and trust, release loop, issue triage, watchdogs.                 | autonomy, pr-release                    |
-| [typescript.md](typescript.md) + [typescript/](typescript/) | TypeScript conventions cluster: thin twin index plus data, components, control-flow, readability. | implementer, reviewer                   |
-| [styling.md](styling.md)                                    | Concrete Tailwind rules for spacing, radius, scroll. DESIGN.md owns the principles.               | implementer, reviewer                   |
-| [tone-of-voice.md](tone-of-voice.md)                        | How Goodboy talks: README, website, release notes, in-app copy, errors.                           | implementer, reviewer, pr-release       |
-| [providers.md](providers.md)                                | Provider integration guide: install, connect, manage each CLI.                                    | scout, planner, implementer, onboarding |
-| [model-picker.md](model-picker.md)                          | Model picker structure: catalog presentation data, axes, Cursor Max Mode.                         | planner, implementer, reviewer          |
-| [release.md](release.md)                                    | Technical release runbook: signing, notarization, updater, homebrew.                              | pr-release                              |
-| [release-command.md](release-command.md)                    | Agent release playbook: step order and gotchas. Points to release.md for mechanics.               | pr-release                              |
-| [workflows.md](workflows.md)                                | Workflow tables, run advance gate, post-step summarizer, parallel status.                         | planner, implementer, reviewer          |
-| [file-system.md](file-system.md)                            | File layout and where new code goes.                                                              | all code roles, onboarding              |
-| [architecture.md](architecture.md)                          | Repo architecture, subprocess env, provider system, vscode integration.                           | all code roles, onboarding              |
-| [testing.md](testing.md)                                    | Test rules and the golden rule.                                                                   | planner, implementer, reviewer          |
-| [dependencies.md](dependencies.md)                          | Dependency policy, single source of truth.                                                        | planner, implementer, reviewer          |
+| Doc                                                         | Purpose                                                                                           | Roles                                       |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| [glossary.md](glossary.md)                                  | Canonical term definitions for code, UI, docs, and issues.                                        | all                                         |
+| [autonomy.md](autonomy.md) + [autonomy/](autonomy/)         | Autonomy cluster: roles, safety and trust, release loop, issue triage, watchdogs.                 | autonomy, pr-release                        |
+| [typescript.md](typescript.md) + [typescript/](typescript/) | TypeScript conventions cluster: thin twin index plus data, components, control-flow, readability. | implementer, reviewer                       |
+| [styling.md](styling.md)                                    | Concrete Tailwind rules for spacing, radius, scroll. DESIGN.md owns the principles.               | implementer, reviewer                       |
+| [tone-of-voice.md](tone-of-voice.md)                        | How Goodboy talks: README, website, release notes, in-app copy, errors.                           | implementer, reviewer, pr-release, autonomy |
+| [providers.md](providers.md)                                | Provider integration guide: install, connect, manage each CLI.                                    | scout, planner, implementer, onboarding     |
+| [model-picker.md](model-picker.md)                          | Model picker structure: catalog presentation data, axes, Cursor Max Mode.                         | planner, implementer, reviewer              |
+| [release.md](release.md)                                    | Technical release runbook: signing, notarization, updater, homebrew.                              | pr-release                                  |
+| [release-command.md](release-command.md)                    | Agent release playbook: step order and gotchas. Points to release.md for mechanics.               | pr-release, autonomy                        |
+| [workflows.md](workflows.md)                                | Workflow tables, run advance gate, post-step summarizer, parallel status.                         | planner, implementer, reviewer              |
+| [file-system.md](file-system.md)                            | File layout and where new code goes.                                                              | all code roles, onboarding                  |
+| [architecture.md](architecture.md)                          | Repo architecture, subprocess env, provider system, vscode integration.                           | all code roles, onboarding                  |
+| [testing.md](testing.md)                                    | Test rules and the golden rule.                                                                   | planner, implementer, reviewer              |
+| [dependencies.md](dependencies.md)                          | Dependency policy, single source of truth.                                                        | planner, implementer, reviewer              |
 
 ### Per-workspace
 

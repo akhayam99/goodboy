@@ -58,21 +58,25 @@ raw diff.
    in flight.
 
 Afterwards the captain updates the backlog (what it took, what it surfaced
-and left), appends the ledger entry, and reports.
+and left) and returns its report block; the delivery lead is the only writer
+of the ledger and appends the block there.
 
 ## Area rotation
 
 Recent PRs show trajectory, and trajectory tunnels: five releases of depth on
 one surface starved the rest until the owner intervened. So each cycle names
 one **focus area** in Phase 1, drawn from a rotation, and the audit digs
-there even when recent history points elsewhere. The rotation, held in the
-backlog and extended as the product grows:
+there even when recent history points elsewhere. This file owns the rotation
+list; the ledger's per-release `focus-area` line is the visitation record the
+delivery lead picks from. The rotation, extended as the product grows:
 
 - workflows and agents (advance, carry-forward, routing, races)
 - resolve, end to end against diff and the code hosts
 - integration surface (render, act, route; one anatomy; write paths)
 - UX and UI fine pass (layout, visual polish, copy, seams between sections);
   this area is never "done" and returns more often than the others
+- legacy surfaces due a structural refactor (a page or flow the conventions
+  outgrew)
 - onboarding and first-run
 - performance and startup
 - the board, sessions and navigation

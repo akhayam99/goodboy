@@ -232,10 +232,10 @@ Routing is a fact about the work, so it reads like one. A model is shown as
 its provider mark, its authored name, and its effort, in that order, never as
 a raw catalog id.
 
-### Telemetry & cost awareness
+### Cost awareness
 
-Every interaction is metered. Goodboy gives you total visibility on what
-you're spending and where, in real time.
+Every interaction is metered, locally. Goodboy gives you total visibility on
+what you're spending and where, in real time.
 
 - **Token usage**: input/output tokens per request, per session, per provider,
   per model.

@@ -77,12 +77,11 @@ operational specifics:
   next merge. Never advance local `main`; `git fetch origin main` for SHAs.
   A PR red after two honest repairs is closed and reported as dropped.
 - **Phase 7, cut**: follow `docs/release-command.md` up to and including the
-  draft, with the rc dry-run and notarization check (team M3R9H4QX65, never
-  FC96QL5F9R). Never tag while another tag build is in flight; confirm the
-  previous version's homebrew run finished first. Changelog section format:
-  match `CHANGELOG.md` as it actually is, PR refs at the start of the
-  heading. Notes from PR bodies you read, never commit messages or memory;
-  name every call that was never sent to a live tenant.
+  draft, with the rc dry-run and notarization check (team M3R9H4QX65; any
+  other team fails the check). Never tag while another tag build is in
+  flight; confirm the previous version's homebrew run finished first. Notes
+  from PR bodies you read, never commit messages or memory; name every call
+  that was never sent to a live tenant.
 
 **Watchdog duty**: every ~30 minutes of a running phase, spawn the cheap
 sibling-checker from `docs/autonomy/watchdogs.md` and act on its report.
@@ -96,8 +95,9 @@ any kind, leaving `main` red, guessing at unidentifiable vendors.
 
 ## Report and exit
 
-Update `BACKLOG.md` (remove what you took, add what you surfaced and left,
-note the focus area as visited) and append to nothing else. Return only:
+Update `BACKLOG.md` (remove what you took, add what you surfaced and left)
+and append to nothing else; the ledger is your caller's to write. Return
+only:
 
 ```
 ## v{{version}}: <theme in six words>

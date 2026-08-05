@@ -15,16 +15,29 @@ role earns its place by owning a decision nobody else can make.
 delivery lead (one per engagement, up to 5 releases)
 ├── release captain (one per release)
 │   ├── archaeologists (3-5, cheap, read-only)
-│   ├── product owner (fable-tier, decides the release)
-│   ├── challenger (fable-tier, second opinion on the PO)
+│   ├── product owner (reasoning tier, decides the release)
+│   ├── challenger (reasoning tier, second opinion on the PO)
 │   ├── scouts (cheap, pressure-test the plan)
-│   ├── builders (one per PR)
+│   ├── builders (one per PR, mid or strong tier)
 │   ├── verifiers (one per PR, never the builder)
 │   └── watchdog (periodic, checks siblings)
 ├── issue triage officer (periodic loop)
 │   └── responder (per issue, drafts the reply)
 └── watchdog (checks the release captain)
 ```
+
+## Model tiers
+
+The tier names used across this cluster and the skill, mapped once here.
+Examples are the current best fit, not a lock-in: when the provider landscape
+moves, update this table, not every brief.
+
+| Tier      | Meaning                                            | Current example    |
+| --------- | -------------------------------------------------- | ------------------ |
+| cheap     | read, list, grep, summarize; disposable            | Haiku class        |
+| mid       | mechanical or localized build work, triage replies | Sonnet class       |
+| strong    | cross-cutting build, migrations, protocols, Rust   | Opus class         |
+| reasoning | product decisions, challenges, orchestration       | Fable / Opus class |
 
 ## The roles
 
@@ -35,20 +48,20 @@ five releases end to end, then reports and exits. It never writes code and
 never writes a release itself: it spawns release captains, reviews their draft
 releases, publishes each reviewed draft, keeps the ledger, runs the issue
 triage loop, and watches for stalled children. It is the only role authorized
-to publish a release. Model: the strongest available orchestrator tier.
+to publish a release. Model: reasoning tier.
 
 ### Release captain
 
 Owns one version end to end: audit, decision, build, verify, merge, draft.
 Stops at a reviewed draft release; publication belongs to the delivery lead.
-Follows [release-loop.md](./release-loop.md). Model: strong orchestrator tier.
+Follows [release-loop.md](./release-loop.md). Model: reasoning tier.
 
 ### Archaeologist
 
 Read-only auditor. Each gets a disjoint slice of the codebase or the product
 surface and returns a compact structured list of facts: what exists, what
 drifts, what is dead, what an item would cost. Never fixes anything, never
-touches git. Model: cheap tier (haiku or sonnet class).
+touches git. Model: cheap tier.
 
 ### Product owner
 
@@ -86,7 +99,7 @@ Pressure-tests the plan before a line is written: does the assumed code exist,
 is there a prior implementation to extend instead of duplicate, is a migration
 number free, which gating lists a change must touch, what tests cover the
 path. Scouts have contradicted every first plan so far; a plan that skipped
-scouting has shipped wrong items. Cheap tier, read-only.
+scouting has shipped wrong items. Model: cheap tier, read-only.
 
 ### Builder
 
