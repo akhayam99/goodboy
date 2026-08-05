@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
-import { jiraListComments, type JiraComment, type JiraIssue } from '../client';
+import { jiraCreateComment, jiraListComments, type JiraComment, type JiraIssue } from '../client';
 import { useJiraConfig } from '../useJiraConfig';
 
 type Params = {
@@ -14,6 +14,7 @@ type Result = {
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly reload: () => void;
+  readonly post: ((body: string) => Promise<void>) | null;
 };
 
 export const useJiraIssueComments = ({ issue, workspaceId }: Params): Result => {
@@ -65,5 +66,18 @@ export const useJiraIssueComments = ({ issue, workspaceId }: Params): Result => 
     setReloadToken((token) => token + 1);
   }, []);
 
-  return { comments, isLoading, error, reload };
+  const post = useCallback(
+    async (body: string) => {
+      if (siteUrl == null || email == null || issueKey == null) {
+        return;
+      }
+      const created = await jiraCreateComment({ workspaceId, siteUrl, email, issueKey, body });
+      setComments((current) => [...current, created]);
+    },
+    [workspaceId, siteUrl, email, issueKey],
+  );
+
+  const isReady = siteUrl != null && email != null && issueKey != null;
+
+  return { comments, isLoading, error, reload, post: isReady ? post : null };
 };

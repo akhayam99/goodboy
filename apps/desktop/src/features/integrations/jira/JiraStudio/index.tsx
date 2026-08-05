@@ -132,6 +132,7 @@ export const JiraStudio = ({ workspaceId, workspaceName, initialIssueId, onClose
                 issue={focused}
                 sessionId={focusedRow?.sessionId ?? null}
                 workspaceId={workspaceId}
+                onIssueWritten={refetch}
                 onClose={requestClose}
               />
             }

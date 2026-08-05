@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { EmptyState, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { NoteComposer } from '../../../../shared/components/NoteComposer';
 import type { JiraComment } from '../client';
 import { IssueNoteCard } from './IssueNoteCard';
 import { buildIssueConversation } from './issueNotes';
@@ -11,9 +12,10 @@ type Props = {
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly onRetry: () => void;
+  readonly onPost: ((body: string) => Promise<void>) | null;
 };
 
-export const IssueConversation = ({ comments, isLoading, error, onRetry }: Props) => {
+export const IssueConversation = ({ comments, isLoading, error, onRetry, onPost }: Props) => {
   const conversation = useMemo(() => buildIssueConversation({ comments }), [comments]);
 
   if (isLoading) {
@@ -60,6 +62,14 @@ export const IssueConversation = ({ comments, isLoading, error, onRetry }: Props
             ? '1 comment has no readable text'
             : `${conversation.emptyCommentCount} comments have no readable text`}
         </p>
+      )}
+      {onPost != null && (
+        <NoteComposer
+          placeholder="Write a comment"
+          submitLabel="Comment"
+          hint="Plain text, one paragraph per line"
+          onSubmit={onPost}
+        />
       )}
     </div>
   );
