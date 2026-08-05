@@ -9,7 +9,7 @@ import {
 } from '@goodboy/ui';
 import { GitPullRequest, Search } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
+import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 import type { BitbucketPullRequest } from '../client';
 import type { BitbucketPrGroup } from './useBitbucketPrs';
@@ -144,7 +144,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                               ·
                             </span>
                             <span className="shrink-0 tabular-nums text-muted-foreground/50">
-                              {formatShortDayMonth({ iso: pullRequest.updatedOn })}
+                              {formatAdaptiveAge({ iso: pullRequest.updatedOn })}
                             </span>
                             <InboxStatusIcons
                               className="ml-auto"

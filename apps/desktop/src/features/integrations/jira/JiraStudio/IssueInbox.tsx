@@ -9,7 +9,7 @@ import {
 } from '@goodboy/ui';
 import { MessagesSquare, Search } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
+import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 import type { JiraIssue } from '../client';
 import type { JiraIssueGroup } from './useJiraIssues';
@@ -139,7 +139,7 @@ export const IssueInbox = ({
                             {row.issue.summary}
                           </span>
                           <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">
-                            {formatShortDayMonth({ iso: row.issue.updated })}
+                            {formatAdaptiveAge({ iso: row.issue.updated })}
                           </span>
                           <InboxStatusIcons
                             sessionIcon={

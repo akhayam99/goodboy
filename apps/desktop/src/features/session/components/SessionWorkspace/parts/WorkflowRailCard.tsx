@@ -3,7 +3,10 @@ import { MetaRow, formatUsdPrecise } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunStatus } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowRunStatus';
-import { formatRelativeDuration } from '../../../../../shared/utils/relativeDate';
+import {
+  formatAdaptiveAge,
+  formatRelativeDuration,
+} from '../../../../../shared/utils/relativeDate';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { WorkflowOriginTag } from '../../../../workflows/components/WorkflowOriginTag';
 import { RailCard } from '../../../../../shared/components/RailCard';
@@ -63,6 +66,7 @@ export const WorkflowRailCard = ({
     run.executionMode === 'dynamic'
       ? `${ranAgents.length} ${ranAgents.length === 1 ? 'step' : 'steps'} run`
       : `${ranAgents.length} of ${workflow.steps.length} steps run`;
+  const attachedAge = run.createdAt != null ? formatAdaptiveAge({ iso: run.createdAt }) : '';
 
   return (
     <div className="relative flex w-full flex-col">
@@ -88,6 +92,11 @@ export const WorkflowRailCard = ({
               <span key="steps" className="tabular-nums">
                 {stepCount}
               </span>,
+              attachedAge !== '' ? (
+                <span key="age" className="tabular-nums">
+                  {attachedAge}
+                </span>
+              ) : null,
               duration != null ? (
                 <span key="duration" className="tabular-nums">
                   {duration}

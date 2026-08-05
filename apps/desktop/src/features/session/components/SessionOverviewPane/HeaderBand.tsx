@@ -4,7 +4,7 @@ import { Button, cn, Input, StatusDot } from '@goodboy/ui';
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
 import { agentHasUnread, EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../../../store';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { SummarizerBadge } from '../SummarizerBadge';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
@@ -126,7 +126,7 @@ export const HeaderBand = ({ session, stage }: Props) => {
         ) : null}
         <SummarizerBadge sessionId={sessionId} />
         <span className="text-2xs text-muted-foreground/70">
-          {formatRelativeDuration(session.createdAt)} ago
+          {formatAdaptiveAge({ iso: session.createdAt })}
         </span>
       </div>
     </div>

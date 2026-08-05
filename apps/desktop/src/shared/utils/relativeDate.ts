@@ -1,4 +1,7 @@
 import { APP_LOCALE } from './appLocale';
+import { formatShortDate } from './formatShortDate';
+import { formatShortDayMonth } from './formatShortDayMonth';
+import { toValidDate } from './toValidDate';
 
 export const formatRelativeDuration = (fromIso: string, toIso?: string): string => {
   const fromMs = Date.parse(fromIso);
@@ -64,4 +67,48 @@ export const formatRelativeAge = ({ fromIso, nowMs }: FormatRelativeAgeParams): 
     return 'just now';
   }
   return `${formatRelativeDuration(fromIso, new Date(toMs).toISOString())} ago`;
+};
+
+const MS_PER_MINUTE = 60_000;
+const MS_PER_HOUR = 3_600_000;
+const MS_PER_DAY = 86_400_000;
+
+type CalendarDayParams = {
+  readonly date: Date;
+};
+
+const startOfCalendarDay = ({ date }: CalendarDayParams): number =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
+type FormatAdaptiveAgeParams = {
+  readonly iso: string | number;
+  readonly nowMs?: number;
+};
+
+export const formatAdaptiveAge = ({ iso, nowMs }: FormatAdaptiveAgeParams): string => {
+  const date = toValidDate({ iso });
+  if (date == null) {
+    return '';
+  }
+  const now = new Date(nowMs ?? Date.now());
+  const dayGap = Math.round(
+    (startOfCalendarDay({ date: now }) - startOfCalendarDay({ date })) / MS_PER_DAY,
+  );
+  if (dayGap <= 0) {
+    const elapsed = Math.max(0, now.getTime() - date.getTime());
+    if (elapsed < MS_PER_MINUTE) {
+      return 'just now';
+    }
+    if (elapsed < MS_PER_HOUR) {
+      return `${Math.floor(elapsed / MS_PER_MINUTE)}m ago`;
+    }
+    return `${Math.floor(elapsed / MS_PER_HOUR)}h ago`;
+  }
+  if (dayGap === 1) {
+    return 'yesterday';
+  }
+  if (date.getFullYear() === now.getFullYear()) {
+    return formatShortDayMonth({ iso }).toLowerCase();
+  }
+  return formatShortDate({ iso }).toLowerCase();
 };

@@ -1,7 +1,7 @@
 import { ArrowUpRight, Check, RotateCcw, Trash2 } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { AgentId, DiffComment } from '@goodboy/types';
-import { relativeTime } from '../lib';
+import { formatAdaptiveAge } from '../../../../../shared/utils/relativeDate';
 
 type Props = {
   comment: DiffComment;
@@ -45,7 +45,9 @@ export const CommentItem = ({
           ME
         </span>
         <span className="text-2xs font-medium text-foreground">you</span>
-        <span className="text-3xs text-muted-foreground/70">{relativeTime(comment.createdAt)}</span>
+        <span className="text-3xs text-muted-foreground/70">
+          {formatAdaptiveAge({ iso: comment.createdAt })}
+        </span>
         {statusPill ? (
           <span className={cn('rounded-full px-1.5 py-0.5 text-3xs font-medium', statusPill.cls)}>
             {statusPill.label}

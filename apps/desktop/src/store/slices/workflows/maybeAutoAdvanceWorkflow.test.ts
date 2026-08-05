@@ -140,6 +140,40 @@ describe('maybeAutoAdvanceWorkflow', () => {
     });
   });
 
+  it('advances the lowest-ordinal run when two are eligible at once', async () => {
+    const SECOND_ID = 'run-2' as WorkflowRunId;
+    const agentFor = (runId: WorkflowRunId): Agent => ({
+      id: `${runId}-s0` as AgentId,
+      sessionId: SESSION_ID,
+      stepId: 's0' as StepId,
+      workflowRunId: runId,
+      ordinal: 0,
+      name: 's0',
+      status: 'pending',
+    });
+    const session = makeSession();
+    const state = baseState(['s0'], [agentFor(RUN_ID), agentFor(SECOND_ID)]);
+    state['sessions'] = [
+      {
+        ...session,
+        workflowRuns: [
+          { ...session.workflowRuns[0]!, id: SECOND_ID, ordinal: 1 },
+          session.workflowRuns[0]!,
+        ],
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledTimes(1);
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: `${RUN_ID}-s0`,
+      focus: 'agent',
+    });
+  });
+
   it('does not skip past a step that failed', async () => {
     const state = baseState(
       ['s0', 's1'],

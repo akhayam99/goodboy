@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { formatAbsoluteDateTime, formatRelativeDuration } from './relativeDate';
+import { formatAbsoluteDateTime, formatAdaptiveAge, formatRelativeDuration } from './relativeDate';
 
 const iso = (ms: number) => new Date(ms).toISOString();
 const NOW = 1_700_000_000_000;
@@ -43,6 +43,55 @@ describe('formatRelativeDuration', () => {
 
   it('returns empty string for invalid toIso', () => {
     expect(formatRelativeDuration(iso(NOW), 'garbage')).toBe('');
+  });
+});
+
+const at = (year: number, month: number, day: number, hour: number, minute = 0) =>
+  new Date(year, month - 1, day, hour, minute).getTime();
+
+describe('formatAdaptiveAge', () => {
+  it('returns "just now" under a minute', () => {
+    expect(
+      formatAdaptiveAge({ iso: at(2026, 8, 5, 14, 0), nowMs: at(2026, 8, 5, 14, 0) + 30_000 }),
+    ).toBe('just now');
+  });
+
+  it('counts minutes then hours within the same calendar day', () => {
+    const now = at(2026, 8, 5, 14, 0);
+    expect(formatAdaptiveAge({ iso: at(2026, 8, 5, 13, 55), nowMs: now })).toBe('5m ago');
+    expect(formatAdaptiveAge({ iso: at(2026, 8, 5, 13, 1), nowMs: now })).toBe('59m ago');
+    expect(formatAdaptiveAge({ iso: at(2026, 8, 5, 11, 0), nowMs: now })).toBe('3h ago');
+  });
+
+  it('says "yesterday" for the previous calendar day even when only hours old', () => {
+    expect(formatAdaptiveAge({ iso: at(2026, 8, 4, 22, 0), nowMs: at(2026, 8, 5, 1, 0) })).toBe(
+      'yesterday',
+    );
+    expect(formatAdaptiveAge({ iso: at(2026, 8, 4, 9, 0), nowMs: at(2026, 8, 5, 14, 0) })).toBe(
+      'yesterday',
+    );
+  });
+
+  it('drops to a lowercase day and month past yesterday, with no day-count rung', () => {
+    expect(formatAdaptiveAge({ iso: at(2026, 8, 2, 12, 0), nowMs: at(2026, 8, 5, 12, 0) })).toBe(
+      'aug 2',
+    );
+  });
+
+  it('carries the year for a previous calendar year', () => {
+    expect(formatAdaptiveAge({ iso: at(2025, 12, 12, 12, 0), nowMs: at(2026, 1, 5, 12, 0) })).toBe(
+      'dec 12, 2025',
+    );
+  });
+
+  it('prefers "yesterday" over the year rung across a new year boundary', () => {
+    expect(formatAdaptiveAge({ iso: at(2025, 12, 31, 22, 0), nowMs: at(2026, 1, 1, 9, 0) })).toBe(
+      'yesterday',
+    );
+  });
+
+  it('returns an empty string for an invalid timestamp', () => {
+    expect(formatAdaptiveAge({ iso: 'not-a-date' })).toBe('');
   });
 });
 

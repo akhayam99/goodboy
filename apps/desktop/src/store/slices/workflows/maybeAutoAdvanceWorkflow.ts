@@ -58,9 +58,9 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   if (session == null || session.workflowRuns.length === 0) {
     return;
   }
-  const activeRuns = session.workflowRuns.filter(
-    (r) => r.autoRun && r.discardedAt == null && r.triggerMode === 'immediate',
-  );
+  const activeRuns = session.workflowRuns
+    .filter((r) => r.autoRun && r.discardedAt == null && r.triggerMode === 'immediate')
+    .sort((a, b) => a.ordinal - b.ordinal);
   if (activeRuns.length === 0) {
     return;
   }
