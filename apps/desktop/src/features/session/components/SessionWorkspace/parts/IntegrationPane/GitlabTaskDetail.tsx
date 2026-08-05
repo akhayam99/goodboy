@@ -17,7 +17,7 @@ export const GitlabTaskDetail = ({ workspaceId, task }: Props) => {
   });
 
   if (issue != null) {
-    return <GitlabIssueDetail issue={issue} fit="fill" />;
+    return <GitlabIssueDetail issue={issue} workspaceId={workspaceId} fit="fill" />;
   }
 
   return (

@@ -5,6 +5,7 @@ import {
   issuePullRequests,
   linearFetchIssue,
   linearFetchIssueComments,
+  linearUpdateIssueDescription,
   type LinearAttachment,
   type LinearIssue,
 } from './client';
@@ -113,5 +114,22 @@ describe('Linear issue requests', () => {
       ['linear_fetch_issue', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
       ['linear_fetch_issue_comments', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
     ]);
+  });
+
+  it('sends the new description to the update command and returns the saved body', async () => {
+    mockInvoke.mockResolvedValueOnce('Saved by Linear');
+
+    const saved = await linearUpdateIssueDescription({
+      workspaceId: WORKSPACE_ID,
+      issueId: 'issue-42',
+      description: 'Rewritten body',
+    });
+
+    expect(saved).toBe('Saved by Linear');
+    expect(mockInvoke).toHaveBeenCalledWith('linear_update_issue', {
+      workspaceId: WORKSPACE_ID,
+      issueId: 'issue-42',
+      description: 'Rewritten body',
+    });
   });
 });

@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
 import type { WorkspaceId } from '@goodboy/types';
-import { gitlabFetchIssue, humanizeMergeStatus, issueIdentifier, type GitlabIssue } from './client';
+import {
+  gitlabFetchIssue,
+  gitlabUpdateIssueDescription,
+  humanizeMergeStatus,
+  issueIdentifier,
+  type GitlabIssue,
+} from './client';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
@@ -61,6 +67,29 @@ describe('gitlabFetchIssue', () => {
       host: 'https://gitlab.com',
       projectPath: 'acme/web',
       issueIid: 7,
+    });
+  });
+});
+
+describe('gitlabUpdateIssueDescription', () => {
+  it('sends the new description to the update command and returns the saved body', async () => {
+    mockInvoke.mockResolvedValueOnce('Saved by GitLab');
+
+    const saved = await gitlabUpdateIssueDescription({
+      workspaceId: 'workspace-1' as WorkspaceId,
+      host: 'https://gitlab.com',
+      projectPath: 'acme/web',
+      issueIid: 7,
+      description: 'Rewritten body',
+    });
+
+    expect(saved).toBe('Saved by GitLab');
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_update_issue', {
+      workspaceId: 'workspace-1',
+      host: 'https://gitlab.com',
+      projectPath: 'acme/web',
+      issueIid: 7,
+      description: 'Rewritten body',
     });
   });
 });
