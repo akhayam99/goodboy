@@ -240,6 +240,15 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
       });
   };
 
+  useEffect(() => {
+    if (goalEditorOpen || goal === goalEditorBaseRef.current) {
+      return;
+    }
+    goalEditorBaseRef.current = goal;
+    setGoalEditorDraft(goal);
+    setGoalEditorDirty(false);
+  }, [goal, goalEditorOpen]);
+
   const openGoalEditor = () => {
     goalPolishRequestId.current += 1;
     setGoalPolishing(false);

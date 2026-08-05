@@ -175,9 +175,6 @@ export const NewSessionForm = ({
               className="min-w-0 flex-1"
             />
             <div className="flex shrink-0 flex-col items-end gap-1">
-              {goalEditorDirty ? (
-                <span className="text-2xs text-warning">Unsaved edits</span>
-              ) : null}
               <button
                 type="button"
                 onClick={onOpenGoalEditor}
@@ -191,6 +188,9 @@ export const NewSessionForm = ({
               >
                 <Expand size={13} aria-hidden />
               </button>
+              {goalEditorDirty ? (
+                <span className="text-2xs text-warning">Unsaved edits</span>
+              ) : null}
             </div>
           </div>
         </FieldRow>
