@@ -7,6 +7,52 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.60
+
+GitLab stops being a read-only mirror: the merge request conversation, its approvals, and issue comments all live here now. The open-question gate moved into the engine, and a retried resolution no longer posts the same reply twice.
+
+### [#1215] The merge request conversation, and the actions on it
+
+Goodboy could already post to a GitLab merge request and never show you what it posted. `gitlab_create_mr_discussion` and `gitlab_create_mr_note` shipped wired only into the review publish flow, so an agent could leave an inline discussion you had no way to see without opening gitlab.com. The merge request detail rendered three things: state badges, the description, and a merge button.
+
+There is now a Conversation tab. Threads render their head note and replies, with the file and line when the discussion is anchored to a diff position, and a resolved badge when every resolvable note in the thread is settled. GitLab system notes are filtered out and the count reported underneath, so "changed title from X to Y" does not bury the review. An Approvals row shows how many approvals are in, how many the project requires, and who gave them.
+
+From the same panel you can reply inside a thread, post a standalone note, approve or revoke your approval, close, reopen, and toggle draft. GitLab models draft as a title prefix, so the toggle rewrites the title and handles the `[Draft]`, `(Draft)` and legacy `WIP:` forms. Every action reflects its result without a manual refresh, because the command returns the updated merge request and the panel adopts it.
+
+Still ahead: resolving a thread from the app, emoji awards and suggestions, and anchoring an existing discussion inside the diff viewer. There is no polling. Instances without the approvals endpoint hide the row rather than taking the panel down, which also means their approval rules are not shown.
+
+### [#1218] Comment on and edit a GitLab issue in place
+
+A GitLab issue showed its title, description, and state, and nothing else, while GitHub issues already took comments and description edits. Both GitLab issue surfaces now carry the same tabbed layout as the merge request panel: notes render oldest first with the composer at the bottom, system notes filtered and counted the same way, and the description is editable inline through the same editor the other issue sources use.
+
+### [#1214] The open-question gate moved into the engine
+
+v0.1.59 closed three manual bypasses one call site at a time, but the gate still lived in the callers, so every new entry point could forget it, and one already had: the mobile bridge reimplemented next-step selection and activated a step with no gating at all, so a phone tap could force a run past a question the desktop blocks on.
+
+Starting a pending step now refuses by default when its workflow run has an unanswered question, and only an explicit bypass gets through. Four call sites carry that bypass, each one a start the operator already confirmed. Every refusal reaches you rather than disappearing: the orchestrator records the block and the panel asks for an answer, the mobile bridge returns the real reason instead of a generic failure, and fire-and-forget starts raise a notification. Forcing a skip past a blocked step now carries that decision into dynamic runs too, where it used to be dropped.
+
+One related fix on the same path: a stuck step could be force-skipped from the sidebar for a session you had never opened, because the check read in-memory turn state that is only filled in for the session on screen. It now reads what the database says first.
+
+### [#1216] A retried resolution posts its reply once
+
+Resolve posted a reply and then resolved the thread with nothing tying the two together. If the resolve failed after the reply had already landed, the queued row stayed put and the UI invited a retry, which posted the identical comment again, compounding every time. A resolution now records that its reply went out before it attempts the resolve, so a retry skips straight to resolving. The ad-hoc single-thread path had no queued row to record against, so it persists one first.
+
+Three more on the same path: the push-all summary only counts a comment when one actually went out, the outcome dispatch is exhaustive so a new outcome cannot fall through it silently, and a resolver turn that fails now says so instead of failing quietly. Two resolvers can no longer start at the same time, and the hand-off to the next resolver in a chain still runs.
+
+### [#1217] Review drafts stay on the pull request they were written for
+
+Publishing a review selected every draft in the session and never checked which pull request it belonged to, so drafts staged against one PR could post onto another. v0.1.59 opened a second place to publish from, where the target and the drafts could disagree. Drafts are now matched to the resolved target, and the ones that belong elsewhere stay where they are and are reported rather than posted.
+
+### Smaller fixes
+
+- [#1217] Deleting a provider API key or removing a budget cap asks first, and names what it is removing
+- [#1217] Switching agents no longer carries the previous agent's diff jump and merge dialog over
+- [#1217] Spawning from the composer no longer pulls you into the chat view
+- [#1217] A disabled Run control keeps its tooltip, so it can say why it is disabled
+- [#1217] The questions pane shows a skeleton instead of flashing "no open questions" before it has loaded, and the pull request pane has a loading skeleton on first fetch
+- [#1217] The companion setup reports a failure in words instead of printing the raw exception
+- [#1217] The link-issue form shows its error in the footer, where the other forms put theirs
+
 ## Goodboy v0.1.59
 
 Approving a pull request and replying to an issue both happen here now, a queued resolution never closes a thread nobody settled, and a workflow stops walking past a question nobody answered.
