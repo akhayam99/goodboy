@@ -199,6 +199,16 @@ describe('PrDetailPanel', () => {
     );
   });
 
+  it('tells me in words when bitbucket refuses the approval', async () => {
+    h.showToast.mockClear();
+    h.state.approveBitbucketPr.mockRejectedValueOnce(new Error('bitbucket said no'));
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => expect(h.showToast).toHaveBeenCalledWith('error', 'bitbucket said no'));
+  });
+
   it('merges only after the confirmation, and for that pull request', async () => {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));

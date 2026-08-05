@@ -31,7 +31,7 @@ const EMPTY: Loaded = { pullRequestId: null, comments: [], checks: [] };
 
 export const useBitbucketPrDetail = ({ target }: Params): Result => {
   const [loaded, setLoaded] = useState<Loaded>(EMPTY);
-  const [isFetching, setIsFetching] = useState(target != null);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const wantedId = target?.pullRequestId ?? null;

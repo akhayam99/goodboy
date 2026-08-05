@@ -138,9 +138,28 @@ describe('PrActionBar', () => {
     await waitFor(() => expect(handlers[handlerKey]).toHaveBeenCalledTimes(1));
   });
 
-  it('drops the moves and says so in words once the pull request is merged', () => {
-    renderBar({ pullRequest: buildPr({ state: 'MERGED' }) });
+  it.each([
+    ['Merge', 'Cancel', 'onMerge'],
+    ['Decline', 'Cancel', 'onDecline'],
+  ] as const)('backing out of the %s confirmation writes nothing', (label, cancelLabel, key) => {
+    renderBar({});
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    fireEvent.click(screen.getByRole('button', { name: cancelLabel }));
+
+    expect(handlers[key]).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: label })).toBeTruthy();
+  });
+
+  it.each([
+    ['MERGED', /This pull request is merged/],
+    ['DECLINED', /This pull request was declined/],
+    ['SUPERSEDED', /Another pull request superseded this one/],
+  ] as const)('drops the moves and says so in words once the state is %s', (state, sentence) => {
+    renderBar({ pullRequest: buildPr({ state }) });
+
     expect(screen.queryByRole('button', { name: 'Merge' })).toBeNull();
-    expect(screen.getByText(/This pull request is merged/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Decline' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(screen.getByText(sentence)).toBeTruthy();
   });
 });

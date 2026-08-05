@@ -61,4 +61,26 @@ describe('useBitbucketPrDetail', () => {
     expect(result.current.comments).toEqual([]);
     expect(result.current.isLoading).toBe(true);
   });
+
+  it('reports loading in every frame it renders after the target changes, not only the settled one', async () => {
+    const frames: Array<{ readonly isLoading: boolean; readonly commentCount: number }> = [];
+    const { rerender } = renderHook(
+      ({ pullRequestId }: { readonly pullRequestId: number }) => {
+        const detail = useBitbucketPrDetail({ target: target(pullRequestId) });
+        frames.push({ isLoading: detail.isLoading, commentCount: detail.comments.length });
+        return detail;
+      },
+      { initialProps: { pullRequestId: 42 } },
+    );
+    await waitFor(() => expect(frames.at(-1)?.commentCount).toBe(1));
+    frames.length = 0;
+
+    rerender({ pullRequestId: 43 });
+
+    expect(frames.length).toBeGreaterThan(0);
+    frames.forEach((frame) => {
+      expect(frame.commentCount).toBe(0);
+      expect(frame.isLoading).toBe(true);
+    });
+  });
 });
