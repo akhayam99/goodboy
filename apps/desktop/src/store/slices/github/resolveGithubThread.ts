@@ -3,7 +3,7 @@ import {
   listPendingResolutionsForSession,
   queuePendingResolution,
 } from '@goodboy/db';
-import type { SessionId } from '@goodboy/types';
+import type { PendingResolutionOutcome, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
@@ -12,6 +12,26 @@ import { withResolutionLock } from './withResolutionLock';
 import type { GetFn, SetFn } from './types';
 
 type Params = { commitSha?: string; reason?: string; reply?: string };
+
+const deriveOutcome = ({
+  closure,
+}: {
+  readonly closure: Params | undefined;
+}): PendingResolutionOutcome | null => {
+  const commitSha = closure?.commitSha ?? '';
+  const reason = closure?.reason ?? '';
+  const reply = closure?.reply ?? '';
+  if (commitSha === '' && reason === '' && reply === '') {
+    return null;
+  }
+  if (commitSha !== '') {
+    return 'resolved';
+  }
+  if (reason !== '') {
+    return 'wontfix';
+  }
+  return 'analyzed';
+};
 
 export const resolveGithubThread = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, threadId: string, closure?: Params): Promise<boolean> =>
@@ -77,7 +97,7 @@ export const resolveGithubThread = (set: SetFn, get: GetFn) => {
                 threadId,
                 commitSha: closure?.commitSha ?? '',
                 reply: closure?.reply ?? null,
-                outcome: null,
+                outcome: deriveOutcome({ closure }),
               });
               const queued = await listPendingResolutionsForSession({
                 db: tauriDatabase,
