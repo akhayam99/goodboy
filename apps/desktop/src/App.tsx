@@ -384,6 +384,21 @@ export const App = () => {
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
+      if (!detail?.sessionId) {
+        return;
+      }
+      setNewSessionOpen(false);
+      setWorkspaceSettingsOpen(false);
+      setWorkspaceSettingsFocus(undefined);
+      setSessionStudio(detail.sessionId, { kind: 'bitbucket' });
+    };
+    window.addEventListener('goodboy:open-bitbucket-pr', handler);
+    return () => window.removeEventListener('goodboy:open-bitbucket-pr', handler);
+  }, [setSessionStudio]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: SessionId }>).detail;
       if (detail?.sessionId) {
         setWorkspaceSettingsOpen(false);
         setWorkspaceSettingsFocus(undefined);

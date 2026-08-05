@@ -5,6 +5,7 @@ import { useCurrentWorkspace, type SessionStudio } from '../../../../../store';
 import { WorkflowBuilderView } from '../../WorkflowBuilderView';
 import { GitHubSessionPane } from '../../../../github/components/GitHubSessionPane';
 import { MrSessionPane } from '../../../../integrations/gitlab/MrSessionPane';
+import { BitbucketStudio } from '../../../../integrations/bitbucket/BitbucketStudio';
 
 const STUDIO_OUT_MS = 200;
 
@@ -74,6 +75,12 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
           workspaceName={workspaceName}
           initialPrNumber={studio.prNumber ?? null}
           initialThreadId={studio.threadId ?? null}
+          onClose={requestClose}
+        />
+      ) : studio.kind === 'bitbucket' ? (
+        <BitbucketStudio
+          sessionId={session.id}
+          workspaceName={workspaceName}
           onClose={requestClose}
         />
       ) : (

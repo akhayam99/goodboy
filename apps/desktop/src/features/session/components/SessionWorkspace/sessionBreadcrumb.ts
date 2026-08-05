@@ -57,6 +57,13 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         },
       ]);
     }
+    if (studio.kind === 'bitbucket') {
+      return sealLast([
+        overview,
+        { id: 'pr', label: lensLabel('pr'), onClick: () => handlers.toLens('pr') },
+        { id: 'bitbucket', label: 'Bitbucket' },
+      ]);
+    }
     return sealLast([
       overview,
       { id: 'pr', label: lensLabel('pr'), onClick: () => handlers.toLens('pr') },
