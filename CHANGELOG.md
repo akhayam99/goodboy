@@ -7,6 +7,31 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.59
+
+Approving a pull request and replying to an issue both happen here now, a queued resolution never closes a thread nobody settled, and a workflow stops walking past a question nobody answered.
+
+### [#1209] Approve or request changes from the pull request panel
+
+The GitHub pull request panel rendered the whole PR and could merge, close, reopen and toggle draft, but it had no verdict control, so approving meant leaving for a browser tab. A Review action now sits in the same bar: approve, request changes, or comment, with an optional summary. It shares in-flight state with the other writes, so nothing else fires while a review posts, and it is hidden on merged and closed PRs where a verdict means nothing. One thing had to be fixed before it could ship: the publish path resolved its target from the session's first linked pull request rather than the one on screen, so in a session with more than one PR a verdict would have landed on the wrong one. The panel now passes the PR you are looking at. Note that submitting a verdict also publishes any review drafts staged in that session, which is how the publish path already behaved.
+
+### [#1210] Read and write a GitHub issue conversation in place
+
+A GitHub issue showed its title, state and description and nothing else. Its conversation was invisible, and no issue in the product had a composer at all. The issue detail now carries a Conversation tab with the full thread (author, date, markdown body) and a composer at the bottom that posts back to GitHub and reloads the thread. When a post fails it keeps what you typed and shows what GitHub returned. This is the first issue comment you can write from inside Goodboy. Linear, GitLab and Sentry issues stay read-only for now.
+
+### [#1211] A review thread never closes on a verdict nobody gave
+
+A queued resolution carrying no verdict was read as a fix, so the thread was resolved on GitHub. Every row written before the verdict column existed carries no verdict, so this was reachable rather than theoretical. An unknown verdict now posts its reply, leaves the thread open, and says so in the toast. Three more fixes on the same path: a batch that hits an error keeps going instead of abandoning every thread after the first one and still refreshes what it did close, a rejected push no longer marks items failed that never needed the push, and the three paths that delete queued resolutions can no longer run at the same time and post the same comment twice.
+
+### [#1212] A blocked workflow says so at the button
+
+The open-question gate stopped a workflow from marching past a question nobody answered, but enforcing it was left to each caller, and three manual start paths walked around it. Both run start buttons now carry the blocked state at the action itself and route through the same confirm the next-step action already used, so starting anyway is a deliberate second click. Starting a step agent refuses an unconfirmed start of a blocked run instead of relying on the caller to have checked. Engine-level enforcement, where the gate lives inside the store action rather than the buttons, is still ahead.
+
+### Smaller fixes
+
+- [#1208] A linked GitHub issue opens the issue instead of landing in the pull request pane
+- [#1208] External links go through one shared open path rather than raw anchors that a webview may not honor
+
 ## Goodboy v0.1.58
 
 Deleting a session no longer leaves an orphaned worktree behind, a new Storage section lets you see and reclaim what archived sessions cost on disk, the issue-to-PR loop closes on GitHub and GitLab alike, and Linear and GitLab issue descriptions get the same in-app editor GitHub already had.
