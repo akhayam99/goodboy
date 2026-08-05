@@ -34,6 +34,7 @@ import type {
 } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
 import { readPersistedLens } from './workSurfaceStorage';
+import { resolveOpenDiffViewerEvent } from './openDiffViewerEvent';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(async () => null),
@@ -809,6 +810,50 @@ describe('store contract', () => {
       expect(store.getState().activeLens[SESSION_ID]).toBe('github_issue');
       expect(store.getState().focusedGithubIssueNumber[SESSION_ID]).toBe(9);
       expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
+    });
+
+    it('the open-diff-viewer event resolution cannot land on a stale commit after going back', async () => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, 'resolve');
+      store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
+      store.getState().lensGo(SESSION_ID, -1);
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({
+        kind: 'commit',
+        sha: 'abc1234',
+        path: null,
+      });
+
+      const resolved = resolveOpenDiffViewerEvent({ detail: { sessionId: SESSION_ID } });
+      if (resolved === null) {
+        throw new Error('expected a resolution');
+      }
+      store.getState().openDiffLens(resolved.sessionId, resolved.focus);
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
+      expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
+    });
+
+    it('the event path and a direct openDiffLens call land in identical state', async () => {
+      const store = await getStore();
+      store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
+      const resolved = resolveOpenDiffViewerEvent({ detail: { sessionId: SESSION_ID } });
+      if (resolved === null) {
+        throw new Error('expected a resolution');
+      }
+      store.getState().openDiffLens(resolved.sessionId, resolved.focus);
+      const eventPathState = {
+        activeLens: store.getState().activeLens[SESSION_ID],
+        diffFocus: store.getState().diffFocus[SESSION_ID],
+      };
+
+      store.getState().openDiffLens(SESSION_ID_2, { kind: 'commit', sha: 'abc1234', path: null });
+      store.getState().openDiffLens(SESSION_ID_2, { kind: 'working', path: null });
+      const directCallState = {
+        activeLens: store.getState().activeLens[SESSION_ID_2],
+        diffFocus: store.getState().diffFocus[SESSION_ID_2],
+      };
+
+      expect(eventPathState).toEqual(directCallState);
     });
 
     it('setSessionStudio(non-null) clears the selected agent', async () => {

@@ -201,4 +201,39 @@ describe('activateNextResolver', () => {
       expect.objectContaining({ agentId: SECOND, content: 'fix comment two' }),
     );
   });
+
+  it('surfaces a notification instead of an unhandled rejection when the kickoff turn fails', async () => {
+    const sendTurn = vi.fn(async () => {
+      throw new Error('provider unreachable');
+    });
+    const emitNotification = vi.fn(async () => undefined);
+    const state: Record<string, unknown> = {
+      sessionPhaseRuns: { [SID]: [resolver({ id: FIRST, ordinal: 1 })] },
+      agentKindOverride: {},
+      pendingResolverKickoff: { [FIRST]: 'fix comment one' },
+      sendTurn,
+      selectAgent: vi.fn(async () => undefined),
+      emitNotification,
+    };
+    const get = (() => state) as unknown as GetFn;
+    const set = ((u: unknown) => {
+      const patch =
+        typeof u === 'function'
+          ? (u as (s: Record<string, unknown>) => Record<string, unknown>)(state)
+          : (u as Record<string, unknown>);
+      Object.assign(state, patch);
+    }) as unknown as SetFn;
+
+    await activateNextResolver(set, get)(SID);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(emitNotification).toHaveBeenCalledWith(
+      'error',
+      'error',
+      'resolver failed to start',
+      'provider unreachable',
+      { sessionId: SID },
+    );
+  });
 });
