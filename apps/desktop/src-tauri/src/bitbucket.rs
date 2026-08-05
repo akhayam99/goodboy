@@ -208,6 +208,10 @@ async fn get_json<T: serde::de::DeserializeOwned>(
     serde_json::from_str(&body).map_err(|e| BitbucketError::InvalidShape(e.to_string()))
 }
 
+fn reads_as_absent(status: u16) -> bool {
+    status == 404
+}
+
 async fn get_json_optional<T: serde::de::DeserializeOwned>(
     credentials: &Credentials<'_>,
     url: &str,
@@ -220,7 +224,7 @@ async fn get_json_optional<T: serde::de::DeserializeOwned>(
         .await?;
     let status = res.status();
     let body = res.text().await?;
-    if status == reqwest::StatusCode::NOT_FOUND {
+    if reads_as_absent(status.as_u16()) {
         return Ok(None);
     }
     if !status.is_success() {
@@ -763,31 +767,59 @@ fn first_matching_branch(
 }
 
 struct BitbucketWrite {
+    method: reqwest::Method,
     url: String,
-    body: Value,
+    body: Option<Value>,
+}
+
+fn approve_url(base: &str, workspace: &str, repo: &str, id: u64) -> String {
+    format!("{}/approve", pull_request_path(base, workspace, repo, id))
+}
+
+fn request_changes_url(base: &str, workspace: &str, repo: &str, id: u64) -> String {
+    format!(
+        "{}/request-changes",
+        pull_request_path(base, workspace, repo, id)
+    )
 }
 
 fn approve_write(base: &str, workspace: &str, repo: &str, id: u64) -> BitbucketWrite {
     BitbucketWrite {
-        url: format!("{}/approve", pull_request_path(base, workspace, repo, id)),
-        body: Value::Object(serde_json::Map::new()),
+        method: reqwest::Method::POST,
+        url: approve_url(base, workspace, repo, id),
+        body: Some(Value::Object(serde_json::Map::new())),
+    }
+}
+
+fn unapprove_write(base: &str, workspace: &str, repo: &str, id: u64) -> BitbucketWrite {
+    BitbucketWrite {
+        method: reqwest::Method::DELETE,
+        url: approve_url(base, workspace, repo, id),
+        body: None,
     }
 }
 
 fn request_changes_write(base: &str, workspace: &str, repo: &str, id: u64) -> BitbucketWrite {
     BitbucketWrite {
-        url: format!(
-            "{}/request-changes",
-            pull_request_path(base, workspace, repo, id)
-        ),
-        body: Value::Object(serde_json::Map::new()),
+        method: reqwest::Method::POST,
+        url: request_changes_url(base, workspace, repo, id),
+        body: Some(Value::Object(serde_json::Map::new())),
+    }
+}
+
+fn unrequest_changes_write(base: &str, workspace: &str, repo: &str, id: u64) -> BitbucketWrite {
+    BitbucketWrite {
+        method: reqwest::Method::DELETE,
+        url: request_changes_url(base, workspace, repo, id),
+        body: None,
     }
 }
 
 fn decline_write(base: &str, workspace: &str, repo: &str, id: u64) -> BitbucketWrite {
     BitbucketWrite {
+        method: reqwest::Method::POST,
         url: format!("{}/decline", pull_request_path(base, workspace, repo, id)),
-        body: Value::Object(serde_json::Map::new()),
+        body: Some(Value::Object(serde_json::Map::new())),
     }
 }
 
@@ -807,15 +839,17 @@ fn merge_write(
         body.insert("message".to_string(), Value::String(text.to_string()));
     }
     BitbucketWrite {
+        method: reqwest::Method::POST,
         url: format!("{}/merge", pull_request_path(base, workspace, repo, id)),
-        body: Value::Object(body),
+        body: Some(Value::Object(body)),
     }
 }
 
 fn comment_write(base: &str, workspace: &str, repo: &str, id: u64, text: &str) -> BitbucketWrite {
     BitbucketWrite {
+        method: reqwest::Method::POST,
         url: format!("{}/comments", pull_request_path(base, workspace, repo, id)),
-        body: serde_json::json!({ "content": { "raw": text } }),
+        body: Some(serde_json::json!({ "content": { "raw": text } })),
     }
 }
 
@@ -828,11 +862,12 @@ fn reply_write(
     text: &str,
 ) -> BitbucketWrite {
     BitbucketWrite {
+        method: reqwest::Method::POST,
         url: format!("{}/comments", pull_request_path(base, workspace, repo, id)),
-        body: serde_json::json!({
+        body: Some(serde_json::json!({
             "content": { "raw": text },
             "parent": { "id": parent_id }
-        }),
+        })),
     }
 }
 
@@ -1010,13 +1045,8 @@ pub async fn bitbucket_approve_pull_request(
         token: &token,
     };
     let write = approve_write(API_BASE, &workspace_slug, &repo_slug, pull_request_id);
-    let raw: BitbucketParticipantRaw = send_json(
-        &credentials,
-        reqwest::Method::POST,
-        &write.url,
-        Some(&write.body),
-    )
-    .await?;
+    let raw: BitbucketParticipantRaw =
+        send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_participant(raw))
 }
 
@@ -1034,8 +1064,8 @@ pub async fn bitbucket_unapprove_pull_request(
         email: &email,
         token: &token,
     };
-    let write = approve_write(API_BASE, &workspace_slug, &repo_slug, pull_request_id);
-    send_no_content(&credentials, reqwest::Method::DELETE, &write.url, None).await
+    let write = unapprove_write(API_BASE, &workspace_slug, &repo_slug, pull_request_id);
+    send_no_content(&credentials, write.method, &write.url, write.body.as_ref()).await
 }
 
 #[tauri::command]
@@ -1053,13 +1083,8 @@ pub async fn bitbucket_request_changes(
         token: &token,
     };
     let write = request_changes_write(API_BASE, &workspace_slug, &repo_slug, pull_request_id);
-    let raw: BitbucketParticipantRaw = send_json(
-        &credentials,
-        reqwest::Method::POST,
-        &write.url,
-        Some(&write.body),
-    )
-    .await?;
+    let raw: BitbucketParticipantRaw =
+        send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_participant(raw))
 }
 
@@ -1077,8 +1102,8 @@ pub async fn bitbucket_unrequest_changes(
         email: &email,
         token: &token,
     };
-    let write = request_changes_write(API_BASE, &workspace_slug, &repo_slug, pull_request_id);
-    send_no_content(&credentials, reqwest::Method::DELETE, &write.url, None).await
+    let write = unrequest_changes_write(API_BASE, &workspace_slug, &repo_slug, pull_request_id);
+    send_no_content(&credentials, write.method, &write.url, write.body.as_ref()).await
 }
 
 #[tauri::command]
@@ -1105,13 +1130,8 @@ pub async fn bitbucket_merge_pull_request(
         close_source_branch,
         message.as_deref(),
     );
-    let raw: BitbucketPullRequestRaw = send_json(
-        &credentials,
-        reqwest::Method::POST,
-        &write.url,
-        Some(&write.body),
-    )
-    .await?;
+    let raw: BitbucketPullRequestRaw =
+        send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_pull_request(raw))
 }
 
@@ -1130,13 +1150,8 @@ pub async fn bitbucket_decline_pull_request(
         token: &token,
     };
     let write = decline_write(API_BASE, &workspace_slug, &repo_slug, pull_request_id);
-    let raw: BitbucketPullRequestRaw = send_json(
-        &credentials,
-        reqwest::Method::POST,
-        &write.url,
-        Some(&write.body),
-    )
-    .await?;
+    let raw: BitbucketPullRequestRaw =
+        send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_pull_request(raw))
 }
 
@@ -1162,13 +1177,8 @@ pub async fn bitbucket_create_pull_request_comment(
         pull_request_id,
         &body,
     );
-    let raw: BitbucketCommentRaw = send_json(
-        &credentials,
-        reqwest::Method::POST,
-        &write.url,
-        Some(&write.body),
-    )
-    .await?;
+    let raw: BitbucketCommentRaw =
+        send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_comment(raw))
 }
 
@@ -1196,13 +1206,8 @@ pub async fn bitbucket_reply_to_pull_request_comment(
         parent_comment_id,
         &body,
     );
-    let raw: BitbucketCommentRaw = send_json(
-        &credentials,
-        reqwest::Method::POST,
-        &write.url,
-        Some(&write.body),
-    )
-    .await?;
+    let raw: BitbucketCommentRaw =
+        send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_comment(raw))
 }
 
@@ -1358,29 +1363,55 @@ mod tests {
             .starts_with("https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/7/statuses?"));
     }
 
+    fn body_of(write: &BitbucketWrite) -> &Value {
+        write.body.as_ref().expect("the write carries a body")
+    }
+
     #[test]
     fn approve_write_posts_to_the_approve_sub_resource_with_an_empty_body() {
         let write = approve_write(BASE, "goodboy", "desktop", 12);
+        assert_eq!(write.method, reqwest::Method::POST);
         assert_eq!(
             write.url,
             "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/12/approve"
         );
-        assert_eq!(write.body, serde_json::json!({}));
+        assert_eq!(*body_of(&write), serde_json::json!({}));
+    }
+
+    #[test]
+    fn unapprove_write_deletes_the_same_approve_sub_resource_without_a_body() {
+        let write = unapprove_write(BASE, "goodboy", "desktop", 12);
+        assert_eq!(write.method, reqwest::Method::DELETE);
+        assert_eq!(write.url, approve_write(BASE, "goodboy", "desktop", 12).url);
+        assert!(write.body.is_none());
     }
 
     #[test]
     fn request_changes_write_uses_the_hyphenated_sub_resource() {
         let write = request_changes_write(BASE, "goodboy", "desktop", 12);
+        assert_eq!(write.method, reqwest::Method::POST);
         assert_eq!(
             write.url,
             "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/12/request-changes"
         );
-        assert_eq!(write.body, serde_json::json!({}));
+        assert_eq!(*body_of(&write), serde_json::json!({}));
+    }
+
+    #[test]
+    fn unrequest_changes_write_deletes_the_same_sub_resource_without_a_body() {
+        let write = unrequest_changes_write(BASE, "goodboy", "desktop", 12);
+        assert_eq!(write.method, reqwest::Method::DELETE);
+        assert_eq!(
+            write.url,
+            request_changes_write(BASE, "goodboy", "desktop", 12).url
+        );
+        assert!(write.body.is_none());
     }
 
     #[test]
     fn decline_write_targets_the_decline_sub_resource() {
         let write = decline_write(BASE, "goodboy", "desktop", 3);
+        assert_eq!(write.method, reqwest::Method::POST);
         assert_eq!(
             write.url,
             "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/3/decline"
@@ -1390,48 +1421,63 @@ mod tests {
     #[test]
     fn merge_write_never_pins_a_merge_strategy() {
         let bare = merge_write(BASE, "goodboy", "desktop", 5, None, None);
+        assert_eq!(bare.method, reqwest::Method::POST);
         assert_eq!(
             bare.url,
             "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/5/merge"
         );
-        assert_eq!(bare.body, serde_json::json!({}));
+        assert_eq!(*body_of(&bare), serde_json::json!({}));
         let full = merge_write(BASE, "goodboy", "desktop", 5, Some(true), Some("ship it"));
-        assert!(full.body.get("merge_strategy").is_none());
+        assert!(body_of(&full).get("merge_strategy").is_none());
     }
 
     #[test]
     fn merge_write_carries_only_the_options_it_was_given() {
         let with_flag = merge_write(BASE, "goodboy", "desktop", 5, Some(false), None);
-        assert_eq!(with_flag.body["close_source_branch"], Value::Bool(false));
-        assert!(with_flag.body.get("message").is_none());
+        assert_eq!(
+            body_of(&with_flag)["close_source_branch"],
+            Value::Bool(false)
+        );
+        assert!(body_of(&with_flag).get("message").is_none());
         let with_message = merge_write(BASE, "goodboy", "desktop", 5, None, Some(" ship it "));
-        assert_eq!(with_message.body["message"], "ship it");
-        assert!(with_message.body.get("close_source_branch").is_none());
+        assert_eq!(body_of(&with_message)["message"], "ship it");
+        assert!(body_of(&with_message).get("close_source_branch").is_none());
         let blank_message = merge_write(BASE, "goodboy", "desktop", 5, None, Some("   "));
-        assert!(blank_message.body.get("message").is_none());
+        assert!(body_of(&blank_message).get("message").is_none());
     }
 
     #[test]
     fn comment_write_nests_the_text_under_content_raw() {
         let write = comment_write(BASE, "goodboy", "desktop", 9, "looks good");
+        assert_eq!(write.method, reqwest::Method::POST);
         assert_eq!(
             write.url,
             "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/9/comments"
         );
-        assert_eq!(write.body["content"]["raw"], "looks good");
-        assert!(write.body.get("parent").is_none());
-        assert!(write.body.get("body").is_none());
+        assert_eq!(body_of(&write)["content"]["raw"], "looks good");
+        assert!(body_of(&write).get("parent").is_none());
+        assert!(body_of(&write).get("body").is_none());
     }
 
     #[test]
     fn reply_write_adds_the_parent_id_beside_the_content() {
         let write = reply_write(BASE, "goodboy", "desktop", 9, 4242, "agreed");
+        assert_eq!(write.method, reqwest::Method::POST);
         assert_eq!(
             write.url,
             "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/9/comments"
         );
-        assert_eq!(write.body["content"]["raw"], "agreed");
-        assert_eq!(write.body["parent"]["id"], 4242);
+        assert_eq!(body_of(&write)["content"]["raw"], "agreed");
+        assert_eq!(body_of(&write)["parent"]["id"], 4242);
+    }
+
+    #[test]
+    fn only_a_404_reads_as_an_absent_resource() {
+        assert!(reads_as_absent(404));
+        assert!(!reads_as_absent(403));
+        assert!(!reads_as_absent(401));
+        assert!(!reads_as_absent(200));
+        assert!(!reads_as_absent(500));
     }
 
     #[test]
