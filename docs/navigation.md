@@ -178,6 +178,10 @@ Sentry, GitLab, workflow, guide are modal overlays, all built on `StudioShell`'s
 fullscreen variant. They are not part of the breadcrumb IA and are exited via
 their close button or Esc.
 
+The Bitbucket studio is not one of them. It is a session studio, opened from the
+`pr` lens as `SessionStudio { kind: 'bitbucket' }`, so it needs the session's
+repository to know which pull requests to list. It has no footer entry.
+
 Most utility studios have a footer entry. The notifications studio does not:
 its only entrance is the `Show more` row at the bottom of the bell popover in
 the top bar, which dispatches `goodboy:open-notifications-studio`. There is no
@@ -254,6 +258,8 @@ only the preview, not the form.
 Sections, top to bottom: issue source (conditional), goal, attachments, branch.
 The issue-source section is derived from the workspace's connected integrations
 via `resolveIssueSources` (Linear, GitHub, GitLab, Jira, Sentry) and the whole section
+is a hand-curated allowlist, not the provider union: Bitbucket is a code host in
+Goodboy and has no issue picker, so it is deliberately absent. The section
 is hidden when none of them is connected. Picking an issue fills the goal from
 the issue and the branch slug from its identifier, and counts as a manual slug
 edit, so later goal typing no longer re-slugs it.

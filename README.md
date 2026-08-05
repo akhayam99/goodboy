@@ -80,12 +80,18 @@ labels, description and the comment thread, all readable in the app. Launch a
 session from one and the key lands on the branch. Writing back to Jira,
 commenting, assigning, moving status, is not there yet.
 
-**Bitbucket, connect only so far.** Bitbucket Cloud is a code host you can
-connect from onboarding or the integrations panel: a workspace slug, your
-Atlassian account email and an API token, verified against the account and the
-workspace before anything is stored. The pull request inbox, the diff and the
-review verbs are wired in the backend but have no screen yet, so connecting is
-all you can do with it in this build.
+**Bitbucket, read and route.** Connect Bitbucket Cloud from onboarding or the
+integrations panel with a workspace slug, your Atlassian account email and an
+API token, all verified against the account and the workspace before anything
+is stored. From there a session's pull request lens shows the Bitbucket request
+for its branch beside any GitHub or GitLab one, and the studio behind it lists
+the repository's pull requests with the description, the changed files, the
+build statuses read as plain language, and the review comments. You can start a
+session from a pull request, or link one to the session you are in. Approving,
+merging, declining and replying still happen on Bitbucket: those verbs land
+next. Bitbucket issues are out of scope, Atlassian points issue tracking at
+Jira and Goodboy follows that. Goodboy does not read a `bitbucket.org` git
+remote either, the workspace integration is how it finds your pull requests.
 
 **Cost meter that taps your shoulder.** Every session shows what it's costing
 as it runs. Goodboy nudges you before you burn Opus on a one-liner.
