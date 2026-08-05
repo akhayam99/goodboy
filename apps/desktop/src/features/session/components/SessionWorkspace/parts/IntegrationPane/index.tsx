@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Unlink } from 'lucide-react';
+import { ArrowLeft, Check, Unlink } from 'lucide-react';
 import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { Eyebrow, InlineConfirm, cn } from '@goodboy/ui';
+import { CountToggle, InlineConfirm, cn } from '@goodboy/ui';
 import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
@@ -53,6 +53,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [isUnlinkArmed, setIsUnlinkArmed] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY,
   );
@@ -216,19 +217,22 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         providerLabel={meta.label}
         onSelect={setFocusedTaskKey}
       />
-      {workItems.history.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <Eyebrow
-            label={`Completed work (${workItems.history.length})`}
-            muted
-            className="px-0.5 font-medium"
-          />
-          <WorkItemList
-            items={workItems.history}
-            providerLabel={meta.label}
-            onSelect={setFocusedTaskKey}
-          />
-        </div>
+      <div className="flex justify-center">
+        <CountToggle
+          label="Completed"
+          itemsLabel="issues"
+          count={workItems.history.length}
+          isShown={showHistory}
+          icon={Check}
+          onChange={setShowHistory}
+        />
+      </div>
+      {showHistory && workItems.history.length > 0 ? (
+        <WorkItemList
+          items={workItems.history}
+          providerLabel={meta.label}
+          onSelect={setFocusedTaskKey}
+        />
       ) : null}
       {unlinkError != null ? <p className="text-xs text-danger">{unlinkError}</p> : null}
     </PaneShell>

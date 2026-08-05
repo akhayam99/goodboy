@@ -176,7 +176,6 @@ export const GenericTerminalPanel = ({
       termRef.current = null;
       fitAndSyncRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminalId]);
 
   useEffect(() => {

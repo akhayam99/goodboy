@@ -344,7 +344,7 @@ describe('IntegrationPane', () => {
     expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
   });
 
-  it('groups a merged work item as completed instead of current work', () => {
+  it('folds a merged work item behind a completed count until expanded', () => {
     h.store.sessionExternalTasks = {
       [SESSION_ID]: [
         { ...TASK, branch: 'ak/current' },
@@ -355,9 +355,21 @@ describe('IntegrationPane', () => {
 
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
-    expect(screen.getByText('Completed work (2)')).toBeDefined();
+    const toggle = screen.getByRole('button', { name: 'Completed (2)' });
+    expect(screen.queryByText('ak/shipped')).toBeNull();
+
+    fireEvent.click(toggle);
+
     expect(screen.getAllByText('Completed')).toHaveLength(1);
     expect(screen.getByText('ak/shipped')).toBeDefined();
+  });
+
+  it('renders no completed toggle when nothing is completed', () => {
+    h.store.sessionExternalTasks = { [SESSION_ID]: [{ ...TASK, branch: 'ak/current' }] };
+
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    expect(screen.queryByRole('button', { name: /^Completed/ })).toBeNull();
   });
 
   it('opens and confirms before unlinking the focused task', async () => {

@@ -17,7 +17,7 @@ export const useScrollPin = (deps: ReadonlyArray<unknown>, resetKey?: unknown) =
       return;
     }
     el.scrollTop = el.scrollHeight;
-  }, [pinned, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pinned, ...deps]);
 
   const onScroll = () => {
     const el = scrollerRef.current;

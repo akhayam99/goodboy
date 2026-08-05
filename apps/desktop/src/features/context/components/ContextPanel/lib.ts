@@ -1,11 +1,11 @@
 import type { ContextSlot } from '@goodboy/types';
 
-export interface FilesTouchedShape {
+export type FilesTouchedShape = {
   readonly paths: ReadonlyArray<string>;
   readonly count: number;
   readonly additions: number;
   readonly deletions: number;
-}
+};
 
 export function normalizeFilesSlot(slot: ContextSlot, workingDir: string | null): ContextSlot {
   if (!workingDir || slot.value.length === 0) return slot;

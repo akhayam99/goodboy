@@ -18,14 +18,14 @@ import { CHAT_PREFIX_RE } from '../lib';
 
 export { QuickActionsPopover };
 
-interface UseChatPrefixArgs {
+type Params = {
   readonly session: Session;
   readonly value: string;
   readonly setValue: (next: string) => void;
   readonly sessionWorktree: string | null;
   readonly showToast: (kind: ToastKind, message: string) => void;
   readonly wrapperRef: RefObject<HTMLDivElement | null>;
-}
+};
 
 export function useChatPrefix({
   session,
@@ -34,7 +34,7 @@ export function useChatPrefix({
   sessionWorktree,
   showToast,
   wrapperRef,
-}: UseChatPrefixArgs) {
+}: Params) {
   const workspaceSkills = useAppStore(
     useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
   );

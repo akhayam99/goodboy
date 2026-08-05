@@ -359,7 +359,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     } else {
       setWorkflowDraft(session.id, draft);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     session.id,
     mode,

@@ -7,13 +7,13 @@ import type { ToastKind } from '../../../../../app/components/Toast';
 import { dataUrlToBase64, type PendingAttachment } from '../lib';
 import { usePendingAttachments } from './usePendingAttachments';
 
-interface UseAttachmentsArgs {
+type Params = {
   readonly sessionId: SessionId;
   readonly selectedAgentId: AgentId | null;
   readonly sessionWorktree: string | null;
   readonly providerDisconnected: boolean;
   readonly showToast: (kind: ToastKind, message: string) => void;
-}
+};
 
 export function useAttachments({
   sessionId,
@@ -21,7 +21,7 @@ export function useAttachments({
   sessionWorktree,
   providerDisconnected,
   showToast,
-}: UseAttachmentsArgs) {
+}: Params) {
   const setAgentAttachments = useAppStore((s) => s.setAgentAttachments);
 
   const sessionWorktreeRef = useRef(sessionWorktree);

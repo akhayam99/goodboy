@@ -40,7 +40,6 @@ export const runScript = (set: SetFn, get: GetFn) => {
     });
 
     const STDOUT_CAP = 64 * 1024;
-    // eslint-disable-next-line no-control-regex
     const ANSI_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g;
     let stdoutBuf = '';
     let truncated = false;
