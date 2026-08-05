@@ -35,6 +35,7 @@ import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { SentryStudio } from './features/integrations/sentry/SentryStudio';
 import { GitlabStudio } from './features/integrations/gitlab/GitlabStudio';
 import { JiraStudio } from './features/integrations/jira/JiraStudio';
+import { SlackStudio } from './features/integrations/slack/SlackStudio';
 import { ProviderStudio } from './features/providers/components/ProviderStudio';
 import { BudgetStudio } from './features/budget/components/BudgetStudio';
 import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
@@ -108,6 +109,11 @@ export const App = () => {
       (i) => i.provider === 'gitlab',
     ),
   );
+  const hasSlack = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'slack',
+    ),
+  );
   const [companionOpen, setCompanionOpen] = useState(false);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
@@ -131,6 +137,8 @@ export const App = () => {
   const [gitlabStudioFocus, setGitlabStudioFocus] = useState<string | null>(null);
   const [jiraStudioOpen, setJiraStudioOpen] = useState(false);
   const [jiraStudioFocus, setJiraStudioFocus] = useState<string | null>(null);
+  const [slackStudioOpen, setSlackStudioOpen] = useState(false);
+  const [slackStudioFocus, setSlackStudioFocus] = useState<string | null>(null);
   const [providerStudioOpen, setProviderStudioOpen] = useState(false);
   const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
   const [providerStudioAction, setProviderStudioAction] = useState<ProviderLifecycleAction | null>(
@@ -169,6 +177,7 @@ export const App = () => {
     setSentryStudioOpen(false);
     setGitlabStudioOpen(false);
     setJiraStudioOpen(false);
+    setSlackStudioOpen(false);
     setAppSettingsOpen(false);
     setGuideStudioOpen(false);
     setAddWorkspaceOpen(false);
@@ -487,11 +496,13 @@ export const App = () => {
                       ? 'gitlab'
                       : jiraStudioOpen
                         ? 'jira'
-                        : appSettingsOpen
-                          ? 'settings'
-                          : guideStudioOpen
-                            ? 'guide'
-                            : null;
+                        : slackStudioOpen
+                          ? 'slack'
+                          : appSettingsOpen
+                            ? 'settings'
+                            : guideStudioOpen
+                              ? 'guide'
+                              : null;
 
   const openSettings = useCallback(() => {
     closeAllStudios();
@@ -691,6 +702,7 @@ export const App = () => {
   useShortcut('lens.sentry', () => goToLens('sentry'));
   useShortcut('lens.gitlab_issues', () => goToLens('gitlab_issues'));
   useShortcut('lens.jira_issues', () => goToLens('jira_issues'));
+  useShortcut('lens.slack_threads', () => goToLens('slack_threads'));
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
@@ -762,6 +774,7 @@ export const App = () => {
                 jiraEnabled={hasJira}
                 sentryEnabled={hasSentry}
                 gitlabEnabled={hasGitlab}
+                slackEnabled={hasSlack}
                 onOpenWorkflows={() => {
                   closeAllStudios();
                   setWorkflowStudioOpen(true);
@@ -800,6 +813,11 @@ export const App = () => {
                   closeAllStudios();
                   setGitlabStudioFocus(null);
                   setGitlabStudioOpen(true);
+                }}
+                onOpenSlack={() => {
+                  closeAllStudios();
+                  setSlackStudioFocus(null);
+                  setSlackStudioOpen(true);
                 }}
               />
             ) : undefined
@@ -999,6 +1017,14 @@ export const App = () => {
           workspaceName={currentWorkspace.name}
           initialIssueId={jiraStudioFocus}
           onClose={() => setJiraStudioOpen(false)}
+        />
+      ) : null}
+      {slackStudioOpen && currentWorkspace ? (
+        <SlackStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialThreadTs={slackStudioFocus}
+          onClose={() => setSlackStudioOpen(false)}
         />
       ) : null}
       {commitDiff ? (

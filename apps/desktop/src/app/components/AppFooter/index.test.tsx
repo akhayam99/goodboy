@@ -52,11 +52,13 @@ describe('AppFooter', () => {
         onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={vi.fn()}
+        onOpenSlack={vi.fn()}
         githubEnabled={false}
         linearEnabled={false}
         jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
+        slackEnabled={false}
         isSimpleWorkspace={false}
         onConvertToDevProject={vi.fn()}
       />,
@@ -104,11 +106,13 @@ describe('AppFooter', () => {
         onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={vi.fn()}
+        onOpenSlack={vi.fn()}
         githubEnabled={false}
         linearEnabled={false}
         jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
+        slackEnabled={false}
         isSimpleWorkspace={false}
         onConvertToDevProject={vi.fn()}
       />,
@@ -141,11 +145,13 @@ describe('AppFooter', () => {
         onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={onOpenGitlab}
+        onOpenSlack={vi.fn()}
         githubEnabled={false}
         linearEnabled={false}
         jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
+        slackEnabled={false}
         isSimpleWorkspace={false}
         onConvertToDevProject={vi.fn()}
       />,
@@ -156,6 +162,7 @@ describe('AppFooter', () => {
       'gitlab',
       'linear',
       'jira',
+      'slack',
       'sentry',
     ]);
     expect(screen.getByRole('button', { name: 'Connect GitHub' })).toBeDefined();
@@ -163,6 +170,7 @@ describe('AppFooter', () => {
     expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect Jira' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect Sentry' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect Slack' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect GitLab' }));
 
@@ -185,11 +193,13 @@ describe('AppFooter', () => {
         onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={vi.fn()}
+        onOpenSlack={vi.fn()}
         githubEnabled={false}
         linearEnabled={false}
         jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
+        slackEnabled={false}
         isSimpleWorkspace
         onConvertToDevProject={onConvertToDevProject}
       />,
@@ -228,11 +238,13 @@ describe('AppFooter', () => {
         onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={onOpenGitlab}
+        onOpenSlack={vi.fn()}
         githubEnabled={false}
         linearEnabled={false}
         jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled
+        slackEnabled={false}
         isSimpleWorkspace={false}
         onConvertToDevProject={vi.fn()}
       />,
@@ -245,5 +257,65 @@ describe('AppFooter', () => {
     );
 
     expect(onOpenGitlab).toHaveBeenCalledOnce();
+  });
+
+  it('offers the Slack studio and says so when Slack is not connected yet', () => {
+    const onOpenSlack = vi.fn();
+    const { rerender } = render(
+      <AppFooter
+        activeStudio={null}
+        onOpenWorkflows={vi.fn()}
+        onOpenProviders={vi.fn()}
+        onOpenBudget={vi.fn()}
+        onOpenImpact={vi.fn()}
+        onOpenChangelog={vi.fn()}
+        onOpenGithub={vi.fn()}
+        onOpenLinear={vi.fn()}
+        onOpenJira={vi.fn()}
+        onOpenSentry={vi.fn()}
+        onOpenGitlab={vi.fn()}
+        onOpenSlack={onOpenSlack}
+        githubEnabled={false}
+        linearEnabled={false}
+        jiraEnabled={false}
+        sentryEnabled={false}
+        gitlabEnabled={false}
+        slackEnabled={false}
+        isSimpleWorkspace={false}
+        onConvertToDevProject={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
+    expect(onOpenSlack).toHaveBeenCalledOnce();
+
+    rerender(
+      <AppFooter
+        activeStudio={null}
+        onOpenWorkflows={vi.fn()}
+        onOpenProviders={vi.fn()}
+        onOpenBudget={vi.fn()}
+        onOpenImpact={vi.fn()}
+        onOpenChangelog={vi.fn()}
+        onOpenGithub={vi.fn()}
+        onOpenLinear={vi.fn()}
+        onOpenJira={vi.fn()}
+        onOpenSentry={vi.fn()}
+        onOpenGitlab={vi.fn()}
+        onOpenSlack={onOpenSlack}
+        githubEnabled={false}
+        linearEnabled={false}
+        jiraEnabled={false}
+        sentryEnabled={false}
+        gitlabEnabled={false}
+        slackEnabled
+        isSimpleWorkspace={false}
+        onConvertToDevProject={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Launch a session from a Slack thread' }),
+    ).toBeDefined();
   });
 });

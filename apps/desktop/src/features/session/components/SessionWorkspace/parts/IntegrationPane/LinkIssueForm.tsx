@@ -12,6 +12,9 @@ import { formatError } from '../../../../../../shared/lib/errors';
 import { IssuePicker } from '../../../../../integrations/components/IssuePicker';
 import { useIssueCandidates } from '../../../../../integrations/hooks/useIssueCandidates';
 import type { IssueCandidate } from '../../../../../integrations/fetchIssueCandidates';
+import { slackGetThread, slackListChannels } from '../../../../../integrations/slack/client';
+import { hydrateSlackThreadTask } from '../../../../../integrations/slack/hydrateSlackThreadTask';
+import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
 import { resolvePastedIssueCandidate } from './resolvePastedIssueCandidate';
 
 type Props = {
@@ -19,7 +22,39 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly provider: SessionExternalTaskProvider;
   readonly providerLabel: string;
+  readonly nounPhrase: string;
+  readonly nounPlural: string;
   readonly onLinked?: () => void;
+};
+
+type HydrateParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly candidate: IssueCandidate;
+};
+
+type Hydrated = {
+  readonly identifier: string;
+  readonly title: string;
+};
+
+const hydrateSlackCandidate = async ({
+  workspaceId,
+  candidate,
+}: HydrateParams): Promise<Hydrated> => {
+  const parsed = parseSlackThreadExternalId({ externalId: candidate.externalId });
+  if (parsed == null) {
+    return { identifier: candidate.identifier, title: candidate.title };
+  }
+  const [channels, messages] = await Promise.all([
+    slackListChannels({ workspaceId }),
+    slackGetThread({ workspaceId, channelId: parsed.channelId, threadTs: parsed.threadTs }),
+  ]);
+  return hydrateSlackThreadTask({
+    channelId: parsed.channelId,
+    threadTs: parsed.threadTs,
+    channels,
+    messages,
+  });
 };
 
 export const LinkIssueForm = ({
@@ -27,6 +62,8 @@ export const LinkIssueForm = ({
   workspaceId,
   provider,
   providerLabel,
+  nounPhrase,
+  nounPlural,
   onLinked,
 }: Props) => {
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +75,15 @@ export const LinkIssueForm = ({
     setError(null);
     setIsLinking(true);
     try {
+      const hydrated =
+        provider === 'slack'
+          ? await hydrateSlackCandidate({ workspaceId, candidate })
+          : { identifier: candidate.identifier, title: candidate.title };
       await linkSessionExternalTask(sessionId, {
         provider,
         externalId: candidate.externalId,
-        identifier: candidate.identifier,
-        title: candidate.title,
+        identifier: hydrated.identifier,
+        title: hydrated.title,
         url: candidate.url,
         createdAt: new Date().toISOString() as IsoDateTime,
       });
@@ -59,7 +100,7 @@ export const LinkIssueForm = ({
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={`${provider}-issue-picker`} className="text-xs font-medium text-foreground">
-        Link an issue
+        {`Link ${nounPhrase}`}
       </label>
       <IssuePicker
         inputId={`${provider}-issue-picker`}
@@ -68,7 +109,7 @@ export const LinkIssueForm = ({
         isLoaded={candidates.isLoaded}
         error={candidates.error}
         value={null}
-        placeholder={`Search ${providerLabel} issues or paste a URL…`}
+        placeholder={`Search ${providerLabel} ${nounPlural} or paste a URL…`}
         disabled={isLinking}
         resolvePaste={(rawValue) => resolvePastedIssueCandidate({ provider, rawValue })}
         onOpen={candidates.load}

@@ -91,6 +91,14 @@ import {
   type BitbucketPrWriteParams,
   type RefreshSessionBitbucketPrOptions,
 } from './slices/bitbucket-pr';
+import {
+  createSlackThreadsSlice,
+  initialSlackThreadsState,
+  type RefreshSlackThreadOptions,
+  type SlackChannelParams,
+  type SlackThreadParams,
+  type SlackWorkspaceParams,
+} from './slices/slack-threads';
 import { createReviewPrsSlice } from './slices/review-prs';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import type {
@@ -587,6 +595,10 @@ export type AppActions = {
   declineBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
   commentOnBitbucketPr(params: BitbucketPrCommentParams): Promise<void>;
   replyToBitbucketPrComment(params: BitbucketPrReplyParams): Promise<void>;
+  refreshSlackChannels(params: SlackWorkspaceParams): Promise<void>;
+  refreshSlackUsers(params: SlackWorkspaceParams): Promise<void>;
+  refreshSlackThreadHeads(params: SlackChannelParams): Promise<void>;
+  refreshSlackThread(params: SlackThreadParams, options?: RefreshSlackThreadOptions): Promise<void>;
   closePr(sessionId: SessionId, prNumber?: number): Promise<void>;
   reopenPr(sessionId: SessionId, prNumber?: number): Promise<void>;
   editPr(
@@ -804,6 +816,7 @@ export const initialState: AppState = {
   sessionSelectedPrNumber: {},
   sessionGitlabMr: {},
   ...initialBitbucketPrState,
+  ...initialSlackThreadsState,
   reviewPrs: {},
   reviewDrafts: {},
   sessionPendingResolutions: {},
@@ -860,6 +873,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createGithubSlice(set, get),
   ...createGitlabMrSlice(set, get),
   ...createBitbucketPrSlice(set, get),
+  ...createSlackThreadsSlice(set, get),
   ...createReviewPrsSlice(set, get),
   ...createReviewDraftsSlice(set, get),
   ...createIntegrationsSlice(set, get),

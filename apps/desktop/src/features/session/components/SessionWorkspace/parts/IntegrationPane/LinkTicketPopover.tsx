@@ -10,9 +10,20 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly provider: SessionExternalTaskProvider;
   readonly providerLabel: string;
+  readonly noun: string;
+  readonly nounPhrase: string;
+  readonly nounPlural: string;
 };
 
-export const LinkTicketPopover = ({ sessionId, workspaceId, provider, providerLabel }: Props) => {
+export const LinkTicketPopover = ({
+  sessionId,
+  workspaceId,
+  provider,
+  providerLabel,
+  noun,
+  nounPhrase,
+  nounPlural,
+}: Props) => {
   const {
     open,
     close,
@@ -35,14 +46,14 @@ export const LinkTicketPopover = ({ sessionId, workspaceId, provider, providerLa
     <div ref={containerRef} className="relative min-w-0">
       <Button variant="secondary" size="sm" onClick={toggle}>
         <Plus size={13} aria-hidden />
-        Link issue
+        {`Link ${noun}`}
       </Button>
       <DropdownPortal portal={portal} portalTarget={portalTarget}>
         {open && (
           <Popover
             innerRef={popupRef}
             role="dialog"
-            ariaLabel={`Link ${providerLabel} issue`}
+            ariaLabel={`Link ${providerLabel} ${noun}`}
             className={cn(popupClassName, 'p-3')}
             style={popupStyle}
           >
@@ -51,6 +62,8 @@ export const LinkTicketPopover = ({ sessionId, workspaceId, provider, providerLa
               workspaceId={workspaceId}
               provider={provider}
               providerLabel={providerLabel}
+              nounPhrase={nounPhrase}
+              nounPlural={nounPlural}
               onLinked={close}
             />
           </Popover>

@@ -62,12 +62,14 @@ type Props = {
   onOpenJira: () => void;
   onOpenSentry: () => void;
   onOpenGitlab: () => void;
+  onOpenSlack: () => void;
   onConvertToDevProject: () => void;
   githubEnabled: boolean;
   linearEnabled: boolean;
   jiraEnabled: boolean;
   sentryEnabled: boolean;
   gitlabEnabled: boolean;
+  slackEnabled: boolean;
   isSimpleWorkspace: boolean;
 };
 
@@ -83,12 +85,14 @@ export const AppFooter = ({
   onOpenJira,
   onOpenSentry,
   onOpenGitlab,
+  onOpenSlack,
   onConvertToDevProject,
   githubEnabled,
   linearEnabled,
   jiraEnabled,
   sentryEnabled,
   gitlabEnabled,
+  slackEnabled,
   isSimpleWorkspace,
 }: Props) => {
   const noProviderConnected = useAppStore(
@@ -150,6 +154,14 @@ export const AppFooter = ({
             onClick={onOpenJira}
             active={activeStudio === 'jira'}
             connected={jiraEnabled}
+          />
+          <FooterButton
+            icon={<IntegrationGlyph provider="slack" size="xs" useBrandColor />}
+            label="Slack"
+            title={slackEnabled ? 'Launch a session from a Slack thread' : 'Connect Slack'}
+            onClick={onOpenSlack}
+            active={activeStudio === 'slack'}
+            connected={slackEnabled}
           />
           {isSimpleWorkspace ? null : (
             <FooterButton

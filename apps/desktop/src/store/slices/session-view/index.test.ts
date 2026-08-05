@@ -34,6 +34,7 @@ import type {
 } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
 import { readPersistedLens } from './workSurfaceStorage';
+import { LENS_KINDS } from './types';
 import { resolveOpenDiffViewerEvent } from './openDiffViewerEvent';
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -605,6 +606,12 @@ describe('store contract', () => {
       const store = await getStore();
       store.getState().setActiveLens(SESSION_ID, 'linear');
       expect(readPersistedLens(SESSION_ID)).toBe('linear');
+    });
+
+    it.each([...LENS_KINDS])('every lens kind survives a restart: %s', async (lens) => {
+      const store = await getStore();
+      store.getState().setActiveLens(SESSION_ID, lens);
+      expect(readPersistedLens(SESSION_ID)).toBe(lens);
     });
 
     it('lensGo walks back and forward through visited lenses', async () => {

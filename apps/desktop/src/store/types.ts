@@ -54,6 +54,7 @@ import type { ResolverState } from '../features/workspace/components/WorkspacesS
 import type { GitlabMergeRequest } from '../features/integrations/gitlab/client';
 import type { BitbucketRepo } from '../features/integrations/bitbucket/client';
 import type { SessionBitbucketPrEntry } from './slices/bitbucket-pr/state';
+import type { SlackThreadsSliceState } from './slices/slack-threads/state';
 import type {
   ProviderAuthResults,
   ProviderInfo,
@@ -165,7 +166,7 @@ export type SummarizerSessionStatus = {
   } | null;
 };
 
-type AppSliceState = UpdaterState & ChangelogState;
+type AppSliceState = UpdaterState & ChangelogState & SlackThreadsSliceState;
 
 export type AppState = AppSliceState & {
   readonly workspaces: ReadonlyArray<Workspace>;

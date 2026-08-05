@@ -173,6 +173,7 @@ export const LensColumn = ({
   const sentryCount = externalTasks.filter((task) => task.provider === 'sentry').length;
   const gitlabCount = externalTasks.filter((task) => task.provider === 'gitlab').length;
   const jiraCount = externalTasks.filter((task) => task.provider === 'jira').length;
+  const slackCount = externalTasks.filter((task) => task.provider === 'slack').length;
   const githubConnection = resolveIntegrationConnection({
     provider: 'github',
     integrations: workspaceIntegrations,
@@ -204,6 +205,13 @@ export const LensColumn = ({
   });
   const jiraConnection = resolveIntegrationConnection({
     provider: 'jira',
+    integrations: workspaceIntegrations,
+    remoteKind,
+    externalTasks,
+    isGithubAuthenticated: false,
+  });
+  const slackConnection = resolveIntegrationConnection({
+    provider: 'slack',
     integrations: workspaceIntegrations,
     remoteKind,
     externalTasks,
@@ -251,6 +259,14 @@ export const LensColumn = ({
       tone: CONCEPT_TONE.sentry,
       count: sentryCount,
       isConnected: sentryConnection.isConnected,
+    },
+    {
+      kind: 'slack_threads',
+      label: 'Slack',
+      glyph: 'slack',
+      tone: CONCEPT_TONE.slack,
+      count: slackCount,
+      isConnected: slackConnection.isConnected,
     },
   ];
   const sortedIntegrationRows: ReadonlyArray<LensRow> = [...integrationRows].sort((a, b) => {
