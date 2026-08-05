@@ -7,7 +7,7 @@ import {
 } from '../../../session/components/ResolverStateBadge';
 import type { ResolverLink } from '../../../session/resolver-linkage';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { ThreadAvatar } from './ThreadAvatar';
+import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
 import { ThreadBody } from './ThreadBody';
 import { ThreadPathChip } from './ThreadPathChip';
 import { ThreadReplies } from './ThreadReplies';
@@ -25,7 +25,7 @@ export const OpenThread = ({ thread, link, onOpenUrl }: Props) => {
   return (
     <div className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-muted/10 p-3">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <ThreadAvatar url={head.authorAvatarUrl} alt={head.author} />
+        <NoteAvatar url={head.authorAvatarUrl} alt={head.author} />
         <span className="font-medium text-foreground">{head.author}</span>
         {isBot(head.author) ? (
           <span className="rounded bg-info/10 px-1 text-2xs uppercase tracking-wide text-info">

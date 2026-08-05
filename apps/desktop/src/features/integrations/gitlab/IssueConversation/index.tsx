@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { EmptyState, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { NoteComposer } from '../../../../shared/components/NoteComposer';
 import type { GitlabIssueNote } from '../client';
 import { IssueNoteCard } from './IssueNoteCard';
-import { IssueNoteComposer } from './IssueNoteComposer';
 import { buildIssueConversation } from './issueNotes';
 
 type Props = {
@@ -64,7 +64,7 @@ export const IssueConversation = ({ notes, isLoading, error, onRetry, onPost }: 
         </p>
       )}
       {onPost != null && (
-        <IssueNoteComposer placeholder="Write a note" submitLabel="Comment" onSubmit={onPost} />
+        <NoteComposer placeholder="Write a note" submitLabel="Comment" onSubmit={onPost} />
       )}
     </div>
   );

@@ -15,7 +15,7 @@ import {
   StudioDetailLayout,
 } from '../../../../shared/components/StudioDetail';
 import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
-import { AuthorAvatar } from '../AuthorAvatar';
+import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -101,7 +101,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
               <PullRequestChip state={pr.isDraft ? 'draft' : pr.state} variant="badge" />
               {pr.reviewRequested ? <Chip tone="info" label="Review requested" /> : null}
               <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
-                <AuthorAvatar author={pr.author} avatarUrl={pr.authorAvatarUrl} />
+                <NoteAvatar url={pr.authorAvatarUrl} alt="" initialsSource={pr.author} size="xs" />
                 <span className="font-medium text-foreground/80">{pr.author}</span>
               </span>
             </>

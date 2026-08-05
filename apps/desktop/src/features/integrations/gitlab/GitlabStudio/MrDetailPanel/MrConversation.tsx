@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { EmptyState, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../../shared/components/ErrorStrip';
+import { NoteComposer } from '../../../../../shared/components/NoteComposer';
 import type { GitlabMrDiscussion } from '../../client';
-import { MrNoteComposer } from './MrNoteComposer';
 import { MrThreadCard } from './MrThreadCard';
 import { buildMrConversation } from './mrThreads';
 
@@ -79,7 +79,7 @@ export const MrConversation = ({
         </p>
       )}
       {onPost != null && (
-        <MrNoteComposer placeholder="Write a note" submitLabel="Comment" onSubmit={onPost} />
+        <NoteComposer placeholder="Write a note" submitLabel="Comment" onSubmit={onPost} />
       )}
     </div>
   );

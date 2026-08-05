@@ -1,4 +1,4 @@
-import { Markdown } from '@goodboy/ui';
+import { NoteCard } from '../../../../shared/components/NoteCard';
 import type { GitlabIssueNote } from '../client';
 import { IssueNoteHeader } from './IssueNoteHeader';
 
@@ -7,8 +7,5 @@ type Props = {
 };
 
 export const IssueNoteCard = ({ note }: Props) => (
-  <div className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
-    <IssueNoteHeader note={note} />
-    <Markdown text={note.body} className="text-sm leading-relaxed" />
-  </div>
+  <NoteCard header={<IssueNoteHeader note={note} />} body={note.body} />
 );

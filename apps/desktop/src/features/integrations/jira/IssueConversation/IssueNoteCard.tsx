@@ -1,4 +1,4 @@
-import { Markdown } from '@goodboy/ui';
+import { NoteCard } from '../../../../shared/components/NoteCard';
 import type { JiraComment } from '../client';
 import { IssueNoteHeader } from './IssueNoteHeader';
 
@@ -7,8 +7,5 @@ type Props = {
 };
 
 export const IssueNoteCard = ({ comment }: Props) => (
-  <div className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
-    <IssueNoteHeader comment={comment} />
-    <Markdown text={comment.body} className="text-sm leading-relaxed" />
-  </div>
+  <NoteCard header={<IssueNoteHeader comment={comment} />} body={comment.body} />
 );
