@@ -19,7 +19,10 @@ pub async fn read_frame(stream: &mut TcpStream) -> Result<Vec<u8>, BridgeError> 
         return Err(BridgeError::Protocol(format!("bad frame length {len}")));
     }
     let mut body = vec![0u8; len];
-    stream.read_exact(&mut body).await.map_err(BridgeError::Io)?;
+    stream
+        .read_exact(&mut body)
+        .await
+        .map_err(BridgeError::Io)?;
     Ok(body)
 }
 

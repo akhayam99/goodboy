@@ -80,9 +80,7 @@ fn mime_for(path: &Path) -> &'static str {
         Some("json") => "application/json",
         Some("xml") => "application/xml",
         Some("yaml") | Some("yml") => "application/yaml",
-        Some("docx") => {
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        }
+        Some("docx") => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         Some("xlsx") => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         _ => "application/octet-stream",
     }

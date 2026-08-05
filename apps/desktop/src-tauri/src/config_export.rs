@@ -488,7 +488,8 @@ pub fn import_config(
 
         // Workspaces — upsert (preserve existing data, add missing).
         for w in &bundle.workspaces {
-            let parallel_val: Option<i64> = w.overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
+            let parallel_val: Option<i64> =
+                w.overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
             let created_ms = iso_to_ms(&w.created_at).unwrap_or(now_ms);
             let updated_ms = iso_to_ms(&w.updated_at).unwrap_or(now_ms);
             conn.execute(
@@ -584,10 +585,16 @@ pub fn import_config(
                    priority             = excluded.priority,
                    updated_at           = excluded.updated_at",
                 rusqlite::params![
-                    r.id, r.scope, r.workspace_id, r.session_id,
-                    r.pattern_tool, r.pattern_args_matcher,
-                    r.decision, r.priority,
-                    r.created_at, r.updated_at,
+                    r.id,
+                    r.scope,
+                    r.workspace_id,
+                    r.session_id,
+                    r.pattern_tool,
+                    r.pattern_args_matcher,
+                    r.decision,
+                    r.priority,
+                    r.created_at,
+                    r.updated_at,
                 ],
             )?;
         }
@@ -611,9 +618,18 @@ pub fn import_config(
         // Settings — upsert only non-null values.
         let setting_pairs: &[(&str, Option<&str>)] = &[
             ("editor.binary", bundle.settings.editor_binary.as_deref()),
-            ("experimental.enable_parallel_agents", bundle.settings.enable_parallel_agents.as_deref()),
-            ("experimental.max_parallelism", bundle.settings.max_parallelism.as_deref()),
-            ("provider.pricing_config", bundle.settings.provider_pricing_config.as_deref()),
+            (
+                "experimental.enable_parallel_agents",
+                bundle.settings.enable_parallel_agents.as_deref(),
+            ),
+            (
+                "experimental.max_parallelism",
+                bundle.settings.max_parallelism.as_deref(),
+            ),
+            (
+                "provider.pricing_config",
+                bundle.settings.provider_pricing_config.as_deref(),
+            ),
         ];
         for (key, val) in setting_pairs {
             if let Some(v) = val {
@@ -678,7 +694,11 @@ fn iso_to_ms(s: &str) -> Option<i64> {
 
     let mut days: i64 = 0;
     for y in 1970..year {
-        days += if crate::util::is_leap_year(y) { 366 } else { 365 };
+        days += if crate::util::is_leap_year(y) {
+            366
+        } else {
+            365
+        };
     }
     for m in 1..month {
         days += days_in_month(year, m);
@@ -708,10 +728,7 @@ fn days_in_month(y: i64, m: u32) -> i64 {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn export_config_to_file(
-    state: State<'_, Db>,
-    path: String,
-) -> Result<(), ConfigExportError> {
+pub fn export_config_to_file(state: State<'_, Db>, path: String) -> Result<(), ConfigExportError> {
     let bundle = export_config(state)?;
     let json = serde_json::to_string_pretty(&bundle)?;
     std::fs::write(&path, json).map_err(|e| ConfigExportError::Validation(e.to_string()))?;
@@ -776,8 +793,8 @@ mod tests {
         assert!(!json.contains("password"), "json leaked password");
         assert!(!json.contains("token"), "json leaked token");
         assert_eq!(
-            serde_json::from_str::<serde_json::Value>(&json)
-                .expect("parse failed")["schemaVersion"],
+            serde_json::from_str::<serde_json::Value>(&json).expect("parse failed")
+                ["schemaVersion"],
             serde_json::Value::Number(serde_json::Number::from(1u32))
         );
     }
@@ -810,7 +827,10 @@ mod tests {
         };
         assert!(result.is_err(), "should reject wrong schema version");
         let err = result.unwrap_err();
-        assert!(err.to_string().contains("99"), "error should mention got version");
+        assert!(
+            err.to_string().contains("99"),
+            "error should mention got version"
+        );
     }
 
     #[test]

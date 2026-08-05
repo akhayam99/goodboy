@@ -80,12 +80,16 @@ pub struct SpawnArgs {
 #[derive(Debug, Serialize, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum TurnEventPayload {
-    Line { line: String },
+    Line {
+        line: String,
+    },
     End {
         exit_code: Option<i32>,
         stderr: String,
     },
-    Error { message: String },
+    Error {
+        message: String,
+    },
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -488,11 +492,7 @@ fn capture_stderr(mut stderr: ChildStderr) -> String {
     buf
 }
 
-fn wait_and_remove(
-    slot: &ChildSlot,
-    registry: &ChildRegistry,
-    run_id: &str,
-) -> Option<i32> {
+fn wait_and_remove(slot: &ChildSlot, registry: &ChildRegistry, run_id: &str) -> Option<i32> {
     let exit = {
         let mut guard = slot.lock().ok()?;
         let child = guard.as_mut()?;
@@ -665,7 +665,9 @@ mod tests {
         let cli = build_provider_cli_args("codex", &args);
         let idx = cli.iter().position(|a| a == "-s").expect("-s");
         assert_eq!(cli[idx + 1], "workspace-write");
-        assert!(!cli.iter().any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
+        assert!(!cli
+            .iter()
+            .any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
     }
 
     #[test]
@@ -744,7 +746,9 @@ mod tests {
         args.binary = "codex";
         args.permission_mode = "bypassPermissions";
         let cli = build_provider_cli_args("codex", &args);
-        assert!(cli.iter().any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
+        assert!(cli
+            .iter()
+            .any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
         assert!(!cli.iter().any(|a| a == "-s"));
         assert!(cli.iter().any(|a| a == "--skip-git-repo-check"));
     }
@@ -755,8 +759,12 @@ mod tests {
         let args = make_args(Some("sid"), Some("sp"), &empty);
         let cli_cursor = build_provider_cli_args("cursor-agent", &args);
         let cli_codex = build_provider_cli_args("codex", &args);
-        assert!(!cli_cursor.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
-        assert!(!cli_codex.iter().any(|a| a == "--resume" || a == "--append-system-prompt"));
+        assert!(!cli_cursor
+            .iter()
+            .any(|a| a == "--resume" || a == "--append-system-prompt"));
+        assert!(!cli_codex
+            .iter()
+            .any(|a| a == "--resume" || a == "--append-system-prompt"));
     }
 
     #[test]

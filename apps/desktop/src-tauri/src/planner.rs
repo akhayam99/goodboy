@@ -72,7 +72,12 @@ pub async fn planner_run(args: PlannerArgs) -> Result<PlannerResult, PlannerErro
         })
     })
     .await
-    .map_err(|e| PlannerError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?
+    .map_err(|e| {
+        PlannerError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            e.to_string(),
+        ))
+    })?
 }
 
 fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {

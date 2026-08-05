@@ -305,7 +305,10 @@ pub async fn sentry_connect(
         org,
         project,
     };
-    secrets::set(&credential_key(&workspace_id), &serde_json::to_string(&cfg)?)?;
+    secrets::set(
+        &credential_key(&workspace_id),
+        &serde_json::to_string(&cfg)?,
+    )?;
     cache.0.lock().unwrap().insert(workspace_id, cfg);
     Ok(project_resp)
 }
@@ -367,7 +370,11 @@ pub async fn sentry_fetch_issue_detail(
 ) -> Result<SentryIssueDetail, SentryError> {
     let cfg = read_config(&workspace_id, &cache)?;
     let url = format!("{}/issues/{}/events/latest/", BASE_URL, issue_id);
-    let res = http_client().get(&url).bearer_auth(&cfg.token).send().await?;
+    let res = http_client()
+        .get(&url)
+        .bearer_auth(&cfg.token)
+        .send()
+        .await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();

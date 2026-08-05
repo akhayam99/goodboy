@@ -148,10 +148,7 @@ impl From<DbError> for SkillError {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn skill_list(
-    state: State<'_, Db>,
-    workspace_id: String,
-) -> Result<Vec<SkillRow>, SkillError> {
+pub fn skill_list(state: State<'_, Db>, workspace_id: String) -> Result<Vec<SkillRow>, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, file_path, body, frontmatter_json,
@@ -177,10 +174,7 @@ pub fn skill_list(
 }
 
 #[tauri::command]
-pub fn skill_get(
-    state: State<'_, Db>,
-    skill_id: String,
-) -> Result<Option<SkillRow>, SkillError> {
+pub fn skill_get(state: State<'_, Db>, skill_id: String) -> Result<Option<SkillRow>, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT id, workspace_id, name, description, file_path, body, frontmatter_json,
@@ -209,10 +203,7 @@ pub fn skill_get(
 }
 
 #[tauri::command]
-pub fn skill_upsert(
-    state: State<'_, Db>,
-    input: SkillUpsertInput,
-) -> Result<SkillRow, SkillError> {
+pub fn skill_upsert(state: State<'_, Db>, input: SkillUpsertInput) -> Result<SkillRow, SkillError> {
     let conn = state.0.lock().map_err(|_| SkillError::Poisoned)?;
 
     let root = workspace_root(&conn, &input.workspace_id)?;
@@ -237,11 +228,10 @@ pub fn skill_upsert(
 
     // Upsert by (workspace_id, name); generate id if new.
     let existing_id: Option<String> = {
-        let mut stmt = conn.prepare(
-            "SELECT id FROM skills WHERE workspace_id = ?1 AND name = ?2 LIMIT 1",
-        )?;
-        let mut rows =
-            stmt.query_map(rusqlite::params![input.workspace_id, input.name], |row| {
+        let mut stmt =
+            conn.prepare("SELECT id FROM skills WHERE workspace_id = ?1 AND name = ?2 LIMIT 1")?;
+        let mut rows = stmt
+            .query_map(rusqlite::params![input.workspace_id, input.name], |row| {
                 row.get(0)
             })?;
         match rows.next() {
@@ -252,11 +242,8 @@ pub fn skill_upsert(
 
     let id = existing_id.unwrap_or_else(crate::util::uuid_v4);
     let created_at: String = {
-        let mut stmt = conn.prepare(
-            "SELECT created_at FROM skills WHERE id = ?1 LIMIT 1",
-        )?;
-        let mut rows =
-            stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
+        let mut stmt = conn.prepare("SELECT created_at FROM skills WHERE id = ?1 LIMIT 1")?;
+        let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
         match rows.next() {
             Some(r) => r.map_err(SkillError::Db)?,
             None => now.clone(),
@@ -331,8 +318,7 @@ pub fn skill_delete(state: State<'_, Db>, skill_id: String) -> Result<(), SkillE
         if skills_dir.exists() {
             let canonical = guard_path(&path, &skills_dir)?;
             if canonical.exists() {
-                std::fs::remove_file(&canonical)
-                    .map_err(|e| SkillError::Io(e.to_string()))?;
+                std::fs::remove_file(&canonical).map_err(|e| SkillError::Io(e.to_string()))?;
             }
         } else if path.exists() {
             // skills_dir gone — refuse to remove arbitrary path without guard
@@ -377,8 +363,7 @@ pub fn skill_rescan(
     }
 
     if claude_dir.exists() {
-        let entries =
-            std::fs::read_dir(&claude_dir).map_err(|e| SkillError::Io(e.to_string()))?;
+        let entries = std::fs::read_dir(&claude_dir).map_err(|e| SkillError::Io(e.to_string()))?;
         for entry in entries {
             let entry = entry.map_err(|e| SkillError::Io(e.to_string()))?;
             let dir = entry.path();
@@ -396,12 +381,12 @@ pub fn skill_rescan(
 
     // Existing skills in DB for this workspace.
     let existing: Vec<(String, String)> = {
-        let mut stmt =
-            conn.prepare("SELECT id, file_path FROM skills WHERE workspace_id = ?1")?;
+        let mut stmt = conn.prepare("SELECT id, file_path FROM skills WHERE workspace_id = ?1")?;
         let rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(SkillError::Db)?
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(SkillError::Db)?
     };
 
     let existing_by_path: std::collections::HashMap<String, String> = existing
@@ -431,8 +416,7 @@ pub fn skill_rescan(
             .unwrap_or_else(crate::util::uuid_v4);
 
         let created_at: String = {
-            let mut stmt =
-                conn.prepare("SELECT created_at FROM skills WHERE id = ?1 LIMIT 1")?;
+            let mut stmt = conn.prepare("SELECT created_at FROM skills WHERE id = ?1 LIMIT 1")?;
             let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
             match rows.next() {
                 Some(r) => r.map_err(SkillError::Db)?,
@@ -548,9 +532,7 @@ pub fn skill_run_script(input: SkillRunScriptInput) -> Result<SkillRunScriptResu
 // ---------------------------------------------------------------------------
 
 /// Returns (name, description, body, frontmatter_json).
-fn parse_skill_markdown_rust(
-    raw: &str,
-) -> Result<(String, String, String, String), SkillError> {
+fn parse_skill_markdown_rust(raw: &str) -> Result<(String, String, String, String), SkillError> {
     // Match opening/closing --- delimiters.
     let after_first = raw
         .strip_prefix("---")
@@ -558,11 +540,7 @@ fn parse_skill_markdown_rust(
 
     let after_first = match after_first {
         Some(s) => s,
-        None => {
-            return Err(SkillError::Io(
-                "missing frontmatter delimiters".to_string(),
-            ))
-        }
+        None => return Err(SkillError::Io("missing frontmatter delimiters".to_string())),
     };
 
     // Find closing ---
@@ -614,31 +592,26 @@ fn parse_skill_markdown_rust(
 
     if let Some(args_raw) = fields.get("args") {
         let args = parse_yaml_list(args_raw);
-        let arr: Vec<serde_json::Value> =
-            args.into_iter().map(serde_json::Value::String).collect();
+        let arr: Vec<serde_json::Value> = args.into_iter().map(serde_json::Value::String).collect();
         fm_map.insert("args".to_string(), serde_json::Value::Array(arr));
     }
 
     if let Some(scripts_raw) = fields.get("scripts") {
         let scripts = parse_yaml_list(scripts_raw);
-        let arr: Vec<serde_json::Value> = scripts
-            .into_iter()
-            .map(serde_json::Value::String)
-            .collect();
+        let arr: Vec<serde_json::Value> =
+            scripts.into_iter().map(serde_json::Value::String).collect();
         fm_map.insert("scripts".to_string(), serde_json::Value::Array(arr));
     }
 
-    let frontmatter_json = serde_json::to_string(&fm_map)
-        .map_err(|e| SkillError::Io(e.to_string()))?;
+    let frontmatter_json =
+        serde_json::to_string(&fm_map).map_err(|e| SkillError::Io(e.to_string()))?;
 
     Ok((name, description, body, frontmatter_json))
 }
 
 fn unquote_str(s: &str) -> String {
     let s = s.trim();
-    if (s.starts_with('"') && s.ends_with('"'))
-        || (s.starts_with('\'') && s.ends_with('\''))
-    {
+    if (s.starts_with('"') && s.ends_with('"')) || (s.starts_with('\'') && s.ends_with('\'')) {
         s[1..s.len() - 1].to_string()
     } else {
         s.to_string()

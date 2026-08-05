@@ -68,7 +68,12 @@ fn compute_path() -> String {
 
     let mut parts: Vec<String> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
-    for source in [shell.as_str(), inherited.as_str(), npm_bin.as_str(), common.as_str()] {
+    for source in [
+        shell.as_str(),
+        inherited.as_str(),
+        npm_bin.as_str(),
+        common.as_str(),
+    ] {
         for segment in source.split(':') {
             let segment = segment.trim();
             if !segment.is_empty() && seen.insert(segment.to_string()) {
@@ -174,7 +179,11 @@ fn probe_login_shell_env() -> Option<String> {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
-        let args = if *sh == "/bin/sh" { POSIX_ARGS } else { LOGIN_ARGS };
+        let args = if *sh == "/bin/sh" {
+            POSIX_ARGS
+        } else {
+            LOGIN_ARGS
+        };
         if let Some(out) = run_with_timeout(sh, args) {
             let trimmed = out.trim();
             if !trimmed.is_empty() {
@@ -261,7 +270,9 @@ mod tests {
     #[test]
     fn command_inherits_resolved_path() {
         let cmd = command("true");
-        let env = cmd.get_envs().find(|(k, _)| *k == std::ffi::OsStr::new("PATH"));
+        let env = cmd
+            .get_envs()
+            .find(|(k, _)| *k == std::ffi::OsStr::new("PATH"));
         assert!(env.is_some(), "command must set PATH env var");
         let (_, val) = env.unwrap();
         assert!(val.is_some());
@@ -274,13 +285,18 @@ mod tests {
         let segments: Vec<&str> = merged.split(':').collect();
         let mut unique = HashSet::new();
         for s in &segments {
-            assert!(unique.insert(*s), "duplicate segment in resolved PATH: {}", s);
+            assert!(
+                unique.insert(*s),
+                "duplicate segment in resolved PATH: {}",
+                s
+            );
         }
     }
 
     #[test]
     fn parse_env_keeps_first_value_and_skips_malformed() {
-        let raw = "PATH=/usr/bin\nGITHUB_PACKAGES_TOKEN=abc=123\nNOEQUALS\n bad key=x\nPATH=/override\n";
+        let raw =
+            "PATH=/usr/bin\nGITHUB_PACKAGES_TOKEN=abc=123\nNOEQUALS\n bad key=x\nPATH=/override\n";
         let env = parse_env(raw);
         assert_eq!(
             env.iter()
@@ -302,7 +318,10 @@ mod tests {
         let raw = "welcome from .zshrc\nGBPATH:/opt/homebrew/bin:/usr/bin\nGBNPM:/Users/x/.nvm/versions/node/v20/bin/..\n";
         let (path, prefix) = parse_shell_probe(raw);
         assert_eq!(path.as_deref(), Some("/opt/homebrew/bin:/usr/bin"));
-        assert_eq!(prefix.as_deref(), Some("/Users/x/.nvm/versions/node/v20/bin/.."));
+        assert_eq!(
+            prefix.as_deref(),
+            Some("/Users/x/.nvm/versions/node/v20/bin/..")
+        );
     }
 
     #[test]
@@ -316,7 +335,9 @@ mod tests {
     #[test]
     fn command_with_login_env_sets_path() {
         let cmd = command_with_login_env("true");
-        let env = cmd.get_envs().find(|(k, _)| *k == std::ffi::OsStr::new("PATH"));
+        let env = cmd
+            .get_envs()
+            .find(|(k, _)| *k == std::ffi::OsStr::new("PATH"));
         assert!(env.is_some(), "command must set PATH env var");
         let (_, val) = env.unwrap();
         assert_eq!(val, Some(std::ffi::OsStr::new(resolved_path())));

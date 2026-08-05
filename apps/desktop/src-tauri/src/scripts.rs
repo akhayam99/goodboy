@@ -351,7 +351,8 @@ mod tests {
             Some("tok".to_string())
         );
         assert_eq!(
-            cmd.get_env("NVM_DIR").map(|v| v.to_string_lossy().into_owned()),
+            cmd.get_env("NVM_DIR")
+                .map(|v| v.to_string_lossy().into_owned()),
             Some("/home/u/.nvm".to_string())
         );
     }
@@ -364,11 +365,13 @@ mod tests {
         ];
         let cmd = build_script_command("echo hi", "/tmp", &env);
         assert_eq!(
-            cmd.get_env("TERM").map(|v| v.to_string_lossy().into_owned()),
+            cmd.get_env("TERM")
+                .map(|v| v.to_string_lossy().into_owned()),
             Some("xterm-256color".to_string())
         );
         assert_ne!(
-            cmd.get_env("PATH").map(|v| v.to_string_lossy().into_owned()),
+            cmd.get_env("PATH")
+                .map(|v| v.to_string_lossy().into_owned()),
             Some("/stale".to_string())
         );
     }

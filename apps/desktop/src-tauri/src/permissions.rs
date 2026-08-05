@@ -227,7 +227,8 @@ pub fn permission_rule_list(
             updated_at: row.get(9)?,
         })
     })?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(PermissionError::Db)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(PermissionError::Db)
 }
 
 #[tauri::command]
@@ -360,15 +361,11 @@ pub fn permission_rule_upsert(
 }
 
 #[tauri::command]
-pub fn permission_rule_delete(
-    state: State<'_, Db>,
-    id: String,
-) -> Result<(), PermissionError> {
+pub fn permission_rule_delete(state: State<'_, Db>, id: String) -> Result<(), PermissionError> {
     let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
 
     let exists: bool = {
-        let mut stmt =
-            conn.prepare("SELECT 1 FROM permission_rules WHERE id = ?1 LIMIT 1")?;
+        let mut stmt = conn.prepare("SELECT 1 FROM permission_rules WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |_| Ok(()))?;
         rows.next().is_some()
     };
@@ -491,7 +488,8 @@ pub fn permission_audit_list(
             })
         },
     )?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(PermissionError::Db)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(PermissionError::Db)
 }
 
 fn build_audit_list_sql(input: &PermissionAuditQueryInput) -> String {
@@ -628,7 +626,8 @@ pub fn permission_audit_retry_drain(
             updated_at: row.get(5)?,
         })
     })?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(PermissionError::Db)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(PermissionError::Db)
 }
 
 #[tauri::command]

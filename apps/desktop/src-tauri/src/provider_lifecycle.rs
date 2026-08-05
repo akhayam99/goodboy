@@ -68,7 +68,11 @@ impl ProviderLifecycleRegistry {
     }
 }
 
-fn reserve_provider(active: &Mutex<HashMap<String, String>>, provider_id: &str, run_id: &str) -> bool {
+fn reserve_provider(
+    active: &Mutex<HashMap<String, String>>,
+    provider_id: &str,
+    run_id: &str,
+) -> bool {
     let Ok(mut map) = active.lock() else {
         return false;
     };

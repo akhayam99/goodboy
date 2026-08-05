@@ -154,7 +154,11 @@ impl AuthCommandOutput {
     /// codex CLI v0.130 writes `codex login status` to stderr in non-TTY mode
     /// (and Tauri children never have a TTY) — fall back when stdout is empty.
     fn primary_text(&self) -> &str {
-        if self.stdout.trim().is_empty() { &self.stderr } else { &self.stdout }
+        if self.stdout.trim().is_empty() {
+            &self.stderr
+        } else {
+            &self.stdout
+        }
     }
 }
 
@@ -162,11 +166,10 @@ fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
     run_auth_command_until(args, Instant::now() + AUTH_TIMEOUT)
 }
 
-fn run_auth_command_until(
-    args: &[&str],
-    deadline: Instant,
-) -> Result<AuthCommandOutput, String> {
-    let (binary, rest) = args.split_first().ok_or_else(|| "empty command".to_string())?;
+fn run_auth_command_until(args: &[&str], deadline: Instant) -> Result<AuthCommandOutput, String> {
+    let (binary, rest) = args
+        .split_first()
+        .ok_or_else(|| "empty command".to_string())?;
     let mut child = path_env::command(binary)
         .args(rest)
         .stdout(Stdio::piped())
@@ -645,9 +648,7 @@ pub fn get_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
 }
 
 #[tauri::command]
-pub async fn refresh_codex_status(
-    state: State<'_, CodexState>,
-) -> Result<ProviderStatus, String> {
+pub async fn refresh_codex_status(state: State<'_, CodexState>) -> Result<ProviderStatus, String> {
     refresh_status(&state.0, detect_codex).await
 }
 
@@ -692,13 +693,16 @@ pub async fn refresh_opencode_status(
 }
 
 fn get_status(state: &Mutex<ProviderStatus>, id: &str, binary: &str) -> ProviderStatus {
-    state.lock().map(|s| s.clone()).unwrap_or_else(|_| ProviderStatus {
-        id: id.to_string(),
-        binary: binary.to_string(),
-        available: false,
-        version: None,
-        error: Some("status mutex poisoned".to_string()),
-    })
+    state
+        .lock()
+        .map(|s| s.clone())
+        .unwrap_or_else(|_| ProviderStatus {
+            id: id.to_string(),
+            binary: binary.to_string(),
+            available: false,
+            version: None,
+            error: Some("status mutex poisoned".to_string()),
+        })
 }
 
 async fn refresh_status(
@@ -958,7 +962,10 @@ mod tests {
     #[test]
     fn opencode_reads_credential_names_without_the_method_suffix() {
         let names = parse_opencode_credentials(OPENCODE_FILLED_LIST);
-        assert_eq!(names, vec!["OpenRouter".to_string(), "Anthropic".to_string()]);
+        assert_eq!(
+            names,
+            vec!["OpenRouter".to_string(), "Anthropic".to_string()]
+        );
     }
 
     #[test]
@@ -970,7 +977,10 @@ mod tests {
     #[test]
     fn openrouter_matches_its_credential_row() {
         let names = parse_opencode_credentials(OPENCODE_FILLED_LIST);
-        assert_eq!(openrouter_credential(&names), Some(&"OpenRouter".to_string()));
+        assert_eq!(
+            openrouter_credential(&names),
+            Some(&"OpenRouter".to_string())
+        );
     }
 
     #[test]

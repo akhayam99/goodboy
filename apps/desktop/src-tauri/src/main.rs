@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-  goodboy_desktop_lib::run();
+    goodboy_desktop_lib::run();
 }
