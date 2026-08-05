@@ -262,6 +262,7 @@ describe('LensColumn', () => {
       'Sentry',
       'GitLab',
       'Jira',
+      'Slack',
     ]);
     expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull();
   });

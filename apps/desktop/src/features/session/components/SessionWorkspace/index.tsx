@@ -379,6 +379,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                     provider="jira"
                   />
                 ) : null}
+                {lens === 'slack_threads' ? (
+                  <IntegrationPane
+                    sessionId={sessionId}
+                    workspaceId={session.workspaceId}
+                    provider="slack"
+                  />
+                ) : null}
                 {lens === 'github_issue' ? (
                   githubIssueNumber != null ? (
                     <GithubTaskDetail

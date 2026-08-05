@@ -1,0 +1,191 @@
+// @vitest-environment happy-dom
+
+import type { ReactNode } from 'react';
+import { useEffect } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+
+const { state, workspace } = vi.hoisted(() => {
+  const currentWorkspace = {
+    id: 'workspace-1',
+    name: 'Workspace',
+    rootPath: '/repo',
+    kind: 'repo' as const,
+  };
+  return {
+    workspace: currentWorkspace,
+    state: {
+      hydrate: vi.fn(async () => undefined),
+      checkForUpdates: vi.fn(async () => undefined),
+      hydrated: true,
+      bootPhase: 'ready' as const,
+      error: null,
+      workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
+      workspaces: [currentWorkspace],
+      sessions: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
+      sessionMounts: {},
+      sessionActiveMount: {},
+      sessionBranches: {} as Record<string, string>,
+      setSessionStudio: vi.fn(),
+      openWorkspace: vi.fn(),
+      setCurrentSession: vi.fn(),
+      lensGo: vi.fn(),
+      currentWorkspaceId: 'workspace-1' as string | null,
+      currentSessionId: null as string | null,
+      activeLens: {} as Record<string, string | null>,
+      selectedAgentId: {} as Record<string, string | null>,
+      setActiveLens: vi.fn(),
+      sessionWorktrees: {},
+      providers: [] as ReadonlyArray<{ connection: string }>,
+    },
+  };
+});
+
+type ShellProps = {
+  readonly footer?: ReactNode;
+};
+
+vi.mock('@goodboy/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/ui')>();
+  return { ...actual, AppShell: ({ footer }: ShellProps) => <div>{footer}</div> };
+});
+
+type FooterProps = {
+  readonly onOpenSlack: () => void;
+  readonly slackEnabled: boolean;
+};
+
+vi.mock('../app/components/AppFooter', () => ({
+  AppFooter: ({ onOpenSlack, slackEnabled }: FooterProps) => (
+    <button type="button" onClick={onOpenSlack}>
+      {slackEnabled ? 'Launch a session from a Slack thread' : 'Connect Slack'}
+    </button>
+  ),
+}));
+
+vi.mock('../features/integrations/slack/SlackStudio', () => ({
+  SlackStudio: ({ workspaceName }: { workspaceName: string }) => (
+    <div data-testid="slack-studio">{workspaceName}</div>
+  ),
+}));
+
+vi.mock('../features/session/components/CommandPalette', () => ({ CommandPalette: () => null }));
+vi.mock('../app/components/BootSplash', () => ({
+  BootSplash: ({ onFinished }: { onFinished: () => void }) => {
+    useEffect(() => {
+      onFinished();
+    }, [onFinished]);
+    return null;
+  },
+}));
+vi.mock('../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
+vi.mock('../app/components/AppTopBar', () => ({ AppTopBar: () => null }));
+vi.mock('../app/components/AppEmptyState', () => ({ NoWorkspaceScreen: () => null }));
+vi.mock('../features/workspace/components/StageBoard', () => ({ StageBoard: () => null }));
+vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
+  DeleteSessionConfirm: () => null,
+}));
+vi.mock('../features/session/components/ArchiveSessionConfirm', () => ({
+  ArchiveSessionConfirm: () => null,
+}));
+vi.mock('../features/settings/components/SettingsStudio', () => ({ SettingsStudio: () => null }));
+vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
+vi.mock('../features/workspace/components/WorkspaceSettingsPane', () => ({
+  WorkspaceSettingsPane: () => null,
+}));
+vi.mock('../app/components/Toast', () => ({
+  ToastProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+vi.mock('../features/notifications/components/NotificationToastBridge', () => ({
+  NotificationToastBridge: () => null,
+}));
+vi.mock('../features/workspace/components/WorkspacesSidebar', () => ({
+  WorkspacesSidebar: () => null,
+}));
+vi.mock('../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
+vi.mock('../features/workspace/components/WorkspaceLinkDialog', () => ({
+  WorkspaceLinkDialog: () => null,
+}));
+vi.mock('../features/workspace/components/WorkspaceLauncher', () => ({
+  WorkspaceLauncher: () => null,
+}));
+vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
+  WorkspaceSwitcher: () => null,
+}));
+vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
+vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
+vi.mock('../features/session/components/NewSessionView', () => ({ NewSessionView: () => null }));
+vi.mock('../features/github/components/GitHubStudio', () => ({ GitHubStudio: () => null }));
+vi.mock('../features/integrations/linear/LinearStudio', () => ({ LinearStudio: () => null }));
+vi.mock('../features/integrations/sentry/SentryStudio', () => ({ SentryStudio: () => null }));
+vi.mock('../features/integrations/gitlab/GitlabStudio', () => ({ GitlabStudio: () => null }));
+vi.mock('../features/integrations/jira/JiraStudio', () => ({ JiraStudio: () => null }));
+vi.mock('../features/providers/components/ProviderStudio', () => ({ ProviderStudio: () => null }));
+vi.mock('../features/budget/components/BudgetStudio', () => ({ BudgetStudio: () => null }));
+vi.mock('../features/permissions/components/DiffViewerDialog', () => ({
+  DiffViewerDialog: () => null,
+}));
+vi.mock('../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
+vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
+vi.mock('../features/onboarding/OnboardingCard', () => ({ OnboardingCard: () => null }));
+vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
+vi.mock('../features/companion/CompanionStudio', () => ({ CompanionStudio: () => null }));
+vi.mock('../features/companion/commandExecutor', () => ({
+  listenBridgeCommands: vi.fn(async () => () => undefined),
+}));
+vi.mock('../features/onboarding/onboarding-store', () => ({ markStepComplete: vi.fn() }));
+vi.mock('../shared/lib/zoom', () => ({
+  applyStoredZoom: vi.fn(async () => undefined),
+  zoomIn: vi.fn(async () => undefined),
+  zoomOut: vi.fn(async () => undefined),
+  zoomReset: vi.fn(async () => undefined),
+}));
+vi.mock('../shared/hooks/useProviderRefreshOnFocus', () => ({
+  useProviderRefreshOnFocus: vi.fn(),
+}));
+vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
+  useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
+}));
+vi.mock('../store', () => {
+  const useAppStore = Object.assign(
+    vi.fn((selector: (store: typeof state) => unknown) => selector(state)),
+    { getState: () => state },
+  );
+  return {
+    useAppStore,
+    useCurrentSession: () => null,
+    useCurrentWorkspace: () => workspace,
+    useSessions: () => state.sessions,
+    useWorkspaces: () => state.workspaces,
+  };
+});
+vi.mock('../features/github/hooks/useGithubPolling', () => ({ useGithubPolling: vi.fn() }));
+vi.mock('../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPolling: vi.fn() }));
+
+import { App } from '../App';
+
+beforeEach(() => {
+  state.workspaceIntegrations = {};
+});
+
+afterEach(cleanup);
+
+describe('Slack studio reachability', () => {
+  it('opens the workspace slack studio from the app footer', () => {
+    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'slack' }] };
+    render(<App />);
+
+    expect(screen.queryByTestId('slack-studio')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
+
+    expect(screen.getByTestId('slack-studio').textContent).toBe('Workspace');
+  });
+
+  it('still opens the studio when slack is not connected, so the connect form is reachable', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
+
+    expect(screen.getByTestId('slack-studio')).toBeDefined();
+  });
+});

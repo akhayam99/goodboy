@@ -32,6 +32,10 @@ vi.mock('./GitlabTaskDetail', () => ({
   GitlabTaskDetail: () => <div>Gitlab detail</div>,
 }));
 
+vi.mock('./SlackTaskDetail', () => ({
+  SlackTaskDetail: () => <div>Slack detail</div>,
+}));
+
 import { FocusedTaskBody } from './FocusedTaskBody';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -53,6 +57,7 @@ describe('FocusedTaskBody', () => {
   it.each([
     ['github', 'Github detail'],
     ['gitlab', 'Gitlab detail'],
+    ['slack', 'Slack detail'],
   ] as const)('dispatches a connected %s task to its detail component', (provider, text) => {
     render(
       <FocusedTaskBody
@@ -82,6 +87,7 @@ describe('FocusedTaskBody', () => {
 
       expect(screen.queryByText('Github detail')).toBeNull();
       expect(screen.queryByText('Gitlab detail')).toBeNull();
+      expect(screen.queryByText('Slack detail')).toBeNull();
       expect(screen.getByRole('button', { name: 'Open #42' })).toBeDefined();
     },
   );

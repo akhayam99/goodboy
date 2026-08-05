@@ -1,4 +1,5 @@
 import type { SessionExternalTaskProvider } from '@goodboy/types';
+import { slackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
 
 type Params = {
   readonly provider: SessionExternalTaskProvider;
@@ -14,6 +15,7 @@ type ParsedIntegrationTaskUrl = Readonly<{
 
 type ProviderParams = {
   readonly segments: ReadonlyArray<string>;
+  readonly searchParams: URLSearchParams;
 };
 
 type ParseProviderParams = ProviderParams & {
@@ -95,22 +97,62 @@ const parseBitbucket = ({ segments }: ProviderParams): ProviderResult => {
   return { externalId: identifier, identifier };
 };
 
-const parseProvider = ({ provider, segments }: ParseProviderParams): ProviderResult => {
+const SLACK_TS_TAIL = 6;
+
+type PermalinkSegmentParams = {
+  readonly segment: string;
+};
+
+const slackTsFromPermalinkSegment = ({ segment }: PermalinkSegmentParams): string | null => {
+  const match = /^p(\d+)$/.exec(segment);
+  const digits = match?.[1];
+  if (digits == null || digits.length <= SLACK_TS_TAIL) {
+    return null;
+  }
+  return `${digits.slice(0, digits.length - SLACK_TS_TAIL)}.${digits.slice(-SLACK_TS_TAIL)}`;
+};
+
+const parseSlack = ({ segments, searchParams }: ProviderParams): ProviderResult => {
+  const archivesIndex = segments.findIndex((segment) => segment.toLowerCase() === 'archives');
+  const channelId = segments[archivesIndex + 1];
+  const messageSegment = segments[archivesIndex + 2];
+  if (archivesIndex < 0 || channelId == null || channelId === '' || messageSegment == null) {
+    return null;
+  }
+  const parentTs = searchParams.get('thread_ts');
+  const threadTs =
+    parentTs != null && parentTs !== ''
+      ? parentTs
+      : slackTsFromPermalinkSegment({ segment: messageSegment });
+  if (threadTs == null) {
+    return null;
+  }
+  return {
+    externalId: slackThreadExternalId({ channelId, threadTs }),
+    identifier: `#${channelId}`,
+  };
+};
+
+const parseProvider = ({
+  provider,
+  segments,
+  searchParams,
+}: ParseProviderParams): ProviderResult => {
   switch (provider) {
     case 'linear':
-      return parseLinear({ segments });
+      return parseLinear({ segments, searchParams });
     case 'sentry':
-      return parseSentry({ segments });
+      return parseSentry({ segments, searchParams });
     case 'gitlab':
-      return parseGitlab({ segments });
+      return parseGitlab({ segments, searchParams });
     case 'jira':
-      return parseJira({ segments });
+      return parseJira({ segments, searchParams });
     case 'github':
-      return parseGithub({ segments });
+      return parseGithub({ segments, searchParams });
     case 'bitbucket':
-      return parseBitbucket({ segments });
+      return parseBitbucket({ segments, searchParams });
     case 'slack':
-      return null;
+      return parseSlack({ segments, searchParams });
     default: {
       const exhaustiveProvider: never = provider;
       return exhaustiveProvider;
@@ -149,7 +191,11 @@ export const parseIntegrationTaskUrl = ({
       .split('/')
       .filter((segment) => segment !== '')
       .map((segment) => decodeSegment({ value: segment }));
-    const providerResult = parseProvider({ provider, segments });
+    const providerResult = parseProvider({
+      provider,
+      segments,
+      searchParams: parsedUrl.searchParams,
+    });
     const identifier = providerResult?.identifier ?? segments.at(-1) ?? parsedUrl.hostname;
     return {
       externalId: providerResult?.externalId ?? parsedUrl.toString(),

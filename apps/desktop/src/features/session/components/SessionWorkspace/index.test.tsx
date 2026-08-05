@@ -178,6 +178,11 @@ vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/SlotPane', () => ({ SlotPane: () => null }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
+vi.mock('./parts/IntegrationPane', () => ({
+  IntegrationPane: ({ provider }: { provider: string }) => (
+    <div data-testid="integration-pane">{provider}</div>
+  ),
+}));
 vi.mock('./parts/IntegrationPane/GithubTaskDetail', () => ({
   GithubTaskDetail: ({ issueNumber }: { issueNumber: number }) => (
     <div data-testid="github-task-detail">{issueNumber}</div>
@@ -865,5 +870,22 @@ describe('SessionWorkspace github issue lens', () => {
 
     expect(screen.getByTestId('github-task-detail').textContent).toBe('12');
     expect(screen.queryByText('No GitHub issue linked')).toBeNull();
+  });
+});
+
+describe('SessionWorkspace integration lenses', () => {
+  it.each([
+    ['linear', 'linear'],
+    ['sentry', 'sentry'],
+    ['gitlab_issues', 'gitlab'],
+    ['jira_issues', 'jira'],
+    ['slack_threads', 'slack'],
+  ] as const)('mounts the integration pane for the %s lens', (lens, provider) => {
+    store.activeLens = { [SESSION_ID]: lens };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('integration-pane').textContent).toBe(provider);
   });
 });

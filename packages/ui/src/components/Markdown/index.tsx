@@ -189,6 +189,20 @@ function renderInline(input: string, keyPrefix: string, variant: MarkdownVariant
       }
     }
 
+    if (ch === '~' && input[i + 1] === '~') {
+      const end = input.indexOf('~~', i + 2);
+      if (end > i) {
+        flush();
+        out.push(
+          <del key={nextKey()} className="text-muted-foreground">
+            {renderInline(input.slice(i + 2, end), `${keyPrefix}-s${keyN}`, variant)}
+          </del>,
+        );
+        i = end + 2;
+        continue;
+      }
+    }
+
     if ((ch === '*' || ch === '_') && input[i + 1] !== ch) {
       const prev = input[i - 1];
       const isWordBoundary = !prev || /\s|[(\[{,.!?]/.test(prev);

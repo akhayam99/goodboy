@@ -67,6 +67,13 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
       icon: CONCEPT_ICONS.jira,
       onClick: () => onSelectLens('jira_issues'),
     },
+    {
+      kind: 'item',
+      key: 'slack',
+      label: 'Slack threads',
+      icon: CONCEPT_ICONS.slack,
+      onClick: () => onSelectLens('slack_threads'),
+    },
   ];
   const hasLinkedWork = linkedIssues.length > 0 || externalTasks.length > 0;
   const openLinkedIssue = (issueNumber: number) => {

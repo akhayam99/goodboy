@@ -175,8 +175,18 @@ describe('LinkedWorkSection', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sentry' }));
     fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'GitLab issues' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Jira issues' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Slack threads' }));
 
-    expect(onSelectLens.mock.calls).toEqual([['linear'], ['sentry'], ['gitlab_issues']]);
+    expect(onSelectLens.mock.calls).toEqual([
+      ['linear'],
+      ['sentry'],
+      ['gitlab_issues'],
+      ['jira_issues'],
+      ['slack_threads'],
+    ]);
   });
 
   it('shows a task repository only in a composite workspace', () => {

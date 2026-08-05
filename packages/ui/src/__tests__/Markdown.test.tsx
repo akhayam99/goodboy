@@ -243,6 +243,16 @@ describe('Markdown preview variant', () => {
     expect(container.textContent).not.toContain('and then some');
   });
 
+  it('strikes through a gfm strikethrough instead of showing the tildes', () => {
+    const { container } = render(<Markdown text={'keep ~~drop this~~ keep'} />);
+    expect(container.querySelector('del')?.textContent).toBe('drop this');
+    expect(container.textContent).not.toContain('~~');
+  });
+
+  it('leaves a lone tilde alone', () => {
+    expect(textOf('about ~5 minutes')).toContain('about ~5 minutes');
+  });
+
   it('tightens list spacing', () => {
     const { container } = render(<Markdown variant="preview" text={'- one\n- two'} />);
     expect(container.querySelector('ul')?.className).toContain('gap-0.5');
