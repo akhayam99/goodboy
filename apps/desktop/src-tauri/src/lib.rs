@@ -285,6 +285,12 @@ pub fn run() {
             gitlab::gitlab_mr_diff_refs,
             gitlab::gitlab_create_mr_discussion,
             gitlab::gitlab_create_mr_note,
+            gitlab::gitlab_list_mr_discussions,
+            gitlab::gitlab_reply_to_mr_discussion,
+            gitlab::gitlab_mr_approval_state,
+            gitlab::gitlab_approve_mr,
+            gitlab::gitlab_unapprove_mr,
+            gitlab::gitlab_update_mr_state,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

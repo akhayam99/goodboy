@@ -256,6 +256,153 @@ export const gitlabCreateMrNote = async (
   });
 };
 
+export type GitlabNotePosition = {
+  newPath: string | null;
+  oldPath: string | null;
+  newLine: number | null;
+  oldLine: number | null;
+};
+
+export type GitlabMrNote = {
+  id: number;
+  body: string;
+  system: boolean;
+  author: GitlabMrAuthor | null;
+  createdAt: string;
+  resolvable: boolean;
+  resolved: boolean | null;
+  position: GitlabNotePosition | null;
+};
+
+export type GitlabMrDiscussion = {
+  id: string;
+  individualNote: boolean;
+  notes: ReadonlyArray<GitlabMrNote>;
+};
+
+export type GitlabMrApproval = {
+  user: GitlabMrAuthor;
+};
+
+export type GitlabMrApprovalState = {
+  approvalsRequired: number;
+  approvalsLeft: number;
+  userHasApproved: boolean;
+  userCanApprove: boolean;
+  approvedBy: ReadonlyArray<GitlabMrApproval>;
+};
+
+type MrTarget = {
+  readonly workspaceId: WorkspaceId;
+  readonly host: string;
+  readonly projectPath: string;
+  readonly mrIid: number;
+};
+
+export const gitlabListMrDiscussions = async ({
+  workspaceId,
+  host,
+  projectPath,
+  mrIid,
+}: MrTarget): Promise<ReadonlyArray<GitlabMrDiscussion>> => {
+  return invoke<ReadonlyArray<GitlabMrDiscussion>>('gitlab_list_mr_discussions', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+  });
+};
+
+type ReplyParams = MrTarget & {
+  readonly discussionId: string;
+  readonly body: string;
+};
+
+export const gitlabReplyToMrDiscussion = async ({
+  workspaceId,
+  host,
+  projectPath,
+  mrIid,
+  discussionId,
+  body,
+}: ReplyParams): Promise<number> => {
+  return invoke<number>('gitlab_reply_to_mr_discussion', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+    discussionId,
+    body,
+  });
+};
+
+export const gitlabMrApprovalState = async ({
+  workspaceId,
+  host,
+  projectPath,
+  mrIid,
+}: MrTarget): Promise<GitlabMrApprovalState | null> => {
+  return invoke<GitlabMrApprovalState | null>('gitlab_mr_approval_state', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+  });
+};
+
+export const gitlabApproveMr = async ({
+  workspaceId,
+  host,
+  projectPath,
+  mrIid,
+}: MrTarget): Promise<GitlabMrApprovalState | null> => {
+  return invoke<GitlabMrApprovalState | null>('gitlab_approve_mr', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+  });
+};
+
+export const gitlabUnapproveMr = async ({
+  workspaceId,
+  host,
+  projectPath,
+  mrIid,
+}: MrTarget): Promise<GitlabMrApprovalState | null> => {
+  return invoke<GitlabMrApprovalState | null>('gitlab_unapprove_mr', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+  });
+};
+
+export type GitlabMrStateEvent = 'close' | 'reopen';
+
+type UpdateMrStateParams = MrTarget & {
+  readonly stateEvent?: GitlabMrStateEvent;
+  readonly title?: string;
+};
+
+export const gitlabUpdateMrState = async ({
+  workspaceId,
+  host,
+  projectPath,
+  mrIid,
+  stateEvent,
+  title,
+}: UpdateMrStateParams): Promise<GitlabMergeRequest> => {
+  return invoke<GitlabMergeRequest>('gitlab_update_mr_state', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+    ...(stateEvent !== undefined && { stateEvent }),
+    ...(title !== undefined && { title }),
+  });
+};
+
 export const gitlabMergeMr = async (
   workspaceId: WorkspaceId,
   host: string,

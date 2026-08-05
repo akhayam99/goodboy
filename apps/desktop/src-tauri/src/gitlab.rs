@@ -88,6 +88,100 @@ async fn get_json<T: serde::de::DeserializeOwned>(
     serde_json::from_str(&body).map_err(|e| GitlabError::InvalidShape(e.to_string()))
 }
 
+const MAX_PAGES: u32 = 20;
+
+async fn get_json_optional<T: serde::de::DeserializeOwned>(
+    host: &str,
+    token: &str,
+    path: &str,
+) -> Result<Option<T>, GitlabError> {
+    let url = format!("{}{}", api_base(host)?, path);
+    let res = http_client()
+        .get(&url)
+        .header("PRIVATE-TOKEN", token)
+        .send()
+        .await?;
+    let status = res.status();
+    let body = res.text().await?;
+    if status == reqwest::StatusCode::NOT_FOUND || status == reqwest::StatusCode::FORBIDDEN {
+        return Ok(None);
+    }
+    if !status.is_success() {
+        return Err(GitlabError::Http {
+            status: status.as_u16(),
+            body,
+        });
+    }
+    serde_json::from_str(&body)
+        .map(Some)
+        .map_err(|e| GitlabError::InvalidShape(e.to_string()))
+}
+
+async fn get_json_paged<T: serde::de::DeserializeOwned>(
+    host: &str,
+    token: &str,
+    path: &str,
+) -> Result<Vec<T>, GitlabError> {
+    let base = api_base(host)?;
+    let separator = if path.contains('?') { '&' } else { '?' };
+    let mut collected: Vec<T> = Vec::new();
+    let mut page: u32 = 1;
+    loop {
+        let url = format!("{base}{path}{separator}per_page=100&page={page}");
+        let res = http_client()
+            .get(&url)
+            .header("PRIVATE-TOKEN", token)
+            .send()
+            .await?;
+        let status = res.status();
+        let next_page = res
+            .headers()
+            .get("x-next-page")
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.trim().parse::<u32>().ok());
+        let body = res.text().await?;
+        if !status.is_success() {
+            return Err(GitlabError::Http {
+                status: status.as_u16(),
+                body,
+            });
+        }
+        let batch: Vec<T> =
+            serde_json::from_str(&body).map_err(|e| GitlabError::InvalidShape(e.to_string()))?;
+        collected.extend(batch);
+        match next_page {
+            Some(next) if next > page && page < MAX_PAGES => page = next,
+            _ => break,
+        }
+    }
+    Ok(collected)
+}
+
+async fn send_no_content(
+    method: reqwest::Method,
+    host: &str,
+    token: &str,
+    path: &str,
+    body: &serde_json::Value,
+) -> Result<(), GitlabError> {
+    let url = format!("{}{}", api_base(host)?, path);
+    let res = http_client()
+        .request(method, &url)
+        .header("PRIVATE-TOKEN", token)
+        .json(body)
+        .send()
+        .await?;
+    let status = res.status();
+    let text = res.text().await?;
+    if !status.is_success() {
+        return Err(GitlabError::Http {
+            status: status.as_u16(),
+            body: text,
+        });
+    }
+    Ok(())
+}
+
 async fn send_json<T: serde::de::DeserializeOwned>(
     method: reqwest::Method,
     host: &str,
@@ -574,6 +668,215 @@ pub async fn gitlab_create_mr_note(
     Ok(note.id)
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabNotePosition {
+    #[serde(rename = "newPath", alias = "new_path", default)]
+    pub new_path: Option<String>,
+    #[serde(rename = "oldPath", alias = "old_path", default)]
+    pub old_path: Option<String>,
+    #[serde(rename = "newLine", alias = "new_line", default)]
+    pub new_line: Option<i64>,
+    #[serde(rename = "oldLine", alias = "old_line", default)]
+    pub old_line: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabMrNote {
+    pub id: i64,
+    #[serde(default)]
+    pub body: String,
+    #[serde(default)]
+    pub system: bool,
+    #[serde(default)]
+    pub author: Option<GitlabMrAuthor>,
+    #[serde(rename = "createdAt", alias = "created_at", default)]
+    pub created_at: String,
+    #[serde(default)]
+    pub resolvable: bool,
+    #[serde(default)]
+    pub resolved: Option<bool>,
+    #[serde(default)]
+    pub position: Option<GitlabNotePosition>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabMrDiscussion {
+    pub id: String,
+    #[serde(rename = "individualNote", alias = "individual_note", default)]
+    pub individual_note: bool,
+    #[serde(default)]
+    pub notes: Vec<GitlabMrNote>,
+}
+
+#[tauri::command]
+pub async fn gitlab_list_mr_discussions(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Vec<GitlabMrDiscussion>, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    get_json_paged(
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/discussions"),
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn gitlab_reply_to_mr_discussion(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    discussion_id: String,
+    body: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<i64, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let discussion = percent_encode(&discussion_id);
+    let note: GitlabNote = send_json(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/discussions/{discussion}/notes"),
+        &serde_json::json!({ "body": body }),
+    )
+    .await?;
+    Ok(note.id)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabApproval {
+    pub user: GitlabMrAuthor,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabMrApprovalState {
+    #[serde(rename = "approvalsRequired", alias = "approvals_required", default)]
+    pub approvals_required: i64,
+    #[serde(rename = "approvalsLeft", alias = "approvals_left", default)]
+    pub approvals_left: i64,
+    #[serde(rename = "userHasApproved", alias = "user_has_approved", default)]
+    pub user_has_approved: bool,
+    #[serde(rename = "userCanApprove", alias = "user_can_approve", default)]
+    pub user_can_approve: bool,
+    #[serde(rename = "approvedBy", alias = "approved_by", default)]
+    pub approved_by: Vec<GitlabApproval>,
+}
+
+async fn read_approval_state(
+    host: &str,
+    token: &str,
+    encoded_project: &str,
+    mr_iid: i64,
+) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
+    get_json_optional(
+        host,
+        token,
+        &format!("/projects/{encoded_project}/merge_requests/{mr_iid}/approvals"),
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn gitlab_mr_approval_state(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    read_approval_state(&host, &token, &encoded, mr_iid).await
+}
+
+#[tauri::command]
+pub async fn gitlab_approve_mr(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    send_no_content(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/approve"),
+        &serde_json::json!({}),
+    )
+    .await?;
+    read_approval_state(&host, &token, &encoded, mr_iid).await
+}
+
+#[tauri::command]
+pub async fn gitlab_unapprove_mr(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Option<GitlabMrApprovalState>, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    send_no_content(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/unapprove"),
+        &serde_json::json!({}),
+    )
+    .await?;
+    read_approval_state(&host, &token, &encoded, mr_iid).await
+}
+
+fn mr_update_payload(state_event: Option<&str>, title: Option<&str>) -> serde_json::Value {
+    let mut payload = serde_json::Map::new();
+    if let Some(event) = state_event {
+        payload.insert("state_event".to_string(), serde_json::json!(event));
+    }
+    if let Some(value) = title {
+        payload.insert("title".to_string(), serde_json::json!(value));
+    }
+    serde_json::Value::Object(payload)
+}
+
+#[tauri::command]
+pub async fn gitlab_update_mr_state(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    state_event: Option<String>,
+    title: Option<String>,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabMergeRequest, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let payload = mr_update_payload(state_event.as_deref(), title.as_deref());
+    if payload.as_object().map(|map| map.is_empty()) == Some(true) {
+        return Err(GitlabError::InvalidShape(
+            "merge request update needs a state event or a title".to_string(),
+        ));
+    }
+    send_json(
+        reqwest::Method::PUT,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}"),
+        &payload,
+    )
+    .await
+}
+
 #[tauri::command]
 pub async fn gitlab_merge_mr(
     workspace_id: String,
@@ -821,6 +1124,113 @@ mod tests {
         assert_eq!(position.base_sha, "aaa");
         assert_eq!(position.new_line, Some(12));
         assert!(position.old_path.is_none());
+    }
+
+    #[test]
+    fn discussion_deserializes_notes_with_system_flag_and_position() {
+        let raw = r#"[{
+            "id": "abc123",
+            "individual_note": false,
+            "notes": [
+                {
+                    "id": 1,
+                    "body": "tighten this",
+                    "system": false,
+                    "created_at": "2026-07-22T10:00:00Z",
+                    "resolvable": true,
+                    "resolved": false,
+                    "author": { "username": "alice", "name": "Alice" },
+                    "position": { "new_path": "src/a.ts", "new_line": 12 }
+                },
+                {
+                    "id": 2,
+                    "body": "changed title from x to y",
+                    "system": true,
+                    "created_at": "2026-07-22T10:05:00Z"
+                }
+            ]
+        }]"#;
+        let discussions: Vec<GitlabMrDiscussion> = serde_json::from_str(raw).unwrap();
+        let discussion = &discussions[0];
+        assert_eq!(discussion.id, "abc123");
+        assert!(!discussion.individual_note);
+        assert_eq!(discussion.notes.len(), 2);
+        assert_eq!(discussion.notes[0].resolved, Some(false));
+        assert_eq!(
+            discussion.notes[0]
+                .position
+                .as_ref()
+                .and_then(|p| p.new_line),
+            Some(12)
+        );
+        assert!(discussion.notes[1].system);
+        assert!(discussion.notes[1].author.is_none());
+    }
+
+    #[test]
+    fn discussion_serializes_notes_to_camel_case_for_the_frontend() {
+        let discussion = GitlabMrDiscussion {
+            id: "abc123".into(),
+            individual_note: true,
+            notes: vec![GitlabMrNote {
+                id: 1,
+                body: "ship it".into(),
+                system: false,
+                author: None,
+                created_at: "2026-07-22T10:00:00Z".into(),
+                resolvable: false,
+                resolved: None,
+                position: Some(GitlabNotePosition {
+                    new_path: Some("src/a.ts".into()),
+                    old_path: None,
+                    new_line: Some(3),
+                    old_line: None,
+                }),
+            }],
+        };
+        let value = serde_json::to_value(&discussion).unwrap();
+        assert_eq!(value["individualNote"], true);
+        assert_eq!(value["notes"][0]["createdAt"], "2026-07-22T10:00:00Z");
+        assert_eq!(value["notes"][0]["position"]["newPath"], "src/a.ts");
+        assert_eq!(value["notes"][0]["position"]["newLine"], 3);
+    }
+
+    #[test]
+    fn approval_state_deserializes_snake_case_payload() {
+        let raw = r#"{
+            "approvals_required": 2,
+            "approvals_left": 1,
+            "user_has_approved": true,
+            "user_can_approve": false,
+            "approved_by": [{ "user": { "username": "bob", "name": "Bob" } }]
+        }"#;
+        let state: GitlabMrApprovalState = serde_json::from_str(raw).unwrap();
+        assert_eq!(state.approvals_required, 2);
+        assert_eq!(state.approvals_left, 1);
+        assert!(state.user_has_approved);
+        assert!(!state.user_can_approve);
+        assert_eq!(state.approved_by[0].user.username, "bob");
+    }
+
+    #[test]
+    fn approval_state_defaults_every_field_on_a_bare_payload() {
+        let state: GitlabMrApprovalState = serde_json::from_str("{}").unwrap();
+        assert_eq!(state.approvals_required, 0);
+        assert!(!state.user_has_approved);
+        assert!(state.approved_by.is_empty());
+    }
+
+    #[test]
+    fn mr_update_payload_carries_only_the_supplied_fields() {
+        let closing = mr_update_payload(Some("close"), None);
+        assert_eq!(closing["state_event"], "close");
+        assert!(closing.get("title").is_none());
+
+        let retitle = mr_update_payload(None, Some("Draft: ship it"));
+        assert_eq!(retitle["title"], "Draft: ship it");
+        assert!(retitle.get("state_event").is_none());
+
+        assert_eq!(mr_update_payload(None, None), serde_json::json!({}));
     }
 
     #[test]
