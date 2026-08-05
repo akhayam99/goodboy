@@ -7,6 +7,44 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.64
+
+Bitbucket is the third code host, and the first one that arrives whole in a single release: read the pull request, review it, vote on it, merge it, and turn it into a session, without a browser tab.
+
+### [#1241, #1243, #1245] Bitbucket, end to end
+
+A Bitbucket pull request used to be a link Goodboy could not read. Now it is an object in the workspace. Connect a Bitbucket Cloud workspace with your account email and an Atlassian API token, and the `pr` lens starts finding the pull request that belongs to your session's branch.
+
+What you see: the pull request in full. Number, state, title, the description as markdown, the source and destination branches, the changed files as a real diff, the build statuses, and the review conversation with each comment's author, age, and the file and line when it is inline. The checks tab opens with a line in plain words, "2 failed, 1 in progress", instead of a row of icons to decode. GitHub's checks tab got that line too.
+
+What you can do to it: approve, revoke your approval, request changes, withdraw that request, comment, reply on a thread, merge, and decline. The vote state reads as a sentence above the buttons, "You approved this pull request. 2 approvals, 1 change request so far". Merge and decline ask before they fire, because they are the only writes here that cannot be undone. A control that cannot fire stays where it is and says why in its tooltip, rather than disappearing.
+
+Where it takes you: Start session on any pull request opens a session with the goal and the branch name seeded from it, and the pull request linked back. Pasting a `bitbucket.org/{workspace}/{repo}/pull-requests/{id}` URL into Link work does the same.
+
+Bitbucket did not get a lens of its own. GitHub and GitLab already share the `pr` lens with a host switcher, so Bitbucket joins them as the third tab, and the tabs only list hosts that actually have something to show.
+
+The limits. Bitbucket Cloud only, no Server or Data Center, which runs a different API. No Bitbucket issues: Atlassian's issue tracker is Jira, and Jira shipped last release. No reopen, because Bitbucket has no reopen verb, so a declined pull request is declined. No merge strategy picker: the merge is sent without one so your repository's own default applies. Goodboy finds Bitbucket work only through the workspace connection, not by reading your git remote. The mobile companion cannot see Bitbucket.
+
+The honest part: none of these calls has run against a real Bitbucket workspace. Every endpoint is contract-tested against fixtures built from Atlassian's documentation, which proves the request shapes agree with the docs and proves nothing about the docs. Two places to watch. The auth scheme is Basic with an Atlassian API token, which is where Atlassian says Bitbucket is heading as it retires app passwords; if a scope still wants an app password instead, every call answers 401, and the error names both schemes so you can tell which one you have. And the change request verb is the least certain path of the six: its hyphenated URL is an assumption, so a workspace on an older API surface could answer 200 without recording the vote, leaving the summary saying you have not voted after a write that reported success. If the pull request list comes back in a shape the docs did not describe, the pane is simply empty and none of the tests will have caught it. Try it, break it, send the error back.
+
+### [#1242] One comment thread, five hosts
+
+Every integration that renders a comment thread had hand-copied the same avatar, header and card. When Jira shipped last release it reused the shared composer and, in the same change, copied the note card and header byte for byte from GitLab. Bitbucket was about to become the sixth copy.
+
+The note is a primitive now. One avatar, one header, one card, one composer, used by GitLab, Jira, Linear, GitHub and Bitbucket, with each host mapping its own fields onto them. Five avatar copies became one, and the three leftover composers were retired onto the one that already shipped. A broken avatar URL now falls back to the author's initial everywhere, which previously only happened on the review surface.
+
+### [#1239] About 1,300 lines of dead code, gone
+
+`GithubCard` and its fourteen files were an entire tabbed pull request view with no consumer: the live path has been a different component for a long time. It survived every cleanup because the repo's unused-file check treats test files as entry points, so its own tests kept it reachable. Five pieces of it were genuinely in use and moved out first, then the rest went.
+
+### Smaller fixes
+
+- [#1240] The GitLab approve button no longer vanishes when the approval state fails to load. It stays where it is, disabled, with the reason in its tooltip, and it now respects whether you are allowed to approve at all
+- [#1240] Leaving the plans lens or the GitHub issue lens and coming back shows the list again instead of silently reopening whatever you last had focused
+- [#1240] The mobile companion's issue lookups are now checked for completeness by the compiler, so a provider added without its own handling cannot quietly query GitLab instead
+- [#1240] The workflow gate message on the session overview comes from the same place as everywhere else, so it cannot drift
+- [#1244] A provider union and an exhaustive switch landed in separate pull requests and left the build broken between them, which this closed
+
 ## Goodboy v0.1.63
 
 Jira is the fifth host Goodboy reads, and the first one you can assign and transition from without opening a browser tab. Moonshot joins the provider list with Kimi K3, and the Plans lens finally works like every other lens.
