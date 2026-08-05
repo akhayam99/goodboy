@@ -2,10 +2,14 @@ import { useState } from 'react';
 import type { WorkflowBlockReason } from '../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../blockCopy';
 
+type StartParams = {
+  readonly isConfirmed: boolean;
+};
+
 type Params = {
   readonly blockReason: WorkflowBlockReason | null;
   readonly title?: string;
-  readonly onStart: () => void | Promise<void>;
+  readonly onStart: (params: StartParams) => void | Promise<void>;
 };
 
 export const useStartAnywayConfirm = ({
@@ -16,14 +20,14 @@ export const useStartAnywayConfirm = ({
   const [isBusy, setIsBusy] = useState(false);
   const [isArmed, setIsArmed] = useState(false);
 
-  const start = async () => {
+  const start = async ({ isConfirmed }: StartParams) => {
     if (isBusy) {
       return;
     }
     setIsBusy(true);
     setIsArmed(false);
     try {
-      await onStart();
+      await onStart({ isConfirmed });
     } finally {
       setIsBusy(false);
     }
@@ -41,9 +45,9 @@ export const useStartAnywayConfirm = ({
         setIsArmed(true);
         return;
       }
-      void start();
+      void start({ isConfirmed: false });
     },
-    onConfirm: () => void start(),
+    onConfirm: () => void start({ isConfirmed: true }),
     onCancel: () => setIsArmed(false),
   };
 };

@@ -259,7 +259,12 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     try {
       if (agent.status === 'pending') {
-        await activateWorkflowAgent(task.id, agent.id, undefined, 'agent');
+        await activateWorkflowAgent({
+          sessionId: task.id,
+          agentId: agent.id,
+          focus: 'agent',
+          bypassGate: isConfirmed,
+        });
         return;
       }
       await spawnAgent(task.id, {

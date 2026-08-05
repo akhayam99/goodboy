@@ -94,14 +94,15 @@ const nextAgent: Agent = {
   status: 'pending',
 };
 
-const buildHarness = (turnKind: 'idle' | 'running') => {
+const buildHarness = (turnKind: 'idle' | 'running' | 'unseeded') => {
   const activateWorkflowAgent = vi.fn();
   const orchestrateNextStep = vi.fn();
   const state = {
     sessions: [session],
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
     sessionPhaseRuns: { [SESSION_ID]: [stuckAgent, nextAgent] },
-    agentTurnState: { [STUCK]: { kind: turnKind, lastActivityAt: NOW } },
+    agentTurnState:
+      turnKind === 'unseeded' ? {} : { [STUCK]: { kind: turnKind, lastActivityAt: NOW } },
     activateWorkflowAgent,
     orchestrateNextStep,
     refreshUnreadWorkspaces: vi.fn(),
@@ -172,7 +173,7 @@ describe('skipStuckStepAndAdvance', () => {
     vi.clearAllMocks();
   });
 
-  it('skips a paused running step and activates the next pending step', async () => {
+  it('skips a paused step and starts the next one past the gate the operator just acknowledged', async () => {
     const { run, activateWorkflowAgent } = buildHarness('idle');
 
     await run(SESSION_ID, RUN_ID);
@@ -181,11 +182,25 @@ describe('skipStuckStepAndAdvance', () => {
       STUCK,
       expect.objectContaining({ status: 'skipped' }),
     );
-    expect(activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, NEXT, undefined, 'agent');
+    expect(activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: NEXT,
+      focus: 'agent',
+      bypassGate: true,
+    });
   });
 
   it('does not skip a step with a live turn', async () => {
     const { run, activateWorkflowAgent } = buildHarness('running');
+
+    await run(SESSION_ID, RUN_ID);
+
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+    expect(activateWorkflowAgent).not.toHaveBeenCalled();
+  });
+
+  it('refuses a background session where the persisted status is the only signal', async () => {
+    const { run, activateWorkflowAgent } = buildHarness('unseeded');
 
     await run(SESSION_ID, RUN_ID);
 

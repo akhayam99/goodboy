@@ -19,15 +19,25 @@ import {
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import { fanOutClusters, selectFanOutPlan } from './clusterImplementation';
 import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
+import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
 
+export type ActivateWorkflowAgentParams = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly explicitPlanId?: PlanId;
+  readonly focus?: SpawnFocus;
+  readonly bypassGate?: boolean;
+};
+
 export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
-  return async (
-    sessionId: SessionId,
-    agentId: AgentId,
-    explicitPlanId?: PlanId,
-    focus: SpawnFocus = 'none',
-  ) => {
+  return async ({
+    sessionId,
+    agentId,
+    explicitPlanId,
+    focus = 'none',
+    bypassGate = false,
+  }: ActivateWorkflowAgentParams) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
     if (!agent || !agent.stepId) {
@@ -37,6 +47,16 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session || session.workflowRuns.length === 0) {
       throw new Error('session has no workflow');
+    }
+
+    if (bypassGate !== true) {
+      const blocked = await findWorkflowActivationBlock({
+        sessionId,
+        workflowRunId: agent.workflowRunId,
+      });
+      if (blocked !== null) {
+        throw new WorkflowGateError({ reason: blocked });
+      }
     }
 
     const run = session.workflowRuns.find((r) => r.id === agent.workflowRunId);

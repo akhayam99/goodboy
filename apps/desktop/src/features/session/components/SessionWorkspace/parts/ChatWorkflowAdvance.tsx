@@ -13,6 +13,11 @@ type Props = {
   readonly workflow: Workflow;
 };
 
+type AdvanceParams = {
+  readonly step: Step;
+  readonly isConfirmed: boolean;
+};
+
 export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Props) => {
   const phaseRuns = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -58,14 +63,19 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
     return null;
   }
 
-  const onAdvance = async (step: Step) => {
+  const onAdvance = async ({ step, isConfirmed }: AdvanceParams) => {
     const pending = stepAgents.find(
       (agent) => agent.stepId === step.id && agent.status === 'pending',
     );
     if (pending == null) {
       return;
     }
-    await activateWorkflowAgent(sessionId, pending.id, undefined, 'agent');
+    await activateWorkflowAgent({
+      sessionId,
+      agentId: pending.id,
+      focus: 'agent',
+      bypassGate: isConfirmed,
+    });
   };
 
   return (
@@ -74,7 +84,7 @@ export const ChatWorkflowAdvance = ({ sessionId, workflowRunId, workflow }: Prop
       runs={stepAgents}
       roleModels={roleModels}
       blockReason={state.kind === 'blocked' ? state.reason : null}
-      onAdvance={(step) => void onAdvance(step)}
+      onAdvance={(step, _model, _verbosity, isConfirmed) => void onAdvance({ step, isConfirmed })}
       onForceAdvance={() =>
         void skipStuckStepAndAdvance(sessionId, workflowRunId, { onlyWhenBlocked: true })
       }

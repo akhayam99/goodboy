@@ -19,6 +19,7 @@ export type Props = {
     step: Step,
     model: string,
     verbosity: VerbosityLevel | undefined,
+    isConfirmed: boolean,
   ) => void | Promise<void>;
   readonly onForceAdvance?: () => void | Promise<void>;
   readonly blockReason?: WorkflowBlockReason | null;
@@ -76,11 +77,11 @@ export const WorkflowNextStepCta = ({
   const routing = resolveStepRouting({ step: next, kind, roleModels });
   const advance = useStartAnywayConfirm({
     blockReason,
-    onStart: async () => {
+    onStart: async ({ isConfirmed }) => {
       if (next == null) {
         return;
       }
-      await onAdvance(next, routing.model, next.verbosity);
+      await onAdvance(next, routing.model, next.verbosity, isConfirmed);
     },
   });
   const doForce = async () => {

@@ -138,6 +138,10 @@ describe('starting a workflow lands on the workflow detail', () => {
 
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID);
 
-    expect(activateWorkflowAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-0', undefined, 'none');
+    expect(activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'agent-0',
+      focus: 'none',
+    });
   });
 });

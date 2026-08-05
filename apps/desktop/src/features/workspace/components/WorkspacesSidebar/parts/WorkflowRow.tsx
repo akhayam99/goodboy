@@ -534,14 +534,14 @@ export const WorkflowRow = ({
                 runs={wfAgents}
                 roleModels={roleModels}
                 blockReason={wfBlockReason}
-                onAdvance={(step) => {
+                onAdvance={(step, _model, _verbosity, isConfirmed) => {
                   const pending = wfAgents.find(
                     (agent) => agent.stepId === step.id && agent.status === 'pending',
                   );
                   if (pending == null) {
                     return;
                   }
-                  void onStartStepAgent({ agent: pending, isConfirmed: true });
+                  void onStartStepAgent({ agent: pending, isConfirmed });
                 }}
                 onForceAdvance={() =>
                   void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })

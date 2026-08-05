@@ -17,6 +17,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../store/store';
 import { resolveSessionRepo } from '../../store/slices/worktrees/resolveSessionRepo';
+import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
 import { PROVIDER_LABEL_LOWER } from '../providers/providers';
 import { isMainWindow } from '../workspace/window';
 import { worktreeDiffFile } from '../worktree/worktree';
@@ -385,7 +386,14 @@ async function advanceNextWorkflowStep(sessionId: SessionId): Promise<void> {
           ),
         );
       if (allPrevDone) {
-        await store.activateWorkflowAgent(sessionId, agent.id, undefined, 'agent');
+        try {
+          await store.activateWorkflowAgent({ sessionId, agentId: agent.id, focus: 'none' });
+        } catch (e) {
+          if (e instanceof WorkflowGateError) {
+            throw new BridgeSafeError(`step not ready: ${e.message}`);
+          }
+          throw e;
+        }
         return;
       }
       break;

@@ -331,12 +331,11 @@ describe('startWorkflowRun', () => {
     const state = baseState(run, agents);
     const { set, get } = harness(state);
     await startWorkflowRun(set, get)(SESSION_ID, 'q' as WorkflowRunId);
-    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith(
-      SESSION_ID,
-      'q-s0',
-      undefined,
-      'none',
-    );
+    expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'q-s0',
+      focus: 'none',
+    });
     expect(state['setFocusedWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, 'q');
     expect(state['setActiveLens']).not.toHaveBeenCalled();
   });

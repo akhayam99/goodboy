@@ -4,6 +4,8 @@ import type {
   AgentId,
   ImplementationCluster,
   IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
   PlanId,
   PlanWithCount,
   Session,
@@ -23,12 +25,17 @@ const {
   listConsumptionsForPlanSpy,
   listPlansForSessionSpy,
   fanOutClustersSpy,
+  listOpenQuestionsSpy,
 } = vi.hoisted(() => ({
   addPlanConsumptionSpy: vi.fn(async () => undefined),
   listConsumptionsForPlanSpy: vi.fn(async () => []),
   listPlansForSessionSpy: vi.fn(async () => [] as ReadonlyArray<PlanWithCount>),
   fanOutClustersSpy: vi.fn(async () => undefined),
+  listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
 }));
+
+vi.mock('@goodboy/db', () => ({ listOpenQuestionsForSession: listOpenQuestionsSpy }));
+vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 vi.mock('../../../features/plans/plans', () => ({
   addPlanConsumption: addPlanConsumptionSpy,
@@ -42,6 +49,8 @@ vi.mock('./clusterImplementation', async (importOriginal) => {
 });
 
 import { activateWorkflowAgent } from './activateWorkflowAgent';
+import { WorkflowGateError } from './workflowActivationGate';
+import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WF_ID = 'wf-1' as WorkflowId;
@@ -163,10 +172,91 @@ function mergedSetPartials(set: ReturnType<typeof vi.fn>, state: Record<string, 
   }, {});
 }
 
+const makeOpenQuestion = (overrides: Partial<OpenQuestion> = {}): OpenQuestion => ({
+  id: 'oq-1' as OpenQuestionId,
+  sessionId: SESSION_ID,
+  workflowRunId: RUN_ID,
+  text: 'which database?',
+  suggestedAnswers: [],
+  userAnswer: null,
+  status: 'open',
+  createdAt: NOW,
+  ...overrides,
+});
+
+describe('activateWorkflowAgent, open-question gate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listConsumptionsForPlanSpy.mockResolvedValue([]);
+    listOpenQuestionsSpy.mockResolvedValue([]);
+  });
+
+  it('refuses to start a pending step while its run has an unanswered question', async () => {
+    listOpenQuestionsSpy.mockResolvedValue([makeOpenQuestion()]);
+    const { set, sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    await expect(activate({ sessionId: SESSION_ID, agentId: AGENT_ID })).rejects.toThrow(
+      WORKFLOW_BLOCK_COPY.questions,
+    );
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it('blocks the mobile bridge shape too: no caller-side gate, no bypass flag', async () => {
+    listOpenQuestionsSpy.mockResolvedValue([makeOpenQuestion()]);
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    const error = await activate({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      focus: 'none',
+    }).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(WorkflowGateError);
+    expect((error as WorkflowGateError).reason).toBe('questions');
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('lets the skip path through: bypassGate starts the step despite open questions', async () => {
+    listOpenQuestionsSpy.mockResolvedValue([makeOpenQuestion()]);
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, bypassGate: true });
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a question already answered and starts the step', async () => {
+    listOpenQuestionsSpy.mockResolvedValue([]);
+    const { sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('activateWorkflowAgent, plan consumption by kind', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     listConsumptionsForPlanSpy.mockResolvedValue([]);
+    listOpenQuestionsSpy.mockResolvedValue([]);
   });
 
   it('a generic step after a plan consumes it and receives the plan body', async () => {
@@ -176,7 +266,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
     const [payload] = sendTurn.mock.calls[0]!;
@@ -192,7 +282,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
     const [payload] = sendTurn.mock.calls[0]!;
@@ -213,7 +303,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       autoRun: true,
     });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
@@ -231,7 +321,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       autoRun: false,
     });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
   });
@@ -247,7 +337,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan({ clusters, status: 'consumed' })],
     });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
     expect(fanOutClustersSpy).not.toHaveBeenCalled();
@@ -263,7 +353,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan({ status: 'consumed' })],
     });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
   });
@@ -279,7 +369,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       ],
     });
 
-    await activate(SESSION_ID, AGENT_ID, EXPLICIT_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, explicitPlanId: EXPLICIT_ID });
 
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(EXPLICIT_ID, AGENT_ID);
     expect(addPlanConsumptionSpy).not.toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
@@ -295,7 +385,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     const merged = mergedSetPartials(set, state);
     expect(merged.selectedAgentId).toBeUndefined();
@@ -310,7 +400,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     });
     Object.assign(state, { activeLens: { [SESSION_ID]: 'workflows' } });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, 'agent');
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, focus: 'agent' });
 
     const merged = mergedSetPartials(set, state);
     expect(merged.selectedAgentId).toBeUndefined();
@@ -328,7 +418,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       selectedAgentId: { [SESSION_ID]: 'other-agent' },
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, 'agent');
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, focus: 'agent' });
 
     const merged = mergedSetPartials(set, state);
     expect((merged.selectedAgentId as Record<string, unknown>)[SESSION_ID]).toBe(AGENT_ID);
@@ -341,7 +431,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, 'none');
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, focus: 'none' });
 
     const merged = mergedSetPartials(set, state);
     expect(merged.selectedAgentId).toBeUndefined();
@@ -356,7 +446,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan({ status: 'consumed' })],
     });
 
-    await activate(SESSION_ID, AGENT_ID, PLAN_ID);
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, explicitPlanId: PLAN_ID });
 
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
   });
@@ -373,7 +463,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       autoRun: true,
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, 'none');
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, focus: 'none' });
 
     expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
     const merged = mergedSetPartials(set, state);
@@ -388,7 +478,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, 'none');
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, focus: 'none' });
 
     const merged = mergedSetPartials(set, state);
     expect(merged.selectedAgentId).toBeUndefined();
@@ -406,7 +496,12 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan({ id: EXPLICIT_ID, bodyMd: 'explicit body' })],
     });
 
-    await activate(SESSION_ID, AGENT_ID, EXPLICIT_ID, 'none');
+    await activate({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      explicitPlanId: EXPLICIT_ID,
+      focus: 'none',
+    });
 
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(EXPLICIT_ID, AGENT_ID);
     const merged = mergedSetPartials(set, state);
@@ -421,7 +516,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, 'none');
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, focus: 'none' });
 
     const touchesSelection = set.mock.calls.some((call) => {
       const updater = call[0] as (s: Record<string, unknown>) => Record<string, unknown>;
@@ -437,7 +532,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await activate(SESSION_ID, AGENT_ID, undefined, 'agent');
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, focus: 'agent' });
 
     const merged = mergedSetPartials(set, state);
     expect((merged.selectedAgentId as Record<string, unknown>)[SESSION_ID]).toBe(AGENT_ID);
@@ -450,9 +545,9 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
       plans: [makePlan()],
     });
 
-    await expect(activate(SESSION_ID, 'nope' as AgentId, undefined, 'none')).rejects.toThrow(
-      'agent not found or not a workflow agent',
-    );
+    await expect(
+      activate({ sessionId: SESSION_ID, agentId: 'nope' as AgentId, focus: 'none' }),
+    ).rejects.toThrow('agent not found or not a workflow agent');
     expect(set).not.toHaveBeenCalled();
     expect(sendTurn).not.toHaveBeenCalled();
   });

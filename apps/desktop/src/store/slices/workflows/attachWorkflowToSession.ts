@@ -164,7 +164,11 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       } else if (autoRun) {
         void get().maybeAutoAdvanceWorkflow(sessionId);
       } else if (newAgents.length > 0) {
-        void get().activateWorkflowAgent(sessionId, newAgents[0]!.id, undefined, 'none');
+        void get().activateWorkflowAgent({
+          sessionId,
+          agentId: newAgents[0]!.id,
+          focus: 'none',
+        });
       }
     }
   };

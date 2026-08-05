@@ -518,7 +518,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           model: result.model,
           usage: result.usage,
         });
-        await get().activateWorkflowAgent(sessionId, agent.id, undefined, 'agent');
+        await get().activateWorkflowAgent({ sessionId, agentId: agent.id, focus: 'agent' });
         return;
       }
       await persistOrchestrationOutcome({

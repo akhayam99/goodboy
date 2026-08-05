@@ -112,12 +112,12 @@ describe('ChatWorkflowAdvance', () => {
 
     fireEvent.click(screen.getByTestId('workflow-next-step-cta'));
 
-    expect(store.activateWorkflowAgent).toHaveBeenCalledWith(
-      SESSION_ID,
-      'agent-1',
-      undefined,
-      'agent',
-    );
+    expect(store.activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'agent-1',
+      focus: 'agent',
+      bypassGate: false,
+    });
   });
 
   it('names the blocker instead of hiding the CTA while the summarizer runs', () => {
@@ -141,12 +141,12 @@ describe('ChatWorkflowAdvance', () => {
     fireEvent.click(cta);
     expect(store.activateWorkflowAgent).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Start anyway' }));
-    expect(store.activateWorkflowAgent).toHaveBeenCalledWith(
-      SESSION_ID,
-      'agent-1',
-      undefined,
-      'agent',
-    );
+    expect(store.activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'agent-1',
+      focus: 'agent',
+      bypassGate: true,
+    });
   });
 
   it('forces past a stuck step only after an explicit confirmation', () => {
