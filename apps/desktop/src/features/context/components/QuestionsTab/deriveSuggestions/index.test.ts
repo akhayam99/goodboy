@@ -14,8 +14,12 @@ describe('deriveSuggestions', () => {
     expect(deriveSuggestions('Lo mettiamo in core oppure db?')).toEqual(['core', 'db']);
   });
 
-  it('returns yes/no for a yes-no phrasing', () => {
-    expect(deriveSuggestions('Devo procedere con il refactor?')).toEqual(['sì', 'no']);
+  it('returns english yes/no for an english yes-no phrasing', () => {
+    expect(deriveSuggestions('Should I proceed with the refactor?')).toEqual(['yes', 'no']);
+  });
+
+  it('does not treat an italian opener as a yes-no trigger anymore', () => {
+    expect(deriveSuggestions('Devo procedere con il refactor?')).toEqual([]);
   });
 
   it('returns nothing for an open-ended question', () => {

@@ -1,5 +1,4 @@
-const YES_NO_RE =
-  /^\s*(vuoi|devo|dobbiamo|posso|possiamo|procedo|procediamo|conviene|ti torna|should|shall|do you|does|did|can|could|is|are|was|were|may|would)\b/i;
+const YES_NO_RE = /^\s*(should|shall|do you|does|did|can|could|is|are|was|were|may|would)\b/i;
 
 const SEPARATORS = [' oppure ', ' or ', ' o '];
 
@@ -66,7 +65,7 @@ export const deriveSuggestions = (question: string): ReadonlyArray<string> => {
   }
 
   if (YES_NO_RE.test(trimmed)) {
-    return ['sì', 'no'];
+    return ['yes', 'no'];
   }
   return [];
 };

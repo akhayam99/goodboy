@@ -118,7 +118,6 @@ const RUN_ID = 'run-1' as ProviderRunId;
 const AT: IsoDateTime = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 
 describe('store unknownPayloadCounts', () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   let useAppStore: (typeof import('../../store/store'))['useAppStore'];
 
   beforeEach(async () => {

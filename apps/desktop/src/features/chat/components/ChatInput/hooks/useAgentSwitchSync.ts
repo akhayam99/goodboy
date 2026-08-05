@@ -87,5 +87,5 @@ export function useAgentSwitchSync({
     setRightSizeDismissed(false);
     setScopePending(null);
     setScopeNudgeEventId(null);
-  }, [selectedAgentId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedAgentId]);
 }

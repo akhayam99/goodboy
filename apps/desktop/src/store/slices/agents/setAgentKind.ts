@@ -29,8 +29,9 @@ export const setAgentKind = (set: SetFn, get: GetFn) => {
       };
     });
     void invokeAgentSetKind(agentId, kind).catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn('[store] failed to persist agent kind', err);
+      if (import.meta.env.DEV) {
+        console.warn('[store] failed to persist agent kind', err);
+      }
     });
   };
 };
