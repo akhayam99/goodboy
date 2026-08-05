@@ -7,6 +7,31 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.58
+
+Deleting a session no longer leaves an orphaned worktree behind, the issue-to-PR loop closes on GitHub and GitLab alike, and Linear and GitLab issue descriptions get the same in-app editor GitHub already had.
+
+### [#1202] Deleting a session cleans up its worktree, every time
+
+Deleting a session could fail with "Directory not empty" when a dev server was still running inside its worktree: git de-registered the folder anyway and it stayed on disk forever. Closing a session now kills every process in its terminal session, not just the shell, waits for the terminals to close before touching the filesystem, retries the removal and falls back to deleting the folder directly if it still won't budge, and reports the path if it truly can't. On startup, folders git or the app lost track of are found and offered up for cleanup, never removed automatically.
+
+### [#1205] The issue-to-PR loop closes on GitHub and GitLab
+
+An issue linked to a session after its pull request was already open never got a `Closes #N` line, so it never auto-closed. Linked issues now get a "Link issue" action that adds the reference to an already open PR. On GitLab, a work item now also completes when its merge request merges, matching the behavior GitHub already had.
+
+### [#1204] Edit a Linear or GitLab issue description in place
+
+GitHub issue descriptions became editable in-app in the last release. Linear and GitLab issues now get the same editor, writing straight back to the provider.
+
+### [#1200] A resolver's verdicts survive a restart
+
+Restarting the app used to wipe a resolver's decisions on a review thread, and the "no verdicts" warning would blame the agent for threads it had actually resolved. Verdicts are now rebuilt from the session transcript on load, so a restart no longer loses them.
+
+### Smaller fixes
+
+- [#1201] The "update available" chip pulses three times, then rests, instead of forever
+- [#1198] Spawning a resolver shows a status dot instead of a spinner
+
 ## Goodboy v0.1.57
 
 One visual grammar across every screen, a provider you connect in one click, diffs side by side, and the round where a workflow's orchestrator stopped hiding what it decided.
