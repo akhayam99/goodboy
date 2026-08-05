@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { Agent, Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { WorkflowGateError } from '../../../../store/slices/workflows/workflowActivationGate';
+import { notifyWorkflowGateBlock } from '../../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import type { SpawnNode } from '../../../orchestration/components/SpawnTree/lib';
 import type { RunLaneModel } from '../../../orchestration/hooks/useWorkspaceRuns';
@@ -77,12 +77,7 @@ export const PipelineSection = ({
         try {
           await activateWorkflowAgent({ sessionId, agentId: agent.id, focus: 'none' });
         } catch (error) {
-          if (!(error instanceof WorkflowGateError)) {
-            throw error;
-          }
-          void emitNotification('error', 'warning', 'workflow step held back', error.message, {
-            sessionId,
-          });
+          notifyWorkflowGateBlock({ error, sessionId, emitNotification });
         }
       },
     };
