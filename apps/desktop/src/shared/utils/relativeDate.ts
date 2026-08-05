@@ -1,6 +1,4 @@
 import { APP_LOCALE } from './appLocale';
-import { formatShortDate } from './formatShortDate';
-import { formatShortDayMonth } from './formatShortDayMonth';
 import { toValidDate } from './toValidDate';
 
 export const formatRelativeDuration = (fromIso: string, toIso?: string): string => {
@@ -80,6 +78,23 @@ type CalendarDayParams = {
 const startOfCalendarDay = ({ date }: CalendarDayParams): number =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
+type DayMonthParams = {
+  readonly date: Date;
+  readonly withYear: boolean;
+};
+
+const dayFirstDate = ({ date, withYear }: DayMonthParams): string => {
+  const parts = new Intl.DateTimeFormat(APP_LOCALE, {
+    day: 'numeric',
+    month: 'short',
+    ...(withYear && { year: 'numeric' }),
+  }).formatToParts(date);
+  const valueOf = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((part) => part.type === type)?.value ?? '';
+  const year = withYear ? ` ${valueOf('year')}` : '';
+  return `${valueOf('day')} ${valueOf('month').toLowerCase()}${year}`;
+};
+
 type FormatAdaptiveAgeParams = {
   readonly iso: string | number;
   readonly nowMs?: number;
@@ -107,8 +122,5 @@ export const formatAdaptiveAge = ({ iso, nowMs }: FormatAdaptiveAgeParams): stri
   if (dayGap === 1) {
     return 'yesterday';
   }
-  if (date.getFullYear() === now.getFullYear()) {
-    return formatShortDayMonth({ iso }).toLowerCase();
-  }
-  return formatShortDate({ iso }).toLowerCase();
+  return dayFirstDate({ date, withYear: date.getFullYear() !== now.getFullYear() });
 };

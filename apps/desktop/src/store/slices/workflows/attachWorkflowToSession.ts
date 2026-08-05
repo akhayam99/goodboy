@@ -112,6 +112,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       autoRun,
       triggerMode,
       executionMode,
+      createdAt: now,
       ...(chainAfterId && { chainAfterId }),
       ...(goal && { goal }),
     };

@@ -182,6 +182,21 @@ describe('WorkflowsPane', () => {
     expect(screen.getByRole('heading', { name: 'Workflows' })).toBeDefined();
   });
 
+  it('lists the newest run first and stamps a run that carries an attach time', () => {
+    const { container } = render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1', 'run-2'],
+          runOverrides: { 'run-2': { createdAt: '2025-12-12T09:00:00.000Z' } },
+        })}
+      />,
+    );
+    const body = container.textContent ?? '';
+
+    expect(body.indexOf('Second workflow')).toBeLessThan(body.indexOf('First workflow'));
+    expect(screen.getAllByText('12 dec 2025')).toHaveLength(1);
+  });
+
   it('shows static run progress, duration, last step, and tracked cost', () => {
     store.sessionPhaseRuns = {
       [SESSION_ID]: [

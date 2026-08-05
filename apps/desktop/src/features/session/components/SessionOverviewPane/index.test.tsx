@@ -313,7 +313,7 @@ describe('SessionOverviewPane header band', () => {
     expect(screen.getByTestId('branch-chip').textContent).toBe('ak/feat-thing');
     expect(screen.getByTestId('cost-chip')).toBeDefined();
     expect(screen.getByTestId('summarizer-badge')).toBeDefined();
-    expect(screen.getByText(/^jun 22/)).toBeDefined();
+    expect(screen.getByText(/^22 jun/)).toBeDefined();
   });
 
   it('omits the branch chip when no branch is known', () => {

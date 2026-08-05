@@ -139,6 +139,10 @@ describe('session_workflows trigger-mode queries', () => {
     });
 
     afterAll(() => {
+      if (hostZone == null) {
+        delete process.env['TZ'];
+        return;
+      }
       process.env['TZ'] = hostZone;
     });
 

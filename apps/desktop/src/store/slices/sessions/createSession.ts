@@ -208,6 +208,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
                 autoRun: runAutoRun,
                 triggerMode: 'immediate' as const,
                 executionMode: 'static' as const,
+                createdAt: now,
               },
             ]
           : [],

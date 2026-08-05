@@ -174,6 +174,27 @@ describe('maybeAutoAdvanceWorkflow', () => {
     });
   });
 
+  it('orchestrates the highest-ordinal dynamic run when two are eligible at once', async () => {
+    const SECOND_ID = 'run-2' as WorkflowRunId;
+    const session = makeSession();
+    const dynamicRun = (id: WorkflowRunId, ordinal: number): WorkflowRun => ({
+      ...session.workflowRuns[0]!,
+      id,
+      ordinal,
+      executionMode: 'dynamic',
+    });
+    const state = baseState([], []);
+    state['sessions'] = [
+      { ...session, workflowRuns: [dynamicRun(SECOND_ID, 1), dynamicRun(RUN_ID, 0)] },
+    ];
+    const { set, get } = harness(state);
+
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+
+    expect(state['orchestrateNextStep']).toHaveBeenCalledTimes(1);
+    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, SECOND_ID);
+  });
+
   it('does not skip past a step that failed', async () => {
     const state = baseState(
       ['s0', 's1'],
