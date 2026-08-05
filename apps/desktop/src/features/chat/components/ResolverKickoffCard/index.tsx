@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Markdown } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { codeFenceMarkers } from '../../utils/codeFenceMarkers';
@@ -10,12 +11,13 @@ import { ThreadCard } from './ThreadCard';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'resolver_kickoff' }>;
+  readonly sessionId?: SessionId | null;
 };
 
 const Icon = CONCEPT_ICONS.resolve;
 const TONE = CONCEPT_TONE.resolve;
 
-export const ResolverKickoffCard = ({ item }: Props) => {
+export const ResolverKickoffCard = ({ item, sessionId = null }: Props) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -30,7 +32,7 @@ export const ResolverKickoffCard = ({ item }: Props) => {
       <ul className="flex min-w-0 flex-col gap-2">
         {item.threads.map((thread) => (
           <li key={thread.threadId ?? `thread-${thread.position}`} className="min-w-0">
-            <ThreadCard thread={thread} />
+            <ThreadCard thread={thread} sessionId={sessionId} />
           </li>
         ))}
       </ul>

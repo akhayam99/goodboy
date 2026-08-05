@@ -214,6 +214,17 @@ export const useResolverAgentsLane = ({ session }: Params) => {
     return map;
   }, [prComments]);
 
+  const threadIdByCommentUrl = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const comment of prComments) {
+      if (comment.source !== 'review' || comment.threadId == null) {
+        continue;
+      }
+      map.set(comment.url, comment.threadId);
+    }
+    return map;
+  }, [prComments]);
+
   const diffCommentByAgentId = useMemo(() => {
     const map = new Map<AgentId, DiffComment>();
     for (const comment of diffComments) {
@@ -241,7 +252,12 @@ export const useResolverAgentsLane = ({ session }: Params) => {
 
   const onJump = useCallback(
     (agent: Agent) => {
-      const threadId = agentThreadIds(agent)[0];
+      const linkedThreadId = agentThreadIds(agent)[0] ?? null;
+      const matchedThreadId =
+        agent.sourceCommentUrl != null
+          ? (threadIdByCommentUrl.get(agent.sourceCommentUrl) ?? null)
+          : null;
+      const threadId = linkedThreadId ?? matchedThreadId;
       if (threadId != null && prNumber != null) {
         window.dispatchEvent(
           new CustomEvent('goodboy:open-github-session', {
@@ -254,7 +270,7 @@ export const useResolverAgentsLane = ({ session }: Params) => {
         void openUrl(agent.sourceCommentUrl);
       }
     },
-    [prNumber, sessionId],
+    [prNumber, sessionId, threadIdByCommentUrl],
   );
 
   const onForceNext = useCallback(() => {
