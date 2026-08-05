@@ -13,6 +13,7 @@ export type PublishPrReviewResult = {
   readonly published: number;
   readonly stale: ReadonlyArray<PrReviewDraft>;
   readonly failed: ReadonlyArray<{ readonly draft: PrReviewDraft; readonly error: string }>;
+  readonly mismatched: ReadonlyArray<PrReviewDraft>;
 };
 
 export type { GetFn, SetFn } from '../../slice-types';

@@ -13,7 +13,7 @@ const h = vi.hoisted(() => {
     addReviewDraft: vi.fn(async () => undefined),
     updateReviewDraft: vi.fn(async () => undefined),
     discardReviewDraft: vi.fn(async () => undefined),
-    publishPrReview: vi.fn(async () => ({ published: 1, stale: [], failed: [] })),
+    publishPrReview: vi.fn(async () => ({ published: 1, stale: [], failed: [], mismatched: [] })),
     setAgentDraft: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
   };
@@ -116,7 +116,12 @@ beforeEach(() => {
   h.state.updateReviewDraft.mockClear();
   h.state.discardReviewDraft.mockClear();
   h.state.publishPrReview.mockClear();
-  h.state.publishPrReview.mockResolvedValue({ published: 1, stale: [], failed: [] });
+  h.state.publishPrReview.mockResolvedValue({
+    published: 1,
+    stale: [],
+    failed: [],
+    mismatched: [],
+  });
   h.state.setAgentDraft.mockClear();
   h.showToast.mockClear();
   localStorage.clear();
@@ -178,6 +183,7 @@ describe('ReviewBoardPane', () => {
       published: number;
       stale: never[];
       failed: never[];
+      mismatched: never[];
     }) => void = () => undefined;
     h.state.publishPrReview.mockReturnValue(
       new Promise((resolve) => {
@@ -198,7 +204,7 @@ describe('ReviewBoardPane', () => {
     const pending = await screen.findByRole('button', { name: 'Publishing…' });
     expect(pending.hasAttribute('disabled')).toBe(true);
 
-    resolvePublish({ published: 1, stale: [], failed: [] });
+    resolvePublish({ published: 1, stale: [], failed: [], mismatched: [] });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Publish review (1)' })).toBeDefined();
     });

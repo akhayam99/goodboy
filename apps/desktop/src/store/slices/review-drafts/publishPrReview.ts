@@ -228,8 +228,14 @@ export const publishPrReview = (set: SetFn, get: GetFn) => {
     if (repo == null) {
       throw new Error(`session repository not found: ${sessionId}`);
     }
-    const drafts = (get().reviewDrafts[sessionId] ?? []).filter(
+    const openDrafts = (get().reviewDrafts[sessionId] ?? []).filter(
       (draft) => draft.status === 'draft',
+    );
+    const drafts = openDrafts.filter(
+      (draft) => draft.repo === target.repo && draft.prNumber === target.prNumber,
+    );
+    const mismatched = openDrafts.filter(
+      (draft) => draft.repo !== target.repo || draft.prNumber !== target.prNumber,
     );
 
     const diff = await fetchCurrentDiff({ get, workspace, repo, target });
@@ -271,6 +277,11 @@ export const publishPrReview = (set: SetFn, get: GetFn) => {
         ),
       },
     }));
-    return { published: outcome.publishedIds.length, stale, failed: outcome.failed };
+    return {
+      published: outcome.publishedIds.length,
+      stale,
+      failed: outcome.failed,
+      mismatched,
+    };
   };
 };

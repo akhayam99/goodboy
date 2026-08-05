@@ -384,7 +384,11 @@ export const PrDetailPanel = ({
         showToast('error', `Review not posted: ${failure.error}`);
         return;
       }
-      showToast('success', VERDICT_TOAST[verdict]);
+      const mismatchedNote =
+        result.mismatched.length > 0
+          ? `, ${result.mismatched.length} left for a different pull request`
+          : '';
+      showToast('success', `${VERDICT_TOAST[verdict]}${mismatchedNote}`);
     } catch (err) {
       showToast('error', formatError(err));
     } finally {

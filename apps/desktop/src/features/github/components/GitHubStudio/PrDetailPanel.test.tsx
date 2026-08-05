@@ -132,7 +132,8 @@ const h = vi.hoisted(() => {
           published: number;
           stale: ReadonlyArray<{ id: string }>;
           failed: ReadonlyArray<{ draft: { id: string }; error: string }>;
-        }> => ({ published: 0, stale: [], failed: [] }),
+          mismatched: ReadonlyArray<{ id: string }>;
+        }> => ({ published: 0, stale: [], failed: [], mismatched: [] }),
       ),
       editPr: vi.fn(async () => undefined),
       spawnAgent: vi.fn(async () => 'agent-1'),
@@ -389,6 +390,7 @@ describe('PrDetailPanel', () => {
       published: 0,
       stale: [],
       failed: [{ draft: { id: 'draft-1' }, error: 'resource not accessible by integration' }],
+      mismatched: [],
     });
 
     renderPanel();
