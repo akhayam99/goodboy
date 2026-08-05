@@ -40,7 +40,11 @@ const ISSUE: GitlabIssue = {
   labels: [],
 };
 
-const note = (id: number): GitlabIssueNote => ({
+type Params = {
+  readonly id: number;
+};
+
+const note = ({ id }: Params): GitlabIssueNote => ({
   id,
   body: `note ${id}`,
   system: false,
@@ -50,7 +54,7 @@ const note = (id: number): GitlabIssueNote => ({
 
 beforeEach(() => {
   h.list.mockReset();
-  h.list.mockResolvedValue([note(1)]);
+  h.list.mockResolvedValue([note({ id: 1 })]);
   h.createNote.mockClear();
   h.store.workspaceIntegrations = {
     [WORKSPACE_ID]: [{ provider: 'gitlab', config: { host: 'https://gitlab.com' } }],

@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { GitlabIssue } from './client';
 import { projectPathFromIssue } from './issueProjectPath';
 
-const issue = (full: string): GitlabIssue => ({
+type Params = {
+  readonly full: string;
+};
+
+const issue = ({ full }: Params): GitlabIssue => ({
   id: 1,
   iid: 1,
   projectId: 1,
@@ -18,14 +22,14 @@ const issue = (full: string): GitlabIssue => ({
 
 describe('projectPathFromIssue', () => {
   it('strips the issue suffix from the full reference', () => {
-    expect(projectPathFromIssue({ issue: issue('acme/web#7') })).toBe('acme/web');
+    expect(projectPathFromIssue({ issue: issue({ full: 'acme/web#7' }) })).toBe('acme/web');
   });
 
   it('returns null when the reference has no project prefix', () => {
-    expect(projectPathFromIssue({ issue: issue('#7') })).toBeNull();
+    expect(projectPathFromIssue({ issue: issue({ full: '#7' }) })).toBeNull();
   });
 
   it('returns null when the reference is empty', () => {
-    expect(projectPathFromIssue({ issue: issue('') })).toBeNull();
+    expect(projectPathFromIssue({ issue: issue({ full: '' }) })).toBeNull();
   });
 });
