@@ -33,6 +33,7 @@ type Store = {
   readonly closePr: ReturnType<typeof vi.fn>;
   readonly reopenPr: ReturnType<typeof vi.fn>;
   readonly requestReview: ReturnType<typeof vi.fn>;
+  readonly publishPrReview: ReturnType<typeof vi.fn>;
   readonly editPr: ReturnType<typeof vi.fn>;
   readonly spawnAgent: ReturnType<typeof vi.fn>;
   readonly selectAgent: ReturnType<typeof vi.fn>;
@@ -95,6 +96,7 @@ const h = vi.hoisted(() => {
     secondPr,
     detail,
     thread,
+    showToast: vi.fn(),
     prs: [] as ReadonlyArray<PullRequestState>,
     store: {
       sessions: [
@@ -125,6 +127,7 @@ const h = vi.hoisted(() => {
       closePr: vi.fn(async () => undefined),
       reopenPr: vi.fn(async () => undefined),
       requestReview: vi.fn(async () => undefined),
+      publishPrReview: vi.fn(async () => ({ published: 0, stale: [], failed: [] })),
       editPr: vi.fn(async () => undefined),
       spawnAgent: vi.fn(async () => 'agent-1'),
       selectAgent: vi.fn(async () => undefined),
@@ -162,8 +165,26 @@ vi.mock('../../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => null,
 }));
 
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: h.showToast }),
+}));
+
 vi.mock('./PrActionBar', () => ({
-  PrActionBar: () => <div>Pull request actions</div>,
+  PrActionBar: ({
+    onSubmitVerdict,
+  }: {
+    readonly onSubmitVerdict: (submission: { verdict: string; body: string }) => void;
+  }) => (
+    <div>
+      Pull request actions
+      <button
+        type="button"
+        onClick={() => onSubmitVerdict({ verdict: 'approve', body: 'ship it' })}
+      >
+        Approve pull request
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('./PrConversation', () => ({
@@ -207,6 +228,8 @@ beforeEach(() => {
   h.store.sessionGithubPrs = { [h.sessionId]: [h.pr] };
   h.store.sessionSelectedPrNumber = {};
   h.store.selectSessionPr.mockClear();
+  h.store.publishPrReview.mockClear();
+  h.showToast.mockClear();
 });
 
 afterEach(cleanup);
@@ -335,6 +358,24 @@ describe('PrDetailPanel', () => {
     await waitFor(() => expect(h.store.selectAgent).toHaveBeenCalledWith(h.sessionId, 'agent-1'));
     expect(h.store.setActiveLens).toHaveBeenCalledWith(h.sessionId, 'resolve');
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('publishes the verdict against the pull request selected in the panel', async () => {
+    h.store.sessionGithubPrs = { [h.sessionId]: [h.pr, h.secondPr] };
+    h.store.sessionSelectedPrNumber = { [h.sessionId]: h.secondPr.number };
+
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Approve pull request' }));
+
+    await waitFor(() => expect(h.store.publishPrReview).toHaveBeenCalledOnce());
+    expect(h.store.publishPrReview).toHaveBeenCalledWith(h.sessionId, {
+      verdict: 'approve',
+      body: 'ship it',
+      target: { provider: 'github', repo: 'goodboy/goodboy', prNumber: h.secondPr.number },
+    });
+    await waitFor(() =>
+      expect(h.showToast).toHaveBeenCalledWith('success', 'Pull request approved'),
+    );
   });
 
   it('drives the active pr and switcher selection through store state', () => {

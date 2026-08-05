@@ -19,4 +19,4 @@ export const createReviewDraftsSlice = (set: SetFn, get: GetFn) => {
 
 export { computeStaleDrafts } from './computeStaleDrafts';
 export type { AddReviewDraftInput } from './addReviewDraft';
-export type { PublishPrReviewResult, PublishPrReviewVerdict } from './types';
+export type { PublishPrReviewOpts, PublishPrReviewResult } from './types';

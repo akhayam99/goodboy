@@ -87,8 +87,8 @@ import { createReviewPrsSlice } from './slices/review-prs';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import type {
   AddReviewDraftInput,
+  PublishPrReviewOpts,
   PublishPrReviewResult,
-  PublishPrReviewVerdict,
 } from './slices/review-drafts';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
@@ -544,10 +544,7 @@ export type AppActions = {
     agentId: AgentId,
     markers: ReadonlyArray<ExtractedReviewComment>,
   ): Promise<void>;
-  publishPrReview(
-    sessionId: SessionId,
-    opts: { verdict: PublishPrReviewVerdict; body: string },
-  ): Promise<PublishPrReviewResult>;
+  publishPrReview(sessionId: SessionId, opts: PublishPrReviewOpts): Promise<PublishPrReviewResult>;
   createMrForSession(
     sessionId: SessionId,
     opts?: { title?: string; description?: string; targetBranch?: string; draft?: boolean },

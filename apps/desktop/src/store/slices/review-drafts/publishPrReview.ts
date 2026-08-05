@@ -24,7 +24,13 @@ import { computeStaleDrafts } from './computeStaleDrafts';
 import { resolveReviewTarget, type ReviewTarget } from './resolveReviewTarget';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { SessionRepo } from '../worktrees/resolveSessionRepo';
-import type { GetFn, PublishPrReviewResult, PublishPrReviewVerdict, SetFn } from './types';
+import type {
+  GetFn,
+  PublishPrReviewOpts,
+  PublishPrReviewResult,
+  PublishPrReviewVerdict,
+  SetFn,
+} from './types';
 
 const VERDICT_EVENT = {
   comment: 'COMMENT',
@@ -205,9 +211,9 @@ const publishGitlab = async ({
 export const publishPrReview = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
-    opts: { verdict: PublishPrReviewVerdict; body: string },
+    opts: PublishPrReviewOpts,
   ): Promise<PublishPrReviewResult> => {
-    const target = resolveReviewTarget({ get, sessionId });
+    const target = opts.target ?? resolveReviewTarget({ get, sessionId });
     if (target == null) {
       throw new Error('no linked pull request or merge request for this session');
     }
