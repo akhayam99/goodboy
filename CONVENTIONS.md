@@ -87,6 +87,11 @@ chore(repo): bump pnpm to 10.33.4
 
 ## Issues as task manager
 
+Issues are the product's front door: the owner and contributors direct the
+autonomous delivery loop through them, weighed by the trust model in
+[docs/autonomy/safety.md](./docs/autonomy/safety.md) and answered every
+release cycle per [docs/autonomy/issue-triage.md](./docs/autonomy/issue-triage.md).
+
 Labels (set up at repo init):
 
 - **type**: `feat`, `bug`, `chore`, `docs`, `refactor`, `perf`.

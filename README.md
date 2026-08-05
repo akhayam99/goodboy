@@ -74,11 +74,13 @@ studio treatment as GitHub. A Sentry error turns into a session with the
 stack trace already written into the goal and the branch named, ready to
 debug.
 
-**Jira, read first.** Point Goodboy at a Jira Cloud site and one project key,
-and the project's issues get the same inbox: status, type, priority, assignee,
-labels, description and the comment thread, all readable in the app. Launch a
-session from one and the key lands on the branch. Writing back to Jira,
-commenting, assigning, moving status, is not there yet.
+**Jira, read and act.** Point Goodboy at a Jira Cloud site and one project
+key, and the project's issues get the same inbox: status, type, priority,
+assignee, labels, description and the comment thread, all readable in the app.
+From the same screen you comment, assign or unassign, move the issue through
+its real transitions, and edit the description. Launch a session from one and
+the key lands on the branch. Sprints, boards and priority edits are not there
+yet, and Jira Server is unsupported.
 
 **Bitbucket, read, act and route.** Connect Bitbucket Cloud from onboarding or
 the integrations panel with a workspace slug, your Atlassian account email and
@@ -172,11 +174,25 @@ shells out to `cargo`). Platform prereqs:
 Hacking on the app itself? The dev-loop notes live in
 [apps/desktop/README.md](./apps/desktop/README.md).
 
+## How it ships
+
+Goodboy ships Goodboy. Releases are decided, built, verified and drafted by
+an autonomous delivery loop made of agents, steered by the written vision and
+design docs, with a human reviewing after rather than before. Every PR is
+checked by a different agent than the one that wrote it, and anything never
+exercised against a live tenant is named in the release notes. The whole
+model, including what the loop is never allowed to do, is in
+[AUTONOMY.md](./AUTONOMY.md).
+
 ## Help out
 
 Try it. If something breaks, feels weird or is missing, open an issue.
 Half-formed thoughts welcome. Screenshots welcome. "This feels off" is a
 perfectly valid bug report.
+
+Issues are triaged every release cycle, so you get an answer even when the
+answer is "not yet". A request that clashes with the zero-data rule (tracking,
+analytics) will be declined, whoever asks.
 
 ## Stack
 
@@ -194,6 +210,7 @@ pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
 - [docs/tone-of-voice.md](./docs/tone-of-voice.md): how Goodboy talks
 - [VISION.md](./VISION.md): the why, at length
 - [DESIGN.md](./DESIGN.md): how it looks and behaves
+- [AUTONOMY.md](./AUTONOMY.md): how it ships itself
 - [CONVENTIONS.md](./CONVENTIONS.md) · [CLAUDE.md](./CLAUDE.md): contributor rules
 
 ## License

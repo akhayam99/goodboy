@@ -10,27 +10,28 @@ Which docs each role loads. Rows are roles, a check means "load this when
 working in that role". Load top to bottom: a role rarely needs every doc at
 once, so pull the deep-dive only when the task touches it.
 
-| Doc                                                     | scout | planner | implementer | reviewer | pr-release | onboarding |
-| ------------------------------------------------------- | :---: | :-----: | :---------: | :------: | :--------: | :--------: |
-| [README.md](../README.md)                               |       |         |             |          |            |     ✓      |
-| [VISION.md](../VISION.md)                               |   ✓   |    ✓    |             |          |            |     ✓      |
-| [DESIGN.md](../DESIGN.md)                               |       |    ✓    |      ✓      |    ✓     |            |     ✓      |
-| [AGENTS.md](../AGENTS.md)                               |   ✓   |    ✓    |      ✓      |    ✓     |            |     ✓      |
-| [CONVENTIONS.md](../CONVENTIONS.md)                     |       |    ✓    |      ✓      |    ✓     |     ✓      |     ✓      |
-| [glossary.md](glossary.md)                              |   ✓   |    ✓    |      ✓      |    ✓     |            |     ✓      |
-| [typescript.md](typescript.md) + [cluster](typescript/) |       |         |      ✓      |    ✓     |            |            |
-| [styling.md](styling.md)                                |       |         |      ✓      |    ✓     |            |            |
-| [tone-of-voice.md](tone-of-voice.md)                    |       |         |      ✓      |    ✓     |     ✓      |            |
-| [providers.md](providers.md)                            |   ✓   |    ✓    |      ✓      |          |            |     ✓      |
-| [model-picker.md](model-picker.md)                      |       |    ✓    |      ✓      |    ✓     |            |            |
-| [release.md](release.md)                                |       |         |             |          |     ✓      |            |
-| [release-command.md](release-command.md)                |       |         |             |          |     ✓      |            |
-| [workflows.md](workflows.md)                            |       |    ✓    |      ✓      |    ✓     |            |            |
-| [file-system.md](file-system.md)                        |   ✓   |    ✓    |      ✓      |    ✓     |            |     ✓      |
-| [architecture.md](architecture.md)                      |   ✓   |    ✓    |      ✓      |    ✓     |            |     ✓      |
-| [testing.md](testing.md)                                |       |    ✓    |      ✓      |    ✓     |            |            |
-| [dependencies.md](dependencies.md)                      |       |    ✓    |      ✓      |    ✓     |            |            |
-| per-workspace `CONVENTIONS.md` / `README.md`            |       |         |      ✓      |    ✓     |            |     ✓      |
+| Doc                                                     | scout | planner | implementer | reviewer | pr-release | autonomy | onboarding |
+| ------------------------------------------------------- | :---: | :-----: | :---------: | :------: | :--------: | :------: | :--------: |
+| [README.md](../README.md)                               |       |         |             |          |            |          |     ✓      |
+| [VISION.md](../VISION.md)                               |   ✓   |    ✓    |             |          |            |    ✓     |     ✓      |
+| [DESIGN.md](../DESIGN.md)                               |       |    ✓    |      ✓      |    ✓     |            |    ✓     |     ✓      |
+| [AUTONOMY.md](../AUTONOMY.md) + [cluster](autonomy/)    |       |         |             |          |     ✓      |    ✓     |     ✓      |
+| [AGENTS.md](../AGENTS.md)                               |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
+| [CONVENTIONS.md](../CONVENTIONS.md)                     |       |    ✓    |      ✓      |    ✓     |     ✓      |    ✓     |     ✓      |
+| [glossary.md](glossary.md)                              |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
+| [typescript.md](typescript.md) + [cluster](typescript/) |       |         |      ✓      |    ✓     |            |          |            |
+| [styling.md](styling.md)                                |       |         |      ✓      |    ✓     |            |          |            |
+| [tone-of-voice.md](tone-of-voice.md)                    |       |         |      ✓      |    ✓     |     ✓      |    ✓     |            |
+| [providers.md](providers.md)                            |   ✓   |    ✓    |      ✓      |          |            |          |     ✓      |
+| [model-picker.md](model-picker.md)                      |       |    ✓    |      ✓      |    ✓     |            |          |            |
+| [release.md](release.md)                                |       |         |             |          |     ✓      |          |            |
+| [release-command.md](release-command.md)                |       |         |             |          |     ✓      |    ✓     |            |
+| [workflows.md](workflows.md)                            |       |    ✓    |      ✓      |    ✓     |            |          |            |
+| [file-system.md](file-system.md)                        |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
+| [architecture.md](architecture.md)                      |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
+| [testing.md](testing.md)                                |       |    ✓    |      ✓      |    ✓     |            |          |            |
+| [dependencies.md](dependencies.md)                      |       |    ✓    |      ✓      |    ✓     |            |          |            |
+| per-workspace `CONVENTIONS.md` / `README.md`            |       |         |      ✓      |    ✓     |            |          |     ✓      |
 
 ## Reference map
 
@@ -85,6 +86,7 @@ Every doc, its one-line purpose, and the roles that load it.
 | [VISION.md](../VISION.md)           | The why, the mission, core concepts (workspaces, sessions, agents, workflows, shared context).                      | scout, planner, onboarding                             |
 | [DESIGN.md](../DESIGN.md)           | Surface principles: how Goodboy looks, reads, and feels. Points to styling.md for mechanics.                        | planner, implementer, reviewer, onboarding             |
 | [AGENTS.md](../AGENTS.md)           | Code hub. Working-memory floor: forbidden patterns checklist plus hard-rules summary. Points up to granular spokes. | all code roles, onboarding                             |
+| [AUTONOMY.md](../AUTONOMY.md)       | Autonomy hub: how Goodboy ships itself, the delivery org model and the floor. Points to docs/autonomy/.             | autonomy, pr-release, onboarding                       |
 | [CONVENTIONS.md](../CONVENTIONS.md) | Process and monorepo hub: pnpm, turbo, tsconfig, ci, git workflow, release.                                         | planner, implementer, reviewer, pr-release, onboarding |
 
 ### Spokes (`docs/`)
@@ -92,6 +94,7 @@ Every doc, its one-line purpose, and the roles that load it.
 | Doc                                                         | Purpose                                                                                           | Roles                                   |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------- |
 | [glossary.md](glossary.md)                                  | Canonical term definitions for code, UI, docs, and issues.                                        | all                                     |
+| [autonomy.md](autonomy.md) + [autonomy/](autonomy/)         | Autonomy cluster: roles, safety and trust, release loop, issue triage, watchdogs.                 | autonomy, pr-release                    |
 | [typescript.md](typescript.md) + [typescript/](typescript/) | TypeScript conventions cluster: thin twin index plus data, components, control-flow, readability. | implementer, reviewer                   |
 | [styling.md](styling.md)                                    | Concrete Tailwind rules for spacing, radius, scroll. DESIGN.md owns the principles.               | implementer, reviewer                   |
 | [tone-of-voice.md](tone-of-voice.md)                        | How Goodboy talks: README, website, release notes, in-app copy, errors.                           | implementer, reviewer, pr-release       |
