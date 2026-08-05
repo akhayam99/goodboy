@@ -401,7 +401,10 @@ fn render_list(node: &Value, ordered: bool) -> String {
                 false => "- ".to_string(),
             };
             let width = marker.len();
-            indent_continuation(&format!("{marker}{}", render_blocks(item.get("content"))), width)
+            indent_continuation(
+                &format!("{marker}{}", render_blocks(item.get("content"))),
+                width,
+            )
         })
         .collect::<Vec<_>>()
         .join("\n")
@@ -417,7 +420,11 @@ fn render_block(node: &Value) -> String {
                 .and_then(|value| value.as_u64())
                 .unwrap_or(1)
                 .clamp(1, 6) as usize;
-            format!("{} {}", "#".repeat(level), render_inline(node.get("content")))
+            format!(
+                "{} {}",
+                "#".repeat(level),
+                render_inline(node.get("content"))
+            )
         }
         Some("bulletList") => render_list(node, false),
         Some("orderedList") => render_list(node, true),
@@ -748,6 +755,43 @@ struct JiraTransitionsPayload {
     transitions: Vec<JiraTransition>,
 }
 
+struct JiraWrite {
+    url: String,
+    body: Value,
+}
+
+fn comment_write(base: &str, issue_key: &str, text: &str) -> JiraWrite {
+    JiraWrite {
+        url: format!("{}/comment", issue_path(base, issue_key)),
+        body: serde_json::json!({ "body": text_to_adf(text) }),
+    }
+}
+
+fn description_write(base: &str, issue_key: &str, description: &str) -> JiraWrite {
+    JiraWrite {
+        url: issue_path(base, issue_key),
+        body: serde_json::json!({ "fields": { "description": text_to_adf(description) } }),
+    }
+}
+
+fn assignee_write(base: &str, issue_key: &str, account_id: Option<&str>) -> JiraWrite {
+    let target = match account_id.map(str::trim).filter(|id| !id.is_empty()) {
+        Some(id) => Value::String(id.to_string()),
+        None => Value::Null,
+    };
+    JiraWrite {
+        url: format!("{}/assignee", issue_path(base, issue_key)),
+        body: serde_json::json!({ "accountId": target }),
+    }
+}
+
+fn transition_write(base: &str, issue_key: &str, transition_id: &str) -> JiraWrite {
+    JiraWrite {
+        url: format!("{}/transitions", issue_path(base, issue_key)),
+        body: serde_json::json!({ "transition": { "id": transition_id } }),
+    }
+}
+
 #[tauri::command]
 pub async fn jira_validate_connection(
     workspace_id: String,
@@ -879,14 +923,9 @@ pub async fn jira_create_comment(
         email: &email,
         token: &token,
     };
-    let payload = serde_json::json!({ "body": text_to_adf(&body) });
-    let raw: JiraCommentRaw = send_json(
-        &credentials,
-        reqwest::Method::POST,
-        &format!("{}/comment", issue_path(&base, &issue_key)),
-        &payload,
-    )
-    .await?;
+    let write = comment_write(&base, &issue_key, &body);
+    let raw: JiraCommentRaw =
+        send_json(&credentials, reqwest::Method::POST, &write.url, &write.body).await?;
     Ok(map_comment(raw))
 }
 
@@ -907,21 +946,8 @@ pub async fn jira_update_issue(
         email: &email,
         token: &token,
     };
-    let payload = serde_json::json!({ "fields": { "description": text_to_adf(&description) } });
-    send_no_content(
-        &credentials,
-        reqwest::Method::PUT,
-        &issue_path(&base, &issue_key),
-        &payload,
-    )
-    .await
-}
-
-fn assignee_payload(account_id: Option<&str>) -> Value {
-    match account_id.map(str::trim).filter(|id| !id.is_empty()) {
-        Some(id) => serde_json::json!({ "accountId": id }),
-        None => serde_json::json!({ "accountId": Value::Null }),
-    }
+    let write = description_write(&base, &issue_key, &description);
+    send_no_content(&credentials, reqwest::Method::PUT, &write.url, &write.body).await
 }
 
 #[tauri::command]
@@ -941,13 +967,8 @@ pub async fn jira_set_assignee(
         email: &email,
         token: &token,
     };
-    send_no_content(
-        &credentials,
-        reqwest::Method::PUT,
-        &format!("{}/assignee", issue_path(&base, &issue_key)),
-        &assignee_payload(account_id.as_deref()),
-    )
-    .await
+    let write = assignee_write(&base, &issue_key, account_id.as_deref());
+    send_no_content(&credentials, reqwest::Method::PUT, &write.url, &write.body).await
 }
 
 #[tauri::command]
@@ -1015,13 +1036,8 @@ pub async fn jira_transition_issue(
         email: &email,
         token: &token,
     };
-    send_no_content(
-        &credentials,
-        reqwest::Method::POST,
-        &format!("{}/transitions", issue_path(&base, &issue_key)),
-        &serde_json::json!({ "transition": { "id": transition_id } }),
-    )
-    .await
+    let write = transition_write(&base, &issue_key, &transition_id);
+    send_no_content(&credentials, reqwest::Method::POST, &write.url, &write.body).await
 }
 
 #[cfg(test)]
@@ -1123,7 +1139,11 @@ mod tests {
 
     #[test]
     fn search_url_encodes_the_jql_and_pins_an_explicit_field_list() {
-        let url = search_url("https://acme.atlassian.net/rest/api/3", "project = \"GB\"", None);
+        let url = search_url(
+            "https://acme.atlassian.net/rest/api/3",
+            "project = \"GB\"",
+            None,
+        );
         assert!(url.starts_with("https://acme.atlassian.net/rest/api/3/search/jql?jql="));
         assert!(url.contains("project%20%3D%20%22GB%22"));
         assert!(url.contains("&fields=summary%2Cdescription"));
@@ -1171,7 +1191,10 @@ mod tests {
         );
         let filtered = assignable_url("https://x/rest/api/3", "GB-12", Some(" ami "));
         assert!(filtered.ends_with("&query=ami"));
-        assert_eq!(assignable_url("https://x/rest/api/3", "GB-12", Some("  ")), bare);
+        assert_eq!(
+            assignable_url("https://x/rest/api/3", "GB-12", Some("  ")),
+            bare
+        );
     }
 
     #[test]
@@ -1397,10 +1420,9 @@ mod tests {
             r#"{ "issues": [{ "id": "1", "key": "GB-1" }], "nextPageToken": "t1", "isLast": false }"#,
         )
         .unwrap();
-        let second: JiraSearchPage = serde_json::from_str(
-            r#"{ "issues": [{ "id": "2", "key": "GB-2" }], "isLast": true }"#,
-        )
-        .unwrap();
+        let second: JiraSearchPage =
+            serde_json::from_str(r#"{ "issues": [{ "id": "2", "key": "GB-2" }], "isLast": true }"#)
+                .unwrap();
         assert_eq!(pager.absorb(first).unwrap(), Some("t1".to_string()));
         assert_eq!(pager.absorb(second).unwrap(), None);
         assert_eq!(pager.issues.len(), 2);
@@ -1419,7 +1441,11 @@ mod tests {
         .unwrap();
         pager.absorb(first).unwrap();
         pager.absorb(second).unwrap();
-        let keys: Vec<&str> = pager.issues.iter().map(|issue| issue.key.as_str()).collect();
+        let keys: Vec<&str> = pager
+            .issues
+            .iter()
+            .map(|issue| issue.key.as_str())
+            .collect();
         assert_eq!(keys, vec!["GB-1", "GB-2"]);
     }
 
@@ -1465,10 +1491,9 @@ mod tests {
 
     #[test]
     fn next_comment_offset_stops_once_total_is_reached() {
-        let page: JiraCommentPage = serde_json::from_str(
-            r#"{ "startAt": 2, "total": 3, "comments": [{ "id": "3" }] }"#,
-        )
-        .unwrap();
+        let page: JiraCommentPage =
+            serde_json::from_str(r#"{ "startAt": 2, "total": 3, "comments": [{ "id": "3" }] }"#)
+                .unwrap();
         assert_eq!(next_comment_offset(&page), None);
     }
 
@@ -1520,28 +1545,60 @@ mod tests {
     }
 
     #[test]
-    fn assignee_payload_sends_a_null_account_id_to_unassign() {
-        assert_eq!(assignee_payload(None)["accountId"], Value::Null);
-        assert_eq!(assignee_payload(Some("  "))["accountId"], Value::Null);
-        assert_eq!(assignee_payload(Some("acc-1"))["accountId"], "acc-1");
-    }
-
-    #[test]
-    fn comment_payload_wraps_the_text_in_an_adf_document() {
-        let payload = serde_json::json!({ "body": text_to_adf("ship it") });
-        assert_eq!(payload["body"]["type"], "doc");
-        assert_eq!(payload["body"]["version"], 1);
-        assert_eq!(payload["body"]["content"][0]["content"][0]["text"], "ship it");
-    }
-
-    #[test]
-    fn description_payload_nests_the_document_under_fields() {
-        let payload =
-            serde_json::json!({ "fields": { "description": text_to_adf("new description") } });
-        assert_eq!(payload["fields"]["description"]["type"], "doc");
+    fn assignee_write_sends_a_null_account_id_to_unassign() {
+        let base = "https://x/rest/api/3";
         assert_eq!(
-            payload["fields"]["description"]["content"][0]["content"][0]["text"],
+            assignee_write(base, "GB-1", None).url,
+            "https://x/rest/api/3/issue/GB-1/assignee"
+        );
+        assert_eq!(
+            assignee_write(base, "GB-1", None).body["accountId"],
+            Value::Null
+        );
+        assert_eq!(
+            assignee_write(base, "GB-1", Some("  ")).body["accountId"],
+            Value::Null
+        );
+    }
+
+    #[test]
+    fn assignee_write_echoes_the_account_id_and_never_the_default_sentinel() {
+        let write = assignee_write("https://x/rest/api/3", "GB-1", Some("acc-1"));
+        assert_eq!(write.body["accountId"], "acc-1");
+        assert_ne!(write.body["accountId"], "-1");
+    }
+
+    #[test]
+    fn comment_write_targets_the_comment_collection_with_an_adf_body() {
+        let write = comment_write("https://x/rest/api/3", "GB-1", "ship it");
+        assert_eq!(write.url, "https://x/rest/api/3/issue/GB-1/comment");
+        assert_eq!(write.body["body"]["type"], "doc");
+        assert_eq!(write.body["body"]["version"], 1);
+        assert_eq!(
+            write.body["body"]["content"][0]["content"][0]["text"],
+            "ship it"
+        );
+    }
+
+    #[test]
+    fn description_write_targets_the_issue_itself_and_nests_the_document_under_fields() {
+        let write = description_write("https://x/rest/api/3", "GB-1", "new description");
+        assert_eq!(write.url, "https://x/rest/api/3/issue/GB-1");
+        assert_eq!(write.body["fields"]["description"]["type"], "doc");
+        assert_eq!(
+            write.body["fields"]["description"]["content"][0]["content"][0]["text"],
             "new description"
+        );
+    }
+
+    #[test]
+    fn transition_write_posts_the_chosen_transition_id_to_the_transitions_collection() {
+        let write = transition_write("https://x/rest/api/3", "GB-1", "31");
+        assert_eq!(write.url, "https://x/rest/api/3/issue/GB-1/transitions");
+        assert_eq!(write.body["transition"]["id"], "31");
+        assert_eq!(
+            transition_write("https://x/rest/api/3", "GB-1", "41").body["transition"]["id"],
+            "41"
         );
     }
 }
