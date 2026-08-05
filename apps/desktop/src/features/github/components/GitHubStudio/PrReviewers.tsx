@@ -3,9 +3,9 @@ import type { PrDetail, WorkspaceId } from '@goodboy/types';
 import { CircleDashed } from 'lucide-react';
 import { EmptyState } from '@goodboy/ui';
 import { RailBlock } from '../../../../shared/components/StudioDetail';
-import { latestTerminalReviewsByAuthor } from '../Card/lib';
-import { Avatar } from '../Card/parts/Avatar';
-import { ReviewStateIcon } from '../Card/parts/ReviewStateIcon';
+import { latestTerminalReviewsByAuthor } from '../../utils/latest-terminal-reviews-by-author';
+import { Avatar } from '../Avatar';
+import { ReviewStateIcon } from '../ReviewStateIcon';
 import { ReviewerPicker } from './ReviewerPicker';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 

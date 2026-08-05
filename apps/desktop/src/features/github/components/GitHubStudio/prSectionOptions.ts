@@ -1,7 +1,7 @@
 import type { PrDetail, PullRequestState } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
 import { FileText, ListChecks, MessageSquare, Sparkles } from 'lucide-react';
-import { computeTabStatus } from '../Card';
+import { computeTabStatus } from '../../utils/compute-tab-status';
 import type { PrSection } from './prSection';
 
 type Params = {
