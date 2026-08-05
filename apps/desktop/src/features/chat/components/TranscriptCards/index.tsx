@@ -93,7 +93,7 @@ function TranscriptCardImpl({
     case 'workflow_kickoff':
       return <WorkflowKickoffCard item={item} />;
     case 'resolver_kickoff':
-      return <ResolverKickoffCard item={item} />;
+      return <ResolverKickoffCard item={item} sessionId={sessionId} />;
     case 'oq_answer':
       return null;
     case 'done':

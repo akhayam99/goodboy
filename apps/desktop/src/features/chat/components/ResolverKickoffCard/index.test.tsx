@@ -95,7 +95,7 @@ describe('ResolverKickoffCard', () => {
     expect(screen.getByText(/carol/)).toBeDefined();
     expect(screen.getByText('this should use a helper')).toBeDefined();
     expect(screen.getByText('this name does not match the folder')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: /Open thread/ })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /Open on GitHub/ })).toHaveLength(2);
   });
 
   it('keeps the full instructions collapsed and never first in the transcript', () => {
@@ -128,7 +128,7 @@ describe('ResolverKickoffCard', () => {
   it('opens the thread it names on GitHub', () => {
     render(<ResolverKickoffCard item={kickoffItem()} />);
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Open thread/ })[1]!);
+    fireEvent.click(screen.getAllByRole('button', { name: /Open on GitHub/ })[1]!);
 
     expect(openUrl).toHaveBeenCalledWith('https://github.com/o/r/pull/9108#discussion_r2');
   });
