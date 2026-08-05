@@ -9,7 +9,6 @@ export const STORAGE_KEYS = {
   lensColumnWidth: `${PREFIX}lens-column-width`,
   inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
   reviewBoardListWidth: `${PREFIX}review-board-list-width`,
-  planListWidth: `${PREFIX}plan-list-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   rightSidebarWidth: `${PREFIX}right-sidebar-width`,
   onboardingWorkspaceDraft: `${PREFIX}onboarding-workspace-draft:v1`,

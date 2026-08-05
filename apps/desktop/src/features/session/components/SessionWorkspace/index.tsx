@@ -12,7 +12,6 @@ import {
   useAppStore,
   useFilesTouched,
   useSessionOpenQuestions,
-  useSessionPlans,
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { worktreeStatus } from '../../../worktree/worktree';
@@ -73,7 +72,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       ? null
       : storedActiveLens;
   const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
   const focusedGithubIssueNumber = useAppStore(
     (s) => s.focusedGithubIssueNumber[sessionId] ?? null,
   );
@@ -88,7 +86,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
-  const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const reconcileSessionBranch = useAppStore((s) => s.reconcileSessionBranch);
   const filesTouched = useFilesTouched(sessionId, isActive && !isBranchless);
   const phaseRuns = useAppStore(
@@ -96,7 +93,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   );
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
   const attachedWorkflowRuns = useAttachedWorkflowRuns({ session });
-  const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const sessionLoading = useAppStore((s) => s.sessionLoading[sessionId]);
 
@@ -277,10 +273,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
     return visibleRun == null ? null : workflowKindName(visibleRun.workflow);
   }, [focusedWorkflowRunId, attachedWorkflowRuns, lens]);
-  const focusedPlanTitle = useMemo(
-    () => plans.find((p) => p.id === focusedPlanId)?.title ?? null,
-    [plans, focusedPlanId],
-  );
   useEffect(() => {
     if (!showAgentOverlay) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -329,9 +321,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   )
                 ) : null}
                 {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-                {lens === 'plans' ? (
-                  <PlanStudio sessionId={sessionId} initialPlanId={focusedPlanId ?? undefined} />
-                ) : null}
+                {lens === 'plans' ? <PlanStudio sessionId={sessionId} /> : null}
                 {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
                 {lens === 'resolve' ? (
                   <ResolvePane
