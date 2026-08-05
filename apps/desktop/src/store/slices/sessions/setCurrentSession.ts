@@ -63,12 +63,14 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
     const perf = (op: string) => {
       const t0 = performance.now();
       return () => {
-        // eslint-disable-next-line no-console
-        console.log(`[perf] session:${op} ${(performance.now() - t0).toFixed(0)}ms`);
+        if (import.meta.env.DEV) {
+          console.log(`[perf] session:${op} ${(performance.now() - t0).toFixed(0)}ms`);
+        }
       };
     };
-    // eslint-disable-next-line no-console
-    console.log(`[perf] session:switchSync ${(performance.now() - tSwitch).toFixed(0)}ms`);
+    if (import.meta.env.DEV) {
+      console.log(`[perf] session:switchSync ${(performance.now() - tSwitch).toFixed(0)}ms`);
+    }
 
     const markDone = (key: keyof SessionLoadingFlags): void => {
       set((state) => {

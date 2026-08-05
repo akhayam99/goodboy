@@ -29,6 +29,7 @@ type Props = {
   readonly goal: string;
   readonly onGoalChange: (value: string) => void;
   readonly onOpenGoalEditor: () => void;
+  readonly goalEditorDirty: boolean;
   readonly attachments: ReadonlyArray<PendingAttachment>;
   readonly isDragging: boolean;
   readonly composerRef: RefObject<HTMLDivElement | null>;
@@ -69,6 +70,7 @@ export const NewSessionForm = ({
   goal,
   onGoalChange,
   onOpenGoalEditor,
+  goalEditorDirty,
   attachments,
   isDragging,
   composerRef,
@@ -172,19 +174,24 @@ export const NewSessionForm = ({
               aria-label="Goal"
               className="min-w-0 flex-1"
             />
-            <button
-              type="button"
-              onClick={onOpenGoalEditor}
-              disabled={busy}
-              title="Open goal editor"
-              aria-label="Open goal editor"
-              className={cn(
-                'shrink-0 rounded-md border border-border p-2 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground',
-                busy && 'cursor-not-allowed text-muted-foreground/30',
-              )}
-            >
-              <Expand size={13} aria-hidden />
-            </button>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <button
+                type="button"
+                onClick={onOpenGoalEditor}
+                disabled={busy}
+                title="Open goal editor"
+                aria-label="Open goal editor"
+                className={cn(
+                  'rounded-md border border-border p-2 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground',
+                  busy && 'cursor-not-allowed text-muted-foreground/30',
+                )}
+              >
+                <Expand size={13} aria-hidden />
+              </button>
+              {goalEditorDirty ? (
+                <span className="text-2xs text-warning">Unsaved edits</span>
+              ) : null}
+            </div>
           </div>
         </FieldRow>
         <Divider />
