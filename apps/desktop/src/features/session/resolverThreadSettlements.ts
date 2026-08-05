@@ -78,7 +78,7 @@ const fromPending = ({
   readonly resolution: PendingResolution;
   readonly isClosed: boolean;
 }): ResolverThreadSettlement => {
-  const kind = resolution.outcome ?? 'resolved';
+  const kind: ResolverThreadSettlementKind = resolution.outcome ?? 'open';
   return {
     threadId,
     kind,

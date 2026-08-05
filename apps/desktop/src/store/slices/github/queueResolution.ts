@@ -29,7 +29,7 @@ export const queueResolution = (set: SetFn, get: GetFn) => {
       threadId,
       commitSha,
       reply: reply === undefined ? (outcome?.reply ?? null) : reply,
-      outcome: explicitOutcome === undefined ? (outcome?.kind ?? null) : explicitOutcome,
+      outcome: explicitOutcome ?? outcome?.kind ?? null,
     });
     const rows = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
     set((state) => ({

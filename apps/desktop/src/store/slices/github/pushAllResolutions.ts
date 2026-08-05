@@ -1,10 +1,12 @@
 import { deletePendingResolution, listPendingResolutionsForSession } from '@goodboy/db';
-import type { SessionId } from '@goodboy/types';
+import type { PendingResolutionOutcome, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
+import { postThreadReply } from './postThreadReply';
 import { pushSessionBranch } from './pushSessionBranch';
 import { resolverOutcomeForThread } from './resolverOutcomeForThread';
+import { withResolutionLock } from './withResolutionLock';
 import type { GetFn, SetFn } from './types';
 
 export type PushAllResult = {
@@ -14,93 +16,140 @@ export type PushAllResult = {
 };
 
 export const pushAllResolutions = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId): Promise<PushAllResult> => {
-    const session = get().sessions.find((s) => s.id === sessionId);
-    const workspace = session
-      ? get().workspaces.find((w) => w.id === session.workspaceId)
-      : undefined;
-    const notifyTarget = { sessionId, ...(workspace && { workspaceId: workspace.id }) };
-
-    const pending = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
-    if (pending.length === 0) {
-      return { pushed: false, resolved: 0, failed: 0 };
-    }
-
-    const inMemoryOutcomes = pending.map((resolution) =>
-      resolverOutcomeForThread({
-        outcomes: get().resolverThreadOutcomes,
-        threadId: resolution.threadId,
-      }),
-    );
-    const shouldPush = pending.some((resolution, index) => {
-      const outcome = inMemoryOutcomes[index];
-      return (outcome?.kind ?? resolution.outcome ?? 'resolved') === 'resolved';
-    });
-    if (shouldPush) {
-      const push = await pushSessionBranch(get, sessionId);
-      if (!push.ok) {
+  return async (sessionId: SessionId): Promise<PushAllResult> =>
+    withResolutionLock<PushAllResult>({
+      sessionId,
+      onBusy: () => {
         void get().emitNotification(
           'error',
-          'error',
-          'push failed, comments left unresolved',
-          push.error,
-          notifyTarget,
+          'warning',
+          'resolve already running',
+          'another resolve is still working on this session, so nothing was pushed.',
+          { sessionId },
         );
-        return { pushed: false, resolved: 0, failed: pending.length };
-      }
-    }
-
-    let resolved = 0;
-    let failed = 0;
-    let lastError = '';
-    for (const [index, resolution] of pending.entries()) {
-      try {
-        const inMemoryOutcome = inMemoryOutcomes[index];
-        const outcome = inMemoryOutcome?.kind ?? resolution.outcome ?? 'resolved';
-        if (outcome === 'resolved') {
-          await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
-            commitSha: resolution.commitSha,
-            reply: resolution.reply ?? undefined,
-          });
-        }
-        if (outcome === 'wontfix') {
-          await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
-            reason: inMemoryOutcome?.kind === 'wontfix' ? inMemoryOutcome.reason : undefined,
-            reply: resolution.reply ?? undefined,
-          });
-        }
-        if (outcome === 'analyzed') {
-          await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
-            reply: resolution.reply ?? undefined,
-          });
-        }
-        await deletePendingResolution({
-          db: tauriDatabase,
+        return { pushed: false, resolved: 0, failed: 0 };
+      },
+      run: async () => {
+        const session = get().sessions.find((candidate) => candidate.id === sessionId);
+        const workspace =
+          session !== undefined
+            ? get().workspaces.find((candidate) => candidate.id === session.workspaceId)
+            : undefined;
+        const notifyTarget = {
           sessionId,
-          threadId: resolution.threadId,
-        });
-        resolved += 1;
-      } catch (err) {
-        failed += 1;
-        lastError = formatError(err);
-      }
-    }
+          ...(workspace !== undefined && { workspaceId: workspace.id }),
+        };
 
-    const rows = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
-    set((state) => ({
-      sessionPendingResolutions: { ...state.sessionPendingResolutions, [sessionId]: rows },
-    }));
-    await get().refreshSessionPrDetail(sessionId, { force: true });
+        const pending = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+        if (pending.length === 0) {
+          return { pushed: false, resolved: 0, failed: 0 };
+        }
 
-    if (failed > 0) {
-      void get().emitNotification(
-        'error',
-        failed === pending.length ? 'error' : 'warning',
-        `pushed, but ${failed} comment${failed === 1 ? '' : 's'} failed to resolve`,
-        lastError || 'the branch was pushed; retry to resolve the remaining threads',
-        notifyTarget,
-      );
-    }
-    return { pushed: shouldPush, resolved, failed };
-  };
+        const inMemoryOutcomes = pending.map((resolution) =>
+          resolverOutcomeForThread({
+            outcomes: get().resolverThreadOutcomes,
+            threadId: resolution.threadId,
+          }),
+        );
+        const outcomes = pending.map(
+          (resolution, index): PendingResolutionOutcome | null =>
+            inMemoryOutcomes[index]?.kind ?? resolution.outcome ?? null,
+        );
+
+        const pushNeeded = outcomes.filter((outcome) => outcome === 'resolved').length;
+        let pushed = false;
+        let blocked = 0;
+        if (pushNeeded > 0) {
+          const push = await pushSessionBranch(get, sessionId);
+          pushed = push.ok;
+          if (!push.ok) {
+            blocked = pushNeeded;
+            void get().emitNotification(
+              'error',
+              'error',
+              'push failed, comments left unresolved',
+              push.error,
+              notifyTarget,
+            );
+          }
+        }
+
+        let resolved = 0;
+        let commented = 0;
+        let failed = 0;
+        let lastError = '';
+        for (const [index, resolution] of pending.entries()) {
+          const outcome = outcomes[index] ?? null;
+          if (outcome === 'resolved' && !pushed) {
+            continue;
+          }
+          try {
+            const inMemoryOutcome = inMemoryOutcomes[index];
+            if (outcome === null) {
+              await postThreadReply({
+                get,
+                sessionId,
+                threadId: resolution.threadId,
+                closure: { ...(resolution.reply !== null && { reply: resolution.reply }) },
+              });
+              commented += 1;
+            }
+            if (outcome === 'resolved') {
+              await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
+                commitSha: resolution.commitSha,
+                reply: resolution.reply ?? undefined,
+              });
+              resolved += 1;
+            }
+            if (outcome === 'wontfix') {
+              await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
+                reason: inMemoryOutcome?.kind === 'wontfix' ? inMemoryOutcome.reason : undefined,
+                reply: resolution.reply ?? undefined,
+              });
+              resolved += 1;
+            }
+            if (outcome === 'analyzed') {
+              await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
+                reply: resolution.reply ?? undefined,
+              });
+              resolved += 1;
+            }
+            await deletePendingResolution({
+              db: tauriDatabase,
+              sessionId,
+              threadId: resolution.threadId,
+            });
+          } catch (err) {
+            failed += 1;
+            lastError = formatError(err);
+          }
+        }
+
+        const rows = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+        set((state) => ({
+          sessionPendingResolutions: { ...state.sessionPendingResolutions, [sessionId]: rows },
+        }));
+        await get().refreshSessionPrDetail(sessionId, { force: true });
+
+        if (failed > 0) {
+          void get().emitNotification(
+            'error',
+            resolved === 0 ? 'error' : 'warning',
+            `${failed} comment${failed === 1 ? '' : 's'} failed to resolve`,
+            lastError !== '' ? lastError : 'retry to resolve the remaining threads.',
+            notifyTarget,
+          );
+        }
+        if (commented > 0) {
+          void get().emitNotification(
+            'error',
+            'warning',
+            `${commented} comment${commented === 1 ? '' : 's'} left open`,
+            'no verdict was recorded, so the reply went out and the thread stays open on GitHub.',
+            notifyTarget,
+          );
+        }
+        return { pushed, resolved, failed: failed + blocked };
+      },
+    });
 };
