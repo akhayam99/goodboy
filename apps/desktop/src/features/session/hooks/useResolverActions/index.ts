@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Agent, PendingResolution, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
+import { formatError } from '../../../../shared/lib/errors';
 import { PROCEED_RESOLVER_PROMPT } from '../../../../shared/utils/proceedResolverPrompt';
 import { RERUN_RESOLVER_PROMPT } from '../../../../shared/utils/rerunResolverPrompt';
 import { agentThreadIds } from '../../agentThreadIds';
@@ -101,6 +102,7 @@ export const useResolverActions = ({
   const forceCloseResolver = useAppStore((state) => state.forceCloseResolver);
   const sendTurn = useAppStore((state) => state.sendTurn);
   const selectAgent = useAppStore((state) => state.selectAgent);
+  const emitNotification = useAppStore((state) => state.emitNotification);
   const turnState = useAppStore((state) => state.agentTurnState[agent.id]);
   const prNumber = useAppStore((state) => state.sessionGithub[sessionId]?.pr?.number ?? null);
   const pending =
@@ -177,9 +179,19 @@ export const useResolverActions = ({
     return [];
   });
 
+  const notifyTurnFailed = ({ error }: { readonly error: unknown }) => {
+    void emitNotification('error', 'error', 'resolver turn failed', formatError(error), {
+      sessionId,
+    });
+  };
+
   const sendToAgent = async ({ content }: { readonly content: string }) => {
     await selectAgent(sessionId, agent.id);
-    await sendTurn({ sessionId, agentId: agent.id, content });
+    try {
+      await sendTurn({ sessionId, agentId: agent.id, content });
+    } catch (error) {
+      notifyTurnFailed({ error });
+    }
   };
 
   const dispatchThread = async ({ threadId, kind, text, notes = '' }: ResolverThreadRunParams) => {
@@ -287,12 +299,20 @@ export const useResolverActions = ({
       return;
     }
     if (kind === 'proceed') {
-      await sendTurn({ sessionId, agentId: agent.id, content: PROCEED_RESOLVER_PROMPT });
+      try {
+        await sendTurn({ sessionId, agentId: agent.id, content: PROCEED_RESOLVER_PROMPT });
+      } catch (error) {
+        notifyTurnFailed({ error });
+      }
       return;
     }
     if (kind === 'rerun') {
       await selectAgent(sessionId, agent.id);
-      await sendTurn({ sessionId, agentId: agent.id, content: RERUN_RESOLVER_PROMPT });
+      try {
+        await sendTurn({ sessionId, agentId: agent.id, content: RERUN_RESOLVER_PROMPT });
+      } catch (error) {
+        notifyTurnFailed({ error });
+      }
       return;
     }
     if (kind === 'answer') {

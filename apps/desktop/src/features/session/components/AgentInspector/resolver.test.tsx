@@ -32,6 +32,7 @@ const h = vi.hoisted(() => {
     activateNextResolver: vi.fn(async () => undefined),
     sendTurn: vi.fn(async () => undefined),
     selectAgent: vi.fn(async () => undefined),
+    emitNotification: vi.fn(async () => undefined),
     setAgentDone: vi.fn(async () => undefined),
     clearAgentDone: vi.fn(async () => undefined),
     deleteAgent: vi.fn(async () => undefined),
@@ -164,6 +165,7 @@ const reset = ({
     activateNextResolver: h.activateNextResolver,
     sendTurn: h.sendTurn,
     selectAgent: h.selectAgent,
+    emitNotification: h.emitNotification,
     setAgentDone: h.setAgentDone,
     clearAgentDone: h.clearAgentDone,
     deleteAgent: h.deleteAgent,
@@ -537,6 +539,26 @@ describe('AgentInspector (resolver)', () => {
         agentId: SETTLED_ID,
         content: expect.stringContaining('PRRT_3'),
       }),
+    );
+  });
+
+  it('surfaces a failed resolver turn instead of swallowing it', async () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'wontfix' },
+      outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'wontfix', reason: 'the branch is dead' } } },
+    });
+    h.sendTurn.mockRejectedValueOnce(new Error('provider exited without a response'));
+    renderInspector(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix it anyway' }));
+
+    await vi.waitFor(() => expect(h.emitNotification).toHaveBeenCalledTimes(1));
+    expect(h.emitNotification).toHaveBeenCalledWith(
+      'error',
+      'error',
+      'resolver turn failed',
+      'provider exited without a response',
+      { sessionId: SESSION_ID },
     );
   });
 

@@ -85,34 +85,70 @@ export const pushAllResolutions = (set: SetFn, get: GetFn) => {
           }
           try {
             const inMemoryOutcome = inMemoryOutcomes[index];
-            if (outcome === null) {
-              await postThreadReply({
-                get,
-                sessionId,
-                threadId: resolution.threadId,
-                closure: { ...(resolution.reply !== null && { reply: resolution.reply }) },
-              });
-              commented += 1;
-            }
-            if (outcome === 'resolved') {
-              await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
-                commitSha: resolution.commitSha,
-                reply: resolution.reply ?? undefined,
-              });
-              resolved += 1;
-            }
-            if (outcome === 'wontfix') {
-              await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
-                reason: inMemoryOutcome?.kind === 'wontfix' ? inMemoryOutcome.reason : undefined,
-                reply: resolution.reply ?? undefined,
-              });
-              resolved += 1;
-            }
-            if (outcome === 'analyzed') {
-              await markThreadResolvedNoPush(set, get, sessionId, resolution.threadId, {
-                reply: resolution.reply ?? undefined,
-              });
-              resolved += 1;
+            const replyAlreadyPosted = resolution.replyPostedAt != null;
+            switch (outcome) {
+              case null: {
+                if (replyAlreadyPosted) {
+                  break;
+                }
+                const posted = await postThreadReply({
+                  get,
+                  sessionId,
+                  threadId: resolution.threadId,
+                  closure: { ...(resolution.reply !== null && { reply: resolution.reply }) },
+                });
+                if (posted) {
+                  commented += 1;
+                }
+                break;
+              }
+              case 'resolved': {
+                await markThreadResolvedNoPush({
+                  set,
+                  get,
+                  sessionId,
+                  threadId: resolution.threadId,
+                  replyAlreadyPosted,
+                  closure: {
+                    commitSha: resolution.commitSha,
+                    reply: resolution.reply ?? undefined,
+                  },
+                });
+                resolved += 1;
+                break;
+              }
+              case 'wontfix': {
+                await markThreadResolvedNoPush({
+                  set,
+                  get,
+                  sessionId,
+                  threadId: resolution.threadId,
+                  replyAlreadyPosted,
+                  closure: {
+                    reason:
+                      inMemoryOutcome?.kind === 'wontfix' ? inMemoryOutcome.reason : undefined,
+                    reply: resolution.reply ?? undefined,
+                  },
+                });
+                resolved += 1;
+                break;
+              }
+              case 'analyzed': {
+                await markThreadResolvedNoPush({
+                  set,
+                  get,
+                  sessionId,
+                  threadId: resolution.threadId,
+                  replyAlreadyPosted,
+                  closure: { reply: resolution.reply ?? undefined },
+                });
+                resolved += 1;
+                break;
+              }
+              default: {
+                const exhaustive: never = outcome;
+                throw new Error(`unhandled pending resolution outcome: ${String(exhaustive)}`);
+              }
             }
             await deletePendingResolution({
               db: tauriDatabase,

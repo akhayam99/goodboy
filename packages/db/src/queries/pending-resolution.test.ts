@@ -3,7 +3,11 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrations } from '../migrations';
 import { migrate } from '../migrations/runner';
-import { listPendingResolutionsForSession, queuePendingResolution } from './pending-resolution';
+import {
+  listPendingResolutionsForSession,
+  markPendingResolutionReplyPosted,
+  queuePendingResolution,
+} from './pending-resolution';
 
 const workspaceId = 'w1' as WorkspaceId;
 const sessionId = 's1' as SessionId;
@@ -50,6 +54,27 @@ describe('pending_resolutions queries', () => {
       commitSha: 'abcdef1234567890',
       reply: 'persist this reply',
       outcome: 'resolved',
+      replyPostedAt: null,
     });
+  });
+
+  it('records when the reply was posted, so a retry can skip reposting it', async () => {
+    const db = await seed({});
+    await queuePendingResolution({
+      db,
+      id: 'pending-1',
+      sessionId,
+      prNumber: 42,
+      threadId: 'PRRT_1',
+      commitSha: 'abcdef1234567890',
+      reply: 'persist this reply',
+      outcome: 'resolved',
+    });
+
+    await markPendingResolutionReplyPosted({ db, sessionId, threadId: 'PRRT_1' });
+    const rows = await listPendingResolutionsForSession({ db, sessionId });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.replyPostedAt).not.toBeNull();
   });
 });

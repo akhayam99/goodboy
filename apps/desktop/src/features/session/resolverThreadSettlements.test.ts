@@ -68,6 +68,7 @@ describe('resolverThreadSettlements', () => {
       commitSha: 'abcdef1234567890',
       reply: 'legacy resolver reply',
       outcome: null,
+      replyPostedAt: null,
       createdAt: '2026-05-28T00:00:00.000Z' as IsoDateTime,
     } satisfies PendingResolution;
 

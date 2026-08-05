@@ -14,6 +14,7 @@ type PendingResolutionRow = {
   commit_sha: string;
   reply: string | null;
   outcome: string | null;
+  reply_posted_at: number | null;
   created_at: number;
 };
 
@@ -34,6 +35,10 @@ type ListParams = {
 };
 
 type DeleteParams = ListParams & {
+  readonly threadId: string;
+};
+
+type MarkReplyPostedParams = ListParams & {
   readonly threadId: string;
 };
 
@@ -61,11 +66,15 @@ const toDomain = ({ row }: ToDomainParams): PendingResolution => {
     commitSha: row.commit_sha,
     reply: row.reply,
     outcome: toOutcome({ value: row.outcome }),
+    replyPostedAt:
+      row.reply_posted_at != null
+        ? (new Date(row.reply_posted_at).toISOString() as IsoDateTime)
+        : null,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
   };
 };
 
-const SELECT_COLUMNS = `id, session_id, pr_number, thread_id, commit_sha, reply, outcome, created_at`;
+const SELECT_COLUMNS = `id, session_id, pr_number, thread_id, commit_sha, reply, outcome, reply_posted_at, created_at`;
 
 export const queuePendingResolution = async ({
   db,
@@ -103,6 +112,17 @@ export const listPendingResolutionsForSession = async ({
     [sessionId],
   );
   return rows.map((row) => toDomain({ row }));
+};
+
+export const markPendingResolutionReplyPosted = async ({
+  db,
+  sessionId,
+  threadId,
+}: MarkReplyPostedParams): Promise<void> => {
+  await db.execute(
+    `UPDATE pending_resolutions SET reply_posted_at = ? WHERE session_id = ? AND thread_id = ?`,
+    [Date.now(), sessionId, threadId],
+  );
 };
 
 export const deletePendingResolution = async ({
