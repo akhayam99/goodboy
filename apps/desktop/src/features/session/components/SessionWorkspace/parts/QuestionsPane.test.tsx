@@ -10,6 +10,7 @@ let _oqPendingUndo: { question: { id: string; sessionId: string }; timer: number
 const mockAnswerOpenQuestions = vi.fn().mockResolvedValue(undefined);
 const mockDismissOpenQuestion = vi.fn().mockResolvedValue(undefined);
 const mockRestoreDismissedOpenQuestion = vi.fn().mockResolvedValue(undefined);
+const mockLoadSessionOpenQuestions = vi.fn().mockResolvedValue(undefined);
 const mockLoadSessionAnsweredQuestions = vi.fn().mockResolvedValue(undefined);
 const mockSelectAgent = vi.fn().mockResolvedValue(undefined);
 const mockFlashAnswered = vi.fn();
@@ -212,6 +213,7 @@ function setupStore(overrides: {
     answerOpenQuestions: mockAnswerOpenQuestions,
     dismissOpenQuestion: mockDismissOpenQuestion,
     restoreDismissedOpenQuestion: mockRestoreDismissedOpenQuestion,
+    loadSessionOpenQuestions: mockLoadSessionOpenQuestions,
     loadSessionAnsweredQuestions: mockLoadSessionAnsweredQuestions,
     selectAgent: mockSelectAgent,
   };
@@ -229,6 +231,17 @@ afterEach(() => {
 });
 
 describe('QuestionsPane', () => {
+  describe('loading state', () => {
+    it('shows a loading skeleton before open and answered questions have loaded', () => {
+      setupStore({ openQuestions: [] });
+      _storeState['sessionOpenQuestions'] = {};
+      _storeState['sessionAnsweredQuestions'] = {};
+      render(<QuestionsPane session={BASE_SESSION} />);
+      expect(screen.getByRole('status', { name: 'Loading questions' })).toBeDefined();
+      expect(screen.queryByText('No open questions')).toBeNull();
+    });
+  });
+
   describe('empty state', () => {
     it('renders empty state when no open questions', () => {
       setupStore({ openQuestions: [] });
@@ -573,9 +586,10 @@ describe('QuestionsPane', () => {
   });
 
   describe('answered history', () => {
-    it('loads answered questions on mount', () => {
+    it('loads open and answered questions on mount', () => {
       setupStore({ openQuestions: [] });
       render(<QuestionsPane session={BASE_SESSION} />);
+      expect(mockLoadSessionOpenQuestions).toHaveBeenCalledWith(SESSION_ID);
       expect(mockLoadSessionAnsweredQuestions).toHaveBeenCalledWith(SESSION_ID);
     });
 
