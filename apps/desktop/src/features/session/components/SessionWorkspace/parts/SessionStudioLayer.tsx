@@ -19,8 +19,6 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
   const [closing, setClosing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Defer the real unmount one studio-out cycle so the exit can play; reduced-motion
-  // skips the animation, so fall straight through to onClose without a visible hold.
   const requestClose = useCallback(() => {
     const reduce =
       typeof window !== 'undefined' &&
@@ -33,31 +31,29 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
     timer.current = setTimeout(onClose, STUDIO_OUT_MS);
   }, [onClose]);
 
-  // The store swaps sessionStudio[sid] in place (no remount/key), so a close
-  // animation in flight for the previous studio would otherwise leave its
-  // pending onClose timer to fire — closing the freshly-opened pane. On any
-  // studio identity change, abort the pending close and reset to the in state.
-  const studioPrNumber = studio.kind === 'github' ? studio.prNumber : undefined;
-  const studioThreadId = studio.kind === 'github' ? studio.threadId : undefined;
-  useEffect(() => {
-    if (timer.current) {
+  const studioIdentityPrNumber = studio.kind === 'github' ? studio.prNumber : undefined;
+  const studioIdentityThreadId = studio.kind === 'github' ? studio.threadId : undefined;
+
+  const discardStaleCloseTimerForNewStudio = () => {
+    if (timer.current != null) {
       clearTimeout(timer.current);
       timer.current = null;
     }
     setClosing(false);
-  }, [studio.kind, studioPrNumber, studioThreadId]);
+  };
+  useEffect(discardStaleCloseTimerForNewStudio, [
+    studio.kind,
+    studioIdentityPrNumber,
+    studioIdentityThreadId,
+  ]);
 
-  // Clear any pending close timer on unmount so a leaked timer can't fire
-  // onClose after this layer is gone.
-  useEffect(
-    () => () => {
-      if (timer.current) {
-        clearTimeout(timer.current);
-        timer.current = null;
-      }
-    },
-    [],
-  );
+  const clearPendingCloseTimerOnUnmount = () => () => {
+    if (timer.current != null) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+  };
+  useEffect(clearPendingCloseTimerOnUnmount, []);
 
   if (!workspace) {
     return null;
