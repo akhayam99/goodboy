@@ -717,6 +717,7 @@ export const initialState: AppState = {
     gemini: null,
     opencode: null,
     openrouter: null,
+    moonshot: null,
   }),
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
   providerConnect: INITIAL_CONNECT_MAP,

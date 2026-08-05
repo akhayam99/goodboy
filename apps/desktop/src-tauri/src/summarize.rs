@@ -223,7 +223,7 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
             args.model.clone(),
             "--sandbox".to_string(),
         ]),
-        "opencode" | "openrouter" => {
+        "opencode" | "openrouter" | "moonshot" => {
             let mut cli_args = vec![
                 "run".to_string(),
                 "--format".to_string(),

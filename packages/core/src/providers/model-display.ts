@@ -9,6 +9,7 @@ const PROVIDER_PRIORITY: ReadonlyArray<ProviderId> = [
   'cursor',
   'opencode',
   'openrouter',
+  'moonshot',
 ];
 
 const DESCRIPTOR_BY_ID: ReadonlyMap<string, ModelDescriptor> = (() => {
@@ -27,6 +28,7 @@ const DESCRIPTOR_BY_ID: ReadonlyMap<string, ModelDescriptor> = (() => {
         case 'gemini':
         case 'opencode':
         case 'openrouter':
+        case 'moonshot':
           map.set(model.cliId, descriptor);
           break;
         case 'codex':

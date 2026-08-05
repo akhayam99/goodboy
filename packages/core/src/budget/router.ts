@@ -28,6 +28,7 @@ const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
   gemini: 'gemini',
   opencode: 'opencode',
   openrouter: 'openrouter',
+  moonshot: 'moonshot',
 };
 
 export const resolveProvider = async (input: ResolveProviderInput): Promise<RoutingDecision> => {

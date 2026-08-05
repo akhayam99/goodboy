@@ -14,6 +14,7 @@ export const VALID_PROVIDERS: ReadonlyArray<ProviderId> = [
   'gemini',
   'opencode',
   'openrouter',
+  'moonshot',
 ];
 
 export const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;

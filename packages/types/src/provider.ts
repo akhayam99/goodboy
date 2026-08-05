@@ -8,7 +8,8 @@ export type ProviderName =
   | 'codex'
   | 'gemini'
   | 'opencode'
-  | 'openrouter';
+  | 'openrouter'
+  | 'moonshot';
 
 export type ProviderRunStatus =
   | { kind: 'pending' }

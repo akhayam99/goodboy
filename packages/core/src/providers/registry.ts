@@ -43,6 +43,8 @@ export const createProvider = (id: ProviderId, deps: ProviderDeps = {}): Provide
       return new OpenCodeAdapter({ ...deps, providerId: 'opencode' });
     case 'openrouter':
       return new OpenCodeAdapter({ ...deps, providerId: 'openrouter' });
+    case 'moonshot':
+      return new OpenCodeAdapter({ ...deps, providerId: 'moonshot' });
     default: {
       const _exhaustive: never = id;
       throw new UnknownProviderError(_exhaustive);

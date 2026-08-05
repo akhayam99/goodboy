@@ -42,7 +42,7 @@ export const Hero = () => (
           and <strong className="font-semibold text-foreground">picks the next one</strong>: the
           agent, the model, how hard to think.
           <br className="hidden sm:block" /> Across Claude, Cursor, Codex, Antigravity, OpenCode,
-          and OpenRouter.
+          OpenRouter, and Moonshot.
         </p>
 
         <div

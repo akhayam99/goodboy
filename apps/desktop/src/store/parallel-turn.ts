@@ -136,6 +136,7 @@ function parseProviderLine(
       return parseGeminiJsonLine(line, ctx);
     case 'opencode':
     case 'openrouter':
+    case 'moonshot':
       return parseOpenCodeJsonLine({ line, ctx });
     case 'anthropic':
       return parseStreamJsonLine(line, ctx);

@@ -22,6 +22,7 @@ describe('listSupportedProviders', () => {
       'gemini',
       'opencode',
       'openrouter',
+      'moonshot',
     ]);
   });
 
@@ -56,13 +57,16 @@ describe('createProvider', () => {
     expect(adapter.id).toBe('gemini');
   });
 
-  it('returns OpenCodeAdapter for opencode and openrouter', () => {
+  it('returns OpenCodeAdapter for opencode, openrouter and moonshot', () => {
     const opencode = createProvider('opencode');
     const openrouter = createProvider('openrouter');
+    const moonshot = createProvider('moonshot');
     expect(opencode).toBeInstanceOf(OpenCodeAdapter);
     expect(opencode.id).toBe('opencode');
     expect(openrouter).toBeInstanceOf(OpenCodeAdapter);
     expect(openrouter.id).toBe('openrouter');
+    expect(moonshot).toBeInstanceOf(OpenCodeAdapter);
+    expect(moonshot.id).toBe('moonshot');
   });
 
   it('passes deps through to adapter', () => {

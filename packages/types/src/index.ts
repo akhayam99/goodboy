@@ -106,6 +106,7 @@ export type {
   ModelPresentation,
   ModelRemapRecord,
   ModelSelection,
+  MoonshotModel,
   OpencodeModel,
   OpenRouterModel,
   ResolvedModelArgs,

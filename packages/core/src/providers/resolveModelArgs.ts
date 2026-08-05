@@ -81,7 +81,8 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
       });
     }
     case 'opencode':
-    case 'openrouter': {
+    case 'openrouter':
+    case 'moonshot': {
       const requested = selection.effort ?? model.defaultEffort;
       const applied = clampEffort({ requested, available: model.efforts });
       return withClamp({

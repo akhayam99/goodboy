@@ -131,7 +131,7 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
             args.model.clone(),
             "--sandbox".to_string(),
         ]),
-        "opencode" | "openrouter" => {
+        "opencode" | "openrouter" | "moonshot" => {
             let mut cli_args = vec![
                 "run".to_string(),
                 "--format".to_string(),

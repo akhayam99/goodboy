@@ -74,13 +74,21 @@ export type OpenRouterModel = BaseModel & {
   readonly defaultEffort: EffortLevel;
 };
 
+export type MoonshotModel = BaseModel & {
+  readonly provider: 'moonshot';
+  readonly cliId: string;
+  readonly efforts: ReadonlyArray<EffortLevel>;
+  readonly defaultEffort: EffortLevel;
+};
+
 export type CatalogModel =
   | AnthropicModel
   | CodexModel
   | CursorModel
   | GeminiModel
   | OpencodeModel
-  | OpenRouterModel;
+  | OpenRouterModel
+  | MoonshotModel;
 
 export type ModelSelection = {
   readonly key: ModelKey;

@@ -9,6 +9,7 @@ import {
   getCodexStatus,
   getCursorStatus,
   getGeminiStatus,
+  getMoonshotStatus,
   getOpenCodeStatus,
   getOpenRouterStatus,
   getProviderStatus,
@@ -77,6 +78,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           geminiStatus,
           opencodeStatus,
           openrouterStatus,
+          moonshotStatus,
         ] = await Promise.all([
           getProviderStatus('anthropic'),
           getCursorStatus(),
@@ -84,6 +86,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           getGeminiStatus(),
           getOpenCodeStatus(),
           getOpenRouterStatus(),
+          getMoonshotStatus(),
         ]);
         const statuses: ProviderStatuses = {
           anthropic: providerStatus,
@@ -92,6 +95,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           gemini: geminiStatus,
           opencode: opencodeStatus,
           openrouter: openrouterStatus,
+          moonshot: moonshotStatus,
         };
         set({
           providerStatus,
@@ -101,15 +105,23 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           providers: buildProviderList(statuses),
         });
 
-        const [anthropicAuth, cursorAuth, codexAuth, geminiAuth, opencodeAuth, openrouterAuth] =
-          await Promise.all([
-            checkProviderAuth('anthropic'),
-            checkProviderAuth('cursor'),
-            checkProviderAuth('codex'),
-            checkProviderAuth('gemini'),
-            checkProviderAuth('opencode'),
-            checkProviderAuth('openrouter'),
-          ]);
+        const [
+          anthropicAuth,
+          cursorAuth,
+          codexAuth,
+          geminiAuth,
+          opencodeAuth,
+          openrouterAuth,
+          moonshotAuth,
+        ] = await Promise.all([
+          checkProviderAuth('anthropic'),
+          checkProviderAuth('cursor'),
+          checkProviderAuth('codex'),
+          checkProviderAuth('gemini'),
+          checkProviderAuth('opencode'),
+          checkProviderAuth('openrouter'),
+          checkProviderAuth('moonshot'),
+        ]);
         const authResults: ProviderAuthResults = {
           anthropic: anthropicAuth,
           cursor: cursorAuth,
@@ -117,6 +129,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           gemini: geminiAuth,
           opencode: opencodeAuth,
           openrouter: openrouterAuth,
+          moonshot: moonshotAuth,
         };
         set({ authResults, providers: buildProviderList(statuses, authResults) });
 

@@ -52,6 +52,9 @@ const core = vi.hoisted(() => {
         },
       ],
     },
+    moonshot: {
+      models: [{ id: 'moonshotai/kimi-k3', label: 'Kimi K3', tier: 'turn' }],
+    },
   } as Record<string, { models: Array<{ id: string; label: string; tier: string }> }>;
   return {
     isSlotKey: (k: string) => SLOT_KEY_SET.has(k),
@@ -76,6 +79,7 @@ vi.mock('../providers/providers', () => ({
     gemini: 'gemini',
     opencode: 'OpenCode',
     openrouter: 'OpenRouter',
+    moonshot: 'Moonshot',
   },
 }));
 vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
@@ -218,6 +222,7 @@ describe('queryProviders (read-only menu RPC)', () => {
       'gemini',
       'opencode',
       'openrouter',
+      'moonshot',
     ]);
   });
 

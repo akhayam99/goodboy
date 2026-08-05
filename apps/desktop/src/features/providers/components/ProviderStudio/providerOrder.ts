@@ -7,4 +7,5 @@ export const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
   'gemini',
   'opencode',
   'openrouter',
+  'moonshot',
 ];
