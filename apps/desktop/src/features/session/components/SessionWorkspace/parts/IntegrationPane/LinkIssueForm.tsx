@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import { Divider } from '@goodboy/ui';
 import type {
   IsoDateTime,
   SessionExternalTaskProvider,
@@ -73,7 +75,15 @@ export const LinkIssueForm = ({
         onPick={(candidate) => void handlePick(candidate)}
         onClear={() => undefined}
       />
-      {error != null ? <p className="text-xs text-danger">{error}</p> : null}
+      {error != null ? (
+        <>
+          <Divider />
+          <footer role="alert" className="flex items-center gap-1 text-xs text-danger">
+            <AlertTriangle size={12} aria-hidden className="shrink-0" />
+            {error}
+          </footer>
+        </>
+      ) : null}
     </div>
   );
 };
