@@ -9,6 +9,7 @@ import { resolveStepRouting } from '../../resolveStepRouting';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
+import { useStartAnywayConfirm } from '../../useStartAnywayConfirm';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type Props = {
@@ -68,12 +69,20 @@ export const WorkflowNextStepCta = ({
   roleModels = null,
 }: Props) => {
   const [busy, setBusy] = useState(false);
-  const [pendingConfirm, setPendingConfirm] = useState(false);
   const [pendingForce, setPendingForce] = useState(false);
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next ? inferAgentKindFromName(next.name) : 'generic'), [next]);
   const routing = resolveStepRouting({ step: next, kind, roleModels });
+  const advance = useStartAnywayConfirm({
+    blockReason,
+    onStart: async () => {
+      if (next == null) {
+        return;
+      }
+      await onAdvance(next, routing.model, next.verbosity);
+    },
+  });
   const doForce = async () => {
     if (busy) {
       return;
@@ -128,31 +137,12 @@ export const WorkflowNextStepCta = ({
     return null;
   }
   const stepVerbosity = next.verbosity;
-  const doAdvance = async () => {
-    if (busy) {
-      return;
-    }
-    setBusy(true);
-    setPendingConfirm(false);
-    try {
-      await onAdvance(next, routing.model, stepVerbosity);
-    } finally {
-      setBusy(false);
-    }
-  };
-  const onClick = () => {
-    if (blockReason != null) {
-      setPendingConfirm(true);
-      return;
-    }
-    void doAdvance();
-  };
   return (
     <div className={cn('relative', className)}>
       <button
         type="button"
-        onClick={onClick}
-        disabled={busy}
+        onClick={advance.onTrigger}
+        disabled={advance.isBusy}
         data-testid="workflow-next-step-cta"
         title={
           blockReason != null
@@ -189,17 +179,17 @@ export const WorkflowNextStepCta = ({
           </span>
         ) : null}
       </button>
-      {pendingConfirm && blockReason != null ? (
+      {advance.isConfirming ? (
         <InlineConfirm
           role="alert"
           icon={<AlertTriangle size={12} />}
-          title="Start the next agent anyway?"
-          description={WORKFLOW_BLOCK_COPY[blockReason]}
-          confirmLabel="Start anyway"
-          cancelLabel="Wait"
-          isBusy={busy}
-          onConfirm={() => void doAdvance()}
-          onCancel={() => setPendingConfirm(false)}
+          title={advance.title}
+          description={advance.description}
+          confirmLabel={advance.confirmLabel}
+          cancelLabel={advance.cancelLabel}
+          isBusy={advance.isBusy}
+          onConfirm={advance.onConfirm}
+          onCancel={advance.onCancel}
           className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
         />
       ) : null}
