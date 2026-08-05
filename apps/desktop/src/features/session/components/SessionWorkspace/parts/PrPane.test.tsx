@@ -214,6 +214,24 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PrPane', () => {
+  it('shows a loading skeleton on the first fetch instead of flashing the empty state', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: null,
+        linkedIssues: [],
+        detail: null,
+        loading: true,
+        fetchedAt: null,
+        error: null,
+      },
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByRole('status', { name: 'Loading pull request' })).toBeDefined();
+    expect(screen.queryByText('Open a pull or merge request')).toBeNull();
+  });
+
   it('names the host it is actually pointed at', () => {
     h.remoteKind = 'gitlab';
 
