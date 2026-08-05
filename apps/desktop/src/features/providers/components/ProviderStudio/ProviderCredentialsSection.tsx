@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, EmptyState, Input, SectionHeader } from '@goodboy/ui';
+import { Button, EmptyState, InlineConfirm, Input, SectionHeader } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -28,6 +28,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
   const [label, setLabel] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [busy, setBusy] = useState(false);
+  const [armedId, setArmedId] = useState<CredentialId | null>(null);
 
   const reset = useCallback(() => {
     setAdding(false);
@@ -55,6 +56,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
     async (credentialId: CredentialId) => {
       await deleteCredential(credentialId);
       await refreshProviders();
+      setArmedId(null);
     },
     [deleteCredential, refreshProviders],
   );
@@ -94,32 +96,47 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
 
       {mine.length > 0 && (
         <ul className="flex flex-col gap-2">
-          {mine.map((c) => (
-            <li
-              key={c.id}
-              className="group flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-3 transition-colors hover:bg-muted/30"
-            >
-              <span
-                className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
-                aria-hidden
+          {mine.map((c) =>
+            armedId === c.id ? (
+              <li key={c.id}>
+                <InlineConfirm
+                  role="danger"
+                  icon={<Trash2 size={12} aria-hidden />}
+                  title={`Remove "${c.label}"?`}
+                  description="Deletes this API key from Goodboy. You can add it again later."
+                  confirmLabel={`Remove ${c.label}`}
+                  autoDisarmMs={4000}
+                  onConfirm={() => onDelete(c.id)}
+                  onCancel={() => setArmedId(null)}
+                />
+              </li>
+            ) : (
+              <li
+                key={c.id}
+                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-3 transition-colors hover:bg-muted/30"
               >
-                <KeyRound size={14} />
-              </span>
-              <div className="flex min-w-0 flex-col">
-                <span className="truncate text-sm font-medium text-foreground">{c.label}</span>
-                <span className="font-mono text-2xs text-muted-foreground/70">{c.hint}</span>
-              </div>
-              <div className="flex-1" />
-              <button
-                type="button"
-                aria-label={`Remove ${c.label}`}
-                onClick={() => void onDelete(c.id)}
-                className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
-              >
-                <Trash2 size={13} aria-hidden />
-              </button>
-            </li>
-          ))}
+                <span
+                  className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
+                  aria-hidden
+                >
+                  <KeyRound size={14} />
+                </span>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-medium text-foreground">{c.label}</span>
+                  <span className="font-mono text-2xs text-muted-foreground/70">{c.hint}</span>
+                </div>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  aria-label={`Remove ${c.label}`}
+                  onClick={() => setArmedId(c.id)}
+                  className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+                >
+                  <Trash2 size={13} aria-hidden />
+                </button>
+              </li>
+            ),
+          )}
         </ul>
       )}
 
