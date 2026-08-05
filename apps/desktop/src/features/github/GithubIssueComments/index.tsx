@@ -4,9 +4,9 @@ import { formatRelativeDuration } from '../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { NoteAvatar } from '../../../shared/components/NoteAvatar';
 import { NoteCard } from '../../../shared/components/NoteCard';
+import { NoteComposer } from '../../../shared/components/NoteComposer';
 import { NoteHeader } from '../../../shared/components/NoteHeader';
 import { NoteListSkeleton } from '../../../shared/components/NoteListSkeleton';
-import { GithubIssueCommentComposer } from './GithubIssueCommentComposer';
 
 type Props = {
   readonly comments: ReadonlyArray<GithubIssueComment>;
@@ -56,7 +56,9 @@ export const GithubIssueComments = ({ comments, isLoading, error, onPost }: Prop
           })}
         </div>
       )}
-      {onPost != null && <GithubIssueCommentComposer onPost={onPost} />}
+      {onPost != null && (
+        <NoteComposer placeholder="Write a comment" submitLabel="Comment" onSubmit={onPost} />
+      )}
     </div>
   );
 };
