@@ -1,48 +1,46 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
-import { jiraCreateComment, jiraListComments, type JiraComment, type JiraIssue } from '../client';
+import { jiraListTransitions, type JiraTransition } from '../client';
 import { useJiraConfig } from '../useJiraConfig';
 
 type Params = {
-  readonly issue: JiraIssue | null;
+  readonly issueKey: string;
   readonly workspaceId: WorkspaceId;
 };
 
 type Result = {
-  readonly comments: ReadonlyArray<JiraComment>;
+  readonly transitions: ReadonlyArray<JiraTransition>;
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly reload: () => void;
-  readonly post: ((body: string) => Promise<void>) | null;
 };
 
-export const useJiraIssueComments = ({ issue, workspaceId }: Params): Result => {
+export const useJiraTransitions = ({ issueKey, workspaceId }: Params): Result => {
   const config = useJiraConfig({ workspaceId });
   const siteUrl = config?.siteUrl ?? null;
   const email = config?.email ?? null;
-  const issueKey = issue?.key ?? null;
-  const [comments, setComments] = useState<ReadonlyArray<JiraComment>>([]);
+  const [transitions, setTransitions] = useState<ReadonlyArray<JiraTransition>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    setComments([]);
+    setTransitions([]);
     setError(null);
-    if (siteUrl == null || email == null || issueKey == null) {
+    if (siteUrl == null || email == null || issueKey === '') {
       setIsLoading(false);
       return;
     }
 
     let isCancelled = false;
     setIsLoading(true);
-    jiraListComments({ workspaceId, siteUrl, email, issueKey })
+    jiraListTransitions({ workspaceId, siteUrl, email, issueKey })
       .then((next) => {
         if (isCancelled) {
           return;
         }
-        setComments(next);
+        setTransitions(next);
       })
       .catch((fetchError: unknown) => {
         if (isCancelled) {
@@ -66,18 +64,5 @@ export const useJiraIssueComments = ({ issue, workspaceId }: Params): Result => 
     setReloadToken((token) => token + 1);
   }, []);
 
-  const post = useCallback(
-    async (body: string) => {
-      if (siteUrl == null || email == null || issueKey == null) {
-        return;
-      }
-      const created = await jiraCreateComment({ workspaceId, siteUrl, email, issueKey, body });
-      setComments((current) => [...current, created]);
-    },
-    [workspaceId, siteUrl, email, issueKey],
-  );
-
-  const isReady = siteUrl != null && email != null && issueKey != null;
-
-  return { comments, isLoading, error, reload, post: isReady ? post : null };
+  return { transitions, isLoading, error, reload };
 };

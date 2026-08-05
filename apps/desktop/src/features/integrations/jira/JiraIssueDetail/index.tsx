@@ -13,7 +13,10 @@ import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import type { JiraIssue } from '../client';
 import { statusCategoryTone } from '../statusCategoryTone';
+import { useJiraIssueActions } from '../useJiraIssueActions';
 import { useJiraIssueComments } from '../useJiraIssueComments';
+import { AssigneePicker } from '../AssigneePicker';
+import { TransitionMenu } from '../TransitionMenu';
 import { IssueConversation } from '../IssueConversation';
 
 type Fit = 'fill' | 'bleed' | 'flow';
@@ -40,7 +43,9 @@ export const JiraIssueDetail = ({
   fit = 'fill',
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
-  const conversation = useJiraIssueComments({ issue, workspaceId });
+  const actions = useJiraIssueActions({ issue, workspaceId });
+  const live = actions.issue;
+  const conversation = useJiraIssueComments({ issue: live, workspaceId });
 
   return (
     <StudioDetailLayout
@@ -51,18 +56,33 @@ export const JiraIssueDetail = ({
           meta={
             <>
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-                {issue.key}
+                {live.key}
               </span>
-              <IssueStateBadge tone={statusCategoryTone({ statusCategory: issue.statusCategory })}>
-                {issue.status}
+              <IssueStateBadge tone={statusCategoryTone({ statusCategory: live.statusCategory })}>
+                {live.status}
               </IssueStateBadge>
             </>
           }
-          title={issue.summary}
+          title={live.summary}
           actions={
             <>
+              {actions.assign != null && (
+                <AssigneePicker
+                  issueKey={live.key}
+                  workspaceId={workspaceId}
+                  assignee={live.assignee}
+                  onAssign={actions.assign}
+                />
+              )}
+              {actions.transition != null && (
+                <TransitionMenu
+                  issueKey={live.key}
+                  workspaceId={workspaceId}
+                  onTransition={actions.transition}
+                />
+              )}
               {headerActions}
-              <ExternalRefActions url={issue.url} label="issue" hostLabel="Jira" />
+              <ExternalRefActions url={live.url} label="issue" hostLabel="Jira" />
             </>
           }
         />
@@ -75,16 +95,17 @@ export const JiraIssueDetail = ({
           onChange={setSection}
         />
       }
-      properties={resolveDetailFields({ registry: jiraIssueFields, entity: issue })}
+      properties={resolveDetailFields({ registry: jiraIssueFields, entity: live })}
     >
       {section === 'overview' ? (
-        <DescriptionSection text={issue.description} />
+        <DescriptionSection text={live.description} onSave={actions.saveDescription} />
       ) : (
         <IssueConversation
           comments={conversation.comments}
           isLoading={conversation.isLoading}
           error={conversation.error}
           onRetry={conversation.reload}
+          onPost={conversation.post}
         />
       )}
     </StudioDetailLayout>
