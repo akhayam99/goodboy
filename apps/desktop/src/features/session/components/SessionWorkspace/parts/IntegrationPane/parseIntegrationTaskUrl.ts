@@ -83,6 +83,18 @@ const parseGithub = ({ segments }: ProviderParams): ProviderResult => {
   return { externalId: issueNumber, identifier: `#${issueNumber}` };
 };
 
+const parseBitbucket = ({ segments }: ProviderParams): ProviderResult => {
+  const pullRequestIndex = segments.findIndex(
+    (segment) => segment.toLowerCase() === 'pull-requests',
+  );
+  const pullRequestId = segments[pullRequestIndex + 1];
+  if (pullRequestIndex !== 2 || pullRequestId == null || !/^\d+$/.test(pullRequestId)) {
+    return null;
+  }
+  const identifier = `${segments[0]}/${segments[1]}#${pullRequestId}`;
+  return { externalId: identifier, identifier };
+};
+
 const parseProvider = ({ provider, segments }: ParseProviderParams): ProviderResult => {
   switch (provider) {
     case 'linear':
@@ -95,6 +107,8 @@ const parseProvider = ({ provider, segments }: ParseProviderParams): ProviderRes
       return parseJira({ segments });
     case 'github':
       return parseGithub({ segments });
+    case 'bitbucket':
+      return parseBitbucket({ segments });
     default: {
       const exhaustiveProvider: never = provider;
       return exhaustiveProvider;

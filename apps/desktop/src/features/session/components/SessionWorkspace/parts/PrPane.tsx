@@ -1,5 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { ArrowRight, GitBranch, GitFork, GitMerge, Unlink } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ArrowRight, GitBranch, GitFork, GitMerge, GitPullRequest, Unlink } from 'lucide-react';
 import { Button, Eyebrow, Skeleton } from '@goodboy/ui';
 import type {
   LinkedIssue,
@@ -11,7 +11,9 @@ import type {
 } from '@goodboy/types';
 import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
+import { integrationLabel } from '../../../../integrations/components/IntegrationGlyph';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
+import { BitbucketPrStrip } from '../../../../context/components/ContextPanel/strips/BitbucketPrStrip';
 import { MissingGithubRemoteEmptyState } from '../../../../github/components/MissingGithubRemoteEmptyState';
 import { MissingGithubTokenEmptyState } from '../../../../github/components/MissingGithubTokenEmptyState';
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
@@ -42,22 +44,40 @@ import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
 import { branchRequests } from '../../../branchRequests';
 import { buildWorkItems, type WorkItem, type WorkItemGroups } from '../../../workItems';
 import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
+import { codeHostFromUrl } from './codeHostFromUrl';
+import {
+  availableProviderCount,
+  resolvePullRequestProvider,
+  type PullRequestProvider,
+} from './resolvePullRequestProvider';
+
+const PROVIDER_TAB_OPTIONS: ReadonlyArray<{
+  readonly value: PullRequestProvider;
+  readonly label: string;
+  readonly icon: typeof GitFork;
+}> = [
+  { value: 'github', label: 'GitHub', icon: GitFork },
+  { value: 'gitlab', label: 'GitLab', icon: GitMerge },
+  { value: 'bitbucket', label: 'Bitbucket', icon: GitPullRequest },
+];
 
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-type PullRequestProvider = 'github' | 'gitlab';
-
 type HostTitleParams = {
   readonly remoteKind: RemoteHostKind | null;
-  readonly hasBothProviders: boolean;
+  readonly providerCount: number;
+  readonly activeProvider: PullRequestProvider;
 };
 
-const hostTitle = ({ remoteKind, hasBothProviders }: HostTitleParams): string => {
-  if (hasBothProviders) {
+const hostTitle = ({ remoteKind, providerCount, activeProvider }: HostTitleParams): string => {
+  if (providerCount > 1) {
     return 'Code host work';
+  }
+  if (activeProvider === 'bitbucket') {
+    return 'Bitbucket';
   }
   if (remoteKind === 'gitlab') {
     return 'GitLab';
@@ -90,24 +110,26 @@ const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
     </span>
   );
 
-type SessionStudioOpenEvent = 'goodboy:open-github-session' | 'goodboy:open-gitlab-mr';
+type SessionStudioOpenEvent =
+  | 'goodboy:open-github-session'
+  | 'goodboy:open-gitlab-mr'
+  | 'goodboy:open-bitbucket-pr';
 
 const resolveSessionStudioOpenEvent = ({
-  remoteKind,
+  activeProvider,
 }: {
-  readonly remoteKind: RemoteHostKind | null;
+  readonly activeProvider: PullRequestProvider;
 }): SessionStudioOpenEvent => {
-  switch (remoteKind) {
+  switch (activeProvider) {
     case 'gitlab':
       return 'goodboy:open-gitlab-mr';
+    case 'bitbucket':
+      return 'goodboy:open-bitbucket-pr';
     case 'github':
-    case 'other':
-    case 'none':
-    case null:
       return 'goodboy:open-github-session';
     default: {
-      const unexpectedKind: never = remoteKind;
-      return unexpectedKind;
+      const unexpectedProvider: never = activeProvider;
+      return unexpectedProvider;
     }
   }
 };
@@ -127,41 +149,91 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const phaseRuns = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
+  const bitbucketPr = useAppStore((state) => state.sessionBitbucketPr[sessionId]?.pr ?? null);
+  const hasBitbucketIntegration = useAppStore(
+    (state) =>
+      state.workspaceIntegrations[session.workspaceId]?.some(
+        (integration) => integration.provider === 'bitbucket',
+      ) === true,
+  );
+  const hasResolvedBitbucket = useAppStore(
+    (state) => state.sessionBitbucketPr[sessionId]?.fetchedAt != null,
+  );
+  const refreshSessionBitbucketPr = useAppStore((state) => state.refreshSessionBitbucketPr);
+  const discoverBitbucketPullRequest = () => {
+    if (!hasBitbucketIntegration || hasResolvedBitbucket) {
+      return;
+    }
+    void refreshSessionBitbucketPr(sessionId, { silent: true });
+  };
+  useEffect(discoverBitbucketPullRequest, [
+    hasBitbucketIntegration,
+    hasResolvedBitbucket,
+    refreshSessionBitbucketPr,
+    sessionId,
+  ]);
   const [selectedProvider, setSelectedProvider] = useState<PullRequestProvider | null>(null);
-  const defaultProvider: PullRequestProvider =
-    remoteKind === 'gitlab' && mergeRequest != null
-      ? 'gitlab'
-      : pullRequest != null
-        ? 'github'
-        : mergeRequest != null
-          ? 'gitlab'
-          : remoteKind === 'gitlab'
-            ? 'gitlab'
-            : 'github';
-  const activeProvider =
-    selectedProvider === 'github' && pullRequest != null
-      ? 'github'
-      : selectedProvider === 'gitlab' && mergeRequest != null
-        ? 'gitlab'
-        : defaultProvider;
+  const availability = useMemo(
+    () => ({
+      github: pullRequest != null,
+      gitlab: mergeRequest != null,
+      bitbucket: bitbucketPr != null,
+    }),
+    [bitbucketPr, mergeRequest, pullRequest],
+  );
+  const activeProvider = resolvePullRequestProvider({
+    selected: selectedProvider,
+    availability,
+    remoteKind,
+  });
+  const providerCount = availableProviderCount({ availability });
   const mergeRequestState = mergeRequest == null ? null : gitlabMrStateKind({ mr: mergeRequest });
-  const hasBothProviders = pullRequest != null && mergeRequest != null;
   const openStudio = () =>
     window.dispatchEvent(
-      new CustomEvent(resolveSessionStudioOpenEvent({ remoteKind }), { detail: { sessionId } }),
+      new CustomEvent(resolveSessionStudioOpenEvent({ activeProvider }), {
+        detail: { sessionId },
+      }),
     );
 
-  const providerTabs = hasBothProviders ? (
-    <StudioDetailTabs
-      ariaLabel="Code host"
-      value={activeProvider}
-      onChange={setSelectedProvider}
-      options={[
-        { value: 'github', label: 'GitHub', icon: GitFork },
-        { value: 'gitlab', label: 'GitLab', icon: GitMerge },
-      ]}
-    />
-  ) : undefined;
+  const providerTabs =
+    providerCount > 1 ? (
+      <StudioDetailTabs
+        ariaLabel="Code host"
+        value={activeProvider}
+        onChange={setSelectedProvider}
+        options={PROVIDER_TAB_OPTIONS.filter((option) => availability[option.value])}
+      />
+    ) : undefined;
+
+  if (activeProvider === 'bitbucket') {
+    return (
+      <StudioDetailLayout
+        fit="fill"
+        header={
+          <HeaderBand
+            meta={<SessionBranchTag branch={sessionBranch} />}
+            title={hostTitle({ remoteKind, providerCount, activeProvider })}
+            subtitle={
+              bitbucketPr != null ? (
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="font-mono text-2xs tabular-nums text-muted-foreground">
+                    #{bitbucketPr.id}
+                  </span>
+                  <IssueStateBadge>{bitbucketPr.state.toLowerCase()}</IssueStateBadge>
+                  <span className="min-w-0 truncate text-sm text-muted-foreground">
+                    {bitbucketPr.title}
+                  </span>
+                </div>
+              ) : null
+            }
+          />
+        }
+        {...(providerTabs != null && { tabs: providerTabs })}
+      >
+        <BitbucketPrStrip sessionId={sessionId} onOpenStudio={openStudio} />
+      </StudioDetailLayout>
+    );
+  }
 
   if (activeProvider === 'gitlab') {
     return (
@@ -170,7 +242,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
         header={
           <HeaderBand
             meta={<SessionBranchTag branch={sessionBranch} />}
-            title={hostTitle({ remoteKind, hasBothProviders })}
+            title={hostTitle({ remoteKind, providerCount, activeProvider })}
             subtitle={
               mergeRequest != null && mergeRequestState != null ? (
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -200,7 +272,8 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
       onSelectLens={onSelectLens}
       remoteKind={remoteKind}
       onOpenStudio={openStudio}
-      hasBothProviders={hasBothProviders}
+      providerCount={providerCount}
+      activeProvider={activeProvider}
       {...(providerTabs != null && { tabs: providerTabs })}
     />
   );
@@ -212,7 +285,8 @@ const GithubPrCard = ({
   onSelectLens,
   remoteKind,
   onOpenStudio,
-  hasBothProviders,
+  providerCount,
+  activeProvider,
   tabs,
 }: {
   session: Session;
@@ -220,7 +294,8 @@ const GithubPrCard = ({
   onSelectLens: (lens: LensKind) => void;
   remoteKind: RemoteHostKind | null;
   onOpenStudio: () => void;
-  hasBothProviders: boolean;
+  providerCount: number;
+  activeProvider: PullRequestProvider;
   tabs?: ReactNode;
 }) => {
   const sessionId = session.id as SessionId;
@@ -259,7 +334,8 @@ const GithubPrCard = ({
   const detail = github?.detail ?? null;
   const linkedIssues = github?.linkedIssues ?? [];
   const codeHostTasks = externalTasks.filter(
-    (task) => task.provider === 'github' || task.provider === 'gitlab',
+    (task) =>
+      task.provider === 'github' || task.provider === 'gitlab' || task.provider === 'bitbucket',
   );
   const loading = github?.loading ?? false;
   const error = github?.error ?? null;
@@ -336,7 +412,7 @@ const GithubPrCard = ({
       header={
         <HeaderBand
           meta={<SessionBranchTag branch={branch} />}
-          title={hostTitle({ remoteKind, hasBothProviders })}
+          title={hostTitle({ remoteKind, providerCount, activeProvider })}
         />
       }
       {...(tabs != null && { tabs })}
@@ -425,7 +501,7 @@ const GithubPrCard = ({
       header={
         <HeaderBand
           meta={<SessionBranchTag branch={branch} />}
-          title={hostTitle({ remoteKind, hasBothProviders })}
+          title={hostTitle({ remoteKind, providerCount, activeProvider })}
           subtitle={
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <PullRequestChip state={pr.state} variant="badge" number={pr.number} iconSize={12} />
@@ -514,7 +590,7 @@ const LinkedPullRequestsSection = ({
         {prs.map((candidate) => (
           <LinkedWorkRow
             key={candidate.number}
-            leading={{ kind: 'glyph', provider: 'github' }}
+            leading={{ kind: 'glyph', provider: codeHostFromUrl({ url: candidate.url }) }}
             identifier={`#${candidate.number}`}
             title={candidate.title}
             isSelected={candidate.number === selectedNumber}
@@ -532,7 +608,7 @@ const LinkedPullRequestsSection = ({
               <ExternalRefActions
                 url={candidate.url}
                 label={`pull request #${candidate.number}`}
-                hostLabel="GitHub"
+                hostLabel={integrationLabel({ provider: codeHostFromUrl({ url: candidate.url }) })}
               />
             }
           />

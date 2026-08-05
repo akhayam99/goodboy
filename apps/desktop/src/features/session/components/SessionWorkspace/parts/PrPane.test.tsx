@@ -16,10 +16,12 @@ type Store = {
   sessionGithubPrs: Record<string, ReadonlyArray<PullRequestState>>;
   sessionSelectedPrNumber: Record<string, number | null>;
   sessionGitlabMr: Record<string, unknown>;
+  sessionBitbucketPr: Record<string, unknown>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
   workspaceIntegrations: Record<string, ReadonlyArray<{ readonly provider: string }>>;
   readonly refreshSessionPr: ReturnType<typeof vi.fn>;
+  readonly refreshSessionBitbucketPr: ReturnType<typeof vi.fn>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly editPr: ReturnType<typeof vi.fn>;
   readonly setFocusedGithubIssueNumber: ReturnType<typeof vi.fn>;
@@ -38,10 +40,12 @@ const h = vi.hoisted(() => ({
     sessionGithubPrs: {},
     sessionSelectedPrNumber: {},
     sessionGitlabMr: {},
+    sessionBitbucketPr: {},
     sessionExternalTasks: {},
     sessionPhaseRuns: {},
     workspaceIntegrations: {},
     refreshSessionPr: vi.fn(),
+    refreshSessionBitbucketPr: vi.fn(async () => undefined),
     selectSessionPr: vi.fn(),
     editPr: vi.fn(async () => undefined),
     setFocusedGithubIssueNumber: vi.fn(),
@@ -91,6 +95,17 @@ vi.mock('../../../../context/components/ContextPanel/strips/GitlabMrStrip', () =
       <div>GitLab merge request detail</div>
       <button type="button" onClick={onOpenStudio}>
         Open merge request from code host
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('../../../../context/components/ContextPanel/strips/BitbucketPrStrip', () => ({
+  BitbucketPrStrip: ({ onOpenStudio }: { readonly onOpenStudio?: () => void }) => (
+    <div>
+      <div>Bitbucket pull request detail</div>
+      <button type="button" onClick={onOpenStudio}>
+        Open pull request from code host
       </button>
     </div>
   ),
@@ -179,6 +194,7 @@ beforeEach(() => {
   h.store.sessionGithubPrs = {};
   h.store.sessionSelectedPrNumber = {};
   h.store.sessionGitlabMr = {};
+  h.store.sessionBitbucketPr = {};
   h.store.sessionExternalTasks = {};
   h.store.sessionPhaseRuns = {};
   h.store.workspaceIntegrations = {};
@@ -199,6 +215,7 @@ beforeEach(() => {
   h.store.editPr.mockClear();
   h.store.setFocusedGithubIssueNumber.mockClear();
   h.store.openExternalTaskLens.mockClear();
+  h.store.refreshSessionBitbucketPr.mockClear();
   h.githubStatus = {
     available: true,
     mode: 'gh-cli',
@@ -290,6 +307,110 @@ describe('PrPane', () => {
     expect(screen.getAllByText('Refactor authentication').length).toBeGreaterThan(0);
     expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
     expect(screen.getByRole('tab', { name: 'GitLab' })).toBeDefined();
+  });
+
+  it('resolves the branch to a Bitbucket pull request when the workspace has Bitbucket connected', () => {
+    h.remoteKind = 'other';
+    h.store.workspaceIntegrations = { [session.workspaceId]: [{ provider: 'bitbucket' }] };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(h.store.refreshSessionBitbucketPr).toHaveBeenCalledWith(SESSION_ID, { silent: true });
+  });
+
+  it('leaves Bitbucket alone when the workspace never connected it', () => {
+    h.remoteKind = 'other';
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(h.store.refreshSessionBitbucketPr).not.toHaveBeenCalled();
+  });
+
+  it('does not resolve the Bitbucket pull request twice once it has an answer', () => {
+    h.remoteKind = 'other';
+    h.store.workspaceIntegrations = { [session.workspaceId]: [{ provider: 'bitbucket' }] };
+    h.store.sessionBitbucketPr = { [SESSION_ID]: { pr: null, fetchedAt: DATE } };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(h.store.refreshSessionBitbucketPr).not.toHaveBeenCalled();
+  });
+
+  it('names Bitbucket and shows its strip when it is the only host with a pull request', () => {
+    h.remoteKind = 'other';
+    h.store.sessionBitbucketPr = {
+      [SESSION_ID]: { pr: { id: 42, title: 'Raise the fuel constant', state: 'OPEN' } },
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByRole('heading', { name: 'Bitbucket' })).toBeDefined();
+    expect(screen.getByText('Bitbucket pull request detail')).toBeDefined();
+    expect(screen.queryByRole('tab', { name: 'Bitbucket' })).toBeNull();
+  });
+
+  it('offers a tab only for the hosts that have a request', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionBitbucketPr = {
+      [SESSION_ID]: { pr: { id: 42, title: 'Raise the fuel constant', state: 'OPEN' } },
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Bitbucket' })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: 'GitLab' })).toBeNull();
+  });
+
+  it('offers all three hosts as tabs when all three have a request', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    h.store.sessionGitlabMr = {
+      [SESSION_ID]: { mr: { iid: 7, title: 'MR', state: 'open', draft: false } },
+    };
+    h.store.sessionBitbucketPr = {
+      [SESSION_ID]: { pr: { id: 42, title: 'Raise the fuel constant', state: 'OPEN' } },
+    };
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+
+    expect(screen.getByRole('heading', { name: 'Code host work' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'GitLab' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Bitbucket' })).toBeDefined();
+  });
+
+  it('routes the open action to Bitbucket when Bitbucket is the active host', () => {
+    h.remoteKind = 'other';
+    h.store.sessionBitbucketPr = {
+      [SESSION_ID]: { pr: { id: 42, title: 'Raise the fuel constant', state: 'OPEN' } },
+    };
+    const bitbucketEvents: Array<CustomEvent> = [];
+    const listener = (event: Event) => bitbucketEvents.push(event as CustomEvent);
+    window.addEventListener('goodboy:open-bitbucket-pr', listener);
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open pull request from code host' }));
+    window.removeEventListener('goodboy:open-bitbucket-pr', listener);
+
+    expect(bitbucketEvents).toHaveLength(1);
+    expect(bitbucketEvents[0]?.detail).toEqual({ sessionId: SESSION_ID });
   });
 
   it.each([0, 1, 2] as const)('states its section title with %i linked records', (count) => {

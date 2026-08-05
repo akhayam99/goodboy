@@ -15,8 +15,8 @@ type Props = {
   readonly isNewActive: boolean;
   readonly hasOldDraft: boolean;
   readonly hasNewDraft: boolean;
-  readonly onToggleComposer: (target: ReviewLineTarget) => void;
-  readonly onAskAgent: (target: ReviewLineTarget) => void;
+  readonly onToggleComposer: ((target: ReviewLineTarget) => void) | null;
+  readonly onAskAgent: ((target: ReviewLineTarget) => void) | null;
 };
 
 type SideStateParams = {

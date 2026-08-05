@@ -19,6 +19,7 @@ const TASK_VERB: Record<SessionExternalTaskProvider, string> = {
   gitlab: 'closes',
   jira: 'closes',
   github: 'closes',
+  bitbucket: 'merges',
 };
 
 type JoinParams = {

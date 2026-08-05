@@ -48,6 +48,7 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   gitlab: { label: 'GitLab' },
   jira: { label: 'Jira' },
   github: { label: 'GitHub' },
+  bitbucket: { label: 'Bitbucket' },
 };
 
 export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {

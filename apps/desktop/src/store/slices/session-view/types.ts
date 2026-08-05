@@ -72,7 +72,8 @@ export type FocusedExternalTask = {
 export type SessionStudio =
   | { readonly kind: 'workflow' }
   | { readonly kind: 'github'; readonly prNumber?: number; readonly threadId?: string }
-  | { readonly kind: 'mr' };
+  | { readonly kind: 'mr' }
+  | { readonly kind: 'bitbucket' };
 
 export const DEFAULT_PREFS: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
 

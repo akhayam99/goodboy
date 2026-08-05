@@ -48,6 +48,11 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
     colorClasses:
       'border-provider-github/30 bg-provider-github/5 text-provider-github hover:border-provider-github/60 hover:bg-provider-github/10',
   },
+  bitbucket: {
+    label: 'Bitbucket',
+    colorClasses:
+      'border-provider-bitbucket/30 bg-provider-bitbucket/5 text-provider-bitbucket hover:border-provider-bitbucket/60 hover:bg-provider-bitbucket/10',
+  },
 };
 
 export const ExternalTaskChip = ({
