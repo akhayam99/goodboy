@@ -20,7 +20,9 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }
-    get().closeSessionTerminals(sessionId);
+    await get()
+      .closeSessionTerminals(sessionId)
+      .catch(() => undefined);
     if (session.state.kind === 'running') {
       await cancelTurn((session.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(
         () => undefined,

@@ -111,6 +111,36 @@ export const removeWorktree = async (repoPath: string, worktreePath: string): Pr
   await invoke('worktree_remove', { repoPath, worktreePath });
 };
 
+export type OrphanWorktree = {
+  readonly path: string;
+  readonly name: string;
+  readonly sizeBytes: number;
+};
+
+type ScanOrphanWorktreesParams = {
+  readonly repoPath: string;
+  readonly knownPaths: ReadonlyArray<string>;
+};
+
+export const scanOrphanWorktrees = async ({
+  repoPath,
+  knownPaths,
+}: ScanOrphanWorktreesParams): Promise<ReadonlyArray<OrphanWorktree>> => {
+  return invoke<ReadonlyArray<OrphanWorktree>>('worktree_orphans', { repoPath, knownPaths });
+};
+
+type RemoveOrphanWorktreeParams = {
+  readonly repoPath: string;
+  readonly path: string;
+};
+
+export const removeOrphanWorktree = async ({
+  repoPath,
+  path,
+}: RemoveOrphanWorktreeParams): Promise<void> => {
+  await invoke('worktree_orphan_remove', { repoPath, path });
+};
+
 export type WorktreeEntry = {
   readonly path: string;
   readonly branch: string | null;

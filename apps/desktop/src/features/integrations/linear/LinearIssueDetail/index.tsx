@@ -13,6 +13,7 @@ import { ExternalRefActions } from '../../../../shared/components/ExternalRefAct
 import type { LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
 import { useLinearIssueComments } from '../useLinearIssueComments';
+import { useLinearIssueDescription } from '../useLinearIssueDescription';
 
 type IssueSection = 'overview' | 'conversation';
 type Fit = 'fill' | 'bleed' | 'flow';
@@ -37,6 +38,7 @@ export const LinearIssueDetail = ({
     workspaceId,
     issueId: issue.id,
   });
+  const { description, save } = useLinearIssueDescription({ issue, workspaceId });
 
   return (
     <StudioDetailLayout
@@ -80,7 +82,7 @@ export const LinearIssueDetail = ({
       properties={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
     >
       {section === 'overview' ? (
-        <DescriptionSection text={issue.description ?? ''} />
+        <DescriptionSection text={description} onSave={save} />
       ) : (
         <LinearIssueComments comments={comments} isLoading={isLoading} error={error} />
       )}

@@ -289,6 +289,15 @@ query IssueComments($issueId: String!) {
 }
 "#;
 
+const ISSUE_UPDATE_MUTATION: &str = r#"
+mutation IssueUpdate($issueId: String!, $input: IssueUpdateInput!) {
+  issueUpdate(id: $issueId, input: $input) {
+    success
+    issue { description }
+  }
+}
+"#;
+
 /// Verify token via /viewer query and save to keyring on success.
 #[tauri::command]
 pub async fn linear_connect(
@@ -370,6 +379,36 @@ pub async fn linear_fetch_issue_comments(
     Ok(comments)
 }
 
+#[tauri::command]
+pub async fn linear_update_issue(
+    workspace_id: String,
+    issue_id: String,
+    description: String,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<String, LinearError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let resp: IssueUpdateResponse = graphql(
+        &token,
+        ISSUE_UPDATE_MUTATION,
+        Some(serde_json::json!({
+            "issueId": issue_id,
+            "input": { "description": description }
+        })),
+    )
+    .await?;
+    if !resp.issue_update.success {
+        return Err(LinearError::GraphQl(format!(
+            "issueUpdate rejected for {}",
+            issue_id
+        )));
+    }
+    let issue = resp
+        .issue_update
+        .issue
+        .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))?;
+    Ok(issue.description.unwrap_or_default())
+}
+
 #[derive(Deserialize)]
 struct ViewerResponse {
     viewer: LinearViewer,
@@ -398,4 +437,21 @@ struct IssueComments {
 #[derive(Deserialize)]
 struct IssueCommentsResponse {
     issue: Option<IssueComments>,
+}
+
+#[derive(Deserialize)]
+struct IssueDescription {
+    description: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct IssueUpdatePayload {
+    success: bool,
+    issue: Option<IssueDescription>,
+}
+
+#[derive(Deserialize)]
+struct IssueUpdateResponse {
+    #[serde(rename = "issueUpdate")]
+    issue_update: IssueUpdatePayload,
 }

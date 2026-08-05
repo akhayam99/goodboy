@@ -6,6 +6,7 @@ import { clearAgentQueue } from './clearAgentQueue';
 import { deleteAgent } from './deleteAgent';
 import { deselectAgent } from './deselectAgent';
 import { forceCloseResolver } from './forceCloseResolver';
+import { hydrateResolverOutcomes } from './hydrateResolverOutcomes';
 import { markAgentSeen } from './markAgentSeen';
 import { markAgentViewed } from './markAgentViewed';
 import { markAllAgentsSeen } from './markAllAgentsSeen';
@@ -44,5 +45,6 @@ export const createAgentsSlice = (set: SetFn, get: GetFn) => {
     activateNextResolver: activateNextResolver(set, get),
     forceCloseResolver: forceCloseResolver(set, get),
     setResolverThreadReply: setResolverThreadReply(set),
+    hydrateResolverOutcomes: hydrateResolverOutcomes(set, get),
   };
 };

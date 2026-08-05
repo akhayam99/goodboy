@@ -64,6 +64,57 @@ fn login_shell() -> String {
     crate::path_env::login_shell()
 }
 
+#[cfg(unix)]
+const SESSION_DRAIN_POLLS: usize = 6;
+
+#[cfg(unix)]
+const SESSION_DRAIN_INTERVAL: std::time::Duration = std::time::Duration::from_millis(50);
+
+#[cfg(unix)]
+fn session_descendants(sid: libc::pid_t) -> Vec<libc::pid_t> {
+    let Ok(output) = crate::path_env::command("ps")
+        .args(["-Ao", "pid="])
+        .output()
+    else {
+        return Vec::new();
+    };
+    let Ok(text) = String::from_utf8(output.stdout) else {
+        return Vec::new();
+    };
+    text.split_whitespace()
+        .filter_map(|token| token.parse::<libc::pid_t>().ok())
+        .filter(|pid| *pid != sid && *pid > 1)
+        .filter(|pid| unsafe { libc::getsid(*pid) } == sid)
+        .collect()
+}
+
+#[cfg(unix)]
+fn signal_pty_session(sid: libc::pid_t, signal: libc::c_int) {
+    for pid in session_descendants(sid) {
+        unsafe { libc::kill(pid, signal) };
+    }
+    unsafe { libc::kill(sid, signal) };
+}
+
+#[cfg(unix)]
+pub(crate) fn terminate_pty_session(leader_pid: u32) {
+    let sid = leader_pid as libc::pid_t;
+    if session_descendants(sid).is_empty() {
+        return;
+    }
+    signal_pty_session(sid, libc::SIGTERM);
+    for _ in 0..SESSION_DRAIN_POLLS {
+        thread::sleep(SESSION_DRAIN_INTERVAL);
+        if session_descendants(sid).is_empty() {
+            return;
+        }
+    }
+    signal_pty_session(sid, libc::SIGKILL);
+}
+
+#[cfg(not(unix))]
+pub(crate) fn terminate_pty_session(_leader_pid: u32) {}
+
 #[tauri::command]
 pub async fn terminal_open(
     app: AppHandle,
@@ -262,6 +313,9 @@ pub fn terminal_close(
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
             if let Some(mut session) = guard.take() {
+                if let Some(leader_pid) = session.child.process_id() {
+                    terminate_pty_session(leader_pid);
+                }
                 let _ = session.child.kill();
             }
         }
@@ -272,6 +326,77 @@ pub fn terminal_close(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    fn read_announced_pid(reader: &mut Box<dyn Read + Send>) -> libc::pid_t {
+        let mut collected = String::new();
+        let mut buf = [0u8; 1024];
+        for _ in 0..200 {
+            let Ok(n) = reader.read(&mut buf) else {
+                break;
+            };
+            if n == 0 {
+                break;
+            }
+            collected.push_str(&String::from_utf8_lossy(&buf[..n]));
+            if let Some(rest) = collected.split("BACKGROUND:").nth(1) {
+                let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+                if digits.len() > 0 && rest.len() > digits.len() {
+                    return digits.parse().unwrap();
+                }
+            }
+        }
+        panic!("background pid never announced: {collected}");
+    }
+
+    #[cfg(unix)]
+    fn is_alive(pid: libc::pid_t) -> bool {
+        unsafe { libc::kill(pid, 0) == 0 }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn terminate_pty_session_kills_backgrounded_descendant() {
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .unwrap();
+        let mut cmd = CommandBuilder::new("/bin/sh");
+        cmd.arg("-c");
+        cmd.arg("trap '' HUP; sleep 120 & echo BACKGROUND:$! ; sleep 120");
+        let mut child = pair.slave.spawn_command(cmd).unwrap();
+        drop(pair.slave);
+        let mut reader = pair.master.try_clone_reader().unwrap();
+
+        let background_pid = read_announced_pid(&mut reader);
+        let leader_pid = child.process_id().unwrap();
+        assert_eq!(
+            unsafe { libc::getsid(background_pid) },
+            leader_pid as libc::pid_t,
+            "the backgrounded process must share the pty session"
+        );
+
+        terminate_pty_session(leader_pid);
+        let _ = child.kill();
+        let _ = child.wait();
+
+        let mut still_alive = true;
+        for _ in 0..60 {
+            if !is_alive(background_pid) {
+                still_alive = false;
+                break;
+            }
+            thread::sleep(std::time::Duration::from_millis(50));
+        }
+        assert!(
+            !still_alive,
+            "backgrounded descendant {background_pid} survived the terminal close"
+        );
+    }
 
     #[test]
     fn login_shell_returns_existing_executable() {

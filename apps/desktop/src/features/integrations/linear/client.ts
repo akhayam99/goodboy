@@ -128,3 +128,15 @@ export const linearFetchIssueComments = async ({
 }: Params): Promise<LinearIssueComment[]> => {
   return invoke<LinearIssueComment[]>('linear_fetch_issue_comments', { workspaceId, issueId });
 };
+
+type UpdateDescriptionParams = Params & {
+  readonly description: string;
+};
+
+export const linearUpdateIssueDescription = async ({
+  workspaceId,
+  issueId,
+  description,
+}: UpdateDescriptionParams): Promise<string> => {
+  return invoke<string>('linear_update_issue', { workspaceId, issueId, description });
+};

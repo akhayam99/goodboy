@@ -15,6 +15,7 @@ export type NotificationKind =
   | 'budget-cap'
   | 'title-generation'
   | 'provider-connected'
+  | 'orphan-worktrees'
   | 'error';
 
 export type NotificationAction =
@@ -24,7 +25,8 @@ export type NotificationAction =
       readonly sessionId: SessionId;
       readonly agentId: AgentId;
     }
-  | { readonly kind: 'open-budget'; readonly sessionId: SessionId | null };
+  | { readonly kind: 'open-budget'; readonly sessionId: SessionId | null }
+  | { readonly kind: 'open-orphan-worktrees'; readonly workspaceId: WorkspaceId };
 
 export type Notification = {
   readonly id: string;

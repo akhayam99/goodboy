@@ -221,6 +221,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
             agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
           }));
           markDone('agents');
+          void get().hydrateResolverOutcomes(id);
 
           if (!get().selectedAgentId[id]) {
             set((state) => ({
