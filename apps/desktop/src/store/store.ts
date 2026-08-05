@@ -77,6 +77,7 @@ import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
+import { createStorageSlice } from './slices/storage';
 import { createDiffCommentsSlice } from './slices/diff-comments';
 import { createFileVersionsSlice } from './slices/file-versions';
 import { createAttachmentsSlice } from './slices/attachments';
@@ -346,6 +347,9 @@ export type AppActions = {
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   loadSlotHistory(sessionId: SessionId, key: SlotKey): Promise<void>;
   toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
+  loadStorageStats(): Promise<void>;
+  pruneArchivedTranscripts(): Promise<number>;
+  removeArchivedWorktrees(): Promise<{ removed: number; failed: number }>;
   loadBudgetRules(): Promise<void>;
   saveBudgetRule(rule: Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
@@ -728,6 +732,8 @@ export const initialState: AppState = {
   sessionSlots: {},
   slotHistory: {},
   summarizerStatus: {},
+  storageStats: null,
+  storageStatsLoading: false,
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],
@@ -809,6 +815,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createOpenQuestionsSlice(set, get),
   ...createBudgetSlice(set, get),
   ...createSkillsSlice(set, get),
+  ...createStorageSlice(set, get),
   ...createDiffCommentsSlice(set, get),
   ...createFileVersionsSlice(set, get),
   ...createAttachmentsSlice(set, get),

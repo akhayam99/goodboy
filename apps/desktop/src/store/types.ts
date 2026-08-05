@@ -1,5 +1,6 @@
 import type { FileConflict } from '@goodboy/core';
 import type { OrphanWorktree } from '../features/worktree/worktree';
+import type { StorageStats } from './slices/storage';
 import type { Notification, NotificationCounts, TelemetrySummary } from '@goodboy/db';
 import type {
   Agent,
@@ -203,6 +204,8 @@ export type AppState = AppSliceState & {
     Record<string, Readonly<Record<string, ReadonlyArray<ContextSlotHistoryEntry>>>>
   >;
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
+  readonly storageStats: StorageStats | null;
+  readonly storageStatsLoading: boolean;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;

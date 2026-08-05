@@ -15,6 +15,7 @@ import { useAppStore } from '../../../../store';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ShortcutsSection } from './ShortcutsSection';
+import { StorageSection } from './StorageSection';
 
 type Props = {
   readonly initialSection?: string;
@@ -242,6 +243,12 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                 </Button>
               </span>
             </FieldRow>
+          </section>
+
+          <Divider />
+
+          <section id="storage" ref={anchor('storage')}>
+            <StorageSection />
           </section>
 
           <Divider />

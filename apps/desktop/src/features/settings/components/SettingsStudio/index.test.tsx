@@ -13,6 +13,11 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     wipeLocalDatabase: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
+    storageStats: null,
+    storageStatsLoading: false,
+    loadStorageStats: vi.fn(async () => undefined),
+    pruneArchivedTranscripts: vi.fn(async () => 0),
+    removeArchivedWorktrees: vi.fn(async () => ({ removed: 0, failed: 0 })),
   },
   toastMock: vi.fn(),
 }));
