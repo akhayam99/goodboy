@@ -14,6 +14,7 @@ export type OnboardingWizardState = {
   readonly workspaceKind: WorkspaceKind | null;
   readonly githubConnected: boolean;
   readonly gitlabConnected: boolean;
+  readonly bitbucketConnected: boolean;
   readonly hasCodeHost: boolean;
   readonly hasLinear: boolean;
   readonly hasJira: boolean;
@@ -37,6 +38,11 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const gitlabConnected = useAppStore((s) =>
     workspaceId
       ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab')
+      : false,
+  );
+  const bitbucketConnected = useAppStore((s) =>
+    workspaceId
+      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'bitbucket')
       : false,
   );
   const hasLinear = useAppStore((s) =>
@@ -70,7 +76,7 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
     refreshGithubStatus();
   }, [refreshGithubStatus]);
 
-  const hasCodeHost = githubScoped || gitlabConnected;
+  const hasCodeHost = githubScoped || gitlabConnected || bitbucketConnected;
 
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<WizardMode>('full');
@@ -124,6 +130,7 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
     workspaceKind,
     githubConnected: githubScoped,
     gitlabConnected,
+    bitbucketConnected,
     hasCodeHost,
     hasLinear,
     hasJira,

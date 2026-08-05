@@ -71,6 +71,11 @@ export const useOnboardingProgress = (): OnboardingProgress => {
       ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab')
       : false,
   );
+  const bitbucketConnected = useAppStore((s) =>
+    workspaceId
+      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'bitbucket')
+      : false,
+  );
   const hasTools = useAppStore((s) =>
     workspaceId
       ? (s.workspaceIntegrations[workspaceId] ?? []).some(
@@ -96,7 +101,11 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     if (workspaces.length > 0 && !persistedCompleted.has('workspace')) {
       markStepComplete('workspace');
     }
-    if (!isSimple && (gitlabConnected || githubScoped) && !persistedCompleted.has('codeHost')) {
+    if (
+      !isSimple &&
+      (gitlabConnected || bitbucketConnected || githubScoped) &&
+      !persistedCompleted.has('codeHost')
+    ) {
       markStepComplete('codeHost');
     }
     if (hasTools && !persistedCompleted.has('tools')) {
@@ -117,6 +126,7 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     anyAgent,
     anyPlan,
     gitlabConnected,
+    bitbucketConnected,
     githubScoped,
     hasTools,
     isSimple,

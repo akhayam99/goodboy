@@ -51,6 +51,7 @@ const baseState: OnboardingWizardState = {
   workspaceKind: null,
   githubConnected: false,
   gitlabConnected: false,
+  bitbucketConnected: false,
   hasCodeHost: false,
   hasLinear: false,
   hasJira: false,

@@ -1,5 +1,6 @@
 mod attachment;
 mod aux_spawn;
+mod bitbucket;
 mod bridge;
 mod budget;
 mod config_export;
@@ -74,6 +75,7 @@ pub fn run() {
     let sentry_token_cache = sentry::SentryTokenCache::new();
     let gitlab_token_cache = gitlab::GitlabTokenCache::new();
     let jira_token_cache = jira::JiraTokenCache::new();
+    let bitbucket_token_cache = bitbucket::BitbucketTokenCache::new();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -94,6 +96,7 @@ pub fn run() {
         .manage(sentry_token_cache)
         .manage(gitlab_token_cache)
         .manage(jira_token_cache)
+        .manage(bitbucket_token_cache)
         .setup(|app| {
             #[cfg(desktop)]
             app.handle()
@@ -309,6 +312,23 @@ pub fn run() {
             jira::jira_list_assignable_users,
             jira::jira_list_transitions,
             jira::jira_transition_issue,
+            bitbucket::bitbucket_validate_connection,
+            bitbucket::bitbucket_connect,
+            bitbucket::bitbucket_disconnect,
+            bitbucket::bitbucket_list_pull_requests,
+            bitbucket::bitbucket_get_pull_request,
+            bitbucket::bitbucket_pull_request_diff,
+            bitbucket::bitbucket_list_pull_request_comments,
+            bitbucket::bitbucket_list_pull_request_statuses,
+            bitbucket::bitbucket_pull_request_for_branch,
+            bitbucket::bitbucket_approve_pull_request,
+            bitbucket::bitbucket_unapprove_pull_request,
+            bitbucket::bitbucket_request_changes,
+            bitbucket::bitbucket_unrequest_changes,
+            bitbucket::bitbucket_merge_pull_request,
+            bitbucket::bitbucket_decline_pull_request,
+            bitbucket::bitbucket_create_pull_request_comment,
+            bitbucket::bitbucket_reply_to_pull_request_comment,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

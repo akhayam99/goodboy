@@ -2,29 +2,47 @@ import { useState } from 'react';
 import { FolderGit2, GitBranch } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { GithubIcon, GitlabIcon } from '../../../../shared/components/brand-icons';
-import { GithubFormBody } from '../../../integrations/github/GithubFormBody';
-import { GitlabFormBody } from '../../../integrations/gitlab/GitlabFormBody';
+import { BitbucketIcon, GithubIcon, GitlabIcon } from '../../../../shared/components/brand-icons';
 import { Segmented, type SegmentedOption } from '../Segmented';
-
-type Host = 'github' | 'gitlab';
+import { CodeHostForm, type CodeHost } from './CodeHostForm';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
   readonly githubConnected: boolean;
   readonly gitlabConnected: boolean;
+  readonly bitbucketConnected: boolean;
   readonly onConnected: () => void;
+};
+
+const initialHost = ({
+  githubConnected,
+  gitlabConnected,
+  bitbucketConnected,
+}: Pick<Props, 'githubConnected' | 'gitlabConnected' | 'bitbucketConnected'>): CodeHost => {
+  if (githubConnected) {
+    return 'github';
+  }
+  if (gitlabConnected) {
+    return 'gitlab';
+  }
+  if (bitbucketConnected) {
+    return 'bitbucket';
+  }
+  return 'github';
 };
 
 export const CodeHostStep = ({
   workspaceId,
   githubConnected,
   gitlabConnected,
+  bitbucketConnected,
   onConnected,
 }: Props) => {
-  const [host, setHost] = useState<Host>(gitlabConnected && !githubConnected ? 'gitlab' : 'github');
+  const [host, setHost] = useState<CodeHost>(
+    initialHost({ githubConnected, gitlabConnected, bitbucketConnected }),
+  );
 
-  const options: ReadonlyArray<SegmentedOption<Host>> = [
+  const options: ReadonlyArray<SegmentedOption<CodeHost>> = [
     {
       value: 'github',
       label: 'GitHub',
@@ -39,6 +57,13 @@ export const CodeHostStep = ({
       color: 'var(--color-provider-gitlab)',
       connected: gitlabConnected,
     },
+    {
+      value: 'bitbucket',
+      label: 'Bitbucket',
+      icon: BitbucketIcon,
+      color: 'var(--color-provider-bitbucket)',
+      connected: bitbucketConnected,
+    },
   ];
 
   return (
@@ -52,8 +77,8 @@ export const CodeHostStep = ({
           Connect a code host
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          Link GitHub or GitLab so Goodboy can review and resolve pull requests for this workspace.
-          You can only use one at a time.
+          Link GitHub, GitLab or Bitbucket so Goodboy can review and resolve pull requests for this
+          workspace. You can only use one at a time.
         </p>
       </div>
 
@@ -77,11 +102,7 @@ export const CodeHostStep = ({
         <div className="flex w-full flex-col gap-4 text-left">
           <Segmented ariaLabel="Code host" options={options} value={host} onChange={setHost} />
           <div className="rounded-lg border border-border-soft/40 bg-subtle/20 p-4">
-            {host === 'github' ? (
-              <GithubFormBody workspaceId={workspaceId} onConnected={onConnected} />
-            ) : (
-              <GitlabFormBody workspaceId={workspaceId} onConnected={onConnected} />
-            )}
+            <CodeHostForm host={host} workspaceId={workspaceId} onConnected={onConnected} />
           </div>
         </div>
       )}

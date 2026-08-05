@@ -32,10 +32,18 @@ import {
   Waypoints,
   Wrench,
 } from 'lucide-react';
-import { GithubIcon, GitlabIcon, JiraIcon, LinearIcon, SentryIcon } from './brand-icons';
+import {
+  BitbucketIcon,
+  GithubIcon,
+  GitlabIcon,
+  JiraIcon,
+  LinearIcon,
+  SentryIcon,
+} from './brand-icons';
 
 export const CONCEPT_ICONS = {
   agents: Bot,
+  bitbucket: BitbucketIcon,
   budget: Wallet,
   changelog: History,
   commits: GitCommit,
@@ -77,6 +85,7 @@ type Concept = keyof typeof CONCEPT_ICONS;
 
 export const CONCEPT_TONE = {
   agents: 'primary',
+  bitbucket: 'primary',
   budget: 'warning',
   changelog: 'neutral',
   commits: 'info',

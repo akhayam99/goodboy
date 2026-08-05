@@ -2,7 +2,13 @@ import type { LucideIcon } from 'lucide-react';
 import { BrandGlyph } from '../../../../shared/components/BrandGlyph';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
-export type IntegrationGlyphProvider = 'github' | 'gitlab' | 'jira' | 'linear' | 'sentry';
+export type IntegrationGlyphProvider =
+  | 'bitbucket'
+  | 'github'
+  | 'gitlab'
+  | 'jira'
+  | 'linear'
+  | 'sentry';
 
 type IntegrationBrand = {
   readonly icon: LucideIcon;
@@ -11,6 +17,11 @@ type IntegrationBrand = {
 };
 
 const INTEGRATION_BRAND: Record<IntegrationGlyphProvider, IntegrationBrand> = {
+  bitbucket: {
+    icon: CONCEPT_ICONS.bitbucket,
+    label: 'Bitbucket',
+    cssVar: '--color-provider-bitbucket',
+  },
   github: { icon: CONCEPT_ICONS.github, label: 'GitHub', cssVar: '--color-provider-github' },
   gitlab: { icon: CONCEPT_ICONS.gitlab, label: 'GitLab', cssVar: '--color-provider-gitlab' },
   jira: { icon: CONCEPT_ICONS.jira, label: 'Jira', cssVar: '--color-provider-jira' },

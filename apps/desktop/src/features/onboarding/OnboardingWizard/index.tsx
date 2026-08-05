@@ -87,6 +87,7 @@ export const OnboardingWizard = () => {
     workspaceKind,
     githubConnected,
     gitlabConnected,
+    bitbucketConnected,
     hasCodeHost,
     hasLinear,
     hasJira,
@@ -197,6 +198,7 @@ export const OnboardingWizard = () => {
         workspaceId={workspaceId}
         githubConnected={githubConnected}
         gitlabConnected={gitlabConnected}
+        bitbucketConnected={bitbucketConnected}
         onConnected={refreshGithubStatus}
       />
     );

@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { IntegrationConnectPanel } from './components/IntegrationConnectPanel';
+import { BitbucketFormBody } from './bitbucket/BitbucketFormBody';
 import { GitlabFormBody } from './gitlab/GitlabFormBody';
 import { JiraFormBody } from './jira/JiraFormBody';
 import { LinearFormBody } from './linear/LinearFormBody';
 import { SentryFormBody } from './sentry/SentryFormBody';
 
 type Props = {
-  readonly provider: 'linear' | 'sentry' | 'gitlab' | 'jira';
+  readonly provider: 'linear' | 'sentry' | 'gitlab' | 'jira' | 'bitbucket';
   readonly workspaceId: WorkspaceId;
   readonly compact?: boolean;
   readonly shouldAutoFocus?: boolean;
@@ -19,6 +20,7 @@ const PROVIDER_DESCRIPTIONS: Record<Props['provider'], string> = {
   sentry: 'Connect Sentry to review errors from this workspace',
   gitlab: 'Connect GitLab to review merge requests from this workspace',
   jira: 'Connect Jira to review issues from this workspace',
+  bitbucket: 'Connect Bitbucket to review pull requests from this workspace',
 };
 
 const renderWrapped = ({
@@ -75,6 +77,23 @@ export const ConnectIntegrationEmptyState = ({
           headingLevel={compact ? undefined : 2}
         >
           <SentryFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
+        </IntegrationConnectPanel>
+      ),
+    });
+  }
+
+  if (provider === 'bitbucket') {
+    return renderWrapped({
+      compact,
+      wrapped,
+      panel: (
+        <IntegrationConnectPanel
+          provider={provider}
+          description={PROVIDER_DESCRIPTIONS[provider]}
+          size={compact ? 'sm' : 'lg'}
+          headingLevel={compact ? undefined : 2}
+        >
+          <BitbucketFormBody workspaceId={workspaceId} shouldAutoFocus={shouldAutoFocus} />
         </IntegrationConnectPanel>
       ),
     });
