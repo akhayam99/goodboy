@@ -1,5 +1,9 @@
 import { detectRepoSlug } from '@goodboy/core';
-import type { SessionExternalTaskProvider, WorkspaceId } from '@goodboy/types';
+import type {
+  JiraIntegrationConfig,
+  SessionExternalTaskProvider,
+  WorkspaceId,
+} from '@goodboy/types';
 import { slugifyBranch } from '../../shared/utils/slugifyBranch';
 import { ghAssignedIssues, tauriGhRunner } from '../github/github';
 import { goalFromIssue as goalFromGithubIssue } from '../github/goal-from-issue';
@@ -9,6 +13,9 @@ import { goalFromIssue as goalFromLinearIssue } from './linear/goal-from-issue';
 import { gitlabFetchAssignedIssues, issueIdentifier } from './gitlab/client';
 import { goalFromIssue as goalFromGitlabIssue } from './gitlab/goal-from-issue';
 import { gitlabBranchSlug } from './gitlab/GitlabStudio/useGitlabIssues';
+import { jiraListIssues } from './jira/client';
+import { goalFromIssue as goalFromJiraIssue } from './jira/goal-from-issue';
+import { jiraBranchSlug } from './jira/JiraStudio/useJiraIssues';
 import { sentryFetchIssues } from './sentry/client';
 import { goalFromSentry } from './sentry/goal-from-sentry';
 
@@ -27,6 +34,7 @@ type Params = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string | null;
   readonly gitlabHost: string | null;
+  readonly jiraConfig: JiraIntegrationConfig | null;
 };
 
 const SENTRY_SLUG_MAX_LEN = 30;
@@ -36,6 +44,7 @@ export const fetchIssueCandidates = async ({
   workspaceId,
   rootPath,
   gitlabHost,
+  jiraConfig,
 }: Params): Promise<ReadonlyArray<IssueCandidate>> => {
   switch (provider) {
     case 'linear': {
@@ -82,6 +91,27 @@ export const fetchIssueCandidates = async ({
         url: issue.webUrl,
         goal: goalFromGitlabIssue(issue),
         branchSlug: gitlabBranchSlug(issue),
+      }));
+    }
+    case 'jira': {
+      if (jiraConfig == null) {
+        return [];
+      }
+      const issues = await jiraListIssues({
+        workspaceId,
+        siteUrl: jiraConfig.siteUrl,
+        email: jiraConfig.email,
+        projectKey: jiraConfig.projectKey,
+        assignedOnly: true,
+      });
+      return issues.map((issue) => ({
+        provider,
+        externalId: issue.id,
+        identifier: issue.key,
+        title: issue.summary,
+        url: issue.url,
+        goal: goalFromJiraIssue({ issue }),
+        branchSlug: jiraBranchSlug({ issue }),
       }));
     }
     case 'sentry': {

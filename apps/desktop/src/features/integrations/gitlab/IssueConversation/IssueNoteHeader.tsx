@@ -1,6 +1,6 @@
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import type { GitlabIssueNote } from '../client';
-import { IssueNoteAvatar } from './IssueNoteAvatar';
+import { IssueNoteAvatar } from '../../components/IssueNoteAvatar';
 
 type Props = {
   readonly note: GitlabIssueNote;

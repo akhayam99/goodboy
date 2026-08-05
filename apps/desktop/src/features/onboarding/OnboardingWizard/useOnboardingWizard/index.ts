@@ -16,6 +16,7 @@ export type OnboardingWizardState = {
   readonly gitlabConnected: boolean;
   readonly hasCodeHost: boolean;
   readonly hasLinear: boolean;
+  readonly hasJira: boolean;
   readonly hasSentry: boolean;
   readonly refreshGithubStatus: () => void;
 };
@@ -41,6 +42,11 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const hasLinear = useAppStore((s) =>
     workspaceId
       ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'linear')
+      : false,
+  );
+  const hasJira = useAppStore((s) =>
+    workspaceId
+      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'jira')
       : false,
   );
   const hasSentry = useAppStore((s) =>
@@ -120,6 +126,7 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
     gitlabConnected,
     hasCodeHost,
     hasLinear,
+    hasJira,
     hasSentry,
     refreshGithubStatus,
   };

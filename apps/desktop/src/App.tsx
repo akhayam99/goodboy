@@ -34,6 +34,7 @@ import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { SentryStudio } from './features/integrations/sentry/SentryStudio';
 import { GitlabStudio } from './features/integrations/gitlab/GitlabStudio';
+import { JiraStudio } from './features/integrations/jira/JiraStudio';
 import { ProviderStudio } from './features/providers/components/ProviderStudio';
 import { BudgetStudio } from './features/budget/components/BudgetStudio';
 import type { BudgetScope } from './features/budget/components/BudgetStudio/lib';
@@ -97,6 +98,11 @@ export const App = () => {
       (i) => i.provider === 'sentry',
     ),
   );
+  const hasJira = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'jira',
+    ),
+  );
   const hasGitlab = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'gitlab',
@@ -123,6 +129,8 @@ export const App = () => {
   const [sentryStudioFocus, setSentryStudioFocus] = useState<string | null>(null);
   const [gitlabStudioOpen, setGitlabStudioOpen] = useState(false);
   const [gitlabStudioFocus, setGitlabStudioFocus] = useState<string | null>(null);
+  const [jiraStudioOpen, setJiraStudioOpen] = useState(false);
+  const [jiraStudioFocus, setJiraStudioFocus] = useState<string | null>(null);
   const [providerStudioOpen, setProviderStudioOpen] = useState(false);
   const [providerStudioFocus, setProviderStudioFocus] = useState<ProviderId | null>(null);
   const [providerStudioAction, setProviderStudioAction] = useState<ProviderLifecycleAction | null>(
@@ -160,6 +168,7 @@ export const App = () => {
     setLinearStudioOpen(false);
     setSentryStudioOpen(false);
     setGitlabStudioOpen(false);
+    setJiraStudioOpen(false);
     setAppSettingsOpen(false);
     setGuideStudioOpen(false);
     setAddWorkspaceOpen(false);
@@ -262,6 +271,12 @@ export const App = () => {
       setGitlabStudioFocus(detail?.issueExternalId ?? null);
       setGitlabStudioOpen(true);
     };
+    const onOpenJiraStudio = (event: Event) => {
+      const detail = (event as CustomEvent<{ issueExternalId?: string }>).detail;
+      closeAllStudios();
+      setJiraStudioFocus(detail?.issueExternalId ?? null);
+      setJiraStudioOpen(true);
+    };
     const onRevealChat = () => {
       setNewSessionOpen(false);
       setWorkspaceSettingsOpen(false);
@@ -290,6 +305,7 @@ export const App = () => {
     window.addEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
     window.addEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
     window.addEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
+    window.addEventListener('goodboy:open-jira-studio', onOpenJiraStudio);
     window.addEventListener('goodboy:reveal-chat', onRevealChat);
     window.addEventListener('goodboy:add-workspace', onAddWorkspace);
     window.addEventListener('goodboy:open-pair-device', onPairDevice);
@@ -305,6 +321,7 @@ export const App = () => {
       window.removeEventListener('goodboy:open-linear-studio', onOpenLinearStudio);
       window.removeEventListener('goodboy:open-sentry-studio', onOpenSentryStudio);
       window.removeEventListener('goodboy:open-gitlab-studio', onOpenGitlabStudio);
+      window.removeEventListener('goodboy:open-jira-studio', onOpenJiraStudio);
       window.removeEventListener('goodboy:reveal-chat', onRevealChat);
       window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
       window.removeEventListener('goodboy:open-pair-device', onPairDevice);
@@ -453,11 +470,13 @@ export const App = () => {
                     ? 'sentry'
                     : gitlabStudioOpen
                       ? 'gitlab'
-                      : appSettingsOpen
-                        ? 'settings'
-                        : guideStudioOpen
-                          ? 'guide'
-                          : null;
+                      : jiraStudioOpen
+                        ? 'jira'
+                        : appSettingsOpen
+                          ? 'settings'
+                          : guideStudioOpen
+                            ? 'guide'
+                            : null;
 
   const openSettings = useCallback(() => {
     closeAllStudios();
@@ -656,6 +675,7 @@ export const App = () => {
   useShortcut('lens.linear', () => goToLens('linear'));
   useShortcut('lens.sentry', () => goToLens('sentry'));
   useShortcut('lens.gitlab_issues', () => goToLens('gitlab_issues'));
+  useShortcut('lens.jira_issues', () => goToLens('jira_issues'));
 
   const renderedSessionIds = useMemo<ReadonlyArray<SessionId>>(() => {
     const cid = currentSession?.id ?? null;
@@ -724,6 +744,7 @@ export const App = () => {
                 onConvertToDevProject={() => setConvertWorkspaceOpen(true)}
                 githubEnabled={remoteKind === 'github'}
                 linearEnabled={hasLinear}
+                jiraEnabled={hasJira}
                 sentryEnabled={hasSentry}
                 gitlabEnabled={hasGitlab}
                 onOpenWorkflows={() => {
@@ -749,6 +770,11 @@ export const App = () => {
                   closeAllStudios();
                   setLinearStudioFocus(null);
                   setLinearStudioOpen(true);
+                }}
+                onOpenJira={() => {
+                  closeAllStudios();
+                  setJiraStudioFocus(null);
+                  setJiraStudioOpen(true);
                 }}
                 onOpenSentry={() => {
                   closeAllStudios();
@@ -950,6 +976,14 @@ export const App = () => {
           workspaceName={currentWorkspace.name}
           initialIssueId={gitlabStudioFocus}
           onClose={() => setGitlabStudioOpen(false)}
+        />
+      ) : null}
+      {jiraStudioOpen && currentWorkspace ? (
+        <JiraStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          initialIssueId={jiraStudioFocus}
+          onClose={() => setJiraStudioOpen(false)}
         />
       ) : null}
       {commitDiff ? (

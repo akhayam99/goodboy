@@ -98,6 +98,13 @@ describe('useOnboardingProgress auto-mark', () => {
     expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
   });
 
+  it('marks tools when Jira is connected for the workspace', () => {
+    workspaces.push({ id: 'w1' });
+    workspaceIntegrations = { w1: [{ provider: 'jira' }] };
+    renderHook(() => useOnboardingProgress());
+    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
+  });
+
   it('marks tools when Sentry is connected for the workspace', () => {
     workspaces.push({ id: 'w1' });
     workspaceIntegrations = { w1: [{ provider: 'sentry' }] };

@@ -46,6 +46,7 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   linear: { label: 'Linear' },
   sentry: { label: 'Sentry' },
   gitlab: { label: 'GitLab' },
+  jira: { label: 'Jira' },
   github: { label: 'GitHub' },
 };
 

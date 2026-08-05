@@ -59,6 +59,7 @@ export const SHORTCUTS = {
   'lens.linear': { combo: 'cmd+alt+Digit2', label: 'Linear', plane: 'lens' },
   'lens.sentry': { combo: 'cmd+alt+Digit3', label: 'Sentry', plane: 'lens' },
   'lens.gitlab_issues': { combo: 'cmd+alt+Digit4', label: 'GitLab issues', plane: 'lens' },
+  'lens.jira_issues': { combo: 'cmd+alt+Digit5', label: 'Jira issues', plane: 'lens' },
 } as const satisfies Record<string, ShortcutEntry>;
 
 export type ShortcutId = keyof typeof SHORTCUTS;

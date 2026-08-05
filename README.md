@@ -74,6 +74,12 @@ studio treatment as GitHub. A Sentry error turns into a session with the
 stack trace already written into the goal and the branch named, ready to
 debug.
 
+**Jira, read first.** Point Goodboy at a Jira Cloud site and one project key,
+and the project's issues get the same inbox: status, type, priority, assignee,
+labels, description and the comment thread, all readable in the app. Launch a
+session from one and the key lands on the branch. Writing back to Jira,
+commenting, assigning, moving status, is not there yet.
+
 **Cost meter that taps your shoulder.** Every session shows what it's costing
 as it runs. Goodboy nudges you before you burn Opus on a one-liner.
 

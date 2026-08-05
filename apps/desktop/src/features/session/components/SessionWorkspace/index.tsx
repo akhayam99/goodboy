@@ -382,6 +382,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                     provider="gitlab"
                   />
                 ) : null}
+                {lens === 'jira_issues' ? (
+                  <IntegrationPane
+                    sessionId={sessionId}
+                    workspaceId={session.workspaceId}
+                    provider="jira"
+                  />
+                ) : null}
                 {lens === 'github_issue' ? (
                   githubIssueNumber != null ? (
                     <GithubTaskDetail

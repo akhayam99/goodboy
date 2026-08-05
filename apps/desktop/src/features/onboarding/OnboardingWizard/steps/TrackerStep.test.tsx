@@ -10,6 +10,12 @@ vi.mock('../../../integrations/linear/LinearFormBody', () => ({
   ),
 }));
 
+vi.mock('../../../integrations/jira/JiraFormBody', () => ({
+  JiraFormBody: ({ workspaceId }: { workspaceId: WorkspaceId }) => (
+    <div data-testid="jira-form">{workspaceId}</div>
+  ),
+}));
+
 const WS_ID = 'ws-1' as WorkspaceId;
 
 afterEach(cleanup);
@@ -18,13 +24,13 @@ import { TrackerStep } from './TrackerStep';
 
 describe('TrackerStep', () => {
   it('renders the heading', () => {
-    render(<TrackerStep workspaceId={WS_ID} linearConnected={false} />);
+    render(<TrackerStep workspaceId={WS_ID} linearConnected={false} jiraConnected={false} />);
     expect(screen.getByRole('heading', { name: /connect your issue tracker/i })).toBeDefined();
   });
 
   describe('with a workspace', () => {
     beforeEach(() => {
-      render(<TrackerStep workspaceId={WS_ID} linearConnected={false} />);
+      render(<TrackerStep workspaceId={WS_ID} linearConnected={false} jiraConnected={false} />);
     });
 
     it('renders the Linear form scoped to the workspace', () => {
@@ -32,15 +38,18 @@ describe('TrackerStep', () => {
       expect(screen.queryByText(/Add a workspace first/i)).toBeNull();
     });
 
-    it('keeps the Jira segment disabled', () => {
+    it('swaps in the Jira form when the Jira segment is picked', () => {
       const jira = screen.getByRole('tab', { name: /jira/i });
-      expect(jira.hasAttribute('disabled')).toBe(true);
+      expect(jira.hasAttribute('disabled')).toBe(false);
+      fireEvent.click(jira);
+      expect(screen.getByTestId('jira-form').textContent).toBe(WS_ID);
+      expect(screen.queryByTestId('linear-form')).toBeNull();
     });
   });
 
   describe('without a workspace', () => {
     beforeEach(() => {
-      render(<TrackerStep workspaceId={null} linearConnected={false} />);
+      render(<TrackerStep workspaceId={null} linearConnected={false} jiraConnected={false} />);
     });
 
     it('shows the add-workspace empty state instead of the form', () => {

@@ -59,11 +59,13 @@ type Props = {
   onOpenChangelog: () => void;
   onOpenGithub: () => void;
   onOpenLinear: () => void;
+  onOpenJira: () => void;
   onOpenSentry: () => void;
   onOpenGitlab: () => void;
   onConvertToDevProject: () => void;
   githubEnabled: boolean;
   linearEnabled: boolean;
+  jiraEnabled: boolean;
   sentryEnabled: boolean;
   gitlabEnabled: boolean;
   isSimpleWorkspace: boolean;
@@ -78,11 +80,13 @@ export const AppFooter = ({
   onOpenChangelog,
   onOpenGithub,
   onOpenLinear,
+  onOpenJira,
   onOpenSentry,
   onOpenGitlab,
   onConvertToDevProject,
   githubEnabled,
   linearEnabled,
+  jiraEnabled,
   sentryEnabled,
   gitlabEnabled,
   isSimpleWorkspace,
@@ -138,6 +142,14 @@ export const AppFooter = ({
             onClick={onOpenLinear}
             active={activeStudio === 'linear'}
             connected={linearEnabled}
+          />
+          <FooterButton
+            icon={<IntegrationGlyph provider="jira" size="xs" useBrandColor />}
+            label="Jira"
+            title={jiraEnabled ? 'Launch a session from a Jira issue' : 'Connect Jira'}
+            onClick={onOpenJira}
+            active={activeStudio === 'jira'}
+            connected={jiraEnabled}
           />
           {isSimpleWorkspace ? null : (
             <FooterButton

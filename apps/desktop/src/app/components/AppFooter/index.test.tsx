@@ -49,10 +49,12 @@ describe('AppFooter', () => {
         onOpenChangelog={onOpenChangelog}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
+        onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={vi.fn()}
         githubEnabled={false}
         linearEnabled={false}
+        jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
         isSimpleWorkspace={false}
@@ -99,10 +101,12 @@ describe('AppFooter', () => {
         onOpenChangelog={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
+        onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={vi.fn()}
         githubEnabled={false}
         linearEnabled={false}
+        jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
         isSimpleWorkspace={false}
@@ -134,10 +138,12 @@ describe('AppFooter', () => {
         onOpenChangelog={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
+        onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={onOpenGitlab}
         githubEnabled={false}
         linearEnabled={false}
+        jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
         isSimpleWorkspace={false}
@@ -149,11 +155,13 @@ describe('AppFooter', () => {
       'github',
       'gitlab',
       'linear',
+      'jira',
       'sentry',
     ]);
     expect(screen.getByRole('button', { name: 'Connect GitHub' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect GitLab' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect Jira' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect Sentry' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect GitLab' }));
@@ -174,10 +182,12 @@ describe('AppFooter', () => {
         onOpenChangelog={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
+        onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={vi.fn()}
         githubEnabled={false}
         linearEnabled={false}
+        jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled={false}
         isSimpleWorkspace
@@ -189,6 +199,7 @@ describe('AppFooter', () => {
     expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect Jira' })).toBeDefined();
     expect(
       screen.getByRole('button', { name: 'Open the workflow library for this workspace' }),
     ).toBeDefined();
@@ -214,10 +225,12 @@ describe('AppFooter', () => {
         onOpenChangelog={vi.fn()}
         onOpenGithub={vi.fn()}
         onOpenLinear={vi.fn()}
+        onOpenJira={vi.fn()}
         onOpenSentry={vi.fn()}
         onOpenGitlab={onOpenGitlab}
         githubEnabled={false}
         linearEnabled={false}
+        jiraEnabled={false}
         sentryEnabled={false}
         gitlabEnabled
         isSimpleWorkspace={false}

@@ -172,6 +172,7 @@ export const LensColumn = ({
   const linearCount = externalTasks.filter((task) => task.provider === 'linear').length;
   const sentryCount = externalTasks.filter((task) => task.provider === 'sentry').length;
   const gitlabCount = externalTasks.filter((task) => task.provider === 'gitlab').length;
+  const jiraCount = externalTasks.filter((task) => task.provider === 'jira').length;
   const githubConnection = resolveIntegrationConnection({
     provider: 'github',
     integrations: workspaceIntegrations,
@@ -201,6 +202,13 @@ export const LensColumn = ({
     externalTasks,
     isGithubAuthenticated: false,
   });
+  const jiraConnection = resolveIntegrationConnection({
+    provider: 'jira',
+    integrations: workspaceIntegrations,
+    remoteKind,
+    externalTasks,
+    isGithubAuthenticated: false,
+  });
   const integrationRows: ReadonlyArray<LensRow> = [
     {
       kind: 'pr',
@@ -219,6 +227,14 @@ export const LensColumn = ({
       count: gitlabCount,
       secondaryDot: hasGitlabMr,
       isConnected: gitlabConnection.isConnected,
+    },
+    {
+      kind: 'jira_issues',
+      label: 'Jira',
+      glyph: 'jira',
+      tone: CONCEPT_TONE.jira,
+      count: jiraCount,
+      isConnected: jiraConnection.isConnected,
     },
     {
       kind: 'linear',

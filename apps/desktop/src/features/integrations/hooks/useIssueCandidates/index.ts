@@ -7,6 +7,7 @@ import type {
 import { useAppStore } from '../../../../store';
 import { formatError } from '../../../../shared/lib/errors';
 import { fetchIssueCandidates, type IssueCandidate } from '../../fetchIssueCandidates';
+import { useJiraConfig } from '../../jira/useJiraConfig';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -33,6 +34,7 @@ export const useIssueCandidates = ({ workspaceId, provider }: Params): Result =>
     );
     return integration?.config.host ?? null;
   });
+  const jiraConfig = useJiraConfig({ workspaceId });
   const [byProvider, setByProvider] = useState<
     Readonly<Record<string, ReadonlyArray<IssueCandidate>>>
   >({});
@@ -49,7 +51,7 @@ export const useIssueCandidates = ({ workspaceId, provider }: Params): Result =>
       delete next[provider];
       return next;
     });
-    void fetchIssueCandidates({ provider, workspaceId, rootPath, gitlabHost })
+    void fetchIssueCandidates({ provider, workspaceId, rootPath, gitlabHost, jiraConfig })
       .then((rows) => {
         setByProvider((current) => ({ ...current, [provider]: rows }));
       })
@@ -59,7 +61,7 @@ export const useIssueCandidates = ({ workspaceId, provider }: Params): Result =>
       .finally(() => {
         setLoadingProvider((current) => (current === provider ? null : current));
       });
-  }, [byProvider, gitlabHost, loadingProvider, provider, rootPath, workspaceId]);
+  }, [byProvider, gitlabHost, jiraConfig, loadingProvider, provider, rootPath, workspaceId]);
 
   return {
     rows: byProvider[provider] ?? EMPTY_ROWS,

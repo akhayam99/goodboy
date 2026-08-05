@@ -65,6 +65,15 @@ const parseGitlab = ({ segments }: ProviderParams): ProviderResult => {
   return { externalId: identifier, identifier };
 };
 
+const parseJira = ({ segments }: ProviderParams): ProviderResult => {
+  const browseIndex = segments.findIndex((segment) => segment.toLowerCase() === 'browse');
+  const issueKey = segments[browseIndex + 1];
+  if (browseIndex < 0 || issueKey == null || issueKey === '') {
+    return null;
+  }
+  return { externalId: issueKey, identifier: issueKey };
+};
+
 const parseGithub = ({ segments }: ProviderParams): ProviderResult => {
   const issueIndex = segments.findIndex((segment) => segment.toLowerCase() === 'issues');
   const issueNumber = segments[issueIndex + 1];
@@ -82,6 +91,8 @@ const parseProvider = ({ provider, segments }: ParseProviderParams): ProviderRes
       return parseSentry({ segments });
     case 'gitlab':
       return parseGitlab({ segments });
+    case 'jira':
+      return parseJira({ segments });
     case 'github':
       return parseGithub({ segments });
     default: {
