@@ -10,6 +10,33 @@ function makeJsonRunner(data: unknown): GhRunner {
   return makeRunner({ stdout: JSON.stringify(data), stderr: '', exitCode: 0 });
 }
 
+type MergeQueueNode = {
+  number: number;
+  isInMergeQueue: boolean;
+  mergeQueueEntry: { position: number | null; state: string } | null;
+};
+
+const makeMergeQueueAwareRunner = ({
+  prs,
+  mergeQueueNodes,
+}: {
+  prs: unknown;
+  mergeQueueNodes: ReadonlyArray<MergeQueueNode>;
+}): GhRunner => ({
+  run: vi.fn(async (args: ReadonlyArray<string>) => {
+    if (args.includes('graphql')) {
+      return {
+        stdout: JSON.stringify({
+          data: { repository: { pullRequests: { nodes: mergeQueueNodes } } },
+        }),
+        stderr: '',
+        exitCode: 0,
+      };
+    }
+    return { stdout: JSON.stringify(prs), stderr: '', exitCode: 0 };
+  }),
+});
+
 const BASE_RAW = {
   number: 1,
   title: 'PR title',
@@ -89,5 +116,20 @@ describe('listOpenPrsForRepo', () => {
       run: vi.fn().mockRejectedValue(new TypeError('network error')),
     };
     await expect(listOpenPrsForRepo(runner, 'org/repo')).rejects.toBeInstanceOf(TypeError);
+  });
+
+  it('attaches merge queue placement to the listed pull requests', async () => {
+    const pr = { ...BASE_RAW, number: 7 };
+    const runner = makeMergeQueueAwareRunner({
+      prs: [pr],
+      mergeQueueNodes: [
+        { number: 7, isInMergeQueue: true, mergeQueueEntry: { position: 3, state: 'QUEUED' } },
+      ],
+    });
+
+    const result = await listOpenPrsForRepo(runner, 'org/repo');
+
+    expect(result[0]?.state).toBe('queued');
+    expect(result[0]?.mergeQueue).toEqual({ position: 3 });
   });
 });

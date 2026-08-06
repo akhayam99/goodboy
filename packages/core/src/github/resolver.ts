@@ -1,6 +1,12 @@
-import type { LinkedIssue, PullRequestState, PullRequestStateKind } from '@goodboy/types';
+import type {
+  LinkedIssue,
+  PullRequestChecks,
+  PullRequestState,
+  PullRequestStateKind,
+} from '@goodboy/types';
 import type { GhRunner, GhRunOptions } from './gh';
 import { GhCliError, runJson } from './gh';
+import { fetchMergeQueuePlacements, type MergeQueuePlacement } from './merge-queue';
 
 export const PR_FIELDS = [
   'number',
@@ -18,6 +24,12 @@ export const PR_FIELDS = [
   'autoMergeRequest',
 ] as const;
 
+export type RawStatusCheck = {
+  state?: string | null;
+  status?: string | null;
+  conclusion?: string | null;
+};
+
 export type RawPullRequest = {
   number: number;
   title: string;
@@ -28,10 +40,7 @@ export type RawPullRequest = {
   baseRefName: string;
   headRefName: string;
   reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null;
-  statusCheckRollup: ReadonlyArray<{
-    state?: 'SUCCESS' | 'FAILURE' | 'PENDING' | 'ERROR' | null;
-    conclusion?: 'SUCCESS' | 'FAILURE' | 'NEUTRAL' | 'CANCELLED' | 'TIMED_OUT' | null;
-  }> | null;
+  statusCheckRollup: ReadonlyArray<RawStatusCheck> | null;
   updatedAt: string;
   body: string | null;
   autoMergeRequest: Record<string, unknown> | null;
@@ -43,7 +52,77 @@ type ClosingIssueRef = {
   url: string;
 };
 
-function deriveStateKind(raw: RawPullRequest): PullRequestStateKind {
+const UNFINISHED_CHECK_STATUSES = new Set([
+  'REQUESTED',
+  'QUEUED',
+  'IN_PROGRESS',
+  'WAITING',
+  'PENDING',
+]);
+
+const FAILED_CHECK_CONCLUSIONS = new Set([
+  'FAILURE',
+  'CANCELLED',
+  'TIMED_OUT',
+  'ACTION_REQUIRED',
+  'STARTUP_FAILURE',
+]);
+
+const FAILED_CHECK_STATES = new Set(['FAILURE', 'ERROR']);
+
+const PASSED_CHECK_CONCLUSIONS = new Set(['SUCCESS', 'NEUTRAL', 'SKIPPED', 'STALE']);
+
+type CheckOutcome = 'pending' | 'success' | 'failure';
+
+const readCheckSignal = ({ value }: { value?: string | null }): string | null => {
+  const normalized = (value ?? '').trim().toUpperCase();
+  return normalized === '' ? null : normalized;
+};
+
+const classifyCheck = ({ check }: { check: RawStatusCheck }): CheckOutcome => {
+  const status = readCheckSignal({ value: check.status });
+  if (status != null && UNFINISHED_CHECK_STATUSES.has(status)) {
+    return 'pending';
+  }
+  const conclusion = readCheckSignal({ value: check.conclusion });
+  if (conclusion != null && FAILED_CHECK_CONCLUSIONS.has(conclusion)) {
+    return 'failure';
+  }
+  const state = readCheckSignal({ value: check.state });
+  if (state != null && FAILED_CHECK_STATES.has(state)) {
+    return 'failure';
+  }
+  if (conclusion != null && PASSED_CHECK_CONCLUSIONS.has(conclusion)) {
+    return 'success';
+  }
+  if (state === 'SUCCESS') {
+    return 'success';
+  }
+  return 'pending';
+};
+
+const deriveChecks = ({ raw }: { raw: RawPullRequest }): PullRequestChecks => {
+  const checks = raw.statusCheckRollup ?? [];
+  if (checks.length === 0) {
+    return null;
+  }
+  const outcomes = checks.map((check) => classifyCheck({ check }));
+  if (outcomes.includes('failure')) {
+    return 'failure';
+  }
+  if (outcomes.includes('pending')) {
+    return 'pending';
+  }
+  return 'success';
+};
+
+const deriveStateKind = ({
+  raw,
+  mergeQueue,
+}: {
+  raw: RawPullRequest;
+  mergeQueue: MergeQueuePlacement | null;
+}): PullRequestStateKind => {
   if (raw.state === 'MERGED') {
     return 'merged';
   }
@@ -53,6 +132,9 @@ function deriveStateKind(raw: RawPullRequest): PullRequestStateKind {
   if (raw.isDraft) {
     return 'draft';
   }
+  if (mergeQueue != null) {
+    return 'queued';
+  }
   if (raw.autoMergeRequest != null) {
     return 'queued';
   }
@@ -60,32 +142,9 @@ function deriveStateKind(raw: RawPullRequest): PullRequestStateKind {
     return 'approved';
   }
   return 'open';
-}
+};
 
-function deriveChecks(raw: RawPullRequest): PullRequestState['checks'] {
-  const checks = raw.statusCheckRollup ?? [];
-  if (checks.length === 0) {
-    return null;
-  }
-  let pending = false;
-  for (const c of checks) {
-    const status = c.conclusion ?? c.state ?? null;
-    if (
-      status === 'FAILURE' ||
-      status === 'CANCELLED' ||
-      status === 'TIMED_OUT' ||
-      status === 'ERROR'
-    ) {
-      return 'failure';
-    }
-    if (status === 'PENDING' || status === null) {
-      pending = true;
-    }
-  }
-  return pending ? 'pending' : 'success';
-}
-
-function deriveMergeable(raw: RawPullRequest): boolean | null {
+const deriveMergeable = ({ raw }: { raw: RawPullRequest }): boolean | null => {
   if (raw.mergeable === 'MERGEABLE') {
     return true;
   }
@@ -93,30 +152,36 @@ function deriveMergeable(raw: RawPullRequest): boolean | null {
     return false;
   }
   return null;
-}
-
-export const toPullRequestState = (raw: RawPullRequest): PullRequestState => {
-  const reviewMap: Record<string, PullRequestState['reviewDecision']> = {
-    APPROVED: 'approved',
-    CHANGES_REQUESTED: 'changes_requested',
-    REVIEW_REQUIRED: 'review_required',
-  };
-  return {
-    number: raw.number,
-    title: raw.title,
-    url: raw.url,
-    state: deriveStateKind(raw),
-    mergeable: deriveMergeable(raw),
-    checks: deriveChecks(raw),
-    baseBranch: raw.baseRefName,
-    headBranch: raw.headRefName,
-    isDraft: raw.isDraft,
-    reviewDecision: raw.reviewDecision ? (reviewMap[raw.reviewDecision] ?? null) : null,
-    body: raw.body ?? '',
-    updatedAt: raw.updatedAt,
-    mergeQueue: raw.autoMergeRequest != null ? { position: null } : null,
-  };
 };
+
+const REVIEW_DECISIONS: Record<string, PullRequestState['reviewDecision']> = {
+  APPROVED: 'approved',
+  CHANGES_REQUESTED: 'changes_requested',
+  REVIEW_REQUIRED: 'review_required',
+};
+
+export const toPullRequestState = ({
+  raw,
+  mergeQueue = null,
+}: {
+  raw: RawPullRequest;
+  mergeQueue?: MergeQueuePlacement | null;
+}): PullRequestState => ({
+  number: raw.number,
+  title: raw.title,
+  url: raw.url,
+  state: deriveStateKind({ raw, mergeQueue }),
+  mergeable: deriveMergeable({ raw }),
+  checks: deriveChecks({ raw }),
+  baseBranch: raw.baseRefName,
+  headBranch: raw.headRefName,
+  isDraft: raw.isDraft,
+  reviewDecision:
+    raw.reviewDecision != null ? (REVIEW_DECISIONS[raw.reviewDecision] ?? null) : null,
+  body: raw.body ?? '',
+  updatedAt: raw.updatedAt,
+  mergeQueue,
+});
 
 export const resolvePrForBranch = async (
   runner: GhRunner,
@@ -153,7 +218,11 @@ export const resolvePrForBranch = async (
   const open = raw.filter((p) => p.state === 'OPEN');
   open.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const head = open[0] ?? [...raw].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-  return head ? toPullRequestState(head) : null;
+  if (head == null) {
+    return null;
+  }
+  const placements = await fetchMergeQueuePlacements({ runner, repo, branch, opts });
+  return toPullRequestState({ raw: head, mergeQueue: placements.get(head.number) ?? null });
 };
 
 export const listPrsForBranch = async (
@@ -177,6 +246,10 @@ export const listPrsForBranch = async (
     PR_FIELDS.join(','),
   ];
   const raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
+  if (raw.length === 0) {
+    return [];
+  }
+  const placements = await fetchMergeQueuePlacements({ runner, repo, branch, opts });
   return [...raw]
     .sort((a, b) => {
       const aTerminal = a.state === 'OPEN' ? 0 : 1;
@@ -186,7 +259,7 @@ export const listPrsForBranch = async (
       }
       return b.updatedAt.localeCompare(a.updatedAt);
     })
-    .map(toPullRequestState);
+    .map((pr) => toPullRequestState({ raw: pr, mergeQueue: placements.get(pr.number) ?? null }));
 };
 
 const LINKED_KEYWORD_RE =

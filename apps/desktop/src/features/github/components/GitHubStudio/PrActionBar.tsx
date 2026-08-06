@@ -63,7 +63,7 @@ export const PrActionBar = ({
       {!isTerminal && isQueued && (
         <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
           <GitMerge size={13} aria-hidden />
-          In merge queue
+          {pr.mergeQueue != null ? 'In merge queue' : 'Auto-merge on'}
           {pr.mergeQueue?.position != null && <span>#{pr.mergeQueue.position}</span>}
         </span>
       )}

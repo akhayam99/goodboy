@@ -5,6 +5,7 @@ import type { ActionBusy } from './PrActionBar';
 import type { PrVerdictSubmission } from './PrVerdictAction';
 
 type Params = {
+  readonly pr?: PullRequestState;
   readonly canMerge?: boolean;
   readonly canReview?: boolean;
   readonly busy?: ActionBusy;
@@ -30,6 +31,7 @@ const PR = {
 import { PrActionBar } from './PrActionBar';
 
 const renderActionBar = ({
+  pr = PR,
   canMerge = true,
   canReview = true,
   busy = null,
@@ -38,7 +40,7 @@ const renderActionBar = ({
 }: Params = {}) =>
   render(
     <PrActionBar
-      pr={PR}
+      pr={pr}
       busy={busy}
       canMerge={canMerge}
       canReview={canReview}
@@ -120,5 +122,20 @@ describe('PrActionBar', () => {
     const merge = screen.getByRole('button', { name: 'Merge' });
     expect(merge.hasAttribute('disabled')).toBe(true);
     expect(merge.getAttribute('title')).toBe('PR has conflicts, resolve them first');
+  });
+
+  it('replaces merge with the queue position once the PR is in the merge queue', () => {
+    renderActionBar({ pr: { ...PR, state: 'queued', mergeQueue: { position: 3 } } });
+
+    expect(screen.getByText('In merge queue')).toBeDefined();
+    expect(screen.getByText('#3')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Merge' })).toBeNull();
+  });
+
+  it('calls auto-merge by its name instead of claiming a merge queue', () => {
+    renderActionBar({ pr: { ...PR, state: 'queued', mergeQueue: null } });
+
+    expect(screen.getByText('Auto-merge on')).toBeDefined();
+    expect(screen.queryByText('In merge queue')).toBeNull();
   });
 });
