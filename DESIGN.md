@@ -250,7 +250,12 @@ Compaction for the full exemption list.
   inbox; nothing lives only in a toast.
 - **Errors are toasts, never pinned banners.** An error surfaces as a
   transient, dismissible toast owned by the notification system, not an inline
-  banner wired into the view that lingers after the cause is gone.
+  banner wired into the view that lingers after the cause is gone. The one
+  exception, which also carves out the budget-alert rule under
+  [Spend](#spend): the composer's pre-send routing line states where the next
+  turn is about to go and clears itself the moment routing changes, so it is
+  live state attached to an unsent turn rather than an alert or an error, and
+  it belongs inline where the turn is composed.
 - **Chips carry a word.** Status chips (PR state, CI, agent kind) pair an
   icon with a label. Icon-only is allowed only where space is truly gone, and
   then the label survives as a tooltip.
