@@ -11,6 +11,33 @@ function makeJsonRunner(data: unknown): GhRunner {
   return makeRunner({ stdout: JSON.stringify(data), stderr: '', exitCode: 0 });
 }
 
+type MergeQueueNode = {
+  number: number;
+  isInMergeQueue: boolean;
+  mergeQueueEntry: { position: number | null; state: string } | null;
+};
+
+const makeMergeQueueAwareRunner = ({
+  prs,
+  mergeQueueNodes,
+}: {
+  prs: unknown;
+  mergeQueueNodes: ReadonlyArray<MergeQueueNode>;
+}): GhRunner => ({
+  run: vi.fn(async (args: ReadonlyArray<string>) => {
+    if (args.includes('graphql')) {
+      return {
+        stdout: JSON.stringify({
+          data: { repository: { pullRequests: { nodes: mergeQueueNodes } } },
+        }),
+        stderr: '',
+        exitCode: 0,
+      };
+    }
+    return { stdout: JSON.stringify(prs), stderr: '', exitCode: 0 };
+  }),
+});
+
 const BASE_RAW = {
   number: 1,
   title: 'PR title',
@@ -130,17 +157,43 @@ describe('resolvePrForBranch', () => {
     expect(result?.state).toBe('merged');
   });
 
-  it('maps OPEN + autoMergeRequest object → queued (with mergeQueue)', async () => {
+  it('maps OPEN + autoMergeRequest object → queued without forging a mergeQueue entry', async () => {
     const pr = {
       ...BASE_RAW,
       number: 1,
       state: 'OPEN' as const,
       autoMergeRequest: { enabledAt: '2024-01-01T00:00:00Z' },
     };
-    const runner = makeJsonRunner([pr]);
+    const runner = makeMergeQueueAwareRunner({ prs: [pr], mergeQueueNodes: [] });
     const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
     expect(result?.state).toBe('queued');
-    expect(result?.mergeQueue).toEqual({ position: null });
+    expect(result?.mergeQueue).toBeNull();
+  });
+
+  it('maps a live merge queue entry → queued with its position', async () => {
+    const pr = { ...BASE_RAW, number: 7, state: 'OPEN' as const };
+    const runner = makeMergeQueueAwareRunner({
+      prs: [pr],
+      mergeQueueNodes: [
+        { number: 7, isInMergeQueue: true, mergeQueueEntry: { position: 2, state: 'QUEUED' } },
+      ],
+    });
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.state).toBe('queued');
+    expect(result?.mergeQueue).toEqual({ position: 2 });
+  });
+
+  it('leaves a PR absent from the merge queue as open', async () => {
+    const pr = { ...BASE_RAW, number: 7, state: 'OPEN' as const };
+    const runner = makeMergeQueueAwareRunner({
+      prs: [pr],
+      mergeQueueNodes: [
+        { number: 99, isInMergeQueue: true, mergeQueueEntry: { position: 1, state: 'QUEUED' } },
+      ],
+    });
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.state).toBe('open');
+    expect(result?.mergeQueue).toBeNull();
   });
 
   it('queued beats approved when autoMergeRequest present', async () => {
@@ -247,6 +300,60 @@ describe('resolvePrForBranch', () => {
       number: 1,
       state: 'OPEN' as const,
       statusCheckRollup: [{ conclusion: 'SUCCESS' as const }, { state: 'PENDING' as const }],
+    };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.checks).toBe('pending');
+  });
+
+  it('checks: IN_PROGRESS run with an empty-string conclusion → pending', async () => {
+    const pr = {
+      ...BASE_RAW,
+      number: 1,
+      state: 'OPEN' as const,
+      statusCheckRollup: [
+        { conclusion: 'SUCCESS', status: 'COMPLETED' },
+        { conclusion: '', status: 'IN_PROGRESS' },
+      ],
+    };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.checks).toBe('pending');
+  });
+
+  it('checks: QUEUED run with an empty-string conclusion → pending', async () => {
+    const pr = {
+      ...BASE_RAW,
+      number: 1,
+      state: 'OPEN' as const,
+      statusCheckRollup: [{ conclusion: '', status: 'QUEUED' }],
+    };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.checks).toBe('pending');
+  });
+
+  it('checks: STARTUP_FAILURE conclusion → failure', async () => {
+    const pr = {
+      ...BASE_RAW,
+      number: 1,
+      state: 'OPEN' as const,
+      statusCheckRollup: [
+        { conclusion: 'SUCCESS', status: 'COMPLETED' },
+        { conclusion: 'STARTUP_FAILURE', status: 'COMPLETED' },
+      ],
+    };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.checks).toBe('failure');
+  });
+
+  it('checks: a run GitHub reports with no verdict at all → pending', async () => {
+    const pr = {
+      ...BASE_RAW,
+      number: 1,
+      state: 'OPEN' as const,
+      statusCheckRollup: [{ conclusion: '', status: '', state: '' }],
     };
     const runner = makeJsonRunner([pr]);
     const result = await resolvePrForBranch(runner, 'org/repo', 'feature');

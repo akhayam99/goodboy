@@ -112,7 +112,10 @@ describe('getPrForBranch', () => {
     const deps: PrCacheDeps = { runner, store, now: () => NOW };
 
     const result = await getPrForBranch(deps, BASE_INPUT);
-    expect(runner.run).toHaveBeenCalledOnce();
+    expect(runner.run).toHaveBeenCalledWith(
+      expect.arrayContaining(['pr', 'list']),
+      expect.anything(),
+    );
     expect(store.upsert).toHaveBeenCalledOnce();
     expect(result?.title).toBe('Updated PR');
   });
@@ -123,7 +126,10 @@ describe('getPrForBranch', () => {
     const deps: PrCacheDeps = { runner, store, now: () => NOW };
 
     const result = await getPrForBranch(deps, BASE_INPUT);
-    expect(runner.run).toHaveBeenCalledOnce();
+    expect(runner.run).toHaveBeenCalledWith(
+      expect.arrayContaining(['pr', 'list']),
+      expect.anything(),
+    );
     expect(result).not.toBeNull();
   });
 
@@ -139,7 +145,10 @@ describe('getPrForBranch', () => {
     const deps: PrCacheDeps = { runner, store, now: () => NOW };
 
     await getPrForBranch(deps, { ...BASE_INPUT, force: true });
-    expect(runner.run).toHaveBeenCalledOnce();
+    expect(runner.run).toHaveBeenCalledWith(
+      expect.arrayContaining(['pr', 'list']),
+      expect.anything(),
+    );
   });
 
   it('upserts null and returns null when runner returns no PR', async () => {
