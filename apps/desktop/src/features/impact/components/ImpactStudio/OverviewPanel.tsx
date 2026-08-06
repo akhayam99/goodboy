@@ -131,24 +131,26 @@ export const OverviewPanel = ({
               />
             </StudioWidget>
             <StudioWidget label="spend this window" hint="highest-cost sessions">
-              <div className="flex flex-col gap-3">
-                {data.spendUsd != null ? (
+              {data.spendUsd === null ? (
+                <span className="text-xs text-muted-foreground">
+                  No spend recorded in this window
+                </span>
+              ) : (
+                <div className="flex flex-col gap-3">
                   <div
                     title={formatUsdPrecise(data.spendUsd)}
                     className="font-mono text-2xl tabular-nums text-foreground"
                   >
                     {formatUsd(data.spendUsd)}
                   </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">No spend recorded</span>
-                )}
-                <SessionRows
-                  sessions={data.spendSessions}
-                  valueLabel=""
-                  formatValue={(value) => formatUsd(value)}
-                  onOpenSession={onOpenSession}
-                />
-              </div>
+                  <SessionRows
+                    sessions={data.spendSessions}
+                    valueLabel=""
+                    formatValue={(value) => formatUsd(value)}
+                    onOpenSession={onOpenSession}
+                  />
+                </div>
+              )}
             </StudioWidget>
           </div>
         </>

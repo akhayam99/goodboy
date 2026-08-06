@@ -24,7 +24,6 @@ export type ImpactOverview = {
   readonly previousMedianSessionHours: number | null;
   readonly sessions: ReadonlyArray<ImpactSession>;
   readonly spendUsd: number | null;
-  readonly previousSpendUsd: number | null;
   readonly spendSessions: ReadonlyArray<ImpactSession>;
 };
 
@@ -342,10 +341,11 @@ const selectSessionSpend = async ({
 };
 
 const sumSpend = ({ rows }: { readonly rows: ReadonlyArray<SessionSpendRow> }): number | null => {
-  if (rows.length === 0) {
+  const total = rows.reduce((running, row) => running + row.spend_usd, 0);
+  if (total <= 0) {
     return null;
   }
-  return rows.reduce((total, row) => total + row.spend_usd, 0);
+  return total;
 };
 
 export const getImpactOverview = async ({
@@ -354,48 +354,37 @@ export const getImpactOverview = async ({
   sinceMs,
 }: ImpactQueryParams): Promise<ImpactOverview> => {
   const bounds = windowBounds({ sinceMs });
-  const [current, previous, durations, previousDurations, spend, previousSpend] = await Promise.all(
-    [
-      selectOverview({ db, workspaceId, sinceMs, startMs: bounds.currentStart, endMs: null }),
-      sinceMs === null
-        ? Promise.resolve(null)
-        : selectOverview({
-            db,
-            workspaceId,
-            sinceMs,
-            startMs: bounds.previousStart,
-            endMs: bounds.previousEnd,
-          }),
-      selectSessionDurations({
-        db,
-        workspaceId,
-        sinceMs,
-        startMs: bounds.currentStart,
-        endMs: null,
-        limit: null,
-      }),
-      sinceMs === null
-        ? Promise.resolve([])
-        : selectSessionDurations({
-            db,
-            workspaceId,
-            sinceMs,
-            startMs: bounds.previousStart,
-            endMs: bounds.previousEnd,
-            limit: null,
-          }),
-      selectSessionSpend({ db, workspaceId, sinceMs, startMs: bounds.currentStart, endMs: null }),
-      sinceMs === null
-        ? Promise.resolve([])
-        : selectSessionSpend({
-            db,
-            workspaceId,
-            sinceMs,
-            startMs: bounds.previousStart,
-            endMs: bounds.previousEnd,
-          }),
-    ],
-  );
+  const [current, previous, durations, previousDurations, spend] = await Promise.all([
+    selectOverview({ db, workspaceId, sinceMs, startMs: bounds.currentStart, endMs: null }),
+    sinceMs === null
+      ? Promise.resolve(null)
+      : selectOverview({
+          db,
+          workspaceId,
+          sinceMs,
+          startMs: bounds.previousStart,
+          endMs: bounds.previousEnd,
+        }),
+    selectSessionDurations({
+      db,
+      workspaceId,
+      sinceMs,
+      startMs: bounds.currentStart,
+      endMs: null,
+      limit: null,
+    }),
+    sinceMs === null
+      ? Promise.resolve([])
+      : selectSessionDurations({
+          db,
+          workspaceId,
+          sinceMs,
+          startMs: bounds.previousStart,
+          endMs: bounds.previousEnd,
+          limit: null,
+        }),
+    selectSessionSpend({ db, workspaceId, sinceMs, startMs: bounds.currentStart, endMs: null }),
+  ]);
   return {
     sessionCount: readCount({ value: current.session_count }),
     orchestratedSessions: readCount({ value: current.orchestrated_sessions }),
@@ -416,12 +405,14 @@ export const getImpactOverview = async ({
       value: row.duration_hours,
     })),
     spendUsd: sumSpend({ rows: spend }),
-    previousSpendUsd: sinceMs === null ? null : sumSpend({ rows: previousSpend }),
-    spendSessions: spend.slice(0, 5).map((row) => ({
-      sessionId: row.session_id as SessionId,
-      goal: row.goal,
-      value: row.spend_usd,
-    })),
+    spendSessions: spend
+      .filter((row) => row.spend_usd > 0)
+      .slice(0, 5)
+      .map((row) => ({
+        sessionId: row.session_id as SessionId,
+        goal: row.goal,
+        value: row.spend_usd,
+      })),
   };
 };
 
@@ -445,11 +436,19 @@ const selectPullRequests = async ({
        CAST(json_extract(g.pr_json, '$.number') AS INTEGER) AS number,
        COALESCE(json_extract(g.pr_json, '$.title'), 'Untitled pull request') AS title,
        COALESCE(json_extract(g.pr_json, '$.state'), 'open') AS state,
-       (SELECT SUM(tr.estimated_cost_usd)
-          FROM telemetry_records tr
-         WHERE tr.session_id IN (
-           SELECT sw2.session_id FROM session_worktrees sw2 WHERE sw2.branch = g.branch
-         )) AS spend_usd
+       NULLIF(
+         (SELECT SUM(tr.estimated_cost_usd)
+            FROM telemetry_records tr
+           WHERE tr.session_id IN (
+             SELECT sw2.session_id
+               FROM session_worktrees sw2
+               JOIN sessions s2 ON s2.id = sw2.session_id
+              WHERE sw2.branch = g.branch
+                AND s2.workspace_id = s.workspace_id
+                AND s2.deleted_at IS NULL
+           )),
+         0
+       ) AS spend_usd
      FROM github_pr_cache g
      JOIN session_worktrees sw ON sw.branch = g.branch
      JOIN sessions s ON s.id = sw.session_id

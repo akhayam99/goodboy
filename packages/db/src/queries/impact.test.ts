@@ -203,13 +203,33 @@ describe('impact overview', () => {
     expect(result.medianSessionHours).toBe(2);
     expect(result.sessions[0]?.sessionId).toBe('recent');
     expect(result.spendUsd).toBeCloseTo(4, 4);
-    expect(result.previousSpendUsd).toBeCloseTo(3, 4);
     expect(result.spendSessions[0]).toMatchObject({ sessionId: 'recent', value: 2.5 });
   });
 
   it('reports spend as absent rather than zero when no telemetry was recorded', async () => {
     const db = await seedDb();
     await addSession({ db, seed: { id: 'untelemetered', createdAt: RECENT } });
+
+    const result = await getImpactOverview(params({ db, sinceMs: SINCE }));
+
+    expect(result.spendUsd).toBeNull();
+    expect(result.spendSessions).toEqual([]);
+  });
+
+  it('reports spend as absent when every telemetry row priced the work at zero', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'unpriced', createdAt: RECENT } });
+    await addTelemetry({
+      db,
+      seed: {
+        id: 't-unpriced',
+        runId: 'r-unpriced',
+        sessionId: 'unpriced',
+        at: RECENT,
+        provider: 'opencode',
+        cost: 0,
+      },
+    });
 
     const result = await getImpactOverview(params({ db, sinceMs: SINCE }));
 
@@ -329,6 +349,88 @@ describe('pull request outcomes', () => {
     const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
 
     expect(result.entries[0]).toMatchObject({ number: 30, spendUsd: null });
+  });
+
+  it('leaves another workspace spend out of a pull request that shares its branch name', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'mine', createdAt: RECENT } });
+    await addSession({
+      db,
+      seed: { id: 'theirs', createdAt: RECENT, workspace: otherWorkspaceId },
+    });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, created_at)
+       VALUES ('wt-mine', 'mine', '/tmp/mine', 'ak/shared-slug', 0, ?),
+              ('wt-theirs', 'theirs', '/tmp/theirs', 'ak/shared-slug', 0, ?)`,
+      [RECENT, RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'repo', ?, ?)`,
+      [
+        'ak/shared-slug',
+        JSON.stringify({
+          number: 44,
+          title: 'shared branch name',
+          state: 'open',
+          updatedAt: iso(RECENT),
+        }),
+        iso(RECENT),
+      ],
+    );
+    await addTelemetry({
+      db,
+      seed: { id: 't-mine', runId: 'r-mine', sessionId: 'mine', at: RECENT, cost: 2 },
+    });
+    await addTelemetry({
+      db,
+      seed: { id: 't-theirs', runId: 'r-theirs', sessionId: 'theirs', at: RECENT, cost: 9 },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.entries[0]).toMatchObject({ number: 44, spendUsd: 2 });
+  });
+
+  it('reports a pull request priced at zero as having no spend', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'freebie', createdAt: RECENT } });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, created_at)
+       VALUES ('wt-freebie', 'freebie', '/tmp/freebie', 'ak/freebie', 0, ?)`,
+      [RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'repo', ?, ?)`,
+      [
+        'ak/freebie',
+        JSON.stringify({
+          number: 51,
+          title: 'unpriced provider run',
+          state: 'open',
+          updatedAt: iso(RECENT),
+        }),
+        iso(RECENT),
+      ],
+    );
+    await addTelemetry({
+      db,
+      seed: {
+        id: 't-freebie',
+        runId: 'r-freebie',
+        sessionId: 'freebie',
+        at: RECENT,
+        provider: 'opencode',
+        cost: 0,
+      },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.entries[0]).toMatchObject({ number: 51, spendUsd: null });
   });
 });
 

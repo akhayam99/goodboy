@@ -87,14 +87,14 @@ export const ShippedPanel = ({
                 <span className="min-w-0 flex-1 truncate">
                   #{entry.number} {entry.title}
                 </span>
-                {entry.spendUsd != null ? (
+                {entry.spendUsd === null ? null : (
                   <span
                     title={formatUsdPrecise(entry.spendUsd)}
                     className="shrink-0 font-mono tabular-nums text-muted-foreground"
                   >
                     {formatUsd(entry.spendUsd)}
                   </span>
-                ) : null}
+                )}
                 <span className="shrink-0 capitalize text-muted-foreground">{entry.state}</span>
                 <ArrowUpRight size={12} aria-hidden />
               </button>
