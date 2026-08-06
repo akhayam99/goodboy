@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
-import type { GitlabMrDiscussion } from '../../client';
+import type { GitlabMrDiscussion, GitlabMrNote } from '../../client';
 
 const h = vi.hoisted(() => ({
   list: vi.fn<() => Promise<ReadonlyArray<GitlabMrDiscussion>>>(),
@@ -31,21 +31,21 @@ const TARGET = {
   mrIid: 4,
 };
 
+const NOTE: GitlabMrNote = {
+  id: 1,
+  body: 'one nit',
+  system: false,
+  author: { username: 'ada', name: 'Ada Lovelace', avatarUrl: null },
+  createdAt: '2026-08-01T10:00:00Z',
+  resolvable: true,
+  resolved: false,
+  position: null,
+};
+
 const DISCUSSION: GitlabMrDiscussion = {
   id: 'disc-1',
   individualNote: false,
-  notes: [
-    {
-      id: 1,
-      body: 'one nit',
-      system: false,
-      author: { username: 'ada', name: 'Ada Lovelace', avatarUrl: null },
-      createdAt: '2026-08-01T10:00:00Z',
-      resolvable: true,
-      resolved: false,
-      position: null,
-    },
-  ],
+  notes: [NOTE],
 };
 
 const Harness = () => {
@@ -86,9 +86,7 @@ describe('MrConversation resolve wiring', () => {
   });
 
   it('reopens a resolved thread with the cleared flag', async () => {
-    h.list.mockResolvedValue([
-      { ...DISCUSSION, notes: [{ ...DISCUSSION.notes[0], resolved: true }] },
-    ]);
+    h.list.mockResolvedValue([{ ...DISCUSSION, notes: [{ ...NOTE, resolved: true }] }]);
     h.resolve.mockResolvedValue(DISCUSSION);
     render(<Harness />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Unresolve' })).toBeDefined());
