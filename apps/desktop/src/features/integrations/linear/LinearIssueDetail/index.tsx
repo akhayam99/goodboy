@@ -34,7 +34,7 @@ export const LinearIssueDetail = ({
   fit = 'fill',
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
-  const { comments, isLoading, error } = useLinearIssueComments({
+  const { comments, isLoading, error, post } = useLinearIssueComments({
     workspaceId,
     issueId: issue.id,
   });
@@ -84,7 +84,12 @@ export const LinearIssueDetail = ({
       {section === 'overview' ? (
         <DescriptionSection text={description} onSave={save} />
       ) : (
-        <LinearIssueComments comments={comments} isLoading={isLoading} error={error} />
+        <LinearIssueComments
+          comments={comments}
+          isLoading={isLoading}
+          error={error}
+          onPost={post}
+        />
       )}
     </StudioDetailLayout>
   );

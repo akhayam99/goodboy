@@ -289,6 +289,29 @@ query IssueComments($issueId: String!) {
 }
 "#;
 
+const COMMENT_CREATE_MUTATION: &str = r#"
+mutation CommentCreate($input: CommentCreateInput!) {
+  commentCreate(input: $input) {
+    success
+    comment {
+      id
+      body
+      createdAt
+      user { name }
+    }
+  }
+}
+"#;
+
+fn comment_create_variables(issue_id: &str, body: &str) -> serde_json::Value {
+    serde_json::json!({
+        "input": {
+            "issueId": issue_id,
+            "body": body
+        }
+    })
+}
+
 const ISSUE_UPDATE_MUTATION: &str = r#"
 mutation IssueUpdate($issueId: String!, $input: IssueUpdateInput!) {
   issueUpdate(id: $issueId, input: $input) {
@@ -384,6 +407,31 @@ pub async fn linear_fetch_issue_comments(
 }
 
 #[tauri::command]
+pub async fn linear_create_comment(
+    workspace_id: String,
+    issue_id: String,
+    body: String,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<LinearIssueComment, LinearError> {
+    let token = read_token(&workspace_id, &cache)?;
+    let resp: CommentCreateResponse = graphql(
+        &token,
+        COMMENT_CREATE_MUTATION,
+        Some(comment_create_variables(&issue_id, &body)),
+    )
+    .await?;
+    if !resp.comment_create.success {
+        return Err(LinearError::GraphQl(format!(
+            "commentCreate rejected for {}",
+            issue_id
+        )));
+    }
+    resp.comment_create
+        .comment
+        .ok_or_else(|| LinearError::InvalidShape("missing comment".into()))
+}
+
+#[tauri::command]
 pub async fn linear_update_issue(
     workspace_id: String,
     issue_id: String,
@@ -458,4 +506,38 @@ struct IssueUpdatePayload {
 struct IssueUpdateResponse {
     #[serde(rename = "issueUpdate")]
     issue_update: IssueUpdatePayload,
+}
+
+#[derive(Deserialize)]
+struct CommentCreatePayload {
+    success: bool,
+    comment: Option<LinearIssueComment>,
+}
+
+#[derive(Deserialize)]
+struct CommentCreateResponse {
+    #[serde(rename = "commentCreate")]
+    comment_create: CommentCreatePayload,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn comment_create_variables_nest_the_issue_and_the_body_under_input() {
+        let variables = comment_create_variables("issue-42", "ship it");
+
+        assert_eq!(variables["input"]["issueId"], "issue-42");
+        assert_eq!(variables["input"]["body"], "ship it");
+        assert!(variables.get("issueId").is_none());
+        assert!(variables.get("body").is_none());
+    }
+
+    #[test]
+    fn comment_create_mutation_asks_linear_for_the_created_comment_back() {
+        assert!(COMMENT_CREATE_MUTATION.contains("$input: CommentCreateInput!"));
+        assert!(COMMENT_CREATE_MUTATION.contains("commentCreate(input: $input)"));
+        assert!(COMMENT_CREATE_MUTATION.contains("createdAt"));
+    }
 }

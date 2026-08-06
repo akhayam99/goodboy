@@ -41,6 +41,7 @@ vi.mock('../useLinearIssueComments', () => ({
     ],
     isLoading: false,
     error: null,
+    post: vi.fn(async () => {}),
   }),
 }));
 

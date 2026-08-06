@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { formatError } from '../../../shared/lib/errors';
-import { linearFetchIssueComments, type LinearIssueComment } from './client';
+import { linearCreateComment, linearFetchIssueComments, type LinearIssueComment } from './client';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -12,6 +12,7 @@ type Result = {
   readonly comments: ReadonlyArray<LinearIssueComment>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly post: ((body: string) => Promise<void>) | null;
 };
 
 export const useLinearIssueComments = ({ workspaceId, issueId }: Params): Result => {
@@ -54,5 +55,16 @@ export const useLinearIssueComments = ({ workspaceId, issueId }: Params): Result
     };
   }, [issueId, workspaceId]);
 
-  return { comments, isLoading, error };
+  const post = useCallback(
+    async (body: string) => {
+      if (issueId == null) {
+        return;
+      }
+      const created = await linearCreateComment({ workspaceId, issueId, body });
+      setComments((current) => [...current, created]);
+    },
+    [issueId, workspaceId],
+  );
+
+  return { comments, isLoading, error, post: issueId != null ? post : null };
 };
