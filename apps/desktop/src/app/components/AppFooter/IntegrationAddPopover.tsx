@@ -8,12 +8,15 @@ import { IntegrationAddRow } from './IntegrationAddRow';
 
 type Props = {
   readonly addLabel: string;
+  readonly emptyLabel: string;
   readonly exhaustedLabel: string;
   readonly panelLabel: string;
   readonly members: ReadonlyArray<FooterIntegrationEntry>;
   readonly enabled: Record<IntegrationGlyphProvider, boolean>;
   readonly openers: Record<IntegrationGlyphProvider, () => void>;
   readonly isExhausted: boolean;
+  readonly showLabel: boolean;
+  readonly active: boolean;
 };
 
 type PopoverCoordinates = {
@@ -28,12 +31,15 @@ const VIEWPORT_MARGIN = 8;
 
 export const IntegrationAddPopover = ({
   addLabel,
+  emptyLabel,
   exhaustedLabel,
   panelLabel,
   members,
   enabled,
   openers,
   isExhausted,
+  showLabel,
+  active,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -103,17 +109,21 @@ export const IntegrationAddPopover = ({
           ref={triggerRef}
           type="button"
           onClick={toggle}
-          aria-label={addLabel}
+          aria-label={isExhausted ? exhaustedLabel : addLabel}
           aria-expanded={isOpen}
           aria-disabled={isExhausted}
           className={cn(
-            'flex items-center rounded-md px-1.5 py-1 transition-colors',
+            'flex items-center rounded-md py-1 text-2xs font-medium transition-colors',
+            showLabel ? 'gap-1.5 px-2' : 'px-1.5',
             isExhausted
               ? 'cursor-default text-muted-foreground/40'
-              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+              : active
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
           )}
         >
           <Plus size={12} aria-hidden />
+          {showLabel ? <span>{emptyLabel}</span> : null}
         </button>
       </Tooltip>
 
@@ -135,7 +145,11 @@ export const IntegrationAddPopover = ({
                   left: coordinates.left,
                 }}
               >
-                <ul aria-label={panelLabel} className="flex flex-col py-1">
+                <ul
+                  aria-label={panelLabel}
+                  className="flex flex-col overflow-y-auto py-1"
+                  style={{ maxHeight: PANEL_MAX_HEIGHT }}
+                >
                   {members.map((member) => (
                     <IntegrationAddRow
                       key={member.provider}

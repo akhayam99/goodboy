@@ -97,7 +97,14 @@ functional. One register per surface; let the other supply only texture.
 - **Pin the structure, flex the density.** A control's position is fixed so it
   can be learned, and no control appears or disappears at a count threshold.
   Counts themselves may: the attention and running chips render only above
-  zero, because a chip reading zero is noise, not structure. Overview
+  zero, because a chip reading zero is noise, not structure. The footer's
+  integration groups flex density this way: an add control with nothing
+  connected in its category carries the category noun as a visible label and
+  drops back to a bare glyph once a member connects. One honest exception to
+  the first half of the rule: the groups are laid out in a row, so connecting an
+  integration adds a glyph and shifts the controls to its right. Nothing appears
+  or disappears, but a position is not fixed in absolute terms, only in order.
+  Overview
   stays board-only. Inside a session, the sessions column is hidden or shown
   from one control in the top bar, or with ⌘B, and that choice persists. The
   sidebar has no collapse rail: a rail is a second, narrower copy of the

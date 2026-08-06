@@ -135,13 +135,21 @@ Layout:
 - Left: integration tools in three groups, separated by a vertical `<Divider>`:
   code hosts (GitHub, GitLab, Bitbucket), trackers (Linear, Jira, Sentry),
   conversation tools (Slack). `FOOTER_CATEGORIES` in `AppFooter/categories.ts`
-  owns the model. A group is a `role="group"` with an `aria-label`, renders its
+  owns the model, and it derives its members from one record keyed by
+  `IntegrationGlyphProvider`, so a new integration cannot compile until it names
+  a category. A group is a `role="group"` with an `aria-label`, renders its
   connected members as glyph-only buttons, and ends with one add control
   (`IntegrationAddPopover`) listing every member of the category with its
   connection state. Any row there opens that integration's studio, which renders
   the connect form when the integration is not connected yet. The add control
-  stays mounted once every member is connected and turns `aria-disabled` with
-  the reason in its tooltip, so no control leaves its position.
+  stays mounted once every member is connected and turns `aria-disabled`, with
+  the reason in both its tooltip and its accessible name, so no control leaves
+  its position.
+- Left, density: a group with nothing connected labels its add control with the
+  category noun (`Code host`, `Tracker`, `Conversation tool`), so a workspace on
+  its first run reads what each group offers instead of hovering three
+  anonymous glyphs. The label goes away as soon as that category has one
+  connected member, and the control keeps its slot either way.
 - Left, simple workspace: the code-host group is swapped whole for the
   `Add a repo` conversion action, which has no add control, and Sentry drops out
   of the trackers group. A simple workspace has no repository for either to
@@ -153,8 +161,12 @@ lens rows, and the back-to-board action in the workspace sidebar.
 
 The active navigation item takes a muted fill (`bg-muted text-foreground`)
 across those surfaces; only the settings toggle in the top bar still inverts.
-Lens rows keep `aria-current="page"` on the active row. Opening any studio
-closes the others (`closeAllStudios` in `App.tsx`).
+In the footer's integration groups that fill lands on the glyph of the open
+integration, or on the group's add control when the open integration is not
+connected and therefore has no glyph, so exactly one control per group carries
+it and no group hides where the user is. Lens rows keep `aria-current="page"`
+on the active row. Opening any studio closes the others (`closeAllStudios` in
+`App.tsx`).
 
 Every lens row is bound on the ⌘⌥ plane and reveals its glyph on hover, in
 place of the row badge, so the rail teaches the binding without widening.

@@ -1,6 +1,8 @@
 import type { ComponentProps } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
+import { FOOTER_CATEGORIES, FOOTER_INTEGRATION_PROVIDERS } from './categories';
 
 vi.mock('../../../store', () => ({
   useAppStore: (
@@ -46,6 +48,55 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   isSimpleWorkspace: false,
   ...overrides,
 });
+
+const openerSpies = () => ({
+  github: vi.fn(),
+  gitlab: vi.fn(),
+  bitbucket: vi.fn(),
+  linear: vi.fn(),
+  jira: vi.fn(),
+  sentry: vi.fn(),
+  slack: vi.fn(),
+});
+
+type RoutingParams = {
+  readonly spies: ReturnType<typeof openerSpies>;
+  readonly connected: boolean;
+};
+
+const routingProps = ({ spies, connected }: RoutingParams): FooterProps =>
+  footerProps({
+    overrides: {
+      onOpenGithub: spies.github,
+      onOpenGitlab: spies.gitlab,
+      onOpenBitbucket: spies.bitbucket,
+      onOpenLinear: spies.linear,
+      onOpenJira: spies.jira,
+      onOpenSentry: spies.sentry,
+      onOpenSlack: spies.slack,
+      githubEnabled: connected,
+      gitlabEnabled: connected,
+      bitbucketEnabled: connected,
+      linearEnabled: connected,
+      jiraEnabled: connected,
+      sentryEnabled: connected,
+      slackEnabled: connected,
+    },
+  });
+
+type ExpectRoutedParams = {
+  readonly spies: ReturnType<typeof openerSpies>;
+  readonly provider: IntegrationGlyphProvider;
+};
+
+const expectRoutedOnlyTo = ({ spies, provider }: ExpectRoutedParams) => {
+  FOOTER_INTEGRATION_PROVIDERS.forEach((candidate) => {
+    expect(
+      spies[candidate].mock.calls.length,
+      `${candidate} opener while ${provider} was picked`,
+    ).toBe(candidate === provider ? 1 : 0);
+  });
+};
 
 describe('AppFooter', () => {
   it('opens each studio launcher on the right', () => {
@@ -187,15 +238,122 @@ describe('AppFooter', () => {
     expect(screen.queryByRole('dialog', { name: 'Trackers' })).toBeNull();
   });
 
-  it('disables the add control with a reason once every member of a category is connected', () => {
+  it('disables the add control once every member of a category is connected and names the reason', () => {
     render(<AppFooter {...footerProps({ overrides: { slackEnabled: true } })} />);
 
-    const add = screen.getByRole('button', { name: 'Connect a conversation tool' });
+    const add = screen.getByRole('button', { name: 'Every conversation tool is connected' });
     expect(add.getAttribute('aria-disabled')).toBe('true');
+    expect(screen.queryByRole('button', { name: 'Connect a conversation tool' })).toBeNull();
 
     fireEvent.click(add);
 
     expect(screen.queryByRole('dialog', { name: 'Conversation tools' })).toBeNull();
+  });
+
+  it('sends every connected glyph to its own studio and to no other', () => {
+    FOOTER_CATEGORIES.forEach((category) => {
+      category.members.forEach((member) => {
+        const spies = openerSpies();
+        render(<AppFooter {...routingProps({ spies, connected: true })} />);
+
+        fireEvent.click(screen.getByRole('button', { name: member.connectedLabel }));
+
+        expectRoutedOnlyTo({ spies, provider: member.provider });
+        cleanup();
+      });
+    });
+  });
+
+  it('sends every popover row to its own studio and to no other', () => {
+    FOOTER_CATEGORIES.forEach((category) => {
+      category.members.forEach((member) => {
+        const spies = openerSpies();
+        render(<AppFooter {...routingProps({ spies, connected: false })} />);
+
+        fireEvent.click(screen.getByRole('button', { name: category.addLabel }));
+        fireEvent.click(
+          within(screen.getByRole('dialog', { name: category.groupLabel })).getByRole('button', {
+            name: member.connectLabel,
+          }),
+        );
+
+        expectRoutedOnlyTo({ spies, provider: member.provider });
+        cleanup();
+      });
+    });
+  });
+
+  it('places every integration in exactly one category', () => {
+    const placed = FOOTER_CATEGORIES.flatMap((category) =>
+      category.members.map((member) => member.provider),
+    );
+
+    expect([...placed].sort()).toEqual([...FOOTER_INTEGRATION_PROVIDERS].sort());
+  });
+
+  it('keeps the three groups in order with a divider between each pair', () => {
+    render(<AppFooter {...footerProps()} />);
+
+    const groups = screen.getAllByRole('group');
+    expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual([
+      'Code hosts',
+      'Trackers',
+      'Conversation tools',
+    ]);
+
+    const cluster = groups[0]?.parentElement;
+    expect(Array.from(cluster?.children ?? []).map((child) => child.getAttribute('role'))).toEqual([
+      'group',
+      'separator',
+      'group',
+      'separator',
+      'group',
+    ]);
+  });
+
+  it('holds the active state on the group whose disconnected member owns the open studio', () => {
+    render(<AppFooter {...footerProps({ overrides: { activeStudio: 'sentry' } })} />);
+
+    expect(screen.getByRole('button', { name: 'Connect a tracker' }).className).toContain(
+      'bg-muted text-foreground',
+    );
+    expect(screen.getByRole('button', { name: 'Connect a code host' }).className).toContain(
+      'text-muted-foreground',
+    );
+  });
+
+  it('moves that active state onto the glyph once the integration is connected', () => {
+    render(
+      <AppFooter
+        {...footerProps({ overrides: { activeStudio: 'sentry', sentryEnabled: true } })}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Launch a session from a Sentry issue' }).className,
+    ).toContain('bg-muted text-foreground');
+    expect(screen.getByRole('button', { name: 'Connect a tracker' }).className).toContain(
+      'text-muted-foreground',
+    );
+  });
+
+  it('names a category with nothing connected and drops to a glyph once a member connects', () => {
+    const { rerender } = render(<AppFooter {...footerProps()} />);
+
+    expect(screen.getByRole('button', { name: 'Connect a code host' }).textContent).toBe(
+      'Code host',
+    );
+    expect(screen.getByRole('button', { name: 'Connect a tracker' }).textContent).toBe('Tracker');
+    expect(screen.getByRole('button', { name: 'Connect a conversation tool' }).textContent).toBe(
+      'Conversation tool',
+    );
+
+    rerender(<AppFooter {...footerProps({ overrides: { linearEnabled: true } })} />);
+
+    expect(screen.getByRole('button', { name: 'Connect a tracker' }).textContent).toBe('');
+    expect(screen.getByRole('button', { name: 'Connect a code host' }).textContent).toBe(
+      'Code host',
+    );
   });
 
   it('swaps the code hosts for the conversion CTA and drops Sentry in a simple workspace', () => {

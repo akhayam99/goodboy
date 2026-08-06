@@ -42,12 +42,17 @@ export const IntegrationCategoryGroup = ({
       ))}
       <IntegrationAddPopover
         addLabel={category.addLabel}
+        emptyLabel={category.emptyLabel}
         exhaustedLabel={category.exhaustedLabel}
         panelLabel={category.groupLabel}
         members={members}
         enabled={enabled}
         openers={openers}
         isExhausted={connectedMembers.length === members.length}
+        showLabel={connectedMembers.length === 0}
+        active={members.some(
+          (member) => member.provider === activeStudio && !enabled[member.provider],
+        )}
       />
     </div>
   );
