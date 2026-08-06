@@ -63,4 +63,23 @@ describe('RoutingIndicator', () => {
     await waitFor(() => screen.getByTitle('Model: cursor-pro'));
     expect(screen.getByText(/budget exceeded for claude/i)).toBeTruthy();
   });
+
+  it('renders the threshold warning, worded apart from the over-cap one', async () => {
+    resolveMock.mockResolvedValue({
+      reason: 'fallback-threshold',
+      fallbackFrom: 'anthropic',
+      selectedProvider: 'cursor',
+      selectedModel: 'cursor-pro',
+    });
+    render(
+      <RoutingIndicator
+        sessionPreference={null as never}
+        turnOverride={undefined}
+        connectedProviders={[]}
+      />,
+    );
+    await waitFor(() => screen.getByTitle('Model: cursor-pro'));
+    expect(screen.getByText(/claude past its budget threshold/i)).toBeTruthy();
+    expect(screen.queryByText(/budget exceeded/i)).toBeNull();
+  });
 });

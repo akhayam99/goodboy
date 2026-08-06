@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import type {
   ProviderId,
   RoutingDecision,
+  RoutingReason,
   SessionProviderPreference,
   TurnProviderOverride,
 } from '@goodboy/types';
@@ -73,16 +74,20 @@ export const RoutingIndicator = ({
   }
 
   const isFallback =
-    decision.reason === 'fallback-budget' || decision.reason === 'fallback-disconnected';
+    decision.reason === 'fallback-budget' ||
+    decision.reason === 'fallback-threshold' ||
+    decision.reason === 'fallback-disconnected';
   if (!isFallback || !decision.fallbackFrom) {
     return null;
   }
 
   const fromLabel = PROVIDER_LABEL_LOWER[decision.fallbackFrom];
-  const cause =
-    decision.reason === 'fallback-budget'
-      ? `budget exceeded for ${fromLabel}`
-      : `${fromLabel} disconnected`;
+  const causeByReason: Partial<Record<RoutingReason, string>> = {
+    'fallback-budget': `budget exceeded for ${fromLabel}`,
+    'fallback-threshold': `${fromLabel} past its budget threshold`,
+    'fallback-disconnected': `${fromLabel} disconnected`,
+  };
+  const cause = causeByReason[decision.reason] ?? `${fromLabel} disconnected`;
 
   return (
     <TranscriptShell
