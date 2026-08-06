@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { WorkspaceId } from '@goodboy/types';
 import {
   issuePullRequests,
+  linearCreateComment,
   linearFetchIssue,
   linearFetchIssueComments,
   linearUpdateIssueDescription,
@@ -114,6 +115,29 @@ describe('Linear issue requests', () => {
       ['linear_fetch_issue', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
       ['linear_fetch_issue_comments', { workspaceId: WORKSPACE_ID, issueId: 'issue-42' }],
     ]);
+  });
+
+  it('posts a comment against the issue and returns the comment Linear created', async () => {
+    const created = {
+      id: 'comment-7',
+      body: 'Looks good',
+      createdAt: '2026-08-05T09:00:00Z',
+      user: { name: 'Ada' },
+    };
+    mockInvoke.mockResolvedValueOnce(created);
+
+    const comment = await linearCreateComment({
+      workspaceId: WORKSPACE_ID,
+      issueId: 'issue-42',
+      body: 'Looks good',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith('linear_create_comment', {
+      workspaceId: WORKSPACE_ID,
+      issueId: 'issue-42',
+      body: 'Looks good',
+    });
+    expect(comment).toEqual(created);
   });
 
   it('sends the new description to the update command and returns the saved body', async () => {

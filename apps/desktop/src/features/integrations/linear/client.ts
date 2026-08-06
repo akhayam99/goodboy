@@ -129,6 +129,18 @@ export const linearFetchIssueComments = async ({
   return invoke<LinearIssueComment[]>('linear_fetch_issue_comments', { workspaceId, issueId });
 };
 
+type CreateCommentParams = Params & {
+  readonly body: string;
+};
+
+export const linearCreateComment = async ({
+  workspaceId,
+  issueId,
+  body,
+}: CreateCommentParams): Promise<LinearIssueComment> => {
+  return invoke<LinearIssueComment>('linear_create_comment', { workspaceId, issueId, body });
+};
+
 type UpdateDescriptionParams = Params & {
   readonly description: string;
 };

@@ -10,6 +10,8 @@ vi.mock('../client', async (importOriginal) => ({
   linearUpdateIssueDescription: vi.fn(),
 }));
 
+const postComment = vi.hoisted(() => vi.fn(async () => {}));
+
 vi.mock('../useLinearIssueComments', () => ({
   useLinearIssueComments: () => ({
     comments: [
@@ -22,6 +24,7 @@ vi.mock('../useLinearIssueComments', () => ({
     ],
     isLoading: false,
     error: null,
+    post: postComment,
   }),
 }));
 
@@ -47,6 +50,7 @@ const updateDescription = vi.mocked(linearUpdateIssueDescription);
 
 beforeEach(() => {
   updateDescription.mockReset();
+  postComment.mockClear();
 });
 
 afterEach(cleanup);
@@ -66,6 +70,18 @@ describe('LinearIssueDetail', () => {
 
     expect(screen.getByText('Ada Lovelace')).toBeDefined();
     expect(screen.getByText('The fix is ready for review.')).toBeDefined();
+  });
+
+  it('sends a comment written in the conversation tab back to Linear', async () => {
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /Conversation/ }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Write a comment' }), {
+      target: { value: 'Merging this' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+
+    await waitFor(() => expect(postComment).toHaveBeenCalledWith('Merging this'));
   });
 
   it('keeps a fenced description as a code block', () => {

@@ -3,6 +3,7 @@ import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { NoteCard } from '../../../../shared/components/NoteCard';
 import { NoteHeader } from '../../../../shared/components/NoteHeader';
+import { NoteComposer } from '../../../../shared/components/NoteComposer';
 import { NoteListSkeleton } from '../../../../shared/components/NoteListSkeleton';
 import type { LinearIssueComment } from '../client';
 
@@ -10,9 +11,10 @@ type Props = {
   readonly comments: ReadonlyArray<LinearIssueComment>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly onPost: ((body: string) => Promise<void>) | null;
 };
 
-export const LinearIssueComments = ({ comments, isLoading, error }: Props) => {
+export const LinearIssueComments = ({ comments, isLoading, error, onPost }: Props) => {
   if (isLoading) {
     return <NoteListSkeleton />;
   }
@@ -21,37 +23,40 @@ export const LinearIssueComments = ({ comments, isLoading, error }: Props) => {
     return <p className="text-sm text-danger">{error}</p>;
   }
 
-  if (comments.length === 0) {
-    return (
-      <EmptyState
-        icon={CONCEPT_ICONS.comments}
-        tone={CONCEPT_TONE.comments}
-        title="No comments"
-        description="This issue has no comments yet."
-        size="inline"
-        className="py-5"
-      />
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-3">
-      {comments.map((comment) => {
-        const relativeDate = formatRelativeDuration(comment.createdAt);
-        return (
-          <NoteCard
-            key={comment.id}
-            header={
-              <NoteHeader
-                author={comment.user?.name ?? 'Unknown author'}
-                timestamp={relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
-                size="xs"
+    <div className="flex flex-col gap-4">
+      {comments.length === 0 ? (
+        <EmptyState
+          icon={CONCEPT_ICONS.comments}
+          tone={CONCEPT_TONE.comments}
+          title="No comments"
+          description="This issue has no comments yet."
+          size="inline"
+          className="py-5"
+        />
+      ) : (
+        <div className="flex flex-col gap-3">
+          {comments.map((comment) => {
+            const relativeDate = formatRelativeDuration(comment.createdAt);
+            return (
+              <NoteCard
+                key={comment.id}
+                header={
+                  <NoteHeader
+                    author={comment.user?.name ?? 'Unknown author'}
+                    timestamp={relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
+                    size="xs"
+                  />
+                }
+                body={comment.body}
               />
-            }
-            body={comment.body}
-          />
-        );
-      })}
+            );
+          })}
+        </div>
+      )}
+      {onPost != null && (
+        <NoteComposer placeholder="Write a comment" submitLabel="Comment" onSubmit={onPost} />
+      )}
     </div>
   );
 };
