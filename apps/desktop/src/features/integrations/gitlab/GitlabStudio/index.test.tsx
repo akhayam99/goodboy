@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
+import { ToastProvider } from '../../../../app/components/Toast';
 
 const MR = {
   id: 12,
@@ -23,6 +24,7 @@ const h = vi.hoisted(() => ({
   isConnected: true,
   useGitlabIssues: vi.fn(),
   useGitlabMrs: vi.fn(),
+  disconnectGitlab: vi.fn(async () => undefined),
 }));
 
 vi.mock('./useGitlabIssues', () => ({
@@ -57,10 +59,14 @@ vi.mock('../../../review/components/ReviewPrDetailPanel', () => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(
-    selector: (state: { workspaceIntegrations: Record<string, Array<{ provider: string }>> }) => T,
+    selector: (state: {
+      workspaceIntegrations: Record<string, Array<{ provider: string }>>;
+      disconnectGitlab: typeof h.disconnectGitlab;
+    }) => T,
   ) =>
     selector({
       workspaceIntegrations: h.isConnected ? { 'workspace-1': [{ provider: 'gitlab' }] } : {},
+      disconnectGitlab: h.disconnectGitlab,
     }),
 }));
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -79,6 +85,17 @@ vi.mock('../../../../shared/components/StudioShell', () => ({
 }));
 
 import { GitlabStudio } from './index';
+
+const renderStudio = () =>
+  render(
+    <ToastProvider>
+      <GitlabStudio
+        workspaceId={'workspace-1' as WorkspaceId}
+        workspaceName="Goodboy"
+        onClose={vi.fn()}
+      />
+    </ToastProvider>,
+  );
 
 beforeEach(() => {
   h.isConnected = true;
@@ -101,17 +118,12 @@ afterEach(() => {
   cleanup();
   h.useGitlabIssues.mockReset();
   h.useGitlabMrs.mockReset();
+  h.disconnectGitlab.mockReset();
 });
 
 describe('GitlabStudio', () => {
   it('keeps issues selected by default', () => {
-    render(
-      <GitlabStudio
-        workspaceId={'workspace-1' as WorkspaceId}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    renderStudio();
 
     expect(screen.getByRole('tab', { name: 'Issues' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText('Issue inbox')).toBeDefined();
@@ -119,13 +131,7 @@ describe('GitlabStudio', () => {
   });
 
   it('renders grouped assigned merge requests in the merge requests tab', () => {
-    render(
-      <GitlabStudio
-        workspaceId={'workspace-1' as WorkspaceId}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    renderStudio();
     fireEvent.click(screen.getByRole('tab', { name: 'Merge requests' }));
 
     expect(screen.getByRole('tab', { name: 'Mine' }).getAttribute('aria-selected')).toBe('true');
@@ -135,13 +141,7 @@ describe('GitlabStudio', () => {
   });
 
   it('switches the merge requests tab to the shared review inbox for others', () => {
-    render(
-      <GitlabStudio
-        workspaceId={'workspace-1' as WorkspaceId}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    renderStudio();
     fireEvent.click(screen.getByRole('tab', { name: 'Merge requests' }));
     fireEvent.click(screen.getByRole('tab', { name: 'Others' }));
 
@@ -153,7 +153,7 @@ describe('GitlabStudio', () => {
   it('renders the disconnected state and disables both data hooks', () => {
     h.isConnected = false;
     const workspaceId = 'workspace-1' as WorkspaceId;
-    render(<GitlabStudio workspaceId={workspaceId} workspaceName="Goodboy" onClose={vi.fn()} />);
+    renderStudio();
 
     expect(
       screen.getByText('Connect GitLab to review merge requests from this workspace'),
@@ -162,5 +162,14 @@ describe('GitlabStudio', () => {
     expect(screen.getByLabelText('Personal access token')).toBeDefined();
     expect(h.useGitlabIssues).toHaveBeenCalledWith({ workspaceId, isEnabled: false });
     expect(h.useGitlabMrs).toHaveBeenCalledWith({ workspaceId, isEnabled: false });
+  });
+
+  it('disconnects GitLab from the header once connected', async () => {
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitLab' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitLab' }));
+
+    await vi.waitFor(() => expect(h.disconnectGitlab).toHaveBeenCalledWith('workspace-1'));
   });
 });

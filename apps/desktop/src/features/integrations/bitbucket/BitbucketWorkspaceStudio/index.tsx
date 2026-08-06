@@ -4,6 +4,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -31,6 +32,7 @@ export const BitbucketWorkspaceStudio = ({ workspaceId, workspaceName, onClose }
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
+  const disconnectBitbucket = useAppStore((s) => s.disconnectBitbucket);
   const repo = useWorkspaceBitbucketRepo({ workspaceId, isEnabled: isConnected });
   const [focused, setFocused] = useState<BitbucketPullRequest | null>(null);
   const pullRequests = useBitbucketPrs({ repo });
@@ -52,6 +54,15 @@ export const BitbucketWorkspaceStudio = ({ workspaceId, workspaceName, onClose }
       title="Bitbucket"
       workspaceName={workspaceName}
       closeLabel="close bitbucket studio"
+      headerAccessory={
+        isConnected ? (
+          <IntegrationDisconnect
+            label="Bitbucket"
+            description="Deletes the saved Bitbucket API token from your keychain and forgets this workspace's connection. Reconnect anytime."
+            onDisconnect={() => disconnectBitbucket({ workspaceId })}
+          />
+        ) : null
+      }
       onClose={onClose}
     >
       {(requestClose) =>

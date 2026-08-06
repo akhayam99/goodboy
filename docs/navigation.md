@@ -197,6 +197,19 @@ the top bar, which dispatches `goodboy:open-notifications-studio`. There is no
 footer button, no shortcut, and no command palette entry for it, because the
 bell already carries the unread count that makes the page worth opening.
 
+Every integration studio (GitHub, GitLab, Bitbucket, Linear, Jira, Sentry,
+Slack) carries a disconnect control in `StudioShell`'s `headerAccessory` slot,
+next to the refresh action, once that integration is actually connected. It
+follows the `InlineConfirm` canon: the icon button swaps for the confirm in an
+anchored popover so the header never grows, and confirming clears the
+workspace credential (keychain entry, database row, and any in-memory cache)
+without leaving the studio. This is the only way to disconnect an integration
+short of Settings' "Run setup again", which re-opens the onboarding wizard and
+does not cover Slack. GitHub only shows the control when the workspace has its
+own token (`gh_status`'s `scoped` flag): a workspace falling back to the
+system `gh` CLI has nothing workspace-scoped to clear, and disconnecting never
+touches that system session.
+
 ### Workspace creation
 
 `WorkspaceLinkDialog` renders the `Overview > Workspace > Create` breadcrumb

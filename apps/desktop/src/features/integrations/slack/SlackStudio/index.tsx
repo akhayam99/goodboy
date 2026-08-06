@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { IconButton } from '@goodboy/ui';
+import { Divider, IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -30,6 +31,7 @@ export const SlackStudio = ({ workspaceId, workspaceName, initialThreadTs, onClo
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
+  const disconnectSlack = useAppStore((s) => s.disconnectSlack);
   const { groups, hiddenChannelCount, isLoading, error, refetch } = useSlackThreads({
     workspaceId,
     isEnabled: isConnected,
@@ -77,13 +79,21 @@ export const SlackStudio = ({ workspaceId, workspaceName, initialThreadTs, onClo
       closeLabel="close slack studio"
       headerAccessory={
         isConnected ? (
-          <IconButton
-            icon={RefreshCw}
-            label="Refresh threads"
-            onClick={refetch}
-            disabled={isLoading}
-            busy={isLoading}
-          />
+          <div className="flex items-center gap-2">
+            <IconButton
+              icon={RefreshCw}
+              label="Refresh threads"
+              onClick={refetch}
+              disabled={isLoading}
+              busy={isLoading}
+            />
+            <Divider orientation="vertical" className="mx-0.5 h-5" />
+            <IntegrationDisconnect
+              label="Slack"
+              description="Deletes the saved Slack bot token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              onDisconnect={() => disconnectSlack({ workspaceId })}
+            />
+          </div>
         ) : null
       }
       onClose={onClose}

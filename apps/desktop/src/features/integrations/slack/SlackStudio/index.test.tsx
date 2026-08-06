@@ -4,18 +4,24 @@ import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
+import { ToastProvider } from '../../../../app/components/Toast';
 import type { SlackThreadGroup, SlackThreadRow } from './useSlackThreads';
 
 const h = vi.hoisted(() => ({
   integrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
   groups: [] as ReadonlyArray<SlackThreadGroup>,
   isEnabled: null as boolean | null,
+  disconnectSlack: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: { workspaceIntegrations: typeof h.integrations }) => T) =>
-    selector({ workspaceIntegrations: h.integrations }),
+  useAppStore: <T,>(
+    selector: (state: {
+      workspaceIntegrations: typeof h.integrations;
+      disconnectSlack: typeof h.disconnectSlack;
+    }) => T,
+  ) => selector({ workspaceIntegrations: h.integrations, disconnectSlack: h.disconnectSlack }),
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -83,22 +89,30 @@ const row = (ts: string, text: string): SlackThreadRow => ({
   sessionId: null,
 });
 
+const renderStudio = () =>
+  render(
+    <ToastProvider>
+      <SlackStudio
+        workspaceId={'workspace-1' as WorkspaceId}
+        workspaceName="Goodboy"
+        onClose={vi.fn()}
+      />
+    </ToastProvider>,
+  );
+
 beforeEach(() => {
   h.integrations = {};
   h.groups = [];
   h.isEnabled = null;
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  h.disconnectSlack.mockReset();
+});
 
 describe('SlackStudio', () => {
   it('asks for the connection before showing an inbox', () => {
-    render(
-      <SlackStudio
-        workspaceId={'workspace-1' as WorkspaceId}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    renderStudio();
 
     expect(screen.getByText('Connect Slack to read the threads a task came out of')).toBeDefined();
     expect(screen.getByLabelText('Bot token')).toBeDefined();
@@ -115,13 +129,7 @@ describe('SlackStudio', () => {
       },
     ];
 
-    render(
-      <SlackStudio
-        workspaceId={'workspace-1' as WorkspaceId}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    renderStudio();
 
     expect(h.isEnabled).toBe(true);
     expect(screen.getByText('#eng-alerts')).toBeDefined();
@@ -139,29 +147,30 @@ describe('SlackStudio', () => {
       },
     ];
 
-    render(
-      <SlackStudio
-        workspaceId={'workspace-1' as WorkspaceId}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    renderStudio();
 
     fireEvent.click(screen.getByText('ping'));
 
     expect(screen.getByTestId('detail').textContent).toBe('ping');
   });
 
+  it('disconnects Slack from the header once connected', async () => {
+    h.integrations = { 'workspace-1': [{ provider: 'slack' }] };
+
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Slack' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Slack' }));
+
+    await vi.waitFor(() =>
+      expect(h.disconnectSlack).toHaveBeenCalledWith({ workspaceId: 'workspace-1' }),
+    );
+  });
+
   it('says nothing is there when the bot joined no channels', () => {
     h.integrations = { 'workspace-1': [{ provider: 'slack' }] };
 
-    render(
-      <SlackStudio
-        workspaceId={'workspace-1' as WorkspaceId}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />,
-    );
+    renderStudio();
 
     expect(screen.getByText('No channels yet')).toBeDefined();
     expect(

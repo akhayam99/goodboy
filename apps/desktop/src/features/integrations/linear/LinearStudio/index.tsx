@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, IconButton } from '@goodboy/ui';
+import { Divider, IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -31,6 +32,7 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
+  const disconnectLinear = useAppStore((s) => s.disconnectLinear);
   const { groups, loading, error, refetch } = useLinearIssues(workspaceId, isConnected);
   const [focused, setFocused] = useState<LinearIssue | null>(null);
 
@@ -65,16 +67,27 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     }
     return null;
   }, [focused, groups]);
-  const headerAccessory =
-    !isConnected || groups.length === 0 ? null : (
-      <IconButton
-        icon={RefreshCw}
-        label="Refresh issues"
-        onClick={refetch}
-        disabled={loading}
-        busy={loading}
+  const headerAccessory = !isConnected ? null : (
+    <div className="flex items-center gap-2">
+      {groups.length > 0 ? (
+        <>
+          <IconButton
+            icon={RefreshCw}
+            label="Refresh issues"
+            onClick={refetch}
+            disabled={loading}
+            busy={loading}
+          />
+          <Divider orientation="vertical" className="mx-0.5 h-5" />
+        </>
+      ) : null}
+      <IntegrationDisconnect
+        label="Linear"
+        description="Deletes the saved Linear token from your keychain and forgets this workspace's connection. Reconnect anytime."
+        onDisconnect={() => disconnectLinear(workspaceId)}
       />
-    );
+    </div>
+  );
 
   return (
     <StudioShell
