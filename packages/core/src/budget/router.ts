@@ -20,6 +20,7 @@ export type ResolveProviderInput = {
     ) => Promise<BudgetCheckResult>;
   };
   getDefaultModel: (provider: ProviderId) => string;
+  force?: boolean;
 };
 
 const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
@@ -35,6 +36,7 @@ const PROVIDER_ID_TO_NAME: Readonly<Record<ProviderId, ProviderName>> = {
 export const resolveProvider = async (input: ResolveProviderInput): Promise<RoutingDecision> => {
   const { sessionPreference, turnOverride, connectedProviders, budgetChecker, getDefaultModel } =
     input;
+  const force = input.force === true;
 
   const useOverride = turnOverride !== undefined && sessionPreference.allowTurnOverride;
 
@@ -124,7 +126,7 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
   return {
     selectedProvider: preferredProvider,
     selectedModel: preferredModel,
-    reason: 'all-exceeded',
+    reason: force ? 'forced-over-budget' : 'all-exceeded',
     fallbackUsed: false,
   };
 };
