@@ -1391,7 +1391,7 @@ dependencies = [
 
 [[package]]
 name = "goodboy-desktop"
-version = "0.1.66"
+version = "0.1.67"
 dependencies = [
  "base64 0.22.1",
  "dirs",
