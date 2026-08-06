@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { Divider, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -42,6 +43,7 @@ export const JiraStudio = ({ workspaceId, workspaceName, initialIssueId, onClose
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
+  const disconnectJira = useAppStore((s) => s.disconnectJira);
   const [scope, setScope] = useState<Scope>('mine');
   const { groups, isLoading, error, refetch } = useJiraIssues({
     workspaceId,
@@ -104,6 +106,12 @@ export const JiraStudio = ({ workspaceId, workspaceName, initialIssueId, onClose
               onClick={refetch}
               disabled={isLoading}
               busy={isLoading}
+            />
+            <Divider orientation="vertical" className="mx-0.5 h-5" />
+            <IntegrationDisconnect
+              label="Jira"
+              description="Deletes the saved Jira API token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              onDisconnect={() => disconnectJira({ workspaceId })}
             />
           </div>
         ) : null

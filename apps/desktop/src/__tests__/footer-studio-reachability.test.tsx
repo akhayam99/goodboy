@@ -208,7 +208,9 @@ beforeEach(() => {
   githubAuth.isAuthenticated = false;
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+});
 
 describe('Slack studio reachability', () => {
   it('opens the workspace slack studio from the app footer', () => {

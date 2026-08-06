@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
-import { useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { resolveIntegrationConnection } from '../../connection';
 import type { BitbucketPullRequest } from '../client';
 import { focusedBitbucketPr } from './focusedBitbucketPr';
 import { PrDetailPanel } from './PrDetailPanel';
@@ -27,6 +29,16 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
   const error = useAppStore((state) => state.sessionBitbucketPr[sessionId]?.error ?? null);
   const refreshSessionBitbucketPr = useAppStore((state) => state.refreshSessionBitbucketPr);
   const selectSessionBitbucketPr = useAppStore((state) => state.selectSessionBitbucketPr);
+  const disconnectBitbucket = useAppStore((state) => state.disconnectBitbucket);
+  const integrations = useAppStore((state) =>
+    workspaceId != null ? (state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  );
+  const isConnected = resolveIntegrationConnection({
+    provider: 'bitbucket',
+    integrations,
+    externalTasks: EMPTY_ARRAY,
+    isGithubAuthenticated: false,
+  }).isConnected;
   const [focused, setFocused] = useState<BitbucketPullRequest | null>(null);
   const pullRequests = useBitbucketPrs({ repo });
   const pullRequest = focusedBitbucketPr({ focused, sessionPr });
@@ -59,11 +71,20 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
       title="Bitbucket"
       workspaceName={workspaceName}
       closeLabel="close bitbucket studio"
+      headerAccessory={
+        isConnected && workspaceId != null ? (
+          <IntegrationDisconnect
+            label="Bitbucket"
+            description="Deletes the saved Bitbucket API token from your keychain and forgets this workspace's connection. Reconnect anytime."
+            onDisconnect={() => disconnectBitbucket({ workspaceId })}
+          />
+        ) : null
+      }
       onClose={onClose}
       variant="slot"
     >
       {(requestClose) =>
-        workspaceId == null ? null : repo == null ? (
+        workspaceId == null ? null : !isConnected || repo == null ? (
           <div className="flex min-h-0 flex-1 items-center justify-center p-5">
             <ConnectIntegrationEmptyState
               provider="bitbucket"

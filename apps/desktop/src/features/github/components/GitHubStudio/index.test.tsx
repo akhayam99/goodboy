@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { GithubIssue, SessionId, WorkspaceId } from '@goodboy/types';
+import { ToastProvider } from '../../../../app/components/Toast';
 
 const ISSUE: GithubIssue = {
   number: 42,
@@ -22,6 +23,9 @@ const h = vi.hoisted(() => ({
   remoteKind: 'github' as 'github' | null,
   useGithubIssues: vi.fn(),
   isGithubAuthenticated: true,
+  isScoped: false,
+  refreshConnection: vi.fn(async () => undefined),
+  disconnectGithub: vi.fn(async () => undefined),
 }));
 
 vi.mock('./useGithubInbox', () => ({ useGithubInbox: () => [] }));
@@ -45,8 +49,13 @@ vi.mock('../../../integrations/github/useGithubConnection', () => ({
   useGithubConnection: () => ({
     isAuthenticated: h.isGithubAuthenticated,
     isResolved: true,
-    refresh: vi.fn(async () => undefined),
+    isScoped: h.isScoped,
+    refresh: h.refreshConnection,
   }),
+}));
+vi.mock('../../../../store', () => ({
+  useAppStore: <T,>(selector: (state: { disconnectGithub: typeof h.disconnectGithub }) => T) =>
+    selector({ disconnectGithub: h.disconnectGithub }),
 }));
 vi.mock('./GithubIssueDetailPanel', () => ({
   GithubIssueDetailPanel: ({ issue }: IssueDetailProps) => (
@@ -86,22 +95,27 @@ type RenderParams = {
 
 const renderStudio = ({ initialIssueExternalId = null }: RenderParams = {}) =>
   render(
-    <GitHubStudio
-      workspaceId={'workspace-1' as WorkspaceId}
-      rootPath="/repo"
-      workspaceName="Goodboy"
-      initialSessionId={'session-1' as SessionId}
-      initialIssueExternalId={initialIssueExternalId}
-      onClose={vi.fn()}
-    />,
+    <ToastProvider>
+      <GitHubStudio
+        workspaceId={'workspace-1' as WorkspaceId}
+        rootPath="/repo"
+        workspaceName="Goodboy"
+        initialSessionId={'session-1' as SessionId}
+        initialIssueExternalId={initialIssueExternalId}
+        onClose={vi.fn()}
+      />
+    </ToastProvider>,
   );
 
 afterEach(() => {
   cleanup();
   h.remoteKind = 'github';
   h.isGithubAuthenticated = true;
+  h.isScoped = false;
   h.refetch.mockClear();
   h.useGithubIssues.mockReset();
+  h.refreshConnection.mockClear();
+  h.disconnectGithub.mockReset();
 });
 
 describe('GitHubStudio', () => {
@@ -210,5 +224,39 @@ describe('GitHubStudio', () => {
 
     expect(screen.getByLabelText('Personal access token')).toBeDefined();
     expect(screen.queryByText(/does not have a GitHub remote/i)).toBeNull();
+  });
+
+  it('does not offer a disconnect when auth falls back to the system gh CLI with no workspace token', () => {
+    h.isGithubAuthenticated = true;
+    h.isScoped = false;
+
+    renderStudio();
+
+    expect(screen.queryByRole('button', { name: 'Disconnect GitHub' })).toBeNull();
+  });
+
+  it('disconnects a workspace GitHub token and refreshes the connection', async () => {
+    h.isGithubAuthenticated = true;
+    h.isScoped = true;
+
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect GitHub' }));
+
+    await vi.waitFor(() =>
+      expect(h.disconnectGithub).toHaveBeenCalledWith({ workspaceId: 'workspace-1' }),
+    );
+    expect(h.refreshConnection).toHaveBeenCalledOnce();
+  });
+
+  it('still offers a disconnect on a mixed workspace with no GitHub remote but a scoped token', () => {
+    h.isGithubAuthenticated = true;
+    h.isScoped = true;
+    h.remoteKind = null;
+
+    renderStudio();
+
+    expect(screen.getByRole('button', { name: 'Disconnect GitHub' })).toBeDefined();
   });
 });

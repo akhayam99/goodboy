@@ -5,6 +5,7 @@ import { connectLinear } from './connectLinear';
 import { connectSentry } from './connectSentry';
 import { connectSlack } from './connectSlack';
 import { disconnectBitbucket } from './disconnectBitbucket';
+import { disconnectGithub } from './disconnectGithub';
 import { disconnectGitlab } from './disconnectGitlab';
 import { disconnectJira } from './disconnectJira';
 import { disconnectLinear } from './disconnectLinear';
@@ -28,5 +29,6 @@ export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
     disconnectBitbucket: disconnectBitbucket(set),
     connectSlack: connectSlack(set, get),
     disconnectSlack: disconnectSlack(set),
+    disconnectGithub: disconnectGithub(),
   };
 };
