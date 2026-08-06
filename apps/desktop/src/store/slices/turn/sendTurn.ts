@@ -122,7 +122,7 @@ type Input = {
   };
 };
 
-const DISPATCHED: SendTurnResult = { blockedOverBudget: false };
+const NOT_BLOCKED: SendTurnResult = { blockedOverBudget: false };
 
 // Machine-derived context slot carrying `git diff --numstat` lines for the
 // session's changed files (vs the same merge-base as the desktop file-changes
@@ -211,7 +211,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       now,
     });
     if (!slashResult.ok) {
-      return DISPATCHED;
+      return NOT_BLOCKED;
     }
     let resolvedPrompt = slashResult.resolvedPrompt;
 
@@ -236,7 +236,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             now,
           });
     if (!attachmentResult.ok) {
-      return DISPATCHED;
+      return NOT_BLOCKED;
     }
     const attachmentRefs = attachmentResult.attachmentRefs;
     resolvedPrompt = attachmentResult.resolvedPrompt;
@@ -523,7 +523,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         message: encodeAuthRequiredMessage({ providerId: provider, identity: authState.identity }),
         at: now(),
       });
-      return DISPATCHED;
+      return NOT_BLOCKED;
     }
 
     const resolvedOverride =
@@ -684,7 +684,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         phaseWorkflowRunId,
         now,
       });
-      return DISPATCHED;
+      return NOT_BLOCKED;
     }
 
     const sharedSlots = get().sessionSlots[sessionId] ?? [];
@@ -1266,7 +1266,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (lastError) {
       throw lastError;
     }
-    return DISPATCHED;
+    return NOT_BLOCKED;
   };
   return run;
 };

@@ -263,6 +263,15 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       if (!isRunning && (await rightSize.checkAndInterceptRightSize(content, atts))) return;
     }
 
+    if (force && scope.scopePending !== null) {
+      scope.setScopePending(null);
+      await scope.recordScopeOutcome('overridden');
+    }
+    if (force && rightSize.rightSizePending !== null) {
+      rightSize.setRightSizePending(null);
+      await rightSize.recordRightSizeOutcome({ outcome: 'overridden' });
+    }
+
     setValue('');
     setAttachments([]);
     await sendWith({ content, atts, modelOverrideId: null, force });
@@ -402,7 +411,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
             sessionPreference={session.providerPreference}
             turnOverride={routing.routingOverride}
             connectedProviders={routing.connectedProviderIds}
-            onSendAnyway={value.trim().length > 0 ? () => void onSendAnyway() : undefined}
+            onSendAnyway={canSend ? () => void onSendAnyway() : undefined}
           />
         )}
         <SuggestionStack items={suggestions} />

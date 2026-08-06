@@ -63,6 +63,24 @@ describe('useTurnRouting', () => {
     });
   });
 
+  it('keeps the routing override and the connected provider list referentially stable', () => {
+    useAppStore.setState({
+      providers: [
+        { id: 'anthropic', connection: 'connected' },
+        { id: 'cursor', connection: 'connected' },
+      ] as never,
+    });
+    const session = makeSession();
+    const { result, rerender } = renderHook(() => useTurnRouting({ session }));
+
+    const firstOverride = result.current.routingOverride;
+    const firstProviderIds = result.current.connectedProviderIds;
+    rerender();
+
+    expect(result.current.routingOverride).toBe(firstOverride);
+    expect(result.current.connectedProviderIds).toBe(firstProviderIds);
+  });
+
   it('clears the session model when the provider changes', () => {
     const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
 

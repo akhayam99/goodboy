@@ -63,7 +63,7 @@ export const RoutingIndicator = ({
       >
         <AlertTriangle size={13} aria-hidden className="shrink-0" />
         <span className="flex-1">All provider budgets exceeded</span>
-        {onSendAnyway ? (
+        {onSendAnyway !== undefined ? (
           <button
             type="button"
             onClick={onSendAnyway}
