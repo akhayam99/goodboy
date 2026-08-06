@@ -1,4 +1,5 @@
 import type { ProviderName } from '@goodboy/types';
+import { CLAUDE_PRICES } from './claude/cost';
 import { CODEX_PRICES } from './codex/cost';
 import { GEMINI_PRICES } from './gemini/cost';
 
@@ -12,7 +13,7 @@ type Params = {
 export const costCoverage = ({ provider, model }: Params): CostCoverage => {
   switch (provider) {
     case 'anthropic':
-      return 'measured';
+      return CLAUDE_PRICES[model] != null ? 'measured' : 'approximate';
     case 'codex':
       return CODEX_PRICES[model] != null ? 'measured' : 'unpriced';
     case 'gemini':

@@ -1,10 +1,29 @@
 import { describe, expect, it } from 'vitest';
+import type { ProviderUsage } from '@goodboy/types';
 import { costCoverage } from './cost-coverage';
+import { computeCostUsd } from './claude/cost';
+
+const usage: ProviderUsage = {
+  inputTokens: 1_000_000,
+  outputTokens: 1_000_000,
+  cachedInputTokens: 0,
+  estimatedCostUsd: 0,
+};
 
 describe('costCoverage', () => {
-  it('reports anthropic as measured regardless of model', () => {
+  it('reports anthropic as measured for a priced model', () => {
     expect(costCoverage({ provider: 'anthropic', model: 'claude-sonnet-4-6' })).toBe('measured');
-    expect(costCoverage({ provider: 'anthropic', model: 'some-future-model' })).toBe('measured');
+    expect(costCoverage({ provider: 'anthropic', model: 'claude-fable-5' })).toBe('measured');
+  });
+
+  it('reports anthropic as approximate for a model priced only by the sonnet fallback', () => {
+    expect(costCoverage({ provider: 'anthropic', model: 'some-future-model' })).toBe('approximate');
+    expect(computeCostUsd({ usage, model: 'some-future-model' })).toBeCloseTo(
+      computeCostUsd({ usage, model: 'claude-sonnet-4-6' }),
+    );
+    expect(computeCostUsd({ usage, model: 'some-future-model' })).not.toBeCloseTo(
+      computeCostUsd({ usage, model: 'claude-fable-5' }),
+    );
   });
 
   it('reports codex as measured for a priced model and unpriced otherwise', () => {

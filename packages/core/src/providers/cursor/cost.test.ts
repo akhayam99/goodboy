@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderUsage } from '@goodboy/types';
-import { computeCursorCostUsd, cursorPriceFor } from './cost';
+import { computeCursorCostUsd, cursorPriceFor, CURSOR_PRICES } from './cost';
 import { computeCostUsd } from '../claude/cost';
 
 const usage: ProviderUsage = {
@@ -34,10 +34,12 @@ describe('computeCursorCostUsd', () => {
     expect(computeCursorCostUsd({ usage, model: 'gpt-5.5-high' })).toBeCloseTo(5 + 30);
   });
 
-  it('unknown model falls back to the most expensive known tier', () => {
-    expect(computeCursorCostUsd({ usage, model: 'mystery-model-9' })).toBeCloseTo(
-      computeCursorCostUsd({ usage, model: 'gpt-5.6-sol-high' }),
-    );
+  it('unknown model costs at least as much as every known model', () => {
+    const unknown = computeCursorCostUsd({ usage, model: 'mystery-model-9' });
+    for (const model of Object.keys(CURSOR_PRICES)) {
+      expect(unknown).toBeGreaterThanOrEqual(computeCursorCostUsd({ usage, model }));
+    }
+    expect(unknown).toBeGreaterThan(computeCursorCostUsd({ usage, model: 'composer-2.5' }));
   });
 
   it('cached tokens are billed at discounted rate', () => {
@@ -69,9 +71,11 @@ describe('computeCursorCostUsd', () => {
     ).toBeCloseTo(1.125);
   });
 
-  it('cursorPriceFor returns the most expensive tier as fallback for unknown model', () => {
-    const p = cursorPriceFor('totally-unknown');
-    const fallback = cursorPriceFor('gpt-5.6-sol-high');
-    expect(p).toEqual(fallback);
+  it('cursorPriceFor falls back to the most expensive rate on every axis', () => {
+    const fallback = cursorPriceFor('totally-unknown');
+    const known = Object.values(CURSOR_PRICES);
+    expect(fallback.inputPerMtok).toBe(Math.max(...known.map((p) => p.inputPerMtok)));
+    expect(fallback.outputPerMtok).toBe(Math.max(...known.map((p) => p.outputPerMtok)));
+    expect(fallback.cachedInputPerMtok).toBe(Math.max(...known.map((p) => p.cachedInputPerMtok)));
   });
 });
