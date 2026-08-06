@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { listOpenQuestionsForSession } from '@goodboy/db';
-import { isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
+import { classifyWorkflowChain, isWorkflowComplete, runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import { BUDGET_BLOCK_MESSAGE, isBudgetBlocked } from './budgetBlock';
@@ -122,9 +122,27 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     }
     return null;
   })();
+  if (nextPendingAgent == null && dynamicRunId != null) {
+    await get().orchestrateNextStep(sessionId, dynamicRunId);
+    return;
+  }
   if (nextPendingAgent == null) {
-    if (dynamicRunId != null) {
-      await get().orchestrateNextStep(sessionId, dynamicRunId);
+    for (const run of activeRuns) {
+      const template = templates.find((t) => t.id === run.workflowId);
+      if (template == null) {
+        continue;
+      }
+      const chain = classifyWorkflowChain(template, runsForWorkflowRun(runs, run.id));
+      if (chain.kind !== 'blocked') {
+        continue;
+      }
+      void get().emitNotification(
+        'error',
+        'warning',
+        'workflow blocked',
+        `Autorun stopped at ${chain.failedStep.name} because the step failed.`,
+        { sessionId },
+      );
     }
     return;
   }

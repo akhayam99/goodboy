@@ -2,7 +2,8 @@ import { ArrowRight } from 'lucide-react';
 import { Chip } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { RunLaneModel } from '../../../orchestration/hooks/useWorkspaceRuns';
-import { pickNextWorkflowStep } from '../../../workflows/pickNextWorkflowStep';
+import { resolveWorkflowAdvance } from '../../../workflows/advanceGate';
+import { viewWorkflowAdvance } from '../../../workflows/workflowAdvanceView';
 import type { LaneAdvance } from './LaneAdvance';
 import { StepBadge } from './StepBadge';
 
@@ -14,11 +15,20 @@ type Props = {
 
 export const PipelineLane = ({ lane, onOpen, advance }: Props) => {
   const done = lane.steps.filter((s) => s.status === 'done').length;
-  const nextStep = advance
-    ? pickNextWorkflowStep(advance.workflow, advance.runs, {
-        hasOpenQuestions: advance.hasOpenQuestions,
+  const view = advance
+    ? viewWorkflowAdvance({
+        state: resolveWorkflowAdvance({
+          workflow: advance.workflow,
+          agents: advance.runs,
+          hasOpenQuestions: advance.hasOpenQuestions,
+          isSummarizerRunning: advance.isSummarizerRunning,
+          isTurnRunning: false,
+          isAutoRun: lane.autoRun,
+        }),
       })
     : null;
+  const nextStep = view?.manualStep ?? null;
+  const failedStep = view?.failedStep ?? null;
   return (
     <div className="group flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated px-3.5 py-3 shadow-sm transition-colors hover:border-border">
       <button type="button" onClick={onOpen} className="flex w-full items-center gap-2 text-left">
@@ -49,6 +59,9 @@ export const PipelineLane = ({ lane, onOpen, advance }: Props) => {
           />
         ))}
       </div>
+      {failedStep != null ? (
+        <p className="text-2xs font-medium text-danger">Blocked at {failedStep.name}</p>
+      ) : null}
     </div>
   );
 };

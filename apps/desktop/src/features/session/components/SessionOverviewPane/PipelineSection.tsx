@@ -39,6 +39,9 @@ export const PipelineSection = ({
     (s) => s.sessionWorkflows?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
   const openQuestions = useSessionOpenQuestions(sessionId);
+  const isSummarizerRunning = useAppStore(
+    (s) => s.summarizerStatus[sessionId]?.status === 'running',
+  );
 
   const workflowById = useMemo(() => {
     const m = new Map<string, Workflow>();
@@ -69,6 +72,7 @@ export const PipelineSection = ({
       workflow,
       runs: workflowAgents,
       hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+      isSummarizerRunning,
       onAdvance: async (step) => {
         const agent = workflowAgents.find((r) => r.stepId === step.id);
         if (agent?.status !== 'pending') {

@@ -203,6 +203,21 @@ describe('maybeAutoAdvanceWorkflow', () => {
     const { set, get } = harness(state);
     await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
     expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+    expect(state['emitNotification']).toHaveBeenCalledWith(
+      'error',
+      'warning',
+      'workflow blocked',
+      'Autorun stopped at s0 because the step failed.',
+      { sessionId: SESSION_ID },
+    );
+  });
+
+  it('stays quiet when autorun simply has nothing left to advance', async () => {
+    const state = baseState(['s0'], [makeAgent('s0', 'completed', 0)]);
+    const { set, get } = harness(state);
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+    expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
   it('spawns a single agent when two advances race', async () => {

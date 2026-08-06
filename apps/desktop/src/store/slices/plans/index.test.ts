@@ -419,7 +419,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
   });
 
   describe('gate D, no next step available → free-spawn', () => {
-    it('free-spawns when all workflow steps are completed (pickNextWorkflowStep returns null)', async () => {
+    it('free-spawns when all workflow steps are completed (the advance is complete)', async () => {
       const state = defaultState({
         sessionPhaseRuns: {
           [SESSION_ID]: [

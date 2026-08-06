@@ -1,27 +1,24 @@
 // @vitest-environment happy-dom
 
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@goodboy/types';
 import type { BoardNavigation } from '../../useBoardNavigation';
 
-const { state, pickNextMock } = vi.hoisted(() => ({
+const { state } = vi.hoisted(() => ({
   state: {
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ status: string }>>,
-    sessionWorkflows: {} as Record<string, ReadonlyArray<{ id: string }>>,
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ id: string; workflowRunId?: string }>>,
+    sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    summarizerStatus: {} as Record<string, { status: string }>,
+    skipStuckStepAndAdvance: vi.fn(async () => undefined),
     hasUnread: false,
   },
-  pickNextMock: vi.fn(),
 }));
 
 vi.mock('../../../../../../store', () => ({
   useAppStore: (selector: (s: typeof state) => unknown) => selector(state),
   useSessionHasUnread: () => state.hasUnread,
-}));
-
-vi.mock('../../../../../workflows/pickNextWorkflowStep', () => ({
-  pickNextWorkflowStep: pickNextMock,
 }));
 
 vi.mock('../../../../../context/openQuestionsGate', () => ({
@@ -40,13 +37,33 @@ const nav = {
 const sessionWith = (workflowRuns: ReadonlyArray<unknown> = []): Session =>
   ({ id: 'sess-1', workflowRuns }) as unknown as Session;
 
+const twoStepWorkflow = {
+  id: 'wf-1',
+  steps: [
+    { id: 'step-1', workflowId: 'wf-1', ordinal: 0, name: 'Scout', promptPrefix: '' },
+    { id: 'step-2', workflowId: 'wf-1', ordinal: 1, name: 'Plan', promptPrefix: '' },
+  ],
+};
+
+const agent = (stepId: string, status: string, ordinal: number) => ({
+  id: `a-${stepId}`,
+  sessionId: 'sess-1',
+  workflowRunId: 'run-1',
+  stepId,
+  ordinal,
+  name: stepId,
+  status,
+});
+
+const staticRun = { id: 'run-1', workflowId: 'wf-1', autoRun: false };
+
 beforeEach(() => {
   state.sessionOpenQuestions = {};
   state.sessionWorkflows = {};
   state.sessionPhaseRuns = {};
+  state.summarizerStatus = {};
   state.hasUnread = false;
-  pickNextMock.mockReset();
-  pickNextMock.mockReturnValue(null);
+  state.skipStuckStepAndAdvance.mockClear();
   (nav.openWorkflows as ReturnType<typeof vi.fn>).mockClear();
   (nav.openQuestions as ReturnType<typeof vi.fn>).mockClear();
   (nav.openGithub as ReturnType<typeof vi.fn>).mockClear();
@@ -81,18 +98,70 @@ describe('useDynamicActions', () => {
   });
 
   it('surfaces a run action when a workflow run has a ready next step', () => {
-    pickNextMock.mockReturnValue({ id: 'step-1' });
-    state.sessionWorkflows = { 'sess-1': [{ id: 'wf-1' }] };
-    const session = sessionWith([{ id: 'run-1', workflowId: 'wf-1' }]);
-    const { result } = renderHook(() => useDynamicActions(session, nav, 'building'));
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = {
+      'sess-1': [agent('step-1', 'completed', 0), agent('step-2', 'pending', 1)],
+    };
+    const { result } = renderHook(() =>
+      useDynamicActions(sessionWith([staticRun]), nav, 'building'),
+    );
     expect(result.current.some((a) => a.key === 'run')).toBe(true);
   });
 
   it('suppresses the run action while an agent is running', () => {
-    pickNextMock.mockReturnValue({ id: 'step-1' });
-    state.sessionWorkflows = { 'sess-1': [{ id: 'wf-1' }] };
-    const session = sessionWith([{ id: 'run-1', workflowId: 'wf-1' }]);
-    const { result } = renderHook(() => useDynamicActions(session, nav, 'running'));
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = {
+      'sess-1': [agent('step-1', 'completed', 0), agent('step-2', 'pending', 1)],
+    };
+    const { result } = renderHook(() =>
+      useDynamicActions(sessionWith([staticRun]), nav, 'running'),
+    );
     expect(result.current.some((a) => a.key === 'run')).toBe(false);
+  });
+
+  it('leaves the advance to automation when the run is on autorun', () => {
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = {
+      'sess-1': [agent('step-1', 'completed', 0), agent('step-2', 'pending', 1)],
+    };
+    const session = sessionWith([{ ...staticRun, autoRun: true }]);
+    const { result } = renderHook(() => useDynamicActions(session, nav, 'building'));
+    expect(result.current.some((a) => a.key === 'run')).toBe(false);
+  });
+
+  it('names the blocked step and skips it only after a confirm', () => {
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = {
+      'sess-1': [agent('step-1', 'failed', 0), agent('step-2', 'pending', 1)],
+    };
+    const { result } = renderHook(() =>
+      useDynamicActions(sessionWith([staticRun]), nav, 'attention'),
+    );
+
+    const blocked = result.current.find((a) => a.key === 'blocked');
+    expect(blocked?.label).toBe('Skip blocked step: Scout');
+    expect(blocked?.tone).toBe('warning');
+
+    act(() => blocked?.onClick());
+    expect(state.skipStuckStepAndAdvance).not.toHaveBeenCalled();
+
+    const confirm = result.current.find((a) => a.key === 'blocked');
+    expect(confirm?.label).toBe('Confirm skip and continue');
+    expect(confirm?.tone).toBe('danger');
+
+    act(() => confirm?.onClick());
+    expect(state.skipStuckStepAndAdvance).toHaveBeenCalledWith('sess-1', 'run-1', {
+      onlyWhenBlocked: true,
+    });
+  });
+
+  it('keeps the blocked action on a run that autorun cannot rescue', () => {
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = {
+      'sess-1': [agent('step-1', 'failed', 0), agent('step-2', 'pending', 1)],
+    };
+    const session = sessionWith([{ ...staticRun, autoRun: true }]);
+    const { result } = renderHook(() => useDynamicActions(session, nav, 'attention'));
+    expect(result.current.some((a) => a.key === 'blocked')).toBe(true);
   });
 });

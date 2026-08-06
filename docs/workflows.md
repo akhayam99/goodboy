@@ -50,6 +50,13 @@ Nothing advances until the gate passes. `resolveWorkflowAdvance` in
 3. `failed-step`: `classifyWorkflowChain` reports the current step failed.
 4. `turn-running`: a step agent is still running.
 
+Every surface that asks "what happens next in this run" goes through that one resolver:
+the chat CTA, the sidebar workflow row, the pipeline lane in the session overview, the
+stage board card, and `runPlan`. `viewWorkflowAdvance`
+(`apps/desktop/src/features/workflows/workflowAdvanceView.ts`) is the single exhaustive
+read of the four-state union, splitting it into the step a caller may target, the step a
+human may click right now, and the step that failed.
+
 `automatic` is what `auto_run` collapses the summarizer and turn-running cases into: the
 manual advance controls do not render, because automation is about to make that click. An
 open question and a failed step both survive autorun, because automation bails on both:
@@ -66,9 +73,18 @@ asks "Skip the blocked step and start the next agent?" first, then
 
 Hands-free (`auto_run`, per run, falling back to the session) lets
 `maybeAutoAdvanceWorkflow` activate the next pending agent with no click, still bailing
-on open questions, a busy summarizer, and any undismissed budget-exceeded alert.
-`trigger_mode = 'after_run'` holds a run until the one named by `chain_after_run_id`
-completes.
+on open questions, a busy summarizer, and any undismissed budget-exceeded alert. When it
+bails because a step failed it now says so: a `workflow blocked` warning notification
+naming the failed step, the same `error` kind and `warning` severity the dynamic path
+uses for `dynamic workflow blocked`. A quiet pass with nothing left to advance stays
+silent. `trigger_mode = 'after_run'` holds a run until the one named by
+`chain_after_run_id` completes.
+
+A run stuck on a failed step is visible outside the workflow lens too: the pipeline lane
+in the session overview reads `Blocked at <step>`, and the stage board card grows a
+`Skip blocked step` action that swaps itself for a confirm before calling
+`skipStuckStepAndAdvance`. Both survive autorun, because autorun is exactly what has
+stopped.
 
 ## The post-step summarizer
 

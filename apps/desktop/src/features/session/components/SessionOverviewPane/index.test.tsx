@@ -20,6 +20,7 @@ type Store = {
   setSessionActiveMount: ReturnType<typeof vi.fn>;
   spawnAgent: ReturnType<typeof vi.fn>;
   sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
+  summarizerStatus: Record<string, { status: string }>;
   scriptRuns: Record<string, Record<string, { status: string }>>;
   sessionGithub: Record<
     string,
@@ -70,6 +71,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     setSessionActiveMount: vi.fn(),
     spawnAgent: vi.fn(async () => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    summarizerStatus: {} as Record<string, { status: string }>,
     scriptRuns: {} as Record<string, Record<string, { status: string }>>,
     sessionGithub: {} as Record<string, { pr?: unknown }>,
     sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
@@ -712,5 +714,42 @@ describe('SessionOverviewPane pipeline lane next-step badge', () => {
     store.sessionPhaseRuns = { 'sess-1': [pendingAgent('completed')] };
     renderPane(sessionWithRun());
     expect(screen.queryByTitle(/^start execute$/i)).toBeNull();
+  });
+
+  it('names the failed step on the lane so a stuck run is visible from the overview', () => {
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent('failed')] };
+    renderPane(sessionWithRun());
+    expect(screen.getByText('Blocked at Execute')).not.toBeNull();
+    expect(screen.queryByTitle(/^start execute$/i)).toBeNull();
+  });
+
+  it('says nothing about a block while the run is simply moving along', () => {
+    renderPane(sessionWithRun());
+    expect(screen.queryByText(/^Blocked at/)).toBeNull();
+  });
+
+  it('leaves the start badge to automation when the run is on autorun', () => {
+    runs.lanes = [{ ...lane(), autoRun: true }];
+    renderPane(
+      baseSession({
+        workflowRuns: [
+          { id: RUN_ID, workflowId: WF_ID, ordinal: 0, currentStep: 0, autoRun: true },
+        ],
+      } as unknown as Partial<Session>),
+    );
+    expect(screen.queryByTitle(/^start execute$/i)).toBeNull();
+  });
+
+  it('still names the failed step when autorun cannot rescue the run', () => {
+    runs.lanes = [{ ...lane(), autoRun: true }];
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent('failed')] };
+    renderPane(
+      baseSession({
+        workflowRuns: [
+          { id: RUN_ID, workflowId: WF_ID, ordinal: 0, currentStep: 0, autoRun: true },
+        ],
+      } as unknown as Partial<Session>),
+    );
+    expect(screen.getByText('Blocked at Execute')).not.toBeNull();
   });
 });
