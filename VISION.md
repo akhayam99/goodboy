@@ -145,9 +145,10 @@ Where each connected source stands, honestly:
 - **Jira.** Issues read in full and acted on: comment, assign, transition,
   edit description. Cloud only, one project key per workspace, no sprints or
   boards yet.
-- **Linear.** Issues read and routed; the only write today is the
-  description. Comments, assign and transition are the open gap, and Linear
-  is where the PM persona lives.
+- **Linear.** Issues read and routed, with two writes: the description and a
+  comment. Assign and transition are still the open gap, because the state
+  and team we read carry no id to send back. Linear is where the PM persona
+  lives.
 - **Sentry.** Issues and events read; no write path yet.
 - **Slack.** Threads read and replied to (replies post as the connected bot),
   routed into sessions with the goal pre-filled. Shipped ahead of the company
