@@ -4,11 +4,15 @@ import type { ResolveProviderInput } from '../router';
 import type { BudgetCheckResult } from '@goodboy/types';
 
 function notExceeded(overrides: Partial<BudgetCheckResult> = {}): BudgetCheckResult {
-  return { remainingUsd: 100, pct: 50, exceeded: false, ...overrides };
+  return { remainingUsd: 100, pct: 50, exceeded: false, overThreshold: false, ...overrides };
 }
 
 function exceeded(): BudgetCheckResult {
-  return { remainingUsd: -1, pct: 101, exceeded: true };
+  return { remainingUsd: -1, pct: 101, exceeded: true, overThreshold: false };
+}
+
+function overThreshold(): BudgetCheckResult {
+  return { remainingUsd: 15, pct: 85, exceeded: false, overThreshold: true };
 }
 
 function makeInput(overrides: Partial<ResolveProviderInput> = {}): ResolveProviderInput {
@@ -151,6 +155,121 @@ describe('resolveProvider', () => {
     expect(decision.selectedProvider).toBe('anthropic');
     expect(decision.reason).toBe('preferred');
     expect(decision.fallbackUsed).toBe(false);
+  });
+});
+
+describe('resolveProvider, budget threshold tier', () => {
+  it('preferred past its threshold and a candidate is clear → moves with reason fallback-threshold', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'anthropic' ? overThreshold() : notExceeded(),
+    );
+    const input = makeInput({
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('cursor');
+    expect(decision.reason).toBe('fallback-threshold');
+    expect(decision.fallbackUsed).toBe(true);
+    expect(decision.fallbackFrom).toBe('anthropic');
+  });
+
+  it('preferred past its threshold and every candidate is too → stays put, no fallback', async () => {
+    const checkMock = vi.fn().mockResolvedValue(overThreshold());
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor', 'gemini'],
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('preferred');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+
+  it('preferred past its threshold with no other provider connected → stays put', async () => {
+    const checkMock = vi.fn().mockResolvedValue(overThreshold());
+    const input = makeInput({
+      connectedProviders: ['anthropic'],
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('preferred');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+
+  it('a clear provider beats one that is past its threshold', async () => {
+    const checkMock = vi.fn(async (provider: string) => {
+      if (provider === 'anthropic') {
+        return overThreshold();
+      }
+      return provider === 'openai' ? overThreshold() : notExceeded();
+    });
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'codex', 'gemini'],
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('gemini');
+    expect(decision.reason).toBe('fallback-threshold');
+  });
+
+  it('preferred over cap → a past-threshold provider is still accepted, reason fallback-budget', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'anthropic' ? exceeded() : overThreshold(),
+    );
+    const input = makeInput({
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('cursor');
+    expect(decision.reason).toBe('fallback-budget');
+    expect(decision.fallbackUsed).toBe(true);
+  });
+
+  it('over cap still blocks: a past-threshold preferred never yields all-exceeded', async () => {
+    const checkMock = vi.fn().mockResolvedValue(overThreshold());
+    const input = makeInput({
+      connectedProviders: ['anthropic'],
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.reason).not.toBe('all-exceeded');
+  });
+
+  it('preferred disconnected and past its threshold → reason stays fallback-disconnected', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'anthropic' ? overThreshold() : notExceeded(),
+    );
+    const input = makeInput({
+      connectedProviders: ['cursor'],
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('cursor');
+    expect(decision.reason).toBe('fallback-disconnected');
+  });
+
+  it('a turn override past its threshold still moves, keeping the threshold reason', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'openai' ? overThreshold() : notExceeded(),
+    );
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'codex'],
+      turnOverride: { providerId: 'codex', model: 'gpt-5' },
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.reason).toBe('fallback-threshold');
+    expect(decision.fallbackFrom).toBe('codex');
   });
 });
 

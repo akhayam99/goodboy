@@ -23,11 +23,13 @@ export type BudgetCheckResult = Readonly<{
   remainingUsd: number;
   pct: number;
   exceeded: boolean;
+  overThreshold: boolean;
 }>;
 
 export type RoutingReason =
   | 'preferred'
   | 'fallback-budget'
+  | 'fallback-threshold'
   | 'fallback-disconnected'
   | 'all-exceeded'
   | 'override';
@@ -41,10 +43,7 @@ export type RoutingDecision = Readonly<{
 }>;
 
 export type BudgetAlertKind =
-  | 'provider-threshold'
-  | 'provider-exceeded'
-  | 'session-threshold'
-  | 'session-exceeded';
+  'provider-threshold' | 'provider-exceeded' | 'session-threshold' | 'session-exceeded';
 
 export type BudgetAlert = Readonly<{
   id: string;

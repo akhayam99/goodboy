@@ -84,6 +84,26 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
     [budgetRules, deleteBudgetRule, saveBudgetRule, refreshBreakdown],
   );
 
+  const saveProviderThreshold = useCallback(
+    async (provider: ProviderName, thresholdPct: number) => {
+      const existing = budgetRules.find((r) => r.provider === provider) ?? null;
+      if (existing === null) {
+        return;
+      }
+      await deleteBudgetRule(existing.id);
+      const next: Omit<BudgetRule, 'id' | 'createdAt'> = {
+        provider,
+        period: existing.period,
+        capUsd: existing.capUsd,
+        alertThresholdPct: thresholdPct,
+        extraTokensBudget: existing.extraTokensBudget,
+      };
+      await saveBudgetRule(next);
+      await refreshBreakdown();
+    },
+    [budgetRules, deleteBudgetRule, saveBudgetRule, refreshBreakdown],
+  );
+
   const removeProviderCap = useCallback(
     async (provider: ProviderName) => {
       const existing = budgetRules.find((r) => r.provider === provider) ?? null;
@@ -238,6 +258,7 @@ export const BudgetStudio = ({ workspaceName, initialScope, onClose }: Props) =>
                 telemetryResult={budgetData.telemetry}
                 isLoading={budgetData.loading.rules || budgetData.loading.telemetry}
                 onSaveCap={(capUsd) => saveProviderCap(scope.provider, capUsd)}
+                onSaveThreshold={(pct) => saveProviderThreshold(scope.provider, pct)}
                 onRemoveCap={() => removeProviderCap(scope.provider)}
                 onRetryRules={() => budgetData.retry('rules')}
                 onRetryTelemetry={() => budgetData.retry('telemetry')}

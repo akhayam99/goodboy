@@ -173,6 +173,8 @@ pub struct BudgetCheckResult {
     pub remaining_usd: f64,
     pub pct: f64,
     pub exceeded: bool,
+    #[serde(rename = "overThreshold")]
+    pub over_threshold: bool,
 }
 
 fn current_month_window_ms() -> (i64, i64) {
@@ -351,20 +353,17 @@ pub fn budget_emit_alerts(
     Ok(created)
 }
 
-#[tauri::command]
-pub fn check_provider_budget(
-    state: State<'_, Db>,
-    provider: String,
-    period: String,
+fn provider_budget_status(
+    conn: &rusqlite::Connection,
+    provider: &str,
+    period: &str,
 ) -> Result<BudgetCheckResult, DbError> {
-    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-
-    let rule: Option<(f64,)> = {
+    let rule: Option<(f64, f64)> = {
         let mut stmt = conn.prepare(
-            "SELECT cap_usd FROM budget_rules WHERE provider = ?1 AND period = ?2 LIMIT 1",
+            "SELECT cap_usd, alert_threshold_pct FROM budget_rules WHERE provider = ?1 AND period = ?2 LIMIT 1",
         )?;
         let mut rows = stmt.query_map(rusqlite::params![provider, period], |row| {
-            Ok((row.get::<_, f64>(0)?,))
+            Ok((row.get::<_, f64>(0)?, row.get::<_, f64>(1)?))
         })?;
         match rows.next() {
             Some(r) => Some(r.map_err(DbError::Sqlite)?),
@@ -372,11 +371,12 @@ pub fn check_provider_budget(
         }
     };
 
-    let Some((cap_usd,)) = rule else {
+    let Some((cap_usd, threshold_pct)) = rule else {
         return Ok(BudgetCheckResult {
             remaining_usd: f64::INFINITY,
             pct: 0.0,
             exceeded: false,
+            over_threshold: false,
         });
     };
 
@@ -395,12 +395,24 @@ pub fn check_provider_budget(
     } else {
         0.0
     };
+    let exceeded = spent > cap_usd;
 
     Ok(BudgetCheckResult {
         remaining_usd: remaining,
         pct,
-        exceeded: spent > cap_usd,
+        exceeded,
+        over_threshold: !exceeded && pct >= threshold_pct,
     })
+}
+
+#[tauri::command]
+pub fn check_provider_budget(
+    state: State<'_, Db>,
+    provider: String,
+    period: String,
+) -> Result<BudgetCheckResult, DbError> {
+    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+    provider_budget_status(&conn, &provider, &period)
 }
 
 #[tauri::command]
@@ -425,6 +437,7 @@ pub fn check_session_budget(
             remaining_usd: f64::INFINITY,
             pct: 0.0,
             exceeded: false,
+            over_threshold: false,
         });
     };
 
@@ -445,5 +458,127 @@ pub fn check_session_budget(
         remaining_usd: remaining,
         pct,
         exceeded: spent > cap_usd,
+        over_threshold: false,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn budget_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE budget_rules (
+                id TEXT PRIMARY KEY, provider TEXT, period TEXT,
+                cap_usd REAL, alert_threshold_pct REAL
+            );
+            CREATE TABLE telemetry_records (
+                id TEXT PRIMARY KEY, provider TEXT, estimated_cost_usd REAL, recorded_at INTEGER
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn insert_rule(conn: &rusqlite::Connection, cap_usd: f64, threshold_pct: f64) {
+        conn.execute(
+            "INSERT INTO budget_rules (id, provider, period, cap_usd, alert_threshold_pct)
+             VALUES ('r1', 'anthropic', 'monthly', ?1, ?2)",
+            rusqlite::params![cap_usd, threshold_pct],
+        )
+        .unwrap();
+    }
+
+    fn insert_spend(conn: &rusqlite::Connection, id: &str, cost_usd: f64) {
+        let (start_ms, _) = current_month_window_ms();
+        conn.execute(
+            "INSERT INTO telemetry_records (id, provider, estimated_cost_usd, recorded_at)
+             VALUES (?1, 'anthropic', ?2, ?3)",
+            rusqlite::params![id, cost_usd, start_ms],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn no_rule_leaves_the_provider_unbounded() {
+        let conn = budget_conn();
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert!(result.remaining_usd.is_infinite());
+        assert_eq!(result.pct, 0.0);
+        assert!(!result.exceeded);
+        assert!(!result.over_threshold);
+    }
+
+    #[test]
+    fn under_threshold_is_not_flagged() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        insert_spend(&conn, "t1", 50.0);
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.pct, 50.0);
+        assert_eq!(result.remaining_usd, 50.0);
+        assert!(!result.exceeded);
+        assert!(!result.over_threshold);
+    }
+
+    #[test]
+    fn over_threshold_but_under_cap_is_flagged_without_exceeding() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        insert_spend(&conn, "t1", 85.0);
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.pct, 85.0);
+        assert_eq!(result.remaining_usd, 15.0);
+        assert!(!result.exceeded);
+        assert!(result.over_threshold);
+    }
+
+    #[test]
+    fn over_cap_exceeds_and_clears_the_threshold_flag() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        insert_spend(&conn, "t1", 120.0);
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.pct, 120.0);
+        assert!(result.exceeded);
+        assert!(!result.over_threshold);
+    }
+
+    #[test]
+    fn a_custom_threshold_moves_the_flag_point() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 50.0);
+        insert_spend(&conn, "t1", 60.0);
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert!(!result.exceeded);
+        assert!(result.over_threshold);
+    }
+
+    #[test]
+    fn spend_outside_the_month_window_is_ignored() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        let (start_ms, _) = current_month_window_ms();
+        conn.execute(
+            "INSERT INTO telemetry_records (id, provider, estimated_cost_usd, recorded_at)
+             VALUES ('old', 'anthropic', 90.0, ?1)",
+            rusqlite::params![start_ms - 1],
+        )
+        .unwrap();
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.pct, 0.0);
+        assert!(!result.over_threshold);
+    }
 }

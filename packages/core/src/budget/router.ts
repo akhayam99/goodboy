@@ -4,6 +4,7 @@ import type {
   ProviderId,
   ProviderName,
   RoutingDecision,
+  RoutingReason,
   SessionProviderPreference,
   TurnProviderOverride,
 } from '@goodboy/types';
@@ -58,14 +59,33 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
   const preferredAllowed = useOverride || isEnabled(preferredProvider);
   const preferredResult = await budgetChecker.checkProviderBudget(preferredName, 'monthly');
 
-  if (preferredConnected && preferredAllowed && !preferredResult.exceeded) {
-    return {
-      selectedProvider: preferredProvider,
-      selectedModel: preferredModel,
-      reason: useOverride ? 'override' : 'preferred',
-      fallbackUsed: false,
-    };
+  const keepPreferred: RoutingDecision = {
+    selectedProvider: preferredProvider,
+    selectedModel: preferredModel,
+    reason: useOverride ? 'override' : 'preferred',
+    fallbackUsed: false,
+  };
+
+  const preferredUsable = preferredConnected && preferredAllowed && !preferredResult.exceeded;
+
+  if (preferredUsable && !preferredResult.overThreshold) {
+    return keepPreferred;
   }
+
+  const movedForThreshold = preferredUsable && preferredResult.overThreshold;
+  const budgetReason: RoutingReason = movedForThreshold ? 'fallback-threshold' : 'fallback-budget';
+  const fallbackReason: RoutingReason =
+    preferredConnected && preferredAllowed ? budgetReason : 'fallback-disconnected';
+
+  const moveTo = (candidate: ProviderId): RoutingDecision => ({
+    selectedProvider: candidate,
+    selectedModel: getDefaultModel(candidate),
+    reason: fallbackReason,
+    fallbackUsed: true,
+    fallbackFrom: preferredProvider,
+  });
+
+  let overThresholdCandidate: ProviderId | null = null;
 
   for (const candidate of connectedProviders) {
     if (candidate === preferredProvider) {
@@ -78,25 +98,27 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
     const candidateName = PROVIDER_ID_TO_NAME[candidate];
     const candidateResult = await budgetChecker.checkProviderBudget(candidateName, 'monthly');
 
-    if (!candidateResult.exceeded) {
-      return {
-        selectedProvider: candidate,
-        selectedModel: getDefaultModel(candidate),
-        reason:
-          preferredConnected && preferredAllowed ? 'fallback-budget' : 'fallback-disconnected',
-        fallbackUsed: true,
-        fallbackFrom: preferredProvider,
-      };
+    if (candidateResult.exceeded) {
+      continue;
+    }
+    if (!candidateResult.overThreshold) {
+      return moveTo(candidate);
+    }
+    if (overThresholdCandidate === null) {
+      overThresholdCandidate = candidate;
     }
   }
 
+  if (movedForThreshold) {
+    return keepPreferred;
+  }
+
+  if (overThresholdCandidate !== null) {
+    return moveTo(overThresholdCandidate);
+  }
+
   if (!preferredConnected) {
-    return {
-      selectedProvider: preferredProvider,
-      selectedModel: preferredModel,
-      reason: useOverride ? 'override' : 'preferred',
-      fallbackUsed: false,
-    };
+    return keepPreferred;
   }
 
   return {

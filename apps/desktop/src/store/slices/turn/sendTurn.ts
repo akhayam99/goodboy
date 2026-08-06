@@ -91,6 +91,7 @@ import { dispatchParallelTurn } from './dispatchParallelTurn';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
+import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRoutingNoticeMessage';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -419,6 +420,25 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         at: now(),
       });
       return;
+    }
+
+    const movedForBudget = budgetRoutingReason({ reason: routingDecision.reason });
+
+    if (
+      routingDecision.fallbackUsed &&
+      routingDecision.fallbackFrom !== undefined &&
+      movedForBudget !== null
+    ) {
+      get().appendTurnEvent(activeAgentId, sessionId, {
+        kind: 'error',
+        runId: crypto.randomUUID() as ProviderRunId,
+        message: budgetRoutingNoticeMessage({
+          from: routingDecision.fallbackFrom,
+          to: routingDecision.selectedProvider,
+          reason: movedForBudget,
+        }),
+        at: now(),
+      });
     }
 
     const provider: ProviderId = routingDecision.selectedProvider;
