@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   PROVIDER_CAPABILITIES,
   defaultsForRole,
+  getModelProvider,
   recommendedModelForRole,
   resolveRoleRouting,
+  type ResolvedRoleFallback,
 } from '@goodboy/core';
 import type {
   AgentRole,
   ProviderId,
+  RoleModelFallback,
   RoleModelPreference,
   RoleModelPreferences,
 } from '@goodboy/types';
@@ -21,6 +24,8 @@ import {
 } from '../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { RoutingStatusControl } from './RoutingStatusControl';
+
+const AUTOMATIC_FALLBACK_SUMMARY = 'Automatic';
 
 type Props = {
   readonly role: AgentRole;
@@ -39,6 +44,21 @@ type CommitParams = {
   readonly effort: RoleModelPreference['effort'];
 };
 
+type CommitFallbackParams = {
+  readonly fallback: RoleModelFallback | null;
+};
+
+type StoredFallbackParams = {
+  readonly resolved: ResolvedRoleFallback | undefined;
+};
+
+const storedFallback = ({ resolved }: StoredFallbackParams): RoleModelFallback | undefined => {
+  if (resolved == null) {
+    return undefined;
+  }
+  return { providerId: resolved.provider, model: resolved.model };
+};
+
 export const RoleModelRow = ({
   role,
   label,
@@ -53,7 +73,10 @@ export const RoleModelRow = ({
   const prefs: RoleModelPreferences | null = preference == null ? null : { [role]: preference };
   const resolved = resolveRoleRouting({ role, prefs });
   const resolvedProviderId = resolved.isOverride ? resolved.provider : defaultProviderId;
+  const resolvedFallbackProviderId = resolved.fallback?.provider ?? defaultProviderId;
   const [providerId, setProviderId] = useState(resolvedProviderId);
+  const [isChoosingFallback, setIsChoosingFallback] = useState(false);
+  const pendingFallbackProvider = useRef(resolvedFallbackProviderId);
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
@@ -64,19 +87,65 @@ export const RoleModelRow = ({
     modelEffortLevels(defaultModel) == null
       ? compiledRouting
       : `${compiledRouting} · ${EFFORT_LABEL[compiled.effort]} effort`;
+  const isFallbackPickerVisible = resolved.fallback != null || isChoosingFallback;
 
   useEffect(() => {
     setProviderId(resolvedProviderId);
   }, [resolvedProviderId]);
 
+  useEffect(() => {
+    pendingFallbackProvider.current = resolvedFallbackProviderId;
+  }, [resolvedFallbackProviderId]);
+
   const commit = ({ providerId: nextProvider, model, effort }: CommitParams) => {
-    const candidate: RoleModelPreference = { providerId: nextProvider, model, effort };
+    const carried = storedFallback({ resolved: resolved.fallback });
+    const candidate: RoleModelPreference = {
+      providerId: nextProvider,
+      model,
+      effort,
+      ...(carried != null && { fallback: carried }),
+    };
     const next = resolveRoleRouting({ role, prefs: { [role]: candidate } });
     if (!next.isOverride) {
       onChange(null);
       return;
     }
-    onChange({ providerId: next.provider, model: next.model, effort: next.effort });
+    const kept = storedFallback({ resolved: next.fallback });
+    onChange({
+      providerId: next.provider,
+      model: next.model,
+      effort: next.effort,
+      ...(kept != null && { fallback: kept }),
+    });
+  };
+
+  const commitFallback = ({ fallback }: CommitFallbackParams) => {
+    if (!resolved.isOverride) {
+      return;
+    }
+    const candidate: RoleModelPreference = {
+      providerId: resolved.provider,
+      model: resolved.model,
+      effort: resolved.effort,
+      ...(fallback != null && { fallback }),
+    };
+    const next = resolveRoleRouting({ role, prefs: { [role]: candidate } });
+    if (!next.isOverride) {
+      onChange(null);
+      return;
+    }
+    const kept = storedFallback({ resolved: next.fallback });
+    onChange({
+      providerId: next.provider,
+      model: next.model,
+      effort: next.effort,
+      ...(kept != null && { fallback: kept }),
+    });
+  };
+
+  const clearFallback = () => {
+    setIsChoosingFallback(false);
+    commitFallback({ fallback: null });
   };
 
   return (
@@ -88,7 +157,7 @@ export const RoleModelRow = ({
           disabled={disabled}
           onReset={() => onChange(null)}
         />
-        <div className="w-80">
+        <div className="flex w-80 flex-col gap-1">
           <RoutingPicker
             ariaLabel={`${label} routing`}
             connectedProviders={availableProviderIds}
@@ -136,6 +205,55 @@ export const RoleModelRow = ({
               });
             }}
           />
+          {resolved.isOverride && (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-2xs text-muted-foreground">Fallback</span>
+              {isFallbackPickerVisible ? (
+                <RoutingPicker
+                  variant="pill"
+                  align="end"
+                  ariaLabel={`${label} fallback routing`}
+                  connectedProviders={availableProviderIds}
+                  provider={resolved.fallback?.provider ?? resolvedFallbackProviderId}
+                  model={resolved.fallback?.model ?? ''}
+                  effort={{ editable: false, value: resolved.effort }}
+                  defaultSummary={AUTOMATIC_FALLBACK_SUMMARY}
+                  overridden={resolved.fallback != null}
+                  disabled={disabled}
+                  onReset={clearFallback}
+                  onProvider={(next) => {
+                    if (next === '') {
+                      clearFallback();
+                      return;
+                    }
+                    pendingFallbackProvider.current = next;
+                  }}
+                  onModel={(nextModel) => {
+                    if (nextModel === '') {
+                      clearFallback();
+                      return;
+                    }
+                    commitFallback({
+                      fallback: {
+                        providerId: getModelProvider(nextModel) ?? pendingFallbackProvider.current,
+                        model: nextModel,
+                      },
+                    });
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setIsChoosingFallback(true)}
+                  aria-label={`${label} fallback: automatic`}
+                  className="rounded-full px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {AUTOMATIC_FALLBACK_SUMMARY}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </FieldRow>

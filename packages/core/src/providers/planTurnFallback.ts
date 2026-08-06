@@ -2,11 +2,7 @@ import type { ModelCostTier, ModelDescriptor, ProviderId } from '@goodboy/types'
 import { PROVIDER_CAPABILITIES } from './capabilities';
 
 export type TurnFailureKind =
-  | 'authentication'
-  | 'rate_limit'
-  | 'model_not_available'
-  | 'unreachable'
-  | 'other';
+  'authentication' | 'rate_limit' | 'model_not_available' | 'unreachable' | 'other';
 
 export type TurnFallbackPlan = {
   readonly provider: ProviderId;
@@ -19,6 +15,14 @@ type Params = {
   readonly model: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly attempt: number;
+  readonly preferred?: TurnFallbackPlan;
+};
+
+type PreferredParams = {
+  readonly preferred: TurnFallbackPlan | undefined;
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly connectedProviders: ReadonlyArray<ProviderId>;
 };
 
 type TierParams = {
@@ -112,15 +116,43 @@ const otherProviderPlan = ({
   return { provider: target, model };
 };
 
+const preferredPlan = ({
+  preferred,
+  provider,
+  model,
+  connectedProviders,
+}: PreferredParams): TurnFallbackPlan | null => {
+  if (preferred == null) {
+    return null;
+  }
+  if (preferred.provider === provider && preferred.model === model) {
+    return null;
+  }
+  if (!connectedProviders.includes(preferred.provider)) {
+    return null;
+  }
+  if (descriptorFor({ provider: preferred.provider, model: preferred.model }) == null) {
+    return null;
+  }
+  return { provider: preferred.provider, model: preferred.model };
+};
+
 export const planTurnFallback = ({
   failure,
   provider,
   model,
   connectedProviders,
   attempt,
+  preferred,
 }: Params): TurnFallbackPlan | null => {
   if (attempt >= MAX_ATTEMPTS || failure === 'other') {
     return null;
+  }
+  if (attempt === 0) {
+    const picked = preferredPlan({ preferred, provider, model, connectedProviders });
+    if (picked != null) {
+      return picked;
+    }
   }
   const failed = descriptorFor({ provider, model });
   const tier = failed?.costTier ?? 'mid';

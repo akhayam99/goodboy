@@ -130,6 +130,131 @@ describe('planTurnFallback', () => {
     expect(planTurnFallback(params)).toEqual(expected);
   });
 
+  it('prefers the role fallback over the heuristic on the first attempt', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'codex', model: 'gpt-5.4-mini' },
+      }),
+    ).toEqual({ provider: 'codex', model: 'gpt-5.4-mini' });
+  });
+
+  it('prefers the role fallback for every classified failure, including unreachable', () => {
+    const failures: ReadonlyArray<TurnFailureKind> = [
+      'authentication',
+      'rate_limit',
+      'model_not_available',
+      'unreachable',
+    ];
+    const plans = failures.map((failure) =>
+      planTurnFallback({
+        failure,
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'codex', model: 'gpt-5.4' },
+      }),
+    );
+
+    expect(plans).toEqual(failures.map(() => ({ provider: 'codex', model: 'gpt-5.4' })));
+  });
+
+  it('leaves the heuristic in charge once the role fallback has been tried', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 1,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'codex', model: 'gpt-5.4-mini' },
+      }),
+    ).toEqual({ provider: 'codex', model: 'gpt-5.6' });
+  });
+
+  it('degrades to the heuristic when the role fallback provider is not connected', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: ['anthropic', 'codex'],
+        preferred: { provider: 'gemini', model: 'gemini-3.1-pro' },
+      }),
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+  });
+
+  it('degrades to the heuristic when the role fallback model is not in the catalogue', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'codex', model: 'gpt-99' },
+      }),
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+  });
+
+  it('degrades to the heuristic when the role fallback is the pair that just failed', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'anthropic', model: 'opus-5' },
+      }),
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+  });
+
+  it('never returns a role fallback for an unclassified failure', () => {
+    expect(
+      planTurnFallback({
+        failure: 'other',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'codex', model: 'gpt-5.6' },
+      }),
+    ).toBeNull();
+  });
+
+  it('never returns a role fallback past the attempt cap', () => {
+    expect(
+      planTurnFallback({
+        failure: 'rate_limit',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 2,
+        connectedProviders: CONNECTED,
+        preferred: { provider: 'codex', model: 'gpt-5.6' },
+      }),
+    ).toBeNull();
+  });
+
+  it('retries on a role fallback the heuristic could not reach at all', () => {
+    expect(
+      planTurnFallback({
+        failure: 'authentication',
+        provider: 'anthropic',
+        model: 'opus-5',
+        attempt: 0,
+        connectedProviders: ['anthropic'],
+        preferred: { provider: 'anthropic', model: 'haiku-4.5' },
+      }),
+    ).toEqual({ provider: 'anthropic', model: 'haiku-4.5' });
+  });
+
   it('never proposes the failed pair again outside the unreachable first retry', () => {
     const failures: ReadonlyArray<TurnFailureKind> = [
       'authentication',
