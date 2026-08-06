@@ -53,7 +53,7 @@ describe('WorkspaceIdentityRow', () => {
     fireEvent.click(trigger);
 
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('Workspace settings')).toBeDefined();
+    expect(screen.getByText('New workspace')).toBeDefined();
   });
 
   it('answers the global switcher shortcut', () => {
@@ -63,7 +63,18 @@ describe('WorkspaceIdentityRow', () => {
       window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
     });
 
-    expect(screen.getByText('Workspace settings')).toBeDefined();
+    expect(screen.getByText('New workspace')).toBeDefined();
+  });
+
+  it('opens workspace settings from a control on the row, not from the switcher popover', () => {
+    render(<WorkspaceIdentityRow />);
+    const spy = vi.fn();
+    window.addEventListener('goodboy:open-workspace-settings', spy);
+
+    fireEvent.click(screen.getByLabelText('Workspace settings'));
+
+    expect(spy).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:open-workspace-settings', spy);
   });
 
   it('renders nothing without a workspace', () => {

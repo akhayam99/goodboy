@@ -5,6 +5,7 @@ const FADE_FROM = {
   background: 'from-background',
   subtle: 'from-subtle',
   muted: 'from-muted',
+  elevated: 'from-elevated',
 } as const;
 
 export type ScrollFadeProps = {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronsUpDown } from 'lucide-react';
-import { StatusDot } from '@goodboy/ui';
+import { ChevronsUpDown, Settings } from 'lucide-react';
+import { StatusDot, Tooltip } from '@goodboy/ui';
 import { useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
@@ -30,7 +30,7 @@ export const WorkspaceIdentityRow = () => {
   const subtitle = memberCount > 1 ? `${memberCount} repos` : basenameOf(currentWorkspace.rootPath);
 
   return (
-    <>
+    <div className="flex min-w-0 max-w-64 items-center gap-0.5">
       <button
         ref={triggerRef}
         type="button"
@@ -38,7 +38,7 @@ export const WorkspaceIdentityRow = () => {
         data-tauri-drag-region="false"
         aria-label="Switch or open a workspace"
         aria-expanded={isOpen}
-        className="group flex min-w-0 max-w-56 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-muted/50"
+        className="group flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-muted/50"
         title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
       >
         <span
@@ -60,9 +60,19 @@ export const WorkspaceIdentityRow = () => {
           className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground"
         />
       </button>
+      <Tooltip content="Workspace settings" side="bottom">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('goodboy:open-workspace-settings'))}
+          aria-label="Workspace settings"
+          className="flex shrink-0 items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground"
+        >
+          <Settings size={12} aria-hidden />
+        </button>
+      </Tooltip>
       {isOpen ? (
         <WorkspaceSwitcher anchorRef={triggerRef} onClose={() => setIsOpen(false)} />
       ) : null}
-    </>
+    </div>
   );
 };

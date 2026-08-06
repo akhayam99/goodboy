@@ -102,7 +102,7 @@ function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   const polite = visible.filter((t) => !isAssertive(t));
 
   return (
-    <div className="pointer-events-none fixed right-3 top-12 z-50 flex flex-col items-end gap-2">
+    <div className="pointer-events-none fixed right-3 top-12 z-toast flex flex-col items-end gap-2">
       <div role="alert" aria-live="assertive" className="flex flex-col items-end gap-2">
         {overflowCount > 0 ? <ErrorOverflowChip count={overflowCount} /> : null}
         {assertive.map((t) => (

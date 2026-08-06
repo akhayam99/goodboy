@@ -20,9 +20,9 @@ type SelectParams = {
   readonly sessionId: SessionId;
 };
 
-const DROPDOWN_WIDTH = 320;
+const DROPDOWN_WIDTH = 384;
 const VIEWPORT_MARGIN = 8;
-const LIST_MAX_HEIGHT = 320;
+const LIST_MAX_HEIGHT = 400;
 const HEADER_HEIGHT = 37;
 const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
 
@@ -103,11 +103,15 @@ export const NeedsYouPopover = ({ sessions, count }: Props) => {
       {isOpen && coordinates != null
         ? createPortal(
             <>
-              <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)} aria-hidden />
+              <div
+                className="fixed inset-0 z-popover-backdrop"
+                onClick={() => setIsOpen(false)}
+                aria-hidden
+              />
               <Popover
                 role="dialog"
                 ariaLabel="Sessions needing attention"
-                className="fixed z-40 w-80"
+                className="fixed z-popover w-96"
                 style={{
                   top: coordinates.top,
                   bottom: coordinates.bottom,
@@ -122,7 +126,7 @@ export const NeedsYouPopover = ({ sessions, count }: Props) => {
                   </span>
                 </header>
                 <Divider />
-                <ScrollFade className="max-h-80" fadeSize={16}>
+                <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
                   <ul aria-label="Sessions needing attention">
                     {sessions.map((session) => (
                       <NeedsYouSessionRow

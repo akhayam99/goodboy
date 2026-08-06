@@ -29,6 +29,7 @@ describe('Tooltip', () => {
     });
     expect(screen.getByRole('tooltip')).toBeDefined();
     expect(screen.getByRole('tooltip').textContent).toBe('test tip');
+    expect(screen.getByRole('tooltip').className).toContain('z-tooltip');
     vi.useRealTimers();
   });
 

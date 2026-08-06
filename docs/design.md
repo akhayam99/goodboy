@@ -340,8 +340,12 @@ follow:
 5. Flip above when the space below is short:
    `spaceBelow < PANEL_MAX_HEIGHT + VIEWPORT_MARGIN` sets `bottom:
 window.innerHeight - rect.top + 6` and drops `top`.
-6. A click-catcher `fixed inset-0 z-30` behind, closing on `mousedown`; the
-   panel at `z-40`.
+6. A click-catcher behind, closing on `mousedown`, and a panel above it. The
+   four app-global popovers (`NeedsYouPopover`, `WorkspaceSwitcher`,
+   `NotificationCenter`, `RunningScriptsIndicator`) use `z-popover-backdrop`
+   and `z-popover` from the named scale in `docs/styling.md`, so they clear a
+   full-page studio at `z-50`. A popover scoped to one pane keeps a local
+   `z-30`/`z-40` instead.
 7. Escape closes.
 
 `Popover` from `@goodboy/ui` supplies only the shell (`rounded-md border

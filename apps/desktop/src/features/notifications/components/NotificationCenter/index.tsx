@@ -25,9 +25,9 @@ import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATION_SEVERITY } from '../../severity';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 
-const DROPDOWN_WIDTH = 320;
+const DROPDOWN_WIDTH = 384;
 const VIEWPORT_MARGIN = 8;
-const LIST_MAX_HEIGHT = 320;
+const LIST_MAX_HEIGHT = 400;
 const HEADER_HEIGHT = 37;
 const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
 
@@ -133,9 +133,13 @@ export const NotificationCenter = () => {
       {open && coords
         ? createPortal(
             <>
-              <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden />
+              <div
+                className="fixed inset-0 z-popover-backdrop"
+                onClick={() => setOpen(false)}
+                aria-hidden
+              />
               <Popover
-                className="fixed z-40 w-80"
+                className="fixed z-popover w-96"
                 style={{ top: coords.top, bottom: coords.bottom, left: coords.left }}
               >
                 <header className="flex items-center justify-between gap-2 px-3 py-2">
@@ -194,7 +198,7 @@ export const NotificationCenter = () => {
                     className="px-3 py-6"
                   />
                 ) : (
-                  <ScrollFade className="max-h-80" fadeSize={16}>
+                  <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
                     <ul>
                       {notifications.map((n, i) => (
                         <Fragment key={n.id}>

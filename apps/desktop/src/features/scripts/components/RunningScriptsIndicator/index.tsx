@@ -12,9 +12,9 @@ type PopoverCoordinates = {
   readonly left: number;
 };
 
-const DROPDOWN_WIDTH = 320;
+const DROPDOWN_WIDTH = 384;
 const VIEWPORT_MARGIN = 8;
-const DROPDOWN_MAX_HEIGHT = 357;
+const DROPDOWN_MAX_HEIGHT = 437;
 
 export const RunningScriptsIndicator = () => {
   const running = useRunningScripts();
@@ -125,11 +125,15 @@ export const RunningScriptsIndicator = () => {
       {isOpen && coordinates != null
         ? createPortal(
             <>
-              <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)} aria-hidden />
+              <div
+                className="fixed inset-0 z-popover-backdrop"
+                onClick={() => setIsOpen(false)}
+                aria-hidden
+              />
               <Popover
                 role="dialog"
                 ariaLabel="Running scripts"
-                className="fixed z-40 w-80"
+                className="fixed z-popover w-96"
                 style={{
                   top: coordinates.top,
                   bottom: coordinates.bottom,
@@ -140,7 +144,7 @@ export const RunningScriptsIndicator = () => {
                   <span className="text-xs font-semibold text-foreground">Running scripts</span>
                 </header>
                 <Divider />
-                <ScrollFade className="max-h-80" fadeSize={16}>
+                <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
                   <ul aria-label="Running scripts">
                     {running.map((run) => (
                       <RunningScriptRow
