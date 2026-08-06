@@ -379,6 +379,26 @@ describe('resolveProvider, enabledProviders gate', () => {
     expect(decision.fallbackFrom).toBe('anthropic');
   });
 
+  it('force never runs on a provider the session disabled', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'anthropic' ? notExceeded() : exceeded(),
+    );
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor'],
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        defaultModel: 'claude-3-5-sonnet',
+        allowTurnOverride: true,
+        enabledProviders: ['cursor'],
+      },
+      budgetChecker: { checkProviderBudget: checkMock },
+      force: true,
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.reason).toBe('all-exceeded');
+  });
+
   it('turn override bypasses the enabled gate (explicit pin wins)', async () => {
     const input = makeInput({
       connectedProviders: ['anthropic', 'cursor'],

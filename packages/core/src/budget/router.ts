@@ -126,7 +126,7 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
   return {
     selectedProvider: preferredProvider,
     selectedModel: preferredModel,
-    reason: force ? 'forced-over-budget' : 'all-exceeded',
+    reason: force && preferredAllowed ? 'forced-over-budget' : 'all-exceeded',
     fallbackUsed: false,
   };
 };
