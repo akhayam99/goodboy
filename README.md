@@ -15,7 +15,7 @@
 
 </div>
 
-<img width="3972" height="2234" alt="Goodboy desktop app" src="https://github.com/user-attachments/assets/4708c589-a8e6-4f6c-a80a-222b32cc237e" />
+<img width="4012" height="2256" alt="CleanShot 2026-08-06 at 02 58 41@2x" src="https://github.com/user-attachments/assets/49df6069-d9ca-4a2a-8bf2-e4c6f33a809a" />
 
 You have a repo. You have a goal. You also have several CLIs open in
 several windows, each holding a slightly different version of the same
