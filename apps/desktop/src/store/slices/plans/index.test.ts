@@ -600,6 +600,50 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(agentId).toBe(IMPL_AGENT_ID);
     });
 
+    it('still routes the plan to its step while a sibling agent is running', async () => {
+      const wf = makeWorkflow([
+        { id: STEP_PLAN, name: 'Plan', ordinal: 0 },
+        { id: STEP_IMPL, name: 'Refactor', ordinal: 1 },
+        { id: STEP_REVIEW, name: 'Review', ordinal: 2 },
+      ]);
+      const state = defaultState({
+        phaseTemplates: { [WS_ID]: [wf] },
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            makeAgent({
+              id: CREATOR_AGENT_ID,
+              stepId: STEP_PLAN,
+              workflowRunId: RUN_ID,
+              status: 'completed',
+              name: 'Plan',
+              ordinal: 0,
+            }),
+            makeAgent({
+              id: IMPL_AGENT_ID,
+              stepId: STEP_IMPL,
+              workflowRunId: RUN_ID,
+              status: 'pending',
+              name: 'Refactor',
+              ordinal: 1,
+            }),
+            makeAgent({
+              id: 'agent-review' as AgentId,
+              stepId: STEP_REVIEW,
+              workflowRunId: RUN_ID,
+              status: 'running',
+              name: 'Review',
+              ordinal: 2,
+            }),
+          ],
+        },
+      });
+
+      const agentId = await buildSlice(state).runPlan(SESSION_ID, PLAN_ID);
+
+      expect(state.spawnAgent).not.toHaveBeenCalled();
+      expect(agentId).toBe(IMPL_AGENT_ID);
+    });
+
     it('free-spawns without focus and hands back the spawned agent', async () => {
       const state = defaultState({ sessions: [makeSession({ workflowRuns: [] })] });
 
