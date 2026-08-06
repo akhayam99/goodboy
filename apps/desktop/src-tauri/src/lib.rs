@@ -301,6 +301,7 @@ pub fn run() {
             gitlab::gitlab_create_mr_note,
             gitlab::gitlab_list_mr_discussions,
             gitlab::gitlab_reply_to_mr_discussion,
+            gitlab::gitlab_resolve_mr_discussion,
             gitlab::gitlab_mr_approval_state,
             gitlab::gitlab_approve_mr,
             gitlab::gitlab_unapprove_mr,

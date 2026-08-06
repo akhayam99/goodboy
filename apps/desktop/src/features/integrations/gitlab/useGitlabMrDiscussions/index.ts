@@ -5,6 +5,7 @@ import {
   gitlabCreateMrNote,
   gitlabListMrDiscussions,
   gitlabReplyToMrDiscussion,
+  gitlabResolveMrDiscussion,
   type GitlabMrDiscussion,
 } from '../client';
 
@@ -24,13 +25,25 @@ type ReplyParams = {
   readonly body: string;
 };
 
+type ResolveParams = {
+  readonly discussionId: string;
+  readonly resolved: boolean;
+};
+
+type ResolveFailure = {
+  readonly discussionId: string;
+  readonly message: string;
+};
+
 type Result = {
   readonly discussions: ReadonlyArray<GitlabMrDiscussion>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly resolveError: ResolveFailure | null;
   readonly reload: () => void;
   readonly post: ((params: PostParams) => Promise<void>) | null;
   readonly reply: ((params: ReplyParams) => Promise<void>) | null;
+  readonly resolve: ((params: ResolveParams) => Promise<void>) | null;
 };
 
 export const useGitlabMrDiscussions = ({
@@ -42,8 +55,13 @@ export const useGitlabMrDiscussions = ({
   const [discussions, setDiscussions] = useState<ReadonlyArray<GitlabMrDiscussion>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resolveError, setResolveError] = useState<ResolveFailure | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const isReady = workspaceId != null && host != null && projectPath != null && mrIid != null;
+
+  useEffect(() => {
+    setResolveError(null);
+  }, [workspaceId, host, projectPath, mrIid]);
 
   useEffect(() => {
     setDiscussions([]);
@@ -113,12 +131,38 @@ export const useGitlabMrDiscussions = ({
     [workspaceId, host, projectPath, mrIid],
   );
 
+  const resolve = useCallback(
+    async ({ discussionId, resolved }: ResolveParams) => {
+      if (workspaceId == null || host == null || projectPath == null || mrIid == null) {
+        return;
+      }
+      setResolveError(null);
+      try {
+        await gitlabResolveMrDiscussion({
+          workspaceId,
+          host,
+          projectPath,
+          mrIid,
+          discussionId,
+          resolved,
+        });
+      } catch (writeError: unknown) {
+        setResolveError({ discussionId, message: formatError(writeError) });
+      } finally {
+        setReloadToken((token) => token + 1);
+      }
+    },
+    [workspaceId, host, projectPath, mrIid],
+  );
+
   return {
     discussions,
     isLoading,
     error,
+    resolveError,
     reload,
     post: isReady ? post : null,
     reply: isReady ? reply : null,
+    resolve: isReady ? resolve : null,
   };
 };

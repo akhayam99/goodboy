@@ -356,6 +356,8 @@ export const MrDetailPanel = ({
             onRetry={discussions.reload}
             onPost={postNote == null ? null : (body: string) => postNote({ body })}
             onReply={discussions.reply}
+            onResolve={discussions.resolve}
+            resolveError={discussions.resolveError}
           />
         )}
       </StudioDetailLayout>

@@ -336,6 +336,29 @@ export const gitlabReplyToMrDiscussion = async ({
   });
 };
 
+type ResolveDiscussionParams = MrTarget & {
+  readonly discussionId: string;
+  readonly resolved: boolean;
+};
+
+export const gitlabResolveMrDiscussion = async ({
+  workspaceId,
+  host,
+  projectPath,
+  mrIid,
+  discussionId,
+  resolved,
+}: ResolveDiscussionParams): Promise<GitlabMrDiscussion> => {
+  return invoke<GitlabMrDiscussion>('gitlab_resolve_mr_discussion', {
+    workspaceId,
+    host,
+    projectPath,
+    mrIid,
+    discussionId,
+    resolved,
+  });
+};
+
 export type GitlabIssueNote = {
   id: number;
   body: string;

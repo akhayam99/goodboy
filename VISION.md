@@ -136,8 +136,8 @@ Where each connected source stands, honestly:
 - **GitHub.** Pull requests read and acted on (approve, request changes,
   comment, reply, resolve threads, merge, close); issues read and commented.
 - **GitLab.** Merge requests read and acted on (approve, state changes,
-  comment, reply); issues read, commented and edited. Thread resolve is read
-  but not yet written.
+  comment, reply, resolve and reopen threads); issues read, commented and
+  edited.
 - **Bitbucket.** Pull requests end to end: description, diff, build statuses
   in plain language, review threads, and eight verbs (approve, revoke,
   request changes, withdraw, comment, reply, merge, decline). No issue

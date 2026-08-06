@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { GitlabMrDiscussion } from '../client';
 
@@ -7,12 +7,14 @@ const h = vi.hoisted(() => ({
   list: vi.fn<() => Promise<ReadonlyArray<GitlabMrDiscussion>>>(),
   createNote: vi.fn(async () => 1),
   reply: vi.fn(async () => 2),
+  resolve: vi.fn<() => Promise<GitlabMrDiscussion>>(),
 }));
 
 vi.mock('../client', () => ({
   gitlabListMrDiscussions: h.list,
   gitlabCreateMrNote: h.createNote,
   gitlabReplyToMrDiscussion: h.reply,
+  gitlabResolveMrDiscussion: h.resolve,
 }));
 
 import { useGitlabMrDiscussions } from './index';
@@ -35,6 +37,8 @@ beforeEach(() => {
   h.list.mockResolvedValue([discussion]);
   h.createNote.mockClear();
   h.reply.mockClear();
+  h.resolve.mockReset();
+  h.resolve.mockResolvedValue({ ...discussion, notes: [] });
 });
 
 afterEach(cleanup);
@@ -55,6 +59,7 @@ describe('useGitlabMrDiscussions', () => {
     expect(h.list).not.toHaveBeenCalled();
     expect(result.current.post).toBeNull();
     expect(result.current.reply).toBeNull();
+    expect(result.current.resolve).toBeNull();
   });
 
   it('surfaces a load failure', async () => {
@@ -88,5 +93,57 @@ describe('useGitlabMrDiscussions', () => {
 
     expect(h.reply).toHaveBeenCalledWith({ ...TARGET, discussionId: 'disc-1', body: 'fixed' });
     await waitFor(() => expect(h.list).toHaveBeenCalledTimes(2));
+  });
+
+  it('refetches after resolving a thread', async () => {
+    const { result } = renderHook(() => useGitlabMrDiscussions(TARGET));
+    await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
+
+    await result.current.resolve?.({ discussionId: 'disc-1', resolved: true });
+
+    expect(h.resolve).toHaveBeenCalledWith({ ...TARGET, discussionId: 'disc-1', resolved: true });
+    await waitFor(() => expect(h.list).toHaveBeenCalledTimes(2));
+  });
+
+  it('carries the cleared flag when a thread is reopened', async () => {
+    const { result } = renderHook(() => useGitlabMrDiscussions(TARGET));
+    await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
+
+    await result.current.resolve?.({ discussionId: 'disc-1', resolved: false });
+
+    expect(h.resolve).toHaveBeenCalledWith({ ...TARGET, discussionId: 'disc-1', resolved: false });
+  });
+
+  it('holds a failed resolve on the hook and still refetches, so the card cannot drift', async () => {
+    h.resolve.mockRejectedValue(new Error('GitLab said 403'));
+    const { result } = renderHook(() => useGitlabMrDiscussions(TARGET));
+    await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
+
+    await act(async () => {
+      await result.current.resolve?.({ discussionId: 'disc-1', resolved: true });
+    });
+
+    await waitFor(() => expect(h.list).toHaveBeenCalledTimes(2));
+    expect(result.current.resolveError).toEqual({
+      discussionId: 'disc-1',
+      message: 'GitLab said 403',
+    });
+  });
+
+  it('clears a held resolve failure once a later write succeeds', async () => {
+    h.resolve.mockRejectedValueOnce(new Error('GitLab said 403'));
+    const { result } = renderHook(() => useGitlabMrDiscussions(TARGET));
+    await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
+
+    await act(async () => {
+      await result.current.resolve?.({ discussionId: 'disc-1', resolved: true });
+    });
+    await waitFor(() => expect(result.current.resolveError).not.toBeNull());
+
+    await act(async () => {
+      await result.current.resolve?.({ discussionId: 'disc-1', resolved: true });
+    });
+
+    await waitFor(() => expect(result.current.resolveError).toBeNull());
   });
 });

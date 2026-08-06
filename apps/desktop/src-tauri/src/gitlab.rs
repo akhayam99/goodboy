@@ -750,6 +750,40 @@ pub async fn gitlab_reply_to_mr_discussion(
     Ok(note.id)
 }
 
+fn mr_discussion_resolve_path(
+    project_path: &str,
+    mr_iid: i64,
+    discussion_id: &str,
+    resolved: bool,
+) -> String {
+    let encoded = encode_project_path(project_path);
+    let discussion = percent_encode(discussion_id);
+    format!(
+        "/projects/{encoded}/merge_requests/{mr_iid}/discussions/{discussion}?resolved={resolved}"
+    )
+}
+
+#[tauri::command]
+pub async fn gitlab_resolve_mr_discussion(
+    workspace_id: String,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    discussion_id: String,
+    resolved: bool,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabMrDiscussion, GitlabError> {
+    let token = read_token(&workspace_id, &cache)?;
+    send_json(
+        reqwest::Method::PUT,
+        &host,
+        &token,
+        &mr_discussion_resolve_path(&project_path, mr_iid, &discussion_id, resolved),
+        &serde_json::json!({ "resolved": resolved }),
+    )
+    .await
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitlabIssueNote {
     pub id: i64,
@@ -995,6 +1029,58 @@ mod tests {
         assert_eq!(percent_encode("ak/feat-x"), "ak%2Ffeat-x");
         assert_eq!(percent_encode("a b"), "a%20b");
         assert_eq!(percent_encode("keep-._~"), "keep-._~");
+    }
+
+    #[test]
+    fn mr_discussion_resolve_path_encodes_the_project_and_the_discussion_id() {
+        assert_eq!(
+            mr_discussion_resolve_path("group/sub/repo", 11, "6a9c1750b37d513a43987b574953fceb50b03ce7", true),
+            "/projects/group%2Fsub%2Frepo/merge_requests/11/discussions/6a9c1750b37d513a43987b574953fceb50b03ce7?resolved=true"
+        );
+    }
+
+    #[test]
+    fn mr_discussion_resolve_path_escapes_a_discussion_id_that_is_not_url_safe() {
+        let path = mr_discussion_resolve_path("acme/web", 4, "note/7 a+b", false);
+        assert!(
+            !path.contains("note/7 a+b"),
+            "the raw discussion id leaked into the path: {path}"
+        );
+        assert_eq!(
+            path,
+            "/projects/acme%2Fweb/merge_requests/4/discussions/note%2F7%20a%2Bb?resolved=false"
+        );
+    }
+
+    #[test]
+    fn resolve_mr_discussion_is_registered_as_a_tauri_command() {
+        let lib = include_str!("lib.rs");
+        assert!(
+            lib.contains("gitlab::gitlab_resolve_mr_discussion"),
+            "gitlab_resolve_mr_discussion is missing from the generate_handler block"
+        );
+    }
+
+    #[test]
+    fn mr_discussion_deserializes_a_resolved_thread_payload() {
+        let raw = r#"{
+            "id": "6a9c1750b37d",
+            "individual_note": false,
+            "notes": [
+                {
+                    "id": 42,
+                    "body": "one nit",
+                    "system": false,
+                    "created_at": "2026-08-01T10:00:00Z",
+                    "resolvable": true,
+                    "resolved": true
+                }
+            ]
+        }"#;
+        let discussion: GitlabMrDiscussion = serde_json::from_str(raw).unwrap();
+        assert_eq!(discussion.id, "6a9c1750b37d");
+        assert!(!discussion.individual_note);
+        assert_eq!(discussion.notes[0].resolved, Some(true));
     }
 
     #[test]
