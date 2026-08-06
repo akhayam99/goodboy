@@ -54,7 +54,7 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'gpt-5.3-codex': GPT54_PRICE,
 };
 
-const FALLBACK: ModelPrice = COMPOSER_PRICE;
+const FALLBACK: ModelPrice = GPT56_PRICE;
 
 export const cursorPriceFor = (model: string): ModelPrice => {
   return CURSOR_PRICES[model] ?? FALLBACK;

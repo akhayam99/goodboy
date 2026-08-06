@@ -34,9 +34,9 @@ describe('computeCursorCostUsd', () => {
     expect(computeCursorCostUsd({ usage, model: 'gpt-5.5-high' })).toBeCloseTo(5 + 30);
   });
 
-  it('unknown model falls back to composer standard pricing', () => {
+  it('unknown model falls back to the most expensive known tier', () => {
     expect(computeCursorCostUsd({ usage, model: 'mystery-model-9' })).toBeCloseTo(
-      computeCursorCostUsd({ usage, model: 'composer-2.5' }),
+      computeCursorCostUsd({ usage, model: 'gpt-5.6-sol-high' }),
     );
   });
 
@@ -69,9 +69,9 @@ describe('computeCursorCostUsd', () => {
     ).toBeCloseTo(1.125);
   });
 
-  it('cursorPriceFor returns composer standard fallback for unknown model', () => {
+  it('cursorPriceFor returns the most expensive tier as fallback for unknown model', () => {
     const p = cursorPriceFor('totally-unknown');
-    const fallback = cursorPriceFor('composer-2.5');
+    const fallback = cursorPriceFor('gpt-5.6-sol-high');
     expect(p).toEqual(fallback);
   });
 });
