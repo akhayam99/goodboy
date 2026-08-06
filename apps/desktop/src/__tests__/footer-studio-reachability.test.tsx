@@ -59,6 +59,10 @@ type FooterProps = {
   readonly bitbucketEnabled: boolean;
   readonly onOpenGithub: () => void;
   readonly githubEnabled: boolean;
+  readonly onOpenSettings: () => void;
+  readonly onOpenBudget: () => void;
+  readonly onOpenImpact: () => void;
+  readonly onOpenChangelog: () => void;
 };
 
 vi.mock('../app/components/AppFooter', () => ({
@@ -69,6 +73,10 @@ vi.mock('../app/components/AppFooter', () => ({
     bitbucketEnabled,
     onOpenGithub,
     githubEnabled,
+    onOpenSettings,
+    onOpenBudget,
+    onOpenImpact,
+    onOpenChangelog,
   }: FooterProps) => (
     <>
       <button type="button" onClick={onOpenSlack}>
@@ -79,6 +87,18 @@ vi.mock('../app/components/AppFooter', () => ({
       </button>
       <button type="button" onClick={onOpenGithub}>
         {githubEnabled ? 'Review pull requests and issues' : 'Connect GitHub'}
+      </button>
+      <button type="button" onClick={onOpenSettings}>
+        Open settings
+      </button>
+      <button type="button" onClick={onOpenBudget}>
+        Open budget
+      </button>
+      <button type="button" onClick={onOpenImpact}>
+        Open impact
+      </button>
+      <button type="button" onClick={onOpenChangelog}>
+        Open changelog
       </button>
     </>
   ),
@@ -134,7 +154,9 @@ vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
 vi.mock('../features/session/components/ArchiveSessionConfirm', () => ({
   ArchiveSessionConfirm: () => null,
 }));
-vi.mock('../features/settings/components/SettingsStudio', () => ({ SettingsStudio: () => null }));
+vi.mock('../features/settings/components/SettingsStudio', () => ({
+  SettingsStudio: () => <div data-testid="settings-studio" />,
+}));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
 vi.mock('../features/workspace/components/WorkspaceSettingsPane', () => ({
   WorkspaceSettingsPane: () => null,
@@ -173,7 +195,21 @@ vi.mock('../features/integrations/jira/JiraStudio', () => ({ JiraStudio: () => n
 vi.mock('../features/providers/components/ProviderStudio', () => ({
   ProviderStudio: () => <div data-testid="provider-studio" />,
 }));
-vi.mock('../features/budget/components/BudgetStudio', () => ({ BudgetStudio: () => null }));
+vi.mock('../features/budget/components/BudgetStudio', () => ({
+  BudgetStudio: ({ workspaceName }: { workspaceName: string }) => (
+    <div data-testid="budget-studio">{workspaceName}</div>
+  ),
+}));
+vi.mock('../features/impact/components/ImpactStudio', () => ({
+  ImpactStudio: ({ workspaceName }: { workspaceName: string }) => (
+    <div data-testid="impact-studio">{workspaceName}</div>
+  ),
+}));
+vi.mock('../features/changelog/components/ChangelogStudio', () => ({
+  ChangelogStudio: ({ workspaceName }: { workspaceName: string }) => (
+    <div data-testid="changelog-studio">{workspaceName}</div>
+  ),
+}));
 vi.mock('../features/permissions/components/DiffViewerDialog', () => ({
   DiffViewerDialog: () => null,
 }));
@@ -221,7 +257,9 @@ beforeEach(() => {
   githubAuth.isAuthenticated = false;
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+});
 
 describe('Slack studio reachability', () => {
   it('opens the workspace slack studio from the app footer', () => {
@@ -312,5 +350,43 @@ describe('Bitbucket studio reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect Bitbucket' }));
 
     expect(screen.getByTestId('bitbucket-studio')).toBeDefined();
+  });
+});
+
+describe('Footer to settings and more-popover reachability', () => {
+  it('opens settings from the footer settings launcher', () => {
+    render(<App />);
+
+    expect(screen.queryByTestId('settings-studio')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
+
+    expect(screen.getByTestId('settings-studio')).toBeDefined();
+  });
+
+  it('opens budget from the footer more popover', () => {
+    render(<App />);
+
+    expect(screen.queryByTestId('budget-studio')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open budget' }));
+
+    expect(screen.getByTestId('budget-studio').textContent).toBe('Workspace');
+  });
+
+  it('opens impact from the footer more popover', () => {
+    render(<App />);
+
+    expect(screen.queryByTestId('impact-studio')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open impact' }));
+
+    expect(screen.getByTestId('impact-studio').textContent).toBe('Workspace');
+  });
+
+  it('opens changelog from the footer more popover', () => {
+    render(<App />);
+
+    expect(screen.queryByTestId('changelog-studio')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open changelog' }));
+
+    expect(screen.getByTestId('changelog-studio').textContent).toBe('Workspace');
   });
 });

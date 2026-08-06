@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { IconButton } from '@goodboy/ui';
+import { Divider, IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -30,6 +31,7 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
+  const disconnectSentry = useAppStore((s) => s.disconnectSentry);
   const { rows, loadMore, hasMore, loading, error, refetch } = useSentryIssues(
     workspaceId,
     isConnected,
@@ -57,16 +59,27 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     () => (focused ? (rows.find((r) => r.issue.id === focused.id) ?? null) : null),
     [focused, rows],
   );
-  const headerAccessory =
-    !isConnected || rows.length === 0 ? null : (
-      <IconButton
-        icon={RefreshCw}
-        label="Refresh issues"
-        onClick={refetch}
-        disabled={loading}
-        busy={loading}
+  const headerAccessory = !isConnected ? null : (
+    <div className="flex items-center gap-2">
+      {rows.length > 0 ? (
+        <>
+          <IconButton
+            icon={RefreshCw}
+            label="Refresh issues"
+            onClick={refetch}
+            disabled={loading}
+            busy={loading}
+          />
+          <Divider orientation="vertical" className="mx-0.5 h-5" />
+        </>
+      ) : null}
+      <IntegrationDisconnect
+        label="Sentry"
+        description="Deletes the saved Sentry token from your keychain and forgets this workspace's connection. Reconnect anytime."
+        onDisconnect={() => disconnectSentry(workspaceId)}
       />
-    );
+    </div>
+  );
 
   return (
     <StudioShell

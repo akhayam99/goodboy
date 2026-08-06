@@ -24,8 +24,10 @@ An app window is a strip, a set of columns, and a pane. Each owns one thing.
 `leftHidden` animation, and no overlay can ever move it.
 
 Composition, left to right: mascot, collapse toggle (session only), workspace
-identity, crumbs, update pip, workspace rollup, vertical divider, then the
-global control cluster (running scripts, notifications, onboarding, settings).
+identity, crumbs, workspace rollup, vertical divider, then the global control
+cluster (running scripts, notifications, theme, onboarding). Settings and the
+update control are not here: they moved to the footer's launcher cluster, which
+is where a destination belongs.
 
 The strip is context, never content. Everything in it is a chip, an indicator,
 a crumb, or a trigger that opens something elsewhere. No editor, no form, no
@@ -109,6 +111,7 @@ Current mounts, one each:
 | Session title (read)            | `features/session/components/SessionStripCrumbs/index.tsx`     |
 | Session title (rename)          | `SessionOverviewPane/HeaderBand.tsx`                           |
 | Collapse the sessions column    | the toggle in `AppTopBar/index.tsx`, plus ⌘B                   |
+| Open app settings               | the launcher in `AppFooter/index.tsx`, plus ⌘, and the palette |
 
 `WorkspaceIdentityRow` is the trigger and the anchor at once: it holds the
 `triggerRef`, and `WorkspaceSwitcher` mounts as its child when open. The command
@@ -341,14 +344,18 @@ follow:
    `spaceBelow < PANEL_MAX_HEIGHT + VIEWPORT_MARGIN` sets `bottom:
 window.innerHeight - rect.top + 6` and drops `top`.
 6. A click-catcher behind, closing on `mousedown`, and a panel above it. The
-   five app-global popovers (`NeedsYouPopover`, `WorkspaceSwitcher`,
+   six app-global popovers (`NeedsYouPopover`, `WorkspaceSwitcher`,
    `NotificationCenter`, `RunningScriptsIndicator`,
-   `AppFooter/IntegrationAddPopover`) use `z-popover-backdrop`
+   `AppFooter/IntegrationAddPopover`, `AppFooter/MoreStudiosPopover`) use
+   `z-popover-backdrop`
    and `z-popover` from the named scale in `docs/styling.md`, so they clear a
-   full-page studio at `z-50`. The footer one earns the tokens the same way the
+   full-page studio at `z-50`. The footer ones earn the tokens the same way the
    top-bar ones do: `StudioShell`'s fullscreen variant is `inset-x-0 bottom-9
 top-9`, so the footer stays visible and clickable under an open studio. A
-   popover scoped to one pane keeps a local `z-30`/`z-40` instead.
+   popover scoped to one pane keeps a local `z-30`/`z-40` instead, which is why
+   `shared/components/OverflowMenu` hardcodes `z-30` and why the footer builds
+   its own popover instead of raising that shared one over every pane menu that
+   uses it.
 7. Escape closes.
 
 `Popover` from `@goodboy/ui` supplies only the shell (`rounded-md border

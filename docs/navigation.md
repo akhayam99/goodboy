@@ -115,10 +115,12 @@ the sessions-column toggle (only inside a session), the workspace identity and
 its switcher popover, then the session breadcrumb, which does render here and is
 rooted at the session title.
 
-Right side: update pip, workspace rollup (attention count and today's spend), a
-divider, then running scripts, notifications, onboarding and settings. Theme,
-the guide and pair-device left this row: they are set-once preferences and live
-in the settings studio and the command palette.
+Right side: workspace rollup (attention count and today's spend), a divider,
+then running scripts, notifications, the theme toggle and onboarding. Theme is
+the one set-once preference kept here, because it is flipped often enough to
+earn the slot; the guide and pair-device left this row and live in the settings
+studio and the command palette. Settings and the update control left it too,
+downwards: both open a destination, and destinations belong to the footer.
 
 Controls dispatch the same `goodboy:*` events and callbacks as before.
 
@@ -154,13 +156,30 @@ Layout:
   `Add a repo` conversion action, which has no add control, and Sentry drops out
   of the trackers group. A simple workspace has no repository for either to
   read.
-- Right: common studios (workflows, providers, budget, impact, changelog).
+- Right: the launchers reached by name (workflows, providers, settings), the
+  update control while an update is pending, and a `More` popover
+  (`MoreStudiosPopover`) holding budget, impact and changelog. `MORE_STUDIOS` in
+  `AppFooter/moreStudios.ts` owns that list. The popover follows the app-global
+  anchoring recipe in [design.md](./design.md) section 6, not
+  `shared/components/OverflowMenu`, because it opens upward into the area a
+  fullscreen studio covers and needs the `z-popover` tokens to clear `z-50`.
+- Right, the release dot: the `More` control carries a dot when the running
+  version's release notes have not been opened. `useUnseenRelease` compares the
+  installed version from `getVersion()` against `changelogSeenVersion`, which
+  the changelog slice hydrates from the `settings` table at boot
+  (`changelog.lastSeenVersion`) and rewrites when `ChangelogStudio` mounts. The
+  question is "have you read the notes for what you are running", not "has a new
+  release been published", so it answers offline, it never lights up for a
+  version the user cannot install, and a fresh install shows one dot rather than
+  one per historical release.
 
 Navigation chrome stays muted while inactive across footer launchers, session
 lens rows, and the back-to-board action in the workspace sidebar.
 
 The active navigation item takes a muted fill (`bg-muted text-foreground`)
-across those surfaces; only the settings toggle in the top bar still inverts.
+across those surfaces. Settings was the last control to invert instead; in the
+footer it takes the same muted fill as its neighbours, so no navigation control
+in the app inverts any more.
 In the footer's integration groups that fill lands on the glyph of the open
 integration, or on the group's add control when the open integration is not
 connected and therefore has no glyph, so exactly one control per group carries
@@ -213,11 +232,30 @@ knows the session's repository and carries the full action bar. A composite
 workspace has no single repository and no active mount outside a session, so
 the footer variant stops at an empty state and points back at a session.
 
-Most utility studios have a footer entry. The notifications studio does not:
+Most utility studios have a footer entry, three of them (budget, impact,
+changelog) behind the `More` popover rather than on the row. The notifications
+studio does not:
 its only entrance is the `Show more` row at the bottom of the bell popover in
 the top bar, which dispatches `goodboy:open-notifications-studio`. There is no
 footer button, no shortcut, and no command palette entry for it, because the
 bell already carries the unread count that makes the page worth opening.
+
+Every integration studio (GitHub, GitLab, Bitbucket, Linear, Jira, Sentry,
+Slack) carries a disconnect control in `StudioShell`'s `headerAccessory` slot,
+next to the refresh action, once that integration is actually connected. It
+follows the `InlineConfirm` canon: the icon button swaps for the confirm in an
+anchored popover so the header never grows, and confirming clears the
+workspace credential (keychain entry, database row, and any in-memory cache)
+without leaving the studio. This is the only way to disconnect an integration
+short of Settings' "Run setup again", which re-opens the onboarding wizard and
+does not cover Slack. GitHub only shows the control when the workspace has its
+own token (`gh_status`'s `scoped` flag): a workspace falling back to the
+system `gh` CLI has nothing workspace-scoped to clear, and disconnecting never
+touches that system session. The GitHub control is gated on that credential
+state alone, not on whether the workspace's git remote is GitHub, so a mixed
+workspace (a GitLab or Bitbucket remote that still carries a leftover scoped
+GitHub token) still shows a way to clear it even though the pull request and
+issue browsing panes stay hidden.
 
 ### Workspace creation
 

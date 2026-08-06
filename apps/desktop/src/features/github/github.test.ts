@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
 
 const h = vi.hoisted(() => ({
   detectRepoSlug: vi.fn(),
@@ -20,12 +21,17 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   };
 });
 
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+
 import {
   ghCreateIssueComment,
   ghIssueByNumber,
   ghIssueComments,
+  ghStatus,
   ghUpdateIssueBody,
 } from './github';
+
+const mockInvoke = vi.mocked(invoke);
 
 afterEach(() => {
   h.detectRepoSlug.mockReset();
@@ -33,6 +39,41 @@ afterEach(() => {
   h.updateIssueBody.mockReset();
   h.listIssueComments.mockReset();
   h.createIssueComment.mockReset();
+  mockInvoke.mockReset();
+});
+
+describe('ghStatus', () => {
+  it('passes the scoped flag through from the raw gh_status response', async () => {
+    mockInvoke.mockResolvedValueOnce({
+      available: true,
+      mode: 'gh-cli',
+      version: '2.60.0',
+      user: 'octocat',
+      scopes: [],
+      scoped: false,
+    });
+
+    const status = await ghStatus('workspace-1');
+
+    expect(status.mode).toBe('gh-cli');
+    expect(status.scoped).toBe(false);
+  });
+
+  it('reports scoped true for a workspace personal access token', async () => {
+    mockInvoke.mockResolvedValueOnce({
+      available: true,
+      mode: 'pat',
+      version: null,
+      user: 'octocat',
+      scopes: ['repo'],
+      scoped: true,
+    });
+
+    const status = await ghStatus('workspace-1');
+
+    expect(status.mode).toBe('pat');
+    expect(status.scoped).toBe(true);
+  });
 });
 
 describe('ghIssueByNumber', () => {

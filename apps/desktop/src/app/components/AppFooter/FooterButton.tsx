@@ -33,7 +33,7 @@ export const FooterButton = ({
         active
           ? 'bg-muted text-foreground'
           : pulse
-            ? 'animate-soft-pulse text-info hover:bg-info/10'
+            ? 'text-info motion-safe:animate-soft-pulse hover:bg-info/10'
             : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
       )}
     >

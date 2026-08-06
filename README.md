@@ -139,7 +139,8 @@ of scrollback. Click a workflow in the activity and it opens focused with the
 rest collapsed, or advance its next step without leaving the overview. The
 diff reads like an editor: syntax-highlighted for the common languages, neutral
 for the rest. The top bar rolls up what needs you, what's running and today's
-spend.
+spend; the footer holds where you go next: integrations on the left, workflows,
+providers and settings on the right.
 
 ## Providers
 
@@ -177,9 +178,10 @@ brew install --cask akhayam99/tap/goodboy
 [latest release](https://github.com/akhayam99/goodboy/releases/latest) and
 drag Goodboy to Applications.
 
-**Updates are automatic.** When a new release ships, a "Restart to update"
-control appears in the status bar and next to the sidebar logo. One click
-downloads it and relaunches; Homebrew users can also
+**Updates are automatic.** When a new release ships, an update control appears
+in the footer, next to settings, and on the workspace launcher. One click
+downloads it and relaunches, and the footer's `More` control then carries a dot
+until you read the release notes; Homebrew users can also
 `brew upgrade --cask goodboy`.
 
 ## Run it

@@ -989,5 +989,14 @@ describe('store contract', () => {
       const remaining = store.getState().workspaceIntegrations[WS_ID] ?? [];
       expect(remaining.map((i) => i.provider)).toEqual(['linear']);
     });
+
+    it('disconnectGithub clears the workspace-scoped keychain token only', async () => {
+      const store = await getStore();
+
+      await store.getState().disconnectGithub({ workspaceId: WS_ID });
+
+      expect(ghClearTokenSpy).toHaveBeenCalledWith(WS_ID);
+      expect(deleteWorkspaceIntegrationSpy).not.toHaveBeenCalled();
+    });
   });
 });

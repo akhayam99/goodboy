@@ -42,6 +42,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         await runDbMigrations();
         await migrateLsToDb();
         await hydrateOnboardingFromDb();
+        await get().hydrateChangelogSeen();
         void get()
           .loadNotifications()
           .catch(() => {});

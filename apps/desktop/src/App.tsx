@@ -756,9 +756,7 @@ export const App = () => {
         <AppShell
           topBar={
             <AppTopBar
-              onOpenSettings={openSettings}
               onOpenBudget={openBudget}
-              activeStudio={activeStudio}
               hasWorkspace={currentWorkspace != null}
               hasActiveSession={hasActiveSession}
               isSessionSidebarCollapsed={sessionSidebar.isCollapsed}
@@ -796,6 +794,7 @@ export const App = () => {
                   setProviderStudioAction(null);
                   setProviderStudioOpen(true);
                 }}
+                onOpenSettings={openSettings}
                 onOpenBudget={openBudget}
                 onOpenImpact={openImpact}
                 onOpenChangelog={openChangelog}
