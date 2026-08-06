@@ -61,6 +61,17 @@ describe('RoleModelRow', () => {
     });
   });
 
+  it('pins a role running on its compiled default to the provider picked', () => {
+    const onChange = vi.fn<(preference: RoleModelPreference | null) => void>();
+    renderRow({ preference: null, onChange });
+
+    openPrimary();
+    pickProvider('Cursor');
+
+    expect(onChange).not.toHaveBeenCalledWith(null);
+    expect(onChange.mock.calls.at(-1)?.[0]?.providerId).toBe('cursor');
+  });
+
   it('emits no preference the registry has to throw away', () => {
     const onChange = vi.fn<(preference: RoleModelPreference | null) => void>();
     renderRow({
