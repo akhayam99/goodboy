@@ -32,6 +32,7 @@ export type RoutingReason =
   | 'fallback-threshold'
   | 'fallback-disconnected'
   | 'all-exceeded'
+  | 'forced-over-budget'
   | 'override';
 
 export type RoutingDecision = Readonly<{

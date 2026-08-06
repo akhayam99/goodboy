@@ -102,6 +102,44 @@ describe('resolveProvider', () => {
     expect(decision.fallbackUsed).toBe(false);
   });
 
+  it('all providers exceeded with force → returns preferred with reason forced-over-budget', async () => {
+    const checkMock = vi.fn().mockResolvedValue(exceeded());
+
+    const input = makeInput({
+      budgetChecker: { checkProviderBudget: checkMock },
+      force: true,
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.selectedModel).toBe('claude-3-5-sonnet');
+    expect(decision.reason).toBe('forced-over-budget');
+    expect(decision.fallbackUsed).toBe(false);
+  });
+
+  it('force keeps the turn override provider when everything is over cap', async () => {
+    const checkMock = vi.fn().mockResolvedValue(exceeded());
+
+    const input = makeInput({
+      turnOverride: { providerId: 'cursor', model: 'composer-2.5' },
+      budgetChecker: { checkProviderBudget: checkMock },
+      force: true,
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('cursor');
+    expect(decision.selectedModel).toBe('composer-2.5');
+    expect(decision.reason).toBe('forced-over-budget');
+  });
+
+  it('force does not change a decision that was never all-exceeded', async () => {
+    const input = makeInput({ force: true });
+    const decision = await resolveProvider(input);
+
+    expect(decision.reason).toBe('preferred');
+    expect(decision.selectedProvider).toBe('anthropic');
+  });
+
   it('only one connected provider → no fallback, returns all-exceeded when over', async () => {
     const checkMock = vi.fn().mockResolvedValue(exceeded());
 
@@ -339,6 +377,26 @@ describe('resolveProvider, enabledProviders gate', () => {
     expect(decision.selectedProvider).toBe('gemini');
     expect(decision.reason).toBe('fallback-budget');
     expect(decision.fallbackFrom).toBe('anthropic');
+  });
+
+  it('force never runs on a provider the session disabled', async () => {
+    const checkMock = vi.fn(async (provider: string) =>
+      provider === 'anthropic' ? notExceeded() : exceeded(),
+    );
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor'],
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        defaultModel: 'claude-3-5-sonnet',
+        allowTurnOverride: true,
+        enabledProviders: ['cursor'],
+      },
+      budgetChecker: { checkProviderBudget: checkMock },
+      force: true,
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.reason).toBe('all-exceeded');
   });
 
   it('turn override bypasses the enabled gate (explicit pin wins)', async () => {

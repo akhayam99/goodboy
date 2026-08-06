@@ -104,7 +104,7 @@ vi.mock('../features/providers/providers', () => ({
 }));
 
 vi.mock('../features/providers/routing', () => ({
-  resolveProviderForTurn: vi.fn(async (_pref, _override, _connected) => ({
+  resolveProviderForTurn: vi.fn(async () => ({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-3-5-sonnet-latest',
     reason: 'preference',

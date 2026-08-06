@@ -6,7 +6,7 @@ export const WORKSPACE_FEATURES = {
 } as const;
 
 export const SESSION_FEATURES = {
-  budget: false,
+  budget: true,
   sessionArchival: true,
   branchSwitching: true,
   verbosity: true,

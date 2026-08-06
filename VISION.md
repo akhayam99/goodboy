@@ -250,7 +250,9 @@ what you're spending and where, in real time.
 - **Session lifecycle metrics**: when a session starts, resets, hits a
   threshold, switches provider, ends.
 - **Budgets**: per-provider monthly cap, per-session soft cap. Visual alerts
-  before you hit limits.
+  before you hit limits. Caps steer routing rather than lock you out: when
+  every provider is over cap the composer says so and you can still send the
+  turn on the provider you picked.
 
 All metrics are computed and stored locally. Nothing transmitted.
 

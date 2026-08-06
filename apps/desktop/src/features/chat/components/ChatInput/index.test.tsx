@@ -6,6 +6,7 @@ import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
 const {
   sendTurnMock,
+  resolveProviderMock,
   cancelCurrentTurnMock,
   mockStore,
   writeAttachmentMock,
@@ -14,7 +15,12 @@ const {
   readDroppedAttachmentMock,
 } = await vi.hoisted(async () => {
   const { create } = await import('zustand');
-  const send = vi.fn(async () => undefined);
+  const send = vi.fn(async (_input: unknown) => ({ blockedOverBudget: false }));
+  const resolveProvider = vi.fn(async (_input: unknown) => ({
+    selectedProvider: 'anthropic',
+    selectedModel: 'claude-sonnet-4-6',
+    reason: 'preference',
+  }));
   const cancel = vi.fn();
   const writeAttachment = vi.fn(async () => 'attachments/att-pic.png');
   const readAttachment = vi.fn(async () => 'data:image/png;base64,QUJD');
@@ -40,7 +46,7 @@ const {
     agentTurnState: Record<string, never>;
     agentModelOverride: Record<string, string>;
     agentProviderOverride: Record<string, never>;
-    agentKindOverride: Record<string, never>;
+    agentKindOverride: Record<string, string>;
     agentRunHistory: Record<string, never>;
     agentDraft: Record<string, string>;
     agentAttachments: Record<string, ReadonlyArray<never>>;
@@ -139,6 +145,7 @@ const {
   }));
   return {
     sendTurnMock: send,
+    resolveProviderMock: resolveProvider,
     cancelCurrentTurnMock: cancel,
     mockStore: store,
     writeAttachmentMock: writeAttachment,
@@ -153,6 +160,7 @@ function resetMockStore() {
     agentDraft: {},
     agentAttachments: {},
     agentQueue: {},
+    agentKindOverride: {},
     sessionWorktrees: {},
     sessionTelemetry: {},
   });
@@ -190,11 +198,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   return {
     ...actual,
     buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
-    resolveProvider: vi.fn(async () => ({
-      selectedProvider: 'anthropic',
-      selectedModel: 'claude-sonnet-4-6',
-      reason: 'preference',
-    })),
+    resolveProvider: resolveProviderMock,
     assessTurnWeight: () => 'small',
   };
 });
@@ -226,6 +230,12 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   resetMockStore();
+  sendTurnMock.mockResolvedValue({ blockedOverBudget: false });
+  resolveProviderMock.mockResolvedValue({
+    selectedProvider: 'anthropic',
+    selectedModel: 'claude-sonnet-4-6',
+    reason: 'preference',
+  });
 });
 
 describe('ChatInput, input wiring', () => {
@@ -596,5 +606,148 @@ describe('ChatInput, attachment persistence', () => {
     await waitFor(() => {
       expect(mockStore.getState().agentAttachments['agent-1']).toBeUndefined();
     });
+  });
+});
+
+describe('ChatInput, all providers over budget', () => {
+  const pngFile = () => new File(['abc'], 'pic.png', { type: 'image/png' });
+
+  function fileInput(container: HTMLElement): HTMLInputElement {
+    const input = container.querySelector('input[type="file"]');
+    if (!input) {
+      throw new Error('file input not found');
+    }
+    return input as HTMLInputElement;
+  }
+
+  it('restores the typed message into the composer when the send is blocked', async () => {
+    sendTurnMock.mockResolvedValue({ blockedOverBudget: true });
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'do not lose me');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('do not lose me');
+    });
+    expect(mockStore.getState().agentDraft['agent-1']).toBe('do not lose me');
+  });
+
+  it('keeps the attachments and never deletes them from disk when the send is blocked', async () => {
+    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
+    sendTurnMock.mockResolvedValue({ blockedOverBudget: true });
+    const user = userEvent.setup();
+    const { container } = render(<ChatInput session={makeSession()} />);
+
+    await user.upload(fileInput(container), pngFile());
+    await screen.findByAltText('pic.png');
+    await waitFor(() => {
+      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
+    });
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'with attachment');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect(screen.getByAltText('pic.png')).toBeTruthy();
+    });
+    expect(deleteAttachmentMock).not.toHaveBeenCalled();
+    expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
+  });
+
+  it('sends the turn with force when the escape hatch is used, unlike a plain send', async () => {
+    resolveProviderMock.mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-6',
+      reason: 'all-exceeded',
+    });
+    sendTurnMock.mockResolvedValue({ blockedOverBudget: true });
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'over cap but urgent');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'over cap but urgent' }),
+    );
+    expect(sendTurnMock.mock.calls[0]?.[0]).not.toHaveProperty('force');
+
+    sendTurnMock.mockResolvedValue({ blockedOverBudget: false });
+    const sendAnyway = await screen.findByRole('button', { name: 'Send anyway' });
+    await user.click(sendAnyway);
+
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledWith(
+        expect.objectContaining({ content: 'over cap but urgent', force: true }),
+      );
+    });
+  });
+
+  it('offers the escape hatch to an attachment-only message with no text', async () => {
+    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
+    resolveProviderMock.mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-6',
+      reason: 'all-exceeded',
+    });
+    const user = userEvent.setup();
+    const { container } = render(<ChatInput session={makeSession()} />);
+
+    await user.upload(fileInput(container), pngFile());
+    await screen.findByAltText('pic.png');
+    await waitFor(() => {
+      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
+    });
+
+    const sendAnyway = await screen.findByRole('button', { name: 'Send anyway' });
+    await user.click(sendAnyway);
+
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: '',
+          force: true,
+          attachments: expect.arrayContaining([expect.objectContaining({ fileName: 'pic.png' })]),
+        }),
+      );
+    });
+  });
+
+  it('a forced send retires the pending scope nudge instead of leaving it armed', async () => {
+    mockStore.setState({ agentKindOverride: { 'agent-1': 'planner' } });
+    resolveProviderMock.mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-6',
+      reason: 'all-exceeded',
+    });
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    const textarea = screen.getByRole('textbox');
+    await user.type(textarea, 'implement the retry');
+    await user.keyboard('{Enter}');
+
+    expect(await screen.findByTestId('scope-mismatch-nudge')).toBeTruthy();
+    expect(sendTurnMock).not.toHaveBeenCalled();
+
+    const sendAnyway = await screen.findByRole('button', { name: 'Send anyway' });
+    await user.click(sendAnyway);
+
+    await waitFor(() => {
+      expect(sendTurnMock).toHaveBeenCalledWith(
+        expect.objectContaining({ content: 'implement the retry', force: true }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('scope-mismatch-nudge')).toBeNull();
+    });
+    expect(sendTurnMock).toHaveBeenCalledOnce();
   });
 });

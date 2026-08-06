@@ -5,10 +5,19 @@ import { formatError } from '../../../../../shared/lib/errors';
 import { isTranscriptOwnedTurnError } from '../../../turn-errors';
 import { toAttachmentInput } from '../lib';
 import type { PendingAttachment, QueuedTurn } from '../lib';
+import type { SendTurnResult } from '../../../../../store/slices/turn/types';
 
 type UseTurnDispatchArgs = {
   readonly sessionId: SessionId;
   readonly cleanupSentAttachments: (atts: ReadonlyArray<PendingAttachment>) => void;
+};
+
+export type DispatchTurnParams = {
+  readonly content: string;
+  readonly atts: ReadonlyArray<PendingAttachment>;
+  readonly override: TurnProviderOverride | undefined;
+  readonly agentId: AgentId;
+  readonly force?: boolean;
 };
 
 export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDispatchArgs) => {
@@ -18,30 +27,37 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
   const [lastFailedTurn, setLastFailedTurn] = useState<Omit<QueuedTurn, 'id'> | null>(null);
 
   const dispatchTurn = useCallback(
-    async (
-      content: string,
-      atts: ReadonlyArray<PendingAttachment>,
-      override: TurnProviderOverride | undefined,
-      agentId: AgentId,
-    ) => {
+    async ({
+      content,
+      atts,
+      override,
+      agentId,
+      force = false,
+    }: DispatchTurnParams): Promise<SendTurnResult> => {
       try {
-        await sendTurn({
+        const result = await sendTurn({
           sessionId,
           agentId,
           content,
           ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
           override,
+          ...(force ? { force: true } : {}),
         });
+        if (result.blockedOverBudget) {
+          return result;
+        }
         setLastFailedTurn(null);
         cleanupSentAttachments(atts);
+        return result;
       } catch (err) {
         if (isTranscriptOwnedTurnError({ error: err })) {
           setError(null);
           setLastFailedTurn(null);
-          return;
+          return { blockedOverBudget: false };
         }
         setError(formatError(err));
         setLastFailedTurn({ agentId, content, attachments: atts, override });
+        return { blockedOverBudget: false };
       }
     },
     [sendTurn, sessionId, cleanupSentAttachments],

@@ -7,15 +7,24 @@ import type {
 } from '@goodboy/types';
 import { invokeCheckProviderBudget } from '../budget/budget';
 
-export const resolveProviderForTurn = async (
-  sessionPreference: SessionProviderPreference,
-  turnOverride: TurnProviderOverride | undefined,
-  connectedProviders: ProviderId[],
-): Promise<RoutingDecision> => {
+type Params = {
+  readonly sessionPreference: SessionProviderPreference;
+  readonly turnOverride: TurnProviderOverride | undefined;
+  readonly connectedProviders: ProviderId[];
+  readonly force?: boolean;
+};
+
+export const resolveProviderForTurn = async ({
+  sessionPreference,
+  turnOverride,
+  connectedProviders,
+  force,
+}: Params): Promise<RoutingDecision> => {
   return resolveProvider({
     sessionPreference,
     turnOverride,
     connectedProviders,
+    ...(force === true ? { force: true } : {}),
     budgetChecker: {
       checkProviderBudget: (provider, period) => invokeCheckProviderBudget(provider, period),
     },

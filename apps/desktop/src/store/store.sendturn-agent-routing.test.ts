@@ -1133,9 +1133,9 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
     expect(spy).toHaveBeenCalled();
-    const [preference, override] = spy.mock.calls[0]!;
-    expect(preference.allowTurnOverride).toBe(true);
-    expect(override).toEqual({ providerId: 'codex', model: 'gpt-5-codex' });
+    const [params] = spy.mock.calls[0]!;
+    expect(params.sessionPreference.allowTurnOverride).toBe(true);
+    expect(params.turnOverride).toEqual({ providerId: 'codex', model: 'gpt-5-codex' });
   });
 
   it('a resolver that emits a resolution marker records committed and advances the queue', async () => {
@@ -1841,6 +1841,58 @@ describe('sendTurn, budget routing notice', () => {
     });
 
     expect(messages.join(' ')).not.toContain('running this turn on');
+  });
+
+  it('blocks the turn and says so in the transcript when every provider is over cap', async () => {
+    const useAppStore = await importStore();
+    setupNoticeAgent(useAppStore);
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'all-exceeded',
+      fallbackUsed: false,
+    });
+
+    const result = await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(result.blockedOverBudget).toBe(true);
+    expect(runTurnSpy).not.toHaveBeenCalled();
+    const messages = (useAppStore.getState().transcripts[AGENT_A] ?? [])
+      .filter((event) => event.kind === 'error')
+      .map((event) => ('message' in event ? event.message : ''));
+    expect(messages).toContain(
+      'All providers have exceeded their budget cap. Adjust budget rules or wait for the next billing period.',
+    );
+  });
+
+  it('forwards a forced send into the routing resolver, unlike a plain send', async () => {
+    const useAppStore = await importStore();
+    setupNoticeAgent(useAppStore);
+    const routingMod = await import('../features/providers/routing');
+    const routingSpy = routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>;
+    routingSpy.mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'forced-over-budget',
+      fallbackUsed: false,
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go', force: true });
+
+    expect(routingSpy).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
+    expect(runTurnSpy).toHaveBeenCalledOnce();
+
+    routingSpy.mockClear();
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go again' });
+
+    expect(routingSpy.mock.calls[0]?.[0]).not.toHaveProperty('force');
   });
 
   it('stays quiet when the turn never left the preferred provider', async () => {
