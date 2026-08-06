@@ -225,21 +225,33 @@ the list for `WorkflowRunDetail`, which hosts the run through `AgentsSection`
 is one explicit click from there, never an automatic redirect. The trail back is
 the breadcrumb `Overview > Workflows > {WorkflowName}`.
 
+### The plans lens has two levels
+
+`PlanStudio` reads like the Workflows and Agents lenses, one level at a time,
+never a rail plus a detail at once. The list shows the active plans, then an
+unconditional "Consumed" `CountToggle` row (it self-hides at a zero count,
+same as the Workflows and Resolve lenses), then the revealed consumed plans
+when the toggle is on. A plan with no active siblings still shows the
+"Nothing active" empty state, with the toggle as its own row underneath it,
+never inside the empty state's action slot: the toggle is a lens-wide control,
+not an action scoped to that one empty state. Selecting a card writes
+`focusedPlanId` and swaps the list for the plan body in a `FocusedPane`, with
+`WorkSurfaceBackButton` as its only header action. There is no sibling
+"other plans" panel: the list is the only way back.
+
 ### Sibling panels inside a lens
 
-Five surfaces open their detail to the right of the content instead of taking a
+Four surfaces open their detail to the right of the content instead of taking a
 studio rail: `AgentInspector` (from an agent row's "Details" action in the Agents
 lens and from a resolver row's "Details" action in the Resolve lens, since it is
 one component for both: it adds `ResolverSections` when the agent classifies as a
 resolver), `SlotHistoryPanel` in `SlotPane` (the history trigger in the pane
 header of the Goal, Decisions, and Session summary lenses, rendered only when
-that slot has history), `ScriptDetail`/`ScriptEditor` in `ScriptsPanel` (clicking
-a script row opens `ScriptDetail`, whose Edit button swaps the same panel to
-`ScriptEditor`; that is the only route to the editor), and `PlanListPanel` in
-`PlanStudio` (the "Other plans (N)" trigger in the pane header, rendered only
-when the session holds more than one plan).
+that slot has history), and `ScriptDetail`/`ScriptEditor` in `ScriptsPanel`
+(clicking a script row opens `ScriptDetail`, whose Edit button swaps the same
+panel to `ScriptEditor`; that is the only route to the editor).
 
-`WorkflowStepInspector` in `WorkflowRunDetail` is the fifth.
+`WorkflowStepInspector` in `WorkflowRunDetail` is the fourth.
 
 `AgentInspector`, `SlotHistoryPanel`, and `ScriptDetail`/`ScriptEditor` share one
 primitive, `InspectorSplit`
@@ -247,9 +259,7 @@ primitive, `InspectorSplit`
 a sibling column resizable via a `ResizeHandle` (width persisted at
 `STORAGE_KEYS.inspectorPanelWidth`), open state is local to the pane, the panel
 loads or refreshes its data when it opens, and it closes from its own header.
-`PlanListPanel` predates this primitive and stays a fixed-width column behind a
-plain `<Divider>`. Reuse `InspectorSplit` for the next detail surface rather
-than adding a rail.
+Reuse `InspectorSplit` for the next detail surface rather than adding a rail.
 
 `ScriptsPanel` is the one consumer that nests the split _inside_ its
 `PaneShell` rather than wrapping it, because the same component also mounts in

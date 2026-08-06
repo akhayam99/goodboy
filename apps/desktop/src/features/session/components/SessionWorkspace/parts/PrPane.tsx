@@ -111,9 +111,7 @@ const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
   );
 
 type SessionStudioOpenEvent =
-  | 'goodboy:open-github-session'
-  | 'goodboy:open-gitlab-mr'
-  | 'goodboy:open-bitbucket-pr';
+  'goodboy:open-github-session' | 'goodboy:open-gitlab-mr' | 'goodboy:open-bitbucket-pr';
 
 const resolveSessionStudioOpenEvent = ({
   activeProvider,
@@ -533,6 +531,7 @@ const GithubPrCard = ({
         branch={branch}
         selectedNumber={pr.number}
         onSelect={(prNumber) => void selectSessionPr(sessionId, prNumber)}
+        onOpenSelected={onOpenStudio}
       />
       <LinkedIssuesSection
         issues={linkedIssues}
@@ -557,6 +556,7 @@ type LinkedPullRequestsSectionProps = {
   readonly branch: string | null;
   readonly selectedNumber: number;
   readonly onSelect: (prNumber: number) => void;
+  readonly onOpenSelected: () => void;
 };
 
 const branchScopedLabel = ({
@@ -575,6 +575,7 @@ const LinkedPullRequestsSection = ({
   branch,
   selectedNumber,
   onSelect,
+  onOpenSelected,
 }: LinkedPullRequestsSectionProps) => {
   if (prs.length === 0) {
     return null;
@@ -587,32 +588,37 @@ const LinkedPullRequestsSection = ({
         className="px-0.5 font-medium"
       />
       <div className="flex flex-col gap-1">
-        {prs.map((candidate) => (
-          <LinkedWorkRow
-            key={candidate.number}
-            leading={{ kind: 'glyph', provider: codeHostFromUrl({ url: candidate.url }) }}
-            identifier={`#${candidate.number}`}
-            title={candidate.title}
-            isSelected={candidate.number === selectedNumber}
-            ariaLabel={`Show pull request #${candidate.number}`}
-            tooltip={
-              candidate.number === selectedNumber
-                ? 'Showing this pull request'
-                : 'Show this pull request instead'
-            }
-            attribution={
-              <IssueStateBadge>{pullRequestMeta(candidate.state).label}</IssueStateBadge>
-            }
-            onClick={() => onSelect(candidate.number)}
-            actions={
-              <ExternalRefActions
-                url={candidate.url}
-                label={`pull request #${candidate.number}`}
-                hostLabel={integrationLabel({ provider: codeHostFromUrl({ url: candidate.url }) })}
-              />
-            }
-          />
-        ))}
+        {prs.map((candidate) => {
+          const isSelected = candidate.number === selectedNumber;
+          return (
+            <LinkedWorkRow
+              key={candidate.number}
+              leading={{ kind: 'glyph', provider: codeHostFromUrl({ url: candidate.url }) }}
+              identifier={`#${candidate.number}`}
+              title={candidate.title}
+              isSelected={isSelected}
+              ariaLabel={
+                isSelected
+                  ? `Open pull request #${candidate.number}`
+                  : `Show pull request #${candidate.number}`
+              }
+              tooltip={isSelected ? 'Open this pull request' : 'Show this pull request instead'}
+              attribution={
+                <IssueStateBadge>{pullRequestMeta(candidate.state).label}</IssueStateBadge>
+              }
+              onClick={() => (isSelected ? onOpenSelected() : onSelect(candidate.number))}
+              actions={
+                <ExternalRefActions
+                  url={candidate.url}
+                  label={`pull request #${candidate.number}`}
+                  hostLabel={integrationLabel({
+                    provider: codeHostFromUrl({ url: candidate.url }),
+                  })}
+                />
+              }
+            />
+          );
+        })}
       </div>
     </div>
   );

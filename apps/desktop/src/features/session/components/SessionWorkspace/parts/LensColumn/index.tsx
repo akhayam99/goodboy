@@ -51,8 +51,17 @@ type AttentionParams = {
   readonly rows: ReadonlyArray<LensRow>;
 };
 
-const BOARD_ICON_BUTTON =
-  'inline-flex shrink-0 items-center justify-center rounded-md p-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
+const boardIconButtonTint = tintClasses('primary');
+
+const BOARD_ICON_BUTTON = cn(
+  'flex shrink-0 items-center justify-center rounded-md ring-1 motion-safe:transition-colors',
+  PANE_RHYTHM.navRail.row,
+  boardIconButtonTint.bg,
+  boardIconButtonTint.text,
+  boardIconButtonTint.ring,
+  boardIconButtonTint.hoverBg,
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+);
 
 const groupWantsAttention = ({ rows }: AttentionParams): boolean => {
   return rows.some((row) => {
@@ -347,7 +356,9 @@ export const LensColumn = ({
                 title={`Back to board (${shortcutGlyphs('session.board')})`}
                 className={BOARD_ICON_BUTTON}
               >
-                <Kanban size={14} aria-hidden />
+                <span className="flex h-5 w-5 flex-none items-center justify-center">
+                  <Kanban size={14} aria-hidden />
+                </span>
               </button>
             ) : null}
           </div>
