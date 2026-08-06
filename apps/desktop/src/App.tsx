@@ -68,7 +68,7 @@ import {
 } from './store';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
-import { useWorkspaceRemoteHostKind } from './features/worktree/useWorkspaceRemoteHostKind';
+import { useGithubConnection } from './features/integrations/github/useGithubConnection';
 import { resolveSessionRepo } from './store/slices/worktrees/resolveSessionRepo';
 import { resolveOpenDiffViewerEvent } from './store/slices/session-view/openDiffViewerEvent';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
@@ -89,7 +89,7 @@ export const App = () => {
   const currentSession = useCurrentSession();
   const hasActiveSession = currentSession != null;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
-  const remoteKind = useWorkspaceRemoteHostKind({ workspaceId: currentWorkspace?.id ?? null });
+  const githubConnection = useGithubConnection({ workspaceId: currentWorkspace?.id ?? null });
   const hasLinear = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'linear',
@@ -779,7 +779,7 @@ export const App = () => {
                 activeStudio={activeStudio}
                 isSimpleWorkspace={currentWorkspace.kind === 'simple'}
                 onConvertToDevProject={() => setConvertWorkspaceOpen(true)}
-                githubEnabled={remoteKind === 'github'}
+                githubEnabled={githubConnection.isAuthenticated}
                 linearEnabled={hasLinear}
                 jiraEnabled={hasJira}
                 sentryEnabled={hasSentry}

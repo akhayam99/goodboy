@@ -137,22 +137,35 @@ describe('GitlabFormBody', () => {
     });
   });
 
-  describe('when a scoped GitHub token exists (mutual exclusivity)', () => {
+  describe('when a scoped GitHub token exists', () => {
     beforeEach(() => {
       ghStatusMock.mockResolvedValue({ scoped: true });
     });
 
-    it('shows the mutex banner and no connect form', async () => {
+    it('offers the connect form and no cross-host disconnect so both hosts coexist', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
-      expect(await screen.findByText(/Disconnect GitHub to use GitLab/i)).toBeDefined();
-      expect(screen.queryByLabelText(/personal access token/i)).toBeNull();
-      expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
+      expect(await screen.findByLabelText(/personal access token/i)).toBeDefined();
+      expect(screen.getByRole('button', { name: /^connect$/i })).toBeDefined();
+      expect(screen.queryByText(/Disconnect GitHub/i)).toBeNull();
     });
 
-    it('clears the GitHub token when the banner action is clicked', async () => {
+    it('never reads or clears the GitHub token', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
-      fireEvent.click(await screen.findByRole('button', { name: /disconnect github/i }));
-      await waitFor(() => expect(ghClearTokenMock).toHaveBeenCalledWith(WS_ID));
+      fireEvent.change(await screen.findByLabelText(/personal access token/i), {
+        target: { value: 'glpat-x' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
+      await waitFor(() =>
+        expect(state.connectGitlab).toHaveBeenCalledWith(WS_ID, 'https://gitlab.com', 'glpat-x'),
+      );
+      expect(ghStatusMock).not.toHaveBeenCalled();
+      expect(ghClearTokenMock).not.toHaveBeenCalled();
     });
+  });
+
+  it('does not claim the token never leaves this machine', async () => {
+    render(<GitlabFormBody workspaceId={WS_ID} />);
+    await screen.findByLabelText(/personal access token/i);
+    expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
   });
 });

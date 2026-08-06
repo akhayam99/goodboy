@@ -27,7 +27,6 @@ export const LinearStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
   const isConnected = resolveIntegrationConnection({
     provider: 'linear',
     integrations,
-    remoteKind: null,
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;

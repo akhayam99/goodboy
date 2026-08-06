@@ -12,11 +12,13 @@ import type { AppStore } from '../../store';
 import type { SetFn } from './types';
 import { createReviewPrsSlice, selectReviewPrs } from './index';
 
-const { detectRepoSlugSpy, listOpenPrsForRepoSpy, gitlabFetchProjectMrsSpy } = vi.hoisted(() => ({
-  detectRepoSlugSpy: vi.fn(),
-  listOpenPrsForRepoSpy: vi.fn(),
-  gitlabFetchProjectMrsSpy: vi.fn(),
-}));
+const { detectRepoSlugSpy, listOpenPrsForRepoSpy, gitlabFetchProjectMrsSpy, worktreeRemoteUrlSpy } =
+  vi.hoisted(() => ({
+    detectRepoSlugSpy: vi.fn(),
+    listOpenPrsForRepoSpy: vi.fn(),
+    gitlabFetchProjectMrsSpy: vi.fn(),
+    worktreeRemoteUrlSpy: vi.fn(),
+  }));
 
 vi.mock('@goodboy/core', () => ({
   detectRepoSlug: detectRepoSlugSpy,
@@ -32,7 +34,7 @@ vi.mock('../../../features/integrations/gitlab/client', () => ({
 }));
 
 vi.mock('../../../features/worktree/worktree', () => ({
-  worktreeRemoteUrl: vi.fn(async () => 'git@gitlab.com:acme/web.git'),
+  worktreeRemoteUrl: worktreeRemoteUrlSpy,
 }));
 
 const WS_ID = 'workspace-1' as WorkspaceId;
@@ -130,6 +132,7 @@ describe('review-prs slice', () => {
     detectRepoSlugSpy.mockResolvedValue(null);
     listOpenPrsForRepoSpy.mockResolvedValue([]);
     gitlabFetchProjectMrsSpy.mockResolvedValue([]);
+    worktreeRemoteUrlSpy.mockResolvedValue('git@gitlab.com:acme/web.git');
   });
 
   it('classifies github PRs as mine or review-requested case-insensitively', async () => {
@@ -181,6 +184,22 @@ describe('review-prs slice', () => {
     expect(byIid.get(2)?.authorAvatarUrl).toBe('https://gitlab.com/n.png');
     expect(byIid.get(1)?.mine).toBe(false);
     expect(byIid.get(4)?.reviewRequested).toBe(true);
+  });
+
+  it('skips the gitlab fetch on a github remote so the github half stays clean', async () => {
+    worktreeRemoteUrlSpy.mockResolvedValue('git@github.com:org/repo.git');
+    detectRepoSlugSpy.mockResolvedValue('org/repo');
+    listOpenPrsForRepoSpy.mockResolvedValue([buildRepoPr({ number: 7 })]);
+    gitlabFetchProjectMrsSpy.mockRejectedValue(new Error('404 project not found'));
+    const { slice, getState } = buildHarness({
+      githubStatus: { available: true, mode: 'gh-cli', user: 'me' },
+      workspaceIntegrations: { [WS_ID]: [buildGitlabIntegration()] },
+    });
+    await slice.refreshReviewPrs(WS_ID);
+    const result = selectReviewPrs(WS_ID)(getState());
+    expect(gitlabFetchProjectMrsSpy).not.toHaveBeenCalled();
+    expect(result.items.map((p) => p.id)).toEqual(['github:7']);
+    expect(result.error).toBeNull();
   });
 
   it('keeps github results when the gitlab provider fails', async () => {

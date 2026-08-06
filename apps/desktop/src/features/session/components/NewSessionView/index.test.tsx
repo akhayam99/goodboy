@@ -9,6 +9,7 @@ import type {
 
 const h = vi.hoisted(() => ({
   remoteKind: 'github' as string | null,
+  isGithubAuthenticated: true,
   listLocalBranches: vi.fn(async () => []),
   simpleSessionDirExists: vi.fn(async () => false),
   invoke: vi.fn(),
@@ -53,7 +54,7 @@ vi.mock('../../../../features/worktree/useWorkspaceRemoteHostKind', () => ({
 
 vi.mock('../../../../features/integrations/github/useGithubConnection', () => ({
   useGithubConnection: () => ({
-    isAuthenticated: true,
+    isAuthenticated: h.isGithubAuthenticated,
     isResolved: true,
     refresh: vi.fn(async () => undefined),
   }),
@@ -85,10 +86,16 @@ import { NewSessionView } from './index';
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
 const integration = (provider: 'linear' | 'sentry' | 'gitlab'): WorkspaceIntegration =>
-  ({ id: `${provider}-1`, workspaceId: WORKSPACE_ID, provider }) as WorkspaceIntegration;
+  ({
+    id: `${provider}-1`,
+    workspaceId: WORKSPACE_ID,
+    provider,
+    config: { host: 'https://gitlab.com' },
+  }) as WorkspaceIntegration;
 
 beforeEach(() => {
   h.remoteKind = 'github';
+  h.isGithubAuthenticated = true;
   h.store.workspaces[0]!.kind = 'repo';
   h.store.workspaceIntegrations = {};
   h.store.workspaceGitStatus = {};
@@ -405,8 +412,20 @@ describe('NewSessionView issue sources', () => {
     expect(screen.queryByRole('tab', { name: /GitLab/ })).toBeNull();
   });
 
+  it('keeps the GitHub tab on a GitLab remote when a GitHub token is connected', () => {
+    h.remoteKind = 'gitlab';
+    h.store.workspaceIntegrations = { [WORKSPACE_ID]: [integration('gitlab')] };
+
+    render(
+      <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,
+    );
+
+    expect(screen.getByRole('tab', { name: /GitHub/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /GitLab/ })).toBeDefined();
+  });
+
   it('drops the section when nothing is connected', () => {
-    h.remoteKind = 'other';
+    h.isGithubAuthenticated = false;
 
     render(
       <NewSessionView onClose={vi.fn()} workspaceId={WORKSPACE_ID} onOpenSettings={vi.fn()} />,

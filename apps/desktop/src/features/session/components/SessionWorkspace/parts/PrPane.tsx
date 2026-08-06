@@ -319,7 +319,6 @@ const GithubPrCard = ({
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
     integrations: workspaceIntegrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated:
       githubConnection.isResolved === false || githubConnection.isAuthenticated,

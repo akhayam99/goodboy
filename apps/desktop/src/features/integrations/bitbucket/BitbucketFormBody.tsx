@@ -151,8 +151,9 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
           <p className="text-2xs leading-relaxed text-muted-foreground">
             Bitbucket Cloud only, Data Center and Server are not supported. An older Bitbucket app
             password works in the same field while Atlassian keeps it alive. The secret carries your
-            own Bitbucket permissions and is stored encrypted in your operating system keychain,
-            never leaving this machine.
+            own Bitbucket permissions and is stored encrypted in your operating system keychain.
+            Goodboy sends it directly to Bitbucket over HTTPS; it never touches Goodboy&apos;s own
+            servers.
           </p>
         </>
       )}

@@ -134,7 +134,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const connection = resolveIntegrationConnection({
     provider,
     integrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated:
       provider !== 'github' ||

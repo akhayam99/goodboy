@@ -19,7 +19,10 @@ const { hooks, remote, store } = vi.hoisted(() => {
       attachedRuns: [] as ReadonlyArray<unknown>,
       resolverLinks: [] as ReadonlyArray<unknown>,
     },
-    remote: { kind: 'github' as 'github' | 'gitlab' | 'other' | null },
+    remote: {
+      kind: 'github' as 'github' | 'gitlab' | 'other' | null,
+      isGithubAuthenticated: true,
+    },
     store: {
       sessionMounts: {},
       sessionActiveMount: {},
@@ -101,7 +104,7 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
 
 vi.mock('../../../../../integrations/github/useGithubConnection', () => ({
   useGithubConnection: () => ({
-    isAuthenticated: true,
+    isAuthenticated: remote.isGithubAuthenticated,
     isResolved: true,
     refresh: vi.fn(async () => undefined),
   }),
@@ -131,6 +134,7 @@ const SESSION = {
 
 beforeEach(() => {
   remote.kind = 'github';
+  remote.isGithubAuthenticated = true;
   hooks.agentCount = 0;
   hooks.doneAgentCount = 0;
   hooks.planCount = 0;
@@ -626,6 +630,7 @@ describe('LensColumn', () => {
     (label, lens, studioEvent) => {
       store.workspaceIntegrations = {};
       remote.kind = null;
+      remote.isGithubAuthenticated = false;
       const listener = vi.fn();
       window.addEventListener(studioEvent, listener);
       const onSelect = vi.fn();

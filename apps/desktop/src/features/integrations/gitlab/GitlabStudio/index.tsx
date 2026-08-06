@@ -47,7 +47,6 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
   const isConnected = resolveIntegrationConnection({
     provider: 'gitlab',
     integrations,
-    remoteKind: null,
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;

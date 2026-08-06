@@ -1,4 +1,5 @@
 import type { ReviewablePrProvider, SessionExternalTask, SessionId } from '@goodboy/types';
+import { PROVIDER_PRIORITY } from '../../../features/session/components/SessionWorkspace/parts/resolvePullRequestProvider';
 import type { GetFn } from './types';
 
 export type ReviewTarget = {
@@ -7,8 +8,13 @@ export type ReviewTarget = {
   readonly prNumber: number;
 };
 
+type ReviewableTask = SessionExternalTask & { readonly provider: ReviewablePrProvider };
+
+const isReviewableTask = (task: SessionExternalTask): task is ReviewableTask =>
+  task.provider === 'github' || task.provider === 'gitlab';
+
 type RepoFromTaskParams = {
-  readonly task: SessionExternalTask;
+  readonly task: ReviewableTask;
 };
 
 const repoFromTask = ({ task }: RepoFromTaskParams): string | null => {
@@ -29,17 +35,11 @@ const repoFromTask = ({ task }: RepoFromTaskParams): string | null => {
   }
 };
 
-type FromTasksParams = {
-  readonly tasks: ReadonlyArray<SessionExternalTask>;
+type TargetFromTaskParams = {
+  readonly task: ReviewableTask;
 };
 
-export const reviewTargetFromTasks = ({ tasks }: FromTasksParams): ReviewTarget | null => {
-  const task =
-    tasks.find((candidate) => candidate.provider === 'github' || candidate.provider === 'gitlab') ??
-    null;
-  if (task == null) {
-    return null;
-  }
+const targetFromTask = ({ task }: TargetFromTaskParams): ReviewTarget | null => {
   const prNumber = Number.parseInt(task.externalId, 10);
   if (!Number.isInteger(prNumber) || prNumber <= 0) {
     return null;
@@ -48,7 +48,45 @@ export const reviewTargetFromTasks = ({ tasks }: FromTasksParams): ReviewTarget 
   if (repo == null) {
     return null;
   }
-  return { provider: task.provider as ReviewablePrProvider, repo, prNumber };
+  return { provider: task.provider, repo, prNumber };
+};
+
+type PrKeyParams = {
+  readonly provider: ReviewablePrProvider;
+  readonly prNumber: number;
+};
+
+export const reviewPrKey = ({ provider, prNumber }: PrKeyParams): string =>
+  `${provider}#${prNumber}`;
+
+const byProviderThenNumber = (left: ReviewTarget, right: ReviewTarget): number => {
+  const rank = PROVIDER_PRIORITY.indexOf(left.provider) - PROVIDER_PRIORITY.indexOf(right.provider);
+  if (rank !== 0) {
+    return rank;
+  }
+  return left.prNumber - right.prNumber;
+};
+
+type FromTasksParams = {
+  readonly tasks: ReadonlyArray<SessionExternalTask>;
+  readonly discoveredPrKeys?: ReadonlySet<string>;
+};
+
+export const reviewTargetFromTasks = ({
+  tasks,
+  discoveredPrKeys,
+}: FromTasksParams): ReviewTarget | null => {
+  const candidates = tasks
+    .filter(isReviewableTask)
+    .flatMap((task) => {
+      const target = targetFromTask({ task });
+      return target == null ? [] : [target];
+    })
+    .sort(byProviderThenNumber);
+  const discovered = candidates.find(
+    (candidate) => discoveredPrKeys?.has(reviewPrKey(candidate)) === true,
+  );
+  return discovered ?? candidates[0] ?? null;
 };
 
 type Params = {
@@ -56,5 +94,20 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
+const discoveredPrKeysForSession = ({ get, sessionId }: Params): ReadonlySet<string> => {
+  const keys = new Set<string>();
+  for (const pr of get().sessionGithubPrs?.[sessionId] ?? []) {
+    keys.add(reviewPrKey({ provider: 'github', prNumber: pr.number }));
+  }
+  const mergeRequest = get().sessionGitlabMr?.[sessionId]?.mr ?? null;
+  if (mergeRequest != null) {
+    keys.add(reviewPrKey({ provider: 'gitlab', prNumber: mergeRequest.iid }));
+  }
+  return keys;
+};
+
 export const resolveReviewTarget = ({ get, sessionId }: Params): ReviewTarget | null =>
-  reviewTargetFromTasks({ tasks: get().sessionExternalTasks[sessionId] ?? [] });
+  reviewTargetFromTasks({
+    tasks: get().sessionExternalTasks?.[sessionId] ?? [],
+    discoveredPrKeys: discoveredPrKeysForSession({ get, sessionId }),
+  });

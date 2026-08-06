@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { Button, Input } from '@goodboy/ui';
 import { CheckCircle2, Unplug } from 'lucide-react';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
-import { useAppStore } from '../../../store';
 import { formatError } from '../../../shared/lib/errors';
 import { CreateTokenLink } from './CreateTokenLink';
 
@@ -19,13 +17,6 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const gitlabConnected = useAppStore(
-    useShallow((s) =>
-      (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab'),
-    ),
-  );
-  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab);
 
   const refresh = useCallback(async () => {
     try {
@@ -85,21 +76,6 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             {busy ? 'Disconnecting…' : 'Disconnect'}
           </Button>
         </div>
-      ) : gitlabConnected ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            GitLab is connected for this workspace. Disconnect GitLab to use a GitHub token.
-          </p>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => void disconnectGitlab(workspaceId)}
-            disabled={busy}
-          >
-            <Unplug size={12} aria-hidden />
-            Disconnect GitLab
-          </Button>
-        </div>
       ) : (
         <>
           <p className="text-xs leading-relaxed text-muted-foreground">
@@ -120,8 +96,8 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             <CreateTokenLink />
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
-            The token is stored encrypted in your operating system keychain and never leaves this
-            machine.
+            The token is stored encrypted in your operating system keychain. Goodboy sends it
+            directly to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.
           </p>
         </>
       )}
@@ -132,7 +108,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         </div>
       ) : null}
 
-      {scoped || gitlabConnected ? null : (
+      {scoped ? null : (
         <div className="flex justify-end">
           <Button
             onClick={() => void onConnect()}

@@ -3,7 +3,7 @@ import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghStatus } from '../../github/github';
 
 type Params = {
-  readonly workspaceId: WorkspaceId;
+  readonly workspaceId: WorkspaceId | null;
 };
 
 type ConnectionState = {
@@ -18,6 +18,10 @@ export const useGithubConnection = ({ workspaceId }: Params) => {
   });
 
   const refresh = useCallback(async () => {
+    if (workspaceId == null) {
+      setConnection({ status: null, isResolved: true });
+      return;
+    }
     try {
       const status = await ghStatus(workspaceId);
       setConnection({ status, isResolved: true });

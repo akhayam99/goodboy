@@ -183,8 +183,8 @@ function Absent({
       ) : null}
       <CreateTokenLink />
       <p className="text-3xs text-muted-foreground">
-        token is stored in your OS keychain via the system credential store. it never leaves your
-        machine.
+        token is stored in your OS keychain via the system credential store. Goodboy sends it
+        directly to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.
       </p>
     </div>
   );

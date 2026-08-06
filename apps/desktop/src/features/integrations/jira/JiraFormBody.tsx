@@ -171,8 +171,8 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             Jira Cloud only, Data Center and Server are not supported. The token carries your own
-            Jira permissions and is stored encrypted in your operating system keychain, never
-            leaving this machine.
+            Jira permissions and is stored encrypted in your operating system keychain. Goodboy
+            sends it directly to Jira over HTTPS; it never touches Goodboy&apos;s own servers.
           </p>
         </>
       )}
