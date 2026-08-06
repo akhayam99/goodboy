@@ -7,6 +7,54 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.67
+
+The footer and the top bar were reorganised, and a workspace can now hold more than one code host.
+
+### [#1277] Connect integrations from grouped footer controls
+
+Seven integration buttons had grown to fill half the footer, in one undifferentiated row, each carrying a text label whether or not you used it. They are now three groups, split by a divider: code hosts (GitHub, GitLab, Bitbucket), trackers (Linear, Jira, Sentry), and conversation tools (Slack).
+
+A group shows only what you have connected, as a glyph, and ends with an add control. Opening that control lists every integration of that kind with its connection state, so the ones you have not turned on are one click away instead of taking a permanent slot. A group with nothing connected labels its add control with what it offers, so a first run reads "Code host" rather than three anonymous glyphs.
+
+In a workspace with no repository the code-host group gives way to the same "Add a repo" action as before, and Sentry drops out of the trackers.
+
+### [#1282] Reach settings, updates and the changelog from the footer
+
+The top bar now reports only what is happening: what needs you, what is running, today's spend, notifications, and the theme. Settings and the update control moved down to the footer, which is where destinations live. Budget, Impact and the changelog moved behind one More control beside them.
+
+That More control carries a dot when the notes for the version you are running have not been opened, and clears it once the changelog is open with those notes actually loaded. Offline, or while the fetch is still in flight, the dot stays put rather than being spent on an error screen. Today's spend still sits in the top bar and still opens the budget studio in one click.
+
+### [#1278] Use GitHub for code and GitLab for tickets
+
+Connecting GitHub used to block GitLab, and connecting GitLab used to block GitHub. Both restrictions are gone, and so is the deeper one behind them: GitHub counted as connected only when the workspace's git remote was GitHub, so a valid token reported itself as absent and GitHub disappeared from the new-session issue picker on any other repository.
+
+A workspace can now hold any mix of the three code hosts. Six connect forms also stopped claiming your token "never leaves this machine", which was never true for a token the vendor has to receive: they now say it is stored in your keychain, sent to the vendor over HTTPS, and never touches Goodboy's own servers.
+
+Follow-up: a mixed-host workspace was exercised through the test suite, not against live GitLab or Bitbucket accounts.
+
+### [#1279] Disconnect an integration from its studio
+
+The disconnect button lived inside the connect form, and the connect form unmounts the moment you connect, so from the studio there was no way back out. For Slack there was no way out anywhere in the app.
+
+Every integration studio now carries a disconnect in its header, behind a confirm, and it clears the credential from your keychain along with the workspace's record of it. For GitHub it removes this workspace's token and says so, and it never touches a system `gh` login, so it does not appear when that login is all you have.
+
+### [#1281] Read what went wrong when a token is refused
+
+Pasting a bad GitHub token used to print the `gh` command's own error output into the onboarding step. It now says which of six things happened, and what to do next: the token was rejected, it expired, it is missing the repo scope or an SSO authorization, GitHub is rate limiting it, the certificate could not be verified, or github.com could not be reached. Anything unrecognised still quotes what `gh` said, rather than guessing.
+
+Follow-up: the classification reads `gh`'s wording, so a message GitHub changes could fall through to that quoted fallback instead of a written cause.
+
+### Fixes
+
+- Escape closes the onboarding wizard wherever "Skip setup" is offered, so an accidental reopen is no longer a full-screen dead end [#1281]
+- "Connect a provider" is now in the command palette, the one setup step you cannot skip [#1281]
+- The onboarding checklist's hide control no longer points at the sidebar for a control that lives in the top bar [#1281]
+- The code-host onboarding step no longer says you can only use one at a time [#1278]
+- A GitLab failure no longer poisons the pull request panel when the GitHub half succeeded [#1278]
+- Review comments resolve to one pull request deterministically, instead of following whichever linked task happened to load first [#1278]
+- The empty-provider nudge in the footer now respects reduced-motion settings [#1282]
+
 ## Goodboy v0.1.66
 
 Seven integrations shipped in five releases, and the surface around them fell behind. This one makes every connected host reachable, and makes the states they report honest.
