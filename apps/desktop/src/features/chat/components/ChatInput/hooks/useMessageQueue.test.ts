@@ -17,7 +17,7 @@ const makeTurn = (id: string, content = 'hi'): QueuedTurn => ({
 });
 
 const noop = () => {};
-const resolved = () => Promise.resolve();
+const resolved = () => Promise.resolve({ blockedOverBudget: false });
 
 beforeEach(() => {
   useAppStore.setState({ agentQueue: {} });
@@ -135,7 +135,7 @@ describe('useMessageQueue', () => {
   });
 
   it('dispatches the head turn when the agent goes from running to idle', () => {
-    const dispatchTurn = vi.fn().mockResolvedValue(undefined);
+    const dispatchTurn = vi.fn().mockResolvedValue({ blockedOverBudget: false });
     const { result, rerender } = renderHook(
       ({ isRunning }) => useMessageQueue({ agentId: AGENT, isRunning, dispatchTurn, onEdit: noop }),
       { initialProps: { isRunning: true } },
@@ -144,12 +144,17 @@ describe('useMessageQueue', () => {
       result.current.enqueue(makeTurn('t1', 'queued'));
     });
     rerender({ isRunning: false });
-    expect(dispatchTurn).toHaveBeenCalledWith('queued', [], undefined, AGENT);
+    expect(dispatchTurn).toHaveBeenCalledWith({
+      content: 'queued',
+      atts: [],
+      override: undefined,
+      agentId: AGENT,
+    });
     expect(result.current.queue).toEqual([]);
   });
 
   it('dispatches the exact routing override captured by the queued turn', () => {
-    const dispatchTurn = vi.fn().mockResolvedValue(undefined);
+    const dispatchTurn = vi.fn().mockResolvedValue({ blockedOverBudget: false });
     const override = {
       providerId: 'anthropic',
       model: 'claude-opus-5',
@@ -165,12 +170,17 @@ describe('useMessageQueue', () => {
 
     rerender({ isRunning: false });
 
-    expect(dispatchTurn).toHaveBeenCalledWith('queued with override', [], override, AGENT);
-    expect(dispatchTurn.mock.calls[0]?.[2]).toBe(override);
+    expect(dispatchTurn).toHaveBeenCalledWith({
+      content: 'queued with override',
+      atts: [],
+      override,
+      agentId: AGENT,
+    });
+    expect(dispatchTurn.mock.calls[0]?.[0]?.override).toBe(override);
   });
 
   it('dispatches to the agent captured by the queued turn', () => {
-    const dispatchTurn = vi.fn().mockResolvedValue(undefined);
+    const dispatchTurn = vi.fn().mockResolvedValue({ blockedOverBudget: false });
     const { result, rerender } = renderHook(
       ({ isRunning }) => useMessageQueue({ agentId: AGENT, isRunning, dispatchTurn, onEdit: noop }),
       { initialProps: { isRunning: true } },
@@ -184,16 +194,16 @@ describe('useMessageQueue', () => {
 
     rerender({ isRunning: false });
 
-    expect(dispatchTurn).toHaveBeenCalledWith(
-      'queued for another agent',
-      [],
-      undefined,
-      OTHER_AGENT,
-    );
+    expect(dispatchTurn).toHaveBeenCalledWith({
+      content: 'queued for another agent',
+      atts: [],
+      override: undefined,
+      agentId: OTHER_AGENT,
+    });
   });
 
   it('holds turns queued while idle without a running-to-idle transition', () => {
-    const dispatchTurn = vi.fn().mockResolvedValue(undefined);
+    const dispatchTurn = vi.fn().mockResolvedValue({ blockedOverBudget: false });
     const { result } = renderHook(() =>
       useMessageQueue({ agentId: AGENT, isRunning: false, dispatchTurn, onEdit: noop }),
     );

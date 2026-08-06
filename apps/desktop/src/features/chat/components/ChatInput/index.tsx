@@ -182,11 +182,17 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   }, []);
 
   const sendWith = useCallback(
-    async (
-      content: string,
-      atts: ReadonlyArray<PendingAttachment>,
-      modelOverrideId: string | null,
-    ) => {
+    async ({
+      content,
+      atts,
+      modelOverrideId,
+      force = false,
+    }: {
+      readonly content: string;
+      readonly atts: ReadonlyArray<PendingAttachment>;
+      readonly modelOverrideId: string | null;
+      readonly force?: boolean;
+    }) => {
       const override: TurnProviderOverride | undefined = routing.allowOverride
         ? modelOverrideId == null
           ? routing.routingOverride
@@ -218,7 +224,18 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       if (selectedAgentId == null) {
         return;
       }
-      await dispatch.dispatchTurn(content, atts, override, selectedAgentId);
+      const result = await dispatch.dispatchTurn({
+        content,
+        atts,
+        override,
+        agentId: selectedAgentId,
+        force,
+      });
+      if (!result.blockedOverBudget) {
+        return;
+      }
+      setValue(content);
+      setAttachments(atts);
     },
     [
       routing.allowOverride,
@@ -229,23 +246,31 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       selectedAgentId,
       enqueue,
       dispatch.dispatchTurn,
+      setValue,
+      setAttachments,
     ],
   );
 
-  const onSend = async () => {
+  const submitDraft = async ({ force }: { readonly force: boolean }) => {
     const content = value.trim();
     const atts = attachments;
     if ((!content && atts.length === 0) || providerDisconnected) return;
     dispatch.setError(null);
     dispatch.setLastFailedTurn(null);
 
-    if (await scope.checkAndInterceptScope(content, atts)) return;
-    if (!isRunning && (await rightSize.checkAndInterceptRightSize(content, atts))) return;
+    if (!force) {
+      if (await scope.checkAndInterceptScope(content, atts)) return;
+      if (!isRunning && (await rightSize.checkAndInterceptRightSize(content, atts))) return;
+    }
 
     setValue('');
     setAttachments([]);
-    await sendWith(content, atts, null);
+    await sendWith({ content, atts, modelOverrideId: null, force });
   };
+
+  const onSend = async () => submitDraft({ force: false });
+
+  const onSendAnyway = async () => submitDraft({ force: true });
 
   const onScopeSpawn = async () => {
     if (!scope.scopePending) return;
@@ -275,7 +300,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setValue('');
     setAttachments([]);
     await scope.recordScopeOutcome('overridden');
-    await sendWith(content, atts, null);
+    await sendWith({ content, atts, modelOverrideId: null });
   };
 
   const onScopeDismiss = async () => {
@@ -293,7 +318,11 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setAttachments([]);
     if (suggested !== null) routing.setSelectedModel(suggested);
     await rightSize.recordRightSizeOutcome({ outcome: 'accepted' });
-    await sendWith(pending.content, pending.attachments, suggested);
+    await sendWith({
+      content: pending.content,
+      atts: pending.attachments,
+      modelOverrideId: suggested,
+    });
   };
 
   const onKeepCurrent = async () => {
@@ -304,7 +333,11 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     setValue('');
     setAttachments([]);
     await rightSize.recordRightSizeOutcome({ outcome: 'overridden' });
-    await sendWith(pending.content, pending.attachments, null);
+    await sendWith({
+      content: pending.content,
+      atts: pending.attachments,
+      modelOverrideId: null,
+    });
   };
 
   const onChangeModel = async () => {
@@ -369,7 +402,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
             sessionPreference={session.providerPreference}
             turnOverride={routing.routingOverride}
             connectedProviders={routing.connectedProviderIds}
-            onSendAnyway={value.trim().length > 0 ? () => void onSend() : undefined}
+            onSendAnyway={value.trim().length > 0 ? () => void onSendAnyway() : undefined}
           />
         )}
         <SuggestionStack items={suggestions} />
@@ -553,12 +586,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                       const failed = dispatch.lastFailedTurn;
                       if (!failed) return;
                       dispatch.setError(null);
-                      void dispatch.dispatchTurn(
-                        failed.content,
-                        failed.attachments,
-                        failed.override,
-                        failed.agentId,
-                      );
+                      void dispatch.dispatchTurn({
+                        content: failed.content,
+                        atts: failed.attachments,
+                        override: failed.override,
+                        agentId: failed.agentId,
+                      });
                     },
                   }
                 : undefined

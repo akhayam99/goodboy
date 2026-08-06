@@ -95,7 +95,7 @@ import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRouting
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
-import type { GetFn, SetFn } from './types';
+import type { GetFn, SendTurnResult, SetFn } from './types';
 
 const EFFORT_FLAG_BY_PROVIDER = {
   anthropic: '--effort',
@@ -113,6 +113,7 @@ type Input = {
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
+  force?: boolean;
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -120,6 +121,8 @@ type Input = {
     readonly attachmentRefs: ReadonlyArray<MessageAttachment>;
   };
 };
+
+const DISPATCHED: SendTurnResult = { blockedOverBudget: false };
 
 // Machine-derived context slot carrying `git diff --numstat` lines for the
 // session's changed files (vs the same merge-base as the desktop file-changes
@@ -134,8 +137,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     content,
     attachments,
     override,
+    force,
     retry,
-  }: Input): Promise<void> => {
+  }: Input): Promise<SendTurnResult> => {
     const before = get();
     const session = before.sessions.find((s) => s.id === sessionId);
     if (!session) {
@@ -207,7 +211,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       now,
     });
     if (!slashResult.ok) {
-      return;
+      return DISPATCHED;
     }
     let resolvedPrompt = slashResult.resolvedPrompt;
 
@@ -232,7 +236,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             now,
           });
     if (!attachmentResult.ok) {
-      return;
+      return DISPATCHED;
     }
     const attachmentRefs = attachmentResult.attachmentRefs;
     resolvedPrompt = attachmentResult.resolvedPrompt;
@@ -404,11 +408,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ? { ...session.providerPreference, allowTurnOverride: true }
         : session.providerPreference;
 
-    const routingDecision = await resolveProviderForTurn(
-      routingPreference,
-      effectiveOverride,
+    const routingDecision = await resolveProviderForTurn({
+      sessionPreference: routingPreference,
+      turnOverride: effectiveOverride,
       connectedProviders,
-    );
+      ...(force === true ? { force: true } : {}),
+    });
 
     if (routingDecision.reason === 'all-exceeded') {
       const runId = crypto.randomUUID() as ProviderRunId;
@@ -419,7 +424,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           'All providers have exceeded their budget cap. Adjust budget rules or wait for the next billing period.',
         at: now(),
       });
-      return;
+      return { blockedOverBudget: true };
     }
 
     const movedForBudget = budgetRoutingReason({ reason: routingDecision.reason });
@@ -518,7 +523,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         message: encodeAuthRequiredMessage({ providerId: provider, identity: authState.identity }),
         at: now(),
       });
-      return;
+      return DISPATCHED;
     }
 
     const resolvedOverride =
@@ -679,7 +684,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         phaseWorkflowRunId,
         now,
       });
-      return;
+      return DISPATCHED;
     }
 
     const sharedSlots = get().sessionSlots[sessionId] ?? [];
@@ -1138,12 +1143,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const retryState: TurnState = { kind: 'idle', lastActivityAt: now() };
         const retryDerived = applyAgentTurnState(set, sessionId, activeAgentId, retryState, now());
         await updateSessionState(tauriDatabase, sessionId, retryDerived, now());
-        await run({
+        return await run({
           sessionId,
           agentId: activeAgentId,
           content,
           ...(attachments !== undefined && { attachments }),
           ...(override !== undefined && { override }),
+          ...(force === true ? { force: true } : {}),
           retry: {
             attempt: (retry?.attempt ?? 0) + 1,
             provider: fallbackPlan.provider,
@@ -1151,7 +1157,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             attachmentRefs,
           },
         });
-        return;
       }
       const errorState: TurnState = {
         kind: 'error',
@@ -1261,6 +1266,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (lastError) {
       throw lastError;
     }
+    return DISPATCHED;
   };
   return run;
 };

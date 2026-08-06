@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const { resolveMock, featuresState } = vi.hoisted(() => ({
   resolveMock: vi.fn(),
@@ -44,6 +44,35 @@ describe('RoutingIndicator', () => {
       />,
     );
     await waitFor(() => screen.getByText(/all provider budgets exceeded/i));
+  });
+
+  it('wires the send anyway button when the escape hatch is passed', async () => {
+    const onSendAnyway = vi.fn();
+    resolveMock.mockResolvedValue({ reason: 'all-exceeded' });
+    render(
+      <RoutingIndicator
+        sessionPreference={null as never}
+        turnOverride={undefined}
+        connectedProviders={[]}
+        onSendAnyway={onSendAnyway}
+      />,
+    );
+    const button = await waitFor(() => screen.getByRole('button', { name: 'Send anyway' }));
+    fireEvent.click(button);
+    expect(onSendAnyway).toHaveBeenCalledTimes(1);
+  });
+
+  it('omits the send anyway button when no escape hatch is passed', async () => {
+    resolveMock.mockResolvedValue({ reason: 'all-exceeded' });
+    render(
+      <RoutingIndicator
+        sessionPreference={null as never}
+        turnOverride={undefined}
+        connectedProviders={[]}
+      />,
+    );
+    await waitFor(() => screen.getByText(/all provider budgets exceeded/i));
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('renders the fallback-budget warning with the selected provider', async () => {

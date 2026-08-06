@@ -153,6 +153,7 @@ import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
+import type { SendTurnResult } from './slices/turn/types';
 import { createWorktreesSlice } from './slices/worktrees';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
@@ -376,7 +377,8 @@ export type AppActions = {
     content: string;
     attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;
-  }): Promise<void>;
+    force?: boolean;
+  }): Promise<SendTurnResult>;
   cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
   refreshWorkspaceSummary(workspaceId: WorkspaceId): Promise<void>;

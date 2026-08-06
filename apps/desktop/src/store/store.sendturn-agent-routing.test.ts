@@ -1133,9 +1133,9 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
     expect(spy).toHaveBeenCalled();
-    const [preference, override] = spy.mock.calls[0]!;
-    expect(preference.allowTurnOverride).toBe(true);
-    expect(override).toEqual({ providerId: 'codex', model: 'gpt-5-codex' });
+    const [params] = spy.mock.calls[0]!;
+    expect(params.sessionPreference.allowTurnOverride).toBe(true);
+    expect(params.turnOverride).toEqual({ providerId: 'codex', model: 'gpt-5-codex' });
   });
 
   it('a resolver that emits a resolution marker records committed and advances the queue', async () => {

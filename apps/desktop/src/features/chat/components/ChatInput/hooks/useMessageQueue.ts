@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { AgentId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import type { PendingAttachment, QueuedTurn } from '../lib';
+import type { QueuedTurn } from '../lib';
+import type { SendTurnResult } from '../../../../../store/slices/turn/types';
+import type { DispatchTurnParams } from './useTurnDispatch';
 
 type UseMessageQueueArgs = {
   readonly agentId: AgentId | null;
   readonly isRunning: boolean;
-  readonly dispatchTurn: (
-    content: string,
-    atts: ReadonlyArray<PendingAttachment>,
-    override: QueuedTurn['override'],
-    agentId: AgentId,
-  ) => Promise<void>;
+  readonly dispatchTurn: (params: DispatchTurnParams) => Promise<SendTurnResult>;
   readonly onEdit: (item: QueuedTurn) => void;
 };
 
@@ -32,7 +29,12 @@ export function useMessageQueue({ agentId, isRunning, dispatchTurn, onEdit }: Us
       const [next, ...rest] = queue;
       setAgentQueue(agentId, rest);
       if (next) {
-        void dispatchTurn(next.content, next.attachments, next.override, next.agentId);
+        void dispatchTurn({
+          content: next.content,
+          atts: next.attachments,
+          override: next.override,
+          agentId: next.agentId,
+        });
       }
     }
   }, [agentId, isRunning, queue, dispatchTurn, setAgentQueue]);

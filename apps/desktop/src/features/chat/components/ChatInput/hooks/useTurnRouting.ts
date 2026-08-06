@@ -105,29 +105,38 @@ export const useTurnRouting = ({ session }: Params) => {
     modelId: effectiveModelId,
   });
   const effectiveEffort = clampEffort(effectiveModel, effort);
-  const storedSelection = resolveStoredModelSelection({
-    provider: effectiveProvider,
-    id: effectiveModelId,
-    effort: effectiveEffort,
-  });
-  const effectiveSelection =
-    storedSelection.report?.kind === 'unknown'
-      ? resolveStoredModelSelection({
-          provider: effectiveProvider,
-          id: effectiveModel,
-          effort: effectiveEffort,
-        }).selection
-      : storedSelection.selection;
-  const routingOverride: TurnProviderOverride | undefined = allowOverride
-    ? {
-        providerId: effectiveProvider,
-        model: effectiveModel,
-        selection: effectiveSelection,
-        explicit: isPicked,
-      }
-    : undefined;
+  const effectiveSelection = useMemo(() => {
+    const stored = resolveStoredModelSelection({
+      provider: effectiveProvider,
+      id: effectiveModelId,
+      effort: effectiveEffort,
+    });
+    if (stored.report?.kind !== 'unknown') {
+      return stored.selection;
+    }
+    return resolveStoredModelSelection({
+      provider: effectiveProvider,
+      id: effectiveModel,
+      effort: effectiveEffort,
+    }).selection;
+  }, [effectiveProvider, effectiveModelId, effectiveModel, effectiveEffort]);
 
-  const connectedProviderIds = connectedProviders.map((p) => p.id);
+  const routingOverride: TurnProviderOverride | undefined = useMemo(() => {
+    if (!allowOverride) {
+      return undefined;
+    }
+    return {
+      providerId: effectiveProvider,
+      model: effectiveModel,
+      selection: effectiveSelection,
+      explicit: isPicked,
+    };
+  }, [allowOverride, effectiveProvider, effectiveModel, effectiveSelection, isPicked]);
+
+  const connectedProviderIds = useMemo(
+    () => connectedProviders.map((p) => p.id),
+    [connectedProviders],
+  );
   const providerModels = PROVIDER_CAPABILITIES[effectiveProvider].models;
   const modelCandidates = useMemo<ReadonlyArray<string>>(() => {
     const ids = new Set(providerModels.map((m) => m.id));

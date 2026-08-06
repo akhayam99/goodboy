@@ -10,11 +10,10 @@ import type {
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
-import { PROVIDER_LABEL_LOWER } from '../../../providers/providers';
+import { PROVIDER_LABEL } from '../../utils/chat-constants';
 import { tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
 
-const dangerAccent = tintClasses('danger');
 const warningAccent = tintClasses('warning');
 
 type Props = {
@@ -34,7 +33,11 @@ export const RoutingIndicator = ({
 
   useEffect(() => {
     let cancelled = false;
-    resolveProviderForTurn(sessionPreference, turnOverride, [...connectedProviders]).then((d) => {
+    void resolveProviderForTurn({
+      sessionPreference,
+      turnOverride,
+      connectedProviders: [...connectedProviders],
+    }).then((d) => {
       if (!cancelled) {
         setDecision(d);
       }
@@ -54,19 +57,19 @@ export const RoutingIndicator = ({
   if (decision.reason === 'all-exceeded') {
     return (
       <TranscriptShell
-        tone="danger"
+        tone="warning"
         variant="boxed"
-        className={`flex items-center gap-2 text-xs ${dangerAccent.text}`}
+        className={`flex items-center gap-2 text-xs ${warningAccent.text}`}
       >
         <AlertTriangle size={13} aria-hidden className="shrink-0" />
-        <span className="flex-1">all provider budgets exceeded</span>
+        <span className="flex-1">All provider budgets exceeded</span>
         {onSendAnyway ? (
           <button
             type="button"
             onClick={onSendAnyway}
-            className={`shrink-0 rounded-md border px-2 py-0.5 font-medium transition-colors ${dangerAccent.border} ${dangerAccent.hoverBg} ${dangerAccent.text}`}
+            className={`shrink-0 rounded-md border px-2 py-0.5 font-medium transition-colors ${warningAccent.border} ${warningAccent.hoverBg} ${warningAccent.text}`}
           >
-            send anyway
+            Send anyway
           </button>
         ) : null}
       </TranscriptShell>
@@ -81,9 +84,9 @@ export const RoutingIndicator = ({
     return null;
   }
 
-  const fromLabel = PROVIDER_LABEL_LOWER[decision.fallbackFrom];
+  const fromLabel = PROVIDER_LABEL[decision.fallbackFrom];
   const causeByReason: Partial<Record<RoutingReason, string>> = {
-    'fallback-budget': `budget exceeded for ${fromLabel}`,
+    'fallback-budget': `Budget exceeded for ${fromLabel}`,
     'fallback-threshold': `${fromLabel} past its budget threshold`,
     'fallback-disconnected': `${fromLabel} disconnected`,
   };
@@ -97,7 +100,7 @@ export const RoutingIndicator = ({
     >
       <AlertTriangle size={13} aria-hidden className="shrink-0" />
       <span className="flex items-center gap-1.5">
-        fallback to
+        Fallback to
         <RoutingBadge provider={decision.selectedProvider} model={decision.selectedModel} />
         <span>({cause})</span>
       </span>
