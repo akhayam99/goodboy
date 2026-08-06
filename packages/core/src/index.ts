@@ -146,6 +146,7 @@ export { computeProviderCostUsd } from './providers/provider-cost';
 export { contextTokensForUsage, inputTokensForUsage } from './providers/context-tokens';
 
 export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
+export { costCoverage, type CostCoverage } from './providers/cost-coverage';
 
 export { computeCursorCostUsd } from './providers/cursor/cost';
 export { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
