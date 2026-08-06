@@ -1,54 +1,13 @@
-import type { ReactNode } from 'react';
-import { cn, Divider, StatusDot, tintClasses, type Tone } from '@goodboy/ui';
+import { Fragment } from 'react';
+import { Divider } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
-import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
+import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import { BetaPill } from '../../../shared/components/BetaPill';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-
-type FooterButtonProps = {
-  icon: ReactNode;
-  label: string;
-  title?: string;
-  onClick: () => void;
-  pulse?: boolean;
-  active?: boolean;
-  connected?: boolean;
-  tone?: Tone;
-};
-
-const FooterButton = ({
-  icon,
-  label,
-  title,
-  onClick,
-  pulse,
-  active,
-  connected,
-  tone = 'neutral',
-}: FooterButtonProps) => (
-  <button
-    type="button"
-    onClick={onClick}
-    title={title ?? label}
-    aria-label={title ?? label}
-    className={cn(
-      'relative flex items-center gap-1.5 rounded px-2 py-1 text-2xs font-medium transition-colors',
-      active
-        ? 'bg-muted text-foreground'
-        : pulse
-          ? 'animate-soft-pulse text-info hover:bg-info/10'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-      connected === false && 'opacity-40',
-    )}
-  >
-    <span className={cn('flex items-center', active && tintClasses(tone).icon)}>{icon}</span>
-    <span>{label}</span>
-    {connected === false ? (
-      <StatusDot tone="warning" size="sm" className="absolute right-0 top-0 ring-1 ring-subtle" />
-    ) : null}
-  </button>
-);
+import { FOOTER_CATEGORIES } from './categories';
+import { FooterButton } from './FooterButton';
+import { IntegrationCategoryGroup } from './IntegrationCategoryGroup';
 
 type Props = {
   activeStudio: string | null;
@@ -103,95 +62,57 @@ export const AppFooter = ({
     (s) => !s.providers.some((p) => p.connection === 'connected'),
   );
 
+  const enabled = {
+    github: githubEnabled,
+    gitlab: gitlabEnabled,
+    bitbucket: bitbucketEnabled,
+    linear: linearEnabled,
+    jira: jiraEnabled,
+    sentry: sentryEnabled,
+    slack: slackEnabled,
+  } satisfies Record<IntegrationGlyphProvider, boolean>;
+
+  const openers = {
+    github: onOpenGithub,
+    gitlab: onOpenGitlab,
+    bitbucket: onOpenBitbucket,
+    linear: onOpenLinear,
+    jira: onOpenJira,
+    sentry: onOpenSentry,
+    slack: onOpenSlack,
+  } satisfies Record<IntegrationGlyphProvider, () => void>;
+
   return (
     <div className="flex shrink-0 flex-col">
       <Divider />
-      <div className="relative flex h-9 items-center justify-between bg-background px-2">
-        <div className="flex items-center gap-0.5">
-          {isSimpleWorkspace ? (
-            <FooterButton
-              icon={<FolderGit2 size={12} aria-hidden />}
-              label="Add a repo"
-              title="Turn this workspace into a dev project backed by a git repository"
-              onClick={onConvertToDevProject}
-            />
-          ) : (
-            <>
-              <FooterButton
-                icon={<IntegrationGlyph provider="github" size="xs" useBrandColor />}
-                label="GitHub"
-                title={
-                  githubEnabled
-                    ? 'Review and act on pull requests across this workspace'
-                    : 'Connect GitHub'
-                }
-                onClick={onOpenGithub}
-                active={activeStudio === 'github'}
-                connected={githubEnabled}
-              />
-              <FooterButton
-                icon={<IntegrationGlyph provider="gitlab" size="xs" useBrandColor />}
-                label="GitLab"
-                title={
-                  gitlabEnabled
-                    ? 'Review merge requests and launch a session from a GitLab issue'
-                    : 'Connect GitLab'
-                }
-                onClick={onOpenGitlab}
-                active={activeStudio === 'gitlab'}
-                connected={gitlabEnabled}
-              />
-              <FooterButton
-                icon={<IntegrationGlyph provider="bitbucket" size="xs" useBrandColor />}
-                label="Bitbucket"
-                title={
-                  bitbucketEnabled
-                    ? 'Review pull requests across this workspace'
-                    : 'Connect Bitbucket'
-                }
-                onClick={onOpenBitbucket}
-                active={activeStudio === 'bitbucket'}
-                connected={bitbucketEnabled}
-              />
-            </>
-          )}
-          <FooterButton
-            icon={<IntegrationGlyph provider="linear" size="xs" useBrandColor />}
-            label="Linear"
-            title={linearEnabled ? 'Launch a session from a Linear issue' : 'Connect Linear'}
-            onClick={onOpenLinear}
-            active={activeStudio === 'linear'}
-            connected={linearEnabled}
-          />
-          <FooterButton
-            icon={<IntegrationGlyph provider="jira" size="xs" useBrandColor />}
-            label="Jira"
-            title={jiraEnabled ? 'Launch a session from a Jira issue' : 'Connect Jira'}
-            onClick={onOpenJira}
-            active={activeStudio === 'jira'}
-            connected={jiraEnabled}
-          />
-          <FooterButton
-            icon={<IntegrationGlyph provider="slack" size="xs" useBrandColor />}
-            label="Slack"
-            title={slackEnabled ? 'Launch a session from a Slack thread' : 'Connect Slack'}
-            onClick={onOpenSlack}
-            active={activeStudio === 'slack'}
-            connected={slackEnabled}
-          />
-          {isSimpleWorkspace ? null : (
-            <FooterButton
-              icon={<IntegrationGlyph provider="sentry" size="xs" useBrandColor />}
-              label="Sentry"
-              title={sentryEnabled ? 'Launch a session from a Sentry issue' : 'Connect Sentry'}
-              onClick={onOpenSentry}
-              active={activeStudio === 'sentry'}
-              connected={sentryEnabled}
-            />
-          )}
+      <div className="grid h-9 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-background px-2 [&>*:last-child]:justify-self-end">
+        <div className="flex items-center gap-1.5">
+          {FOOTER_CATEGORIES.map((category, index) => (
+            <Fragment key={category.id}>
+              {index > 0 ? (
+                <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
+              ) : null}
+              {category.id === 'code-host' && isSimpleWorkspace ? (
+                <FooterButton
+                  icon={<FolderGit2 size={12} aria-hidden />}
+                  label="Add a repo"
+                  title="Turn this workspace into a dev project backed by a git repository"
+                  onClick={onConvertToDevProject}
+                />
+              ) : (
+                <IntegrationCategoryGroup
+                  category={category}
+                  enabled={enabled}
+                  openers={openers}
+                  activeStudio={activeStudio}
+                  isSimpleWorkspace={isSimpleWorkspace}
+                />
+              )}
+            </Fragment>
+          ))}
         </div>
 
-        <BetaPill className="pointer-events-none absolute inset-x-0 mx-auto w-fit" />
+        <BetaPill />
 
         <div className="flex items-center gap-0.5">
           <FooterButton
