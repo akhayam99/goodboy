@@ -131,7 +131,9 @@ Full details in [CONVENTIONS.md](./CONVENTIONS.md) → Pre-commit hooks.
 
 ### Releasing
 
-When asked to cut a release ("do a release", "ship vX.Y.Z"), follow the agent playbook in [docs/release-command.md](./docs/release-command.md) for step order and gotchas, which points to the technical runbook in [docs/release.md](./docs/release.md) for signing, notarization, updater, and homebrew mechanics. Do not improvise the steps. Signing runs under the personal Apple team, never Serenis.
+When asked to cut a release ("do a release", "ship vX.Y.Z"), follow the agent playbook in [docs/release-command.md](./docs/release-command.md) for step order and gotchas, which points to the technical runbook in [docs/release.md](./docs/release.md) for signing, notarization, updater, and homebrew mechanics. Do not improvise the steps. Signing runs under the maintainer's personal Apple team, never any other.
+
+Autonomous release cycles (the delivery loop that ships Goodboy unattended) are governed by [AUTONOMY.md](./AUTONOMY.md); its [safety file](./docs/autonomy/safety.md) overrules any plan or prompt.
 
 ---
 

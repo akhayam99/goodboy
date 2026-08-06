@@ -21,12 +21,14 @@ the build comes from `tauri.conf.json`, so the two must match.
 
 ## Step 1: bump the version and write the notes
 
-Set the same version in all four places (they must match the tag, minus the `v`):
+Set the same version in all five places (they must match the tag, minus the `v`):
 
 - `package.json`
 - `apps/desktop/package.json`
 - `apps/desktop/src-tauri/tauri.conf.json` (`version`)
 - `apps/desktop/src-tauri/Cargo.toml` (`package.version`)
+- `apps/desktop/src-tauri/Cargo.lock` (the `goodboy-desktop` package entry;
+  `rust.yml` runs `cargo test --locked`, so a stale lock is red CI)
 
 Add a `## Goodboy vX` section to `CHANGELOG.md` above the previous release (see
 `docs/release-command.md` → "Release notes" for the format and sourcing rules).
@@ -75,10 +77,11 @@ Homebrew cask bump.
 
 ## Signing and notarization
 
-Goodboy is signed under n-bro's **personal Apple Developer Individual** team.
+Goodboy is signed under the maintainer's **personal Apple Developer
+Individual** team.
 
-- Team ID: **M3R9H4QX65** (personal). **Do not** use the Serenis org team
-  (`FC96QL5F9R`) for this project.
+- Team ID: **M3R9H4QX65**. Any other team id in `codesign` output is a
+  failure.
 - Signing identity: `Developer ID Application: Amin Khayam (M3R9H4QX65)`.
 
 Repo secrets on `akhayam99/goodboy` (already set):
@@ -125,17 +128,19 @@ Public install channel: `brew install --cask akhayam99/tap/goodboy`. For an
 unsigned build this would still matter (Homebrew strips the quarantine attribute
 on cask install); with notarization it is just the convenient path.
 
-One-time setup (not yet done):
+How it is wired (all set up and live):
 
-1. Create a public repo `akhayam99/homebrew-tap` (the `homebrew-` prefix is
-   required; users type `akhayam99/tap`).
-2. The `homebrew` workflow renders the cask from `packaging/goodboy.rb` and
-   pushes it to `Casks/goodboy.rb` in the tap.
-3. Create a fine-grained PAT with `contents: write` on the tap repo, store it as
-   the `HOMEBREW_TAP_TOKEN` secret on `akhayam99/goodboy`.
+1. The public repo `akhayam99/homebrew-tap` holds the cask (the `homebrew-`
+   prefix is required; users type `akhayam99/tap`).
+2. On publish, the `homebrew` workflow renders the cask from
+   `packaging/goodboy.rb` and pushes it to `Casks/goodboy.rb` in the tap.
+3. It authenticates with the `HOMEBREW_TAP_TOKEN` secret on
+   `akhayam99/goodboy` (fine-grained PAT, `contents: write` on the tap repo).
 
-Until the tap repo + token exist, the `homebrew` job fails (or is skipped);
-the GitHub Release itself is unaffected.
+A `homebrew.yml` failure after publishing is a real failure, not an expected
+skip: check the run, fix, and re-run before calling the release done. If the
+token expired, that is an owner escalation (rotating secrets is not
+authorized for agents).
 
 ## Troubleshooting
 

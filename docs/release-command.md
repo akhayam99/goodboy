@@ -26,7 +26,7 @@ Below, `X` is the new version and `X-1` is the current latest.
    `apps/desktop/package.json`, `apps/desktop/src-tauri/tauri.conf.json`,
    `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/Cargo.lock`
    (the `goodboy-desktop` package entry). In the same commit, add the `## Goodboy
-   vX` section to `CHANGELOG.md` (see "Release notes" below) — the release
+vX` section to `CHANGELOG.md` (see "Release notes" below): the release
    build reads its body from there and fails if the section is missing, so this
    is not optional.
 2. Branch `ak/chore-release-vX` (NOT the worktree codename; see branch-naming
@@ -40,8 +40,8 @@ Below, `X` is the new version and `X-1` is the current latest.
 4. rc dry-run: `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
    Wait for `release.yml` to finish green. VERIFY notarization: download the dmg,
    `hdiutil attach`, run `spctl -a -vvv` (expect `accepted, source=Notarized
-Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`, NOT
-   Serenis `FC96QL5F9R`). Detach. Then delete the rc (release + remote tag +
+Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`; any
+   other team is a failure). Detach. Then delete the rc (release + remote tag +
    local tag).
 5. Cut real: `git tag vX <merge-sha> && git push origin vX`. Wait for the build
    to produce the draft release (dmg + app.tar.gz + .sig + latest.json).
@@ -74,9 +74,11 @@ missing.
 - Section heading: `## Goodboy vX`. NO codename (release names were dropped
   from v0.1.8 on). Add the new section above the previous one (newest first).
 - Right under the heading, a one-line lead summary of the release.
-- Each feature is an `### sentence-case heading` with its PR ref(s) in parens at
-  the end of the heading, e.g. `### Attachments stick across agent switches (#796)`.
-  Multiple PRs: `(#794, #793)`.
+- Each feature is an `### sentence-case heading` with its PR ref(s) in square
+  brackets at the START of the heading, e.g.
+  `### [#1241, #1243] Review a Bitbucket pull request in place`. This matches
+  what `CHANGELOG.md` actually does; when the file and this doc disagree,
+  match the file and fix this doc.
 - Lead with the marquee feature, then the rest in priority order.
 - End with a `### Fixes` (or `### Smaller fixes`) section: one bullet per fix,
   each with its PR ref at the end of the line. The same PR can repeat across
@@ -85,6 +87,6 @@ missing.
 ## Finish
 
 6. Once the draft release exists (step 5), its body and `latest.json` are
-   already filled in from `CHANGELOG.md` — review the draft, then publish:
+   already filled in from `CHANGELOG.md`: review the draft, then publish:
    `gh release edit vX --draft=false`, then confirm `homebrew.yml` fires and
    succeeds (`gh run list --workflow=homebrew.yml`).

@@ -87,12 +87,17 @@ chore(repo): bump pnpm to 10.33.4
 
 ## Issues as task manager
 
+Issues are the product's front door: the owner and contributors direct the
+autonomous delivery loop through them, weighed by the trust model in
+[docs/autonomy/safety.md](./docs/autonomy/safety.md) and answered every
+release cycle per [docs/autonomy/issue-triage.md](./docs/autonomy/issue-triage.md).
+
 Labels (set up at repo init):
 
 - **type**: `feat`, `bug`, `chore`, `docs`, `refactor`, `perf`.
 - **priority**: `p0`, `p1`, `p2`, `p3`.
 - **status**: `todo`, `in-progress`, `blocked`, `review`, `done`.
-- **scope**: `desktop`, `ui`, `core`, `db`, `types`.
+- **scope**: `desktop`, `ui`, `core`, `db`, `types`, `repo`, `ci`.
 
 Every PR closes at least one issue.
 
@@ -117,9 +122,12 @@ GitHub Actions on every PR + push to main:
 1. Install: `pnpm install --frozen-lockfile` (cached by lockfile hash).
 2. Lint: `turbo run lint --affected`. The task is declared in `turbo.json` but no package implements a `lint` script and the repo has no eslint config, so this step currently passes without checking anything.
 3. Typecheck: `turbo run typecheck --affected`.
-4. Test: `turbo run test --affected`.
-5. Build: `turbo run build --affected`.
-6. Audit: `pnpm audit --prod`.
+4. Knip: `pnpm knip --include files,duplicates,unlisted`. Bare `pnpm knip` is red on `main`; only this gated form blocks.
+5. Test: `turbo run test --affected`.
+6. Build: `turbo run build --affected`.
+7. Audit: `pnpm audit --prod`.
+
+A separate `rust.yml` runs on Rust changes: `cargo fmt --check` and `clippy` are advisory (`continue-on-error`), only `cargo test --locked` blocks. `main` is not fmt/clippy-clean.
 
 All must pass. No green-on-warning.
 
