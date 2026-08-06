@@ -152,6 +152,40 @@ describe('BudgetStudio', () => {
     });
   });
 
+  it('edits the threshold as delete then save, keeping the cap intact', async () => {
+    state.budgetRules = [
+      {
+        id: 'rule-1',
+        provider: 'anthropic',
+        period: 'monthly',
+        capUsd: 10,
+        alertThresholdPct: 90,
+        extraTokensBudget: 5,
+        createdAt: '2026-06-01T00:00:00.000Z',
+      },
+    ];
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'anthropic' }}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('alert threshold percent'), {
+      target: { value: '60' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /update threshold/i }));
+    await Promise.resolve();
+    expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
+    expect(state.saveBudgetRule).toHaveBeenCalledWith({
+      provider: 'anthropic',
+      period: 'monthly',
+      capUsd: 10,
+      alertThresholdPct: 60,
+      extraTokensBudget: 5,
+    });
+  });
+
   it('removes a provider cap via deleteBudgetRule', () => {
     state.budgetRules = [
       {

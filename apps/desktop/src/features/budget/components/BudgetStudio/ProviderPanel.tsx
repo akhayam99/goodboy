@@ -23,6 +23,7 @@ type Props = {
   readonly telemetryResult: QueryResult<void>;
   readonly isLoading: boolean;
   readonly onSaveCap: (capUsd: number) => Promise<void>;
+  readonly onSaveThreshold: (thresholdPct: number) => Promise<void>;
   readonly onRemoveCap: () => Promise<void>;
   readonly onRetryRules: () => void;
   readonly onRetryTelemetry: () => void;
@@ -38,6 +39,7 @@ export const ProviderPanel = ({
   telemetryResult,
   isLoading,
   onSaveCap,
+  onSaveThreshold,
   onRemoveCap,
   onRetryRules,
   onRetryTelemetry,
@@ -92,6 +94,9 @@ export const ProviderPanel = ({
         label="monthly cap"
         hint="cap monthly spend for this provider"
         currentCapUsd={rule?.capUsd ?? null}
+        {...(rule !== null
+          ? { threshold: { pct: rule.alertThresholdPct, onSave: onSaveThreshold } }
+          : {})}
         onSave={onSaveCap}
         onRemove={onRemoveCap}
       />

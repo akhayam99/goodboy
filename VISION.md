@@ -227,7 +227,8 @@ OpenRouter, Moonshot). Set priorities. Set budgets. Enable or disable
 providers per session. Goodboy routes work to the right provider
 automatically.
 
-- Provider 1 hits 75% budget, fall back to provider 2.
+- Provider 1 passes its budget threshold, work moves to provider 2. You pick the
+  threshold; it defaults to 80% of the cap.
 - Quick task, fast cheap model. Complex architecture, best available model.
 - Each workflow step picks its model automatically by role, tier, and cost; an
   explicit pin overrides the auto choice.

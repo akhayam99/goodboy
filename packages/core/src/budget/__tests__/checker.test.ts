@@ -28,7 +28,12 @@ describe('checkProviderBudget', () => {
   it('no budget rule → Infinity remaining, pct 0, not exceeded', async () => {
     const db = makeDb({ select: vi.fn().mockResolvedValue([]) });
     const result = await checkProviderBudget(db, 'anthropic', 'monthly');
-    expect(result).toEqual({ remainingUsd: Infinity, pct: 0, exceeded: false });
+    expect(result).toEqual({
+      remainingUsd: Infinity,
+      pct: 0,
+      exceeded: false,
+      overThreshold: false,
+    });
   });
 
   it('rule exists, 0% spent → remaining = cap, pct = 0', async () => {
@@ -142,6 +147,74 @@ describe('checkProviderBudget', () => {
     expect(result.remainingUsd).toBe(-1);
     expect(result.pct).toBe(101);
     expect(result.exceeded).toBe(true);
+    expect(result.overThreshold).toBe(false);
+  });
+
+  it('spend at the alert threshold but under the cap → overThreshold, not exceeded', async () => {
+    const selectMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          id: 'r1',
+          provider: 'anthropic',
+          period: 'monthly',
+          cap_usd: 100,
+          alert_threshold_pct: 80,
+          created_at: '2026-05-01T00:00:00.000Z',
+        },
+      ])
+      .mockResolvedValueOnce([{ total: 80 }]);
+
+    const db = makeDb({ select: selectMock });
+    const result = await checkProviderBudget(db, 'anthropic', 'monthly');
+
+    expect(result.overThreshold).toBe(true);
+    expect(result.exceeded).toBe(false);
+    expect(result.remainingUsd).toBe(20);
+  });
+
+  it('a custom threshold moves the flag point, the cap stays at 100%', async () => {
+    const selectMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          id: 'r1',
+          provider: 'anthropic',
+          period: 'monthly',
+          cap_usd: 100,
+          alert_threshold_pct: 50,
+          created_at: '2026-05-01T00:00:00.000Z',
+        },
+      ])
+      .mockResolvedValueOnce([{ total: 60 }]);
+
+    const db = makeDb({ select: selectMock });
+    const result = await checkProviderBudget(db, 'anthropic', 'monthly');
+
+    expect(result.overThreshold).toBe(true);
+    expect(result.exceeded).toBe(false);
+  });
+
+  it('spend just under the threshold → neither flag is set', async () => {
+    const selectMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          id: 'r1',
+          provider: 'anthropic',
+          period: 'monthly',
+          cap_usd: 100,
+          alert_threshold_pct: 80,
+          created_at: '2026-05-01T00:00:00.000Z',
+        },
+      ])
+      .mockResolvedValueOnce([{ total: 79.99 }]);
+
+    const db = makeDb({ select: selectMock });
+    const result = await checkProviderBudget(db, 'anthropic', 'monthly');
+
+    expect(result.overThreshold).toBe(false);
+    expect(result.exceeded).toBe(false);
   });
 });
 
@@ -149,7 +222,12 @@ describe('checkSessionBudget', () => {
   it('no session budget row → Infinity remaining, pct 0, not exceeded', async () => {
     const db = makeDb({ select: vi.fn().mockResolvedValue([]) });
     const result = await checkSessionBudget(db, 'sess-1' as SessionId);
-    expect(result).toEqual({ remainingUsd: Infinity, pct: 0, exceeded: false });
+    expect(result).toEqual({
+      remainingUsd: Infinity,
+      pct: 0,
+      exceeded: false,
+      overThreshold: false,
+    });
   });
 
   it('cap set, under cap → correct values', async () => {

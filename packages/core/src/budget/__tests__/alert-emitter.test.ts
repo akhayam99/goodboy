@@ -36,10 +36,12 @@ const RULE: BudgetRule = {
 function makeResult(pct: number): BudgetCheckResult {
   const capUsd = 100;
   const spent = pct;
+  const exceeded = spent > capUsd;
   return {
     remainingUsd: capUsd - spent,
     pct,
-    exceeded: spent > capUsd,
+    exceeded,
+    overThreshold: !exceeded && pct >= RULE.alertThresholdPct,
   };
 }
 
@@ -64,7 +66,12 @@ beforeEach(() => {
 
 describe('emitBudgetAlerts', () => {
   it('provider at 80% → emits provider-threshold alert', async () => {
-    const deps = makeDeps(makeResult(80), { remainingUsd: Infinity, pct: 0, exceeded: false });
+    const deps = makeDeps(makeResult(80), {
+      remainingUsd: Infinity,
+      pct: 0,
+      exceeded: false,
+      overThreshold: false,
+    });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
 
@@ -74,7 +81,12 @@ describe('emitBudgetAlerts', () => {
   });
 
   it('provider at 100% → emits provider-exceeded alert', async () => {
-    const deps = makeDeps(makeResult(100), { remainingUsd: Infinity, pct: 0, exceeded: false });
+    const deps = makeDeps(makeResult(100), {
+      remainingUsd: Infinity,
+      pct: 0,
+      exceeded: false,
+      overThreshold: false,
+    });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
 
@@ -83,7 +95,12 @@ describe('emitBudgetAlerts', () => {
   });
 
   it('provider under threshold → no alert emitted', async () => {
-    const deps = makeDeps(makeResult(50), { remainingUsd: Infinity, pct: 0, exceeded: false });
+    const deps = makeDeps(makeResult(50), {
+      remainingUsd: Infinity,
+      pct: 0,
+      exceeded: false,
+      overThreshold: false,
+    });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
 
@@ -95,7 +112,12 @@ describe('emitBudgetAlerts', () => {
     const sessionBudget: SessionBudget = { sessionId: SESSION_ID, softCapUsd: 50 };
     vi.mocked(getSessionBudget).mockResolvedValue(sessionBudget);
 
-    const deps = makeDeps(makeResult(50), { remainingUsd: -10, pct: 120, exceeded: true });
+    const deps = makeDeps(makeResult(50), {
+      remainingUsd: -10,
+      pct: 120,
+      exceeded: true,
+      overThreshold: false,
+    });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
 
@@ -114,7 +136,12 @@ describe('emitBudgetAlerts', () => {
     };
     vi.mocked(listBudgetAlerts).mockResolvedValue([existingAlert]);
 
-    const deps = makeDeps(makeResult(80), { remainingUsd: Infinity, pct: 0, exceeded: false });
+    const deps = makeDeps(makeResult(80), {
+      remainingUsd: Infinity,
+      pct: 0,
+      exceeded: false,
+      overThreshold: false,
+    });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
 
@@ -134,7 +161,12 @@ describe('emitBudgetAlerts', () => {
     };
     vi.mocked(listBudgetAlerts).mockResolvedValue([]);
 
-    const deps = makeDeps(makeResult(80), { remainingUsd: Infinity, pct: 0, exceeded: false });
+    const deps = makeDeps(makeResult(80), {
+      remainingUsd: Infinity,
+      pct: 0,
+      exceeded: false,
+      overThreshold: false,
+    });
 
     const alerts = await emitBudgetAlerts(deps, { provider: 'anthropic', sessionId: SESSION_ID });
 

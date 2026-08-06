@@ -37,7 +37,12 @@ export const getPeriodWindow = (period: BudgetPeriod): { start: string; end: str
   return { start, end };
 };
 
-const UNSET_RESULT: BudgetCheckResult = { remainingUsd: Infinity, pct: 0, exceeded: false };
+const UNSET_RESULT: BudgetCheckResult = {
+  remainingUsd: Infinity,
+  pct: 0,
+  exceeded: false,
+  overThreshold: false,
+};
 
 export const checkProviderBudget = async (
   db: Database,
@@ -83,11 +88,13 @@ export const checkProviderBudget = async (
   const spent = costRows[0]?.total ?? 0;
   const remaining = rule.capUsd - spent;
   const pct = rule.capUsd > 0 ? (spent / rule.capUsd) * 100 : 0;
+  const exceeded = spent > rule.capUsd;
 
   return {
     remainingUsd: remaining,
     pct,
-    exceeded: spent > rule.capUsd,
+    exceeded,
+    overThreshold: !exceeded && pct >= rule.alertThresholdPct,
   };
 };
 
@@ -128,5 +135,6 @@ export const checkSessionBudget = async (
     remainingUsd: remaining,
     pct,
     exceeded: spent > budget.softCapUsd,
+    overThreshold: false,
   };
 };
