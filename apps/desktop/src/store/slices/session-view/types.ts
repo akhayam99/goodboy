@@ -35,7 +35,8 @@ export type LensKind =
   | 'sentry'
   | 'gitlab_issues'
   | 'jira_issues'
-  | 'github_issue';
+  | 'github_issue'
+  | 'slack_threads';
 
 export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'questions',
@@ -57,6 +58,7 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'gitlab_issues',
   'jira_issues',
   'github_issue',
+  'slack_threads',
 ]);
 
 export type DiffFocus =

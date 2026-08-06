@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
   SessionId,
@@ -124,16 +124,69 @@ describe('session_workflows trigger-mode queries', () => {
       await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
       await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW);
       const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs.map((r) => r.ordinal)).toEqual([0, 1]);
+      expect(runs.map((r) => [r.id, r.ordinal])).toEqual([
+        ['r1', 1],
+        ['r0', 0],
+      ]);
+    });
+  });
+
+  describe('createdAt mapping', () => {
+    const hostZone = process.env['TZ'];
+
+    beforeAll(() => {
+      process.env['TZ'] = 'America/New_York';
+    });
+
+    afterAll(() => {
+      if (hostZone == null) {
+        delete process.env['TZ'];
+        return;
+      }
+      process.env['TZ'] = hostZone;
+    });
+
+    it('reads the SQLite datetime text as UTC, not as host local time', async () => {
+      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
+      await db.execute('UPDATE session_workflows SET created_at = ? WHERE workflow_run_id = ?', [
+        '2026-08-05 09:14:22',
+        'r0',
+      ]);
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.createdAt).toBe('2026-08-05T09:14:22.000Z');
+    });
+
+    it('omits createdAt when the column is empty', async () => {
+      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
+      await db.execute('UPDATE session_workflows SET created_at = ? WHERE workflow_run_id = ?', [
+        '',
+        'r0',
+      ]);
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs[0]!.createdAt).toBeUndefined();
+    });
+
+    it('keeps the attach timestamp across a reorder', async () => {
+      await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
+      await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW);
+      await db.execute('UPDATE session_workflows SET created_at = ? WHERE workflow_run_id = ?', [
+        '2026-08-05 09:14:22',
+        'r0',
+      ]);
+      await updateWorkflowOrder(db, sessionId, ['r1' as WorkflowRunId, 'r0' as WorkflowRunId], NOW);
+      const runs = await listWorkflowsForSession(db, sessionId);
+      expect(runs.find((r) => r.id === ('r0' as WorkflowRunId))!.createdAt).toBe(
+        '2026-08-05T09:14:22.000Z',
+      );
     });
   });
 
   describe('listWorkflowsForSession ordering', () => {
-    it('returns runs ordered by ordinal ascending', async () => {
+    it('returns runs newest first, by ordinal descending', async () => {
       await attachWorkflowToSession(db, sessionId, 'r0' as WorkflowRunId, workflowId, true, NOW);
       await attachWorkflowToSession(db, sessionId, 'r1' as WorkflowRunId, workflowId2, true, NOW);
       const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs.map((r) => r.id)).toEqual(['r0', 'r1']);
+      expect(runs.map((r) => r.id)).toEqual(['r1', 'r0']);
     });
 
     it('returns empty for a session with no workflows', async () => {
@@ -212,7 +265,10 @@ describe('session_workflows trigger-mode queries', () => {
         NOW,
       );
       const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs.map((r) => r.id)).toEqual(['chained', 'pred']);
+      expect(runs.map((r) => [r.id, r.ordinal])).toEqual([
+        ['pred', 1],
+        ['chained', 0],
+      ]);
       const chained = runs.find((r) => r.id === ('chained' as WorkflowRunId));
       expect(chained!.triggerMode).toBe('after_run');
       expect(chained!.chainAfterId).toBe('pred');
@@ -274,7 +330,10 @@ describe('session_workflows trigger-mode queries', () => {
         NOW,
       );
       const runs = await listWorkflowsForSession(db, sessionId);
-      expect(runs.map((r) => r.goal)).toEqual(['second goal', 'first goal']);
+      expect(runs.map((r) => [r.id, r.goal])).toEqual([
+        ['run-1', 'first goal'],
+        ['run-2', 'second goal'],
+      ]);
     });
   });
 

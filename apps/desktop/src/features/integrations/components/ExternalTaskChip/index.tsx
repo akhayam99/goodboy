@@ -53,6 +53,11 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
     colorClasses:
       'border-provider-bitbucket/30 bg-provider-bitbucket/5 text-provider-bitbucket hover:border-provider-bitbucket/60 hover:bg-provider-bitbucket/10',
   },
+  slack: {
+    label: 'Slack',
+    colorClasses:
+      'border-provider-slack/30 bg-provider-slack/5 text-provider-slack hover:border-provider-slack/60 hover:bg-provider-slack/10',
+  },
 };
 
 export const ExternalTaskChip = ({

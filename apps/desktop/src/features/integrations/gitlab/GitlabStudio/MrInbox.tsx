@@ -10,7 +10,7 @@ import {
 import { GitMerge, Search } from 'lucide-react';
 import type { GitlabMergeRequest } from '../client';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
+import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import type { GitlabMrGroup } from './useGitlabMrs';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 
@@ -136,7 +136,7 @@ export const MrInbox = ({ groups, focusedMrId, onSelect, loading, error, onRefre
                               ·
                             </span>
                             <span className="shrink-0 tabular-nums text-muted-foreground/50">
-                              {formatShortDayMonth({ iso: mr.updatedAt })}
+                              {formatAdaptiveAge({ iso: mr.updatedAt })}
                             </span>
                             <InboxStatusIcons
                               className="ml-auto"

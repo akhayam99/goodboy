@@ -245,6 +245,7 @@ async function fetchIssuesFor(
       }
       case 'jira':
       case 'bitbucket':
+      case 'slack':
         return [];
       default: {
         const unexpected: never = provider;
@@ -352,6 +353,8 @@ async function resolveIssueForSession(
       throw new BridgeSafeError(`jira issue creation is not available from mobile: ${identifier}`);
     case 'bitbucket':
       throw new BridgeSafeError(`bitbucket does not expose issues to Goodboy: ${identifier}`);
+    case 'slack':
+      throw new BridgeSafeError(`slack threads cannot start a session from mobile: ${identifier}`);
     default: {
       const unexpected: never = provider;
       throw new BridgeSafeError(`unsupported issue provider: ${String(unexpected)}`);

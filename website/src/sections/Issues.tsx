@@ -15,10 +15,10 @@ export const Issues = () => {
           <Eyebrow>From issue to branch</Eyebrow>
           <SectionTitle>Start where the work already lives</SectionTitle>
           <p className="mt-4 max-w-xl text-[15px] leading-[1.65] text-muted-foreground">
-            Linear, GitHub, GitLab, Jira, and Sentry each get an inbox inside the app. Pick a ticket
-            and the session writes itself: goal filled in, branch named, worktree cut. The
-            description, the comments, or the stack trace land in the shared context before the
-            first agent speaks.
+            Linear, GitHub, GitLab, Jira, Sentry, and Slack each get an inbox inside the app. Pick a
+            ticket or a thread and the session writes itself: goal filled in, branch named, worktree
+            cut. The description, the comments, or the stack trace land in the shared context before
+            the first agent speaks.
           </p>
         </div>
 

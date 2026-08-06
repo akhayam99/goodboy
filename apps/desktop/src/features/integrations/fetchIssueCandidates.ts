@@ -18,6 +18,7 @@ import { goalFromIssue as goalFromJiraIssue } from './jira/goal-from-issue';
 import { jiraBranchSlug } from './jira/JiraStudio/useJiraIssues';
 import { sentryFetchIssues } from './sentry/client';
 import { goalFromSentry } from './sentry/goal-from-sentry';
+import { slackThreadCandidates } from './slack/slackThreadCandidates';
 
 export type IssueCandidate = {
   readonly provider: SessionExternalTaskProvider;
@@ -125,6 +126,9 @@ export const fetchIssueCandidates = async ({
         goal: goalFromSentry(issue),
         branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
       }));
+    }
+    case 'slack': {
+      return slackThreadCandidates({ workspaceId });
     }
     case 'bitbucket': {
       return [];

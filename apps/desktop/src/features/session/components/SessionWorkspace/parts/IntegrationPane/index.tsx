@@ -36,6 +36,10 @@ type Props = {
 
 type ProviderMeta = Readonly<{
   label: string;
+  noun: string;
+  nounPhrase: string;
+  nounPlural: string;
+  linkHint: string;
 }>;
 
 type UnlinkParams = {
@@ -43,12 +47,56 @@ type UnlinkParams = {
 };
 
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
-  linear: { label: 'Linear' },
-  sentry: { label: 'Sentry' },
-  gitlab: { label: 'GitLab' },
-  jira: { label: 'Jira' },
-  github: { label: 'GitHub' },
-  bitbucket: { label: 'Bitbucket' },
+  linear: {
+    label: 'Linear',
+    noun: 'issue',
+    nounPhrase: 'an issue',
+    nounPlural: 'issues',
+    linkHint: 'Search your assigned Linear issues or paste a URL to link one to this session.',
+  },
+  sentry: {
+    label: 'Sentry',
+    noun: 'issue',
+    nounPhrase: 'an issue',
+    nounPlural: 'issues',
+    linkHint: 'Search your assigned Sentry issues or paste a URL to link one to this session.',
+  },
+  gitlab: {
+    label: 'GitLab',
+    noun: 'issue',
+    nounPhrase: 'an issue',
+    nounPlural: 'issues',
+    linkHint: 'Search your assigned GitLab issues or paste a URL to link one to this session.',
+  },
+  jira: {
+    label: 'Jira',
+    noun: 'issue',
+    nounPhrase: 'an issue',
+    nounPlural: 'issues',
+    linkHint: 'Search your assigned Jira issues or paste a URL to link one to this session.',
+  },
+  github: {
+    label: 'GitHub',
+    noun: 'issue',
+    nounPhrase: 'an issue',
+    nounPlural: 'issues',
+    linkHint: 'Search your assigned GitHub issues or paste a URL to link one to this session.',
+  },
+  bitbucket: {
+    label: 'Bitbucket',
+    noun: 'pull request',
+    nounPhrase: 'a pull request',
+    nounPlural: 'pull requests',
+    linkHint: 'Paste a Bitbucket pull request URL to link one to this session.',
+  },
+  slack: {
+    label: 'Slack',
+    noun: 'thread',
+    nounPhrase: 'a thread',
+    nounPlural: 'threads',
+    linkHint:
+      'Pick a thread from a channel the bot has joined, or paste a Slack permalink to link one.',
+  },
 };
 
 export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
@@ -100,6 +148,9 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       workspaceId={workspaceId}
       provider={provider}
       providerLabel={meta.label}
+      noun={meta.noun}
+      nounPhrase={meta.nounPhrase}
+      nounPlural={meta.nounPlural}
     />
   );
   const focusedTask = tasks.find((task) => integrationTaskKey({ task }) === focusedTaskKey) ?? null;
@@ -140,7 +191,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               className="max-w-sm"
               icon={<Unlink size={12} aria-hidden />}
               title={`Unlink ${focusedTask.identifier}?`}
-              description={`Removes the ${meta.label} issue from this session without changing the issue.`}
+              description={`Removes the ${meta.label} ${meta.noun} from this session without changing the ${meta.noun}.`}
               confirmLabel={`Unlink ${focusedTask.identifier}`}
               autoDisarmMs={4000}
               isBusy={isUnlinking}
@@ -151,7 +202,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
             <div className="flex items-center gap-1.5">
               <GhostActionButton
                 icon={ArrowLeft}
-                label="All issues"
+                label={`All ${meta.nounPlural}`}
                 onClick={() => setFocusedTaskKey(null)}
               />
               <GhostActionButton
@@ -188,7 +239,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   return (
     <PaneShell
       title={meta.label}
-      description={`External ${meta.label} issues linked to this session.`}
+      description={`External ${meta.label} ${meta.nounPlural} linked to this session.`}
       meta={hasTasks ? tasks.length : undefined}
       measure="reading"
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
@@ -209,8 +260,8 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         <LensEmptyState
           icon={CONCEPT_ICONS.integrations}
           tone={CONCEPT_TONE.integrations}
-          title={`No ${meta.label} issues linked`}
-          description={`Search your assigned ${meta.label} issues or paste a URL to link one to this session.`}
+          title={`No ${meta.label} ${meta.nounPlural} linked`}
+          description={meta.linkHint}
           action={linkAction}
         />
       ) : null}
@@ -222,7 +273,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       <div className="flex justify-center">
         <CountToggle
           label="Completed"
-          itemsLabel="issues"
+          itemsLabel={meta.nounPlural}
           count={workItems.history.length}
           isShown={showHistory}
           icon={Check}

@@ -79,8 +79,8 @@ key, and the project's issues get the same inbox: status, type, priority,
 assignee, labels, description and the comment thread, all readable in the app.
 From the same screen you comment, assign or unassign, move the issue through
 its real transitions, and edit the description. Launch a session from one and
-the key lands on the branch. Sprints, boards and priority edits are not there
-yet, and Jira Server is unsupported.
+the key lands on the branch. Creating a new issue, sprints, boards and
+priority edits are not there yet, and Jira Server is unsupported.
 
 **Bitbucket, read, act and route.** Connect Bitbucket Cloud from onboarding or
 the integrations panel with a workspace slug, your Atlassian account email and
@@ -96,6 +96,24 @@ Goodboy does not pick one for you, and declining is closed to reopening from
 here. Bitbucket issues are out of scope, Atlassian points issue tracking at
 Jira and Goodboy follows that. Goodboy does not read a `bitbucket.org` git
 remote either, the workspace integration is how it finds your pull requests.
+
+**Slack, read the thread and reply.** Connect a workspace with a bot token
+(`xoxb-`), checked against the workspace before anything is stored and kept in
+your OS keychain; the connection needs five scopes: `channels:read`,
+`channels:history`, `users:read`, `chat:write` and `reactions:write`. Goodboy
+only sees the public channels the bot has joined, no private channels, no
+DMs. The Slack studio lists those channels, then their threads, then a thread
+rendered in the app with avatars, author names and Slack's markup translated
+for display. A session lens shows the thread linked to the current session,
+or link one by pasting its permalink. Launch a session from a thread and the
+goal is pre-filled from the conversation, the branch named after it. From
+inside Goodboy you can reply in the thread and add a reaction: replies post
+as the connected bot, not as you, the composer says so, and they go out as
+plain text. Each channel reads only its most recent 200 messages, so an old
+thread in a busy channel will not show up and there is no load more, and the
+channel list itself is capped. The connection is per workspace, not per
+company, and none of this has run against a live Slack workspace: every call
+is contract-tested against fixtures.
 
 **Cost meter that taps your shoulder.** Every session shows what it's costing
 as it runs. Goodboy nudges you before you burn Opus on a one-liner.

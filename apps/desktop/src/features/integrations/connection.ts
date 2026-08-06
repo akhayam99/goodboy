@@ -32,6 +32,7 @@ export const resolveIntegrationConnection = ({
   const hasGitlab = integrations.some((integration) => integration.provider === 'gitlab');
   const hasJira = integrations.some((integration) => integration.provider === 'jira');
   const hasBitbucket = integrations.some((integration) => integration.provider === 'bitbucket');
+  const hasSlack = integrations.some((integration) => integration.provider === 'slack');
   const hasGithubRemote = remoteKind === 'github';
   const hasGitlabRemote = remoteKind === 'gitlab';
 
@@ -62,6 +63,10 @@ export const resolveIntegrationConnection = ({
     case 'bitbucket':
       isConnected = hasBitbucket;
       hasLinkedTask = externalTasks.some((task) => task.provider === 'bitbucket');
+      break;
+    case 'slack':
+      isConnected = hasSlack;
+      hasLinkedTask = externalTasks.some((task) => task.provider === 'slack');
       break;
     case 'pr':
       isConnected =

@@ -13,6 +13,7 @@ import { SentryTaskDetail } from './SentryTaskDetail';
 import { GithubTaskDetail } from './GithubTaskDetail';
 import { GitlabTaskDetail } from './GitlabTaskDetail';
 import { JiraTaskDetail } from './JiraTaskDetail';
+import { SlackTaskDetail } from './SlackTaskDetail';
 
 type Props = {
   readonly provider: SessionExternalTaskProvider;
@@ -45,6 +46,10 @@ export const FocusedTaskBody = ({ provider, sessionId, workspaceId, task, isConn
 
   if (isConnected && provider === 'jira') {
     return <JiraTaskDetail workspaceId={workspaceId} task={task} />;
+  }
+
+  if (isConnected && provider === 'slack') {
+    return <SlackTaskDetail workspaceId={workspaceId} task={task} />;
   }
 
   return (

@@ -67,10 +67,10 @@ reading bottom to top is how today's tools are built.
    definition of done. Goodboy treats the task as a first-class object with
    its own worktree, branch, context, and history.
 2. **Integrations.** Where tasks come from and where they go back. GitHub,
-   GitLab, Linear, Sentry, Jira, Bitbucket today. The task is not complete
-   when the code compiles, it is complete when the issue closes, the PR
-   merges, the alert resolves. Integrations are not a side panel, they are the
-   second layer of the product.
+   GitLab, Linear, Sentry, Jira, Bitbucket, Slack today. The task is not
+   complete when the code compiles, it is complete when the issue closes, the
+   PR merges, the alert resolves. Integrations are not a side panel, they are
+   the second layer of the product.
 3. **Code.** The diff, the worktree, the branch, the checks. The artifact the
    task produces. Goodboy owns the isolation (one worktree per session) and
    hands editing to your editor.
@@ -100,9 +100,9 @@ Four nested layers:
   Direction, not yet shipped.
 - A **workspace** is the detail view of a project: a registered git repository
   plus the integrations specific to it (GitHub, GitLab or Bitbucket for code
-  review, Linear or Jira for planning, Sentry for production truth). It is the
-  aggregator of every piece of work on that project, not just the sessions you
-  opened today.
+  review, Linear or Jira for planning, Sentry for production truth, Slack for
+  the conversation a task came out of). It is the aggregator of every piece of
+  work on that project, not just the sessions you opened today.
 - A **session** is a container for a goal: its own git worktree, branch,
   budget, and shared context. Its stage (attention / running / review /
   building / done) is derived from what the session actually holds, never set
@@ -149,10 +149,14 @@ Where each connected source stands, honestly:
   description. Comments, assign and transition are the open gap, and Linear
   is where the PM persona lives.
 - **Sentry.** Issues and events read; no write path yet.
-- **Later, company scope.** Slack and Teams for the conversation a task came
-  out of, Google Calendar and Meet for the meeting it was decided in. A
-  conversation is not an issue: it needs its own object model, not a forced
-  fit into the task shapes.
+- **Slack.** Threads read and replied to (replies post as the connected bot),
+  routed into sessions with the goal pre-filled. Shipped ahead of the company
+  layer, so the connection is per workspace; public bot-joined channels only,
+  and no call has run against a live workspace yet, only contract tests.
+- **Later, company scope.** Teams for the conversation a task came out of,
+  Google Calendar and Meet for the meeting it was decided in. A conversation
+  is not an issue: it needs its own object model, not a forced fit into the
+  task shapes. Slack graduates here when the company layer exists.
 
 The rule for every integration: share the layout, never the logic. A Sentry
 issue and a GitHub pull request look coherent side by side because the page

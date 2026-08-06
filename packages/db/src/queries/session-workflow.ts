@@ -34,10 +34,11 @@ export type SessionWorkflowRow = {
   chain_after_run_id: string | null;
   goal: string | null;
   discarded_at: string | null;
+  created_at: string | null;
 };
 
 export const SESSION_WORKFLOW_COLS =
-  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, chain_after_run_id, goal, discarded_at';
+  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, chain_after_run_id, goal, discarded_at, created_at';
 
 type RoutingColumns = {
   readonly provider: string | null;
@@ -54,6 +55,23 @@ const toRouting = ({ provider, model, effort }: RoutingColumns): OrchestratorRou
     model,
     ...(effort != null && { effort: effort as ModelEffort }),
   };
+};
+
+type SqliteDateColumn = {
+  readonly value: string | null;
+};
+
+const toIsoDateTime = ({ value }: SqliteDateColumn): IsoDateTime | null => {
+  if (value == null || value === '') {
+    return null;
+  }
+  const hasZone = /([Zz]|[+-]\d{2}:?\d{2})$/.test(value);
+  const zoned = hasZone ? value : `${value.replace(' ', 'T')}Z`;
+  const parsed = Date.parse(zoned);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+  return new Date(parsed).toISOString() as IsoDateTime;
 };
 
 type StopColumns = {
@@ -78,6 +96,7 @@ export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     model: row.orchestrator_model,
     effort: row.orchestrator_effort,
   });
+  const createdAt = toIsoDateTime({ value: row.created_at });
   return {
     id: row.workflow_run_id as WorkflowRunId,
     workflowId: row.workflow_id as WorkflowId,
@@ -100,6 +119,7 @@ export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     }),
     ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
     ...(row.discarded_at != null && { discardedAt: row.discarded_at as IsoDateTime }),
+    ...(createdAt != null && { createdAt }),
   };
 }
 
@@ -108,7 +128,7 @@ export const listWorkflowsForSession = async (
   sessionId: SessionId,
 ): Promise<ReadonlyArray<WorkflowRun>> => {
   const rows = await db.select<SessionWorkflowRow>(
-    `SELECT ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id = ? ORDER BY ordinal ASC`,
+    `SELECT ${SESSION_WORKFLOW_COLS} FROM session_workflows WHERE session_id = ? ORDER BY ordinal DESC`,
     [sessionId],
   );
   return rows.map(toWorkflowRun);
@@ -192,7 +212,7 @@ export const updateWorkflowOrder = async (
         continue;
       }
       await db.execute(
-        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           runId,
           sessionId,
@@ -213,6 +233,7 @@ export const updateWorkflowOrder = async (
           prev.orchestrator_provider,
           prev.orchestrator_model,
           prev.orchestrator_effort,
+          prev.created_at,
         ],
       );
     }

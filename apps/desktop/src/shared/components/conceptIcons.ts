@@ -39,6 +39,7 @@ import {
   JiraIcon,
   LinearIcon,
   SentryIcon,
+  SlackIcon,
 } from './brand-icons';
 
 export const CONCEPT_ICONS = {
@@ -74,6 +75,7 @@ export const CONCEPT_ICONS = {
   sessionSummary: NotebookText,
   settings: Settings,
   skills: Wrench,
+  slack: SlackIcon,
   terminal: SquareTerminal,
   checks: ListChecks,
   comments: MessageSquare,
@@ -116,6 +118,7 @@ export const CONCEPT_TONE = {
   sessionSummary: 'info',
   settings: 'neutral',
   skills: 'accent',
+  slack: 'primary',
   terminal: 'neutral',
   checks: 'success',
   comments: 'info',

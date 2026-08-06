@@ -229,12 +229,14 @@ describe('App lens shortcuts', () => {
     press({ code: 'Digit2', key: '2', metaKey: true, altKey: true });
     press({ code: 'Digit3', key: '3', metaKey: true, altKey: true });
     press({ code: 'Digit4', key: '4', metaKey: true, altKey: true });
+    press({ code: 'Digit6', key: '6', metaKey: true, altKey: true });
 
     expect(setActiveLens.mock.calls).toEqual([
       ['session-1', 'review'],
       ['session-1', 'linear'],
       ['session-1', 'sentry'],
       ['session-1', 'gitlab_issues'],
+      ['session-1', 'slack_threads'],
     ]);
   });
 

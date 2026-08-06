@@ -22,6 +22,7 @@ const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
   github: 3,
   jira: 4,
   bitbucket: 5,
+  slack: 6,
 };
 
 export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
@@ -65,6 +66,13 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
       label: 'Jira issues',
       icon: CONCEPT_ICONS.jira,
       onClick: () => onSelectLens('jira_issues'),
+    },
+    {
+      kind: 'item',
+      key: 'slack',
+      label: 'Slack threads',
+      icon: CONCEPT_ICONS.slack,
+      onClick: () => onSelectLens('slack_threads'),
     },
   ];
   const hasLinkedWork = linkedIssues.length > 0 || externalTasks.length > 0;

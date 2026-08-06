@@ -91,6 +91,16 @@ import {
   type BitbucketPrWriteParams,
   type RefreshSessionBitbucketPrOptions,
 } from './slices/bitbucket-pr';
+import {
+  createSlackThreadsSlice,
+  initialSlackThreadsState,
+  type RefreshSlackThreadOptions,
+  type SlackChannelParams,
+  type SlackReactionParams,
+  type SlackReplyParams,
+  type SlackThreadParams,
+  type SlackWorkspaceParams,
+} from './slices/slack-threads';
 import { createReviewPrsSlice } from './slices/review-prs';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import type {
@@ -153,6 +163,7 @@ import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
 import type { BitbucketConnection } from '../features/integrations/bitbucket/client';
+import type { SlackConnection } from '../features/integrations/slack/client';
 import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
@@ -233,6 +244,8 @@ export type AppActions = {
     apiToken: string;
   }): Promise<BitbucketConnection>;
   disconnectBitbucket(params: { workspaceId: WorkspaceId }): Promise<void>;
+  connectSlack(params: { workspaceId: WorkspaceId; botToken: string }): Promise<SlackConnection>;
+  disconnectSlack(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;
@@ -584,6 +597,12 @@ export type AppActions = {
   declineBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
   commentOnBitbucketPr(params: BitbucketPrCommentParams): Promise<void>;
   replyToBitbucketPrComment(params: BitbucketPrReplyParams): Promise<void>;
+  refreshSlackChannels(params: SlackWorkspaceParams): Promise<void>;
+  refreshSlackUsers(params: SlackWorkspaceParams): Promise<void>;
+  refreshSlackThreadHeads(params: SlackChannelParams): Promise<void>;
+  refreshSlackThread(params: SlackThreadParams, options?: RefreshSlackThreadOptions): Promise<void>;
+  replyToSlackThread(params: SlackReplyParams): Promise<void>;
+  addSlackReaction(params: SlackReactionParams): Promise<void>;
   closePr(sessionId: SessionId, prNumber?: number): Promise<void>;
   reopenPr(sessionId: SessionId, prNumber?: number): Promise<void>;
   editPr(
@@ -801,6 +820,7 @@ export const initialState: AppState = {
   sessionSelectedPrNumber: {},
   sessionGitlabMr: {},
   ...initialBitbucketPrState,
+  ...initialSlackThreadsState,
   reviewPrs: {},
   reviewDrafts: {},
   sessionPendingResolutions: {},
@@ -857,6 +877,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createGithubSlice(set, get),
   ...createGitlabMrSlice(set, get),
   ...createBitbucketPrSlice(set, get),
+  ...createSlackThreadsSlice(set, get),
   ...createReviewPrsSlice(set, get),
   ...createReviewDraftsSlice(set, get),
   ...createIntegrationsSlice(set, get),

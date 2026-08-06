@@ -38,6 +38,9 @@ const PROVIDERS = [
   ['linear', 'Linear', 'Personal access token'],
   ['sentry', 'Sentry', 'Auth token'],
   ['gitlab', 'GitLab', 'Personal access token'],
+  ['jira', 'Jira', 'API token'],
+  ['bitbucket', 'Bitbucket', 'API token'],
+  ['slack', 'Slack', 'Bot token'],
 ] as const;
 
 afterEach(cleanup);

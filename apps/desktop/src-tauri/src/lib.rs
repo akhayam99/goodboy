@@ -29,6 +29,7 @@ mod sentry;
 mod session_dir;
 mod settings_overrides;
 mod skills;
+mod slack;
 mod summarize;
 mod terminal;
 mod turn;
@@ -76,6 +77,7 @@ pub fn run() {
     let gitlab_token_cache = gitlab::GitlabTokenCache::new();
     let jira_token_cache = jira::JiraTokenCache::new();
     let bitbucket_token_cache = bitbucket::BitbucketTokenCache::new();
+    let slack_token_cache = slack::SlackTokenCache::new();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -97,6 +99,7 @@ pub fn run() {
         .manage(gitlab_token_cache)
         .manage(jira_token_cache)
         .manage(bitbucket_token_cache)
+        .manage(slack_token_cache)
         .setup(|app| {
             #[cfg(desktop)]
             app.handle()
@@ -329,6 +332,16 @@ pub fn run() {
             bitbucket::bitbucket_decline_pull_request,
             bitbucket::bitbucket_create_pull_request_comment,
             bitbucket::bitbucket_reply_to_pull_request_comment,
+            slack::slack_validate_connection,
+            slack::slack_connect,
+            slack::slack_disconnect,
+            slack::slack_list_channels,
+            slack::slack_list_thread_heads,
+            slack::slack_get_thread,
+            slack::slack_get_permalink,
+            slack::slack_list_users,
+            slack::slack_post_reply,
+            slack::slack_add_reaction,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

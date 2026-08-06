@@ -43,13 +43,14 @@
   --color-provider-gemini: oklch(0.72 0.16 240);
   --color-provider-opencode: #fab283;
   --color-provider-openrouter: #6467f2;
-  --color-provider-moonshot: #16b8a6;
+  --color-provider-moonshot: #1783ff;
   --color-provider-jira: #2684ff;
   --color-provider-bitbucket: #4c9aff;
   --color-provider-linear: oklch(0.57 0.16 277);
   --color-provider-sentry: oklch(0.55 0.18 320);
   --color-provider-gitlab: oklch(0.68 0.18 45);
   --color-provider-github: oklch(0.88 0 0);
+  --color-provider-slack: #bf7cc4;
 
   --color-workspace-1: oklch(0.72 0.1 180);
   --color-workspace-2: oklch(0.72 0.14 260);
@@ -281,13 +282,14 @@ html[data-theme='light'] {
   --color-provider-gemini: oklch(0.5 0.16 240);
   --color-provider-opencode: #c87842;
   --color-provider-openrouter: #5558d9;
-  --color-provider-moonshot: #0f8f81;
+  --color-provider-moonshot: #1783ff;
   --color-provider-jira: #0052cc;
   --color-provider-bitbucket: #0747a6;
   --color-provider-linear: oklch(0.5 0.16 277);
   --color-provider-sentry: oklch(0.48 0.18 320);
   --color-provider-gitlab: oklch(0.56 0.18 45);
   --color-provider-github: oklch(0.24 0 0);
+  --color-provider-slack: #4a154b;
   --color-workspace-1: oklch(0.5 0.1 180);
   --color-workspace-2: oklch(0.5 0.15 260);
   --color-workspace-3: oklch(0.52 0.15 290);

@@ -19,6 +19,7 @@ const SOURCES: ReadonlyArray<IssueSource> = [
   { provider: 'gitlab', label: 'GitLab' },
   { provider: 'jira', label: 'Jira' },
   { provider: 'sentry', label: 'Sentry' },
+  { provider: 'slack', label: 'Slack' },
 ];
 
 export const resolveIssueSources = ({

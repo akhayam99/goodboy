@@ -7,6 +7,42 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.65
+
+Slack is the seventh host, and the first conversation Goodboy can hold. Read the thread here, answer it here, and turn it into a session.
+
+### [#1249, #1250, #1261] Slack, from the thread to the session
+
+Goodboy could hold an issue, an alert and a pull request. It could not hold the conversation the work actually started in, so the one place a task is most often born was the one place you still had to go and look. Slack closes that.
+
+Connect a workspace with a bot token from your Slack app. Goodboy checks it against Slack before it stores anything, tells you the five scopes the bot needs, and keeps the token in your operating system keychain. From the app footer, a Slack studio opens on the channels the bot has joined, then the threads inside them, then the whole thread rendered here: avatars, author names, and Slack's own markup translated for reading. Not a preview and not a link out.
+
+What you can do to it: reply in the thread, and react to any message. A reply posts as the connected bot rather than as you, and the line above the box says so before you send. Replies go out as plain text. A control that cannot fire stays where it is and says why.
+
+Where it takes you: Start session from thread opens a session with the goal written out of the conversation and the branch named after it. Pasting a Slack permalink into Link work does the same, and the thread then gets its own lens in the session rail, so the conversation sits beside the diff and the checks instead of behind them.
+
+The limits, stated plainly. Public channels only, and only the ones the bot has been invited to: no private channels, no direct messages. Each channel reads its most recent 200 messages, so an old thread in a busy channel will not appear and there is no load more. The studio reads the first 12 joined channels per refresh and says so under the list when you have more. Outgoing replies are not translated back into Slack's markup. The connection is per workspace, because the company layer this belongs to is not built yet.
+
+The honest part: none of this has run against a real Slack workspace. Every call is contract-tested against fixtures built from Slack's documentation, which proves the requests agree with the docs and proves nothing about the docs. Worst first, `auth.test`, which the whole connect flow rests on, and whether a bot carrying exactly the five scopes Goodboy asks for satisfies every call. Then the shapes of `conversations.list`, `conversations.history` and `conversations.replies`, which every channel row, every thread row and the thread itself are decoded from. Then whether a bot-authored reply actually threads under its parent instead of landing at the top of the channel, which is the riskiest single claim in this release. When a shape does differ, the pane shows Slack's own error name, `missing_scope: channels:history`, instead of an empty list that tells you nothing. Try it, break it, send the error back.
+
+### [#1247] Workflows read newest first, and say when they started
+
+The workflows lane listed runs oldest first while the agents lane and the resolve lane both listed newest first, so the run you just attached was at the bottom of the one lane where you went looking for it. Workflows now matches, using the same comparator the other two already use.
+
+Each card also carries when it was attached, on a scale that degrades as it ages: `5m ago`, `3h ago`, `yesterday`, then `2 aug`, then `12 dec 2025` once the year has turned. It is GitHub's own timestamp behavior, relative while it is fresh and an absolute date once it is not, and `yesterday` is a calendar comparison, so a run from 22:00 still reads as yesterday at 01:00. The same scale replaced the bare dates in the GitHub, GitLab, Jira and Bitbucket inbox rows, where a five minute old item used to read as a plain date with the recency thrown away, and it retired two hand-rolled copies of the same idea under the permissions views.
+
+The column the date comes from already existed and was already being written. It had been left out of the query that reads a workflow run, so nothing could reach it.
+
+### [#1248] The Moonshot mark is the real one
+
+The Moonshot AI provider shipped in v0.1.63 with a stock crescent moon, which is not the company's logo. It is now the vendor's own mark, taken from their published branding files, drawn to match every other provider mark in the app: one shape, one color, legible at 12 pixels. The provider color went with it, from an invented teal to the blue the vendor uses inside the mark itself.
+
+### Fixes
+
+- [#1247] The workflow reorder arrows moved cards the wrong way once the lane was flipped. They now move a card the direction the arrow points, and the boundaries disable at the ends you can see
+- [#1247] Reordering workflows restamped every run's creation time to the moment you dragged it. It carries the original through now, which mattered the moment a card started showing it
+- [#1247] Auto-run workflows advanced in whatever order the list happened to arrive in. Scheduling no longer follows display order, so several eligible runs still advance oldest first
+
 ## Goodboy v0.1.64
 
 Bitbucket is the third code host, and the first one that arrives whole in a single release: read the pull request, review it, vote on it, merge it, and turn it into a session, without a browser tab.
