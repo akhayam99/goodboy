@@ -160,6 +160,7 @@ export const OnboardingWizard = () => {
       return steps[index - 1] ?? minStep;
     });
   const canSkipSetup = hasWorkspace;
+  const canDismiss = step < last && canSkipSetup;
   const stepOwnsActions =
     step === 2 && (workspace === null ? workspaceAudience !== null : changingWorkspace);
   const dismiss = () => {
@@ -230,6 +231,16 @@ export const OnboardingWizard = () => {
       aria-modal="true"
       aria-label="Goodboy setup"
       tabIndex={-1}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape') {
+          return;
+        }
+        if (!canDismiss) {
+          return;
+        }
+        event.preventDefault();
+        dismiss();
+      }}
       className={cn(
         'fixed inset-0 z-50 flex flex-col overflow-hidden bg-background outline-none',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
@@ -252,7 +263,7 @@ export const OnboardingWizard = () => {
           )}
         </div>
         <div className="flex justify-end">
-          {step < last && canSkipSetup && (
+          {canDismiss && (
             <button
               type="button"
               onClick={dismiss}

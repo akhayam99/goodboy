@@ -7,9 +7,119 @@ use crate::secrets;
 
 const TOKEN_KEY: &str = "github.pat";
 
+const EMPTY_TOKEN_MESSAGE: &str = "Paste a personal access token first.";
+const BAD_CREDENTIALS_MESSAGE: &str =
+    "GitHub rejected this token. Check you pasted the whole value, then try again.";
+const EXPIRED_MESSAGE: &str =
+    "This token has expired or was revoked. Create a new one on GitHub and paste it here.";
+const MISSING_SCOPE_MESSAGE: &str = "This token is missing the access Goodboy needs. Recreate it with the repo scope, and authorize it for your org if SSO is on.";
+const NETWORK_MESSAGE: &str =
+    "Goodboy cannot reach github.com. Check your connection, then try again.";
+const CERTIFICATE_MESSAGE: &str = "Goodboy cannot verify the certificate github.com presented. Check your system clock and any proxy or VPN in the way, then try again.";
+const RATE_LIMIT_MESSAGE: &str =
+    "GitHub is rate limiting this token. Wait a few minutes, then try again.";
+const UNVERIFIED_MESSAGE: &str = "Goodboy could not verify this token.";
+
+const CERTIFICATE_MARKERS: &[&str] = &["x509", "certificate", "unknown authority"];
+
+const NETWORK_MARKERS: &[&str] = &[
+    "dial tcp",
+    "no such host",
+    "could not resolve host",
+    "temporary failure in name resolution",
+    "network is unreachable",
+    "network is down",
+    "connection refused",
+    "connection reset",
+    "i/o timeout",
+    "tls handshake",
+    "proxyconnect",
+    "error connecting to",
+    "check your internet connection",
+    "githubstatus.com",
+];
+
+const RATE_LIMIT_MARKERS: &[&str] = &[
+    "rate limit",
+    "abuse detection",
+    "http 429",
+    "429 too many requests",
+];
+
+const EXPIRED_MARKERS: &[&str] = &["expired", "revoked", "has been deleted"];
+
+const MISSING_SCOPE_MARKERS: &[&str] = &[
+    "missing required scopes",
+    "insufficient scope",
+    "resource not accessible",
+    "saml enforcement",
+    "must grant your",
+];
+
+const BAD_CREDENTIALS_MARKERS: &[&str] = &[
+    "bad credentials",
+    "http 401",
+    "401 unauthorized",
+    "requires authentication",
+    "invalid token",
+    "is invalid",
+];
+
+#[derive(Debug, PartialEq, Eq)]
+enum TokenFailure {
+    Certificate,
+    Network,
+    RateLimited,
+    Expired,
+    MissingScope,
+    BadCredentials,
+    Unverified,
+}
+
+fn classify_token_failure(stderr: &str) -> TokenFailure {
+    let haystack = stderr.to_lowercase();
+    let matches = |markers: &[&str]| markers.iter().any(|marker| haystack.contains(marker));
+    if matches(CERTIFICATE_MARKERS) {
+        return TokenFailure::Certificate;
+    }
+    if matches(NETWORK_MARKERS) {
+        return TokenFailure::Network;
+    }
+    if matches(RATE_LIMIT_MARKERS) {
+        return TokenFailure::RateLimited;
+    }
+    if matches(EXPIRED_MARKERS) {
+        return TokenFailure::Expired;
+    }
+    if matches(MISSING_SCOPE_MARKERS) {
+        return TokenFailure::MissingScope;
+    }
+    if matches(BAD_CREDENTIALS_MARKERS) {
+        return TokenFailure::BadCredentials;
+    }
+    TokenFailure::Unverified
+}
+
+fn token_failure_message(stderr: &str, exit_code: i32) -> String {
+    match classify_token_failure(stderr) {
+        TokenFailure::Certificate => CERTIFICATE_MESSAGE.to_string(),
+        TokenFailure::Network => NETWORK_MESSAGE.to_string(),
+        TokenFailure::RateLimited => RATE_LIMIT_MESSAGE.to_string(),
+        TokenFailure::Expired => EXPIRED_MESSAGE.to_string(),
+        TokenFailure::MissingScope => MISSING_SCOPE_MESSAGE.to_string(),
+        TokenFailure::BadCredentials => BAD_CREDENTIALS_MESSAGE.to_string(),
+        TokenFailure::Unverified => match stderr.lines().map(str::trim).find(|l| !l.is_empty()) {
+            Some(detail) => format!("{UNVERIFIED_MESSAGE} gh said: {detail}"),
+            None => format!("{UNVERIFIED_MESSAGE} gh exited with {exit_code}."),
+        },
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum GithubError {
-    #[error("gh binary not found in PATH")]
+    #[error(
+        "Goodboy cannot find the gh CLI. Install it from cli.github.com, then restart Goodboy."
+    )]
     NotFound,
     #[error("gh command failed: {0}")]
     Spawn(#[from] std::io::Error),
@@ -17,6 +127,8 @@ pub enum GithubError {
     Secret(#[from] secrets::SecretError),
     #[error("gh validation failed: {0}")]
     Validation(String),
+    #[error("{0}")]
+    TokenRejected(String),
 }
 
 impl Serialize for GithubError {
@@ -220,23 +332,32 @@ pub async fn gh_status(
         })
 }
 
+fn validate_token_with<F>(token: &str, run: F) -> Result<(), GithubError>
+where
+    F: FnOnce(&str) -> Result<GhRunResult, GithubError>,
+{
+    if token.trim().is_empty() {
+        return Err(GithubError::TokenRejected(EMPTY_TOKEN_MESSAGE.to_string()));
+    }
+    let res = run(token)?;
+    if res.exit_code != 0 {
+        return Err(GithubError::TokenRejected(token_failure_message(
+            &res.stderr,
+            res.exit_code,
+        )));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn gh_set_token(
     token: String,
     workspace_id: Option<String>,
 ) -> Result<GhStatus, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        if token.trim().is_empty() {
-            return Err(GithubError::Validation("token is empty".to_string()));
-        }
-        let res = run_gh(&["api", "user", "-q", ".login"], None, Some(&token))?;
-        if res.exit_code != 0 {
-            return Err(GithubError::Validation(if res.stderr.is_empty() {
-                format!("gh exited with {}", res.exit_code)
-            } else {
-                res.stderr.trim().to_string()
-            }));
-        }
+        validate_token_with(&token, |candidate| {
+            run_gh(&["api", "user", "-q", ".login"], None, Some(candidate))
+        })?;
         secrets::set(&token_key(workspace_id.as_deref()), &token)?;
         Ok(status_blocking(workspace_id, None))
     })
@@ -313,7 +434,242 @@ pub async fn gh_pr_diff(
 
 #[cfg(test)]
 mod tests {
-    use super::{read_token_from, token_key, TOKEN_KEY};
+    use super::{
+        read_token_from, token_failure_message, token_key, validate_token_with, GhRunResult,
+        GithubError, BAD_CREDENTIALS_MESSAGE, CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE,
+        EXPIRED_MESSAGE, MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, TOKEN_KEY,
+        UNVERIFIED_MESSAGE,
+    };
+
+    fn gh_failure(stderr: &str) -> GhRunResult {
+        GhRunResult {
+            stdout: String::new(),
+            stderr: stderr.to_string(),
+            exit_code: 1,
+        }
+    }
+
+    #[test]
+    fn bad_credentials_reads_as_a_mistyped_token() {
+        let message = token_failure_message("gh: Bad credentials (HTTP 401)\n", 1);
+        assert_eq!(message, BAD_CREDENTIALS_MESSAGE);
+        assert!(!message.contains("HTTP 401"));
+    }
+
+    #[test]
+    fn an_expired_or_revoked_token_asks_for_a_new_one() {
+        let message = token_failure_message("gh: Token expired, create a new one (HTTP 401)\n", 1);
+        assert_eq!(message, EXPIRED_MESSAGE);
+    }
+
+    #[test]
+    fn a_token_without_the_needed_scopes_names_the_scope() {
+        let message = token_failure_message(
+            "error: your authentication token is missing required scopes [repo]\n",
+            1,
+        );
+        assert_eq!(message, MISSING_SCOPE_MESSAGE);
+        assert!(message.contains("repo scope"));
+    }
+
+    #[test]
+    fn a_network_failure_points_at_the_connection() {
+        let message = token_failure_message(
+            "Get \"https://api.github.com/user\": dial tcp: lookup api.github.com: no such host\n",
+            1,
+        );
+        assert_eq!(message, NETWORK_MESSAGE);
+    }
+
+    #[test]
+    fn the_six_causes_stay_distinguishable() {
+        let messages = [
+            token_failure_message("gh: Bad credentials (HTTP 401)", 1),
+            token_failure_message("gh: the token has expired (HTTP 401)", 1),
+            token_failure_message(
+                "HTTP 403: Resource not accessible by personal access token",
+                1,
+            ),
+            token_failure_message("dial tcp 140.82.121.6:443: i/o timeout", 1),
+            token_failure_message(
+                "gh: API rate limit exceeded for user ID 12345. (HTTP 403)",
+                1,
+            ),
+            token_failure_message(
+                "Get \"https://api.github.com/user\": tls: failed to verify certificate: x509: certificate signed by unknown authority",
+                1,
+            ),
+        ];
+        assert_eq!(
+            messages,
+            [
+                BAD_CREDENTIALS_MESSAGE,
+                EXPIRED_MESSAGE,
+                MISSING_SCOPE_MESSAGE,
+                NETWORK_MESSAGE,
+                RATE_LIMIT_MESSAGE,
+                CERTIFICATE_MESSAGE,
+            ]
+            .map(str::to_string),
+            "each cause keeps its own written message"
+        );
+        let mut unique = messages.to_vec();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), 6, "each cause needs its own message");
+    }
+
+    #[test]
+    fn an_expired_certificate_is_not_read_as_an_expired_token() {
+        let message = token_failure_message(
+            "Get \"https://api.github.com/user\": tls: failed to verify certificate: x509: certificate has expired or is not yet valid: current time 2026-08-06T10:00:00Z is after 2025-01-01T00:00:00Z",
+            1,
+        );
+        assert_eq!(message, CERTIFICATE_MESSAGE);
+        assert_ne!(message, EXPIRED_MESSAGE);
+    }
+
+    #[test]
+    fn an_untrusted_chain_points_at_the_proxy_not_the_token() {
+        let message = token_failure_message(
+            "Get \"https://api.github.com/user\": tls: failed to verify certificate: x509: certificate signed by unknown authority",
+            1,
+        );
+        assert_eq!(message, CERTIFICATE_MESSAGE);
+    }
+
+    #[test]
+    fn a_rate_limited_token_is_not_read_as_a_scope_problem() {
+        let message = token_failure_message(
+            "gh: API rate limit exceeded for user ID 12345. (HTTP 403)",
+            1,
+        );
+        assert_eq!(message, RATE_LIMIT_MESSAGE);
+        assert_ne!(message, MISSING_SCOPE_MESSAGE);
+    }
+
+    #[test]
+    fn a_secondary_rate_limit_reads_the_same_way() {
+        let message = token_failure_message(
+            "gh: You have exceeded a secondary rate limit. Please wait a few minutes before you try again. (HTTP 403)",
+            1,
+        );
+        assert_eq!(message, RATE_LIMIT_MESSAGE);
+    }
+
+    #[test]
+    fn the_gh_wording_for_an_offline_machine_reads_as_a_network_failure() {
+        let message = token_failure_message(
+            "error connecting to api.github.com/user\ncheck your internet connection or https://githubstatus.com",
+            1,
+        );
+        assert_eq!(message, NETWORK_MESSAGE);
+        assert!(!message.contains("githubstatus.com"));
+    }
+
+    #[test]
+    fn saml_enforcement_reads_as_a_scope_problem() {
+        let message = token_failure_message(
+            "HTTP 403: Resource protected by organization SAML enforcement. You must grant your token access to this organization.",
+            1,
+        );
+        assert_eq!(message, MISSING_SCOPE_MESSAGE);
+    }
+
+    #[test]
+    fn an_unrecognised_failure_keeps_the_first_line_of_gh_output() {
+        let message = token_failure_message("gh: something new went wrong\nstack noise\n", 7);
+        assert_eq!(
+            message,
+            format!("{UNVERIFIED_MESSAGE} gh said: gh: something new went wrong")
+        );
+        assert!(!message.contains("stack noise"));
+    }
+
+    #[test]
+    fn a_silent_failure_falls_back_to_the_exit_code() {
+        assert_eq!(
+            token_failure_message("   \n", 12),
+            format!("{UNVERIFIED_MESSAGE} gh exited with 12.")
+        );
+    }
+
+    #[test]
+    fn a_rejected_token_renders_the_written_message_alone() {
+        let rendered = GithubError::TokenRejected(BAD_CREDENTIALS_MESSAGE.to_string()).to_string();
+        assert_eq!(rendered, BAD_CREDENTIALS_MESSAGE);
+    }
+
+    #[test]
+    fn a_rejected_token_serialises_to_a_bare_string() {
+        let payload = serde_json::to_string(&GithubError::TokenRejected(
+            BAD_CREDENTIALS_MESSAGE.to_string(),
+        ))
+        .expect("the error serialises");
+        assert_eq!(
+            payload,
+            serde_json::to_string(BAD_CREDENTIALS_MESSAGE).expect("the message serialises"),
+            "the frontend reads the rejection as a plain string, not a tagged object"
+        );
+    }
+
+    #[test]
+    fn a_missing_gh_binary_serialises_to_a_bare_string() {
+        let payload = serde_json::to_string(&GithubError::NotFound).expect("the error serialises");
+        assert_eq!(
+            payload,
+            serde_json::to_string(&GithubError::NotFound.to_string())
+                .expect("the message serialises"),
+            "the frontend reads the missing binary as a plain string, not a tagged object"
+        );
+    }
+
+    #[test]
+    fn a_missing_gh_binary_tells_the_user_what_to_do() {
+        let rendered = GithubError::NotFound.to_string();
+        assert!(rendered.contains("cli.github.com"));
+        assert!(rendered.contains("restart Goodboy"));
+    }
+
+    #[test]
+    fn setting_a_rejected_token_surfaces_the_written_message_with_no_prefix() {
+        let err = validate_token_with("ghp_bad", |_| {
+            Ok(gh_failure("gh: Bad credentials (HTTP 401)"))
+        })
+        .expect_err("a non-zero exit rejects the token");
+        assert_eq!(err.to_string(), BAD_CREDENTIALS_MESSAGE);
+        assert!(matches!(err, GithubError::TokenRejected(_)));
+    }
+
+    #[test]
+    fn setting_an_empty_token_surfaces_the_written_message_with_no_prefix() {
+        let err = validate_token_with("   ", |_| panic!("gh must not run for an empty token"))
+            .expect_err("an empty token is rejected before gh runs");
+        assert_eq!(err.to_string(), EMPTY_TOKEN_MESSAGE);
+        assert!(matches!(err, GithubError::TokenRejected(_)));
+    }
+
+    #[test]
+    fn setting_a_token_without_gh_installed_surfaces_the_install_message() {
+        let err = validate_token_with("ghp_ok", |_| Err(GithubError::NotFound))
+            .expect_err("a missing binary is an error");
+        assert_eq!(err.to_string(), GithubError::NotFound.to_string());
+    }
+
+    #[test]
+    fn setting_a_valid_token_passes_the_untrimmed_value_to_gh() {
+        let mut seen = String::new();
+        let outcome = validate_token_with(" ghp_ok ", |candidate| {
+            seen = candidate.to_string();
+            Ok(GhRunResult {
+                stdout: "octocat\n".to_string(),
+                stderr: String::new(),
+                exit_code: 0,
+            })
+        });
+        assert!(outcome.is_ok());
+        assert_eq!(seen, " ghp_ok ");
+    }
 
     #[test]
     fn token_fallback_prefers_workspace_then_member_then_global() {

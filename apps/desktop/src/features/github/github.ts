@@ -65,8 +65,7 @@ export const ghSetToken = async (token: string, workspaceId?: string): Promise<G
   try {
     return toStatus(await invoke<RawGhStatus>('gh_set_token', { token, workspaceId }));
   } catch (err) {
-    const msg = formatError(err);
-    throw new Error(`gh set token failed: ${msg}`, { cause: err });
+    throw new Error(formatError(err), { cause: err });
   }
 };
 

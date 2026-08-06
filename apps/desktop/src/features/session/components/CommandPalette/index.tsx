@@ -77,6 +77,7 @@ export type Props = {
   onClose: () => void;
   onOpenSettings?: () => void;
   onNewSession?: () => void;
+  onOpenProviders?: () => void;
   onOpenShortcutHelp?: () => void;
   initialQuery?: string;
 };
@@ -85,6 +86,7 @@ export const CommandPalette = ({
   onClose,
   onOpenSettings,
   onNewSession,
+  onOpenProviders,
   onOpenShortcutHelp,
   initialQuery = '',
 }: Props) => {
@@ -205,6 +207,14 @@ export const CommandPalette = ({
       group: 'action',
       onSelect: () => toggleTheme(),
     });
+    if (onOpenProviders) {
+      out.push({
+        id: 'action:connect-provider',
+        label: 'Connect a provider',
+        group: 'action',
+        onSelect: () => onOpenProviders(),
+      });
+    }
     out.push({
       id: 'action:pair-device',
       label: 'Pair your iPhone',
@@ -244,6 +254,7 @@ export const CommandPalette = ({
     selectAgent,
     onOpenSettings,
     onNewSession,
+    onOpenProviders,
     onOpenShortcutHelp,
     theme,
     toggleTheme,

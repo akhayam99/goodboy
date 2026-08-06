@@ -928,6 +928,13 @@ export const App = () => {
             setPaletteOpen(false);
           }}
           onNewSession={() => setPaletteOpen(false)}
+          onOpenProviders={() => {
+            closeAllStudios();
+            setProviderStudioFocus(null);
+            setProviderStudioAction(null);
+            setProviderStudioOpen(true);
+            setPaletteOpen(false);
+          }}
           onOpenShortcutHelp={() => {
             openShortcutHelp();
             setPaletteOpen(false);
