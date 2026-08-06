@@ -151,6 +151,11 @@ describe('AppFooter', () => {
     expect(onOpenSettings).toHaveBeenCalledOnce();
     expect(screen.queryByRole('button', { name: 'Open budget studio' })).toBeNull();
     expect(
+      screen.queryByRole('button', {
+        name: 'See how orchestration changed the way this workspace works',
+      }),
+    ).toBeNull();
+    expect(
       screen.queryByRole('button', { name: 'See what changed, release by release' }),
     ).toBeNull();
   });
@@ -220,12 +225,33 @@ describe('AppFooter', () => {
     expect(screen.getByTestId('update-indicator').textContent).toContain('Update to 0.2.0');
   });
 
+  it('orders the right cluster as workflows, providers, settings, update, more', () => {
+    storeState.updaterStatus = 'available';
+    render(<AppFooter {...footerProps()} />);
+
+    const beta = screen.getByText('Beta');
+    const row = beta.parentElement;
+    const cluster = row?.children[2];
+    const buttons = Array.from(cluster?.querySelectorAll('button') ?? []).filter(
+      (button) => button.closest('dialog') == null,
+    );
+    const names = buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent);
+
+    expect(names).toEqual([
+      'Open the workflow library for this workspace',
+      'Connect and manage your provider accounts',
+      SETTINGS_LABEL,
+      'Update to 0.2.0',
+      REST_MORE_LABEL,
+    ]);
+  });
+
   it('pulses the providers launcher until a provider connects, and never while its studio is open', () => {
     const { rerender } = render(<AppFooter {...footerProps()} />);
     const providers = () =>
       screen.getByRole('button', { name: 'Connect and manage your provider accounts' });
 
-    expect(providers().className).toContain('animate-soft-pulse');
+    expect(providers().className).toContain('motion-safe:animate-soft-pulse');
 
     rerender(<AppFooter {...footerProps({ overrides: { activeStudio: 'provider' } })} />);
     expect(providers().className).not.toContain('animate-soft-pulse');

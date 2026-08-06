@@ -149,6 +149,51 @@ describe('ChangelogStudio', () => {
     expect(mocks.markChangelogSeen).not.toHaveBeenCalled();
   });
 
+  it('marks nothing when the fetch failed and there is no cache to read', () => {
+    mocks.state = {
+      changelogReleases: [],
+      changelogStatus: 'error',
+      changelogError: 'network down',
+      changelogFetchedAt: null,
+      changelogSeenVersion: null,
+    };
+    mocks.installedVersion = '0.1.55';
+
+    renderStudio();
+
+    expect(mocks.markChangelogSeen).not.toHaveBeenCalled();
+  });
+
+  it('marks nothing while the fetch is still in flight', () => {
+    mocks.state = {
+      changelogReleases: [],
+      changelogStatus: 'loading',
+      changelogError: null,
+      changelogFetchedAt: null,
+      changelogSeenVersion: null,
+    };
+    mocks.installedVersion = '0.1.55';
+
+    renderStudio();
+
+    expect(mocks.markChangelogSeen).not.toHaveBeenCalled();
+  });
+
+  it('marks nothing when the installed version is not yet in the fetched releases', () => {
+    mocks.state = {
+      changelogReleases: [buildRelease('v0.1.56', '2026-07-10T10:00:00Z')],
+      changelogStatus: 'ready',
+      changelogError: null,
+      changelogFetchedAt: '2026-07-11T10:00:00Z',
+      changelogSeenVersion: null,
+    };
+    mocks.installedVersion = '0.1.55';
+
+    renderStudio();
+
+    expect(mocks.markChangelogSeen).not.toHaveBeenCalled();
+  });
+
   it('says nothing shipped yet when the list comes back empty', () => {
     mocks.state = {
       changelogReleases: [],

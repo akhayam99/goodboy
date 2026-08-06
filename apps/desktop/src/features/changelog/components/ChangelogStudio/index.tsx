@@ -4,6 +4,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
+import { isInstalledRelease } from '../../isInstalledRelease';
 import { useInstalledVersion } from '../../hooks/useInstalledVersion';
 import { resolveChangelogView } from '../../resolveChangelogView';
 import { ChangelogRail } from './ChangelogRail';
@@ -29,12 +30,24 @@ export const ChangelogStudio = ({ workspaceName, onClose }: Props) => {
     void loadChangelog();
   }, [loadChangelog]);
 
+  const installedReleaseIsLoaded =
+    installedVersion != null &&
+    releases.some((release) =>
+      isInstalledRelease({ tag: release.version, installed: installedVersion }),
+    );
+
   useEffect(() => {
     if (installedVersion == null) {
       return;
     }
+    if (status !== 'ready') {
+      return;
+    }
+    if (!installedReleaseIsLoaded) {
+      return;
+    }
     void markChangelogSeen({ version: installedVersion });
-  }, [installedVersion, markChangelogSeen]);
+  }, [installedVersion, installedReleaseIsLoaded, markChangelogSeen, status]);
 
   const view = resolveChangelogView({ status, releaseCount: releases.length });
   const selected =
