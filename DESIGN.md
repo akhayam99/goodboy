@@ -56,8 +56,11 @@ functional. One register per surface; let the other supply only texture.
 - **Workspace identity has one mount.** The workspace name lives in the top
   bar and nowhere else, because it must be readable on the board, where there
   is no sessions column at all. Clicking it opens an anchored popover that
-  switches workspace, creates one, and opens workspace settings; ⌘O and the
-  palette open that same popover instead of building a second one.
+  switches workspace and creates one; ⌘O and the palette open that same
+  popover instead of building a second one. Workspace settings has its own
+  control on the same row, next to the identity button, because a common
+  per-workspace preference (verbosity, for one) buried inside the switcher
+  popover was easy to never discover.
 - **Shell layout**: top bar (always visible) · left sidebar (sessions and
   agents; hidden at Overview, revealed on session entry) · main (workspace
   board, or a session's lens rail plus pane) · footer (always visible). Each

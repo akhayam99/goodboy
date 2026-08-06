@@ -195,7 +195,7 @@ export const Tooltip = ({ content, side = 'top', children }: TooltipProps) => {
                 visibility: coords ? 'visible' : 'hidden',
               }}
               className={cn(
-                'pointer-events-none z-50 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-xs font-medium text-background shadow-sm',
+                'pointer-events-none z-tooltip whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-xs font-medium text-background shadow-sm',
               )}
             >
               {content}

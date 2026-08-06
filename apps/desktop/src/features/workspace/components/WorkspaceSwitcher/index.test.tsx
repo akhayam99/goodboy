@@ -74,21 +74,16 @@ describe('WorkspaceSwitcher', () => {
     window.removeEventListener('goodboy:add-workspace', spy);
   });
 
-  it('carries workspace settings inside the selector', () => {
-    const onClose = vi.fn();
-    const spy = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', spy);
-    render(<WorkspaceSwitcher anchorRef={anchored()} onClose={onClose} />);
-    fireEvent.click(screen.getByText('Workspace settings'));
-    expect(spy).toHaveBeenCalledOnce();
-    expect(onClose).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-workspace-settings', spy);
+  it('does not duplicate workspace settings inside the selector', () => {
+    render(<WorkspaceSwitcher anchorRef={anchored()} onClose={vi.fn()} />);
+    expect(screen.queryByText('Workspace settings')).toBeNull();
   });
 
   it('anchors to the trigger instead of covering the app', () => {
     render(<WorkspaceSwitcher anchorRef={anchored()} onClose={vi.fn()} />);
     const panel = screen.getByRole('dialog', { name: 'Switch or open a workspace' });
     expect(panel.className).toContain('fixed');
-    expect(panel.style.width).toBe('288px');
+    expect(panel.className).toContain('z-popover');
+    expect(panel.style.width).toBe('340px');
   });
 });

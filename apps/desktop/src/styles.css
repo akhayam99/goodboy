@@ -229,6 +229,11 @@
   --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
 
   --color-focus-ring: oklch(0.78 0 0 / 0.5);
+
+  --z-index-popover-backdrop: 55;
+  --z-index-popover: 65;
+  --z-index-tooltip: 75;
+  --z-index-toast: 85;
 }
 
 /* fade-in keyframes defined only when the user hasn't asked to reduce motion,

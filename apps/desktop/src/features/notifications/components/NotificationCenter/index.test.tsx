@@ -511,6 +511,6 @@ describe('NotificationCenter', () => {
     const fadeRoot = viewport?.parentElement;
     expect(viewport?.className).toContain('overflow-y-auto');
     expect(viewport?.className).toContain('max-h-[inherit]');
-    expect(fadeRoot?.className).toContain('max-h-80');
+    expect(fadeRoot?.className).toContain('max-h-[25rem]');
   });
 });

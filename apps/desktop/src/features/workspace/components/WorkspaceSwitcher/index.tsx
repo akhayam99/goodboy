@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Settings } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Divider, EmptyState, Popover, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -19,9 +19,9 @@ type Coordinates = {
   readonly left: number;
 };
 
-const PANEL_WIDTH = 288;
+const PANEL_WIDTH = 340;
 const VIEWPORT_MARGIN = 8;
-const PANEL_MAX_HEIGHT = 420;
+const PANEL_MAX_HEIGHT = 480;
 
 const actionClass =
   'flex w-full items-center gap-2 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground';
@@ -107,11 +107,11 @@ export const WorkspaceSwitcher = ({ anchorRef, onClose }: Props) => {
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-30" onMouseDown={onClose} aria-hidden />
+      <div className="fixed inset-0 z-popover-backdrop" onMouseDown={onClose} aria-hidden />
       <Popover
         role="dialog"
         ariaLabel="Switch or open a workspace"
-        className="fixed z-40 flex flex-col"
+        className="fixed z-popover flex flex-col"
         style={{
           top: coordinates.top,
           bottom: coordinates.bottom,
@@ -129,7 +129,7 @@ export const WorkspaceSwitcher = ({ anchorRef, onClose }: Props) => {
           className="w-full bg-transparent px-3 py-2.5 text-xs focus-visible:outline-none"
         />
         <Divider />
-        <ScrollFade className="max-h-72" viewportClassName="p-1">
+        <ScrollFade className="max-h-96" viewportClassName="p-1" fadeFrom="elevated">
           <ul>
             {filtered.length === 0 ? (
               <li>
@@ -156,17 +156,6 @@ export const WorkspaceSwitcher = ({ anchorRef, onClose }: Props) => {
           </ul>
         </ScrollFade>
         <Divider />
-        <button
-          type="button"
-          onClick={() => {
-            window.dispatchEvent(new CustomEvent('goodboy:open-workspace-settings'));
-            onClose();
-          }}
-          className={actionClass}
-        >
-          <Settings size={13} aria-hidden />
-          Workspace settings
-        </button>
         <button
           type="button"
           onClick={() => {

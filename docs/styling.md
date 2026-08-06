@@ -162,9 +162,36 @@ Anything that belongs to a control opens anchored to that control, as a `Popover
 from `@goodboy/ui` portaled to `document.body` and positioned off the trigger's
 `getBoundingClientRect()`. `AppTopBar/NeedsYouPopover` and
 `workspace/components/WorkspaceSwitcher` are the reference implementations: fixed
-coordinates, a `z-30` click-catcher behind, Escape to close, and a flip above the
-trigger when the space below runs out. A centred overlay for a menu that has an
-obvious on-screen owner is a bug, not a style choice.
+coordinates, a `z-popover-backdrop` click-catcher behind, Escape to close, and a
+flip above the trigger when the space below runs out. A centred overlay for a menu
+that has an obvious on-screen owner is a bug, not a style choice.
+
+## z-index: a named scale, not a magic number per file
+
+App-global transient overlays (the ones that must win against every full-page
+surface, because their trigger stays visible and clickable no matter what is
+open underneath) use named tokens from `apps/desktop/src/styles.css`'
+`@theme` block, under the `--z-index-*` namespace: Tailwind v4 turns each key
+into a `z-<name>` utility automatically, the same mechanism already used for
+`--animate-*`.
+
+| token                        | value | utility                   | who                                                                                                         |
+| ---------------------------- | ----- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| (StudioShell fullscreen)     | 50    | `z-50` (Tailwind default) | `StudioShell`'s fullscreen variant. The floor: never lowered.                                               |
+| `--z-index-popover-backdrop` | 55    | `z-popover-backdrop`      | click-catcher behind the four app-global popovers below                                                     |
+| `--z-index-popover`          | 65    | `z-popover`               | `NotificationCenter`, `WorkspaceSwitcher`, `RunningScriptsIndicator`, `AppTopBar/NeedsYouPopover`           |
+| `--z-index-tooltip`          | 75    | `z-tooltip`               | `Tooltip` (`packages/ui`), portaled; must win over a popover it's triggered from inside                     |
+| `--z-index-toast`            | 85    | `z-toast`                 | the toast stack (`app/components/Toast`)                                                                    |
+| (native `<dialog>`)          | n/a   | n/a                       | `Dialog` renders through the browser's top layer, always above every z-indexed element regardless of number |
+
+Everything else keeps its existing, unnamed `z-10`/`z-20`/`z-30`/`z-40`
+value: those are local, scoped to one card, toolbar, or pane (`SessionViewMenu`,
+the jira/GitHub in-studio pickers, `SessionStudioLayer`'s session-scoped studio
+at `z-20`, and so on). They are never compared against a full-page studio in
+normal use, so they stay off the named scale. A control needs a name on this
+ladder only when it must render above `StudioShell`'s fullscreen `z-50`
+regardless of what else is open; anything narrower in scope takes the nearest
+existing local `z-10`..`z-40` value instead of inventing a new number.
 
 Confirmations never open a dialog. A destructive action swaps its own row or button
 for `InlineConfirm`, so the thing being destroyed stays visible while the user

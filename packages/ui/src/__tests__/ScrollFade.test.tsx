@@ -45,4 +45,16 @@ describe('ScrollFade', () => {
     );
     expect(viewportOf(container).className).toContain('px-3');
   });
+
+  it('fades to the elevated surface color for floating panels', () => {
+    const { container } = render(
+      <ScrollFade className="max-h-80" fadeFrom="elevated">
+        <p>content</p>
+      </ScrollFade>,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    const fades = root.querySelectorAll('[aria-hidden]');
+    expect(fades.length).toBeGreaterThan(0);
+    fades.forEach((fade) => expect(fade.className).toContain('from-elevated'));
+  });
 });
