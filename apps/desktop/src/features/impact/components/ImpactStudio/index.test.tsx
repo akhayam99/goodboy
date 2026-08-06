@@ -36,6 +36,8 @@ const buildMetrics = (): ImpactMetrics => ({
     medianSessionHours: 2,
     previousMedianSessionHours: 3,
     sessions: [{ sessionId, goal: 'Ship impact studio', value: 2 }],
+    spendUsd: 12.5,
+    spendSessions: [{ sessionId, goal: 'Ship impact studio', value: 7.25 }],
   }),
   pullRequests: result({
     open: 2,
@@ -50,6 +52,7 @@ const buildMetrics = (): ImpactMetrics => ({
         number: 42,
         title: 'Outcome and tempo',
         state: 'merged',
+        spendUsd: 3.5,
       },
     ],
   }),
@@ -132,9 +135,34 @@ describe('ImpactStudio', () => {
     expect(screen.getByText('orchestrated')).toBeDefined();
     expect(screen.getByText('75%')).toBeDefined();
     expect(screen.getByText(/longest session wall-clock/i)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /ship impact studio/i }));
+    expect(screen.getByText(/spend this window/i)).toBeDefined();
+    expect(screen.getByText('$12.50')).toBeDefined();
+    expect(screen.getByText('$7.25')).toBeDefined();
+    const drillDowns = screen.getAllByRole('button', { name: /ship impact studio/i });
+    expect(drillDowns).toHaveLength(2);
+    fireEvent.click(drillDowns[0]!);
     expect(mocks.setCurrentSession).toHaveBeenCalledWith('session-1');
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renders the spend widget as absent rather than zero when nothing was measured', () => {
+    const base = buildMetrics();
+    mocks.metrics = {
+      ...base,
+      overview: result({ ...base.overview.data!, spendUsd: null, spendSessions: [] }),
+    };
+    render(
+      <ImpactStudio
+        workspaceId={'workspace-1' as never}
+        workspaceName="Goodboy"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('No spend recorded in this window')).toBeDefined();
+    expect(screen.queryByText('$0')).toBeNull();
+    expect(screen.queryByText('$0.00')).toBeNull();
+    expect(screen.queryByText('$12.50')).toBeNull();
   });
 
   it('switches to Shipped and renders its key outcome rows', () => {
@@ -150,6 +178,31 @@ describe('ImpactStudio', () => {
     expect(screen.getByText('PR funnel')).toBeDefined();
     expect(screen.getByText('Published drafts: 4')).toBeDefined();
     expect(screen.getByText('src/hot.ts')).toBeDefined();
+    expect(screen.getByText('$3.50')).toBeDefined();
+  });
+
+  it('omits the pull request spend figure when the pull request has no telemetry', () => {
+    const base = buildMetrics();
+    const prs = base.pullRequests.data!;
+    mocks.metrics = {
+      ...base,
+      pullRequests: result({
+        ...prs,
+        entries: prs.entries.map((entry) => ({ ...entry, spendUsd: null })),
+      }),
+    };
+    render(
+      <ImpactStudio
+        workspaceId={'workspace-1' as never}
+        workspaceName="Goodboy"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shipped' }));
+    expect(screen.getByText('PR funnel')).toBeDefined();
+    expect(screen.queryByText('$3.50')).toBeNull();
+    expect(screen.queryByText('$0')).toBeNull();
   });
 
   it('switches to Flow and renders tempo and blocker rows', () => {

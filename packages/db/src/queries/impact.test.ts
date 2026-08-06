@@ -112,6 +112,7 @@ type TelemetrySeed = {
   readonly cached?: number;
   readonly created?: number;
   readonly context?: number | null;
+  readonly cost?: number;
 };
 
 const addTelemetry = async ({
@@ -136,13 +137,14 @@ const addTelemetry = async ({
        (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens,
         estimated_cost_usd, recorded_at, cached_input_tokens, cache_creation_input_tokens,
         context_tokens)
-     VALUES (?, ?, ?, 'turn', ?, 'opus', ?, 10, 0.1, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, 'turn', ?, 'opus', ?, 10, ?, ?, ?, ?, ?)`,
     [
       seed.id,
       seed.runId,
       seed.sessionId,
       seed.provider ?? 'anthropic',
       seed.input ?? 100,
+      seed.cost ?? 0.1,
       seed.at,
       seed.cached ?? 0,
       seed.created ?? 0,
@@ -180,6 +182,18 @@ describe('impact overview', () => {
       db,
       seed: { id: 'child', sessionId: 'recent', startedAt: RECENT, parentId: 'parent' },
     });
+    await addTelemetry({
+      db,
+      seed: { id: 't-recent', runId: 'r-recent', sessionId: 'recent', at: RECENT, cost: 2.5 },
+    });
+    await addTelemetry({
+      db,
+      seed: { id: 't-plain', runId: 'r-plain', sessionId: 'plain', at: RECENT, cost: 1.5 },
+    });
+    await addTelemetry({
+      db,
+      seed: { id: 't-old', runId: 'r-old', sessionId: 'old', at: OLD, cost: 3 },
+    });
 
     const result = await getImpactOverview(params({ db, sinceMs: SINCE }));
 
@@ -188,6 +202,39 @@ describe('impact overview', () => {
     expect(result.previousSessionCount).toBe(1);
     expect(result.medianSessionHours).toBe(2);
     expect(result.sessions[0]?.sessionId).toBe('recent');
+    expect(result.spendUsd).toBeCloseTo(4, 4);
+    expect(result.spendSessions[0]).toMatchObject({ sessionId: 'recent', value: 2.5 });
+  });
+
+  it('reports spend as absent rather than zero when no telemetry was recorded', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'untelemetered', createdAt: RECENT } });
+
+    const result = await getImpactOverview(params({ db, sinceMs: SINCE }));
+
+    expect(result.spendUsd).toBeNull();
+    expect(result.spendSessions).toEqual([]);
+  });
+
+  it('reports spend as absent when every telemetry row priced the work at zero', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'unpriced', createdAt: RECENT } });
+    await addTelemetry({
+      db,
+      seed: {
+        id: 't-unpriced',
+        runId: 'r-unpriced',
+        sessionId: 'unpriced',
+        at: RECENT,
+        provider: 'opencode',
+        cost: 0,
+      },
+    });
+
+    const result = await getImpactOverview(params({ db, sinceMs: SINCE }));
+
+    expect(result.spendUsd).toBeNull();
+    expect(result.spendSessions).toEqual([]);
   });
 });
 
@@ -233,6 +280,157 @@ describe('pull request outcomes', () => {
 
     expect(result).toMatchObject({ open: 0, merged: 1, closed: 0 });
     expect(result.entries[0]).toMatchObject({ number: 8, sessionId: 's1' });
+  });
+
+  it('does not double-count spend when a composite session has two worktree rows on one branch', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'composite', createdAt: RECENT } });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, created_at)
+       VALUES ('wt-a', 'composite', '/tmp/repo-a', 'shared/branch', 0, ?),
+              ('wt-b', 'composite', '/tmp/repo-b', 'shared/branch', 1, ?)`,
+      [RECENT, RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'repo', ?, ?)`,
+      [
+        'shared/branch',
+        JSON.stringify({
+          number: 21,
+          title: 'composite ship',
+          state: 'merged',
+          updatedAt: iso(RECENT),
+        }),
+        iso(RECENT),
+      ],
+    );
+    await addTelemetry({
+      db,
+      seed: {
+        id: 't-composite',
+        runId: 'r-composite',
+        sessionId: 'composite',
+        at: RECENT,
+        cost: 5,
+      },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.entries[0]).toMatchObject({ number: 21, spendUsd: 5 });
+  });
+
+  it('reports a pull request with no telemetry as having no spend, not zero spend', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'unpriced', createdAt: RECENT } });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, created_at)
+       VALUES ('wt-unpriced', 'unpriced', '/tmp/unpriced', 'feature/unpriced', 0, ?)`,
+      [RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'repo', ?, ?)`,
+      [
+        'feature/unpriced',
+        JSON.stringify({
+          number: 30,
+          title: 'no telemetry yet',
+          state: 'open',
+          updatedAt: iso(RECENT),
+        }),
+        iso(RECENT),
+      ],
+    );
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.entries[0]).toMatchObject({ number: 30, spendUsd: null });
+  });
+
+  it('leaves another workspace spend out of a pull request that shares its branch name', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'mine', createdAt: RECENT } });
+    await addSession({
+      db,
+      seed: { id: 'theirs', createdAt: RECENT, workspace: otherWorkspaceId },
+    });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, created_at)
+       VALUES ('wt-mine', 'mine', '/tmp/mine', 'ak/shared-slug', 0, ?),
+              ('wt-theirs', 'theirs', '/tmp/theirs', 'ak/shared-slug', 0, ?)`,
+      [RECENT, RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'repo', ?, ?)`,
+      [
+        'ak/shared-slug',
+        JSON.stringify({
+          number: 44,
+          title: 'shared branch name',
+          state: 'open',
+          updatedAt: iso(RECENT),
+        }),
+        iso(RECENT),
+      ],
+    );
+    await addTelemetry({
+      db,
+      seed: { id: 't-mine', runId: 'r-mine', sessionId: 'mine', at: RECENT, cost: 2 },
+    });
+    await addTelemetry({
+      db,
+      seed: { id: 't-theirs', runId: 'r-theirs', sessionId: 'theirs', at: RECENT, cost: 9 },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.entries[0]).toMatchObject({ number: 44, spendUsd: 2 });
+  });
+
+  it('reports a pull request priced at zero as having no spend', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'freebie', createdAt: RECENT } });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, created_at)
+       VALUES ('wt-freebie', 'freebie', '/tmp/freebie', 'ak/freebie', 0, ?)`,
+      [RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'repo', ?, ?)`,
+      [
+        'ak/freebie',
+        JSON.stringify({
+          number: 51,
+          title: 'unpriced provider run',
+          state: 'open',
+          updatedAt: iso(RECENT),
+        }),
+        iso(RECENT),
+      ],
+    );
+    await addTelemetry({
+      db,
+      seed: {
+        id: 't-freebie',
+        runId: 'r-freebie',
+        sessionId: 'freebie',
+        at: RECENT,
+        provider: 'opencode',
+        cost: 0,
+      },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.entries[0]).toMatchObject({ number: 51, spendUsd: null });
   });
 });
 

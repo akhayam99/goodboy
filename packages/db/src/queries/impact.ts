@@ -23,6 +23,8 @@ export type ImpactOverview = {
   readonly medianSessionHours: number | null;
   readonly previousMedianSessionHours: number | null;
   readonly sessions: ReadonlyArray<ImpactSession>;
+  readonly spendUsd: number | null;
+  readonly spendSessions: ReadonlyArray<ImpactSession>;
 };
 
 export type PullRequestEntry = {
@@ -31,6 +33,7 @@ export type PullRequestEntry = {
   readonly number: number;
   readonly title: string;
   readonly state: string;
+  readonly spendUsd: number | null;
 };
 
 export type PullRequestOutcomes = {
@@ -138,6 +141,13 @@ type PullRequestRow = {
   number: number;
   title: string;
   state: string;
+  spend_usd: number | null;
+};
+
+type SessionSpendRow = {
+  session_id: string;
+  goal: string;
+  spend_usd: number;
 };
 
 type ReviewDurationRow = {
@@ -300,13 +310,51 @@ const selectSessionDurations = async ({
   );
 };
 
+type SessionSpendParams = ImpactQueryParams & {
+  readonly startMs: number | null;
+  readonly endMs: number | null;
+};
+
+const selectSessionSpend = async ({
+  db,
+  workspaceId,
+  startMs,
+  endMs,
+}: SessionSpendParams): Promise<ReadonlyArray<SessionSpendRow>> => {
+  return db.select<SessionSpendRow>(
+    `SELECT
+       s.id AS session_id,
+       s.goal AS goal,
+       SUM(tr.estimated_cost_usd) AS spend_usd
+     FROM sessions s
+     JOIN telemetry_records tr ON tr.session_id = s.id
+    WHERE s.workspace_id = ?
+      AND s.deleted_at IS NULL
+      AND (? IS NULL OR s.updated_at >= ?)
+      AND (? IS NULL OR s.updated_at < ?)
+      AND (? IS NULL OR tr.recorded_at >= ?)
+      AND (? IS NULL OR tr.recorded_at < ?)
+    GROUP BY s.id
+    ORDER BY spend_usd DESC`,
+    [workspaceId, startMs, startMs, endMs, endMs, startMs, startMs, endMs, endMs],
+  );
+};
+
+const sumSpend = ({ rows }: { readonly rows: ReadonlyArray<SessionSpendRow> }): number | null => {
+  const total = rows.reduce((running, row) => running + row.spend_usd, 0);
+  if (total <= 0) {
+    return null;
+  }
+  return total;
+};
+
 export const getImpactOverview = async ({
   db,
   workspaceId,
   sinceMs,
 }: ImpactQueryParams): Promise<ImpactOverview> => {
   const bounds = windowBounds({ sinceMs });
-  const [current, previous, durations, previousDurations] = await Promise.all([
+  const [current, previous, durations, previousDurations, spend] = await Promise.all([
     selectOverview({ db, workspaceId, sinceMs, startMs: bounds.currentStart, endMs: null }),
     sinceMs === null
       ? Promise.resolve(null)
@@ -335,6 +383,7 @@ export const getImpactOverview = async ({
           endMs: bounds.previousEnd,
           limit: null,
         }),
+    selectSessionSpend({ db, workspaceId, sinceMs, startMs: bounds.currentStart, endMs: null }),
   ]);
   return {
     sessionCount: readCount({ value: current.session_count }),
@@ -355,6 +404,15 @@ export const getImpactOverview = async ({
       goal: row.goal,
       value: row.duration_hours,
     })),
+    spendUsd: sumSpend({ rows: spend }),
+    spendSessions: spend
+      .filter((row) => row.spend_usd > 0)
+      .slice(0, 5)
+      .map((row) => ({
+        sessionId: row.session_id as SessionId,
+        goal: row.goal,
+        value: row.spend_usd,
+      })),
   };
 };
 
@@ -377,7 +435,20 @@ const selectPullRequests = async ({
        s.goal AS goal,
        CAST(json_extract(g.pr_json, '$.number') AS INTEGER) AS number,
        COALESCE(json_extract(g.pr_json, '$.title'), 'Untitled pull request') AS title,
-       COALESCE(json_extract(g.pr_json, '$.state'), 'open') AS state
+       COALESCE(json_extract(g.pr_json, '$.state'), 'open') AS state,
+       NULLIF(
+         (SELECT SUM(tr.estimated_cost_usd)
+            FROM telemetry_records tr
+           WHERE tr.session_id IN (
+             SELECT sw2.session_id
+               FROM session_worktrees sw2
+               JOIN sessions s2 ON s2.id = sw2.session_id
+              WHERE sw2.branch = g.branch
+                AND s2.workspace_id = s.workspace_id
+                AND s2.deleted_at IS NULL
+           )),
+         0
+       ) AS spend_usd
      FROM github_pr_cache g
      JOIN session_worktrees sw ON sw.branch = g.branch
      JOIN sessions s ON s.id = sw.session_id
@@ -432,6 +503,7 @@ export const getPullRequestOutcomes = async ({
       number: entry.number,
       title: entry.title,
       state: entry.state,
+      spendUsd: entry.spend_usd,
     })),
   };
 };

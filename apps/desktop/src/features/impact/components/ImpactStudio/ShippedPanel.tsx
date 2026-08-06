@@ -10,7 +10,7 @@ import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -87,6 +87,14 @@ export const ShippedPanel = ({
                 <span className="min-w-0 flex-1 truncate">
                   #{entry.number} {entry.title}
                 </span>
+                {entry.spendUsd === null ? null : (
+                  <span
+                    title={formatUsdPrecise(entry.spendUsd)}
+                    className="shrink-0 font-mono tabular-nums text-muted-foreground"
+                  >
+                    {formatUsd(entry.spendUsd)}
+                  </span>
+                )}
                 <span className="shrink-0 capitalize text-muted-foreground">{entry.state}</span>
                 <ArrowUpRight size={12} aria-hidden />
               </button>
