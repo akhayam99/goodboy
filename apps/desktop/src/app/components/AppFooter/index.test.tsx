@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -32,6 +33,38 @@ import { BetaPill } from '../../../shared/components/BetaPill';
 
 const BETA_CENTERING = 'pointer-events-none absolute inset-x-0 mx-auto w-fit';
 
+type FooterProps = ComponentProps<typeof AppFooter>;
+
+type Params = {
+  readonly overrides?: Partial<FooterProps>;
+};
+
+const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
+  activeStudio: null,
+  onOpenWorkflows: vi.fn(),
+  onOpenProviders: vi.fn(),
+  onOpenBudget: vi.fn(),
+  onOpenImpact: vi.fn(),
+  onOpenChangelog: vi.fn(),
+  onOpenGithub: vi.fn(),
+  onOpenLinear: vi.fn(),
+  onOpenJira: vi.fn(),
+  onOpenSentry: vi.fn(),
+  onOpenGitlab: vi.fn(),
+  onOpenBitbucket: vi.fn(),
+  onOpenSlack: vi.fn(),
+  onConvertToDevProject: vi.fn(),
+  githubEnabled: false,
+  linearEnabled: false,
+  jiraEnabled: false,
+  sentryEnabled: false,
+  gitlabEnabled: false,
+  bitbucketEnabled: false,
+  slackEnabled: false,
+  isSimpleWorkspace: false,
+  ...overrides,
+});
+
 describe('AppFooter', () => {
   it('centers beta and opens each section', () => {
     const onOpenWorkflows = vi.fn();
@@ -41,26 +74,15 @@ describe('AppFooter', () => {
     const onOpenChangelog = vi.fn();
     render(
       <AppFooter
-        activeStudio={null}
-        onOpenWorkflows={onOpenWorkflows}
-        onOpenProviders={onOpenProviders}
-        onOpenBudget={onOpenBudget}
-        onOpenImpact={onOpenImpact}
-        onOpenChangelog={onOpenChangelog}
-        onOpenGithub={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenJira={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={vi.fn()}
-        onOpenSlack={vi.fn()}
-        githubEnabled={false}
-        linearEnabled={false}
-        jiraEnabled={false}
-        sentryEnabled={false}
-        gitlabEnabled={false}
-        slackEnabled={false}
-        isSimpleWorkspace={false}
-        onConvertToDevProject={vi.fn()}
+        {...footerProps({
+          overrides: {
+            onOpenWorkflows,
+            onOpenProviders,
+            onOpenBudget,
+            onOpenImpact,
+            onOpenChangelog,
+          },
+        })}
       />,
     );
 
@@ -93,30 +115,7 @@ describe('AppFooter', () => {
   });
 
   it('keeps studio buttons muted at rest and gives the active one a subtle surface', () => {
-    render(
-      <AppFooter
-        activeStudio="impact"
-        onOpenWorkflows={vi.fn()}
-        onOpenProviders={vi.fn()}
-        onOpenBudget={vi.fn()}
-        onOpenImpact={vi.fn()}
-        onOpenChangelog={vi.fn()}
-        onOpenGithub={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenJira={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={vi.fn()}
-        onOpenSlack={vi.fn()}
-        githubEnabled={false}
-        linearEnabled={false}
-        jiraEnabled={false}
-        sentryEnabled={false}
-        gitlabEnabled={false}
-        slackEnabled={false}
-        isSimpleWorkspace={false}
-        onConvertToDevProject={vi.fn()}
-      />,
-    );
+    render(<AppFooter {...footerProps({ overrides: { activeStudio: 'impact' } })} />);
 
     const budget = screen.getByRole('button', { name: 'Open budget studio' });
     const impact = screen.getByRole('button', {
@@ -132,34 +131,12 @@ describe('AppFooter', () => {
   it('renders every disconnected integration and opens its studio', () => {
     const onOpenGitlab = vi.fn();
 
-    render(
-      <AppFooter
-        activeStudio={null}
-        onOpenWorkflows={vi.fn()}
-        onOpenProviders={vi.fn()}
-        onOpenBudget={vi.fn()}
-        onOpenImpact={vi.fn()}
-        onOpenChangelog={vi.fn()}
-        onOpenGithub={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenJira={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={onOpenGitlab}
-        onOpenSlack={vi.fn()}
-        githubEnabled={false}
-        linearEnabled={false}
-        jiraEnabled={false}
-        sentryEnabled={false}
-        gitlabEnabled={false}
-        slackEnabled={false}
-        isSimpleWorkspace={false}
-        onConvertToDevProject={vi.fn()}
-      />,
-    );
+    render(<AppFooter {...footerProps({ overrides: { onOpenGitlab } })} />);
 
     expect(integrationGlyph.mock.calls.map(([provider]) => provider)).toEqual([
       'github',
       'gitlab',
+      'bitbucket',
       'linear',
       'jira',
       'slack',
@@ -167,6 +144,7 @@ describe('AppFooter', () => {
     ]);
     expect(screen.getByRole('button', { name: 'Connect GitHub' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect GitLab' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect Bitbucket' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect Jira' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect Sentry' })).toBeDefined();
@@ -182,31 +160,13 @@ describe('AppFooter', () => {
 
     render(
       <AppFooter
-        activeStudio={null}
-        onOpenWorkflows={vi.fn()}
-        onOpenProviders={vi.fn()}
-        onOpenBudget={vi.fn()}
-        onOpenImpact={vi.fn()}
-        onOpenChangelog={vi.fn()}
-        onOpenGithub={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenJira={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={vi.fn()}
-        onOpenSlack={vi.fn()}
-        githubEnabled={false}
-        linearEnabled={false}
-        jiraEnabled={false}
-        sentryEnabled={false}
-        gitlabEnabled={false}
-        slackEnabled={false}
-        isSimpleWorkspace
-        onConvertToDevProject={onConvertToDevProject}
+        {...footerProps({ overrides: { isSimpleWorkspace: true, onConvertToDevProject } })}
       />,
     );
 
     expect(screen.queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Connect Bitbucket' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect Jira' })).toBeDefined();
@@ -225,30 +185,7 @@ describe('AppFooter', () => {
 
   it('opens the GitLab studio when GitLab is connected', () => {
     const onOpenGitlab = vi.fn();
-    render(
-      <AppFooter
-        activeStudio={null}
-        onOpenWorkflows={vi.fn()}
-        onOpenProviders={vi.fn()}
-        onOpenBudget={vi.fn()}
-        onOpenImpact={vi.fn()}
-        onOpenChangelog={vi.fn()}
-        onOpenGithub={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenJira={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={onOpenGitlab}
-        onOpenSlack={vi.fn()}
-        githubEnabled={false}
-        linearEnabled={false}
-        jiraEnabled={false}
-        sentryEnabled={false}
-        gitlabEnabled
-        slackEnabled={false}
-        isSimpleWorkspace={false}
-        onConvertToDevProject={vi.fn()}
-      />,
-    );
+    render(<AppFooter {...footerProps({ overrides: { gitlabEnabled: true, onOpenGitlab } })} />);
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -259,60 +196,30 @@ describe('AppFooter', () => {
     expect(onOpenGitlab).toHaveBeenCalledOnce();
   });
 
+  it('offers the Bitbucket studio and says so when Bitbucket is not connected yet', () => {
+    const onOpenBitbucket = vi.fn();
+    const { rerender } = render(<AppFooter {...footerProps({ overrides: { onOpenBitbucket } })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Bitbucket' }));
+    expect(onOpenBitbucket).toHaveBeenCalledOnce();
+
+    rerender(
+      <AppFooter {...footerProps({ overrides: { bitbucketEnabled: true, onOpenBitbucket } })} />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
+    ).toBeDefined();
+  });
+
   it('offers the Slack studio and says so when Slack is not connected yet', () => {
     const onOpenSlack = vi.fn();
-    const { rerender } = render(
-      <AppFooter
-        activeStudio={null}
-        onOpenWorkflows={vi.fn()}
-        onOpenProviders={vi.fn()}
-        onOpenBudget={vi.fn()}
-        onOpenImpact={vi.fn()}
-        onOpenChangelog={vi.fn()}
-        onOpenGithub={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenJira={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={vi.fn()}
-        onOpenSlack={onOpenSlack}
-        githubEnabled={false}
-        linearEnabled={false}
-        jiraEnabled={false}
-        sentryEnabled={false}
-        gitlabEnabled={false}
-        slackEnabled={false}
-        isSimpleWorkspace={false}
-        onConvertToDevProject={vi.fn()}
-      />,
-    );
+    const { rerender } = render(<AppFooter {...footerProps({ overrides: { onOpenSlack } })} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
     expect(onOpenSlack).toHaveBeenCalledOnce();
 
-    rerender(
-      <AppFooter
-        activeStudio={null}
-        onOpenWorkflows={vi.fn()}
-        onOpenProviders={vi.fn()}
-        onOpenBudget={vi.fn()}
-        onOpenImpact={vi.fn()}
-        onOpenChangelog={vi.fn()}
-        onOpenGithub={vi.fn()}
-        onOpenLinear={vi.fn()}
-        onOpenJira={vi.fn()}
-        onOpenSentry={vi.fn()}
-        onOpenGitlab={vi.fn()}
-        onOpenSlack={onOpenSlack}
-        githubEnabled={false}
-        linearEnabled={false}
-        jiraEnabled={false}
-        sentryEnabled={false}
-        gitlabEnabled={false}
-        slackEnabled
-        isSimpleWorkspace={false}
-        onConvertToDevProject={vi.fn()}
-      />,
-    );
+    rerender(<AppFooter {...footerProps({ overrides: { slackEnabled: true, onOpenSlack } })} />);
 
     expect(
       screen.getByRole('button', { name: 'Launch a session from a Slack thread' }),

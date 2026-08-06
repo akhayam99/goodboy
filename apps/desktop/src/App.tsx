@@ -33,6 +33,7 @@ import { NewSessionView } from './features/session/components/NewSessionView';
 import { GitHubStudio } from './features/github/components/GitHubStudio';
 import { LinearStudio } from './features/integrations/linear/LinearStudio';
 import { SentryStudio } from './features/integrations/sentry/SentryStudio';
+import { BitbucketWorkspaceStudio } from './features/integrations/bitbucket/BitbucketWorkspaceStudio';
 import { GitlabStudio } from './features/integrations/gitlab/GitlabStudio';
 import { JiraStudio } from './features/integrations/jira/JiraStudio';
 import { SlackStudio } from './features/integrations/slack/SlackStudio';
@@ -109,6 +110,11 @@ export const App = () => {
       (i) => i.provider === 'gitlab',
     ),
   );
+  const hasBitbucket = useAppStore((s) =>
+    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
+      (i) => i.provider === 'bitbucket',
+    ),
+  );
   const hasSlack = useAppStore((s) =>
     (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
       (i) => i.provider === 'slack',
@@ -137,6 +143,7 @@ export const App = () => {
   const [gitlabStudioFocus, setGitlabStudioFocus] = useState<string | null>(null);
   const [jiraStudioOpen, setJiraStudioOpen] = useState(false);
   const [jiraStudioFocus, setJiraStudioFocus] = useState<string | null>(null);
+  const [bitbucketStudioOpen, setBitbucketStudioOpen] = useState(false);
   const [slackStudioOpen, setSlackStudioOpen] = useState(false);
   const [slackStudioFocus, setSlackStudioFocus] = useState<string | null>(null);
   const [providerStudioOpen, setProviderStudioOpen] = useState(false);
@@ -177,6 +184,7 @@ export const App = () => {
     setSentryStudioOpen(false);
     setGitlabStudioOpen(false);
     setJiraStudioOpen(false);
+    setBitbucketStudioOpen(false);
     setSlackStudioOpen(false);
     setAppSettingsOpen(false);
     setGuideStudioOpen(false);
@@ -496,13 +504,15 @@ export const App = () => {
                       ? 'gitlab'
                       : jiraStudioOpen
                         ? 'jira'
-                        : slackStudioOpen
-                          ? 'slack'
-                          : appSettingsOpen
-                            ? 'settings'
-                            : guideStudioOpen
-                              ? 'guide'
-                              : null;
+                        : bitbucketStudioOpen
+                          ? 'bitbucket'
+                          : slackStudioOpen
+                            ? 'slack'
+                            : appSettingsOpen
+                              ? 'settings'
+                              : guideStudioOpen
+                                ? 'guide'
+                                : null;
 
   const openSettings = useCallback(() => {
     closeAllStudios();
@@ -774,6 +784,7 @@ export const App = () => {
                 jiraEnabled={hasJira}
                 sentryEnabled={hasSentry}
                 gitlabEnabled={hasGitlab}
+                bitbucketEnabled={hasBitbucket}
                 slackEnabled={hasSlack}
                 onOpenWorkflows={() => {
                   closeAllStudios();
@@ -813,6 +824,10 @@ export const App = () => {
                   closeAllStudios();
                   setGitlabStudioFocus(null);
                   setGitlabStudioOpen(true);
+                }}
+                onOpenBitbucket={() => {
+                  closeAllStudios();
+                  setBitbucketStudioOpen(true);
                 }}
                 onOpenSlack={() => {
                   closeAllStudios();
@@ -1017,6 +1032,13 @@ export const App = () => {
           workspaceName={currentWorkspace.name}
           initialIssueId={jiraStudioFocus}
           onClose={() => setJiraStudioOpen(false)}
+        />
+      ) : null}
+      {bitbucketStudioOpen && currentWorkspace ? (
+        <BitbucketWorkspaceStudio
+          workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
+          onClose={() => setBitbucketStudioOpen(false)}
         />
       ) : null}
       {slackStudioOpen && currentWorkspace ? (

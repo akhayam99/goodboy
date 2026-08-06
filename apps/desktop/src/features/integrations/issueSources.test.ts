@@ -16,6 +16,16 @@ describe('resolveIssueSources', () => {
     ).toEqual(['Linear', 'Slack']);
   });
 
+  it('never offers bitbucket, which tracks no issues of its own', () => {
+    expect(
+      resolveIssueSources({
+        integrations: [integration('bitbucket'), integration('jira')],
+        remoteKind: null,
+        isGithubAuthenticated: false,
+      }).map((source) => source.provider),
+    ).toEqual(['jira']);
+  });
+
   it('leaves slack out until the workspace connects it', () => {
     expect(
       resolveIssueSources({

@@ -81,6 +81,28 @@ describe('resolveIntegrationConnection', () => {
     });
   });
 
+  it('connects bitbucket from the workspace integration alone, whatever the remote is', () => {
+    const connected = resolveIntegrationConnection({
+      provider: 'bitbucket',
+      integrations: [integration({ provider: 'bitbucket' })],
+      remoteKind: 'other',
+      externalTasks: [],
+      isGithubAuthenticated: false,
+    });
+    const missing = resolveIntegrationConnection({
+      provider: 'bitbucket',
+      integrations: [],
+      remoteKind: 'other',
+      externalTasks: [],
+      isGithubAuthenticated: false,
+    });
+
+    expect({ connected, missing }).toEqual({
+      connected: { isConnected: true, isAvailable: true },
+      missing: { isConnected: false, isAvailable: false },
+    });
+  });
+
   it('does not treat a GitHub remote as an authenticated connection', () => {
     const github = resolveIntegrationConnection({
       provider: 'github',

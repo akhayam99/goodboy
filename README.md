@@ -82,10 +82,14 @@ its real transitions, and edit the description. Launch a session from one and
 the key lands on the branch. Creating a new issue, sprints, boards and
 priority edits are not there yet, and Jira Server is unsupported.
 
-**Bitbucket, read, act and route.** Connect Bitbucket Cloud from onboarding or
-the integrations panel with a workspace slug, your Atlassian account email and
-an API token, all verified against the account and the workspace before
-anything is stored. From there a session's pull request lens shows the
+**Bitbucket, read, act and route.** Connect Bitbucket Cloud from the footer,
+from onboarding or from the integrations panel with a workspace slug, your
+Atlassian account email and an API token, all verified against the account and
+the workspace before anything is stored. The footer entry sits next to GitHub
+and GitLab and opens the workspace's pull requests without a session, though
+that view is read-only: you browse a request and start a session from it, and
+the approve, comment and merge actions live inside a session. From there a
+session's pull request lens shows the
 Bitbucket request for its branch beside any GitHub or GitLab one, and the
 studio behind it lists the repository's pull requests with the description, the
 changed files, the build statuses read as plain language, and the review
@@ -94,8 +98,10 @@ changes or withdraw the ask, comment, reply on a thread, and merge or decline
 behind a confirmation. Merging uses whatever strategy the repository is set to,
 Goodboy does not pick one for you, and declining is closed to reopening from
 here. Bitbucket issues are out of scope, Atlassian points issue tracking at
-Jira and Goodboy follows that. Goodboy does not read a `bitbucket.org` git
-remote either, the workspace integration is how it finds your pull requests.
+Jira and Goodboy follows that. A `bitbucket.org` git remote does not turn the
+integration on by itself either: the workspace integration is what enables
+Bitbucket, and the remote is read only to work out which repository the pull
+requests belong to.
 
 **Slack, read the thread and reply.** Connect a workspace with a bot token
 (`xoxb-`), checked against the workspace before anything is stored and kept in
