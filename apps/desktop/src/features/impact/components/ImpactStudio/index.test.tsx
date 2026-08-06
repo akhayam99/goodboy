@@ -36,6 +36,9 @@ const buildMetrics = (): ImpactMetrics => ({
     medianSessionHours: 2,
     previousMedianSessionHours: 3,
     sessions: [{ sessionId, goal: 'Ship impact studio', value: 2 }],
+    spendUsd: 12.5,
+    previousSpendUsd: 8,
+    spendSessions: [{ sessionId, goal: 'Ship impact studio', value: 12.5 }],
   }),
   pullRequests: result({
     open: 2,
@@ -50,6 +53,7 @@ const buildMetrics = (): ImpactMetrics => ({
         number: 42,
         title: 'Outcome and tempo',
         state: 'merged',
+        spendUsd: 12.5,
       },
     ],
   }),
@@ -132,7 +136,9 @@ describe('ImpactStudio', () => {
     expect(screen.getByText('orchestrated')).toBeDefined();
     expect(screen.getByText('75%')).toBeDefined();
     expect(screen.getByText(/longest session wall-clock/i)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /ship impact studio/i }));
+    expect(screen.getByText(/spend this window/i)).toBeDefined();
+    expect(screen.getAllByText('$12.50').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getAllByRole('button', { name: /ship impact studio/i })[0]!);
     expect(mocks.setCurrentSession).toHaveBeenCalledWith('session-1');
     expect(onClose).toHaveBeenCalled();
   });

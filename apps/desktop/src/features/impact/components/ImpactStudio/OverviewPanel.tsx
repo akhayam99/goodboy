@@ -1,6 +1,6 @@
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import { PanelLoading } from '../../../../shared/components/PanelLoading';
@@ -118,14 +118,39 @@ export const OverviewPanel = ({
               }
             />
           </div>
-          <StudioWidget label="longest session wall-clock" hint="open a session to inspect its run">
-            <SessionRows
-              sessions={data.sessions}
-              valueLabel=""
-              formatValue={(value) => formatHours({ hours: value })}
-              onOpenSession={onOpenSession}
-            />
-          </StudioWidget>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <StudioWidget
+              label="longest session wall-clock"
+              hint="open a session to inspect its run"
+            >
+              <SessionRows
+                sessions={data.sessions}
+                valueLabel=""
+                formatValue={(value) => formatHours({ hours: value })}
+                onOpenSession={onOpenSession}
+              />
+            </StudioWidget>
+            <StudioWidget label="spend this window" hint="highest-cost sessions">
+              <div className="flex flex-col gap-3">
+                {data.spendUsd != null ? (
+                  <div
+                    title={formatUsdPrecise(data.spendUsd)}
+                    className="font-mono text-2xl tabular-nums text-foreground"
+                  >
+                    {formatUsd(data.spendUsd)}
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">No spend recorded</span>
+                )}
+                <SessionRows
+                  sessions={data.spendSessions}
+                  valueLabel=""
+                  formatValue={(value) => formatUsd(value)}
+                  onOpenSession={onOpenSession}
+                />
+              </div>
+            </StudioWidget>
+          </div>
         </>
       ) : null}
     </StudioPanel>
