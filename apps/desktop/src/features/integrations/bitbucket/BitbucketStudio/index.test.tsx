@@ -76,16 +76,17 @@ vi.mock('../BitbucketFormBody', () => ({
 
 import { BitbucketStudio } from '.';
 
-const renderStudio = () =>
-  render(
-    <ToastProvider>
-      <BitbucketStudio
-        sessionId={'session-1' as SessionId}
-        workspaceName="Goodboy"
-        onClose={vi.fn()}
-      />
-    </ToastProvider>,
-  );
+const studioElement = () => (
+  <ToastProvider>
+    <BitbucketStudio
+      sessionId={'session-1' as SessionId}
+      workspaceName="Goodboy"
+      onClose={vi.fn()}
+    />
+  </ToastProvider>
+);
+
+const renderStudio = () => render(studioElement());
 
 beforeEach(() => {
   h.integrations = {};
@@ -120,6 +121,28 @@ describe('BitbucketStudio', () => {
 
     expect(screen.getByText('Pull request inbox')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Disconnect Bitbucket' })).toBeDefined();
+  });
+
+  it('falls back to the empty state once disconnected, even though the session keeps a stale repo', () => {
+    h.integrations = { 'workspace-1': [{ provider: 'bitbucket' }] };
+    h.repo = {
+      workspaceId: 'workspace-1' as WorkspaceId,
+      workspaceSlug: 'acme',
+      repoSlug: 'goodboy',
+      email: 'dev@acme.test',
+    };
+
+    const { rerender } = renderStudio();
+
+    expect(screen.getByText('Pull request inbox')).toBeDefined();
+
+    h.integrations = {};
+    rerender(studioElement());
+
+    expect(
+      screen.getByText('Connect Bitbucket to review pull requests from this workspace'),
+    ).toBeDefined();
+    expect(screen.queryByText('Pull request inbox')).toBeNull();
   });
 
   it('disconnects Bitbucket from the header', async () => {

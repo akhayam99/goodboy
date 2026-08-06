@@ -87,6 +87,7 @@ describe('SentryStudio', () => {
     expect(screen.getByLabelText('Auth token')).toBeDefined();
     expect(screen.getByLabelText('Project slug')).toBeDefined();
     expect(h.useSentryIssues).toHaveBeenCalledWith(workspaceId, false);
+    expect(screen.queryByRole('button', { name: 'Disconnect Sentry' })).toBeNull();
   });
 
   it('disconnects Sentry from the header once connected', async () => {

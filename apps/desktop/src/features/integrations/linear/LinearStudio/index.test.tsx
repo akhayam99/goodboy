@@ -80,6 +80,7 @@ describe('LinearStudio', () => {
 
     expect(screen.getByText('Connect Linear to review issues from this workspace')).toBeDefined();
     expect(screen.getByLabelText('Personal access token')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Disconnect Linear' })).toBeNull();
   });
 
   it('disconnects Linear from the header once connected', async () => {

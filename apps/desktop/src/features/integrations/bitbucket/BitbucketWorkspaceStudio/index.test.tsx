@@ -141,6 +141,7 @@ describe('BitbucketWorkspaceStudio', () => {
     ).toBeDefined();
     expect(screen.getByLabelText('App password')).toBeDefined();
     expect(h.repoHookEnabled).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Disconnect Bitbucket' })).toBeNull();
   });
 
   it('says the workspace has no Bitbucket remote when the repo does not resolve', () => {

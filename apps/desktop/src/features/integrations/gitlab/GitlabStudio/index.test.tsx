@@ -162,6 +162,7 @@ describe('GitlabStudio', () => {
     expect(screen.getByLabelText('Personal access token')).toBeDefined();
     expect(h.useGitlabIssues).toHaveBeenCalledWith({ workspaceId, isEnabled: false });
     expect(h.useGitlabMrs).toHaveBeenCalledWith({ workspaceId, isEnabled: false });
+    expect(screen.queryByRole('button', { name: 'Disconnect GitLab' })).toBeNull();
   });
 
   it('disconnects GitLab from the header once connected', async () => {

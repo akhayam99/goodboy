@@ -92,6 +92,7 @@ describe('JiraStudio', () => {
 
     expect(screen.getByText('Connect Jira to review issues from this workspace')).toBeDefined();
     expect(screen.getByLabelText('API token')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Disconnect Jira' })).toBeNull();
   });
 
   it('focuses the first issue of the inbox and queries only assigned issues by default', () => {

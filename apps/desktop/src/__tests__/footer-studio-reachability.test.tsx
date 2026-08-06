@@ -37,12 +37,6 @@ const { state, workspace } = vi.hoisted(() => {
       setActiveLens: vi.fn(),
       sessionWorktrees: {},
       providers: [] as ReadonlyArray<{ connection: string }>,
-      disconnectSlack: vi.fn<(params: { workspaceId: string }) => Promise<void>>(
-        async () => undefined,
-      ),
-      disconnectBitbucket: vi.fn<(params: { workspaceId: string }) => Promise<void>>(
-        async () => undefined,
-      ),
     },
   };
 });
@@ -76,35 +70,15 @@ vi.mock('../app/components/AppFooter', () => ({
   ),
 }));
 
-const isProviderConnected = (provider: string) =>
-  (state.workspaceIntegrations['workspace-1'] ?? []).some((i) => i.provider === provider);
-
 vi.mock('../features/integrations/slack/SlackStudio', () => ({
   SlackStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="slack-studio">
-      {workspaceName}
-      {isProviderConnected('slack') ? (
-        <button type="button" onClick={() => state.disconnectSlack({ workspaceId: 'workspace-1' })}>
-          Disconnect Slack
-        </button>
-      ) : null}
-    </div>
+    <div data-testid="slack-studio">{workspaceName}</div>
   ),
 }));
 
 vi.mock('../features/integrations/bitbucket/BitbucketWorkspaceStudio', () => ({
   BitbucketWorkspaceStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="bitbucket-studio">
-      {workspaceName}
-      {isProviderConnected('bitbucket') ? (
-        <button
-          type="button"
-          onClick={() => state.disconnectBitbucket({ workspaceId: 'workspace-1' })}
-        >
-          Disconnect Bitbucket
-        </button>
-      ) : null}
-    </div>
+    <div data-testid="bitbucket-studio">{workspaceName}</div>
   ),
 }));
 
@@ -209,8 +183,6 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  state.disconnectSlack.mockClear();
-  state.disconnectBitbucket.mockClear();
 });
 
 describe('Slack studio reachability', () => {
@@ -221,7 +193,7 @@ describe('Slack studio reachability', () => {
     expect(screen.queryByTestId('slack-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
 
-    expect(screen.getByTestId('slack-studio').textContent).toContain('Workspace');
+    expect(screen.getByTestId('slack-studio').textContent).toBe('Workspace');
   });
 
   it('still opens the studio when slack is not connected, so the connect form is reachable', () => {
@@ -230,16 +202,6 @@ describe('Slack studio reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
 
     expect(screen.getByTestId('slack-studio')).toBeDefined();
-  });
-
-  it('reaches the disconnect control from the footer once slack is connected', () => {
-    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'slack' }] };
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Slack' }));
-
-    expect(state.disconnectSlack).toHaveBeenCalledWith({ workspaceId: 'workspace-1' });
   });
 });
 
@@ -253,7 +215,7 @@ describe('Bitbucket studio reachability', () => {
       screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
     );
 
-    expect(screen.getByTestId('bitbucket-studio').textContent).toContain('Workspace');
+    expect(screen.getByTestId('bitbucket-studio').textContent).toBe('Workspace');
   });
 
   it('still opens the studio when bitbucket is not connected, so the connect form is reachable', () => {
@@ -262,17 +224,5 @@ describe('Bitbucket studio reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect Bitbucket' }));
 
     expect(screen.getByTestId('bitbucket-studio')).toBeDefined();
-  });
-
-  it('reaches the disconnect control from the footer once bitbucket is connected', () => {
-    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'bitbucket' }] };
-    render(<App />);
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Bitbucket' }));
-
-    expect(state.disconnectBitbucket).toHaveBeenCalledWith({ workspaceId: 'workspace-1' });
   });
 });

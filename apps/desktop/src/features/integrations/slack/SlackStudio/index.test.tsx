@@ -117,6 +117,7 @@ describe('SlackStudio', () => {
     expect(screen.getByText('Connect Slack to read the threads a task came out of')).toBeDefined();
     expect(screen.getByLabelText('Bot token')).toBeDefined();
     expect(h.isEnabled).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Disconnect Slack' })).toBeNull();
   });
 
   it('lists thread heads and focuses the first one once connected', () => {
