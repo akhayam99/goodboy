@@ -1,5 +1,6 @@
 import { EmptyState, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { CoverageChip } from './CoverageChip';
 import type { ModelBreakdownEntry } from './lib';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
@@ -44,7 +45,10 @@ export const ModelTable = ({
             className="transition-colors hover:bg-muted/30"
           >
             <td className="px-3 py-2">
-              <RoutingBadge provider={entry.provider} model={entry.model} />
+              <span className="flex min-w-0 items-center gap-1.5">
+                <RoutingBadge provider={entry.provider} model={entry.model} />
+                <CoverageChip coverage={entry.coverage} />
+              </span>
             </td>
             <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
               {formatTokens(entry.tokensIn)}
