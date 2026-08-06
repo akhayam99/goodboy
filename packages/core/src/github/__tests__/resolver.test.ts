@@ -391,6 +391,21 @@ describe('listPrsForBranch', () => {
       GhCliError,
     );
   });
+
+  it('attaches merge queue placement to the listed pull requests', async () => {
+    const pr = { ...BASE_RAW, number: 7, state: 'OPEN' as const };
+    const runner = makeMergeQueueAwareRunner({
+      prs: [pr],
+      mergeQueueNodes: [
+        { number: 7, isInMergeQueue: true, mergeQueueEntry: { position: 3, state: 'QUEUED' } },
+      ],
+    });
+
+    const result = await listPrsForBranch(runner, 'org/repo', 'feature');
+
+    expect(result[0]?.state).toBe('queued');
+    expect(result[0]?.mergeQueue).toEqual({ position: 3 });
+  });
 });
 
 describe('detectRepoSlug', () => {

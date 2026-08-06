@@ -68,9 +68,9 @@ const buildArgs = ({
       'graphql',
       '-f',
       `query=${REPO_MERGE_QUEUE_QUERY}`,
-      '-F',
+      '-f',
       `owner=${owner}`,
-      '-F',
+      '-f',
       `name=${name}`,
     ];
   }
@@ -79,11 +79,11 @@ const buildArgs = ({
     'graphql',
     '-f',
     `query=${BRANCH_MERGE_QUEUE_QUERY}`,
-    '-F',
+    '-f',
     `owner=${owner}`,
-    '-F',
+    '-f',
     `name=${name}`,
-    '-F',
+    '-f',
     `branch=${branch}`,
   ];
 };

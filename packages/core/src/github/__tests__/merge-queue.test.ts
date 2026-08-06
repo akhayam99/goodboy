@@ -59,4 +59,14 @@ describe('fetchMergeQueuePlacements', () => {
     expect(placements.size).toBe(0);
     expect(runner.run).not.toHaveBeenCalled();
   });
+
+  it('passes graphql variables untyped so an all-digit branch is not coerced to a number', async () => {
+    const runner = makeRunner({ stdout: graphqlPayload([]), stderr: '', exitCode: 0 });
+
+    await fetchMergeQueuePlacements({ runner, repo: 'org/repo', branch: '1234' });
+
+    const args = vi.mocked(runner.run).mock.calls[0]?.[0] ?? [];
+    expect(args).not.toContain('-F');
+    expect(args).toEqual(expect.arrayContaining(['-f', 'branch=1234']));
+  });
 });
