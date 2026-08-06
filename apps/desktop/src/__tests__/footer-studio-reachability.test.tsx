@@ -53,19 +53,32 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 type FooterProps = {
   readonly onOpenSlack: () => void;
   readonly slackEnabled: boolean;
+  readonly onOpenBitbucket: () => void;
+  readonly bitbucketEnabled: boolean;
 };
 
 vi.mock('../app/components/AppFooter', () => ({
-  AppFooter: ({ onOpenSlack, slackEnabled }: FooterProps) => (
-    <button type="button" onClick={onOpenSlack}>
-      {slackEnabled ? 'Launch a session from a Slack thread' : 'Connect Slack'}
-    </button>
+  AppFooter: ({ onOpenSlack, slackEnabled, onOpenBitbucket, bitbucketEnabled }: FooterProps) => (
+    <>
+      <button type="button" onClick={onOpenSlack}>
+        {slackEnabled ? 'Launch a session from a Slack thread' : 'Connect Slack'}
+      </button>
+      <button type="button" onClick={onOpenBitbucket}>
+        {bitbucketEnabled ? 'Review pull requests across this workspace' : 'Connect Bitbucket'}
+      </button>
+    </>
   ),
 }));
 
 vi.mock('../features/integrations/slack/SlackStudio', () => ({
   SlackStudio: ({ workspaceName }: { workspaceName: string }) => (
     <div data-testid="slack-studio">{workspaceName}</div>
+  ),
+}));
+
+vi.mock('../features/integrations/bitbucket/BitbucketWorkspaceStudio', () => ({
+  BitbucketWorkspaceStudio: ({ workspaceName }: { workspaceName: string }) => (
+    <div data-testid="bitbucket-studio">{workspaceName}</div>
   ),
 }));
 
@@ -187,5 +200,27 @@ describe('Slack studio reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
 
     expect(screen.getByTestId('slack-studio')).toBeDefined();
+  });
+});
+
+describe('Bitbucket studio reachability', () => {
+  it('opens the workspace bitbucket studio from the app footer', () => {
+    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'bitbucket' }] };
+    render(<App />);
+
+    expect(screen.queryByTestId('bitbucket-studio')).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
+    );
+
+    expect(screen.getByTestId('bitbucket-studio').textContent).toBe('Workspace');
+  });
+
+  it('still opens the studio when bitbucket is not connected, so the connect form is reachable', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Bitbucket' }));
+
+    expect(screen.getByTestId('bitbucket-studio')).toBeDefined();
   });
 });
