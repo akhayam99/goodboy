@@ -221,6 +221,41 @@ describe('OnboardingWizard', () => {
       await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
     });
 
+    it('finishes the wizard on Escape wherever Skip setup is offered', async () => {
+      setHook({ hasWorkspace: true });
+      render(<OnboardingWizard />);
+      expect(screen.getByRole('button', { name: /skip setup/i })).toBeDefined();
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
+    });
+
+    it('ignores Escape before a workspace exists, so no dead end behind the wizard', async () => {
+      setHook({ hasWorkspace: false });
+      render(<OnboardingWizard />);
+      expect(screen.queryByRole('button', { name: /skip setup/i })).toBeNull();
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      expect(finishWizard).not.toHaveBeenCalled();
+    });
+
+    it('ignores Escape on the ready step, where Skip setup is gone', async () => {
+      setHook({
+        providersConnected: 1,
+        hasWorkspace: true,
+        hasCodeHost: true,
+        hasLinear: true,
+        hasSentry: true,
+      });
+      render(<OnboardingWizard />);
+      advance(/get started/i, 1);
+      advance(/continue/i, 6);
+      expect(screen.getByTestId('ReadyStep')).toBeDefined();
+      expect(screen.queryByRole('button', { name: /skip setup/i })).toBeNull();
+      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      expect(finishWizard).not.toHaveBeenCalled();
+    });
+
     it('finishes the wizard from the ready step', async () => {
       setHook({
         providersConnected: 1,

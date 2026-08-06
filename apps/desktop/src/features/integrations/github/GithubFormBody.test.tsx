@@ -109,6 +109,45 @@ describe('GithubFormBody', () => {
       expect(await screen.findByText(/bad credentials/i)).toBeDefined();
       expect(onConnected).not.toHaveBeenCalled();
     });
+
+    it('shows the written rejection verbatim, with no wrapper and no gh output', async () => {
+      ghSetTokenMock.mockRejectedValueOnce(
+        'GitHub rejected this token. Check you pasted the whole value, then try again.',
+      );
+      render(<GithubFormBody workspaceId={WS_ID} />);
+      fireEvent.change(await screen.findByLabelText(/GitHub personal access token/i), {
+        target: { value: 'ghp_bad' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
+
+      const box = await screen.findByText(/GitHub rejected this token/);
+      expect(box.textContent).toBe(
+        'GitHub rejected this token. Check you pasted the whole value, then try again.',
+      );
+    });
+
+    it('keeps each rejection cause distinguishable in the danger box', async () => {
+      const causes = [
+        'GitHub rejected this token. Check you pasted the whole value, then try again.',
+        'This token has expired or was revoked. Create a new one on GitHub and paste it here.',
+        'This token is missing the access Goodboy needs. Recreate it with the repo scope, and authorize it for your org if SSO is on.',
+        'Goodboy cannot reach github.com. Check your connection, then try again.',
+      ];
+      const shown: string[] = [];
+      for (const cause of causes) {
+        ghSetTokenMock.mockRejectedValueOnce(cause);
+        const view = render(<GithubFormBody workspaceId={WS_ID} />);
+        fireEvent.change(await screen.findByLabelText(/GitHub personal access token/i), {
+          target: { value: 'ghp_bad' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
+        shown.push((await screen.findByText(cause)).textContent ?? '');
+        view.unmount();
+      }
+
+      expect(shown).toEqual(causes);
+      expect(new Set(shown).size).toBe(4);
+    });
   });
 
   describe('when a scoped token is already connected', () => {

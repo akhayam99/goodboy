@@ -1,8 +1,17 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { finishMock } = vi.hoisted(() => ({
+const { finishMock, progress } = vi.hoisted(() => ({
   finishMock: vi.fn(),
+  progress: {
+    completedCount: 0,
+    totalCount: 2,
+    completed: new Set(),
+    collapsed: true,
+    finished: false,
+    isDone: false,
+    isSimple: false,
+  },
 }));
 
 vi.mock('../onboarding-store', () => ({
@@ -16,23 +25,37 @@ vi.mock('../onboarding-store', () => ({
 }));
 
 vi.mock('../hooks/useOnboardingProgress', () => ({
-  useOnboardingProgress: () => ({
-    completedCount: 0,
-    totalCount: 2,
-    completed: new Set(),
-    collapsed: true,
-    finished: false,
-    isDone: false,
-    isSimple: false,
-  }),
+  useOnboardingProgress: () => progress,
 }));
+
+beforeEach(() => {
+  progress.collapsed = true;
+});
 
 afterEach(() => {
   cleanup();
   finishMock.mockReset();
 });
 
-import { OnboardingChip } from './index';
+import { OnboardingCard, OnboardingChip } from './index';
+
+describe('OnboardingCard', () => {
+  it('points the hide control at the top bar, where the reopen chip lives', () => {
+    progress.collapsed = false;
+    render(<OnboardingCard />);
+    const hide = screen.getByRole('button', { name: 'Hide onboarding checklist' });
+    expect(hide.getAttribute('title')).toBe(
+      'Hide onboarding checklist (reopen it from the top bar)',
+    );
+  });
+
+  it('never sends the user to the sidebar, which holds no onboarding control', () => {
+    progress.collapsed = false;
+    render(<OnboardingCard />);
+    const hide = screen.getByRole('button', { name: 'Hide onboarding checklist' });
+    expect(hide.getAttribute('title')).not.toMatch(/sidebar/i);
+  });
+});
 
 describe('OnboardingChip', () => {
   it('finishes onboarding from the skip button', () => {

@@ -54,7 +54,7 @@ vi.mock('../../../features/notifications/components/NotificationCenter', () => (
 }));
 
 vi.mock('../../../features/onboarding/OnboardingCard', () => ({
-  OnboardingChip: () => null,
+  OnboardingChip: () => <span data-testid="onboarding-chip" />,
 }));
 
 vi.mock('../../../shared/components/DogMascot', () => ({
@@ -121,6 +121,11 @@ describe('AppTopBar', () => {
   it('renders settings button', () => {
     renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
     expect(screen.getByRole('button', { name: 'Open settings' })).toBeDefined();
+  });
+
+  it('mounts the onboarding reopen chip, which the card tooltip points at', () => {
+    renderBar({ onOpenSettings: vi.fn(), onOpenBudget: vi.fn(), activeStudio: null });
+    expect(screen.getByTestId('onboarding-chip')).toBeDefined();
   });
 
   it('keeps set-once preferences out of the bar, except theme', () => {

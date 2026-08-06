@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
@@ -54,5 +54,20 @@ describe('CommandPalette', () => {
   it('shows the no-results row when nothing matches the query', () => {
     render(<CommandPalette onClose={vi.fn()} initialQuery="zzzz" />);
     expect(screen.getByText(/no results/i)).toBeDefined();
+  });
+
+  it('routes to the provider studio, the one mandatory first-run action', () => {
+    const onOpenProviders = vi.fn();
+    render(
+      <CommandPalette
+        onClose={vi.fn()}
+        onOpenProviders={onOpenProviders}
+        initialQuery="provider"
+      />,
+    );
+
+    fireEvent.mouseDown(screen.getByText('Connect a provider'));
+
+    expect(onOpenProviders).toHaveBeenCalledOnce();
   });
 });
