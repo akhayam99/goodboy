@@ -85,8 +85,9 @@ priority edits are not there yet, and Jira Server is unsupported.
 **Bitbucket, read, act and route.** Connect Bitbucket Cloud from the footer,
 from onboarding or from the integrations panel with a workspace slug, your
 Atlassian account email and an API token, all verified against the account and
-the workspace before anything is stored. The footer entry sits next to GitHub
-and GitLab and opens the workspace's pull requests without a session, though
+the workspace before anything is stored. The footer groups it with GitHub and
+GitLab under code hosts and opens the workspace's pull requests without a
+session, though
 that view is read-only: you browse a request and start a session from it, and
 the approve, comment and merge actions live inside a session. From there a
 session's pull request lens shows the

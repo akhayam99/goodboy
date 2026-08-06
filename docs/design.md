@@ -341,11 +341,14 @@ follow:
    `spaceBelow < PANEL_MAX_HEIGHT + VIEWPORT_MARGIN` sets `bottom:
 window.innerHeight - rect.top + 6` and drops `top`.
 6. A click-catcher behind, closing on `mousedown`, and a panel above it. The
-   four app-global popovers (`NeedsYouPopover`, `WorkspaceSwitcher`,
-   `NotificationCenter`, `RunningScriptsIndicator`) use `z-popover-backdrop`
+   five app-global popovers (`NeedsYouPopover`, `WorkspaceSwitcher`,
+   `NotificationCenter`, `RunningScriptsIndicator`,
+   `AppFooter/IntegrationAddPopover`) use `z-popover-backdrop`
    and `z-popover` from the named scale in `docs/styling.md`, so they clear a
-   full-page studio at `z-50`. A popover scoped to one pane keeps a local
-   `z-30`/`z-40` instead.
+   full-page studio at `z-50`. The footer one earns the tokens the same way the
+   top-bar ones do: `StudioShell`'s fullscreen variant is `inset-x-0 bottom-9
+top-9`, so the footer stays visible and clickable under an open studio. A
+   popover scoped to one pane keeps a local `z-30`/`z-40` instead.
 7. Escape closes.
 
 `Popover` from `@goodboy/ui` supplies only the shell (`rounded-md border

@@ -1,26 +1,11 @@
 import type { ComponentProps } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-const { integrationGlyph } = vi.hoisted(() => ({
-  integrationGlyph: vi.fn(),
-}));
-
-type MockGlyphProps = {
-  provider: string;
-};
 
 vi.mock('../../../store', () => ({
   useAppStore: (
     selector: (state: { providers: ReadonlyArray<{ connection: string }> }) => unknown,
   ) => selector({ providers: [] }),
-}));
-
-vi.mock('../../../features/integrations/components/IntegrationGlyph', () => ({
-  IntegrationGlyph: ({ provider }: MockGlyphProps) => {
-    integrationGlyph(provider);
-    return null;
-  },
 }));
 
 afterEach(() => {
@@ -29,9 +14,6 @@ afterEach(() => {
 });
 
 import { AppFooter } from './index';
-import { BetaPill } from '../../../shared/components/BetaPill';
-
-const BETA_CENTERING = 'pointer-events-none absolute inset-x-0 mx-auto w-fit';
 
 type FooterProps = ComponentProps<typeof AppFooter>;
 
@@ -66,7 +48,7 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
 });
 
 describe('AppFooter', () => {
-  it('centers beta and opens each section', () => {
+  it('opens each studio launcher on the right', () => {
     const onOpenWorkflows = vi.fn();
     const onOpenProviders = vi.fn();
     const onOpenBudget = vi.fn();
@@ -86,16 +68,11 @@ describe('AppFooter', () => {
       />,
     );
 
-    const beta = screen.getByText('Beta');
     fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open the workflow library for this workspace',
-      }),
+      screen.getByRole('button', { name: 'Open the workflow library for this workspace' }),
     );
     fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Connect and manage your provider accounts',
-      }),
+      screen.getByRole('button', { name: 'Connect and manage your provider accounts' }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Open budget studio' }));
     fireEvent.click(
@@ -105,13 +82,23 @@ describe('AppFooter', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'See what changed, release by release' }));
 
-    const { container } = render(<BetaPill className={BETA_CENTERING} />);
-    expect(beta.className).toBe(container.firstElementChild?.className);
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
     expect(onOpenProviders).toHaveBeenCalledOnce();
     expect(onOpenBudget).toHaveBeenCalledOnce();
     expect(onOpenImpact).toHaveBeenCalledOnce();
     expect(onOpenChangelog).toHaveBeenCalledOnce();
+  });
+
+  it('lays the row out as three grid regions so the beta chip cannot overlap a cluster', () => {
+    render(<AppFooter {...footerProps()} />);
+
+    const beta = screen.getByText('Beta');
+    const row = beta.parentElement;
+
+    expect(row?.className).toContain('grid');
+    expect(row?.className).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]');
+    expect(beta.className).not.toContain('absolute');
+    expect(row?.children.length).toBe(3);
   });
 
   it('keeps studio buttons muted at rest and gives the active one a subtle surface', () => {
@@ -123,56 +110,110 @@ describe('AppFooter', () => {
     });
 
     expect(budget.className).toContain('text-muted-foreground');
-    expect(budget.className).not.toContain('text-warning');
     expect(impact.className).toContain('bg-muted text-foreground');
-    expect(impact.className).not.toContain('text-success');
   });
 
-  it('renders every disconnected integration and opens its studio', () => {
+  it('splits the integrations into code hosts, trackers and conversation tools', () => {
+    render(<AppFooter {...footerProps()} />);
+
+    expect(screen.getByRole('group', { name: 'Code hosts' })).toBeDefined();
+    expect(screen.getByRole('group', { name: 'Trackers' })).toBeDefined();
+    expect(screen.getByRole('group', { name: 'Conversation tools' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect a code host' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect a tracker' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect a conversation tool' })).toBeDefined();
+  });
+
+  it('renders only connected integrations in the row, as glyphs with no text label', () => {
+    const onOpenGithub = vi.fn();
+    render(
+      <AppFooter
+        {...footerProps({ overrides: { githubEnabled: true, linearEnabled: true, onOpenGithub } })}
+      />,
+    );
+
+    const codeHosts = screen.getByRole('group', { name: 'Code hosts' });
+    const github = within(codeHosts).getByRole('button', {
+      name: 'Review and act on pull requests across this workspace',
+    });
+
+    expect(github.textContent).toBe('');
+    expect(within(codeHosts).getAllByRole('button').length).toBe(2);
+    expect(
+      within(screen.getByRole('group', { name: 'Trackers' })).getAllByRole('button').length,
+    ).toBe(2);
+
+    fireEvent.click(github);
+    expect(onOpenGithub).toHaveBeenCalledOnce();
+  });
+
+  it('reaches a disconnected integration through the add popover of its category', () => {
     const onOpenGitlab = vi.fn();
+    render(<AppFooter {...footerProps({ overrides: { githubEnabled: true, onOpenGitlab } })} />);
 
-    render(<AppFooter {...footerProps({ overrides: { onOpenGitlab } })} />);
+    expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
 
-    expect(integrationGlyph.mock.calls.map(([provider]) => provider)).toEqual([
-      'github',
-      'gitlab',
-      'bitbucket',
-      'linear',
-      'jira',
-      'slack',
-      'sentry',
-    ]);
-    expect(screen.getByRole('button', { name: 'Connect GitHub' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect GitLab' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect Bitbucket' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect Jira' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect Sentry' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect Slack' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect a code host' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Connect GitLab' }));
+    const panel = screen.getByRole('dialog', { name: 'Code hosts' });
+    expect(within(panel).getByRole('button', { name: 'Open GitHub' })).toBeDefined();
+    expect(within(panel).getByRole('button', { name: 'Connect Bitbucket' })).toBeDefined();
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Connect GitLab' }));
 
     expect(onOpenGitlab).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Code hosts' })).toBeNull();
   });
 
-  it('keeps Linear and swaps the git integrations for the conversion CTA in a simple workspace', () => {
-    const onConvertToDevProject = vi.fn();
+  it('names the connection state of every member in the popover', () => {
+    render(<AppFooter {...footerProps({ overrides: { linearEnabled: true } })} />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Connect a tracker' }));
+
+    const panel = screen.getByRole('dialog', { name: 'Trackers' });
+    expect(within(panel).getAllByRole('listitem').length).toBe(3);
+    expect(within(panel).getAllByText('Not connected').length).toBe(2);
+    expect(within(panel).getByText('Connected')).toBeDefined();
+  });
+
+  it('closes the popover on escape', () => {
+    render(<AppFooter {...footerProps()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect a tracker' }));
+    expect(screen.getByRole('dialog', { name: 'Trackers' })).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog', { name: 'Trackers' })).toBeNull();
+  });
+
+  it('disables the add control with a reason once every member of a category is connected', () => {
+    render(<AppFooter {...footerProps({ overrides: { slackEnabled: true } })} />);
+
+    const add = screen.getByRole('button', { name: 'Connect a conversation tool' });
+    expect(add.getAttribute('aria-disabled')).toBe('true');
+
+    fireEvent.click(add);
+
+    expect(screen.queryByRole('dialog', { name: 'Conversation tools' })).toBeNull();
+  });
+
+  it('swaps the code hosts for the conversion CTA and drops Sentry in a simple workspace', () => {
+    const onConvertToDevProject = vi.fn();
     render(
       <AppFooter
         {...footerProps({ overrides: { isSimpleWorkspace: true, onConvertToDevProject } })}
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Connect Bitbucket' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Connect Linear' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect Jira' })).toBeDefined();
-    expect(
-      screen.getByRole('button', { name: 'Open the workflow library for this workspace' }),
-    ).toBeDefined();
+    expect(screen.queryByRole('group', { name: 'Code hosts' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Connect a code host' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect a tracker' }));
+    const panel = screen.getByRole('dialog', { name: 'Trackers' });
+    expect(within(panel).getByRole('button', { name: 'Connect Linear' })).toBeDefined();
+    expect(within(panel).getByRole('button', { name: 'Connect Jira' })).toBeDefined();
+    expect(within(panel).queryByRole('button', { name: 'Connect Sentry' })).toBeNull();
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -183,46 +224,22 @@ describe('AppFooter', () => {
     expect(onConvertToDevProject).toHaveBeenCalledOnce();
   });
 
-  it('opens the GitLab studio when GitLab is connected', () => {
-    const onOpenGitlab = vi.fn();
-    render(<AppFooter {...footerProps({ overrides: { gitlabEnabled: true, onOpenGitlab } })} />);
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Review merge requests and launch a session from a GitLab issue',
-      }),
-    );
-
-    expect(onOpenGitlab).toHaveBeenCalledOnce();
-  });
-
-  it('offers the Bitbucket studio and says so when Bitbucket is not connected yet', () => {
-    const onOpenBitbucket = vi.fn();
-    const { rerender } = render(<AppFooter {...footerProps({ overrides: { onOpenBitbucket } })} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Bitbucket' }));
-    expect(onOpenBitbucket).toHaveBeenCalledOnce();
-
-    rerender(
-      <AppFooter {...footerProps({ overrides: { bitbucketEnabled: true, onOpenBitbucket } })} />,
-    );
-
-    expect(
-      screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
-    ).toBeDefined();
-  });
-
-  it('offers the Slack studio and says so when Slack is not connected yet', () => {
+  it('keeps Slack reachable from the conversation group whether or not it is connected', () => {
     const onOpenSlack = vi.fn();
     const { rerender } = render(<AppFooter {...footerProps({ overrides: { onOpenSlack } })} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect a conversation tool' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Conversation tools' })).getByRole('button', {
+        name: 'Connect Slack',
+      }),
+    );
     expect(onOpenSlack).toHaveBeenCalledOnce();
 
     rerender(<AppFooter {...footerProps({ overrides: { slackEnabled: true, onOpenSlack } })} />);
 
-    expect(
-      screen.getByRole('button', { name: 'Launch a session from a Slack thread' }),
-    ).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
+
+    expect(onOpenSlack).toHaveBeenCalledTimes(2);
   });
 });

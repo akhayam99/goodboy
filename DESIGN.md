@@ -40,11 +40,17 @@ functional. One register per surface; let the other supply only texture.
   notifications, because it is reached often enough to earn the rent; the
   guide and pair-device stay out and live in the app settings studio and the
   command palette. A persistent footer
-  (`AppFooter`) holds integration tools (the code hosts GitHub/GitLab/Bitbucket
-  first, then Linear/Jira/Slack/Sentry, all gated) on the left and studio
-  launchers (workflows, providers, budget, impact) on the right. Every shipped
-  integration owns one of those entries: it is where a workspace connects the
-  integration, so an integration missing from the footer is unreachable. The top bar is context, never content: every control in it opens
+  (`AppFooter`) holds integration tools on the left and studio
+  launchers (workflows, providers, budget, impact) on the right. The
+  integrations are grouped by what they do, one `<Divider>` between groups: code
+  hosts (GitHub, GitLab, Bitbucket), trackers (Linear, Jira, Sentry),
+  conversation tools (Slack). A group renders its connected members as
+  glyph-only buttons and closes with one add control that opens the whole
+  category, connected or not, and every row in it opens that integration's
+  studio, which carries the connect form when the workspace has not connected it
+  yet. Every shipped integration belongs to exactly one group: that group is
+  where a workspace connects it, so an integration in no group is unreachable.
+  The top bar is context, never content: every control in it opens
   something elsewhere, none of them edits a record in place. See
   [docs/design.md](docs/design.md) for what each surface is made of and
   [docs/navigation.md](docs/navigation.md) for the full IA and breadcrumb
