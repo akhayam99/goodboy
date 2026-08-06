@@ -221,6 +221,12 @@ export const CommandPalette = ({
       group: 'action',
       onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-pair-device')),
     });
+    out.push({
+      id: 'action:report-issue',
+      label: 'Report an issue',
+      group: 'action',
+      onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-report-issue')),
+    });
 
     if (onOpenShortcutHelp) {
       out.push({

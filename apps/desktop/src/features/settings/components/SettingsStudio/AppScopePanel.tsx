@@ -247,6 +247,27 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
 
           <Divider />
 
+          <section id="report-issue" ref={anchor('report-issue')} className="flex flex-col gap-4">
+            <SectionHeader label="Feedback" hint="Tell us what's broken or missing." />
+            <FieldRow
+              label="Report an issue"
+              help="Opens a form. You see exactly what gets sent before you send it."
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  requestClose();
+                  window.dispatchEvent(new CustomEvent('goodboy:open-report-issue'));
+                }}
+              >
+                <CONCEPT_ICONS.reportIssue size={14} aria-hidden /> Report an issue
+              </Button>
+            </FieldRow>
+          </section>
+
+          <Divider />
+
           <section id="storage" ref={anchor('storage')}>
             <StorageSection />
           </section>

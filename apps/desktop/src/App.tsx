@@ -18,6 +18,7 @@ import { DeleteSessionConfirm } from './features/session/components/DeleteSessio
 import { ArchiveSessionConfirm } from './features/session/components/ArchiveSessionConfirm';
 import { SettingsStudio } from './features/settings/components/SettingsStudio';
 import { GuideStudio } from './features/settings/components/GuideStudio';
+import { ReportIssueStudio } from './features/settings/components/ReportIssueStudio';
 import { WorkspaceSettingsPane } from './features/workspace/components/WorkspaceSettingsPane';
 import { ToastProvider } from './app/components/Toast';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
@@ -124,6 +125,7 @@ export const App = () => {
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [appSettingsFocus, setAppSettingsFocus] = useState<string | undefined>(undefined);
   const [guideStudioOpen, setGuideStudioOpen] = useState(false);
+  const [reportIssueStudioOpen, setReportIssueStudioOpen] = useState(false);
   const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
   const [workspaceSettingsFocus, setWorkspaceSettingsFocus] = useState<string | undefined>(
     undefined,
@@ -188,6 +190,7 @@ export const App = () => {
     setSlackStudioOpen(false);
     setAppSettingsOpen(false);
     setGuideStudioOpen(false);
+    setReportIssueStudioOpen(false);
     setAddWorkspaceOpen(false);
   }, []);
 
@@ -215,6 +218,10 @@ export const App = () => {
     const onOpenGuide = () => {
       closeAllStudios();
       setGuideStudioOpen(true);
+    };
+    const onOpenReportIssue = () => {
+      closeAllStudios();
+      setReportIssueStudioOpen(true);
     };
     const onOpenGithubStudio = (event: Event) => {
       const detail = (
@@ -314,6 +321,7 @@ export const App = () => {
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
     window.addEventListener('goodboy:open-settings', onOpenSettings);
     window.addEventListener('goodboy:open-guide', onOpenGuide);
+    window.addEventListener('goodboy:open-report-issue', onOpenReportIssue);
     window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
     window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
@@ -330,6 +338,7 @@ export const App = () => {
       window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
       window.removeEventListener('goodboy:open-guide', onOpenGuide);
+      window.removeEventListener('goodboy:open-report-issue', onOpenReportIssue);
       window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
       window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
@@ -919,6 +928,9 @@ export const App = () => {
         />
       ) : null}
       {guideStudioOpen ? <GuideStudio onClose={() => setGuideStudioOpen(false)} /> : null}
+      {reportIssueStudioOpen ? (
+        <ReportIssueStudio onClose={() => setReportIssueStudioOpen(false)} />
+      ) : null}
       {paletteOpen ? (
         <CommandPalette
           initialQuery={palettePrefix}
