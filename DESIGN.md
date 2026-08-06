@@ -40,9 +40,11 @@ functional. One register per surface; let the other supply only texture.
   notifications, because it is reached often enough to earn the rent; the
   guide and pair-device stay out and live in the app settings studio and the
   command palette. A persistent footer
-  (`AppFooter`) holds integration tools (GitHub/GitLab/Linear/Sentry, gated) on
-  the left and studio launchers (workflows, providers, budget, impact) on the
-  right. The top bar is context, never content: every control in it opens
+  (`AppFooter`) holds integration tools (the code hosts GitHub/GitLab/Bitbucket
+  first, then Linear/Jira/Slack/Sentry, all gated) on the left and studio
+  launchers (workflows, providers, budget, impact) on the right. Every shipped
+  integration owns one of those entries: it is where a workspace connects the
+  integration, so an integration missing from the footer is unreachable. The top bar is context, never content: every control in it opens
   something elsewhere, none of them edits a record in place. See
   [docs/design.md](docs/design.md) for what each surface is made of and
   [docs/navigation.md](docs/navigation.md) for the full IA and breadcrumb

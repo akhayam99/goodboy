@@ -132,8 +132,10 @@ slot. Always visible on the board and inside a session.
 
 Layout:
 
-- Left: integration tools (GitHub, GitLab, Linear, Jira, Slack, Sentry), each
-  gated by enablement.
+- Left: integration tools (GitHub, GitLab, Bitbucket, Linear, Jira, Slack,
+  Sentry), each gated by enablement. The three code hosts come first and are
+  swapped for the `Add a repo` conversion action in a simple workspace, which
+  has no repository for them to read.
 - Right: common studios (workflows, providers, budget, impact).
 
 Navigation chrome stays muted while inactive across footer launchers, session
@@ -174,13 +176,20 @@ persisted preference.
 ### Utility studios
 
 Settings, budget, providers, impact, changelog, notifications, Linear, Jira,
-Slack, Sentry, GitLab, workflow, guide are modal overlays, all built on `StudioShell`'s
-fullscreen variant. They are not part of the breadcrumb IA and are exited via
-their close button or Esc.
+Slack, Sentry, GitLab, Bitbucket, workflow, guide are modal overlays, all built on
+`StudioShell`'s fullscreen variant. They are not part of the breadcrumb IA and
+are exited via their close button or Esc.
 
-The Bitbucket studio is not one of them. It is a session studio, opened from the
-`pr` lens as `SessionStudio { kind: 'bitbucket' }`, so it needs the session's
-repository to know which pull requests to list. It has no footer entry.
+Bitbucket has two mounts. The footer opens `BitbucketWorkspaceStudio`, which
+resolves the repository from the workspace root path and its git remote and
+lists that repository's pull requests. That surface is browse and launch:
+reading a pull request and starting a session from it work, while the write
+verbs (approve, request changes, comment, merge, decline) stay disabled because
+they are keyed to a session. The `pr` lens opens the session variant as
+`SessionStudio { kind: 'bitbucket' }` in `StudioShell`'s slot variant, which
+knows the session's repository and carries the full action bar. A composite
+workspace has no single repository and no active mount outside a session, so
+the footer variant stops at an empty state and points back at a session.
 
 Most utility studios have a footer entry. The notifications studio does not:
 its only entrance is the `Show more` row at the bottom of the bell popover in

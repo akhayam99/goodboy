@@ -62,6 +62,7 @@ type Props = {
   onOpenJira: () => void;
   onOpenSentry: () => void;
   onOpenGitlab: () => void;
+  onOpenBitbucket: () => void;
   onOpenSlack: () => void;
   onConvertToDevProject: () => void;
   githubEnabled: boolean;
@@ -69,6 +70,7 @@ type Props = {
   jiraEnabled: boolean;
   sentryEnabled: boolean;
   gitlabEnabled: boolean;
+  bitbucketEnabled: boolean;
   slackEnabled: boolean;
   isSimpleWorkspace: boolean;
 };
@@ -85,6 +87,7 @@ export const AppFooter = ({
   onOpenJira,
   onOpenSentry,
   onOpenGitlab,
+  onOpenBitbucket,
   onOpenSlack,
   onConvertToDevProject,
   githubEnabled,
@@ -92,6 +95,7 @@ export const AppFooter = ({
   jiraEnabled,
   sentryEnabled,
   gitlabEnabled,
+  bitbucketEnabled,
   slackEnabled,
   isSimpleWorkspace,
 }: Props) => {
@@ -136,6 +140,18 @@ export const AppFooter = ({
                 onClick={onOpenGitlab}
                 active={activeStudio === 'gitlab'}
                 connected={gitlabEnabled}
+              />
+              <FooterButton
+                icon={<IntegrationGlyph provider="bitbucket" size="xs" useBrandColor />}
+                label="Bitbucket"
+                title={
+                  bitbucketEnabled
+                    ? 'Review pull requests across this workspace'
+                    : 'Connect Bitbucket'
+                }
+                onClick={onOpenBitbucket}
+                active={activeStudio === 'bitbucket'}
+                connected={bitbucketEnabled}
               />
             </>
           )}
