@@ -14,6 +14,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { ShortcutsSection } from './ShortcutsSection';
 import { StorageSection } from './StorageSection';
 
@@ -258,7 +259,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                 size="sm"
                 onClick={() => {
                   requestClose();
-                  window.dispatchEvent(new CustomEvent('goodboy:open-report-issue'));
+                  window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
                 }}
               >
                 <CONCEPT_ICONS.reportIssue size={14} aria-hidden /> Report an issue

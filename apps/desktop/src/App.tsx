@@ -45,6 +45,7 @@ import { ImpactStudio } from './features/impact/components/ImpactStudio';
 import { ChangelogStudio } from './features/changelog/components/ChangelogStudio';
 import { NotificationsStudio } from './features/notifications/components/NotificationsStudio';
 import { NOTIFICATIONS_STUDIO_EVENT } from './features/notifications/studioEvent';
+import { REPORT_ISSUE_STUDIO_EVENT } from './features/settings/reportIssueStudioEvent';
 import { DiffViewerDialog } from './features/permissions/components/DiffViewerDialog';
 import { ghCommitDiff } from './features/github/github';
 import { worktreeDiffCommit } from './features/worktree/worktree';
@@ -321,7 +322,7 @@ export const App = () => {
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
     window.addEventListener('goodboy:open-settings', onOpenSettings);
     window.addEventListener('goodboy:open-guide', onOpenGuide);
-    window.addEventListener('goodboy:open-report-issue', onOpenReportIssue);
+    window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenReportIssue);
     window.addEventListener('goodboy:open-github-studio', onOpenGithubStudio);
     window.addEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
     window.addEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);
@@ -338,7 +339,7 @@ export const App = () => {
       window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, onOpenNotificationsStudio);
       window.removeEventListener('goodboy:open-settings', onOpenSettings);
       window.removeEventListener('goodboy:open-guide', onOpenGuide);
-      window.removeEventListener('goodboy:open-report-issue', onOpenReportIssue);
+      window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenReportIssue);
       window.removeEventListener('goodboy:open-github-studio', onOpenGithubStudio);
       window.removeEventListener('goodboy:open-plan-studio', onOpenPlanStudio);
       window.removeEventListener('goodboy:open-diff-viewer', onOpenDiffViewer);

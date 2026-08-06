@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildFallbackIssue,
-  buildFallbackIssueUrl,
   buildIssueBody,
   isOpenableUrl,
   REPORT_ISSUE_REPO,
 } from './issuePayload';
+
+const MAX_URL = 4096;
+
+const decode = (url: string): { title: string; body: string } => {
+  const params = new URL(url).searchParams;
+  return { title: params.get('title') ?? '', body: params.get('body') ?? '' };
+};
 
 describe('buildIssueBody', () => {
   it('contains only the version, area label and notes', () => {
@@ -20,15 +26,6 @@ describe('buildIssueBody', () => {
   });
 });
 
-describe('buildFallbackIssueUrl', () => {
-  it('targets the fixed repo and percent-encodes title and body', () => {
-    const url = buildFallbackIssueUrl({ title: 'Board freeze', body: 'Steps & details' });
-    expect(url.startsWith(`https://github.com/${REPORT_ISSUE_REPO}/issues/new?`)).toBe(true);
-    expect(url).toContain('title=Board%20freeze');
-    expect(url).toContain('body=Steps%20%26%20details');
-  });
-});
-
 describe('buildFallbackIssue', () => {
   it('does not truncate short notes', () => {
     const result = buildFallbackIssue({
@@ -37,9 +34,44 @@ describe('buildFallbackIssue', () => {
       areaLabel: 'Board and sessions',
       notes: 'Short repro.',
     });
-    expect(result.truncated).toBe(false);
+    expect(result.titleTruncated).toBe(false);
+    expect(result.notesTruncated).toBe(false);
     expect(result.body).toContain('Short repro.');
-    expect(result.url.length).toBeLessThanOrEqual(4096);
+    expect(result.url.length).toBeLessThanOrEqual(MAX_URL);
+  });
+
+  it('targets the fixed repo and percent-encodes title and body', () => {
+    const result = buildFallbackIssue({
+      title: 'Board freeze',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'Steps & details',
+    });
+    expect(result.url.startsWith(`https://github.com/${REPORT_ISSUE_REPO}/issues/new?`)).toBe(true);
+    expect(result.url).toContain('title=Board%20freeze');
+    expect(result.url).toContain('%26');
+  });
+
+  it('encodes exactly the previewed title and body into an untruncated url', () => {
+    const result = buildFallbackIssue({
+      title: 'Board freeze',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'Steps & details, with a "quote" and a #hash.',
+    });
+    expect(result.notesTruncated).toBe(false);
+    expect(decode(result.url)).toEqual({ title: result.title, body: result.body });
+  });
+
+  it('encodes exactly the previewed title and body into a truncated url too', () => {
+    const result = buildFallbackIssue({
+      title: 'Board freeze',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'x'.repeat(6000),
+    });
+    expect(result.notesTruncated).toBe(true);
+    expect(decode(result.url)).toEqual({ title: result.title, body: result.body });
   });
 
   it('truncates notes long enough to blow the fallback URL cap, and stays visibly under it', () => {
@@ -50,8 +82,9 @@ describe('buildFallbackIssue', () => {
       areaLabel: 'Board and sessions',
       notes: longNotes,
     });
-    expect(result.truncated).toBe(true);
-    expect(result.url.length).toBeLessThanOrEqual(4096);
+    expect(result.notesTruncated).toBe(true);
+    expect(result.titleTruncated).toBe(false);
+    expect(result.url.length).toBeLessThanOrEqual(MAX_URL);
     expect(result.body).not.toContain(longNotes);
     expect(result.body).toContain('truncated');
   });
@@ -64,8 +97,108 @@ describe('buildFallbackIssue', () => {
       areaLabel: 'Board and sessions',
       notes: longNotes,
     });
-    expect(result.truncated).toBe(true);
-    expect(result.url.length).toBeLessThanOrEqual(4096);
+    expect(result.notesTruncated).toBe(true);
+    expect(result.url.length).toBeLessThanOrEqual(MAX_URL);
+  });
+
+  it('caps a title that blows the URL on its own, and keeps the notes intact', () => {
+    const result = buildFallbackIssue({
+      title: 'T'.repeat(5000),
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'short',
+    });
+    expect(result.titleTruncated).toBe(true);
+    expect(result.notesTruncated).toBe(false);
+    expect(result.title.endsWith('…')).toBe(true);
+    expect(result.body).toContain('short');
+    expect(result.url.length).toBeLessThanOrEqual(MAX_URL);
+    expect(isOpenableUrl(result.url)).toBe(true);
+  });
+
+  it('caps a wide unicode title too', () => {
+    const result = buildFallbackIssue({
+      title: '🐛'.repeat(2000),
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'short',
+    });
+    expect(result.titleTruncated).toBe(true);
+    expect(result.notesTruncated).toBe(false);
+    expect(isOpenableUrl(result.url)).toBe(true);
+  });
+
+  it('caps both the title and the notes when both are overlong', () => {
+    const result = buildFallbackIssue({
+      title: 'T'.repeat(5000),
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'x'.repeat(6000),
+    });
+    expect(result.titleTruncated).toBe(true);
+    expect(result.notesTruncated).toBe(true);
+    expect(isOpenableUrl(result.url)).toBe(true);
+    expect(decode(result.url)).toEqual({ title: result.title, body: result.body });
+  });
+
+  it('stays openable across the title lengths that used to overflow the cap', () => {
+    const lengths = [0, 1, 3900, 3951, 3999, 4000, 4001, 4096, 4097, 5000, 20000];
+    const failures = lengths.filter(
+      (length) =>
+        !isOpenableUrl(
+          buildFallbackIssue({
+            title: 'T'.repeat(length),
+            version: '0.1.69',
+            areaLabel: 'Board and sessions',
+            notes: 'Freezes on archive.',
+          }).url,
+        ),
+    );
+    expect(failures).toEqual([]);
+  });
+
+  it('replaces a lone surrogate in the notes instead of throwing', () => {
+    const result = buildFallbackIssue({
+      title: 'Board freeze',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'a\uD83D b',
+    });
+    expect(result.body).toContain('a� b');
+    expect(isOpenableUrl(result.url)).toBe(true);
+  });
+
+  it('replaces a lone surrogate in the title instead of throwing', () => {
+    const result = buildFallbackIssue({
+      title: 'Board\uDC00freeze',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'Freezes on archive.',
+    });
+    expect(result.title).toBe('Board�freeze');
+    expect(isOpenableUrl(result.url)).toBe(true);
+  });
+
+  it('leaves a valid surrogate pair alone', () => {
+    const result = buildFallbackIssue({
+      title: 'Board freeze 🐛',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: 'Freezes on archive 🐛',
+    });
+    expect(result.title).toBe('Board freeze 🐛');
+    expect(result.body).toContain('Freezes on archive 🐛');
+  });
+
+  it('survives a long note that ends on a lone high surrogate', () => {
+    const result = buildFallbackIssue({
+      title: 'Board freeze',
+      version: '0.1.69',
+      areaLabel: 'Board and sessions',
+      notes: `${'x'.repeat(6000)}\uD83D`,
+    });
+    expect(result.notesTruncated).toBe(true);
+    expect(isOpenableUrl(result.url)).toBe(true);
   });
 });
 

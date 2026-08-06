@@ -16,7 +16,11 @@ export const parseIssueCreateResult = ({
   exitCode,
 }: ParseIssueCreateResultParams): IssueCreateResult => {
   if (exitCode !== 0) {
-    return { ok: false, message: stderr.trim() || `gh issue create exited with ${exitCode}` };
+    const reported = stderr.trim();
+    if (reported !== '') {
+      return { ok: false, message: reported };
+    }
+    return { ok: false, message: `gh issue create exited with ${exitCode}` };
   }
   const lines = stdout
     .split('\n')

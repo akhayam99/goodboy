@@ -111,7 +111,7 @@ export const CONCEPT_TONE = {
   pr: 'primary',
   providers: 'info',
   questions: 'warning',
-  reportIssue: 'warning',
+  reportIssue: 'info',
   resolve: 'success',
   review: 'primary',
   search: 'info',

@@ -27,6 +27,8 @@ import {
   REPORT_ISSUE_REPO,
 } from './issuePayload';
 import { parseIssueCreateResult } from './parseIssueCreateResult';
+import { previewHint } from './previewHint';
+import { truncationNotice } from './truncationNotice';
 
 type Props = {
   readonly onClose: () => void;
@@ -78,7 +80,13 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
   );
 
   const previewBody = sendsDirectly ? directBody : fallback.body;
-  const previewTruncated = !sendsDirectly && fallback.truncated;
+  const previewTitle = sendsDirectly ? trimmedTitle : fallback.title;
+  const previewTruncation = sendsDirectly
+    ? null
+    : truncationNotice({
+        titleTruncated: fallback.titleTruncated,
+        notesTruncated: fallback.notesTruncated,
+      });
 
   const canSend =
     version != null &&
@@ -128,7 +136,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     if (!isOpenableUrl(fallback.url)) {
       setSendState('error');
       setErrorMessage(
-        'This report is too long for a GitHub link. Shorten the notes and try again.',
+        'This report is too long for a GitHub link. Shorten the title or the notes and try again.',
       );
       return;
     }
@@ -140,13 +148,6 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
       setErrorMessage(formatError(err));
     }
   };
-
-  const previewHint =
-    mode == null
-      ? 'Checking how this will send.'
-      : sendsDirectly
-        ? 'Sent directly, using your GitHub CLI login.'
-        : 'Opens GitHub in your browser with this pre-filled. You submit it there.';
 
   return (
     <StudioShell
@@ -221,16 +222,14 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
               <Divider />
 
               <section className="flex flex-col gap-3">
-                <SectionHeader label="Preview" hint={previewHint} />
+                <SectionHeader label="Preview" hint={previewHint({ mode })} />
                 <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-foreground">
-                  <p className="font-medium">{trimmedTitle === '' ? 'Untitled' : trimmedTitle}</p>
+                  <p className="font-medium">{previewTitle === '' ? 'Untitled' : previewTitle}</p>
                   <p className="whitespace-pre-wrap text-foreground/85">{previewBody}</p>
                 </div>
-                {previewTruncated ? (
-                  <p className="text-2xs leading-relaxed text-warning">
-                    Trimmed to fit the GitHub link. Connect the GitHub CLI to send the full text.
-                  </p>
-                ) : null}
+                {previewTruncation != null && (
+                  <p className="text-2xs leading-relaxed text-warning">{previewTruncation}</p>
+                )}
                 <p className="text-2xs leading-relaxed text-muted-foreground">
                   This posts publicly on GitHub, under your own account.
                 </p>

@@ -16,6 +16,7 @@ import {
   type AgentKind,
 } from '../../agent-kind';
 import { PREFIXES, parseQuery, type QuickActionGroup } from '../../../quick-actions';
+import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useThemeStore } from '../../../../shared/lib/theme';
@@ -225,7 +226,7 @@ export const CommandPalette = ({
       id: 'action:report-issue',
       label: 'Report an issue',
       group: 'action',
-      onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-report-issue')),
+      onSelect: () => window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT)),
     });
 
     if (onOpenShortcutHelp) {

@@ -170,7 +170,7 @@ describe('ReportIssueStudio', () => {
     const longNotes = 'x'.repeat(6000);
     fillReport({ area: 'board-sessions', title: 'Board freeze', notes: longNotes });
 
-    expect(screen.getByText(/trimmed to fit the github link/i)).toBeDefined();
+    expect(screen.getByText(/notes trimmed to fit the github link/i)).toBeDefined();
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Open on GitHub' }));
@@ -179,5 +179,82 @@ describe('ReportIssueStudio', () => {
     const [url] = mocks.openUrl.mock.calls[0] as [string];
     expect(url.length).toBeLessThanOrEqual(4096);
     expect(url).not.toContain('x'.repeat(6000));
+  });
+
+  it('trims an overlong title, says so, and still opens a url under the cap', async () => {
+    mocks.githubStatus = { available: false, mode: 'absent' };
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'T'.repeat(5000), notes: 'Freezes on archive.' });
+
+    expect(screen.getByText(/title trimmed to fit the github link/i)).toBeDefined();
+    expect(screen.getByText(/^T+…$/)).toBeDefined();
+    expect(
+      screen.getByText('Area: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.', {
+        normalizer: (text) => text,
+      }),
+    ).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open on GitHub' }));
+    });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    const [url] = mocks.openUrl.mock.calls[0] as [string];
+    expect(url.length).toBeLessThanOrEqual(4096);
+    expect(/[\s"<>`|\\^{}]/.test(url)).toBe(false);
+  });
+
+  it('renders a lone surrogate in the notes instead of crashing, on the fallback path', () => {
+    mocks.githubStatus = { available: false, mode: 'absent' };
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'a\uD83D b' });
+
+    expect(screen.getByRole('button', { name: 'Open on GitHub' })).toBeDefined();
+  });
+
+  it('renders a lone surrogate in the notes instead of crashing, on the direct path', () => {
+    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'a\uD83D b' });
+
+    expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('names the CLI login only when the CLI is what sends it', () => {
+    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    expect(screen.getByText('Sent directly, using your GitHub CLI login.')).toBeDefined();
+  });
+
+  it('says token, not CLI login, when a personal access token is what sends it', () => {
+    mocks.githubStatus = { available: true, mode: 'pat' };
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    expect(screen.getByText('Sent directly, using your GitHub token.')).toBeDefined();
+    expect(screen.queryByText(/CLI login/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDefined();
+  });
+
+  it('never claims a CLI login in the truncation notice', () => {
+    mocks.githubStatus = { available: false, mode: 'absent' };
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'x'.repeat(6000) });
+
+    expect(screen.getByText(/Connect GitHub to send the full text\./)).toBeDefined();
+    expect(screen.queryByText(/GitHub CLI/)).toBeNull();
+  });
+
+  it('discloses that the report is posted publicly under the reporter account', () => {
+    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    expect(
+      screen.getByText('This posts publicly on GitHub, under your own account.'),
+    ).toBeDefined();
   });
 });
