@@ -216,6 +216,16 @@ describe('GitHubStudio', () => {
     expect(screen.queryByText(/does not have a GitHub remote/i)).toBeNull();
   });
 
+  it('offers token controls without a GitHub remote, so the token stays enterable here', () => {
+    h.isGithubAuthenticated = false;
+    h.remoteKind = null;
+
+    renderStudio();
+
+    expect(screen.getByLabelText('Personal access token')).toBeDefined();
+    expect(screen.queryByText(/does not have a GitHub remote/i)).toBeNull();
+  });
+
   it('does not offer a disconnect when auth falls back to the system gh CLI with no workspace token', () => {
     h.isGithubAuthenticated = true;
     h.isScoped = false;
@@ -238,5 +248,15 @@ describe('GitHubStudio', () => {
       expect(h.disconnectGithub).toHaveBeenCalledWith({ workspaceId: 'workspace-1' }),
     );
     expect(h.refreshConnection).toHaveBeenCalledOnce();
+  });
+
+  it('still offers a disconnect on a mixed workspace with no GitHub remote but a scoped token', () => {
+    h.isGithubAuthenticated = true;
+    h.isScoped = true;
+    h.remoteKind = null;
+
+    renderStudio();
+
+    expect(screen.getByRole('button', { name: 'Disconnect GitHub' })).toBeDefined();
   });
 });

@@ -16,7 +16,6 @@ import {
 } from '../../../../features/worktree/worktree';
 import { useBranchConflict } from '../../../../features/worktree/useBranchConflict';
 import { useSimpleSessionDirectoryConflict } from '../../../../features/worktree/useSimpleSessionDirectoryConflict';
-import { useWorkspaceRemoteHostKind } from '../../../../features/worktree/useWorkspaceRemoteHostKind';
 import { useWorkspaceGitStatus } from '../../../workspace/hooks/useWorkspaceGitStatus';
 import type { IssueCandidate } from '../../../../features/integrations/fetchIssueCandidates';
 import { resolveIssueSources } from '../../../../features/integrations/issueSources';
@@ -102,13 +101,11 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
   const workspaceIntegrations = useAppStore(
     useShallow((s) => s.workspaceIntegrations?.[workspaceId] ?? EMPTY_INTEGRATIONS),
   );
-  const remoteKind = useWorkspaceRemoteHostKind({ workspaceId });
   const githubConnection = useGithubConnection({ workspaceId });
   const issueSources = isSimple
     ? []
     : resolveIssueSources({
         integrations: workspaceIntegrations,
-        remoteKind,
         isGithubAuthenticated: githubConnection.isAuthenticated,
       });
 

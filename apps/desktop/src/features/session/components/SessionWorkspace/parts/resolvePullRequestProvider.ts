@@ -4,7 +4,11 @@ export type PullRequestProvider = 'github' | 'gitlab' | 'bitbucket';
 
 export type PullRequestAvailability = Readonly<Record<PullRequestProvider, boolean>>;
 
-const PROVIDER_PRIORITY: ReadonlyArray<PullRequestProvider> = ['github', 'gitlab', 'bitbucket'];
+export const PROVIDER_PRIORITY: ReadonlyArray<PullRequestProvider> = [
+  'github',
+  'gitlab',
+  'bitbucket',
+];
 
 type HintParams = {
   readonly remoteKind: RemoteHostKind | null;

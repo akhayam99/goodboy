@@ -14,8 +14,7 @@ import { ExternalTaskChip } from '../../../../integrations/components/ExternalTa
 import { integrationLabel } from '../../../../integrations/components/IntegrationGlyph';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { BitbucketPrStrip } from '../../../../context/components/ContextPanel/strips/BitbucketPrStrip';
-import { MissingGithubRemoteEmptyState } from '../../../../github/components/MissingGithubRemoteEmptyState';
-import { MissingGithubTokenEmptyState } from '../../../../github/components/MissingGithubTokenEmptyState';
+import { GithubConnectionEmptyState } from '../../../../github/components/GithubConnectionEmptyState';
 import { resolveIntegrationConnection } from '../../../../integrations/connection';
 import { useGithubConnection } from '../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
@@ -319,7 +318,6 @@ const GithubPrCard = ({
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
     integrations: workspaceIntegrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated:
       githubConnection.isResolved === false || githubConnection.isAuthenticated,
@@ -423,15 +421,12 @@ const GithubPrCard = ({
     return shell({ children: <PrPaneSkeleton /> });
   }
 
-  if (!pr && remoteKind !== 'github') {
-    return shell({ children: <MissingGithubRemoteEmptyState /> });
-  }
-
-  if (!pr && !isGithubConnected) {
+  if (!pr && (isGithubConnected === false || remoteKind !== 'github')) {
     return shell({
       children: (
-        <MissingGithubTokenEmptyState
+        <GithubConnectionEmptyState
           workspaceId={session.workspaceId}
+          isConnected={isGithubConnected}
           onConnected={() => void githubConnection.refresh()}
         />
       ),

@@ -60,15 +60,17 @@ export const GitHubStudio = ({
   const remoteKind = useWorkspaceRemoteHostKind({ workspaceId });
   const githubConnection = useGithubConnection({ workspaceId });
   const disconnectGithub = useAppStore((s) => s.disconnectGithub);
-  const isConnected = resolveIntegrationConnection({
+  const hasGithubRemote = remoteKind === 'github';
+  const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
     integrations: [],
-    remoteKind,
     externalTasks: [],
     isGithubAuthenticated:
       githubConnection.isResolved === false || githubConnection.isAuthenticated,
   }).isConnected;
-  const issues = useGithubIssues({ workspaceId, rootPath, isEnabled: isConnected });
+  const canBrowseRepo = isGithubConnected && hasGithubRemote;
+  const canDisconnect = isGithubConnected && githubConnection.isScoped;
+  const issues = useGithubIssues({ workspaceId, rootPath, isEnabled: canBrowseRepo });
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
   const [focusedIssue, setFocusedIssue] = useState<GithubIssue | null>(null);
   const [tab, setTab] = useState<Tab>(initialIssueExternalId == null ? 'pull-requests' : 'issues');
@@ -136,26 +138,30 @@ export const GitHubStudio = ({
       workspaceName={workspaceName}
       closeLabel="close github studio"
       headerAccessory={
-        isConnected ? (
+        canBrowseRepo || canDisconnect ? (
           <div className="flex items-center gap-2">
-            <SegmentedTabs
-              ariaLabel="GitHub work"
-              options={TABS}
-              value={tab}
-              onChange={setTab}
-              size="sm"
-            />
-            {issues.groups.length > 0 ? (
-              <IconButton
-                icon={RefreshCw}
-                label="Refresh issues"
-                onClick={issues.refetch}
-                disabled={issues.loading}
-              />
-            ) : null}
-            {githubConnection.isScoped ? (
+            {canBrowseRepo ? (
               <>
-                <Divider orientation="vertical" className="mx-0.5 h-5" />
+                <SegmentedTabs
+                  ariaLabel="GitHub work"
+                  options={TABS}
+                  value={tab}
+                  onChange={setTab}
+                  size="sm"
+                />
+                {issues.groups.length > 0 ? (
+                  <IconButton
+                    icon={RefreshCw}
+                    label="Refresh issues"
+                    onClick={issues.refetch}
+                    disabled={issues.loading}
+                  />
+                ) : null}
+              </>
+            ) : null}
+            {canDisconnect ? (
+              <>
+                {canBrowseRepo ? <Divider orientation="vertical" className="mx-0.5 h-5" /> : null}
                 <IntegrationDisconnect
                   label="GitHub"
                   description="Deletes this workspace's GitHub token from your keychain. This does not sign you out of the system gh CLI."
@@ -172,11 +178,11 @@ export const GitHubStudio = ({
       onClose={onClose}
     >
       {(requestClose) =>
-        !isConnected ? (
+        !canBrowseRepo ? (
           <div className="flex min-h-0 flex-1 items-center justify-center p-5">
             <GithubConnectionEmptyState
               workspaceId={workspaceId}
-              hasGithubRemote={remoteKind === 'github'}
+              isConnected={isGithubConnected}
               onConnected={() => void githubConnection.refresh()}
               shouldAutoFocus
               wrapped={false}

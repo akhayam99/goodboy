@@ -14,7 +14,7 @@ export const queueAgentReviewComments = (set: SetFn, get: GetFn) => {
     if (markers.length === 0) {
       return;
     }
-    const target = resolveReviewTarget({ get, sessionId });
+    const target = resolveReviewTarget({ state: get(), sessionId });
     if (target == null) {
       return;
     }

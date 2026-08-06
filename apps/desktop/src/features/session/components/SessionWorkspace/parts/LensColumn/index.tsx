@@ -18,7 +18,6 @@ import {
   useSummarizerStatus,
 } from '../../../../../../store';
 import type { LensKind } from '../../../../../../store';
-import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { useSessionSidebarCollapsed } from '../../../../../workspace/hooks/useSessionSidebarVisibility/collapsed';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
@@ -102,7 +101,6 @@ export const LensColumn = ({
     [nonResolverStandalone],
   );
   const unreadLens = useSessionUnreadLens(sessionId);
-  const remoteKind = useRemoteHostKind({ sessionId });
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const workspaceIntegrations = useAppStore(
     (s) => s.workspaceIntegrations[session.workspaceId] ?? EMPTY_ARRAY,
@@ -186,7 +184,6 @@ export const LensColumn = ({
   const githubConnection = resolveIntegrationConnection({
     provider: 'github',
     integrations: workspaceIntegrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated:
       githubAuthentication.isResolved === false || githubAuthentication.isAuthenticated,
@@ -194,35 +191,30 @@ export const LensColumn = ({
   const linearConnection = resolveIntegrationConnection({
     provider: 'linear',
     integrations: workspaceIntegrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated: false,
   });
   const sentryConnection = resolveIntegrationConnection({
     provider: 'sentry',
     integrations: workspaceIntegrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated: false,
   });
   const gitlabConnection = resolveIntegrationConnection({
     provider: 'gitlab',
     integrations: workspaceIntegrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated: false,
   });
   const jiraConnection = resolveIntegrationConnection({
     provider: 'jira',
     integrations: workspaceIntegrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated: false,
   });
   const slackConnection = resolveIntegrationConnection({
     provider: 'slack',
     integrations: workspaceIntegrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated: false,
   });

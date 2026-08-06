@@ -27,7 +27,6 @@ export const SlackStudio = ({ workspaceId, workspaceName, initialThreadTs, onClo
   const isConnected = resolveIntegrationConnection({
     provider: 'slack',
     integrations,
-    remoteKind: null,
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;

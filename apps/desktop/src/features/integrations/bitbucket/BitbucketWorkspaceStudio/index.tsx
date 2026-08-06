@@ -28,7 +28,6 @@ export const BitbucketWorkspaceStudio = ({ workspaceId, workspaceName, onClose }
   const isConnected = resolveIntegrationConnection({
     provider: 'bitbucket',
     integrations,
-    remoteKind: null,
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;

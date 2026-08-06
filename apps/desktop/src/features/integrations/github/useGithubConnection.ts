@@ -2,8 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghStatus } from '../../github/github';
 
+export const GITHUB_CONNECTION_CHANGED_EVENT = 'goodboy:github-connection-changed';
+
+export const notifyGithubConnectionChanged = () => {
+  window.dispatchEvent(new CustomEvent(GITHUB_CONNECTION_CHANGED_EVENT));
+};
+
 type Params = {
-  readonly workspaceId: WorkspaceId;
+  readonly workspaceId: WorkspaceId | null;
 };
 
 type ConnectionState = {
@@ -17,7 +23,11 @@ export const useGithubConnection = ({ workspaceId }: Params) => {
     isResolved: false,
   });
 
-  const refresh = useCallback(async () => {
+  const read = useCallback(async () => {
+    if (workspaceId == null) {
+      setConnection({ status: null, isResolved: true });
+      return;
+    }
     try {
       const status = await ghStatus(workspaceId);
       setConnection({ status, isResolved: true });
@@ -28,8 +38,20 @@ export const useGithubConnection = ({ workspaceId }: Params) => {
 
   useEffect(() => {
     setConnection({ status: null, isResolved: false });
-    void refresh();
-  }, [refresh]);
+    void read();
+  }, [read]);
+
+  useEffect(() => {
+    const onChanged = () => {
+      void read();
+    };
+    window.addEventListener(GITHUB_CONNECTION_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(GITHUB_CONNECTION_CHANGED_EVENT, onChanged);
+  }, [read]);
+
+  const refresh = useCallback(() => {
+    notifyGithubConnectionChanged();
+  }, []);
 
   return {
     isAuthenticated: connection.status?.mode !== 'absent' && connection.status != null,

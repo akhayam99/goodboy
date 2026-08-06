@@ -3,14 +3,12 @@ import type {
   SessionExternalTaskProvider,
   WorkspaceIntegration,
 } from '@goodboy/types';
-import type { RemoteHostKind } from '../../shared/lib/remoteHost';
 
 type Provider = SessionExternalTaskProvider | 'pr';
 
 type Params = {
   readonly provider: Provider;
   readonly integrations: ReadonlyArray<WorkspaceIntegration>;
-  readonly remoteKind: RemoteHostKind | null;
   readonly externalTasks: ReadonlyArray<SessionExternalTask>;
   readonly isGithubAuthenticated: boolean;
 };
@@ -23,7 +21,6 @@ type Result = {
 export const resolveIntegrationConnection = ({
   provider,
   integrations,
-  remoteKind,
   externalTasks,
   isGithubAuthenticated,
 }: Params): Result => {
@@ -33,8 +30,6 @@ export const resolveIntegrationConnection = ({
   const hasJira = integrations.some((integration) => integration.provider === 'jira');
   const hasBitbucket = integrations.some((integration) => integration.provider === 'bitbucket');
   const hasSlack = integrations.some((integration) => integration.provider === 'slack');
-  const hasGithubRemote = remoteKind === 'github';
-  const hasGitlabRemote = remoteKind === 'gitlab';
 
   let isConnected: boolean;
   let hasLinkedTask: boolean;
@@ -57,7 +52,7 @@ export const resolveIntegrationConnection = ({
       hasLinkedTask = externalTasks.some((task) => task.provider === 'jira');
       break;
     case 'github':
-      isConnected = hasGithubRemote && isGithubAuthenticated;
+      isConnected = isGithubAuthenticated;
       hasLinkedTask = externalTasks.some((task) => task.provider === 'github');
       break;
     case 'bitbucket':
@@ -69,10 +64,7 @@ export const resolveIntegrationConnection = ({
       hasLinkedTask = externalTasks.some((task) => task.provider === 'slack');
       break;
     case 'pr':
-      isConnected =
-        (hasGithubRemote && isGithubAuthenticated) ||
-        (hasGitlabRemote && hasGitlab) ||
-        hasBitbucket;
+      isConnected = isGithubAuthenticated || hasGitlab || hasBitbucket;
       hasLinkedTask = externalTasks.some(
         (task) =>
           task.provider === 'github' || task.provider === 'gitlab' || task.provider === 'bitbucket',
