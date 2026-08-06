@@ -72,10 +72,17 @@ export type TaskModelPreference = Readonly<{
 
 export type TaskModelPreferences = Readonly<Partial<Record<AuxTaskId, TaskModelPreference>>>;
 
+export type RoleModelFallback = Readonly<{
+  providerId: ProviderId;
+  model: string;
+  effort?: ModelEffort;
+}>;
+
 export type RoleModelPreference = Readonly<{
   providerId: ProviderId;
   model: string;
   effort: ModelEffort;
+  fallback?: RoleModelFallback;
 }>;
 
 export type RoleModelPreferences = Readonly<Partial<Record<AgentRole, RoleModelPreference>>>;

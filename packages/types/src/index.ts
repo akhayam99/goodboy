@@ -174,6 +174,7 @@ export type {
   OverrideSettings,
   ProviderBindings,
   ResolvedSettings,
+  RoleModelFallback,
   RoleModelPreference,
   RoleModelPreferences,
   SettingsScope,

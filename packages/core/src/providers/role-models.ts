@@ -1,14 +1,26 @@
-import type { AgentEffort, ProviderId, RoleModelPreferences } from '@goodboy/types';
+import type {
+  AgentEffort,
+  ProviderId,
+  RoleModelFallback,
+  RoleModelPreferences,
+} from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 import { defaultsForRole, isAgentRole } from '../roles';
 import { resolveModelArgs } from './resolveModelArgs';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+
+export type ResolvedRoleFallback = Readonly<{
+  provider: ProviderId;
+  model: string;
+  effort: AgentEffort;
+}>;
 
 export type ResolvedRoleRouting = Readonly<{
   provider: ProviderId;
   model: string;
   effort: AgentEffort;
   isOverride: boolean;
+  fallback?: ResolvedRoleFallback;
 }>;
 
 type Params = {
@@ -16,12 +28,45 @@ type Params = {
   readonly prefs: RoleModelPreferences | null | undefined;
 };
 
+type FallbackParams = {
+  readonly fallback: RoleModelFallback | undefined;
+  readonly effort: AgentEffort;
+};
+
+const resolveRoleFallback = ({ fallback, effort }: FallbackParams): ResolvedRoleFallback | null => {
+  if (fallback == null) {
+    return null;
+  }
+  const capabilities = PROVIDER_CAPABILITIES[fallback.providerId];
+  if (capabilities == null) {
+    return null;
+  }
+  const requested = fallback.effort ?? effort;
+  const stored = resolveStoredModelSelection({
+    provider: fallback.providerId,
+    id: fallback.model,
+    effort: requested,
+  });
+  if (stored.report?.kind === 'unknown') {
+    return null;
+  }
+  const resolved = resolveModelArgs({
+    provider: fallback.providerId,
+    selection: stored.selection,
+  });
+  return {
+    provider: fallback.providerId,
+    model: stored.selection.key,
+    effort: resolved.clamped?.applied ?? requested,
+  };
+};
+
 export const resolveRoleRouting = ({ role, prefs }: Params): ResolvedRoleRouting => {
-  const fallback = defaultsForRole(role);
+  const defaults = defaultsForRole(role);
   const compiled: ResolvedRoleRouting = {
-    provider: fallback.provider,
-    model: fallback.model,
-    effort: fallback.effort,
+    provider: defaults.provider,
+    model: defaults.model,
+    effort: defaults.effort,
     isOverride: false,
   };
   const preference = prefs?.[isAgentRole(role) ? role : 'custom'];
@@ -44,10 +89,13 @@ export const resolveRoleRouting = ({ role, prefs }: Params): ResolvedRoleRouting
     provider: preference.providerId,
     selection: stored.selection,
   });
+  const effort = resolved.clamped?.applied ?? preference.effort;
+  const fallback = resolveRoleFallback({ fallback: preference.fallback, effort });
   return {
     provider: preference.providerId,
     model: stored.selection.key,
-    effort: resolved.clamped?.applied ?? preference.effort,
+    effort,
     isOverride: true,
+    ...(fallback != null && { fallback }),
   };
 };

@@ -1909,3 +1909,161 @@ describe('sendTurn, budget routing notice', () => {
     expect(messages.join(' ')).not.toContain('running this turn on');
   });
 });
+
+describe('sendTurn, role fallback model', () => {
+  beforeEach(async () => {
+    runTurnSpy.mockReset();
+    invokeSpy.mockReset();
+    invokeAgentUpdateStatusSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+    invokeSpy.mockResolvedValue({
+      stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
+      stderr: '',
+      exitCode: 0,
+    });
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'preference',
+      fallbackUsed: false,
+    });
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+  });
+
+  afterEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    vi.clearAllMocks();
+  });
+
+  function setupFallbackAgent(
+    useAppStore: Awaited<ReturnType<typeof importStore>>,
+    roleModels: Record<string, unknown> | null,
+  ) {
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: [buildAgent(AGENT_A, 0)] },
+      selectedAgentId: { [SESSION_ID]: AGENT_A },
+      agentEffortOverride: {},
+      agentProviderOverride: {},
+      agentModelOverride: {},
+      agentKindOverride: {},
+      pendingResolverKickoff: {},
+      transcripts: { [AGENT_A]: [] },
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: {
+        anthropic: { state: 'connected', identity: 'test' },
+      } as never,
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+      workspaceOverrides: {
+        [WORKSPACE_ID]: {
+          defaultProviderId: null,
+          defaultWorkflowId: null,
+          defaultBranchPrefix: null,
+          parallelEnabled: null,
+          defaultVerbosity: null,
+          providerBindings: null,
+          taskModels: null,
+          roleModels,
+          parallelAgents: null,
+        } as never,
+      },
+    });
+  }
+
+  function failFirstTurn() {
+    runTurnSpy.mockImplementationOnce(() => {
+      throw new Error('401 unauthorized');
+    });
+  }
+
+  it('retries on the fallback the user picked for the agent role', async () => {
+    const useAppStore = await importStore();
+    setupFallbackAgent(useAppStore, {
+      custom: {
+        providerId: 'anthropic',
+        model: 'sonnet-5',
+        effort: 'medium',
+        fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+      },
+    });
+    failFirstTurn();
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    expect(runTurnSpy).toHaveBeenCalledTimes(2);
+    expect(runTurnSpy.mock.calls[0]?.[0]?.model).toContain('sonnet-4-5');
+    expect(runTurnSpy.mock.calls[1]?.[0]?.model).toContain('haiku');
+  });
+
+  it('leaves the heuristic alone when the role stores no fallback', async () => {
+    const useAppStore = await importStore();
+    setupFallbackAgent(useAppStore, {
+      custom: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' },
+    });
+    failFirstTurn();
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' }),
+    ).rejects.toThrow('401 unauthorized');
+
+    expect(runTurnSpy).toHaveBeenCalledOnce();
+  });
+
+  it('ignores a fallback stored for a role the agent does not have', async () => {
+    const useAppStore = await importStore();
+    setupFallbackAgent(useAppStore, {
+      planner: {
+        providerId: 'anthropic',
+        model: 'opus-5',
+        effort: 'high',
+        fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+      },
+    });
+    failFirstTurn();
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' }),
+    ).rejects.toThrow('401 unauthorized');
+
+    expect(runTurnSpy).toHaveBeenCalledOnce();
+  });
+
+  it('announces the fallback the user picked in the transcript', async () => {
+    const useAppStore = await importStore();
+    setupFallbackAgent(useAppStore, {
+      custom: {
+        providerId: 'anthropic',
+        model: 'sonnet-5',
+        effort: 'medium',
+        fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+      },
+    });
+    failFirstTurn();
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    const messages = (useAppStore.getState().transcripts[AGENT_A] ?? [])
+      .filter((event) => event.kind === 'error')
+      .map((event) => ('message' in event ? event.message : ''));
+
+    expect(messages.join(' ')).toContain('retrying on anthropic Haiku 4.5');
+  });
+});

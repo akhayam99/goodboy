@@ -8,6 +8,7 @@ import {
   isFallbackStepOutputSummary,
   planTurnFallback,
   resolveModelArgs,
+  resolveRoleRouting,
   resolveStoredModelSelection,
   runsForWorkflowRun,
   turnReducer,
@@ -55,7 +56,11 @@ import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-erro
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
-import { AGENT_KIND_DEFAULTS, inferAgentKindFromName } from '../../../features/session/agent-kind';
+import {
+  AGENT_KIND_DEFAULTS,
+  KIND_TO_ROLE,
+  inferAgentKindFromName,
+} from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { formatError } from '../../../shared/lib/errors';
@@ -1108,6 +1113,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             });
       const cancelledBeforeFailure = cancelledRunIds.delete(runId);
       const failure = classifyProviderError({ message: rawMessage });
+      const preferredFallback = resolveRoleRouting({
+        role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+        prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+      }).fallback;
       const fallbackPlan = cancelledBeforeFailure
         ? null
         : planTurnFallback({
@@ -1116,6 +1125,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             model: modelSelection.key,
             connectedProviders,
             attempt: retry?.attempt ?? 0,
+            ...(preferredFallback != null && {
+              preferred: {
+                provider: preferredFallback.provider,
+                model: preferredFallback.model,
+              },
+            }),
           });
       if (fallbackPlan != null) {
         await updateProviderRunStatus(tauriDatabase, runId, {

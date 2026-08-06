@@ -90,6 +90,140 @@ describe('resolveRoleRouting', () => {
     expect(resolved.isOverride).toBe(false);
   });
 
+  it('leaves the fallback absent when the role has no stored preference', () => {
+    expect(resolveRoleRouting({ role: 'planner', prefs: null }).fallback).toBeUndefined();
+  });
+
+  it('leaves the fallback absent when the preference stores none', () => {
+    const prefs: RoleModelPreferences = {
+      planner: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+    };
+
+    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback).toBeUndefined();
+  });
+
+  it('resolves a stored fallback and inherits the primary effort', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        fallback: { providerId: 'codex', model: 'gpt-5.6' },
+      },
+    };
+
+    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6',
+      effort: 'high',
+    });
+  });
+
+  it('inherits the clamped primary effort, not the stored one', () => {
+    const prefs: RoleModelPreferences = {
+      reviewer: {
+        providerId: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        effort: 'max',
+        fallback: { providerId: 'codex', model: 'gpt-5.6' },
+      },
+    };
+    const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
+
+    expect(resolved.effort).toBe('high');
+    expect(resolved.fallback?.effort).toBe('high');
+  });
+
+  it('prefers an explicit fallback effort over the inherited one', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        fallback: { providerId: 'codex', model: 'gpt-5.6', effort: 'low' },
+      },
+    };
+
+    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback?.effort).toBe('low');
+  });
+
+  it('clamps a fallback effort the fallback model cannot reach', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        fallback: { providerId: 'codex', model: 'gpt-5.4-mini', effort: 'max' },
+      },
+    };
+
+    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.4-mini',
+      effort: 'xhigh',
+    });
+  });
+
+  it('normalizes a fallback stored under its legacy cli id', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        fallback: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+      },
+    };
+
+    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback?.model).toBe('haiku-4.5');
+  });
+
+  it('drops a fallback whose model the catalogue does not know, keeping the pin', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        fallback: { providerId: 'anthropic', model: 'claude-opus-99' },
+      },
+    };
+    const resolved = resolveRoleRouting({ role: 'planner', prefs });
+
+    expect(resolved.fallback).toBeUndefined();
+    expect(resolved.model).toBe('opus-5');
+    expect(resolved.isOverride).toBe(true);
+  });
+
+  it('drops a fallback whose provider is unknown to the registry, keeping the pin', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        fallback: { providerId: 'ollama' as ProviderId, model: 'llama-4' },
+      },
+    };
+    const resolved = resolveRoleRouting({ role: 'planner', prefs });
+
+    expect(resolved.fallback).toBeUndefined();
+    expect(resolved.model).toBe('opus-5');
+    expect(resolved.isOverride).toBe(true);
+  });
+
+  it('drops the fallback along with a pin the registry rejects', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-99',
+        effort: 'high',
+        fallback: { providerId: 'codex', model: 'gpt-5.6' },
+      },
+    };
+    const resolved = resolveRoleRouting({ role: 'planner', prefs });
+
+    expect(resolved.isOverride).toBe(false);
+    expect(resolved.fallback).toBeUndefined();
+  });
+
   it('routes an unknown role through the custom preference, like the compiled default does', () => {
     const prefs: RoleModelPreferences = {
       custom: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },

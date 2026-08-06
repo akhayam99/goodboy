@@ -47,6 +47,7 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     recommendation,
     onProvider,
     onModel,
+    onReset,
   }: {
     ariaLabel: string;
     provider: string;
@@ -55,6 +56,7 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     recommendation?: { provider?: string; model?: string };
     onProvider: (provider: string) => void;
     onModel: (model: string) => void;
+    onReset?: () => void;
   }) => (
     <>
       <button
@@ -86,6 +88,11 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
       >
         {effort.value ?? ''}
       </button>
+      {onReset != null && (
+        <button type="button" aria-label={`${ariaLabel} reset`} onClick={onReset}>
+          reset
+        </button>
+      )}
     </>
   ),
 }));
@@ -361,6 +368,166 @@ describe('DefaultsPanel', () => {
         },
       }),
     );
+  });
+
+  it('offers no fallback control while the role runs on its compiled default', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    expect(screen.queryByRole('button', { name: 'Planner fallback: automatic' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Planner fallback routing/ })).toBeNull();
+  });
+
+  it('reads an unset fallback as automatic once the role is pinned', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    expect(screen.getByRole('button', { name: 'Planner fallback: automatic' }).textContent).toBe(
+      'Automatic',
+    );
+  });
+
+  it('persists a fallback without an effort of its own', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Planner fallback: automatic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Planner fallback routing cheap model' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'opus-5',
+            effort: 'high',
+            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+          },
+        },
+      }),
+    );
+  });
+
+  it('shows the primary effort on the fallback and refuses to edit it', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5',
+            effort: 'low',
+            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+          },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    const effort = screen.getByRole('button', { name: 'Planner fallback routing high effort' });
+    expect(effort.textContent).toBe('low');
+    expect(effort.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('keeps the fallback when the role changes its primary model', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5',
+            effort: 'high',
+            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+          },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Planner routing cheap model' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'haiku-4.5',
+            effort: 'high',
+            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+          },
+        },
+      }),
+    );
+  });
+
+  it('deletes the fallback key on reset and keeps the pin', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5',
+            effort: 'high',
+            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+          },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Planner fallback routing reset' }));
+
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        roleModels: {
+          planner: { providerId: 'anthropic', model: 'opus-5', effort: 'high' },
+        },
+      }),
+    );
+  });
+
+  it('drops a fallback the registry cannot resolve instead of storing it back', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5',
+            effort: 'high',
+            fallback: { providerId: 'anthropic', model: 'claude-opus-99' },
+          },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    openRolesTab();
+
+    expect(screen.getByRole('button', { name: 'Planner fallback: automatic' })).toBeDefined();
   });
 
   it('resets a stored role override to the selected default provider', async () => {

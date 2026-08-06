@@ -128,7 +128,11 @@ export type {
 
 export { resolveTaskModel } from './providers/task-models';
 
-export { resolveRoleRouting, type ResolvedRoleRouting } from './providers/role-models';
+export {
+  resolveRoleRouting,
+  type ResolvedRoleFallback,
+  type ResolvedRoleRouting,
+} from './providers/role-models';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
 export {
