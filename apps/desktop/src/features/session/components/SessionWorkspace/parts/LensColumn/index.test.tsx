@@ -801,6 +801,43 @@ describe('LensColumn', () => {
     fireEvent.click(backToBoard);
     expect(store.setCurrentSession).toHaveBeenCalledWith(null);
   });
+
+  it('tints the collapsed board escape hatch primary, like its expanded sidebar twin', () => {
+    render(
+      <SessionSidebarCollapsedContext value>
+        <LensColumn
+          session={SESSION}
+          activeLens={null}
+          onSelectOverview={vi.fn()}
+          onSelect={vi.fn()}
+          filesCount={0}
+        />
+      </SessionSidebarCollapsedContext>,
+    );
+
+    const backToBoard = screen.getByRole('button', { name: 'Back to board' });
+    expect(backToBoard.className).toContain('bg-primary/10');
+    expect(backToBoard.className).toContain('text-primary');
+  });
+
+  it('gives the collapsed board escape hatch the same row padding token as the Overview row', () => {
+    render(
+      <SessionSidebarCollapsedContext value>
+        <LensColumn
+          session={SESSION}
+          activeLens={null}
+          onSelectOverview={vi.fn()}
+          onSelect={vi.fn()}
+          filesCount={0}
+        />
+      </SessionSidebarCollapsedContext>,
+    );
+
+    const overviewRow = screen.getByRole('button', { name: 'Overview' });
+    const backToBoard = screen.getByRole('button', { name: 'Back to board' });
+    expect(backToBoard.className).toContain('py-1.5');
+    expect(overviewRow.className).toContain('py-1.5');
+  });
 });
 
 describe('LensColumn footer', () => {

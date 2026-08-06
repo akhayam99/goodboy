@@ -544,9 +544,32 @@ describe('PrPane', () => {
 
     expect(screen.getByRole('heading', { name: 'GitHub', level: 2 })).toBeDefined();
     expect(screen.getByText('Pull request on ak/refactor-auth')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Show pull request #42' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open pull request #42' })).toBeDefined();
     expect(screen.getByText('No CI')).toBeDefined();
     expect(screen.getByRole('button', { name: /Review this pull request/i })).toBeDefined();
+  });
+
+  it('opens the studio, instead of re-selecting, when the already-selected row is clicked', () => {
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: PULL_REQUEST,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionGithubPrs = { [SESSION_ID]: [PULL_REQUEST] };
+    const githubEvents: Array<CustomEvent> = [];
+    const listener = (event: Event) => githubEvents.push(event as CustomEvent);
+    window.addEventListener('goodboy:open-github-session', listener);
+
+    render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open pull request #42' }));
+    window.removeEventListener('goodboy:open-github-session', listener);
+
+    expect(githubEvents).toHaveLength(1);
+    expect(githubEvents[0]?.detail).toEqual({ sessionId: SESSION_ID });
+    expect(h.store.selectSessionPr).not.toHaveBeenCalled();
   });
 
   it('lists every pull request on the branch and switches on click', () => {
@@ -597,7 +620,7 @@ describe('PrPane', () => {
     expect(screen.getAllByText(closedPr.title).length).toBeGreaterThan(0);
     expect(screen.queryByRole('heading', { name: PULL_REQUEST.title })).toBeNull();
     const selectedRow = screen
-      .getByRole('button', { name: `Show pull request #${closedPr.number}` })
+      .getByRole('button', { name: `Open pull request #${closedPr.number}` })
       .closest('[data-selected]');
     expect(selectedRow).not.toBeNull();
     expect(

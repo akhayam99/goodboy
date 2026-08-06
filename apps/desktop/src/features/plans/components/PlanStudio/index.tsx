@@ -340,16 +340,6 @@ export const PlanStudio = ({ sessionId }: Props) => {
           icon={CONCEPT_ICONS.plans}
           title="Nothing active"
           description="Every plan here already ran or was discarded. Show the consumed ones to reread them."
-          action={
-            <CountToggle
-              label="Consumed"
-              itemsLabel="plans"
-              count={consumed.length}
-              isShown={showConsumed}
-              icon={CircleCheck}
-              onChange={setShowConsumed}
-            />
-          }
         />
       ) : null}
       {active.length > 0 ? (
@@ -361,18 +351,16 @@ export const PlanStudio = ({ sessionId }: Props) => {
           ))}
         </ul>
       ) : null}
-      {active.length > 0 ? (
-        <div className="flex justify-center">
-          <CountToggle
-            label="Consumed"
-            itemsLabel="plans"
-            count={consumed.length}
-            isShown={showConsumed}
-            icon={CircleCheck}
-            onChange={setShowConsumed}
-          />
-        </div>
-      ) : null}
+      <div className="flex justify-center">
+        <CountToggle
+          label="Consumed"
+          itemsLabel="plans"
+          count={consumed.length}
+          isShown={showConsumed}
+          icon={CircleCheck}
+          onChange={setShowConsumed}
+        />
+      </div>
       {showConsumed && consumed.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {consumed.map((plan) => (

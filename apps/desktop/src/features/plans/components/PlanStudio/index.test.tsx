@@ -155,6 +155,80 @@ describe('PlanStudio', () => {
     await waitFor(() => expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-impl'));
     expect(state.setActiveLens).toHaveBeenCalledWith('sess-1', 'agents');
   });
+
+  it('renders the consumed toggle as a row beneath Nothing active, not inside the empty state card', () => {
+    state.plans = [
+      {
+        id: 'plan-1',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'Implement auth module',
+        bodyMd: '## Steps',
+        status: 'consumed',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 1,
+      },
+    ];
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    expect(screen.getByText('Nothing active')).toBeDefined();
+    const toggle = screen.getByRole('button', { name: /consumed/i });
+    const emptyCard = screen.getByText('Nothing active').closest('.border-dashed');
+    expect(emptyCard).not.toBeNull();
+    expect(emptyCard?.contains(toggle)).toBe(false);
+
+    fireEvent.click(toggle);
+    expect(screen.getByText('Implement auth module')).toBeDefined();
+  });
+
+  it('shows the consumed toggle alongside active plans too', () => {
+    state.plans = [
+      {
+        id: 'plan-1',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'Implement auth module',
+        bodyMd: '## Steps',
+        status: 'active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 0,
+      },
+      {
+        id: 'plan-2',
+        agentId: 'agent-2',
+        sessionId: 'sess-1',
+        title: 'Old plan',
+        bodyMd: '## Steps',
+        status: 'consumed',
+        createdAt: '2026-01-02T00:00:00.000Z',
+        runCount: 1,
+      },
+    ];
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    expect(screen.queryByText('Nothing active')).toBeNull();
+    expect(screen.getByRole('button', { name: /consumed/i })).toBeDefined();
+  });
+
+  it('selects a plan from the list, focusing it', () => {
+    state.plans = [
+      {
+        id: 'plan-1',
+        agentId: 'agent-1',
+        sessionId: 'sess-1',
+        title: 'Implement auth module',
+        bodyMd: '## Steps',
+        status: 'active',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        runCount: 0,
+      },
+    ];
+    render(<PlanStudio sessionId={'sess-1' as never} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Implement auth module/i }));
+
+    expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', 'plan-1');
+  });
 });
 
 describe('PlanStudio subpage', () => {
