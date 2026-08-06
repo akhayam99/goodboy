@@ -1,14 +1,32 @@
 import type { ComponentProps } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import { FOOTER_CATEGORIES, FOOTER_INTEGRATION_PROVIDERS } from './categories';
 
-vi.mock('../../../store', () => ({
-  useAppStore: (
-    selector: (state: { providers: ReadonlyArray<{ connection: string }> }) => unknown,
-  ) => selector({ providers: [] }),
+const { flags, storeState } = vi.hoisted(() => ({
+  flags: { unseenRelease: false },
+  storeState: {
+    providers: [] as ReadonlyArray<{ readonly connection: string }>,
+    updaterStatus: 'idle' as 'idle' | 'available' | 'downloading',
+    updateVersion: '0.2.0' as string | null,
+    installUpdate: vi.fn(async () => undefined),
+  },
 }));
+
+vi.mock('../../../store', () => ({
+  useAppStore: <T,>(selector: (state: typeof storeState) => T) => selector(storeState),
+}));
+
+vi.mock('../../../features/changelog/hooks/useUnseenRelease', () => ({
+  useUnseenRelease: () => flags.unseenRelease,
+}));
+
+beforeEach(() => {
+  flags.unseenRelease = false;
+  storeState.providers = [];
+  storeState.updaterStatus = 'idle';
+});
 
 afterEach(() => {
   cleanup();
@@ -16,6 +34,16 @@ afterEach(() => {
 });
 
 import { AppFooter } from './index';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+
+const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
+const REST_MORE_LABEL = 'More studios: budget, impact and changelog';
+const UNSEEN_MORE_LABEL = 'More studios: budget, impact and changelog, new release notes to read';
+
+const openMore = () => {
+  fireEvent.click(screen.getByRole('button', { name: /^More studios/ }));
+  return screen.getByRole('dialog', { name: 'More studios' });
+};
 
 type FooterProps = ComponentProps<typeof AppFooter>;
 
@@ -27,6 +55,7 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   activeStudio: null,
   onOpenWorkflows: vi.fn(),
   onOpenProviders: vi.fn(),
+  onOpenSettings: vi.fn(),
   onOpenBudget: vi.fn(),
   onOpenImpact: vi.fn(),
   onOpenChangelog: vi.fn(),
@@ -99,23 +128,13 @@ const expectRoutedOnlyTo = ({ spies, provider }: ExpectRoutedParams) => {
 };
 
 describe('AppFooter', () => {
-  it('opens each studio launcher on the right', () => {
+  it('keeps workflows, providers and settings one click away on the right', () => {
     const onOpenWorkflows = vi.fn();
     const onOpenProviders = vi.fn();
-    const onOpenBudget = vi.fn();
-    const onOpenImpact = vi.fn();
-    const onOpenChangelog = vi.fn();
+    const onOpenSettings = vi.fn();
     render(
       <AppFooter
-        {...footerProps({
-          overrides: {
-            onOpenWorkflows,
-            onOpenProviders,
-            onOpenBudget,
-            onOpenImpact,
-            onOpenChangelog,
-          },
-        })}
+        {...footerProps({ overrides: { onOpenWorkflows, onOpenProviders, onOpenSettings } })}
       />,
     );
 
@@ -125,19 +144,95 @@ describe('AppFooter', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Connect and manage your provider accounts' }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Open budget studio' }));
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'See how orchestration changed the way this workspace works',
-      }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'See what changed, release by release' }));
+    fireEvent.click(screen.getByRole('button', { name: SETTINGS_LABEL }));
 
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
     expect(onOpenProviders).toHaveBeenCalledOnce();
+    expect(onOpenSettings).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Open budget studio' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'See what changed, release by release' }),
+    ).toBeNull();
+  });
+
+  it('routes budget, impact and changelog through the more menu', () => {
+    const onOpenBudget = vi.fn();
+    const onOpenImpact = vi.fn();
+    const onOpenChangelog = vi.fn();
+    const { rerender } = render(
+      <AppFooter
+        {...footerProps({ overrides: { onOpenBudget, onOpenImpact, onOpenChangelog } })}
+      />,
+    );
+
+    fireEvent.click(within(openMore()).getByRole('button', { name: 'Open budget studio' }));
     expect(onOpenBudget).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'More studios' })).toBeNull();
+
+    fireEvent.click(
+      within(openMore()).getByRole('button', {
+        name: 'See how orchestration changed the way this workspace works',
+      }),
+    );
     expect(onOpenImpact).toHaveBeenCalledOnce();
+
+    fireEvent.click(
+      within(openMore()).getByRole('button', { name: 'See what changed, release by release' }),
+    );
     expect(onOpenChangelog).toHaveBeenCalledOnce();
+
+    rerender(<AppFooter {...footerProps({ overrides: { activeStudio: 'impact' } })} />);
+    expect(screen.getByRole('button', { name: /^More studios/ }).className).toContain(
+      'bg-muted text-foreground',
+    );
+  });
+
+  it('closes the more menu on escape', () => {
+    render(<AppFooter {...footerProps()} />);
+
+    openMore();
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog', { name: 'More studios' })).toBeNull();
+  });
+
+  it('dots the more control for release notes the running version has not shown', () => {
+    const { rerender } = render(<AppFooter {...footerProps()} />);
+
+    expect(screen.queryByTestId('more-studios-dot')).toBeNull();
+    expect(screen.getByRole('button', { name: REST_MORE_LABEL })).toBeDefined();
+
+    flags.unseenRelease = true;
+    rerender(<AppFooter {...footerProps()} />);
+
+    expect(screen.getByTestId('more-studios-dot')).toBeDefined();
+    expect(screen.getByRole('button', { name: UNSEEN_MORE_LABEL })).toBeDefined();
+  });
+
+  it('shows the update control only while an update is pending', () => {
+    const { rerender } = render(<AppFooter {...footerProps()} />);
+
+    expect(screen.queryByTestId('update-indicator')).toBeNull();
+
+    storeState.updaterStatus = 'available';
+    rerender(<AppFooter {...footerProps()} />);
+
+    expect(screen.getByTestId('update-indicator').textContent).toContain('Update to 0.2.0');
+  });
+
+  it('pulses the providers launcher until a provider connects, and never while its studio is open', () => {
+    const { rerender } = render(<AppFooter {...footerProps()} />);
+    const providers = () =>
+      screen.getByRole('button', { name: 'Connect and manage your provider accounts' });
+
+    expect(providers().className).toContain('animate-soft-pulse');
+
+    rerender(<AppFooter {...footerProps({ overrides: { activeStudio: 'provider' } })} />);
+    expect(providers().className).not.toContain('animate-soft-pulse');
+
+    storeState.providers = [{ connection: 'connected' }];
+    rerender(<AppFooter {...footerProps()} />);
+    expect(providers().className).not.toContain('animate-soft-pulse');
   });
 
   it('lays the row out as three grid regions so the beta chip cannot overlap a cluster', () => {
@@ -153,15 +248,24 @@ describe('AppFooter', () => {
   });
 
   it('keeps studio buttons muted at rest and gives the active one a subtle surface', () => {
-    render(<AppFooter {...footerProps({ overrides: { activeStudio: 'impact' } })} />);
+    render(<AppFooter {...footerProps({ overrides: { activeStudio: 'workflow' } })} />);
 
-    const budget = screen.getByRole('button', { name: 'Open budget studio' });
-    const impact = screen.getByRole('button', {
-      name: 'See how orchestration changed the way this workspace works',
+    const settings = screen.getByRole('button', { name: SETTINGS_LABEL });
+    const workflows = screen.getByRole('button', {
+      name: 'Open the workflow library for this workspace',
     });
 
-    expect(budget.className).toContain('text-muted-foreground');
-    expect(impact.className).toContain('bg-muted text-foreground');
+    expect(settings.className).toContain('text-muted-foreground');
+    expect(workflows.className).toContain('bg-muted text-foreground');
+  });
+
+  it('gives settings the muted active fill instead of the inversion it had in the top bar', () => {
+    render(<AppFooter {...footerProps({ overrides: { activeStudio: 'settings' } })} />);
+
+    const settings = screen.getByRole('button', { name: SETTINGS_LABEL });
+
+    expect(settings.className).toContain('bg-muted text-foreground');
+    expect(settings.className).not.toContain('bg-foreground text-background');
   });
 
   it('splits the integrations into code hosts, trackers and conversation tools', () => {

@@ -34,7 +34,7 @@ export const LegendSection = ({}: Props) => (
       <LegendaGrid
         rows={[
           {
-            dot: 'bg-warning animate-soft-pulse',
+            dot: 'bg-warning motion-safe:animate-soft-pulse',
             label: 'attention',
             desc: 'amber pulse, an agent replied or hit a question',
           },

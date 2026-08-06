@@ -159,6 +159,7 @@ import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
+import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
@@ -186,6 +187,8 @@ export type AppActions = {
   installUpdate(): Promise<void>;
   loadChangelog(): Promise<void>;
   reloadChangelog(): Promise<void>;
+  hydrateChangelogSeen(): Promise<void>;
+  markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   openWorkspace(id: WorkspaceId, title: string): Promise<void>;

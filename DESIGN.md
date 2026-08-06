@@ -34,14 +34,20 @@ functional. One register per surface; let the other supply only texture.
 
 - **App chrome**: a single top bar (`AppTopBar`), one 36px row closed by a
   hairline, holds context on the left (mascot, the sessions-column control,
-  workspace identity, the session breadcrumb) and state plus global controls on
-  the right (cost rollup, running scripts, notifications, theme, onboarding,
-  settings). Theme is the one set-once preference exposed there, next to
-  notifications, because it is reached often enough to earn the rent; the
-  guide and pair-device stay out and live in the app settings studio and the
-  command palette. A persistent footer
-  (`AppFooter`) holds integration tools on the left and studio
-  launchers (workflows, providers, budget, impact) on the right. The
+  workspace identity, the session breadcrumb) and state on the right (cost
+  rollup, attention count, running scripts, notifications, theme, onboarding).
+  The top bar carries state and identity, not destinations: what it holds
+  reports something happening right now. Theme is the one set-once preference
+  exposed there, next to notifications, because it is reached often enough to
+  earn the rent; the guide and pair-device stay out and live in the app settings
+  studio and the command palette. A persistent footer
+  (`AppFooter`) holds integration tools on the left and, on the right, the
+  launchers you reach for by name: workflows, providers, settings, the update
+  control while one is pending, and a `More` popover carrying budget, impact and
+  changelog. Settings and the update control live there because both open a
+  destination, and destinations belong to the footer. The `More` control takes a
+  dot when the running version's release notes have not been opened, and the dot
+  clears the first time the changelog studio opens. The
   integrations are grouped by what they do, one `<Divider>` between groups: code
   hosts (GitHub, GitLab, Bitbucket), trackers (Linear, Jira, Sentry),
   conversation tools (Slack). A group renders its connected members as
@@ -84,14 +90,17 @@ functional. One register per surface; let the other supply only texture.
   Every capability stays one navigation away; zero capability is lost.
 - **Top bar is chrome, footer is access, sidebar is presence, palette is
   transit.** The top bar answers "where am I and what is it costing" (identity,
-  crumbs, cost, notifications, theme, settings). The footer holds integration
-  shortcuts and studio launchers. The sidebar answers "what else is going on"
+  crumbs, cost, attention, notifications, theme). The footer answers "where do I
+  go": integration shortcuts and studio launchers, settings and the update
+  control among them. The sidebar answers "what else is going on"
   (session list, agents). The command palette (⌘K) answers "where do I want to
   be". Each has one job; they must not compete.
 - **Navigation chrome is neutral at rest.** Footer launchers and session lens
   rows stay muted until selected, and the selected one takes a muted fill
-  (`bg-muted text-foreground`) rather than a full inversion: only the settings
-  toggle in the top bar still inverts. The lens rail keeps `aria-current` on
+  (`bg-muted text-foreground`) rather than a full inversion. Settings was the
+  last control to invert; it joined the footer launchers and their grammar, so
+  the app now has no inverted navigation control at all. The lens rail keeps
+  `aria-current` on
   the selected row. One deliberate exception: "Back to board" is tinted
   `primary`, the single action in the sidebar that leaves the session.
 - **Pin the structure, flex the density.** A control's position is fixed so it
@@ -104,6 +113,11 @@ functional. One register per surface; let the other supply only texture.
   the first half of the rule: the groups are laid out in a row, so connecting an
   integration adds a glyph and shifts the controls to its right. Nothing appears
   or disappears, but a position is not fixed in absolute terms, only in order.
+  The update control is the second exception and the louder one: it exists only
+  while an update is pending, so it does appear and disappear. It earns that by
+  being an event rather than a count. The cluster is right-aligned, so it sits
+  between settings and `More`: its arrival pushes the named launchers left by
+  its own width and leaves `More`, the right-most control, exactly where it was.
   Overview
   stays board-only. Inside a session, the sessions column is hidden or shown
   from one control in the top bar, or with ⌘B, and that choice persists. The
@@ -270,7 +284,10 @@ before sending, a running total after.
   (attention count, which opens the needs-you list; running count; today's
   spend, which opens the budget studio; all `tabular-nums`) sits in the
   always-visible top bar, so workspace health reads without entering a
-  session.
+  session. That is the glance, and it stays one click from the studio: the
+  footer's `More` popover is a second route to the same place, never the first
+  one. Moving the number itself behind a popover would break the rule at the top
+  of this section.
 - **Caps are authored where they are shown.** A budget cap is edited on the
   same surface that displays it; you don't hunt for a separate settings screen
   to change a number you're looking at. Budget alerts are toasts, never pinned
@@ -372,6 +389,18 @@ before sending, a running total after.
   working. It announces, then stands still; the tone keeps carrying the state.
   `spin-border` means working; `border-pulse` means a warning-stage card needs
   you; `attention-ring` means something new arrived for you.
+- `soft-pulse` is the fourth term and the odd one out. The three above are
+  events: something started, something changed stage, something arrived, and
+  each ends or is carried by tone. `soft-pulse` is a standing precondition: it
+  breathes the Providers launcher while no provider is connected, because
+  nothing in the app can run until one is, and it stops the moment a provider
+  connects or the providers studio opens. That is in tension with the rule
+  above, which says a surface waiting on the user gets no motion: this one waits
+  on the user and moves anyway. It ships because the alternative, a static
+  control in a row of static controls, is what shipped before and was missed by
+  people whose app could not do anything yet. It is the only standing-state
+  animation in the app and the bar for a second one is high. Like every other
+  animation it is `motion-safe:` gated.
 
 ## Accessibility
 

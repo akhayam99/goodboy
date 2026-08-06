@@ -1,8 +1,6 @@
 import { Moon, PanelLeft, PanelLeftClose, Sun } from 'lucide-react';
 import { cn, Divider, Tooltip } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { RunningScriptsIndicator } from '../../../features/scripts/components/RunningScriptsIndicator';
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
@@ -14,12 +12,9 @@ import { useThemeStore } from '../../../shared/lib/theme';
 
 const SHOW_COLUMN_LABEL = `Show sessions column (${shortcutGlyphs('column.toggle')})`;
 const HIDE_COLUMN_LABEL = `Hide sessions column (${shortcutGlyphs('column.toggle')})`;
-const SETTINGS_LABEL = `settings (${shortcutGlyphs('settings.open')})`;
 
-export type AppTopBarProps = {
-  onOpenSettings: () => void;
+type Props = {
   onOpenBudget: () => void;
-  activeStudio: string | null;
   hasWorkspace: boolean;
   hasActiveSession: boolean;
   isSessionSidebarCollapsed: boolean;
@@ -30,9 +25,7 @@ export type AppTopBarProps = {
 };
 
 export const AppTopBar = ({
-  onOpenSettings,
   onOpenBudget,
-  activeStudio,
   hasWorkspace,
   hasActiveSession,
   isSessionSidebarCollapsed,
@@ -40,7 +33,7 @@ export const AppTopBar = ({
   onToggleSessionSidebar,
   onSessionSidebarAnchorEnter,
   onSessionSidebarAnchorLeave,
-}: AppTopBarProps) => {
+}: Props) => {
   const columnActionLabel = isSessionSidebarCollapsed ? SHOW_COLUMN_LABEL : HIDE_COLUMN_LABEL;
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -92,8 +85,6 @@ export const AppTopBar = ({
           {hasActiveSession ? <SessionStripCrumbs /> : null}
         </div>
 
-        <UpdateIndicator variant="pip" />
-
         <WorkspaceRollupStrip onOpenBudget={onOpenBudget} />
 
         <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
@@ -112,21 +103,6 @@ export const AppTopBar = ({
             </button>
           </Tooltip>
           <OnboardingChip />
-          <Tooltip content={SETTINGS_LABEL}>
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              aria-label="Open settings"
-              className={cn(
-                'flex items-center justify-center rounded p-1.5 transition-colors',
-                activeStudio === 'settings'
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
-              )}
-            >
-              <CONCEPT_ICONS.settings size={14} aria-hidden />
-            </button>
-          </Tooltip>
         </div>
       </div>
       <Divider />

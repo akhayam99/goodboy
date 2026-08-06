@@ -21,12 +21,20 @@ export const ChangelogStudio = ({ workspaceName, onClose }: Props) => {
   const fetchedAt = useAppStore((state) => state.changelogFetchedAt);
   const loadChangelog = useAppStore((state) => state.loadChangelog);
   const reloadChangelog = useAppStore((state) => state.reloadChangelog);
+  const markChangelogSeen = useAppStore((state) => state.markChangelogSeen);
   const installedVersion = useInstalledVersion();
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 
   useEffect(() => {
     void loadChangelog();
   }, [loadChangelog]);
+
+  useEffect(() => {
+    if (installedVersion == null) {
+      return;
+    }
+    void markChangelogSeen({ version: installedVersion });
+  }, [installedVersion, markChangelogSeen]);
 
   const view = resolveChangelogView({ status, releaseCount: releases.length });
   const selected =
