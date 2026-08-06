@@ -61,11 +61,15 @@ everything else:
 Agents remember nothing between releases; the disk remembers everything.
 State lives outside the repo in `~/.goodboy-autonomous/`: `MANDATES.md`
 (standing direction from the owner), `BACKLOG.md` (what audits surfaced and
-nobody took yet, plus the area rotation), `LEDGER.md` (one entry per release:
+nobody took yet), `LEDGER.md` (one entry per release:
 theme, PRs, verdict, risks), `OWNER_INBOX.md` (push-backs, questions, stop
 reports). The ledger doubles as the metric: items proposed versus shipped
-versus dropped per cycle is how the loop earns more frequency, per release
-and over time.
+versus dropped per cycle (the captain's report records all three) is how the
+loop earns more frequency, per release and over time. The ratio is always
+read alongside `closed-tab`, the value actually shipped: inflating PR counts,
+splitting one feature into many PRs, or sandbagging proposals to look
+reliable is exactly the failure this metric exists to catch, not a way to
+score on it.
 
 ## Running it
 

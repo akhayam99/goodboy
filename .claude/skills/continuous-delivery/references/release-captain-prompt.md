@@ -1,7 +1,7 @@
 # Release captain brief (template)
 
 The delivery lead fills every `{{placeholder}}` and hands the whole thing to
-one agent on the strongest orchestrator tier, `run_in_background: false`.
+one agent on the reasoning tier, `run_in_background: false`.
 
 ---
 
@@ -39,6 +39,11 @@ extract, as constraints not inputs: {{mandate_extract}}.
 **Backlog items with issue provenance**: take or explicitly decline the ones
 tagged for this cycle: {{issue_backed_items}}.
 
+**Predecessor state** (only when a previous captain died on this version):
+{{predecessor_state}}. When present: PRs it already merged are on `main` and
+in scope for the notes, resume from the phase it reached instead of
+re-planning a different theme, and reuse its scratch dir after reading it.
+
 ## Process
 
 Run the seven phases of `docs/autonomy/release-loop.md`, with these
@@ -54,8 +59,8 @@ operational specifics:
   does not move anything for a real user gets rejected in writing, mandates
   included; rejected mandate items go to `OWNER_INBOX.md` and your report,
   and the release proceeds smaller. Then hand the plan cold to a second
-  strong-tier **challenger** with no shared context; reconcile, and re-read
-  the result against the mandates, not only against the objections.
+  reasoning-tier **challenger** with no shared context; reconcile, and
+  re-read the result against the mandates, not only against the objections.
 - **Phase 3, scouts**: cheap, against the real code. Feed contradictions back
   to the product owner at most twice, then take its last answer.
 - **Phase 4, build**: one item = one agent = one branch
@@ -72,14 +77,22 @@ operational specifics:
 - **Phase 5, verify**: a different agent per PR, running the full standard in
   release-loop.md, sabotage included. Its verdict outranks the builder and
   CI.
-- **Phase 6, merge**: serialized, `gh pr merge --squash` server-side, then
-  poll `main`'s own CI green (foreground until-loop, 60-120s) before the
-  next merge. Never advance local `main`; `git fetch origin main` for SHAs.
-  A PR red after two honest repairs is closed and reported as dropped.
+- **Phase 6, merge**: serialized, server-side. `gh pr merge --squash` for
+  single-concern PRs; a multi-commit PR whose commits matter individually
+  merges per CONVENTIONS.md. Re-fetch `origin/main` before each merge (a
+  human or dependabot may have landed something), then poll `main`'s own CI
+  green (foreground until-loop, 60-120s) before the next merge. Never
+  advance local `main`; `git fetch origin main` for SHAs. A PR red after two
+  honest repairs is closed and reported as dropped. A CI failure unrelated
+  to the diff gets one re-run; the same test failing twice is red, not
+  flake.
 - **Phase 7, cut**: follow `docs/release-command.md` up to and including the
   draft, with the rc dry-run and notarization check (team M3R9H4QX65; any
-  other team fails the check). Never tag while another tag build is in
-  flight; confirm the previous version's homebrew run finished first. Notes
+  other team fails the check). Immediately before tagging, re-check
+  `gh release list`: if v{{version}} or later already exists, a human
+  shipped mid-engagement; stop and report instead of tagging a collision.
+  Never tag while another tag build is in flight; confirm the previous
+  version's homebrew run finished first. Notes
   from PR bodies you read, never commit messages or memory; name every call
   that was never sent to a live tenant.
 
@@ -101,9 +114,10 @@ only:
 
 ```
 ## v{{version}}: <theme in six words>
-verdict: draft-ready | shipped-partial | abandoned
+verdict: draft-ready | merged-partial | abandoned
 focus-area: <area>: <what the dig found, one line>
 pick: <headline choice and why, two lines>       (when the theme was yours to pick)
+proposed: <n items in the plan after the challenge>
 prs: #NNNN <title>   (one line each, merged only)
 dropped: <item>: <why>                          (omit if none)
 pushback: <what the PO refused and why>          (omit if none)

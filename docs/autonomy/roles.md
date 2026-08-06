@@ -85,8 +85,8 @@ by house rule.
 
 ### Challenger
 
-The unbiased third party. A second strong-tier agent that receives the PO's
-plan cold (no shared conversation) and attacks it: wrong priorities, missed
+The unbiased third party. A second reasoning-tier agent that receives the
+PO's plan cold (no shared conversation) and attacks it: wrong priorities, missed
 regressions of the non-coder read, items that fail see/do/next, cheaper paths
 to the same user value, and anything that contradicts VISION or the audit. The
 release captain reconciles PO and challenger; on an unresolved disagreement
@@ -115,7 +115,8 @@ A different agent from the builder, always. Runs the full workspace checks,
 reads the diff against the work item, hunts the known regression classes, and
 sabotages the implementation to prove the tests can fail. The verifier's
 verdict outranks the builder's report and CI. The full playbook is in
-[release-loop.md](./release-loop.md).
+[release-loop.md](./release-loop.md). Model: the tier of the build it checks,
+never below mid; a cheap verifier is not a verifier.
 
 ### Issue triage officer
 
@@ -123,7 +124,7 @@ Owns the issue loop in [issue-triage.md](./issue-triage.md): every open issue
 gets a decision and a reply every cycle. Spawns a cheap responder per issue to
 draft the reply, reviews it against the trust model, posts it. Never merges
 code; when an issue turns into work, it lands in the backlog for the next
-release captain.
+release captain. Model: mid tier.
 
 ### Watchdog
 

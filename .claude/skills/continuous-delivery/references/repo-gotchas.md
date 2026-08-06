@@ -61,17 +61,11 @@ done` works; nested-quote jq inside single quotes does not.
 
 ## Release mechanics
 
-- Bump all five version files plus the `CHANGELOG.md` section in one commit;
-  a missing changelog section fails the release build.
+The steps, formats and checks are owned by `docs/release-command.md`; below
+only what it does not say.
+
 - `perl -i -pe '... if $. <= 5'` does not reset `$.` between files: bump
   each version file in its own invocation.
-- The changelog's real heading format puts PR refs at the start
-  (`### [#1241, #1243] Title`); match the file, not older docs.
-- Notarization check on the rc dmg: `spctl -a -vvv` expects
-  `accepted, source=Notarized Developer ID`; `codesign -dv --verbose=4`
-  expects team `M3R9H4QX65`; any other team is a failure.
-- Never tag while another tag build is in flight; check the previous
-  version's `homebrew.yml` run finished.
 - `hdiutil` mounts a second copy at `/Volumes/Goodboy 1` when one is already
   mounted; detach before asserting paths.
 - To smoke-test a dmg against real data safely, point `GOODBOY_DB_FILE` at a

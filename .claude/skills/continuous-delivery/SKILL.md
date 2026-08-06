@@ -44,14 +44,19 @@ state directory contradicts git history, that is a stop condition
 
 ## Preflight, once per engagement
 
-1. Read the policy docs above, `MANDATES.md`, `BACKLOG.md`, the tail of
+1. Take the engagement lock: if `~/.goodboy-autonomous/ENGAGEMENT.lock`
+   exists and is younger than 24 hours, another engagement may be live; stop
+   with a one-line report instead of racing it. Otherwise write the lock
+   (date, invoker) and remove it in the report step, including on early
+   stops.
+2. Read the policy docs above, `MANDATES.md`, `BACKLOG.md`, the tail of
    `LEDGER.md`, `docs/release-command.md`.
-2. Verify: `main` green on its own CI; no tag build in flight (previous
+3. Verify: `main` green on its own CI; no tag build in flight (previous
    release's `release.yml` and `homebrew.yml` finished); no leftover draft
    releases or rc tags; which PRs are open (dependabot is left alone).
-3. Append an engagement header to `LEDGER.md`: date, target count, standing
+4. Append an engagement header to `LEDGER.md`: date, target count, standing
    instructions, starting version.
-4. Run one issue triage sweep (below) so the first captain's backlog is warm.
+5. Run one issue triage sweep (below) so the first captain's backlog is warm.
 
 ## Per release, in order
 
@@ -59,11 +64,12 @@ state directory contradicts git history, that is a stop condition
    says otherwise.
 2. **Compose the captain's brief** from
    [references/release-captain-prompt.md](references/release-captain-prompt.md):
-   fill every `{{placeholder}}`, including what the previous release covered
+   fill every `{{placeholder}}` (predecessor state is "none" except on a
+   retry), including what the previous release covered
    (from the ledger, so it is not repeated) and the focus area chosen per the
    rotation in `docs/autonomy/release-loop.md` (pick the area least recently
    visited per the ledger; note it in the brief and the ledger).
-3. **Spawn the release captain** on the strongest orchestrator tier,
+3. **Spawn the release captain** on the reasoning tier,
    `run_in_background: false`, with the brief. Tell it: its final message is
    its report, it has no peers, it must not message anyone, it stops at a
    reviewed draft.
@@ -84,9 +90,27 @@ state directory contradicts git history, that is a stop condition
 
 If a captain returns `abandoned` or dies (see the watchdog ladder in
 `docs/autonomy/watchdogs.md`: nudge, replace, drop, stop), one retry with a
-fresh captain and the predecessor's on-disk state. Two failures on one
-version, or two failed releases in a row, is a stop condition: write the
-handoff and end the engagement early with an honest report.
+fresh captain, filling the brief's predecessor-state block from the world:
+PRs already merged for this version, PRs open, phase reached, scratch path.
+Two failures on one version, or two failed releases in a row, is a stop
+condition: write the handoff and end the engagement early with an honest
+report.
+
+Distinguish the work failing from the infrastructure failing. When failures
+trace to a provider outage or model rate limits (the same infrastructure
+error across unrelated agents), pause and retry later instead of burning the
+stop budget; note the pause in the ledger. When a release build fails for
+runner or Actions-quota reasons (read the run logs), that is a pause plus an
+owner-inbox entry naming the quota, not a notarization stop. A true
+signing or notarization stop report names the failing step and the
+credential to check first (certificate expiry, app-specific password, team
+membership).
+
+You share one context across the whole engagement. When you feel it nearing
+exhaustion, finish the current release through its publish step, write the
+engagement state to the ledger, and report `stopped-early (context)`: the
+disk is the memory, and a re-invocation of this skill resumes from the
+ledger. Never start a release you cannot see through to publish.
 
 ## Issue triage sweep
 
@@ -118,8 +142,11 @@ for decisions, not for file contents.
 
 ## Report and exit
 
-After the last release (or a stop), append to `LEDGER.md` and return exactly
-one block:
+After the last release (or a stop): remove the engagement lock you wrote
+(never a foreign one found at preflight), delete the
+per-version scratch dirs and builder worktrees of published releases (the
+ledger, mandates, backlog and inbox stay), then append to `LEDGER.md` and
+return exactly one block:
 
 ```
 ## Engagement <date>: <n> releases

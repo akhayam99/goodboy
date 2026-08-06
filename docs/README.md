@@ -19,6 +19,8 @@ once, so pull the deep-dive only when the task touches it.
 | [AGENTS.md](../AGENTS.md)                               |   ✓   |    ✓    |      ✓      |    ✓     |            |    ✓     |     ✓      |
 | [CONVENTIONS.md](../CONVENTIONS.md)                     |       |    ✓    |      ✓      |    ✓     |     ✓      |    ✓     |     ✓      |
 | [glossary.md](glossary.md)                              |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
+| [design.md](design.md)                                  |       |    ✓    |      ✓      |    ✓     |            |          |            |
+| [navigation.md](navigation.md)                          |       |    ✓    |      ✓      |    ✓     |            |          |            |
 | [typescript.md](typescript.md) + [cluster](typescript/) |       |         |      ✓      |    ✓     |            |          |            |
 | [styling.md](styling.md)                                |       |         |      ✓      |    ✓     |            |          |            |
 | [tone-of-voice.md](tone-of-voice.md)                    |       |         |      ✓      |    ✓     |     ✓      |    ✓     |            |
@@ -96,6 +98,8 @@ Every doc, its one-line purpose, and the roles that load it.
 | [glossary.md](glossary.md)                                  | Canonical term definitions for code, UI, docs, and issues.                                        | all                                         |
 | [autonomy.md](autonomy.md) + [autonomy/](autonomy/)         | Autonomy cluster: roles, safety and trust, release loop, issue triage, watchdogs.                 | autonomy, pr-release                        |
 | [typescript.md](typescript.md) + [typescript/](typescript/) | TypeScript conventions cluster: thin twin index plus data, components, control-flow, readability. | implementer, reviewer                       |
+| [design.md](design.md)                                      | Screen anatomy and surface ownership, between styling.md and navigation.md.                       | planner, implementer, reviewer              |
+| [navigation.md](navigation.md)                              | Breadcrumb model, app-chrome header, sidebar visibility, studio taxonomy.                         | planner, implementer, reviewer              |
 | [styling.md](styling.md)                                    | Concrete Tailwind rules for spacing, radius, scroll. DESIGN.md owns the principles.               | implementer, reviewer                       |
 | [tone-of-voice.md](tone-of-voice.md)                        | How Goodboy talks: README, website, release notes, in-app copy, errors.                           | implementer, reviewer, pr-release, autonomy |
 | [providers.md](providers.md)                                | Provider integration guide: install, connect, manage each CLI.                                    | scout, planner, implementer, onboarding     |
