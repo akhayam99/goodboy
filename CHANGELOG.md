@@ -57,45 +57,35 @@ Follow-up: the classification reads `gh`'s wording, so a message GitHub changes 
 
 ## Goodboy v0.1.66
 
-Seven integrations shipped in five releases, and the surface around them fell behind. This one makes every connected host reachable, and makes the states they report honest.
+Seven hosts are connected. This release makes every one of them reachable from the footer, and makes the states they report honest.
 
-### [#1272] Bitbucket has a way in
+### [#1272] Connect Bitbucket from the footer
 
-Bitbucket shipped whole in v0.1.64: the commands, the connect form, the studio, the eight review verbs. The footer, which is where a workspace connects an integration, never got an entry for it. If you had not already linked a Bitbucket pull request to a session, there was no route to the token field at all, and the only honest description of that is a host we shipped and you could not turn on.
+Bitbucket shipped whole in v0.1.64 except for the way in. The footer, where a workspace connects an integration, had no entry for it, so unless you had already linked a pull request to a session there was no route to the token field.
 
-The footer now carries Bitbucket with the other code hosts. Not connected, it opens the same connect panel every other integration opens. Connected, it opens a workspace view of the repository's pull requests, and Start session works from there.
+It sits with the other code hosts now. Not connected, it opens the same connect panel as everything else. Connected, it opens the repository's pull requests, and Start session works from there. That workspace view is read only: approve, request changes, merge, decline, comment and reply stay inside a session, where they are keyed to its worktree. A composite workspace has no single repository to read outside a session, so it shows an empty state and points you back into one.
 
-The limit, stated plainly: that workspace view is read only. Approve, request changes, merge, decline, comment and reply stay where they were, inside a session, because they are keyed to the session's worktree and this release does not move them. A composite workspace has no single repository to read outside a session, so it shows an empty state and points you back into one. Connecting still works there, which is what the report was about.
+### [#1271] Pull requests carry the queued check state
 
-Bitbucket is gated on the connection you made, not on your git remote. A `bitbucket.org` remote still does not turn anything on by itself.
+A pull request whose checks were queued or still running reported as passed, so Goodboy could tell you CI was green on a run that had not started. The rollup now calls green only on an affirmative pass, reads anything it does not recognise as pending, and treats action required and startup failure as the failures they are.
 
-### [#1271] The pull request tells the truth
+Sending a pull request to the merge queue also read as plain open, with Merge still on the button, so a second click looked like the first had not worked. Goodboy now shows the real placement, "In merge queue #3", and auto-merge keeps its own wording.
 
-Two separate things were wrong, and together they made a merge look like it had failed.
+Follow-up: the queue fields come from GitHub's live schema and the parsing is covered by tests, though no pull request has gone through a populated queue here yet. On a repository with more than 100 open pull requests, one queued outside that window keeps the old behavior.
 
-A pull request whose checks were queued or still running reported as passed. The rollup read a check's conclusion and its status field together, and an unfinished run comes back from GitHub with an empty conclusion rather than an empty value, so it fell through every branch and landed on green. Goodboy told you CI had passed on a run that had not started. The rollup now reads what a check actually reports and calls it green only on an affirmative pass. Anything it does not recognise reads as pending, never as passed. Two conclusions GitHub does return and Goodboy silently passed, action required and startup failure, now read as failures.
+### [#1273] Comment on a Linear issue from the app
 
-The queued state meant auto-merge, not the merge queue. So a pull request you had just sent to the queue read as plain open, Merge stayed on the button, and clicking it again looked like the first click had not worked. Goodboy now asks GitHub for the real queue placement and shows the position, "In merge queue #3". Auto-merge keeps its own wording instead of borrowing the queue's.
+Linear could show you an issue and start a session from it, and write back nothing but the description. Commenting meant opening linear.app, which is the tab this is supposed to remove.
 
-Not verified: no pull request was pushed through a real merge queue, because that needs a ruleset this repository does not have. The fields were checked against GitHub's live schema and the parsing is covered by tests, but a populated queue entry has not been observed. On a repository with more than 100 open pull requests, one queued outside that window keeps the old behaviour.
+You can now comment on an issue from the studio and the session pane, through the same composer the other hosts use, and the comment Linear returns lands in the thread you are reading. Assign and transition are still missing: both need the team and workflow state ids, which Goodboy does not read from Linear yet.
 
-### [#1273] Reply to a Linear issue without leaving
+Follow-up: the mutation and its input come from Linear's published schema, though no call has gone out to a live Linear workspace yet. If a shape differs, Linear's own error comes back in the composer with your draft still in it.
 
-Linear could show you an issue and start a session from it, and the only thing it could write back was the description. Commenting meant opening linear.app, which is the tab this is supposed to remove.
+### [#1274] Popovers open above full-page surfaces
 
-You can now write a comment on a Linear issue from inside Goodboy, in the studio and in the session pane, through the same composer the other hosts use. The comment Linear returns is appended to the thread you are reading.
+Notifications and the workspace selector did nothing visible while an integration studio, a studio page or settings was open: the popover was opening a layer too low, behind the page.
 
-Assign and transition are still not there. Both need the issue's team and workflow state identifiers, which Goodboy does not currently read from Linear, so they need a fetch that does not exist yet rather than a button.
-
-Not verified: no call has run against a live Linear workspace. The mutation and its input come from Linear's published schema. If the shape is wrong, Linear's own error comes back into the composer and your draft is kept.
-
-### [#1274] Popovers stay on top
-
-Opening notifications or the workspace selector while an integration studio, a studio page or settings was open did nothing visible. The popover was opening, behind the page, on a layer one step too low. Every full-page surface in the app sat above every transient one.
-
-Layering is now a named scale rather than four numbers that happened to agree, so a studio, a popover, the command palette, a tooltip and a toast each know where they stand. The four popovers are also wider and taller, and their scroll fade matches the surface it sits on instead of darkening it.
-
-Workspace settings moved out of the workspace popover onto the workspace row itself, so the settings that apply to every session in a workspace are visible without opening anything.
+Layering is a named scale now rather than four numbers that happened to agree, so a studio, a popover, the command palette, a tooltip and a toast each know where they stand. The four popovers are wider and taller, and their scroll fade matches the surface it sits on. Workspace settings moved out of the workspace popover onto the workspace row, where settings that apply to every session are visible without opening anything.
 
 ### Fixes
 

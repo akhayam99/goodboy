@@ -129,7 +129,13 @@ Regression classes to hunt, all shipped in this repo at least once:
 ## Honesty in the notes
 
 Release notes come from the merged PR bodies the captain actually read, in
-the repo's tone of voice. What was never exercised against a live tenant is
-named in plain language in the notes, the PR bodies and the report: shipping
-unverified-but-honest is the house standard, shipping unverified-and-silent
-is a defect.
+the repo's tone of voice, which owns their shape and length
+([tone-of-voice.md](../tone-of-voice.md) sets the heading form, the paragraph
+budget and the follow-up line).
+
+What was never exercised against a live service is still tracked in full, but
+each audience gets it in its own form. The captain's report and the PR bodies
+name it flatly, because the delivery lead and the reviewer need the risk.
+The notes carry it as a **follow-up**: what the work stands on, and what the
+app does if reality disagrees. Never a confession of not having tested.
+Silence is still the defect; self-flagellation is not the cure.
