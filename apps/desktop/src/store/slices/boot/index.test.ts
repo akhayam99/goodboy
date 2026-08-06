@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SETTING_CHANGELOG_SEEN } from '../changelog/state';
 import type {
   Agent,
   AgentId,
@@ -554,6 +555,22 @@ describe('store contract', () => {
       const store = await getStore();
       await store.getState().hydrate();
       expect(listNotificationsSpy).toHaveBeenCalled();
+    });
+
+    it('hydrates the changelog seen marker before the boot phase reaches ready', async () => {
+      const store = await getStore();
+      let bootPhaseAtCall: string | null = null;
+      dbGetSettingSpy.mockImplementation(async (_db: unknown, key: string) => {
+        if (key === SETTING_CHANGELOG_SEEN) {
+          bootPhaseAtCall = store.getState().bootPhase;
+        }
+        return null;
+      });
+
+      await store.getState().hydrate();
+
+      expect(bootPhaseAtCall).not.toBeNull();
+      expect(bootPhaseAtCall).not.toBe('ready');
     });
 
     it('offers to clean the session folders left behind on disk', async () => {

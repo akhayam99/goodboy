@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   state: null as unknown as ChangelogState,
   loadChangelog: vi.fn(async () => undefined),
   reloadChangelog: vi.fn(async () => undefined),
+  markChangelogSeen: vi.fn(async () => undefined),
   installedVersion: null as string | null,
 }));
 
@@ -17,6 +18,7 @@ vi.mock('../../../../store', () => ({
       ...mocks.state,
       loadChangelog: mocks.loadChangelog,
       reloadChangelog: mocks.reloadChangelog,
+      markChangelogSeen: mocks.markChangelogSeen,
     }),
 }));
 
@@ -41,6 +43,7 @@ beforeEach(() => {
     changelogStatus: 'idle',
     changelogError: null,
     changelogFetchedAt: null,
+    changelogSeenVersion: null,
   };
   mocks.installedVersion = null;
 });
@@ -60,6 +63,7 @@ describe('ChangelogStudio', () => {
       changelogStatus: 'ready',
       changelogError: null,
       changelogFetchedAt: '2026-07-11T10:00:00Z',
+      changelogSeenVersion: null,
     };
     mocks.installedVersion = '0.1.55';
 
@@ -79,6 +83,7 @@ describe('ChangelogStudio', () => {
       changelogStatus: 'ready',
       changelogError: null,
       changelogFetchedAt: '2026-07-11T10:00:00Z',
+      changelogSeenVersion: null,
     };
 
     renderStudio();
@@ -93,6 +98,7 @@ describe('ChangelogStudio', () => {
       changelogStatus: 'error',
       changelogError: 'network down',
       changelogFetchedAt: null,
+      changelogSeenVersion: null,
     };
 
     renderStudio();
@@ -110,6 +116,7 @@ describe('ChangelogStudio', () => {
       changelogStatus: 'error',
       changelogError: 'network down',
       changelogFetchedAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+      changelogSeenVersion: null,
     };
 
     renderStudio();
@@ -119,12 +126,81 @@ describe('ChangelogStudio', () => {
     expect(screen.getByRole('alert').textContent).toContain('network down');
   });
 
+  it('marks the running version as read once the studio is open', () => {
+    mocks.state = {
+      changelogReleases: [buildRelease('v0.1.55', '2026-07-01T10:00:00Z')],
+      changelogStatus: 'ready',
+      changelogError: null,
+      changelogFetchedAt: '2026-07-11T10:00:00Z',
+      changelogSeenVersion: null,
+    };
+    mocks.installedVersion = '0.1.55';
+
+    renderStudio();
+
+    expect(mocks.markChangelogSeen).toHaveBeenCalledWith({ version: '0.1.55' });
+  });
+
+  it('marks nothing while the running version is still unknown', () => {
+    mocks.installedVersion = null;
+
+    renderStudio();
+
+    expect(mocks.markChangelogSeen).not.toHaveBeenCalled();
+  });
+
+  it('marks nothing when the fetch failed and there is no cache to read', () => {
+    mocks.state = {
+      changelogReleases: [],
+      changelogStatus: 'error',
+      changelogError: 'network down',
+      changelogFetchedAt: null,
+      changelogSeenVersion: null,
+    };
+    mocks.installedVersion = '0.1.55';
+
+    renderStudio();
+
+    expect(mocks.markChangelogSeen).not.toHaveBeenCalled();
+  });
+
+  it('marks nothing while the fetch is still in flight', () => {
+    mocks.state = {
+      changelogReleases: [],
+      changelogStatus: 'loading',
+      changelogError: null,
+      changelogFetchedAt: null,
+      changelogSeenVersion: null,
+    };
+    mocks.installedVersion = '0.1.55';
+
+    renderStudio();
+
+    expect(mocks.markChangelogSeen).not.toHaveBeenCalled();
+  });
+
+  it('marks nothing when the installed version is not yet in the fetched releases', () => {
+    mocks.state = {
+      changelogReleases: [buildRelease('v0.1.56', '2026-07-10T10:00:00Z')],
+      changelogStatus: 'ready',
+      changelogError: null,
+      changelogFetchedAt: '2026-07-11T10:00:00Z',
+      changelogSeenVersion: null,
+    };
+    mocks.installedVersion = '0.1.55';
+
+    renderStudio();
+
+    expect(mocks.markChangelogSeen).not.toHaveBeenCalled();
+  });
+
   it('says nothing shipped yet when the list comes back empty', () => {
     mocks.state = {
       changelogReleases: [],
       changelogStatus: 'ready',
       changelogError: null,
       changelogFetchedAt: '2026-07-11T10:00:00Z',
+      changelogSeenVersion: null,
     };
 
     renderStudio();

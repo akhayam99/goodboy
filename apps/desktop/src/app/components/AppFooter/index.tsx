@@ -2,17 +2,24 @@ import { Fragment } from 'react';
 import { Divider } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
+import { useUnseenRelease } from '../../../features/changelog/hooks/useUnseenRelease';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
+import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { BetaPill } from '../../../shared/components/BetaPill';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { FOOTER_CATEGORIES } from './categories';
 import { FooterButton } from './FooterButton';
 import { IntegrationCategoryGroup } from './IntegrationCategoryGroup';
+import { MoreStudiosPopover } from './MoreStudiosPopover';
+
+const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
 
 type Props = {
   activeStudio: string | null;
   onOpenWorkflows: () => void;
   onOpenProviders: () => void;
+  onOpenSettings: () => void;
   onOpenBudget: () => void;
   onOpenImpact: () => void;
   onOpenChangelog: () => void;
@@ -38,6 +45,7 @@ export const AppFooter = ({
   activeStudio,
   onOpenWorkflows,
   onOpenProviders,
+  onOpenSettings,
   onOpenBudget,
   onOpenImpact,
   onOpenChangelog,
@@ -61,6 +69,7 @@ export const AppFooter = ({
   const noProviderConnected = useAppStore(
     (s) => !s.providers.some((p) => p.connection === 'connected'),
   );
+  const hasUnseenRelease = useUnseenRelease();
 
   const enabled = {
     github: githubEnabled,
@@ -133,28 +142,22 @@ export const AppFooter = ({
             active={activeStudio === 'provider'}
           />
           <FooterButton
-            icon={<CONCEPT_ICONS.budget size={12} aria-hidden />}
-            label="Budget"
-            tone={CONCEPT_TONE.budget}
-            title="Open budget studio"
-            onClick={onOpenBudget}
-            active={activeStudio === 'budget'}
+            icon={<CONCEPT_ICONS.settings size={12} aria-hidden />}
+            label="Settings"
+            tone={CONCEPT_TONE.settings}
+            title={SETTINGS_LABEL}
+            onClick={onOpenSettings}
+            active={activeStudio === 'settings'}
           />
-          <FooterButton
-            icon={<CONCEPT_ICONS.impact size={12} aria-hidden />}
-            label="Impact"
-            tone={CONCEPT_TONE.impact}
-            title="See how orchestration changed the way this workspace works"
-            onClick={onOpenImpact}
-            active={activeStudio === 'impact'}
-          />
-          <FooterButton
-            icon={<CONCEPT_ICONS.changelog size={12} aria-hidden />}
-            label="Changelog"
-            tone={CONCEPT_TONE.changelog}
-            title="See what changed, release by release"
-            onClick={onOpenChangelog}
-            active={activeStudio === 'changelog'}
+          <UpdateIndicator variant="pip" />
+          <MoreStudiosPopover
+            activeStudio={activeStudio}
+            hasUnseenRelease={hasUnseenRelease}
+            openers={{
+              budget: onOpenBudget,
+              impact: onOpenImpact,
+              changelog: onOpenChangelog,
+            }}
           />
         </div>
       </div>

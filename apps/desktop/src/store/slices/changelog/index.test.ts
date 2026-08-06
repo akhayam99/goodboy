@@ -1,12 +1,20 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { fetchReleasesMock } = vi.hoisted(() => ({ fetchReleasesMock: vi.fn() }));
+const { fetchReleasesMock, getSettingMock, setSettingMock } = vi.hoisted(() => ({
+  fetchReleasesMock: vi.fn(),
+  getSettingMock: vi.fn(async () => null as string | null),
+  setSettingMock: vi.fn(async () => undefined),
+}));
 
 vi.mock('../../../features/changelog/changelog', () => ({ fetchReleases: fetchReleasesMock }));
 
+vi.mock('@goodboy/db', () => ({ getSetting: getSettingMock, setSetting: setSettingMock }));
+
+vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: vi.fn(), select: vi.fn() } }));
+
 import { createChangelogSlice } from './index';
-import { initialChangelogState, type ChangelogState } from './state';
+import { initialChangelogState, SETTING_CHANGELOG_SEEN, type ChangelogState } from './state';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 
 const release = {
@@ -71,6 +79,40 @@ describe('changelog slice', () => {
     expect(getState().changelogStatus).toBe('error');
     expect(getState().changelogReleases).toEqual([]);
     expect(getState().changelogFetchedAt).toBeNull();
+  });
+
+  it('remembers across launches which version the user has already read', async () => {
+    getSettingMock.mockResolvedValue('0.1.66');
+    const { slice, getState } = harness();
+
+    await slice.hydrateChangelogSeen();
+
+    expect(getSettingMock).toHaveBeenCalledWith(expect.anything(), SETTING_CHANGELOG_SEEN);
+    expect(getState().changelogSeenVersion).toBe('0.1.66');
+  });
+
+  it('starts with nothing read when the setting has never been written', async () => {
+    getSettingMock.mockResolvedValue(null);
+    const { slice, getState } = harness();
+
+    await slice.hydrateChangelogSeen();
+
+    expect(getState().changelogSeenVersion).toBeNull();
+  });
+
+  it('persists the version marked as read and writes it only once', async () => {
+    const { slice, getState } = harness();
+
+    await slice.markChangelogSeen({ version: '0.1.67' });
+    await slice.markChangelogSeen({ version: '0.1.67' });
+
+    expect(getState().changelogSeenVersion).toBe('0.1.67');
+    expect(setSettingMock).toHaveBeenCalledTimes(1);
+    expect(setSettingMock).toHaveBeenCalledWith(
+      expect.anything(),
+      SETTING_CHANGELOG_SEEN,
+      '0.1.67',
+    );
   });
 
   it('refetches on an explicit reload after a failure', async () => {
