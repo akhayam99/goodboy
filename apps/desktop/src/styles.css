@@ -232,6 +232,7 @@
 
   --z-index-popover-backdrop: 55;
   --z-index-popover: 65;
+  --z-index-command-palette: 70;
   --z-index-tooltip: 75;
   --z-index-toast: 85;
 }

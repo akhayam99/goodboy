@@ -49,6 +49,27 @@ const readZIndexToken = (name: string): number => {
   return Number(match[1]);
 };
 
+const extractThemeBlock = (css: string): string => {
+  const themeStart = css.indexOf('@theme');
+  if (themeStart === -1) {
+    throw new Error('@theme block not found in styles.css');
+  }
+  const braceStart = css.indexOf('{', themeStart);
+  let depth = 0;
+  let i = braceStart;
+  for (; i < css.length; i += 1) {
+    if (css[i] === '{') {
+      depth += 1;
+    } else if (css[i] === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        break;
+      }
+    }
+  }
+  return css.slice(braceStart + 1, i);
+};
+
 beforeEach(() => {
   state.notifications = [];
   state.notificationCounts = { total: 0, unread: 0 };
@@ -68,13 +89,25 @@ describe('transient popover stacking above a full-page studio', () => {
     const studio = 50;
     const popoverBackdrop = readZIndexToken('popover-backdrop');
     const popover = readZIndexToken('popover');
+    const commandPalette = readZIndexToken('command-palette');
     const tooltip = readZIndexToken('tooltip');
     const toast = readZIndexToken('toast');
 
     expect(popoverBackdrop).toBeGreaterThan(studio);
     expect(popover).toBeGreaterThan(popoverBackdrop);
-    expect(tooltip).toBeGreaterThan(popover);
+    expect(commandPalette).toBeGreaterThan(popover);
+    expect(tooltip).toBeGreaterThan(commandPalette);
     expect(toast).toBeGreaterThan(tooltip);
+  });
+
+  it('keeps the z-index tokens inside the @theme block so tailwind actually generates their utilities', () => {
+    const css = readFileSync(stylesCssPath, 'utf8');
+    const tokenPattern = /--z-index-[a-z-]+:\s*[0-9]+;/g;
+    const allTokens = css.match(tokenPattern) ?? [];
+    const themeTokens = extractThemeBlock(css).match(tokenPattern) ?? [];
+
+    expect(allTokens.length).toBeGreaterThan(0);
+    expect(themeTokens.length).toBe(allTokens.length);
   });
 
   it('renders the notifications popover above an open full-page studio, mid animation', async () => {

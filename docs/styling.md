@@ -175,14 +175,15 @@ open underneath) use named tokens from `apps/desktop/src/styles.css`'
 into a `z-<name>` utility automatically, the same mechanism already used for
 `--animate-*`.
 
-| token                        | value | utility                   | who                                                                                                         |
-| ---------------------------- | ----- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| (StudioShell fullscreen)     | 50    | `z-50` (Tailwind default) | `StudioShell`'s fullscreen variant. The floor: never lowered.                                               |
-| `--z-index-popover-backdrop` | 55    | `z-popover-backdrop`      | click-catcher behind the four app-global popovers below                                                     |
-| `--z-index-popover`          | 65    | `z-popover`               | `NotificationCenter`, `WorkspaceSwitcher`, `RunningScriptsIndicator`, `AppTopBar/NeedsYouPopover`           |
-| `--z-index-tooltip`          | 75    | `z-tooltip`               | `Tooltip` (`packages/ui`), portaled; must win over a popover it's triggered from inside                     |
-| `--z-index-toast`            | 85    | `z-toast`                 | the toast stack (`app/components/Toast`)                                                                    |
-| (native `<dialog>`)          | n/a   | n/a                       | `Dialog` renders through the browser's top layer, always above every z-indexed element regardless of number |
+| token                        | value | utility                   | who                                                                                                                                                                    |
+| ---------------------------- | ----- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (StudioShell fullscreen)     | 50    | `z-50` (Tailwind default) | `StudioShell`'s fullscreen variant. The floor: never lowered.                                                                                                          |
+| `--z-index-popover-backdrop` | 55    | `z-popover-backdrop`      | click-catcher behind the four app-global popovers below                                                                                                                |
+| `--z-index-popover`          | 65    | `z-popover`               | `NotificationCenter`, `WorkspaceSwitcher`, `RunningScriptsIndicator`, `AppTopBar/NeedsYouPopover`                                                                      |
+| `--z-index-command-palette`  | 70    | `z-command-palette`       | `CommandPalette` (⌘K), a global "transit" surface: it fires on a keyboard shortcut regardless of what else is open, so it must clear a popover left open underneath it |
+| `--z-index-tooltip`          | 75    | `z-tooltip`               | `Tooltip` (`packages/ui`), portaled; must win over a popover or the command palette it's triggered from inside                                                         |
+| `--z-index-toast`            | 85    | `z-toast`                 | the toast stack (`app/components/Toast`)                                                                                                                               |
+| (native `<dialog>`)          | n/a   | n/a                       | `Dialog` renders through the browser's top layer, always above every z-indexed element regardless of number                                                            |
 
 Everything else keeps its existing, unnamed `z-10`/`z-20`/`z-30`/`z-40`
 value: those are local, scoped to one card, toolbar, or pane (`SessionViewMenu`,

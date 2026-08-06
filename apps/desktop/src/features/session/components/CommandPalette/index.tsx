@@ -309,7 +309,7 @@ export const CommandPalette = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/20 pt-[20vh]"
+      className="fixed inset-0 z-command-palette flex items-start justify-center bg-black/20 pt-[20vh]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();

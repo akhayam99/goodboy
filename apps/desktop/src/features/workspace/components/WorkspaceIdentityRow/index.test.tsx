@@ -63,11 +63,7 @@ describe('WorkspaceIdentityRow', () => {
       window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
     });
 
-    expect(
-      screen
-        .getByRole('button', { name: 'Switch or open a workspace' })
-        .getAttribute('aria-expanded'),
-    ).toBe('true');
+    expect(screen.getByText('New workspace')).toBeDefined();
   });
 
   it('opens workspace settings from a control on the row, not from the switcher popover', () => {
