@@ -3,7 +3,6 @@ import { Divider, Markdown } from '@goodboy/ui';
 import { Check, MessageSquareReply, Undo2 } from 'lucide-react';
 import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
 import { NoteComposer } from '../../../../../shared/components/NoteComposer';
-import { formatError } from '../../../../../shared/lib/errors';
 import { MrNoteHeader } from './MrNoteHeader';
 import { threadAnchor, type MrThread } from './mrThreads';
 
@@ -11,12 +10,12 @@ type Props = {
   readonly thread: MrThread;
   readonly onReply: ((body: string) => Promise<void>) | null;
   readonly onResolve: ((resolved: boolean) => Promise<void>) | null;
+  readonly resolveError: string | null;
 };
 
-export const MrThreadCard = ({ thread, onReply, onResolve }: Props) => {
+export const MrThreadCard = ({ thread, onReply, onResolve, resolveError }: Props) => {
   const [isReplyOpen, setIsReplyOpen] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
-  const [resolveError, setResolveError] = useState<string | null>(null);
   const anchor = threadAnchor({ thread });
 
   const toggleResolved = async () => {
@@ -24,11 +23,8 @@ export const MrThreadCard = ({ thread, onReply, onResolve }: Props) => {
       return;
     }
     setIsResolving(true);
-    setResolveError(null);
     try {
       await onResolve(!thread.isResolved);
-    } catch (error: unknown) {
-      setResolveError(formatError(error));
     } finally {
       setIsResolving(false);
     }

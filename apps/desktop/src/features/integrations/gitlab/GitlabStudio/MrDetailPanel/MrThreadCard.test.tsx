@@ -50,31 +50,38 @@ afterEach(() => {
 
 describe('MrThreadCard', () => {
   it('renders a real avatar src and accessible name for the thread head note', () => {
-    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} />);
+    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} resolveError={null} />);
 
     const avatar = screen.getByRole('img', { name: 'Ada Lovelace' });
     expect(avatar.getAttribute('src')).toBe('https://gitlab.example/avatars/ada.png');
   });
 
   it('falls back to the author initial for a reply note with no avatar url', () => {
-    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} />);
+    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} resolveError={null} />);
 
     expect(screen.getByText('B')).toBeDefined();
     expect(screen.getAllByRole('img')).toHaveLength(1);
   });
 
   it('renders the resolved pill only when the thread is resolved', () => {
-    const { rerender } = render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} />);
+    const { rerender } = render(
+      <MrThreadCard thread={THREAD} onReply={null} onResolve={null} resolveError={null} />,
+    );
     expect(screen.queryByText('resolved')).toBeNull();
 
     rerender(
-      <MrThreadCard thread={{ ...THREAD, isResolved: true }} onReply={null} onResolve={null} />,
+      <MrThreadCard
+        thread={{ ...THREAD, isResolved: true }}
+        onReply={null}
+        onResolve={null}
+        resolveError={null}
+      />,
     );
     expect(screen.getByText('resolved')).toBeDefined();
   });
 
   it('offers no resolve action when the card is read only', () => {
-    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} />);
+    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} resolveError={null} />);
 
     expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Unresolve' })).toBeNull();
@@ -82,7 +89,9 @@ describe('MrThreadCard', () => {
 
   it('reaches the resolve action on an open thread and sends the resolved flag', async () => {
     const onResolve = vi.fn(async () => undefined);
-    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={onResolve} />);
+    render(
+      <MrThreadCard thread={THREAD} onReply={null} onResolve={onResolve} resolveError={null} />,
+    );
 
     const action = screen.getByRole('button', { name: 'Resolve' });
     await act(async () => {
@@ -99,6 +108,7 @@ describe('MrThreadCard', () => {
         thread={{ ...THREAD, isResolved: true }}
         onReply={null}
         onResolve={onResolve}
+        resolveError={null}
       />,
     );
 
@@ -110,22 +120,29 @@ describe('MrThreadCard', () => {
     expect(onResolve).toHaveBeenCalledWith(false);
   });
 
-  it('surfaces a failed resolve without hiding the action', async () => {
-    const onResolve = vi.fn(async () => {
-      throw new Error('GitLab said 403');
-    });
-    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={onResolve} />);
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
-    });
+  it('surfaces the resolve failure it is handed without hiding the action', () => {
+    const onResolve = vi.fn(async () => undefined);
+    render(
+      <MrThreadCard
+        thread={THREAD}
+        onReply={null}
+        onResolve={onResolve}
+        resolveError="GitLab said 403"
+      />,
+    );
 
     expect(screen.getByRole('alert').textContent).toBe('GitLab said 403');
     expect(screen.getByRole('button', { name: 'Resolve' }).hasAttribute('disabled')).toBe(false);
   });
 
+  it('shows no alert while the resolve failure is absent', () => {
+    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} resolveError={null} />);
+
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('renders author name and relative timestamp for the head and reply notes', () => {
-    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} />);
+    render(<MrThreadCard thread={THREAD} onReply={null} onResolve={null} resolveError={null} />);
 
     expect(screen.getByText('Ada Lovelace')).toBeDefined();
     expect(screen.getByText('3d ago')).toBeDefined();

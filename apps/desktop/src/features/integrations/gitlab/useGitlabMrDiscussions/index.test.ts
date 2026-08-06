@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { GitlabMrDiscussion } from '../client';
 
@@ -114,15 +114,36 @@ describe('useGitlabMrDiscussions', () => {
     expect(h.resolve).toHaveBeenCalledWith({ ...TARGET, discussionId: 'disc-1', resolved: false });
   });
 
-  it('refetches even when the resolve write fails, so the card cannot drift', async () => {
+  it('holds a failed resolve on the hook and still refetches, so the card cannot drift', async () => {
     h.resolve.mockRejectedValue(new Error('GitLab said 403'));
     const { result } = renderHook(() => useGitlabMrDiscussions(TARGET));
     await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
 
-    await expect(
-      result.current.resolve?.({ discussionId: 'disc-1', resolved: true }),
-    ).rejects.toThrow('GitLab said 403');
+    await act(async () => {
+      await result.current.resolve?.({ discussionId: 'disc-1', resolved: true });
+    });
 
     await waitFor(() => expect(h.list).toHaveBeenCalledTimes(2));
+    expect(result.current.resolveError).toEqual({
+      discussionId: 'disc-1',
+      message: 'GitLab said 403',
+    });
+  });
+
+  it('clears a held resolve failure once a later write succeeds', async () => {
+    h.resolve.mockRejectedValueOnce(new Error('GitLab said 403'));
+    const { result } = renderHook(() => useGitlabMrDiscussions(TARGET));
+    await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
+
+    await act(async () => {
+      await result.current.resolve?.({ discussionId: 'disc-1', resolved: true });
+    });
+    await waitFor(() => expect(result.current.resolveError).not.toBeNull());
+
+    await act(async () => {
+      await result.current.resolve?.({ discussionId: 'disc-1', resolved: true });
+    });
+
+    await waitFor(() => expect(result.current.resolveError).toBeNull());
   });
 });

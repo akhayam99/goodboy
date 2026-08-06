@@ -16,6 +16,7 @@ type Props = {
   readonly onReply: ((params: { discussionId: string; body: string }) => Promise<void>) | null;
   readonly onResolve:
     ((params: { discussionId: string; resolved: boolean }) => Promise<void>) | null;
+  readonly resolveError: { readonly discussionId: string; readonly message: string } | null;
 };
 
 export const MrConversation = ({
@@ -26,6 +27,7 @@ export const MrConversation = ({
   onPost,
   onReply,
   onResolve,
+  resolveError,
 }: Props) => {
   const conversation = useMemo(() => buildMrConversation({ discussions }), [discussions]);
 
@@ -73,6 +75,9 @@ export const MrConversation = ({
                   onResolve == null
                     ? null
                     : (resolved: boolean) => onResolve({ discussionId: thread.id, resolved })
+                }
+                resolveError={
+                  resolveError?.discussionId === thread.id ? resolveError.message : null
                 }
               />
             </li>

@@ -30,10 +30,16 @@ type ResolveParams = {
   readonly resolved: boolean;
 };
 
+type ResolveFailure = {
+  readonly discussionId: string;
+  readonly message: string;
+};
+
 type Result = {
   readonly discussions: ReadonlyArray<GitlabMrDiscussion>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly resolveError: ResolveFailure | null;
   readonly reload: () => void;
   readonly post: ((params: PostParams) => Promise<void>) | null;
   readonly reply: ((params: ReplyParams) => Promise<void>) | null;
@@ -49,8 +55,13 @@ export const useGitlabMrDiscussions = ({
   const [discussions, setDiscussions] = useState<ReadonlyArray<GitlabMrDiscussion>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resolveError, setResolveError] = useState<ResolveFailure | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const isReady = workspaceId != null && host != null && projectPath != null && mrIid != null;
+
+  useEffect(() => {
+    setResolveError(null);
+  }, [workspaceId, host, projectPath, mrIid]);
 
   useEffect(() => {
     setDiscussions([]);
@@ -125,6 +136,7 @@ export const useGitlabMrDiscussions = ({
       if (workspaceId == null || host == null || projectPath == null || mrIid == null) {
         return;
       }
+      setResolveError(null);
       try {
         await gitlabResolveMrDiscussion({
           workspaceId,
@@ -134,6 +146,8 @@ export const useGitlabMrDiscussions = ({
           discussionId,
           resolved,
         });
+      } catch (writeError: unknown) {
+        setResolveError({ discussionId, message: formatError(writeError) });
       } finally {
         setReloadToken((token) => token + 1);
       }
@@ -145,6 +159,7 @@ export const useGitlabMrDiscussions = ({
     discussions,
     isLoading,
     error,
+    resolveError,
     reload,
     post: isReady ? post : null,
     reply: isReady ? reply : null,
