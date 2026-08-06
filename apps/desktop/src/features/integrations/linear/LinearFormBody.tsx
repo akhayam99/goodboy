@@ -94,7 +94,8 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             Read-only scope is enough. The token is stored encrypted in your operating system
-            keychain and never leaves this machine.
+            keychain. Goodboy sends it directly to Linear over HTTPS; it never touches
+            Goodboy&apos;s own servers.
           </p>
         </>
       )}

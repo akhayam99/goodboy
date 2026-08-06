@@ -10,7 +10,6 @@ describe('resolveIssueSources', () => {
     expect(
       resolveIssueSources({
         integrations: [integration('slack'), integration('linear')],
-        remoteKind: null,
         isGithubAuthenticated: false,
       }).map((source) => source.label),
     ).toEqual(['Linear', 'Slack']);
@@ -20,17 +19,24 @@ describe('resolveIssueSources', () => {
     expect(
       resolveIssueSources({
         integrations: [integration('bitbucket'), integration('jira')],
-        remoteKind: null,
         isGithubAuthenticated: false,
       }).map((source) => source.provider),
     ).toEqual(['jira']);
+  });
+
+  it('keeps GitHub in the picker when a GitLab credential is the only integration', () => {
+    expect(
+      resolveIssueSources({
+        integrations: [integration('gitlab')],
+        isGithubAuthenticated: true,
+      }).map((source) => source.provider),
+    ).toEqual(['github', 'gitlab']);
   });
 
   it('leaves slack out until the workspace connects it', () => {
     expect(
       resolveIssueSources({
         integrations: [integration('linear')],
-        remoteKind: null,
         isGithubAuthenticated: false,
       }).map((source) => source.provider),
     ).toEqual(['linear']);

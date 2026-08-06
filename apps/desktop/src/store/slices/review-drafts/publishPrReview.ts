@@ -213,7 +213,7 @@ export const publishPrReview = (set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     opts: PublishPrReviewOpts,
   ): Promise<PublishPrReviewResult> => {
-    const target = opts.target ?? resolveReviewTarget({ get, sessionId });
+    const target = opts.target ?? resolveReviewTarget({ state: get(), sessionId });
     if (target == null) {
       throw new Error('no linked pull request or merge request for this session');
     }

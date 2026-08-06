@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
+const { githubAuth } = vi.hoisted(() => ({ githubAuth: { isAuthenticated: false } }));
+
 const { state, workspace } = vi.hoisted(() => {
   const currentWorkspace = {
     id: 'workspace-1',
@@ -55,10 +57,19 @@ type FooterProps = {
   readonly slackEnabled: boolean;
   readonly onOpenBitbucket: () => void;
   readonly bitbucketEnabled: boolean;
+  readonly onOpenGithub: () => void;
+  readonly githubEnabled: boolean;
 };
 
 vi.mock('../app/components/AppFooter', () => ({
-  AppFooter: ({ onOpenSlack, slackEnabled, onOpenBitbucket, bitbucketEnabled }: FooterProps) => (
+  AppFooter: ({
+    onOpenSlack,
+    slackEnabled,
+    onOpenBitbucket,
+    bitbucketEnabled,
+    onOpenGithub,
+    githubEnabled,
+  }: FooterProps) => (
     <>
       <button type="button" onClick={onOpenSlack}>
         {slackEnabled ? 'Launch a session from a Slack thread' : 'Connect Slack'}
@@ -66,8 +77,19 @@ vi.mock('../app/components/AppFooter', () => ({
       <button type="button" onClick={onOpenBitbucket}>
         {bitbucketEnabled ? 'Review pull requests across this workspace' : 'Connect Bitbucket'}
       </button>
+      <button type="button" onClick={onOpenGithub}>
+        {githubEnabled ? 'Review pull requests and issues' : 'Connect GitHub'}
+      </button>
     </>
   ),
+}));
+
+vi.mock('../features/integrations/github/useGithubConnection', () => ({
+  useGithubConnection: () => ({
+    isAuthenticated: githubAuth.isAuthenticated,
+    isResolved: true,
+    refresh: vi.fn(),
+  }),
 }));
 
 vi.mock('../features/integrations/slack/SlackStudio', () => ({
@@ -128,7 +150,11 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
 vi.mock('../features/session/components/NewSessionView', () => ({ NewSessionView: () => null }));
-vi.mock('../features/github/components/GitHubStudio', () => ({ GitHubStudio: () => null }));
+vi.mock('../features/github/components/GitHubStudio', () => ({
+  GitHubStudio: ({ workspaceName }: { workspaceName: string }) => (
+    <div data-testid="github-studio">{workspaceName}</div>
+  ),
+}));
 vi.mock('../features/integrations/linear/LinearStudio', () => ({ LinearStudio: () => null }));
 vi.mock('../features/integrations/sentry/SentryStudio', () => ({ SentryStudio: () => null }));
 vi.mock('../features/integrations/gitlab/GitlabStudio', () => ({ GitlabStudio: () => null }));
@@ -179,6 +205,7 @@ import { App } from '../App';
 
 beforeEach(() => {
   state.workspaceIntegrations = {};
+  githubAuth.isAuthenticated = false;
 });
 
 afterEach(cleanup);
@@ -200,6 +227,32 @@ describe('Slack studio reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect Slack' }));
 
     expect(screen.getByTestId('slack-studio')).toBeDefined();
+  });
+});
+
+describe('GitHub footer state', () => {
+  it('lights the footer glyph from the workspace credential, whatever the remote is', () => {
+    githubAuth.isAuthenticated = true;
+    state.workspaceIntegrations = { 'workspace-1': [{ provider: 'gitlab' }] };
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: 'Review pull requests and issues' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Connect GitHub' })).toBeNull();
+  });
+
+  it('leaves the glyph unlit when no github credential resolves', () => {
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: 'Connect GitHub' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Review pull requests and issues' })).toBeNull();
+  });
+
+  it('still opens the studio when github is not connected, so the connect form is reachable', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect GitHub' }));
+
+    expect(screen.getByTestId('github-studio').textContent).toBe('Workspace');
   });
 });
 

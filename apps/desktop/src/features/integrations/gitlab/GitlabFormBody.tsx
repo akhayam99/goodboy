@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { Button, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
-import { ghClearToken, ghStatus } from '../../github/github';
 import { formatError } from '../../../shared/lib/errors';
 
 type Props = {
@@ -44,13 +43,6 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [githubScoped, setGithubScoped] = useState(false);
-
-  useEffect(() => {
-    void ghStatus(workspaceId)
-      .then((status) => setGithubScoped(status.scoped ?? false))
-      .catch(() => setGithubScoped(false));
-  }, [workspaceId]);
 
   const onConnect = async () => {
     setBusy(true);
@@ -78,19 +70,6 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     }
   };
 
-  const onDisconnectGithub = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await ghClearToken(workspaceId);
-      setGithubScoped(false);
-    } catch (err) {
-      setError(formatError(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const tokenUrl = `${normalizeHost(host)}/-/profile/personal_access_tokens`;
 
   return (
@@ -108,21 +87,6 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
           <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>
             <Unplug size={12} aria-hidden />
             {busy ? 'Disconnecting…' : 'Disconnect'}
-          </Button>
-        </div>
-      ) : githubScoped ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle/40 p-4">
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            A GitHub token is connected for this workspace. Disconnect GitHub to use GitLab.
-          </p>
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => void onDisconnectGithub()}
-            disabled={busy}
-          >
-            <Unplug size={12} aria-hidden />
-            {busy ? 'Disconnecting…' : 'Disconnect GitHub'}
           </Button>
         </div>
       ) : (
@@ -167,7 +131,8 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             The read_api scope is enough. The token is stored encrypted in your operating system
-            keychain and never leaves this machine.
+            keychain. Goodboy sends it directly to GitLab over HTTPS; it never touches
+            Goodboy&apos;s own servers.
           </p>
         </>
       )}
@@ -178,7 +143,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         </div>
       ) : null}
 
-      {gitlab || githubScoped ? null : (
+      {gitlab != null ? null : (
         <div className="flex justify-end">
           <Button
             onClick={() => void onConnect()}

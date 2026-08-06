@@ -57,15 +57,16 @@ export const GitHubStudio = ({
   const groups = useGithubInbox();
   const remoteKind = useWorkspaceRemoteHostKind({ workspaceId });
   const githubConnection = useGithubConnection({ workspaceId });
-  const isConnected = resolveIntegrationConnection({
+  const hasGithubRemote = remoteKind === 'github';
+  const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
     integrations: [],
-    remoteKind,
     externalTasks: [],
     isGithubAuthenticated:
       githubConnection.isResolved === false || githubConnection.isAuthenticated,
   }).isConnected;
-  const issues = useGithubIssues({ workspaceId, rootPath, isEnabled: isConnected });
+  const canBrowseRepo = isGithubConnected && hasGithubRemote;
+  const issues = useGithubIssues({ workspaceId, rootPath, isEnabled: canBrowseRepo });
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
   const [focusedIssue, setFocusedIssue] = useState<GithubIssue | null>(null);
   const [tab, setTab] = useState<Tab>(initialIssueExternalId == null ? 'pull-requests' : 'issues');
@@ -133,7 +134,7 @@ export const GitHubStudio = ({
       workspaceName={workspaceName}
       closeLabel="close github studio"
       headerAccessory={
-        isConnected ? (
+        canBrowseRepo ? (
           <div className="flex items-center gap-2">
             <SegmentedTabs
               ariaLabel="GitHub work"
@@ -156,11 +157,11 @@ export const GitHubStudio = ({
       onClose={onClose}
     >
       {(requestClose) =>
-        !isConnected ? (
+        !canBrowseRepo ? (
           <div className="flex min-h-0 flex-1 items-center justify-center p-5">
             <GithubConnectionEmptyState
               workspaceId={workspaceId}
-              hasGithubRemote={remoteKind === 'github'}
+              isConnected={isGithubConnected}
               onConnected={() => void githubConnection.refresh()}
               shouldAutoFocus
               wrapped={false}

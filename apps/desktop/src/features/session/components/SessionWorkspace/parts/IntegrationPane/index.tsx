@@ -14,7 +14,6 @@ import { ConnectIntegrationEmptyState } from '../../../../../integrations/Connec
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { GithubConnectionEmptyState } from '../../../../../github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
-import { useRemoteHostKind } from '../../../../../worktree/useRemoteHostKind';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '../../../../../../shared/components/GhostActionButton';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
@@ -121,7 +120,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const integrations = useAppStore(
     (state) => state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY,
   );
-  const remoteKind = useRemoteHostKind({ sessionId });
   const githubConnection = useGithubConnection({ workspaceId });
   const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
   const branchPrs = useAppStore((state) => state.sessionGithubPrs[sessionId] ?? EMPTY_ARRAY);
@@ -134,7 +132,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const connection = resolveIntegrationConnection({
     provider,
     integrations,
-    remoteKind,
     externalTasks,
     isGithubAuthenticated:
       provider !== 'github' ||
@@ -248,7 +245,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         provider === 'github' ? (
           <GithubConnectionEmptyState
             workspaceId={workspaceId}
-            hasGithubRemote={remoteKind === 'github'}
+            isConnected={connection.isConnected}
             compact
             onConnected={() => void githubConnection.refresh()}
           />

@@ -15,7 +15,7 @@ export type AddReviewDraftInput = {
 
 export const addReviewDraft = (set: SetFn, get: GetFn) => {
   return async (input: AddReviewDraftInput): Promise<PrReviewDraft> => {
-    const target = resolveReviewTarget({ get, sessionId: input.sessionId });
+    const target = resolveReviewTarget({ state: get(), sessionId: input.sessionId });
     if (target == null) {
       throw new Error('no linked pull request or merge request for this session');
     }

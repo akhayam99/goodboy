@@ -25,28 +25,24 @@ describe('resolveIntegrationConnection', () => {
     const connected = resolveIntegrationConnection({
       provider: 'linear',
       integrations: [integration({ provider: 'linear' })],
-      remoteKind: 'other',
       externalTasks: [],
       isGithubAuthenticated: false,
     });
     const linkedOnly = resolveIntegrationConnection({
       provider: 'sentry',
       integrations: [],
-      remoteKind: 'other',
       externalTasks: [task({ provider: 'sentry' })],
       isGithubAuthenticated: false,
     });
     const jiraConnected = resolveIntegrationConnection({
       provider: 'jira',
       integrations: [integration({ provider: 'jira' })],
-      remoteKind: 'other',
       externalTasks: [],
       isGithubAuthenticated: false,
     });
     const unavailable = resolveIntegrationConnection({
       provider: 'gitlab',
       integrations: [],
-      remoteKind: 'github',
       externalTasks: [],
       isGithubAuthenticated: false,
     });
@@ -59,40 +55,54 @@ describe('resolveIntegrationConnection', () => {
     });
   });
 
-  it('uses workspace remotes for pull request and GitHub availability', () => {
+  it('connects GitHub and GitLab from credentials alone, whatever the remote is', () => {
     const github = resolveIntegrationConnection({
       provider: 'github',
-      integrations: [],
-      remoteKind: 'github',
+      integrations: [integration({ provider: 'gitlab' })],
       externalTasks: [],
       isGithubAuthenticated: true,
     });
+    const gitlab = resolveIntegrationConnection({
+      provider: 'gitlab',
+      integrations: [integration({ provider: 'gitlab' })],
+      externalTasks: [],
+      isGithubAuthenticated: true,
+    });
+    const bothHostsPr = resolveIntegrationConnection({
+      provider: 'pr',
+      integrations: [integration({ provider: 'gitlab' })],
+      externalTasks: [],
+      isGithubAuthenticated: true,
+    });
+
+    expect({ github, gitlab, bothHostsPr }).toEqual({
+      github: { isConnected: true, isAvailable: true },
+      gitlab: { isConnected: true, isAvailable: true },
+      bothHostsPr: { isConnected: true, isAvailable: true },
+    });
+  });
+
+  it('connects the pull request surface from a GitLab credential with no GitLab remote', () => {
     const gitlabPr = resolveIntegrationConnection({
       provider: 'pr',
       integrations: [integration({ provider: 'gitlab' })],
-      remoteKind: 'gitlab',
       externalTasks: [],
       isGithubAuthenticated: false,
     });
 
-    expect({ github, gitlabPr }).toEqual({
-      github: { isConnected: true, isAvailable: true },
-      gitlabPr: { isConnected: true, isAvailable: true },
-    });
+    expect(gitlabPr).toEqual({ isConnected: true, isAvailable: true });
   });
 
   it('connects bitbucket from the workspace integration alone, whatever the remote is', () => {
     const connected = resolveIntegrationConnection({
       provider: 'bitbucket',
       integrations: [integration({ provider: 'bitbucket' })],
-      remoteKind: 'other',
       externalTasks: [],
       isGithubAuthenticated: false,
     });
     const missing = resolveIntegrationConnection({
       provider: 'bitbucket',
       integrations: [],
-      remoteKind: 'other',
       externalTasks: [],
       isGithubAuthenticated: false,
     });
@@ -103,11 +113,10 @@ describe('resolveIntegrationConnection', () => {
     });
   });
 
-  it('does not treat a GitHub remote as an authenticated connection', () => {
+  it('leaves GitHub disconnected without a credential, remote or not', () => {
     const github = resolveIntegrationConnection({
       provider: 'github',
       integrations: [],
-      remoteKind: 'github',
       externalTasks: [],
       isGithubAuthenticated: false,
     });

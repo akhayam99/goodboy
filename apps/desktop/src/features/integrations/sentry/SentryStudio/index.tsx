@@ -27,7 +27,6 @@ export const SentryStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
   const isConnected = resolveIntegrationConnection({
     provider: 'sentry',
     integrations,
-    remoteKind: null,
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;

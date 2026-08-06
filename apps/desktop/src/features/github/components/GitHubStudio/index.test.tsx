@@ -201,4 +201,14 @@ describe('GitHubStudio', () => {
     expect(screen.getByLabelText('Personal access token')).toBeDefined();
     expect(screen.queryByText(/does not have a GitHub remote/i)).toBeNull();
   });
+
+  it('offers token controls without a GitHub remote, so the token stays enterable here', () => {
+    h.isGithubAuthenticated = false;
+    h.remoteKind = null;
+
+    renderStudio();
+
+    expect(screen.getByLabelText('Personal access token')).toBeDefined();
+    expect(screen.queryByText(/does not have a GitHub remote/i)).toBeNull();
+  });
 });

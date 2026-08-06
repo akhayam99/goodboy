@@ -78,7 +78,7 @@ export const CodeHostStep = ({
         </h2>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
           Link GitHub, GitLab or Bitbucket so Goodboy can review and resolve pull requests for this
-          workspace. You can only use one at a time.
+          workspace. Connect as many as you use: one host for code, another for tickets.
         </p>
       </div>
 

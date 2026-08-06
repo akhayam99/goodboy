@@ -39,7 +39,6 @@ export const JiraStudio = ({ workspaceId, workspaceName, initialIssueId, onClose
   const isConnected = resolveIntegrationConnection({
     provider: 'jira',
     integrations,
-    remoteKind: null,
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;

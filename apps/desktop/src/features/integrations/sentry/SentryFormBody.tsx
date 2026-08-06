@@ -130,7 +130,8 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             A token with issue read scope is enough. It is stored encrypted in your operating system
-            keychain and never leaves this machine.
+            keychain. Goodboy sends it directly to Sentry over HTTPS; it never touches
+            Goodboy&apos;s own servers.
           </p>
         </>
       )}

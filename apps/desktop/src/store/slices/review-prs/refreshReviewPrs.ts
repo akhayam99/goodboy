@@ -9,7 +9,7 @@ import { tauriGhRunner } from '../../../features/github/github';
 import { gitlabFetchProjectMrs } from '../../../features/integrations/gitlab/client';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
 import { formatError } from '../../../shared/lib/errors';
-import { projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
+import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
 import { mapGithubPr } from './mapGithubPr';
 import { mapGitlabMr } from './mapGitlabMr';
 import type { GetFn, SetFn } from './types';
@@ -109,7 +109,9 @@ export const refreshReviewPrs = (set: SetFn, get: GetFn) => {
       for (const target of targets) {
         try {
           const remoteUrl = await worktreeRemoteUrl(target.rootPath);
-          const projectPath = projectPathFromRemoteUrl(remoteUrl);
+          const isGitlabRemote =
+            classifyRemoteHost(remoteUrl, [integration.config.host]) === 'gitlab';
+          const projectPath = isGitlabRemote ? projectPathFromRemoteUrl(remoteUrl) : null;
           if (projectPath != null) {
             const mrs = await gitlabFetchProjectMrs(
               workspaceId,

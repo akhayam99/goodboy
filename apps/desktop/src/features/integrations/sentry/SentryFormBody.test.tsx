@@ -100,4 +100,11 @@ describe('SentryFormBody', () => {
       expect(state.disconnectSentry).toHaveBeenCalledWith(WS_ID);
     });
   });
+
+  it('says where the token travels instead of claiming it never leaves', () => {
+    render(<SentryFormBody workspaceId={WS_ID} />);
+    expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
+    expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
+    expect(screen.queryByText(/never leaving this machine/i)).toBeNull();
+  });
 });

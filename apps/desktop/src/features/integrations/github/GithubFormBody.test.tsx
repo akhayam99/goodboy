@@ -129,22 +129,32 @@ describe('GithubFormBody', () => {
     });
   });
 
-  describe('when GitLab is connected (mutual exclusivity)', () => {
+  describe('when GitLab is connected', () => {
     beforeEach(() => {
       state.workspaceIntegrations = { [WS_ID]: [gitlabIntegration] };
     });
 
-    it('shows the mutex banner and no token form', async () => {
+    it('still offers the token form so both hosts can coexist', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      expect(await screen.findByText(/Disconnect GitLab to use a GitHub token/i)).toBeDefined();
-      expect(screen.queryByLabelText(/GitHub personal access token/i)).toBeNull();
-      expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
+      expect(await screen.findByLabelText(/GitHub personal access token/i)).toBeDefined();
+      expect(screen.getByRole('button', { name: /^connect$/i })).toBeDefined();
+      expect(screen.queryByText(/Disconnect GitLab/i)).toBeNull();
     });
 
-    it('disconnects GitLab when the banner action is clicked', async () => {
+    it('connects GitHub without touching the GitLab integration', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
-      fireEvent.click(await screen.findByRole('button', { name: /disconnect gitlab/i }));
-      expect(state.disconnectGitlab).toHaveBeenCalledWith(WS_ID);
+      fireEvent.change(await screen.findByLabelText(/GitHub personal access token/i), {
+        target: { value: 'ghp_abc' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
+      await waitFor(() => expect(ghSetTokenMock).toHaveBeenCalledWith('ghp_abc', WS_ID));
+      expect(state.disconnectGitlab).not.toHaveBeenCalled();
     });
+  });
+
+  it('does not claim the token never leaves this machine', async () => {
+    render(<GithubFormBody workspaceId={WS_ID} />);
+    await screen.findByLabelText(/GitHub personal access token/i);
+    expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
   });
 });

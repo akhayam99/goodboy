@@ -4,7 +4,7 @@ import { MissingGithubTokenEmptyState } from './MissingGithubTokenEmptyState';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly hasGithubRemote: boolean;
+  readonly isConnected: boolean;
   readonly compact?: boolean;
   readonly onConnected: () => void;
   readonly shouldAutoFocus?: boolean;
@@ -13,23 +13,23 @@ type Props = {
 
 export const GithubConnectionEmptyState = ({
   workspaceId,
-  hasGithubRemote,
+  isConnected,
   compact = false,
   onConnected,
   shouldAutoFocus = false,
   wrapped = true,
 }: Props) => {
-  if (hasGithubRemote === false) {
-    return <MissingGithubRemoteEmptyState compact={compact} wrapped={wrapped} />;
+  if (isConnected === false) {
+    return (
+      <MissingGithubTokenEmptyState
+        workspaceId={workspaceId}
+        compact={compact}
+        onConnected={onConnected}
+        shouldAutoFocus={shouldAutoFocus}
+        wrapped={wrapped}
+      />
+    );
   }
 
-  return (
-    <MissingGithubTokenEmptyState
-      workspaceId={workspaceId}
-      compact={compact}
-      onConnected={onConnected}
-      shouldAutoFocus={shouldAutoFocus}
-      wrapped={wrapped}
-    />
-  );
+  return <MissingGithubRemoteEmptyState compact={compact} wrapped={wrapped} />;
 };
