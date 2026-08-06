@@ -1,6 +1,7 @@
 import type { ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
 import type { SegmentedTabOption, Tone } from '@goodboy/ui';
+import { costCoverage, type CostCoverage } from '@goodboy/core';
 import { PROVIDER_LABEL_LOWER } from '../../../providers/providers';
 
 export type BudgetScope =
@@ -35,9 +36,18 @@ export type SessionSpend = {
 export type ModelBreakdownEntry = {
   readonly provider: string;
   readonly model: string;
+  readonly coverage: CostCoverage;
+  readonly turnCount: number;
+  readonly uncountedTurns: number;
   readonly tokensIn: number;
   readonly tokensOut: number;
   readonly spentUsd: number;
+};
+
+export type CoverageTurnCounts = {
+  readonly total: number;
+  readonly approximate: number;
+  readonly unpriced: number;
 };
 
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
@@ -85,28 +95,85 @@ export const sortTurns = (
   return copy;
 };
 
+type ModelAccumulator = {
+  readonly provider: string;
+  readonly model: string;
+  readonly base: CostCoverage;
+  readonly turnCount: number;
+  readonly uncountedTurns: number;
+  readonly tokensIn: number;
+  readonly tokensOut: number;
+  readonly spentUsd: number;
+};
+
+type EffectiveCoverageParams = {
+  readonly base: CostCoverage;
+  readonly uncountedTurns: number;
+};
+
+const effectiveCoverage = ({ base, uncountedTurns }: EffectiveCoverageParams): CostCoverage => {
+  if (base !== 'unpriced') {
+    return base;
+  }
+  if (uncountedTurns > 0) {
+    return 'unpriced';
+  }
+  return 'measured';
+};
+
 export const buildModelBreakdown = (
   records: ReadonlyArray<TelemetryRecord>,
 ): ReadonlyArray<ModelBreakdownEntry> => {
-  const map = new Map<string, ModelBreakdownEntry>();
+  const map = new Map<string, ModelAccumulator>();
   for (const r of records) {
     const key = `${r.provider}//${r.model}`;
     const prev = map.get(key) ?? {
       provider: r.provider,
       model: r.model,
+      base: costCoverage({ provider: r.provider, model: r.model }),
+      turnCount: 0,
+      uncountedTurns: 0,
       tokensIn: 0,
       tokensOut: 0,
       spentUsd: 0,
     };
+    const uncounted = prev.base === 'unpriced' && r.estimatedCostUsd === 0 ? 1 : 0;
     map.set(key, {
       provider: prev.provider,
       model: prev.model,
+      base: prev.base,
+      turnCount: prev.turnCount + 1,
+      uncountedTurns: prev.uncountedTurns + uncounted,
       tokensIn: prev.tokensIn + r.inputTokens,
       tokensOut: prev.tokensOut + r.outputTokens,
       spentUsd: prev.spentUsd + r.estimatedCostUsd,
     });
   }
-  return [...map.values()].sort((a, b) => b.spentUsd - a.spentUsd);
+  return [...map.values()]
+    .map((acc) => ({
+      provider: acc.provider,
+      model: acc.model,
+      coverage: effectiveCoverage({ base: acc.base, uncountedTurns: acc.uncountedTurns }),
+      turnCount: acc.turnCount,
+      uncountedTurns: acc.uncountedTurns,
+      tokensIn: acc.tokensIn,
+      tokensOut: acc.tokensOut,
+      spentUsd: acc.spentUsd,
+    }))
+    .sort((a, b) => b.spentUsd - a.spentUsd);
+};
+
+export const coverageTurnCounts = (
+  entries: ReadonlyArray<ModelBreakdownEntry>,
+): CoverageTurnCounts => {
+  return entries.reduce<CoverageTurnCounts>(
+    (acc, entry) => ({
+      total: acc.total + entry.turnCount,
+      approximate: acc.approximate + (entry.coverage === 'approximate' ? entry.turnCount : 0),
+      unpriced: acc.unpriced + entry.uncountedTurns,
+    }),
+    { total: 0, approximate: 0, unpriced: 0 },
+  );
 };
 
 export const chronologicalTurnCosts = (

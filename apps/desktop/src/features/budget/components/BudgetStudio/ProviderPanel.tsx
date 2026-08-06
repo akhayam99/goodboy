@@ -8,11 +8,12 @@ import type { QueryResult } from '../../../../shared/types/queryResult';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { CapEditor } from './CapEditor';
 import { CostRing } from './CostRing';
+import { CoverageNotice } from './CoverageNotice';
 import { ModelTable } from './ModelTable';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
-import { buildModelBreakdown, providerLabel, type WorkspaceTurn } from './lib';
+import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
 
 type Props = {
   readonly provider: ProviderName;
@@ -55,6 +56,7 @@ export const ProviderPanel = ({
     [turns, provider],
   );
   const models = useMemo(() => buildModelBreakdown(filtered.map((t) => t.record)), [filtered]);
+  const coverage = useMemo(() => coverageTurnCounts(models), [models]);
 
   return (
     <StudioPanel
@@ -89,6 +91,8 @@ export const ProviderPanel = ({
           <StatCard label="models" value={String(models.length)} />
         </section>
       )}
+
+      <CoverageNotice counts={coverage} />
 
       <CapEditor
         label="monthly cap"

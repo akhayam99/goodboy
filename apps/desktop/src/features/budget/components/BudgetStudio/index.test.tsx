@@ -46,6 +46,33 @@ vi.mock('../../../../store', () => ({
 
 import { BudgetStudio } from './index';
 
+type TelemetryRecordParams = {
+  readonly id: string;
+  readonly model: string;
+  readonly costUsd: number;
+  readonly recordedAt: string;
+  readonly provider?: string;
+};
+
+const telemetryRecord = ({
+  id,
+  model,
+  costUsd,
+  recordedAt,
+  provider = 'codex',
+}: TelemetryRecordParams) => ({
+  id,
+  runId: `run-${id}`,
+  sessionId: 'session-1',
+  kind: 'turn',
+  provider,
+  model,
+  inputTokens: 40,
+  outputTokens: 60,
+  estimatedCostUsd: costUsd,
+  recordedAt,
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
   state.loadBudgetRules.mockResolvedValue(undefined);
@@ -240,6 +267,146 @@ describe('BudgetStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open session build the feature' }));
     expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('leaves every model row unmarked and stays silent when the whole provider is priced', () => {
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'anthropic' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/cannot include them/i)).toBeNull();
+    expect(screen.queryByText('unpriced')).toBeNull();
+    expect(screen.queryByText('approx')).toBeNull();
+  });
+
+  it('marks the unpriced model row and names how many turns a cap would miss', () => {
+    const now = new Date().toISOString();
+    state.sessionTelemetry = {
+      'session-1': [
+        telemetryRecord({ id: 'c1', model: 'gpt-5.6-sol', costUsd: 2, recordedAt: now }),
+        telemetryRecord({ id: 'c2', model: 'gpt-5.6-sol', costUsd: 3, recordedAt: now }),
+        telemetryRecord({ id: 'c3', model: 'mystery-codex', costUsd: 0, recordedAt: now }),
+      ],
+    };
+
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'codex' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('No price for 1 of 3 turns, so a cap cannot include them'),
+    ).toBeDefined();
+    expect(screen.getAllByText('unpriced')).toHaveLength(1);
+    expect(screen.queryByText('approx')).toBeNull();
+  });
+
+  it('marks an approximate model row without calling it unpriced or warning about the cap', () => {
+    const now = new Date().toISOString();
+    state.sessionTelemetry = {
+      'session-1': [
+        telemetryRecord({
+          id: 'x1',
+          provider: 'cursor',
+          model: 'composer-2.5',
+          costUsd: 4,
+          recordedAt: now,
+        }),
+      ],
+    };
+
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'cursor' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText('approx')).toHaveLength(1);
+    expect(screen.queryByText('unpriced')).toBeNull();
+    expect(screen.queryByText(/cannot include them/i)).toBeNull();
+  });
+
+  it('stays silent for a provider whose turns all carry a cost the cap already counts', () => {
+    const now = new Date().toISOString();
+    state.sessionTelemetry = {
+      'session-1': [
+        telemetryRecord({
+          id: 'o1',
+          provider: 'openrouter',
+          model: 'anthropic/claude-sonnet-4.5',
+          costUsd: 0.4,
+          recordedAt: now,
+        }),
+        telemetryRecord({
+          id: 'o2',
+          provider: 'openrouter',
+          model: 'anthropic/claude-sonnet-4.5',
+          costUsd: 0.6,
+          recordedAt: now,
+        }),
+      ],
+    };
+
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'openrouter' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/cannot include them/i)).toBeNull();
+    expect(screen.queryByText('unpriced')).toBeNull();
+  });
+
+  it('counts only the zero-cost turns when a provider reports cost inconsistently', () => {
+    const now = new Date().toISOString();
+    state.sessionTelemetry = {
+      'session-1': [
+        telemetryRecord({
+          id: 'm1',
+          provider: 'opencode',
+          model: 'big-pickle',
+          costUsd: 0.5,
+          recordedAt: now,
+        }),
+        telemetryRecord({
+          id: 'm2',
+          provider: 'opencode',
+          model: 'big-pickle',
+          costUsd: 0,
+          recordedAt: now,
+        }),
+        telemetryRecord({
+          id: 'm3',
+          provider: 'opencode',
+          model: 'big-pickle',
+          costUsd: 0,
+          recordedAt: now,
+        }),
+      ],
+    };
+
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'opencode' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('No price for 2 of 3 turns, so a cap cannot include them'),
+    ).toBeDefined();
   });
 
   it('filters telemetry with the header window control', () => {
