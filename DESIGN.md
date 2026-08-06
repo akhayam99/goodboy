@@ -296,7 +296,9 @@ before sending, a running total after.
 - **Caps are authored where they are shown.** A budget cap is edited on the
   same surface that displays it; you don't hunt for a separate settings screen
   to change a number you're looking at. Budget alerts are toasts, never pinned
-  banners.
+  banners. The one exception is the composer's pre-send routing line carved out
+  under [Status & signals](#status--signals), which is live state attached to an
+  unsent turn rather than an alert.
 
 ## Components & interaction
 
