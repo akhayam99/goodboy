@@ -7,6 +7,40 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.68
+
+A budget cap now moves work before it is spent, and the cost figures stop claiming to know things they never measured.
+
+### [#1287] Divert work at the budget threshold you set
+
+A provider cap used to sit idle until spending passed 100% of it, and then block the turn outright. The threshold you already set for alerts now also moves work: past it, the next turn prefers another connected provider; over the cap, that provider is excluded as before.
+
+The move is no longer silent. A turn that lands somewhere else for a budget reason writes a line into the transcript naming where it went and why, the way a provider error already did. Both cases were silent until now.
+
+The threshold sits next to the cap in the budget studio, and it is one number doing two jobs: it raises the alert, and it moves the next turn. Spend past it still runs on the same provider when no other one has room, so nothing that used to run now blocks. Session soft caps have no threshold of their own and are unchanged.
+
+Follow-up: the routing path ran against in-memory SQLite and mocked budget results, so no turn has yet moved between two live CLIs on a real monthly total.
+
+### [#1288, #1289] See which spend was measured and which was estimated
+
+Goodboy priced every turn with equal confidence, including the ones it had no price for. An OpenCode, OpenRouter or Moonshot turn is billed at whatever the CLI reports, or at nothing when it reports nothing, and that zero went into your spend total as fact.
+
+The budget studio now marks each model row: `unpriced` when Goodboy holds no rate for that model and the run recorded nothing, `approx` when the figure comes from an estimated rate rather than a billed amount, and no mark at all when the price is real. Where turns went uncounted, the provider says so above its cap control, because a cap can only add up the spend it has.
+
+An unknown Cursor model also used to be priced at the cheapest rate in the table, understating an unrecognised Opus run by roughly ten times. It now takes the most expensive rate, so a cap errs toward protecting your money instead of spending it.
+
+### [#1285] Read what the work you shipped cost
+
+Impact Studio reported what shipped and how long it took, with no money anywhere. It now carries a spend total for the window, the sessions that cost the most, and a figure on each merged pull request, so the run worth looking at is visible without opening a diff.
+
+Spend attributed to a pull request is the spend of the sessions on its branch, not a per-commit measurement, and a session with nothing recorded reads as absent rather than as zero.
+
+### [#1286] Resolve a merge request thread from the review card
+
+A GitLab review thread could be read and replied to inside Goodboy, and then you opened the browser to tick resolve. The thread card now carries the action itself, in both directions, and the card reconciles against GitLab after every write so a refusal cannot leave it showing a state the server never accepted.
+
+Follow-up: the endpoint and its parameters come from GitLab's published REST documentation, though no call has gone out to a live GitLab instance yet. If a shape differs, GitLab's own error comes back on the card with the thread untouched.
+
 ## Goodboy v0.1.67
 
 The footer and the top bar were reorganised, and a workspace can now hold more than one code host.
