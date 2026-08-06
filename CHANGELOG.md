@@ -31,7 +31,7 @@ Linear could show you an issue and start a session from it, and write back nothi
 
 You can now comment on an issue from the studio and the session pane, through the same composer the other hosts use, and the comment Linear returns lands in the thread you are reading. Assign and transition are still missing: both need the team and workflow state ids, which Goodboy does not read from Linear yet.
 
-Follow-up: the mutation and its input come from Linear's published schema. If a shape differs, Linear's own error comes back in the composer with your draft still in it.
+Follow-up: the mutation and its input come from Linear's published schema, though no call has gone out to a live Linear workspace yet. If a shape differs, Linear's own error comes back in the composer with your draft still in it.
 
 ### [#1274] Popovers open above full-page surfaces
 

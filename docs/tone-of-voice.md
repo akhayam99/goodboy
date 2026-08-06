@@ -131,8 +131,9 @@ plain fact.
   a live X", or "proves nothing". Write what the work stands on and what the
   app does when reality disagrees:
 
-  > Follow-up: the mutation and its input come from Linear's published schema.
-  > If a shape differs, Linear's own error comes back in the composer with the
+  > Follow-up: the mutation and its input come from Linear's published
+  > schema, though no call has gone out to a live Linear workspace yet. If a
+  > shape differs, Linear's own error comes back in the composer with the
   > draft still in it.
 
   One line, at the end of the feature it belongs to, and one line covers
