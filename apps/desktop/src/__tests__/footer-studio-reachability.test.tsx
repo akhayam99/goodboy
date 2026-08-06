@@ -104,7 +104,18 @@ vi.mock('../features/integrations/bitbucket/BitbucketWorkspaceStudio', () => ({
   ),
 }));
 
-vi.mock('../features/session/components/CommandPalette', () => ({ CommandPalette: () => null }));
+type PaletteProps = {
+  readonly onOpenProviders?: () => void;
+};
+
+vi.mock('../features/session/components/CommandPalette', () => ({
+  CommandPalette: ({ onOpenProviders }: PaletteProps) =>
+    onOpenProviders ? (
+      <button type="button" onClick={onOpenProviders}>
+        Connect a provider
+      </button>
+    ) : null,
+}));
 vi.mock('../app/components/BootSplash', () => ({
   BootSplash: ({ onFinished }: { onFinished: () => void }) => {
     useEffect(() => {
@@ -159,7 +170,9 @@ vi.mock('../features/integrations/linear/LinearStudio', () => ({ LinearStudio: (
 vi.mock('../features/integrations/sentry/SentryStudio', () => ({ SentryStudio: () => null }));
 vi.mock('../features/integrations/gitlab/GitlabStudio', () => ({ GitlabStudio: () => null }));
 vi.mock('../features/integrations/jira/JiraStudio', () => ({ JiraStudio: () => null }));
-vi.mock('../features/providers/components/ProviderStudio', () => ({ ProviderStudio: () => null }));
+vi.mock('../features/providers/components/ProviderStudio', () => ({
+  ProviderStudio: () => <div data-testid="provider-studio" />,
+}));
 vi.mock('../features/budget/components/BudgetStudio', () => ({ BudgetStudio: () => null }));
 vi.mock('../features/permissions/components/DiffViewerDialog', () => ({
   DiffViewerDialog: () => null,
@@ -253,6 +266,30 @@ describe('GitHub footer state', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect GitHub' }));
 
     expect(screen.getByTestId('github-studio').textContent).toBe('Workspace');
+  });
+});
+
+describe('Provider studio reachability from the command palette', () => {
+  const openPalette = (): void => {
+    fireEvent.keyDown(window, { key: 'k', code: 'KeyK', metaKey: true });
+  };
+
+  it('hands the palette a way to open the provider studio', () => {
+    render(<App />);
+
+    openPalette();
+
+    expect(screen.getByRole('button', { name: 'Connect a provider' })).toBeDefined();
+  });
+
+  it('opens the provider studio when the palette entry is chosen', () => {
+    render(<App />);
+    openPalette();
+
+    expect(screen.queryByTestId('provider-studio')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect a provider' }));
+
+    expect(screen.getByTestId('provider-studio')).toBeDefined();
   });
 });
 

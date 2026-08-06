@@ -110,7 +110,7 @@ describe('GithubFormBody', () => {
       expect(onConnected).not.toHaveBeenCalled();
     });
 
-    it('shows the written rejection verbatim, with no wrapper and no gh output', async () => {
+    it('renders the rejection it is handed without decorating it', async () => {
       ghSetTokenMock.mockRejectedValueOnce(
         'GitHub rejected this token. Check you pasted the whole value, then try again.',
       );
