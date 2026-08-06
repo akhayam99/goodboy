@@ -23,7 +23,6 @@ export const PipelineLane = ({ lane, onOpen, advance }: Props) => {
           hasOpenQuestions: advance.hasOpenQuestions,
           isSummarizerRunning: advance.isSummarizerRunning,
           isTurnRunning: false,
-          isAutoRun: lane.autoRun,
         }),
       })
     : null;

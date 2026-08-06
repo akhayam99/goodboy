@@ -30,6 +30,7 @@ export type DynamicAction = {
 type RunAdvance = {
   readonly runId: WorkflowRunId;
   readonly view: WorkflowAdvanceView;
+  readonly hasStartableStep: boolean;
 };
 
 const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
@@ -60,18 +61,23 @@ export const useDynamicActions = (
       if (!workflow) {
         continue;
       }
+      const runAgents = runs.filter((agent) => agent.workflowRunId === run.id);
+      const view = viewWorkflowAdvance({
+        state: resolveWorkflowAdvance({
+          workflow,
+          agents: runAgents,
+          hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+          isSummarizerRunning,
+          isTurnRunning: false,
+        }),
+      });
+      const manualStepId = view.manualStep?.id ?? null;
       out.push({
         runId: run.id,
-        view: viewWorkflowAdvance({
-          state: resolveWorkflowAdvance({
-            workflow,
-            agents: runs.filter((agent) => agent.workflowRunId === run.id),
-            hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
-            isSummarizerRunning,
-            isTurnRunning: false,
-            isAutoRun: run.autoRun,
-          }),
-        }),
+        view,
+        hasStartableStep:
+          manualStepId != null &&
+          runAgents.some((agent) => agent.stepId === manualStepId && agent.status === 'pending'),
       });
     }
     return out;
@@ -91,7 +97,7 @@ export const useDynamicActions = (
   return useMemo(() => {
     const openCount = openQuestions.filter((q) => q.status === 'open').length;
     const nextStepReady =
-      stage !== 'running' && advances.some((advance) => advance.view.manualStep != null);
+      stage !== 'running' && advances.some((advance) => advance.hasStartableStep);
 
     const actions: DynamicAction[] = [];
     if (blockedRunId != null && isConfirmingSkip) {

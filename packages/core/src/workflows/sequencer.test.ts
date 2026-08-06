@@ -328,6 +328,18 @@ describe('classifyWorkflowChain', () => {
     expect(chain).toEqual({ kind: 'step', step: D2 });
   });
 
+  it('hops over every completed step in one go', () => {
+    const runs = [makeRun('d1', 'completed', 1), makeRun('d2', 'completed', 2)];
+    const chain = classifyWorkflowChain(TEMPLATE, runs);
+    expect(chain).toEqual({ kind: 'step', step: D3 });
+  });
+
+  it('treats a skipped step as done and moves past it', () => {
+    const runs = [makeRun('d1', 'skipped', 1)];
+    const chain = classifyWorkflowChain(TEMPLATE, runs);
+    expect(chain).toEqual({ kind: 'step', step: D2 });
+  });
+
   it('returns blocked when predecessor has failed', () => {
     const runs = [makeRun('d1', 'failed', 1, '2026-01-01T00:00:00Z')];
     const chain = classifyWorkflowChain(TEMPLATE, runs);

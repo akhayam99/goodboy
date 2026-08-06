@@ -49,7 +49,7 @@ export const runPlan = (get: GetFn) => {
     }
 
     const runAgents = runsForWorkflowRun(runs, creatorRun.id);
-    const { pendingStep: nextStep } = viewWorkflowAdvance({
+    const { chainStep: nextStep } = viewWorkflowAdvance({
       state: resolveWorkflowAdvance({
         workflow: template,
         agents: runAgents,

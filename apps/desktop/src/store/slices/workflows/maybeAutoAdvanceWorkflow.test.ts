@@ -99,6 +99,7 @@ const baseState = (stepIds: ReadonlyArray<string>, agents: ReadonlyArray<Agent>)
   sessionPhaseRuns: { [SESSION_ID]: agents },
   summarizerStatus: {},
   budgetAlerts: [],
+  announcedWorkflowBlocks: {},
   startWorkflowRun: vi.fn(async () => undefined),
   activateWorkflowAgent: vi.fn(async () => undefined),
   orchestrateNextStep: vi.fn(async () => undefined),
@@ -210,6 +211,34 @@ describe('maybeAutoAdvanceWorkflow', () => {
       'Autorun stopped at s0 because the step failed.',
       { sessionId: SESSION_ID },
     );
+  });
+
+  it('announces a stop once, not on every later pass', async () => {
+    const state = baseState(
+      ['s0', 's1'],
+      [makeAgent('s0', 'failed', 0), makeAgent('s1', 'pending', 1)],
+    );
+    const { set, get } = harness(state);
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+    expect(state['emitNotification']).toHaveBeenCalledTimes(1);
+  });
+
+  it('announces again when the failed step is retried and fails again', async () => {
+    const state = baseState(
+      ['s0', 's1'],
+      [makeAgent('s0', 'failed', 0), makeAgent('s1', 'pending', 1)],
+    );
+    const { set, get } = harness(state);
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+    state['sessionPhaseRuns'] = {
+      [SESSION_ID]: [
+        { ...makeAgent('s0', 'failed', 0), id: 'retry-s0' as AgentId },
+        makeAgent('s1', 'pending', 1),
+      ],
+    };
+    await maybeAutoAdvanceWorkflow(set, get)(SESSION_ID);
+    expect(state['emitNotification']).toHaveBeenCalledTimes(2);
   });
 
   it('stays quiet when autorun simply has nothing left to advance', async () => {

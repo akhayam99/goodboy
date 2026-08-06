@@ -246,6 +246,7 @@ beforeEach(() => {
   store.spawnAgent.mockReset();
   store.spawnAgent.mockResolvedValue(undefined);
   store.sessionPhaseRuns = {};
+  store.summarizerStatus = {};
   store.scriptRuns = {};
   store.sessionGithub = {};
   store.sessionGitlabMr = {};
@@ -728,7 +729,7 @@ describe('SessionOverviewPane pipeline lane next-step badge', () => {
     expect(screen.queryByText(/^Blocked at/)).toBeNull();
   });
 
-  it('leaves the start badge to automation when the run is on autorun', () => {
+  it('keeps the start badge on an autorun run the overview cannot vouch for', () => {
     runs.lanes = [{ ...lane(), autoRun: true }];
     renderPane(
       baseSession({
@@ -737,7 +738,23 @@ describe('SessionOverviewPane pipeline lane next-step badge', () => {
         ],
       } as unknown as Partial<Session>),
     );
-    expect(screen.queryByTitle(/^start execute$/i)).toBeNull();
+    expect(screen.getByTitle(/^start execute$/i)).not.toBeNull();
+  });
+
+  it('still names the failed step when an open question also gates the run', () => {
+    hooks.openQuestions = [
+      { status: 'open', text: 'blocked?', workflowRunId: RUN_ID },
+    ] as unknown as ReadonlyArray<OpenQuestion>;
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent('failed')] };
+    renderPane(sessionWithRun());
+    expect(screen.getByText('Blocked at Execute')).not.toBeNull();
+  });
+
+  it('still names the failed step while the summarizer is still writing', () => {
+    store.summarizerStatus = { 'sess-1': { status: 'running' } };
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent('failed')] };
+    renderPane(sessionWithRun());
+    expect(screen.getByText('Blocked at Execute')).not.toBeNull();
   });
 
   it('still names the failed step when autorun cannot rescue the run', () => {

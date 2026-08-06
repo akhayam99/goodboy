@@ -158,7 +158,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
           }),
         }),
       });
-      actionableStepIdByRunId.set(run.id, run.discardedAt ? null : (view.pendingStep?.id ?? null));
+      actionableStepIdByRunId.set(run.id, run.discardedAt ? null : (view.chainStep?.id ?? null));
       blockReasonByRunId.set(run.id, view.blockReason);
     }
     return { actionableStepIdByRunId, blockReasonByRunId };

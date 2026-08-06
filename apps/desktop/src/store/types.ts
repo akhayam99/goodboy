@@ -225,6 +225,7 @@ export type AppState = AppSliceState & {
   readonly sessionWorkflows: Readonly<Record<SessionId, ReadonlyArray<Workflow>>>;
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly orchestratingWorkflowRuns: Readonly<Record<WorkflowRunId, boolean>>;
+  readonly announcedWorkflowBlocks: Readonly<Record<WorkflowRunId, string>>;
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly agentRunHistory: Readonly<Record<AgentId, ReadonlyArray<ProviderRunId>>>;
   readonly agentTurnState: Readonly<Record<AgentId, TurnState>>;

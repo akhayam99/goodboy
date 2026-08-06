@@ -83,7 +83,12 @@ describe('resolveWorkflowAdvance', () => {
       ...gate,
     });
 
-    expect(state).toEqual({ kind: 'blocked', reason: 'failed-step', step: workflow.steps[0] });
+    expect(state).toEqual({
+      kind: 'blocked',
+      reason: 'failed-step',
+      step: workflow.steps[0],
+      failedStep: workflow.steps[0],
+    });
   });
 
   it('reports a running turn last', () => {
@@ -139,7 +144,44 @@ describe('resolveWorkflowAdvance', () => {
       isAutoRun: true,
     });
 
-    expect(state).toEqual({ kind: 'blocked', reason: 'questions', step: workflow.steps[1] });
+    expect(state).toEqual({
+      kind: 'blocked',
+      reason: 'questions',
+      step: workflow.steps[1],
+      failedStep: null,
+    });
+  });
+
+  it('lets the open question own the reason and still names the failed step', () => {
+    const state = resolveWorkflowAdvance({
+      workflow,
+      agents: agents('failed', 'pending'),
+      ...gate,
+      hasOpenQuestions: true,
+    });
+
+    expect(state).toEqual({
+      kind: 'blocked',
+      reason: 'questions',
+      step: workflow.steps[0],
+      failedStep: workflow.steps[0],
+    });
+  });
+
+  it('lets the summarizer own the reason and still names the failed step', () => {
+    const state = resolveWorkflowAdvance({
+      workflow,
+      agents: agents('failed', 'pending'),
+      ...gate,
+      isSummarizerRunning: true,
+    });
+
+    expect(state).toEqual({
+      kind: 'blocked',
+      reason: 'summarizer',
+      step: workflow.steps[0],
+      failedStep: workflow.steps[0],
+    });
   });
 
   it('keeps the skip control under autorun, where automation has stopped for good', () => {
@@ -150,7 +192,12 @@ describe('resolveWorkflowAdvance', () => {
       isAutoRun: true,
     });
 
-    expect(state).toEqual({ kind: 'blocked', reason: 'failed-step', step: workflow.steps[0] });
+    expect(state).toEqual({
+      kind: 'blocked',
+      reason: 'failed-step',
+      step: workflow.steps[0],
+      failedStep: workflow.steps[0],
+    });
   });
 
   it('is complete once every step is done or skipped', () => {

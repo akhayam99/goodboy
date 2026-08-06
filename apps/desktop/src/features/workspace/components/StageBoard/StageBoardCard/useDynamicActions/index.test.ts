@@ -13,6 +13,7 @@ const { state } = vi.hoisted(() => ({
     summarizerStatus: {} as Record<string, { status: string }>,
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
     hasUnread: false,
+    runHasOpenQuestions: false,
   },
 }));
 
@@ -22,7 +23,7 @@ vi.mock('../../../../../../store', () => ({
 }));
 
 vi.mock('../../../../../context/openQuestionsGate', () => ({
-  workflowRunHasOpenQuestions: () => false,
+  workflowRunHasOpenQuestions: () => state.runHasOpenQuestions,
 }));
 
 import { useDynamicActions } from './index';
@@ -63,6 +64,7 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.summarizerStatus = {};
   state.hasUnread = false;
+  state.runHasOpenQuestions = false;
   state.skipStuckStepAndAdvance.mockClear();
   (nav.openWorkflows as ReturnType<typeof vi.fn>).mockClear();
   (nav.openQuestions as ReturnType<typeof vi.fn>).mockClear();
@@ -119,13 +121,22 @@ describe('useDynamicActions', () => {
     expect(result.current.some((a) => a.key === 'run')).toBe(false);
   });
 
-  it('leaves the advance to automation when the run is on autorun', () => {
+  it('keeps the run action on an autorun run the board cannot vouch for', () => {
     state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
     state.sessionPhaseRuns = {
       'sess-1': [agent('step-1', 'completed', 0), agent('step-2', 'pending', 1)],
     };
     const session = sessionWith([{ ...staticRun, autoRun: true }]);
     const { result } = renderHook(() => useDynamicActions(session, nav, 'building'));
+    expect(result.current.some((a) => a.key === 'run')).toBe(true);
+  });
+
+  it('withholds the run action from a run that has no agent to start', () => {
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = { 'sess-1': [] };
+    const { result } = renderHook(() =>
+      useDynamicActions(sessionWith([staticRun]), nav, 'building'),
+    );
     expect(result.current.some((a) => a.key === 'run')).toBe(false);
   });
 
@@ -163,5 +174,30 @@ describe('useDynamicActions', () => {
     const session = sessionWith([{ ...staticRun, autoRun: true }]);
     const { result } = renderHook(() => useDynamicActions(session, nav, 'attention'));
     expect(result.current.some((a) => a.key === 'blocked')).toBe(true);
+  });
+
+  it('keeps the blocked action when an open question also gates the run', () => {
+    state.runHasOpenQuestions = true;
+    state.sessionOpenQuestions = { 'sess-1': [{ status: 'open' }] };
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = {
+      'sess-1': [agent('step-1', 'failed', 0), agent('step-2', 'pending', 1)],
+    };
+    const { result } = renderHook(() =>
+      useDynamicActions(sessionWith([staticRun]), nav, 'attention'),
+    );
+    expect(result.current.find((a) => a.key === 'blocked')?.label).toBe('Skip blocked step: Scout');
+  });
+
+  it('keeps the blocked action while the summarizer is still writing', () => {
+    state.summarizerStatus = { 'sess-1': { status: 'running' } };
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = {
+      'sess-1': [agent('step-1', 'failed', 0), agent('step-2', 'pending', 1)],
+    };
+    const { result } = renderHook(() =>
+      useDynamicActions(sessionWith([staticRun]), nav, 'attention'),
+    );
+    expect(result.current.find((a) => a.key === 'blocked')?.label).toBe('Skip blocked step: Scout');
   });
 });

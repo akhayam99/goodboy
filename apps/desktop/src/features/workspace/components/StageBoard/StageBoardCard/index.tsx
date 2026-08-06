@@ -209,7 +209,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       </span>
 
       <CardActionSlot
-        label="Session navigation actions"
+        label="Session quick actions"
         className="col-start-2 row-start-1 flex-col items-end self-start"
       >
         <span className="flex items-center justify-end gap-1">

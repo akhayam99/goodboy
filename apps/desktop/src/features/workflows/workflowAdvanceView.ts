@@ -2,7 +2,7 @@ import type { Step } from '@goodboy/types';
 import type { WorkflowAdvanceState, WorkflowBlockReason } from './advanceGate';
 
 export type WorkflowAdvanceView = {
-  readonly pendingStep: Step | null;
+  readonly chainStep: Step | null;
   readonly manualStep: Step | null;
   readonly failedStep: Step | null;
   readonly blockReason: WorkflowBlockReason | null;
@@ -13,7 +13,7 @@ type Params = {
 };
 
 const IDLE: WorkflowAdvanceView = {
-  pendingStep: null,
+  chainStep: null,
   manualStep: null,
   failedStep: null,
   blockReason: null,
@@ -24,14 +24,14 @@ export const viewWorkflowAdvance = ({ state }: Params): WorkflowAdvanceView => {
     case 'complete':
       return IDLE;
     case 'automatic':
-      return { ...IDLE, pendingStep: state.step };
+      return { ...IDLE, chainStep: state.step };
     case 'ready':
-      return { ...IDLE, pendingStep: state.step, manualStep: state.step };
+      return { ...IDLE, chainStep: state.step, manualStep: state.step };
     case 'blocked':
       return {
-        pendingStep: state.reason === 'failed-step' ? null : state.step,
+        chainStep: state.failedStep != null ? null : state.step,
         manualStep: null,
-        failedStep: state.reason === 'failed-step' ? state.step : null,
+        failedStep: state.failedStep,
         blockReason: state.reason,
       };
     default: {
