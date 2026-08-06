@@ -249,6 +249,7 @@ export type AppActions = {
   disconnectBitbucket(params: { workspaceId: WorkspaceId }): Promise<void>;
   connectSlack(params: { workspaceId: WorkspaceId; botToken: string }): Promise<SlackConnection>;
   disconnectSlack(params: { workspaceId: WorkspaceId }): Promise<void>;
+  disconnectGithub(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     goal: string;

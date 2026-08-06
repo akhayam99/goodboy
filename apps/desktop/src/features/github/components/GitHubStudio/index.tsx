@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { cn, Divider, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { GithubIssue, ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { InboxList } from './InboxList';
@@ -10,8 +10,10 @@ import { useGithubInbox } from './useGithubInbox';
 import { useGithubIssues } from './useGithubIssues';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { useAppStore } from '../../../../store';
 import { ReviewInboxList } from '../../../review/components/ReviewInboxList';
 import { ReviewPrDetailPanel } from '../../../review/components/ReviewPrDetailPanel';
+import { IntegrationDisconnect } from '../../../integrations/components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import { resolveIntegrationConnection } from '../../../integrations/connection';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
@@ -57,6 +59,7 @@ export const GitHubStudio = ({
   const groups = useGithubInbox();
   const remoteKind = useWorkspaceRemoteHostKind({ workspaceId });
   const githubConnection = useGithubConnection({ workspaceId });
+  const disconnectGithub = useAppStore((s) => s.disconnectGithub);
   const hasGithubRemote = remoteKind === 'github';
   const isGithubConnected = resolveIntegrationConnection({
     provider: 'github',
@@ -66,6 +69,7 @@ export const GitHubStudio = ({
       githubConnection.isResolved === false || githubConnection.isAuthenticated,
   }).isConnected;
   const canBrowseRepo = isGithubConnected && hasGithubRemote;
+  const canDisconnect = isGithubConnected && githubConnection.isScoped;
   const issues = useGithubIssues({ workspaceId, rootPath, isEnabled: canBrowseRepo });
   const [focused, setFocused] = useState<SessionId | null>(initialSessionId);
   const [focusedIssue, setFocusedIssue] = useState<GithubIssue | null>(null);
@@ -134,22 +138,39 @@ export const GitHubStudio = ({
       workspaceName={workspaceName}
       closeLabel="close github studio"
       headerAccessory={
-        canBrowseRepo ? (
+        canBrowseRepo || canDisconnect ? (
           <div className="flex items-center gap-2">
-            <SegmentedTabs
-              ariaLabel="GitHub work"
-              options={TABS}
-              value={tab}
-              onChange={setTab}
-              size="sm"
-            />
-            {issues.groups.length > 0 ? (
-              <IconButton
-                icon={RefreshCw}
-                label="Refresh issues"
-                onClick={issues.refetch}
-                disabled={issues.loading}
-              />
+            {canBrowseRepo ? (
+              <>
+                <SegmentedTabs
+                  ariaLabel="GitHub work"
+                  options={TABS}
+                  value={tab}
+                  onChange={setTab}
+                  size="sm"
+                />
+                {issues.groups.length > 0 ? (
+                  <IconButton
+                    icon={RefreshCw}
+                    label="Refresh issues"
+                    onClick={issues.refetch}
+                    disabled={issues.loading}
+                  />
+                ) : null}
+              </>
+            ) : null}
+            {canDisconnect ? (
+              <>
+                {canBrowseRepo ? <Divider orientation="vertical" className="mx-0.5 h-5" /> : null}
+                <IntegrationDisconnect
+                  label="GitHub"
+                  description="Deletes this workspace's GitHub token from your keychain. This does not sign you out of the system gh CLI."
+                  onDisconnect={async () => {
+                    await disconnectGithub({ workspaceId });
+                    await githubConnection.refresh();
+                  }}
+                />
+              </>
             ) : null}
           </div>
         ) : null

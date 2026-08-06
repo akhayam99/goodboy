@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { cn, Divider, IconButton, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { ReviewablePr, WorkspaceId } from '@goodboy/types';
 import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';
 import { ConnectIntegrationEmptyState } from '../../ConnectIntegrationEmptyState';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -50,6 +51,7 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
     externalTasks: EMPTY_ARRAY,
     isGithubAuthenticated: false,
   }).isConnected;
+  const disconnectGitlab = useAppStore((s) => s.disconnectGitlab);
   const { groups, loading, error, refetch } = useGitlabIssues({
     workspaceId,
     isEnabled: isConnected,
@@ -127,6 +129,12 @@ export const GitlabStudio = ({ workspaceId, workspaceName, initialIssueId, onClo
                 disabled={tab === 'issues' ? loading : mergeRequests.loading}
               />
             ) : null}
+            <Divider orientation="vertical" className="mx-0.5 h-5" />
+            <IntegrationDisconnect
+              label="GitLab"
+              description="Deletes the saved GitLab token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              onDisconnect={() => disconnectGitlab(workspaceId)}
+            />
           </div>
         ) : null
       }
