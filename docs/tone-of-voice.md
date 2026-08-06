@@ -109,6 +109,35 @@ the product to one provider or to the person who happened to write it.
   harder than "you babysit". Between two true words, take the one with the most
   edge, never the one that softens it.
 
+### Release notes
+
+The changelog is the one place that gets to sell a little, and it earns that
+by being short. The release lead line is the pitch; everything under it is
+plain fact.
+
+- **The heading names the capability, not a mood.** "Pull requests carry the
+  queued check state" not "The pull request tells the truth". Verb and object,
+  in the words a user would use to ask for the thing. Objects do not tell,
+  know, feel or remember.
+- **Budget the length.** The headline feature gets a lead line plus at most
+  three short paragraphs. Every other feature gets one or two. A fix gets one
+  line. Cut any paragraph that explains why the old behavior existed: the
+  reader never saw it.
+- **State a limit inside the sentence that promises the thing**, not in a
+  paragraph of its own. "Public channels the bot has joined" beats four
+  sentences of scope caveats.
+- **Work that has not been exercised against a live service is a follow-up,
+  never a confession.** Never write "not verified", "this has not run against
+  a live X", or "proves nothing". Write what the work stands on and what the
+  app does when reality disagrees:
+
+  > Follow-up: the mutation and its input come from Linear's published schema.
+  > If a shape differs, Linear's own error comes back in the composer with the
+  > draft still in it.
+
+  One line, at the end of the feature it belongs to, and one line covers
+  several features when they share the same follow-up.
+
 ### Honesty
 
 - **Don't oversell the roadmap.** "A proper Linear Studio is on the way" not

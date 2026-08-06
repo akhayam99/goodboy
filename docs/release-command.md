@@ -64,10 +64,16 @@ missing.
   follow-up work or migrations unless the PR itself commits to it.
 - Include only `desktop`/`ui`/`core` PRs in the app notes. Exclude
   `website`/`repo`/`docs` PRs.
-- BEFORE writing, read `docs/tone-of-voice.md` and obey it: no "AI", no em-dashes,
-  no fluff/minimizers/superlatives, no "bring your own X", sentence-case
-  headings, no trailing period on headings/list items, problem-then-fix, name the
-  limits.
+- BEFORE writing, read `docs/tone-of-voice.md` and obey it, in particular its
+  "Release notes" rules: headings name the capability and never personify it
+  ("Pull requests carry the queued check state", not "The pull request tells
+  the truth"); the headline feature gets a lead line plus at most three short
+  paragraphs, every other feature one or two, a fix one line; limits go inside
+  the sentence that promises the thing; work not yet exercised against a live
+  service is a one-line follow-up, never "not verified". Plus the standing
+  rules: no "AI", no em-dashes, no fluff/minimizers/superlatives, no "bring
+  your own X", sentence-case headings, no trailing period on headings/list
+  items.
 
 ### Format (match the curated changelog of v0.1.7 through v0.1.11)
 

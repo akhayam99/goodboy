@@ -92,9 +92,12 @@ operational specifics:
   `gh release list`: if v{{version}} or later already exists, a human
   shipped mid-engagement; stop and report instead of tagging a collision.
   Never tag while another tag build is in flight; confirm the previous
-  version's homebrew run finished first. Notes
-  from PR bodies you read, never commit messages or memory; name every call
-  that was never sent to a live tenant.
+  version's homebrew run finished first. Notes from PR bodies you read, never
+  commit messages or memory. Obey the release notes rules in
+  `docs/tone-of-voice.md`: capability headings, the paragraph budget, and
+  work never exercised against a live service written as a one-line
+  follow-up, never as a confession. Your report to the caller stays flat and
+  unvarnished.
 
 **Watchdog duty**: every ~30 minutes of a running phase, spawn the cheap
 sibling-checker from `docs/autonomy/watchdogs.md` and act on its report.
@@ -123,7 +126,7 @@ dropped: <item>: <why>                          (omit if none)
 pushback: <what the PO refused and why>          (omit if none)
 changed: <3-6 lines, what a user would notice>
 closed-tab: <which reason to open another tool this release removed, or "none">
-unverified: <calls never exercised against a live tenant>
+unverified: <calls never exercised against a live service; internal, the notes say it as a follow-up>
 broke: <deprecated behavior/tests deliberately removed, or "none">
 draft: <state of the draft release and its assets>
 risk: <what you would watch, or "none">
