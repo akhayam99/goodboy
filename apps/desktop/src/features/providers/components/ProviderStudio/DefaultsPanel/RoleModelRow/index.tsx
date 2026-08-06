@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   PROVIDER_CAPABILITIES,
   defaultsForRole,
-  getModelProvider,
   recommendedModelForRole,
   resolveRoleRouting,
   type ResolvedRoleFallback,
@@ -21,9 +20,9 @@ import {
   clampEffort,
   modelEffortLevels,
   modelLabel,
-} from '../../../../chat/utils/chat-constants';
-import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
-import { RoutingStatusControl } from './RoutingStatusControl';
+} from '../../../../../chat/utils/chat-constants';
+import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { RoutingStatusControl } from '../RoutingStatusControl';
 
 const AUTOMATIC_FALLBACK_SUMMARY = 'Automatic';
 
@@ -76,12 +75,15 @@ export const RoleModelRow = ({
   const resolvedFallbackProviderId = resolved.fallback?.provider ?? defaultProviderId;
   const [providerId, setProviderId] = useState(resolvedProviderId);
   const [isChoosingFallback, setIsChoosingFallback] = useState(false);
+  const pendingProvider = useRef(resolvedProviderId);
   const pendingFallbackProvider = useRef(resolvedFallbackProviderId);
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
   const recommendedModel = recommendedModelForRole({ role, provider: providerId });
   const defaultModel = recommendedModelForRole({ role, provider: defaultProviderId });
+  const primaryModel = resolved.isOverride ? resolved.model : recommendedModel;
+  const pendingModel = useRef(primaryModel);
   const compiledRouting = `${PROVIDER_LABEL[defaultProviderId]} · ${modelLabel(defaultModel)}`;
   const defaultSummary =
     modelEffortLevels(defaultModel) == null
@@ -91,13 +93,20 @@ export const RoleModelRow = ({
 
   useEffect(() => {
     setProviderId(resolvedProviderId);
+    pendingProvider.current = resolvedProviderId;
   }, [resolvedProviderId]);
+
+  useEffect(() => {
+    pendingModel.current = primaryModel;
+  }, [primaryModel]);
 
   useEffect(() => {
     pendingFallbackProvider.current = resolvedFallbackProviderId;
   }, [resolvedFallbackProviderId]);
 
   const commit = ({ providerId: nextProvider, model, effort }: CommitParams) => {
+    pendingProvider.current = nextProvider;
+    pendingModel.current = model;
     const carried = storedFallback({ resolved: resolved.fallback });
     const candidate: RoleModelPreference = {
       providerId: nextProvider,
@@ -120,9 +129,6 @@ export const RoleModelRow = ({
   };
 
   const commitFallback = ({ fallback }: CommitFallbackParams) => {
-    if (!resolved.isOverride) {
-      return;
-    }
     const candidate: RoleModelPreference = {
       providerId: resolved.provider,
       model: resolved.model,
@@ -168,8 +174,8 @@ export const RoleModelRow = ({
               value: resolved.effort,
               onChange: (effort) =>
                 commit({
-                  providerId,
-                  model: resolved.isOverride ? resolved.model : recommendedModel,
+                  providerId: pendingProvider.current,
+                  model: pendingModel.current,
                   effort,
                 }),
             }}
@@ -183,10 +189,12 @@ export const RoleModelRow = ({
                 return;
               }
               setProviderId(next);
+              pendingProvider.current = next;
+              const nextModel = recommendedModelForRole({ role, provider: next });
+              pendingModel.current = nextModel;
               if (!resolved.isOverride) {
                 return;
               }
-              const nextModel = recommendedModelForRole({ role, provider: next });
               commit({
                 providerId: next,
                 model: nextModel,
@@ -199,7 +207,7 @@ export const RoleModelRow = ({
                 return;
               }
               commit({
-                providerId,
+                providerId: pendingProvider.current,
                 model: nextModel,
                 effort: clampEffort(nextModel, resolved.effort),
               });
@@ -235,7 +243,7 @@ export const RoleModelRow = ({
                     }
                     commitFallback({
                       fallback: {
-                        providerId: getModelProvider(nextModel) ?? pendingFallbackProvider.current,
+                        providerId: pendingFallbackProvider.current,
                         model: nextModel,
                       },
                     });
