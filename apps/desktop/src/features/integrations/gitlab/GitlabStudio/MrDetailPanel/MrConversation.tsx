@@ -14,6 +14,8 @@ type Props = {
   readonly onRetry: () => void;
   readonly onPost: ((body: string) => Promise<void>) | null;
   readonly onReply: ((params: { discussionId: string; body: string }) => Promise<void>) | null;
+  readonly onResolve:
+    ((params: { discussionId: string; resolved: boolean }) => Promise<void>) | null;
 };
 
 export const MrConversation = ({
@@ -23,6 +25,7 @@ export const MrConversation = ({
   onRetry,
   onPost,
   onReply,
+  onResolve,
 }: Props) => {
   const conversation = useMemo(() => buildMrConversation({ discussions }), [discussions]);
 
@@ -65,6 +68,11 @@ export const MrConversation = ({
                   onReply == null
                     ? null
                     : (body: string) => onReply({ discussionId: thread.id, body })
+                }
+                onResolve={
+                  onResolve == null
+                    ? null
+                    : (resolved: boolean) => onResolve({ discussionId: thread.id, resolved })
                 }
               />
             </li>

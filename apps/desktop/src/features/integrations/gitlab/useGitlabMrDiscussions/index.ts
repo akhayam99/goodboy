@@ -5,6 +5,7 @@ import {
   gitlabCreateMrNote,
   gitlabListMrDiscussions,
   gitlabReplyToMrDiscussion,
+  gitlabResolveMrDiscussion,
   type GitlabMrDiscussion,
 } from '../client';
 
@@ -24,6 +25,11 @@ type ReplyParams = {
   readonly body: string;
 };
 
+type ResolveParams = {
+  readonly discussionId: string;
+  readonly resolved: boolean;
+};
+
 type Result = {
   readonly discussions: ReadonlyArray<GitlabMrDiscussion>;
   readonly isLoading: boolean;
@@ -31,6 +37,7 @@ type Result = {
   readonly reload: () => void;
   readonly post: ((params: PostParams) => Promise<void>) | null;
   readonly reply: ((params: ReplyParams) => Promise<void>) | null;
+  readonly resolve: ((params: ResolveParams) => Promise<void>) | null;
 };
 
 export const useGitlabMrDiscussions = ({
@@ -113,6 +120,27 @@ export const useGitlabMrDiscussions = ({
     [workspaceId, host, projectPath, mrIid],
   );
 
+  const resolve = useCallback(
+    async ({ discussionId, resolved }: ResolveParams) => {
+      if (workspaceId == null || host == null || projectPath == null || mrIid == null) {
+        return;
+      }
+      try {
+        await gitlabResolveMrDiscussion({
+          workspaceId,
+          host,
+          projectPath,
+          mrIid,
+          discussionId,
+          resolved,
+        });
+      } finally {
+        setReloadToken((token) => token + 1);
+      }
+    },
+    [workspaceId, host, projectPath, mrIid],
+  );
+
   return {
     discussions,
     isLoading,
@@ -120,5 +148,6 @@ export const useGitlabMrDiscussions = ({
     reload,
     post: isReady ? post : null,
     reply: isReady ? reply : null,
+    resolve: isReady ? resolve : null,
   };
 };

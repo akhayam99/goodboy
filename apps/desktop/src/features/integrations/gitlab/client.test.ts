@@ -3,10 +3,12 @@ import { invoke } from '@tauri-apps/api/core';
 import type { WorkspaceId } from '@goodboy/types';
 import {
   gitlabFetchIssue,
+  gitlabResolveMrDiscussion,
   gitlabUpdateIssueDescription,
   humanizeMergeStatus,
   issueIdentifier,
   type GitlabIssue,
+  type GitlabMrDiscussion,
 } from './client';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -91,6 +93,51 @@ describe('gitlabUpdateIssueDescription', () => {
       issueIid: 7,
       description: 'Rewritten body',
     });
+  });
+});
+
+describe('gitlabResolveMrDiscussion', () => {
+  it('invokes the registered resolve command with the discussion id and the flag', async () => {
+    const updated: GitlabMrDiscussion = {
+      id: '6a9c1750b37d',
+      individualNote: false,
+      notes: [],
+    };
+    mockInvoke.mockResolvedValueOnce(updated);
+
+    const result = await gitlabResolveMrDiscussion({
+      workspaceId: 'workspace-1' as WorkspaceId,
+      host: 'https://gitlab.com',
+      projectPath: 'group/sub/repo',
+      mrIid: 11,
+      discussionId: '6a9c1750b37d',
+      resolved: true,
+    });
+
+    expect(result).toBe(updated);
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_resolve_mr_discussion', {
+      workspaceId: 'workspace-1',
+      host: 'https://gitlab.com',
+      projectPath: 'group/sub/repo',
+      mrIid: 11,
+      discussionId: '6a9c1750b37d',
+      resolved: true,
+    });
+  });
+
+  it('carries a false flag when a thread is reopened', async () => {
+    mockInvoke.mockResolvedValueOnce({ id: 'd-1', individualNote: false, notes: [] });
+
+    await gitlabResolveMrDiscussion({
+      workspaceId: 'workspace-1' as WorkspaceId,
+      host: 'https://gitlab.example.com',
+      projectPath: 'acme/web',
+      mrIid: 4,
+      discussionId: 'd-1',
+      resolved: false,
+    });
+
+    expect(mockInvoke.mock.calls[0]?.[1]).toMatchObject({ resolved: false });
   });
 });
 
