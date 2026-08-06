@@ -22,7 +22,7 @@ export const CoverageChip = ({ coverage }: Props) => {
         tone="neutral"
         shape="badge"
         label="approx"
-        title="Priced from a fallback rate, not this model's own"
+        title="Priced from an estimated rate, not a billed amount"
       />
     );
   }

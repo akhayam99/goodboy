@@ -335,6 +335,80 @@ describe('BudgetStudio', () => {
     expect(screen.queryByText(/cannot include them/i)).toBeNull();
   });
 
+  it('stays silent for a provider whose turns all carry a cost the cap already counts', () => {
+    const now = new Date().toISOString();
+    state.sessionTelemetry = {
+      'session-1': [
+        telemetryRecord({
+          id: 'o1',
+          provider: 'openrouter',
+          model: 'anthropic/claude-sonnet-4.5',
+          costUsd: 0.4,
+          recordedAt: now,
+        }),
+        telemetryRecord({
+          id: 'o2',
+          provider: 'openrouter',
+          model: 'anthropic/claude-sonnet-4.5',
+          costUsd: 0.6,
+          recordedAt: now,
+        }),
+      ],
+    };
+
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'openrouter' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/cannot include them/i)).toBeNull();
+    expect(screen.queryByText('unpriced')).toBeNull();
+  });
+
+  it('counts only the zero-cost turns when a provider reports cost inconsistently', () => {
+    const now = new Date().toISOString();
+    state.sessionTelemetry = {
+      'session-1': [
+        telemetryRecord({
+          id: 'm1',
+          provider: 'opencode',
+          model: 'big-pickle',
+          costUsd: 0.5,
+          recordedAt: now,
+        }),
+        telemetryRecord({
+          id: 'm2',
+          provider: 'opencode',
+          model: 'big-pickle',
+          costUsd: 0,
+          recordedAt: now,
+        }),
+        telemetryRecord({
+          id: 'm3',
+          provider: 'opencode',
+          model: 'big-pickle',
+          costUsd: 0,
+          recordedAt: now,
+        }),
+      ],
+    };
+
+    render(
+      <BudgetStudio
+        workspaceName="goodboy"
+        initialScope={{ kind: 'provider', provider: 'opencode' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('No price for 2 of 3 turns, so a cap cannot include them'),
+    ).toBeDefined();
+  });
+
   it('filters telemetry with the header window control', () => {
     state.sessionTelemetry = {
       'session-1': [

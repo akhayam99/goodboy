@@ -65,11 +65,42 @@ describe('coverageTurnCounts', () => {
         record({ id: 'a', provider: 'anthropic', model: 'claude-sonnet-4-6' }),
         record({ id: 'b', provider: 'anthropic', model: 'some-future-model' }),
         record({ id: 'c', provider: 'anthropic', model: 'another-future-model' }),
-        record({ id: 'd', provider: 'opencode', model: 'big-pickle' }),
+        record({ id: 'd', provider: 'opencode', model: 'big-pickle', costUsd: 0 }),
       ]),
     );
 
     expect(counts).toEqual({ total: 4, approximate: 2, unpriced: 1 });
+  });
+
+  it('does not call a turn unpriced when the provider reported its own cost', () => {
+    const entries = buildModelBreakdown([
+      record({
+        id: 'a',
+        provider: 'openrouter',
+        model: 'anthropic/claude-sonnet-4.5',
+        costUsd: 0.4,
+      }),
+      record({
+        id: 'b',
+        provider: 'openrouter',
+        model: 'anthropic/claude-sonnet-4.5',
+        costUsd: 0.6,
+      }),
+    ]);
+
+    expect(entries[0]?.coverage).toBe('measured');
+    expect(coverageTurnCounts(entries)).toEqual({ total: 2, approximate: 0, unpriced: 0 });
+  });
+
+  it('counts only the turns a cap really misses when a model reports cost inconsistently', () => {
+    const entries = buildModelBreakdown([
+      record({ id: 'a', provider: 'opencode', model: 'big-pickle', costUsd: 0.5 }),
+      record({ id: 'b', provider: 'opencode', model: 'big-pickle', costUsd: 0 }),
+      record({ id: 'c', provider: 'opencode', model: 'big-pickle', costUsd: 0 }),
+    ]);
+
+    expect(entries[0]?.coverage).toBe('unpriced');
+    expect(coverageTurnCounts(entries)).toEqual({ total: 3, approximate: 0, unpriced: 2 });
   });
 
   it('reports nothing approximate and nothing unpriced when every model is priced', () => {
