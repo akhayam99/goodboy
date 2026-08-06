@@ -202,6 +202,28 @@ describe('review-prs slice', () => {
     expect(result.error).toBeNull();
   });
 
+  it('reads the integration host so a self-hosted gitlab remote still fetches', async () => {
+    worktreeRemoteUrlSpy.mockResolvedValue('git@code.acme.dev:acme/web.git');
+    const integration = buildGitlabIntegration();
+    gitlabFetchProjectMrsSpy.mockResolvedValue([buildMr({ iid: 11 })]);
+    const { slice, getState } = buildHarness({
+      workspaceIntegrations: {
+        [WS_ID]: [
+          { ...integration, config: { ...integration.config, host: 'https://code.acme.dev' } },
+        ],
+      },
+    });
+
+    await slice.refreshReviewPrs(WS_ID);
+
+    expect(gitlabFetchProjectMrsSpy).toHaveBeenCalledWith(
+      WS_ID,
+      'https://code.acme.dev',
+      'acme/web',
+    );
+    expect(selectReviewPrs(WS_ID)(getState()).items.map((p) => p.id)).toEqual(['gitlab:11']);
+  });
+
   it('keeps github results when the gitlab provider fails', async () => {
     detectRepoSlugSpy.mockResolvedValue('org/repo');
     listOpenPrsForRepoSpy.mockResolvedValue([buildRepoPr({ number: 7 })]);

@@ -42,6 +42,21 @@ describe('CodeHostStep', () => {
     expect(screen.getByRole('heading', { name: /connect a code host/i })).toBeDefined();
   });
 
+  it('never tells the user the hosts are mutually exclusive', () => {
+    render(
+      <CodeHostStep
+        workspaceId={WS_ID}
+        githubConnected={false}
+        gitlabConnected={false}
+        bitbucketConnected={false}
+        onConnected={vi.fn()}
+      />,
+    );
+
+    expect(document.body.textContent).toContain('Connect as many as you use');
+    expect(document.body.textContent).not.toContain('only use one at a time');
+  });
+
   describe('with a workspace', () => {
     it('renders only the GitHub form by default', () => {
       render(

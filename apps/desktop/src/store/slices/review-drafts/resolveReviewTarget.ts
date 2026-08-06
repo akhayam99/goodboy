@@ -1,6 +1,6 @@
 import type { ReviewablePrProvider, SessionExternalTask, SessionId } from '@goodboy/types';
 import { PROVIDER_PRIORITY } from '../../../features/session/components/SessionWorkspace/parts/resolvePullRequestProvider';
-import type { GetFn } from './types';
+import type { AppState } from '../../types';
 
 export type ReviewTarget = {
   readonly provider: ReviewablePrProvider;
@@ -69,10 +69,10 @@ const byProviderThenNumber = (left: ReviewTarget, right: ReviewTarget): number =
 
 type FromTasksParams = {
   readonly tasks: ReadonlyArray<SessionExternalTask>;
-  readonly discoveredPrKeys?: ReadonlySet<string>;
+  readonly discoveredPrKeys: ReadonlySet<string>;
 };
 
-export const reviewTargetFromTasks = ({
+const reviewTargetFromTasks = ({
   tasks,
   discoveredPrKeys,
 }: FromTasksParams): ReviewTarget | null => {
@@ -83,31 +83,34 @@ export const reviewTargetFromTasks = ({
       return target == null ? [] : [target];
     })
     .sort(byProviderThenNumber);
-  const discovered = candidates.find(
-    (candidate) => discoveredPrKeys?.has(reviewPrKey(candidate)) === true,
-  );
+  const discovered = candidates.find((candidate) => discoveredPrKeys.has(reviewPrKey(candidate)));
   return discovered ?? candidates[0] ?? null;
 };
 
+export type ReviewTargetState = Pick<
+  AppState,
+  'sessionExternalTasks' | 'sessionGithubPrs' | 'sessionGitlabMr'
+>;
+
 type Params = {
-  readonly get: GetFn;
+  readonly state: ReviewTargetState;
   readonly sessionId: SessionId;
 };
 
-const discoveredPrKeysForSession = ({ get, sessionId }: Params): ReadonlySet<string> => {
+const discoveredPrKeysForSession = ({ state, sessionId }: Params): ReadonlySet<string> => {
   const keys = new Set<string>();
-  for (const pr of get().sessionGithubPrs?.[sessionId] ?? []) {
+  for (const pr of state.sessionGithubPrs[sessionId] ?? []) {
     keys.add(reviewPrKey({ provider: 'github', prNumber: pr.number }));
   }
-  const mergeRequest = get().sessionGitlabMr?.[sessionId]?.mr ?? null;
+  const mergeRequest = state.sessionGitlabMr[sessionId]?.mr ?? null;
   if (mergeRequest != null) {
     keys.add(reviewPrKey({ provider: 'gitlab', prNumber: mergeRequest.iid }));
   }
   return keys;
 };
 
-export const resolveReviewTarget = ({ get, sessionId }: Params): ReviewTarget | null =>
+export const resolveReviewTarget = ({ state, sessionId }: Params): ReviewTarget | null =>
   reviewTargetFromTasks({
-    tasks: get().sessionExternalTasks?.[sessionId] ?? [],
-    discoveredPrKeys: discoveredPrKeysForSession({ get, sessionId }),
+    tasks: state.sessionExternalTasks[sessionId] ?? [],
+    discoveredPrKeys: discoveredPrKeysForSession({ state, sessionId }),
   });

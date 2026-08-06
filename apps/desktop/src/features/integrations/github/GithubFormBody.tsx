@@ -5,6 +5,7 @@ import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
 import { formatError } from '../../../shared/lib/errors';
 import { CreateTokenLink } from './CreateTokenLink';
+import { notifyGithubConnectionChanged } from './useGithubConnection';
 
 type Props = {
   workspaceId: WorkspaceId;
@@ -37,6 +38,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
       await ghSetToken(token.trim(), workspaceId);
       setToken('');
       await refresh();
+      notifyGithubConnectionChanged();
       onConnected?.();
     } catch (err) {
       setError(formatError(err));
@@ -51,6 +53,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
     try {
       await ghClearToken(workspaceId);
       await refresh();
+      notifyGithubConnectionChanged();
     } catch (err) {
       setError(formatError(err));
     } finally {

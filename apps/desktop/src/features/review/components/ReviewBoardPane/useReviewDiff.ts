@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { FileDiff, GitlabWorkspaceIntegration, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import {
-  reviewTargetFromTasks,
+  resolveReviewTarget,
   type ReviewTarget,
 } from '../../../../store/slices/review-drafts/resolveReviewTarget';
 import { ghPrDiff } from '../../../github/github';
@@ -26,7 +26,7 @@ type Result = {
 
 export const useReviewDiff = ({ session }: Params): Result => {
   const sessionId = session.id as SessionId;
-  const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
+  const target = useAppStore(useShallow((state) => resolveReviewTarget({ state, sessionId })));
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === session.workspaceId) ?? null,
   );
@@ -42,8 +42,6 @@ export const useReviewDiff = ({ session }: Params): Result => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
-
-  const target = useMemo(() => reviewTargetFromTasks({ tasks: externalTasks }), [externalTasks]);
 
   useEffect(() => {
     if (target == null || workspace == null || repo == null) {

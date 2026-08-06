@@ -161,7 +161,7 @@ export const GitHubStudio = ({
           <div className="flex min-h-0 flex-1 items-center justify-center p-5">
             <GithubConnectionEmptyState
               workspaceId={workspaceId}
-              hasGithubRemote={hasGithubRemote}
+              isConnected={isGithubConnected}
               onConnected={() => void githubConnection.refresh()}
               shouldAutoFocus
               wrapped={false}

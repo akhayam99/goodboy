@@ -68,6 +68,14 @@ describe('GithubPanel', () => {
     expect(state.setGithubPat).toHaveBeenCalledWith('ghp_token');
   });
 
+  it('describes where the token goes without claiming it stays on the machine', () => {
+    state.githubStatus = { available: true, mode: 'absent' };
+    render(<GithubPanel />);
+
+    expect(document.body.textContent).toContain('never touches Goodboy');
+    expect(document.body.textContent).not.toContain('never leaves your machine');
+  });
+
   it('shows connected user info when status is connected', () => {
     state.githubStatus = { available: true, mode: 'connected', user: 'amin' };
     render(<GithubPanel />);

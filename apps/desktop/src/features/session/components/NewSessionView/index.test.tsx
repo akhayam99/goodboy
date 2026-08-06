@@ -8,7 +8,6 @@ import type {
 } from '../../../../store/slices/newSessionDrafts/types';
 
 const h = vi.hoisted(() => ({
-  remoteKind: 'github' as string | null,
   isGithubAuthenticated: true,
   listLocalBranches: vi.fn(async () => []),
   simpleSessionDirExists: vi.fn(async () => false),
@@ -46,10 +45,6 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
-}));
-
-vi.mock('../../../../features/worktree/useWorkspaceRemoteHostKind', () => ({
-  useWorkspaceRemoteHostKind: () => h.remoteKind,
 }));
 
 vi.mock('../../../../features/integrations/github/useGithubConnection', () => ({
@@ -94,7 +89,6 @@ const integration = (provider: 'linear' | 'sentry' | 'gitlab'): WorkspaceIntegra
   }) as WorkspaceIntegration;
 
 beforeEach(() => {
-  h.remoteKind = 'github';
   h.isGithubAuthenticated = true;
   h.store.workspaces[0]!.kind = 'repo';
   h.store.workspaceIntegrations = {};
@@ -412,8 +406,7 @@ describe('NewSessionView issue sources', () => {
     expect(screen.queryByRole('tab', { name: /GitLab/ })).toBeNull();
   });
 
-  it('keeps the GitHub tab on a GitLab remote when a GitHub token is connected', () => {
-    h.remoteKind = 'gitlab';
+  it('keeps the GitHub tab next to GitLab when both hosts are connected', () => {
     h.store.workspaceIntegrations = { [WORKSPACE_ID]: [integration('gitlab')] };
 
     render(

@@ -139,6 +139,8 @@ const buildHarness = (initial: Record<string, unknown>): Harness => {
     workspaces: [{ id: WS_ID, name: 'ws', rootPath: '/tmp/repo' }],
     workspaceIntegrations: {},
     sessionExternalTasks: { [SESSION_ID]: [githubTask] },
+    sessionGithubPrs: {},
+    sessionGitlabMr: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.goodboy/worktrees/review'] },
     sessionBranches: { [SESSION_ID]: 'review' },
     sessionMounts: {},
