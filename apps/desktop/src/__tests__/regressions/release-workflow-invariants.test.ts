@@ -25,12 +25,18 @@ const extractJobBlocks = (content: string): Map<string, string> => {
   return blocks;
 };
 
+const stripComments = (block: string): string =>
+  block
+    .split('\n')
+    .map((line) => line.replace(/(^|\s)#.*$/, '$1'))
+    .join('\n');
+
 const jobBlock = (content: string, name: string): string => {
   const block = extractJobBlocks(content).get(name);
   if (block == null) {
     throw new Error(`release.yml has no top-level "${name}:" job anymore. Update this guard.`);
   }
-  return block;
+  return stripComments(block);
 };
 
 describe('release workflow guardrails', () => {
@@ -69,6 +75,9 @@ describe('release workflow guardrails', () => {
   });
 
   it('serializes the linux job behind macos so it never races the release', () => {
-    expect(/needs:\s*macos/.test(linux), 'linux job must declare needs: macos').toBe(true);
+    expect(
+      /^\s*needs:\s*macos\s*$/m.test(linux),
+      'linux job must declare needs: macos as a real key, not just mention it in prose',
+    ).toBe(true);
   });
 });
