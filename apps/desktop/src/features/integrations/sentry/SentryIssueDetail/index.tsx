@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import type { SegmentedTabOption } from '@goodboy/ui';
+import { Skeleton, type SegmentedTabOption } from '@goodboy/ui';
 import { Footprints, ListTree } from 'lucide-react';
 import type { SentryIssueDetail as Detail } from '../client';
 import {
@@ -9,6 +9,7 @@ import {
   StudioDetailTabs,
 } from '../../../../shared/components/StudioDetail';
 import { resolveDetailFields, sentryIssueFields } from '../../../../shared/detail-fields';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
 import { SentryLevelBadge } from '../SentryLevelBadge';
@@ -32,6 +33,9 @@ type Props = {
   readonly detail: Detail | null;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly summaryIsLoading: boolean;
+  readonly summaryError: string | null;
+  readonly onRetrySummary: () => void;
   readonly headerActions?: ReactNode;
   readonly fit?: Fit;
 };
@@ -50,6 +54,9 @@ export const SentryIssueDetail = ({
   detail,
   isLoading,
   error,
+  summaryIsLoading,
+  summaryError,
+  onRetrySummary,
   headerActions,
   fit = 'fill',
 }: Props) => {
@@ -119,6 +126,23 @@ export const SentryIssueDetail = ({
       }
       properties={resolveDetailFields({ registry: sentryIssueFields, entity: view })}
     >
+      {summaryIsLoading ? (
+        <div
+          role="status"
+          aria-label="Loading Sentry issue details"
+          className="flex flex-col gap-2"
+        >
+          <Skeleton className="h-3 w-1/2 rounded" />
+          <Skeleton className="h-3 w-1/3 rounded" />
+        </div>
+      ) : null}
+      {summaryError != null ? (
+        <ErrorStrip
+          label="the Sentry issue details"
+          error={new Error(summaryError)}
+          onRetry={onRetrySummary}
+        />
+      ) : null}
       {activeSection === 'stack' ? (
         <DetailSection label="stack trace">
           <SentryStackTrace frames={view.frames} isLoading={isLoading} error={error} />
