@@ -176,6 +176,49 @@ describe('reduceTranscript, step_transition', () => {
   });
 });
 
+describe('reduceTranscript, orchestrator_decision', () => {
+  it('carries the operator note through to the transcript item', () => {
+    const event = {
+      kind: 'orchestrator_decision',
+      runId: RUN,
+      action: 'next',
+      reason: 'the gate landed so the tests come next',
+      stepName: 'write the gate tests',
+      operatorNote: 'the gate is in place but its tests are missing',
+      at: AT,
+    } satisfies TurnEvent;
+
+    expect(reduceTranscript([event])).toEqual([
+      {
+        kind: 'orchestrator_decision',
+        key: 'orchestrator-0',
+        action: 'next',
+        reason: event.reason,
+        stepName: event.stepName,
+        operatorNote: event.operatorNote,
+        at: AT,
+      },
+    ]);
+  });
+
+  it('omits the operator note when the decision has none', () => {
+    const event = {
+      kind: 'orchestrator_decision',
+      runId: RUN,
+      action: 'done',
+      reason: 'nothing is left to do',
+      at: AT,
+    } satisfies TurnEvent;
+
+    const item = reduceTranscript([event])[0]!;
+    expect(item.kind).toBe('orchestrator_decision');
+    if (item.kind !== 'orchestrator_decision') {
+      return;
+    }
+    expect(item.operatorNote).toBeUndefined();
+  });
+});
+
 function userTextEvent(text: string): TurnEvent {
   return { kind: 'user_text', runId: RUN, text, at: AT };
 }

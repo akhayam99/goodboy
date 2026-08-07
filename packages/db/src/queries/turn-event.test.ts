@@ -11,7 +11,7 @@ import type { Database } from '../client';
 import { migrate } from '../migrations/runner';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { insertAgent } from './agent';
-import { countUserTextEvents, insertTurnEvent } from './turn-event';
+import { countUserTextEvents, insertTurnEvent, listTurnEventsForAgent } from './turn-event';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
@@ -84,5 +84,30 @@ describe('turn event queries', () => {
 
     await expect(countUserTextEvents({ db, agentId })).resolves.toBe(2);
     await expect(countUserTextEvents({ db, agentId: otherAgentId })).resolves.toBe(1);
+  });
+
+  it('round-trips the operator note stored on an orchestrator decision', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-5',
+      sessionId,
+      agentId,
+      event: {
+        kind: 'orchestrator_decision',
+        runId,
+        action: 'next',
+        reason: 'the tests come next',
+        stepName: 'write the gate tests',
+        operatorNote: 'the gate is in place but its tests are missing',
+        at,
+      },
+    });
+
+    const events = await listTurnEventsForAgent(db, agentId);
+    const decision = events.find((event) => event.kind === 'orchestrator_decision');
+    expect(decision).toBeDefined();
+    if (decision?.kind !== 'orchestrator_decision') {
+      return;
+    }
+    expect(decision.operatorNote).toBe('the gate is in place but its tests are missing');
   });
 });
