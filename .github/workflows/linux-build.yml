@@ -1,0 +1,125 @@
+name: linux build
+
+# release.yml only fires on tags, and a tag build that fails is a failed
+# release that cannot be re-cut. This workflow produces the Linux bundles on a
+# real ubuntu-latest runner before any tag exists, using the same build command
+# the release job runs, so the bundler path is proven on a pull request.
+#
+# Deliberately not a required check: it costs several minutes and guards a leg
+# that changes rarely. It is also deliberately absent from release.yml, which
+# has no workflow_dispatch: no hand-triggered path may mint release assets.
+
+on:
+  pull_request:
+    paths:
+      - 'apps/desktop/src-tauri/**'
+      - '.github/workflows/linux-build.yml'
+      - '.github/workflows/release.yml'
+      - 'pnpm-lock.yaml'
+      - 'apps/desktop/src-tauri/Cargo.lock'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    name: appimage + deb + rpm
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Same list as the release job, plus dpkg-dev for dpkg-shlibdeps, which
+      # is how bundle.linux.deb.depends is derived from the real binary instead
+      # of guessed. libdbus-1-dev and pkg-config are there for the keyring
+      # crate's Secret Service backend (see #1317).
+      - name: install tauri system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev libdbus-1-dev pkg-config patchelf xdg-utils dpkg-dev
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v4
+
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: setup rust
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          toolchain: stable
+
+      - name: cache cargo
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: cargo-linux-bundle-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml') }}
+          restore-keys: |
+            cargo-linux-bundle-
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: build workspace deps
+        run: pnpm turbo run build --filter=@goodboy/desktop^...
+
+      # Identical to the release job's args, invoked directly so the proof runs
+      # the same bundler with the same flags. --no-sign because
+      # bundle.createUpdaterArtifacts is on and no signing key is available here.
+      - name: build bundles
+        run: pnpm --filter @goodboy/desktop exec tauri build --bundles appimage,deb,rpm --no-sign
+
+      - name: list bundles
+        run: |
+          set -euo pipefail
+          find apps/desktop/src-tauri/target/release/bundle -type f \
+            \( -name '*.AppImage' -o -name '*.deb' -o -name '*.rpm' -o -name '*.tar.gz' \) \
+            -printf '%s\t%p\n' | sort -k2
+
+      # Reads the real shared-library dependencies off the binary we just built.
+      # The output of these two commands is the only acceptable source for
+      # bundle.linux.deb.depends in tauri.conf.json.
+      - name: derive deb depends
+        run: |
+          set -euo pipefail
+          binary=apps/desktop/src-tauri/target/release/goodboy-desktop
+          echo "== ldd $binary =="
+          ldd "$binary"
+          echo "== dpkg-shlibdeps -O $binary =="
+          workdir="$(mktemp -d)"
+          mkdir -p "$workdir/debian"
+          printf 'Source: goodboy-desktop\n' > "$workdir/debian/control"
+          (cd "$workdir" && dpkg-shlibdeps -O --ignore-missing-info "$GITHUB_WORKSPACE/$binary")
+          echo "== Depends recorded in the generated deb =="
+          deb="$(find apps/desktop/src-tauri/target/release/bundle/deb -name '*.deb' | head -n1)"
+          dpkg-deb -f "$deb" Depends || echo '(no Depends field)'
+          # ubuntu-latest is 24.04, where the time_t transition renamed some
+          # packages with a t64 suffix, so dpkg-shlibdeps reports the noble
+          # names. The depends list drops that suffix because the t64 packages
+          # declare versioned Provides for the unsuffixed names, which is what
+          # the printout below shows, so the unsuffixed versioned dependencies
+          # resolve. That is the whole reason, and it is not a portability
+          # claim: the derived list pins libc6 (>= 2.39), which already rules
+          # out Debian 12 and Ubuntu 22.04 regardless of these names.
+          for pkg in libglib2.0-0t64 libgtk-3-0t64; do
+            echo "== apt-cache show $pkg | Provides =="
+            apt-cache show "$pkg" | grep -E '^(Package|Version|Provides):' || true
+          done
+
+      - name: upload bundles
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: goodboy-linux-bundles
+          if-no-files-found: error
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+            apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+            apps/desktop/src-tauri/target/release/bundle/rpm/*.rpm

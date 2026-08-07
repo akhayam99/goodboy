@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
+import { formatCombo } from '../../../../shared/keyboard/registry';
 import { ComposerActionRow } from './ComposerActionRow';
+
+const SUBMIT_HINT = formatCombo('cmd+Enter');
 
 type Props = {
   readonly label: string;
@@ -21,7 +24,7 @@ export const LineComposer = ({ label, onSubmit, onCancel }: Props) => {
           autoFocus
           value={body}
           onChange={(event) => setBody(event.target.value)}
-          placeholder="Draft a review comment… (⌘↵ to add)"
+          placeholder={`Draft a review comment… (${SUBMIT_HINT} to add)`}
           aria-label="Draft comment body"
           className="text-xs"
           autoGrow

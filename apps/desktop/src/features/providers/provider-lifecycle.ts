@@ -6,6 +6,7 @@ import {
   type ProviderLifecycleAction,
   type ProviderPlatform,
 } from '@goodboy/types';
+import { currentPlatform } from '../../shared/platform';
 import type { AuthState, ProviderStatus } from './providers';
 
 export type LifecycleOutputPayload = {
@@ -22,20 +23,6 @@ export type LifecycleExitPayload = {
   readonly exitCode: number;
   readonly status: ProviderStatus;
   readonly auth: AuthState;
-};
-
-export const currentPlatform = (): ProviderPlatform => {
-  if (typeof navigator === 'undefined') {
-    return 'linux';
-  }
-  const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes('mac')) {
-    return 'darwin';
-  }
-  if (ua.includes('win')) {
-    return 'win32';
-  }
-  return 'linux';
 };
 
 export const resolveLifecycleCommand = (

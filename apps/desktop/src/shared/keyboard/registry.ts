@@ -1,3 +1,5 @@
+import { currentPlatform } from '../platform';
+
 export type ShortcutPlane = 'app' | 'session' | 'lens';
 
 export type ShortcutEntry = {
@@ -95,7 +97,7 @@ export const RESERVED_COMBOS: ReadonlyArray<string> = [
   'cmd+ArrowDown',
 ];
 
-const GLYPH: Record<string, string> = {
+const MAC_GLYPH: Record<string, string> = {
   cmd: '⌘',
   shift: '⇧',
   alt: '⌥',
@@ -114,9 +116,28 @@ const GLYPH: Record<string, string> = {
   Backquote: '`',
 };
 
-const codeGlyph = (code: string): string => {
-  if (GLYPH[code] != null) {
-    return GLYPH[code];
+const KEY_LABEL: Record<string, string> = {
+  cmd: 'Ctrl',
+  shift: 'Shift',
+  alt: 'Alt',
+  ctrl: 'Ctrl',
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+  Minus: '-',
+  Equal: '=',
+  BracketLeft: '[',
+  BracketRight: ']',
+  Backspace: 'Backspace',
+  Escape: 'Esc',
+  Enter: 'Enter',
+  Space: 'Space',
+  Backquote: '`',
+};
+
+const codeGlyph = ({ code, glyphs }: { code: string; glyphs: Record<string, string> }): string => {
+  if (glyphs[code] != null) {
+    return glyphs[code];
   }
   if (code.startsWith('Key')) {
     return code.slice(3);
@@ -127,12 +148,15 @@ const codeGlyph = (code: string): string => {
   return code;
 };
 
-export const formatCombo = (combo: string): string =>
-  combo
+export const formatCombo = (combo: string): string => {
+  const onMac = currentPlatform() === 'darwin';
+  const glyphs = onMac ? MAC_GLYPH : KEY_LABEL;
+  return combo
     .split('+')
     .map((part, index, parts) =>
-      index === parts.length - 1 ? codeGlyph(part) : (GLYPH[part] ?? part),
+      index === parts.length - 1 ? codeGlyph({ code: part, glyphs }) : (glyphs[part] ?? part),
     )
-    .join('');
+    .join(onMac ? '' : '+');
+};
 
 export const shortcutGlyphs = (id: ShortcutId): string => formatCombo(SHORTCUTS[id].combo);

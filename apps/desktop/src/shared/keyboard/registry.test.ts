@@ -1,7 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
+
+vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
+
 import { RESERVED_COMBOS, SHORTCUTS, formatCombo, shortcutGlyphs } from './registry';
 
 const entries = Object.entries(SHORTCUTS);
+
+afterEach(() => {
+  platform.current = 'darwin';
+});
 
 describe('shortcut registry', () => {
   it('binds every combo exactly once', () => {
@@ -13,7 +22,7 @@ describe('shortcut registry', () => {
     }
   });
 
-  it('never binds a combo macOS or the text field owns', () => {
+  it('never binds a combo macOS reserves, or the text field owns', () => {
     for (const [id, entry] of entries) {
       expect(RESERVED_COMBOS, `${id} binds the reserved ${entry.combo}`).not.toContain(entry.combo);
     }
@@ -40,11 +49,35 @@ describe('shortcut registry', () => {
     }
   });
 
-  it('renders combos as macOS glyphs', () => {
+  it('renders combos as macOS glyphs on darwin', () => {
+    platform.current = 'darwin';
+
     expect(shortcutGlyphs('palette.open')).toBe('⌘K');
     expect(shortcutGlyphs('session.delete')).toBe('⌘⇧⌫');
     expect(shortcutGlyphs('lens.agents')).toBe('⌘⌥A');
     expect(shortcutGlyphs('workspace.1')).toBe('⌘1');
     expect(formatCombo('cmd+BracketLeft')).toBe('⌘[');
+    expect(formatCombo('cmd+Enter')).toBe('⌘↵');
+  });
+
+  it('renders combos as named ctrl keys off darwin', () => {
+    platform.current = 'linux';
+
+    expect(shortcutGlyphs('palette.open')).toBe('Ctrl+K');
+    expect(shortcutGlyphs('session.delete')).toBe('Ctrl+Shift+Backspace');
+    expect(shortcutGlyphs('lens.agents')).toBe('Ctrl+Alt+A');
+    expect(shortcutGlyphs('workspace.1')).toBe('Ctrl+1');
+    expect(formatCombo('cmd+BracketLeft')).toBe('Ctrl+[');
+    expect(formatCombo('cmd+Enter')).toBe('Ctrl+Enter');
+  });
+
+  it('never shows the command glyph off darwin', () => {
+    platform.current = 'linux';
+
+    for (const [id, entry] of entries) {
+      expect(formatCombo(entry.combo), `${id} still renders a macOS glyph`).not.toMatch(
+        /[⌘⌥⇧⌃⌫⎋↵␣]/,
+      );
+    }
   });
 });

@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
+import { formatCombo } from '../../../../../shared/keyboard/registry';
+
+const SUBMIT_HINT = formatCombo('cmd+Enter');
 
 type Props = {
   onSubmit: (body: string) => void;
@@ -20,7 +23,7 @@ export const InlineComposer = ({ onSubmit, onCancel, label }: Props) => {
           autoFocus
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="note for the agent… (⌘↵ to save)"
+          placeholder={`Note for the agent… (${SUBMIT_HINT} to save)`}
           className="text-xs"
           autoGrow
           maxRows={6}
