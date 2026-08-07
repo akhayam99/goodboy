@@ -91,7 +91,7 @@ beforeEach(() => {
   );
 });
 
-const buildState = (set: SetFn): StoreState => ({
+const buildState = (set: SetFn, activeLens: Record<SessionId, string | null>): StoreState => ({
   sessions: [session],
   phaseTemplates: { [WS_ID]: [workflow] },
   sessionPhaseRuns: {},
@@ -103,7 +103,7 @@ const buildState = (set: SetFn): StoreState => ({
   agentProviderOverride: {},
   agentEffortOverride: {},
   focusedWorkflowRunId: {},
-  activeLens: {},
+  activeLens,
   sessionStudio: {},
   selectedAgentId: { [SESSION_ID]: 'agent-elsewhere' },
   diffFocus: {},
@@ -113,11 +113,23 @@ const buildState = (set: SetFn): StoreState => ({
   setActiveLens: setActiveLens(set),
 });
 
-describe('starting a workflow lands on the workflow detail', () => {
-  it('opens the workflows lens on the new run without selecting a step agent', async () => {
+describe('starting a workflow focuses the run without hijacking the lens', () => {
+  it('leaves activeLens untouched when the user is reading a different lens', async () => {
     const state: StoreState = {};
     const { set, get } = harness(state);
-    Object.assign(state, buildState(set), {
+    Object.assign(state, buildState(set, { [SESSION_ID]: 'plans' }), {
+      activateWorkflowAgent: vi.fn(async () => undefined),
+    });
+
+    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID);
+
+    expect((state['activeLens'] as Record<SessionId, string | null>)[SESSION_ID]).toBe('plans');
+  });
+
+  it('still sets focusedWorkflowRunId while leaving a different lens untouched', async () => {
+    const state: StoreState = {};
+    const { set, get } = harness(state);
+    Object.assign(state, buildState(set, { [SESSION_ID]: 'plans' }), {
       activateWorkflowAgent: vi.fn(async () => undefined),
     });
 
@@ -125,6 +137,31 @@ describe('starting a workflow lands on the workflow detail', () => {
 
     const runId = (state['focusedWorkflowRunId'] as Record<SessionId, string | null>)[SESSION_ID];
     expect(runId).not.toBeNull();
+  });
+
+  it('still focuses the new run when already on the workflows lens', async () => {
+    const state: StoreState = {};
+    const { set, get } = harness(state);
+    Object.assign(state, buildState(set, { [SESSION_ID]: 'workflows' }), {
+      activateWorkflowAgent: vi.fn(async () => undefined),
+    });
+
+    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID);
+
+    const runId = (state['focusedWorkflowRunId'] as Record<SessionId, string | null>)[SESSION_ID];
+    expect(runId).not.toBeNull();
+    expect((state['activeLens'] as Record<SessionId, string | null>)[SESSION_ID]).toBe('workflows');
+  });
+
+  it('navigates to the workflows lens when the caller opts in', async () => {
+    const state: StoreState = {};
+    const { set, get } = harness(state);
+    Object.assign(state, buildState(set, { [SESSION_ID]: 'plans' }), {
+      activateWorkflowAgent: vi.fn(async () => undefined),
+    });
+
+    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, { navigate: true });
+
     expect((state['activeLens'] as Record<SessionId, string | null>)[SESSION_ID]).toBe('workflows');
     expect((state['selectedAgentId'] as Record<SessionId, unknown>)[SESSION_ID]).toBeNull();
     expect((state['sessionStudio'] as Record<SessionId, unknown>)[SESSION_ID]).toBeNull();
@@ -134,7 +171,7 @@ describe('starting a workflow lands on the workflow detail', () => {
     const state: StoreState = {};
     const { set, get } = harness(state);
     const activateWorkflowAgent = vi.fn(async () => undefined);
-    Object.assign(state, buildState(set), { activateWorkflowAgent });
+    Object.assign(state, buildState(set, {}), { activateWorkflowAgent });
 
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID);
 
