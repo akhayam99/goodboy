@@ -7,6 +7,54 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.69
+
+When something fails, Goodboy stops leaving you stuck: your message survives a spent budget, a stalled workflow says so where you can see it, and a saved setting stops disappearing.
+
+### [#1292] Send anyway when every budget cap is spent
+
+With every connected provider over its cap, sending did nothing you could recover from. The composer cleared itself before the send ran, the turn was refused, and the message you typed was gone from the composer, the draft and the database alike. The button that offered a way out called the same path that had already refused it, so it did nothing at all.
+
+Your text and its attachments now come back when a send is blocked. A line above the composer says every provider is over its cap and offers Send anyway, which runs that one turn on your preferred provider even though it is over. The attachments of a message that was never sent were also being deleted from disk on the way out; they are kept now.
+
+The same line now shows for the ordinary case too, naming where the next turn is about to go and why when a budget or a disconnected provider moves it. It appears only when routing actually moves or is blocked, and it clears itself the moment that changes.
+
+Follow-up: the forced turn is covered by tests against mocked budget results, and no over-cap turn has yet reached a spawned CLI process.
+
+### [#1294] Pick the fallback model for each agent role
+
+A turn already retried somewhere else when a provider failed, but the choice was a heuristic you could not see or influence. For an authentication failure it was literally the first other connected provider you had.
+
+Agent roles in the providers studio now take a second, optional model under each pinned role: where that role goes first when its primary choice fails. Left alone it reads Automatic and the existing heuristic runs exactly as before, so nothing changes until you set one.
+
+The fallback carries no effort of its own and inherits the one you chose for the role. It applies to agent roles; the task models beside them keep picking automatically. It is set per workspace, not per session. A fallback pointing at a provider you have since disconnected, or at a model the catalogue does not know, is dropped and the heuristic runs instead: it never fails the turn, and it never drags the pinned model down with it.
+
+Follow-up: the routing was exercised against mocked provider failures, so a fallback has not yet moved a turn between two live CLIs.
+
+### [#1293] Report an issue without leaving the app
+
+Filing a bug meant leaving for a browser. Settings now has Report an issue, also reachable from the command palette. It carries the version you are running, an area, a title and your notes, then shows a read-only preview of exactly what will be sent before you send it.
+
+With the GitHub CLI or a token that reaches the repo, it files the issue and hands back the link. Without either, it opens GitHub's own new-issue page with the fields already filled in, rather than asking you to sign in to something new.
+
+Only four things go in: the version, the area, the title and your notes. Nothing else is read from the app, no logs, no session data, no paths. The issue posts publicly under your own GitHub account, and the form says so above the button.
+
+The list of areas is our own choice rather than a settled taxonomy, and it will change as the app does. Screenshots are not supported: a GitHub issue body is markdown text and there is no attachment path that survives it, so the form points you at dragging one onto the issue once it opens.
+
+Follow-up: no issue has been filed from this path against a live GitHub account, so the shape of what the CLI prints back is read defensively rather than assumed.
+
+### [#1291] See a blocked workflow step from the board
+
+A workflow run stuck on a failed step was invisible everywhere except the workflow pane. The board card's action quietly disappeared, the pipeline lane said nothing, and a hands-free run stopped without a word, because the code behind those surfaces could not tell "blocked" apart from "nothing left to do".
+
+The pipeline lane now reads Blocked at the step that failed, the board card offers Skip blocked step with a confirm, and a hands-free run that stops says so once, naming the step. The failed step still shows when an open question or a running summarizer is holding the run as well, so the board, the overview and the workflow pane agree on what happened.
+
+### [#1295] Keep the provider you picked in a routing row
+
+Switching provider inside a routing row's picker could throw the switch away and take the row with it. Picking a new provider fired two updates in one click, the second of them still holding the old provider, and the mismatched pair was refused and the whole saved override for that role deleted. On a role that had gained a fallback, the fallback went too.
+
+Both routing rows now commit the provider you actually picked. A pair the registry refuses is repaired to the model's real owner rather than clearing the row, so a refusal is never answered by deleting what you saved. This also covers connecting a provider from inside the open picker, where the row could not otherwise know which provider the model belonged to.
+
 ## Goodboy v0.1.68
 
 A budget cap now moves work before it is spent, and the cost figures stop claiming to know things they never measured.
