@@ -300,4 +300,48 @@ describe('useStageGroupedSessions', () => {
 
     expect(result.current).toEqual([{ key: 'building', sessions }]);
   });
+
+  it('keeps the same array reference when an unrelated store field changes', () => {
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    const sessions = [createSession(SESSION_ID)];
+
+    const { result, rerender } = renderHook(() => useStageGroupedSessions(WORKSPACE_ID, sessions));
+    const first = result.current;
+
+    store.state.currentSessionId = 'unrelated-session' as SessionId;
+    rerender();
+
+    expect(result.current).toBe(first);
+  });
+
+  it('returns a new reference when a session object is replaced under the same id', () => {
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    let sessions = [createSession(SESSION_ID)];
+
+    const { result, rerender } = renderHook(() => useStageGroupedSessions(WORKSPACE_ID, sessions));
+    const first = result.current;
+
+    sessions = [{ ...createSession(SESSION_ID), goal: 'renamed goal' }];
+    rerender();
+
+    expect(result.current).not.toBe(first);
+    expect(result.current[0]?.sessions[0]?.goal).toBe('renamed goal');
+  });
+
+  it('returns a new reference when a session is added', () => {
+    const otherId = 'session-2' as SessionId;
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing', [otherId]: 'ak/feat-two' };
+    let sessions = [createSession(SESSION_ID)];
+
+    const { result, rerender } = renderHook(() => useStageGroupedSessions(WORKSPACE_ID, sessions));
+    const first = result.current;
+
+    sessions = [...sessions, createSession(otherId)];
+    rerender();
+
+    expect(result.current).not.toBe(first);
+  });
 });

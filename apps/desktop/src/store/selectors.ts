@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { worktreeChangedFiles } from '../features/worktree/worktree';
 import {
@@ -200,6 +200,34 @@ export const useSortedGroupedSessions = (
   ]);
 };
 
+function groupedSessionsEqual(
+  next: ReadonlyArray<GroupedSessions>,
+  prev: ReadonlyArray<GroupedSessions>,
+): boolean {
+  if (next.length !== prev.length) {
+    return false;
+  }
+  for (let i = 0; i < next.length; i++) {
+    const nextGroup = next[i];
+    const prevGroup = prev[i];
+    if (nextGroup === undefined || prevGroup === undefined) {
+      return false;
+    }
+    if (nextGroup.key !== prevGroup.key) {
+      return false;
+    }
+    if (nextGroup.sessions.length !== prevGroup.sessions.length) {
+      return false;
+    }
+    for (let j = 0; j < nextGroup.sessions.length; j++) {
+      if (nextGroup.sessions[j] !== prevGroup.sessions[j]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 export const useStageGroupedSessions = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
@@ -213,7 +241,8 @@ export const useStageGroupedSessions = (
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const workspaces = useAppStore((s) => s.workspaces);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
-  return useMemo(() => {
+  const previousRef = useRef<ReadonlyArray<GroupedSessions> | null>(null);
+  const grouped = useMemo(() => {
     const partial: StageInfoState = {
       workspaces,
       sessionBranches,
@@ -246,6 +275,11 @@ export const useStageGroupedSessions = (
     selectedAgentId,
     currentSessionId,
   ]);
+  if (previousRef.current !== null && groupedSessionsEqual(grouped, previousRef.current)) {
+    return previousRef.current;
+  }
+  previousRef.current = grouped;
+  return grouped;
 };
 
 export type WorkspaceRollup = {
