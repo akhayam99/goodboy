@@ -4,5 +4,6 @@ export type LaneAdvance = {
   readonly workflow: Workflow;
   readonly runs: ReadonlyArray<Agent>;
   readonly hasOpenQuestions: boolean;
+  readonly isSummarizerRunning: boolean;
   readonly onAdvance: (step: Step) => void | Promise<void>;
 };
