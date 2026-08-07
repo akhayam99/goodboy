@@ -61,6 +61,7 @@ export type TranscriptItem =
       action: 'next' | 'done' | 'blocked';
       reason: string;
       stepName?: string;
+      operatorNote?: string;
       at: IsoDateTime;
     }
   | {
@@ -286,6 +287,8 @@ export const reduceTranscript = (
           action: event.action,
           reason: event.reason,
           ...(event.stepName != null && { stepName: event.stepName }),
+          ...(event.operatorNote != null &&
+            event.operatorNote !== '' && { operatorNote: event.operatorNote }),
           at: event.at,
         });
         break;

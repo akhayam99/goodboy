@@ -836,6 +836,173 @@ describe('orchestrateNextStep', () => {
     );
   });
 
+  it('records the note on the decision it triggered, not only in the prompt', async () => {
+    decideSpy.mockResolvedValueOnce({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'The tests come next.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Write the missing tests.',
+        },
+      },
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
+      extraHints: '  the gate is in place but its tests are missing  ',
+    });
+
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      'agent-2',
+      SESSION_ID,
+      expect.objectContaining({
+        kind: 'orchestrator_decision',
+        operatorNote: 'the gate is in place but its tests are missing',
+      }),
+    );
+  });
+
+  it('records the note on a terminal decision too', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
+      extraHints: 'ship the changelog as well',
+    });
+
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({
+        kind: 'orchestrator_decision',
+        action: 'done',
+        operatorNote: 'ship the changelog as well',
+      }),
+    );
+  });
+
+  it('leaves the note off a decision the operator did not write one for', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const appended = state['appendTurnEvent'] as ReturnType<typeof vi.fn>;
+    expect(appended.mock.calls[0]![2]).not.toHaveProperty('operatorNote');
+  });
+
+  it('carries the note from the continue drawer all the way onto the decision', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+    state['orchestrateNextStep'] = orchestrateNextStep(set, get);
+
+    await continueWorkflowRun(set, get)(SESSION_ID, WORKFLOW_RUN_ID, '  say what is missing  ');
+
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({
+        kind: 'orchestrator_decision',
+        operatorNote: 'say what is missing',
+      }),
+    );
+  });
+
+  it('records the note on the hard cap block, not only in the prompt', async () => {
+    const state = baseState();
+    const template = state['phaseTemplates'] as Record<string, ReadonlyArray<Workflow>>;
+    const base = template[WORKSPACE_ID]![0]!;
+    const capped: Workflow = {
+      ...base,
+      steps: Array.from({ length: ORCHESTRATOR_STEP_HARD_CAP }, (_, index) => ({
+        ...base.steps[0]!,
+        id: `step-${index}` as StepId,
+        ordinal: index,
+        name: `Step ${index}`,
+      })),
+    };
+    state['phaseTemplates'] = { [WORKSPACE_ID]: [capped] };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
+      extraHints: 'watch for the hard cap',
+    });
+
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({
+        kind: 'orchestrator_decision',
+        action: 'blocked',
+        operatorNote: 'watch for the hard cap',
+      }),
+    );
+  });
+
+  it('records the note on a provider failure block, not only in the prompt', async () => {
+    decideSpy.mockRejectedValueOnce(new Error('orchestrator decision timed out'));
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
+      extraHints: 'this was already flaky yesterday',
+    });
+
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({
+        kind: 'orchestrator_decision',
+        action: 'blocked',
+        operatorNote: 'this was already flaky yesterday',
+      }),
+    );
+  });
+
+  it('records the note on an unparseable-reply block, not only in the prompt', async () => {
+    decideSpy.mockResolvedValueOnce({
+      decision: null,
+      usage: BILLED_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, {
+      extraHints: 'retry with more context',
+    });
+
+    expect(state['appendTurnEvent']).toHaveBeenCalledWith(
+      AGENT_ID,
+      SESSION_ID,
+      expect.objectContaining({
+        kind: 'orchestrator_decision',
+        action: 'blocked',
+        operatorNote: 'retry with more context',
+      }),
+    );
+  });
+
   it('routes the decision through the provider handed by the caller', async () => {
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },
