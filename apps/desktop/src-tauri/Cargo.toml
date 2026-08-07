@@ -12,6 +12,18 @@ rust-version = "1.77.2"
 name = "goodboy_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+default = [
+    "secret-store-apple",
+    "secret-store-secret-service",
+    "secret-store-encrypted-session",
+    "secret-store-windows",
+]
+secret-store-apple = ["keyring/apple-native"]
+secret-store-secret-service = ["keyring/sync-secret-service"]
+secret-store-encrypted-session = ["keyring/crypto-rust"]
+secret-store-windows = ["keyring/windows-native"]
+
 [build-dependencies]
 tauri-build = { version = "2.6.1", features = [] }
 
