@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
-import { Loader2 } from 'lucide-react';
 import { cn } from '../cn';
+import { StatusDot } from './StatusDot';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'warning';
 export type ButtonSize = 'sm' | 'md';
@@ -24,11 +24,6 @@ const variantClasses: Record<ButtonVariant, string> = {
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'h-7 px-2.5 text-xs',
   md: 'h-8 px-3 text-sm',
-};
-
-const spinnerSize: Record<ButtonSize, number> = {
-  sm: 11,
-  md: 13,
 };
 
 export const Button = ({
@@ -57,11 +52,7 @@ export const Button = ({
     >
       {isBusy ? (
         <>
-          <Loader2
-            size={spinnerSize[size]}
-            aria-hidden
-            className="motion-safe:animate-spin opacity-80"
-          />
+          <StatusDot tone="neutral" size={size} pulsing className="bg-current" />
           {busyLabel ?? children}
         </>
       ) : (
