@@ -25,7 +25,8 @@ An app window is a strip, a set of columns, and a pane. Each owns one thing.
 
 Composition, left to right: mascot, collapse toggle (session only), workspace
 identity, crumbs, workspace rollup, vertical divider, then the global control
-cluster (running scripts, notifications, theme, onboarding). Settings and the
+cluster (running scripts, the report control, notifications, theme,
+onboarding). Settings and the
 update control are not here: they moved to the footer's launcher cluster, which
 is where a destination belongs.
 
@@ -34,6 +35,11 @@ a crumb, or a trigger that opens something elsewhere. No editor, no form, no
 list is rendered inline in the strip. `WorkspaceRollupStrip` opens the budget
 studio, `WorkspaceIdentityRow` opens a popover, `SessionStripCrumbs` changes
 the active lens. None of them mutates a record in place.
+
+`ReportIssuePopover` is the one control that takes typing, and the carve-out is
+argued in [DESIGN.md](../DESIGN.md): a bug report is not a record until it is
+filed, its two fields live in the `bugReportDraft` slice, and the popover's
+primary action opens the full form rather than sending anything itself.
 
 Exactly one child carries `flex-1`, the crumb region:
 
@@ -105,14 +111,14 @@ Board button and `SessionActivityBar`.
 
 Current mounts, one each:
 
-| Thing                           | Sole mount                                                     |
-| ------------------------------- | -------------------------------------------------------------- |
-| Workspace identity and switcher | `features/workspace/components/WorkspaceIdentityRow/index.tsx` |
-| Session title (read)            | `features/session/components/SessionStripCrumbs/index.tsx`     |
-| Session title (rename)          | `SessionOverviewPane/HeaderBand.tsx`                           |
-| Collapse the sessions column    | the toggle in `AppTopBar/index.tsx`, plus ⌘B                   |
-| Open app settings               | the launcher in `AppFooter/index.tsx`, plus ⌘, and the palette |
-| Report an issue                 | the button in Settings' App scope panel, and the palette       |
+| Thing                           | Sole mount                                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Workspace identity and switcher | `features/workspace/components/WorkspaceIdentityRow/index.tsx`                                        |
+| Session title (read)            | `features/session/components/SessionStripCrumbs/index.tsx`                                            |
+| Session title (rename)          | `SessionOverviewPane/HeaderBand.tsx`                                                                  |
+| Collapse the sessions column    | the toggle in `AppTopBar/index.tsx`, plus ⌘B                                                          |
+| Open app settings               | the launcher in `AppFooter/index.tsx`, plus ⌘, and the palette                                        |
+| Report an issue                 | the report control in `AppTopBar/index.tsx`, the button in Settings' App scope panel, and the palette |
 
 `WorkspaceIdentityRow` is the trigger and the anchor at once: it holds the
 `triggerRef`, and `WorkspaceSwitcher` mounts as its child when open. The command

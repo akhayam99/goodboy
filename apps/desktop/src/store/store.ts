@@ -161,6 +161,9 @@ import { initialUpdaterState } from './slices/updater/state';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
+import { createBugReportDraftSlice } from './slices/bugReportDraft';
+import { initialBugReportDraftState } from './slices/bugReportDraft/state';
+import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
@@ -190,6 +193,8 @@ export type AppActions = {
   reloadChangelog(): Promise<void>;
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
+  setBugReportDraft(params: SetBugReportDraftParams): void;
+  clearBugReportDraft(): void;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   openWorkspace(id: WorkspaceId, title: string): Promise<void>;
@@ -748,6 +753,7 @@ export type AppStore = AppState & AppActions;
 export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
+  ...initialBugReportDraftState,
   ...createInitialSessionViewState({}),
   workspaces: [],
   workspaceIntegrations: {},
@@ -914,6 +920,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBootSlice(set, get),
   ...createUpdaterSlice(set, get),
   ...createChangelogSlice(set, get),
+  ...createBugReportDraftSlice(set, get),
 }));
 
 export const useResolvedSettings = (sessionId: SessionId | null): ResolvedSettings => {

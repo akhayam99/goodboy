@@ -7,23 +7,25 @@ import type { GhTokenStatus } from '@goodboy/types';
 type GhRunResult = { stdout: string; stderr: string; exitCode: number };
 
 const mocks = vi.hoisted(() => ({
-  githubStatus: null as GhTokenStatus | null,
-  refreshGithubStatus: vi.fn(async () => undefined),
   run: vi.fn<
     (args: ReadonlyArray<string>, opts: Readonly<Record<string, unknown>>) => Promise<GhRunResult>
   >(async () => ({ stdout: '', stderr: '', exitCode: 0 })),
   openUrl: vi.fn<(url: string) => Promise<void>>(async () => undefined),
 }));
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(
-    selector: (state: {
-      githubStatus: GhTokenStatus | null;
-      refreshGithubStatus: typeof mocks.refreshGithubStatus;
-    }) => T,
-  ) =>
-    selector({ githubStatus: mocks.githubStatus, refreshGithubStatus: mocks.refreshGithubStatus }),
-}));
+vi.mock('../../../../store', async () => {
+  const { create } = await import('zustand');
+  const { createBugReportDraftSlice } = await import('../../../../store/slices/bugReportDraft');
+  const { initialBugReportDraftState } =
+    await import('../../../../store/slices/bugReportDraft/state');
+  const useAppStore = create((set, get) => ({
+    ...initialBugReportDraftState,
+    ...createBugReportDraftSlice(set as never, get as never),
+    githubStatus: null,
+    refreshGithubStatus: async () => undefined,
+  }));
+  return { useAppStore };
+});
 
 vi.mock('../../../changelog/hooks/useInstalledVersion', () => ({
   useInstalledVersion: () => '0.1.69',
@@ -38,6 +40,12 @@ vi.mock('../../../../shared/lib/editor', () => ({
 }));
 
 import { ReportIssueStudio } from './index';
+import { useAppStore } from '../../../../store';
+import { initialBugReportDraftState } from '../../../../store/slices/bugReportDraft/state';
+
+const setGithubStatus = (githubStatus: GhTokenStatus | null) => {
+  useAppStore.setState({ githubStatus });
+};
 
 const fillReport = ({ area, title, notes }: { area?: string; title?: string; notes?: string }) => {
   if (area != null) {
@@ -57,8 +65,7 @@ const fillReport = ({ area, title, notes }: { area?: string; title?: string; not
 };
 
 beforeEach(() => {
-  mocks.githubStatus = null;
-  mocks.refreshGithubStatus = vi.fn(async () => undefined);
+  useAppStore.setState({ ...initialBugReportDraftState, githubStatus: null });
   mocks.run.mockReset();
   mocks.run.mockImplementation(async () => ({ stdout: '', stderr: '', exitCode: 0 }));
   mocks.openUrl.mockReset();
@@ -68,7 +75,7 @@ afterEach(cleanup);
 
 describe('ReportIssueStudio', () => {
   it('keeps send disabled until version, area and title are all filled', () => {
-    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    setGithubStatus({ available: true, mode: 'gh-cli' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     const send = () => screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
@@ -82,7 +89,7 @@ describe('ReportIssueStudio', () => {
   });
 
   it('shows exactly the version, area label, title and notes in the preview, nothing else', () => {
-    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    setGithubStatus({ available: true, mode: 'gh-cli' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     fillReport({
@@ -94,14 +101,14 @@ describe('ReportIssueStudio', () => {
     expect(screen.getByText('Agent reply is cut off')).toBeDefined();
     expect(
       screen.getByText(
-        'Area: Chat and agents\nVersion: 0.1.69\n\nThe reply stops mid-sentence after a tool call.',
+        'Type: Bug\nArea: Chat and agents\nVersion: 0.1.69\n\nThe reply stops mid-sentence after a tool call.',
         { normalizer: (text) => text },
       ),
     ).toBeDefined();
   });
 
-  it('sends directly through gh when connected, and offers the created issue link', async () => {
-    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+  it('sends directly through gh when connected, and opens the created issue', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
     mocks.run.mockImplementation(async () => ({
       stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
       stderr: '',
@@ -123,15 +130,79 @@ describe('ReportIssueStudio', () => {
         '--title',
         'Board freeze',
         '--body',
-        'Area: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.',
+        'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.',
       ],
       {},
     );
-    expect(screen.getByRole('button', { name: /open on github/i })).toBeDefined();
+    expect(mocks.openUrl).toHaveBeenCalledWith('https://github.com/akhayam99/goodboy/issues/99');
+  });
+
+  it('empties the draft and leaves the form once the issue is filed', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    mocks.run.mockImplementation(async () => ({
+      stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
+      stderr: '',
+      exitCode: 0,
+    }));
+    const onClose = vi.fn();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<ReportIssueStudio onClose={onClose} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(400);
+    });
+    vi.useRealTimers();
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().bugReportDraft).toEqual(
+      initialBugReportDraftState.bugReportDraft,
+    );
+  });
+
+  it('empties the draft and leaves the form once the fallback link opens', async () => {
+    setGithubStatus({ available: false, mode: 'absent' });
+    const onClose = vi.fn();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<ReportIssueStudio onClose={onClose} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open on GitHub' }));
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(400);
+    });
+    vi.useRealTimers();
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().bugReportDraft).toEqual(
+      initialBugReportDraftState.bugReportDraft,
+    );
+  });
+
+  it('keeps the draft when the send fails, so nothing typed is lost', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    mocks.run.mockImplementation(async () => ({
+      stdout: '',
+      stderr: 'HTTP 403: Resource not accessible',
+      exitCode: 1,
+    }));
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+
+    expect(useAppStore.getState().bugReportDraft.description).toBe('Freezes on archive.');
   });
 
   it('surfaces the gh stderr message when the direct send fails', async () => {
-    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    setGithubStatus({ available: true, mode: 'gh-cli' });
     mocks.run.mockImplementation(async () => ({
       stdout: '',
       stderr: 'HTTP 403: Resource not accessible',
@@ -148,7 +219,7 @@ describe('ReportIssueStudio', () => {
   });
 
   it('opens a url the native validator would accept when github is not connected', async () => {
-    mocks.githubStatus = { available: false, mode: 'absent' };
+    setGithubStatus({ available: false, mode: 'absent' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
@@ -164,7 +235,7 @@ describe('ReportIssueStudio', () => {
   });
 
   it('truncates an overlong note visibly on the fallback path', async () => {
-    mocks.githubStatus = { available: false, mode: 'absent' };
+    setGithubStatus({ available: false, mode: 'absent' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     const longNotes = 'x'.repeat(6000);
@@ -182,7 +253,7 @@ describe('ReportIssueStudio', () => {
   });
 
   it('trims an overlong title, says so, and still opens a url under the cap', async () => {
-    mocks.githubStatus = { available: false, mode: 'absent' };
+    setGithubStatus({ available: false, mode: 'absent' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     fillReport({ area: 'board-sessions', title: 'T'.repeat(5000), notes: 'Freezes on archive.' });
@@ -190,9 +261,12 @@ describe('ReportIssueStudio', () => {
     expect(screen.getByText(/title trimmed to fit the github link/i)).toBeDefined();
     expect(screen.getByText(/^T+…$/)).toBeDefined();
     expect(
-      screen.getByText('Area: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.', {
-        normalizer: (text) => text,
-      }),
+      screen.getByText(
+        'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.',
+        {
+          normalizer: (text) => text,
+        },
+      ),
     ).toBeDefined();
 
     await act(async () => {
@@ -206,7 +280,7 @@ describe('ReportIssueStudio', () => {
   });
 
   it('renders a lone surrogate in the notes instead of crashing, on the fallback path', () => {
-    mocks.githubStatus = { available: false, mode: 'absent' };
+    setGithubStatus({ available: false, mode: 'absent' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'a\uD83D b' });
@@ -215,7 +289,7 @@ describe('ReportIssueStudio', () => {
   });
 
   it('renders a lone surrogate in the notes instead of crashing, on the direct path', () => {
-    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    setGithubStatus({ available: true, mode: 'gh-cli' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'a\uD83D b' });
@@ -224,14 +298,14 @@ describe('ReportIssueStudio', () => {
   });
 
   it('names the CLI login only when the CLI is what sends it', () => {
-    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    setGithubStatus({ available: true, mode: 'gh-cli' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     expect(screen.getByText('Sent directly, using your GitHub CLI login.')).toBeDefined();
   });
 
   it('says token, not CLI login, when a personal access token is what sends it', () => {
-    mocks.githubStatus = { available: true, mode: 'pat' };
+    setGithubStatus({ available: true, mode: 'pat' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     expect(screen.getByText('Sent directly, using your GitHub token.')).toBeDefined();
@@ -240,7 +314,7 @@ describe('ReportIssueStudio', () => {
   });
 
   it('never claims a CLI login in the truncation notice', () => {
-    mocks.githubStatus = { available: false, mode: 'absent' };
+    setGithubStatus({ available: false, mode: 'absent' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'x'.repeat(6000) });
@@ -250,7 +324,7 @@ describe('ReportIssueStudio', () => {
   });
 
   it('discloses that the report is posted publicly under the reporter account', () => {
-    mocks.githubStatus = { available: true, mode: 'gh-cli' };
+    setGithubStatus({ available: true, mode: 'gh-cli' });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
     expect(

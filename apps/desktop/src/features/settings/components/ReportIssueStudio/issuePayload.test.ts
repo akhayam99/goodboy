@@ -14,14 +14,15 @@ const decode = (url: string): { title: string; body: string } => {
 };
 
 describe('buildIssueBody', () => {
-  it('contains only the version, area label and notes', () => {
+  it('contains only the type, version, area label and notes', () => {
     const body = buildIssueBody({
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'The board freezes after archiving a session.',
     });
     expect(body).toBe(
-      'Area: Board and sessions\nVersion: 0.1.69\n\nThe board freezes after archiving a session.',
+      'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nThe board freezes after archiving a session.',
     );
   });
 });
@@ -30,6 +31,7 @@ describe('buildFallbackIssue', () => {
   it('does not truncate short notes', () => {
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'Short repro.',
@@ -43,6 +45,7 @@ describe('buildFallbackIssue', () => {
   it('targets the fixed repo and percent-encodes title and body', () => {
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'Steps & details',
@@ -55,6 +58,7 @@ describe('buildFallbackIssue', () => {
   it('encodes exactly the previewed title and body into an untruncated url', () => {
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'Steps & details, with a "quote" and a #hash.',
@@ -66,6 +70,7 @@ describe('buildFallbackIssue', () => {
   it('encodes exactly the previewed title and body into a truncated url too', () => {
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'x'.repeat(6000),
@@ -78,6 +83,7 @@ describe('buildFallbackIssue', () => {
     const longNotes = 'x'.repeat(6000);
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: longNotes,
@@ -93,6 +99,7 @@ describe('buildFallbackIssue', () => {
     const longNotes = '🐛'.repeat(2000);
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: longNotes,
@@ -104,6 +111,7 @@ describe('buildFallbackIssue', () => {
   it('caps a title that blows the URL on its own, and keeps the notes intact', () => {
     const result = buildFallbackIssue({
       title: 'T'.repeat(5000),
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'short',
@@ -119,6 +127,7 @@ describe('buildFallbackIssue', () => {
   it('caps a wide unicode title too', () => {
     const result = buildFallbackIssue({
       title: '🐛'.repeat(2000),
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'short',
@@ -131,6 +140,7 @@ describe('buildFallbackIssue', () => {
   it('caps both the title and the notes when both are overlong', () => {
     const result = buildFallbackIssue({
       title: 'T'.repeat(5000),
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'x'.repeat(6000),
@@ -148,6 +158,7 @@ describe('buildFallbackIssue', () => {
         !isOpenableUrl(
           buildFallbackIssue({
             title: 'T'.repeat(length),
+            typeLabel: 'Bug',
             version: '0.1.69',
             areaLabel: 'Board and sessions',
             notes: 'Freezes on archive.',
@@ -160,6 +171,7 @@ describe('buildFallbackIssue', () => {
   it('replaces a lone surrogate in the notes instead of throwing', () => {
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'a\uD83D b',
@@ -171,6 +183,7 @@ describe('buildFallbackIssue', () => {
   it('replaces a lone surrogate in the title instead of throwing', () => {
     const result = buildFallbackIssue({
       title: 'Board\uDC00freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'Freezes on archive.',
@@ -182,6 +195,7 @@ describe('buildFallbackIssue', () => {
   it('leaves a valid surrogate pair alone', () => {
     const result = buildFallbackIssue({
       title: 'Board freeze 🐛',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'Freezes on archive 🐛',
@@ -193,6 +207,7 @@ describe('buildFallbackIssue', () => {
   it('survives a long note that ends on a lone high surrogate', () => {
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: `${'x'.repeat(6000)}\uD83D`,
@@ -226,6 +241,7 @@ describe('isOpenableUrl', () => {
   it('accepts every fallback url this module can produce', () => {
     const result = buildFallbackIssue({
       title: 'Board freeze',
+      typeLabel: 'Bug',
       version: '0.1.69',
       areaLabel: 'Board and sessions',
       notes: 'x'.repeat(6000),
