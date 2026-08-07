@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState, type RefObject } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { formatError } from '../../../../../shared/lib/errors';
-import { WORKSPACE_FEATURES } from '../../../../../shared/lib/features';
-import type { ToastKind } from '../../../../../app/components/Toast';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
+import { formatError } from '../../../../../../shared/lib/errors';
+import { WORKSPACE_FEATURES } from '../../../../../../shared/lib/features';
+import type { ToastKind } from '../../../../../../app/components/Toast';
 import {
   QuickActionsPopover,
   buildAgentActions,
@@ -13,8 +13,8 @@ import {
   buildWorkflowActions,
   parseQuery,
   type QuickActionItem,
-} from '../../../../quick-actions';
-import { CHAT_PREFIX_RE } from '../lib';
+} from '../../../../../quick-actions';
+import { CHAT_PREFIX_RE } from '../../lib';
 
 export { QuickActionsPopover };
 

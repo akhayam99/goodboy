@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
   activateNextResolver: vi.fn(() => Promise.resolve()),
   upsertSessionSlot: vi.fn(() => Promise.resolve()),
   mergePr: vi.fn(() => Promise.resolve()),
+  attachWorkflowToSession: vi.fn(() => Promise.resolve()),
   createSession: vi.fn(
     async (input: { workspaceId: string; goal: string }) =>
       ({ session: { id: 'new-session-1', goal: input.goal }, worktree: {} }) as unknown,
@@ -168,6 +169,7 @@ function makeStore(over: Record<string, unknown> = {}) {
     upsertSessionSlot: h.upsertSessionSlot,
     mergePr: h.mergePr,
     createSession: h.createSession,
+    attachWorkflowToSession: h.attachWorkflowToSession,
     ...over,
   };
 }
@@ -1005,5 +1007,24 @@ describe('createSessionFromIssue (security-gated write)', () => {
       );
       expect(res.ok).toBe(true);
     }
+  });
+});
+
+describe('spawnWorkflow (mobile companion bridge)', () => {
+  it('attaches in the background with navigate: false so it never yanks a desktop viewer', async () => {
+    h.state.value = makeStore({
+      phaseTemplates: { w1: [{ id: 'wf-a' }] },
+    });
+
+    const res = await executeBridgeCommand(
+      cmd('spawnWorkflow', { sessionId: 's1', workflowId: 'wf-a' }),
+    );
+
+    expect(res.ok).toBe(true);
+    expect(h.attachWorkflowToSession).toHaveBeenCalledWith('s1', 'wf-a', {
+      autoRun: false,
+      triggerMode: 'manual',
+      navigate: false,
+    });
   });
 });
