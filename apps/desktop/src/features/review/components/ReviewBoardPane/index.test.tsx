@@ -124,6 +124,7 @@ beforeEach(() => {
   });
   h.state.setAgentDraft.mockClear();
   h.showToast.mockClear();
+  h.diff.refresh.mockClear();
   localStorage.clear();
 });
 

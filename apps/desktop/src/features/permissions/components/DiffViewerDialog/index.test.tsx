@@ -167,6 +167,38 @@ describe('DiffViewerDialog', () => {
     render(<DiffViewerDialog open onClose={vi.fn()} />);
     expect(screen.getByRole('button', { name: /^close$/i })).toBeDefined();
   });
+
+  it('renders a load failure as an alert strip with a retry action', async () => {
+    const loader = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    render(<DiffViewerDialog open loader={loader} onClose={vi.fn()} />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('boom');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+  });
+
+  it('refetches the diff when the retry action is clicked', async () => {
+    let attempt = 0;
+    const loader = vi.fn(async () => {
+      attempt += 1;
+      if (attempt === 1) {
+        throw new Error('boom');
+      }
+      return '';
+    });
+    fixtures.files = fileFixture();
+    render(<DiffViewerDialog open loader={loader} onClose={vi.fn()} />);
+
+    await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => {
+      expect(loader).toHaveBeenCalledTimes(2);
+    });
+    expect(await screen.findByText('alpha')).toBeDefined();
+  });
 });
 
 describe('DiffViewerPane', () => {
