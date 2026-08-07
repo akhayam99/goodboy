@@ -124,7 +124,7 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
       <div className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-col gap-6">
           <section id="appearance" ref={anchor('appearance')} className="flex flex-col gap-4">
-            <SectionHeader label="Appearance" hint="How the app looks on this Mac." />
+            <SectionHeader label="Appearance" hint="How the app looks on this computer." />
             <div className="flex flex-col">
               <FieldRow label="Theme" help="Applies to every window.">
                 <Select

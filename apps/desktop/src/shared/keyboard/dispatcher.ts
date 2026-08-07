@@ -1,3 +1,4 @@
+import { currentPlatform } from '../platform';
 import { SHORTCUTS, type ShortcutId } from './registry';
 
 type Parsed = {
@@ -21,10 +22,13 @@ export const parseCombo = (combo: string): Parsed => {
 
 export const eventMatches = (event: KeyboardEvent, combo: string): boolean => {
   const parsed = parseCombo(combo);
+  const onMac = currentPlatform() === 'darwin';
+  const wantsMeta = onMac ? parsed.meta : false;
+  const wantsCtrl = onMac ? parsed.ctrl : parsed.ctrl || parsed.meta;
   return (
     event.code === parsed.code &&
-    event.metaKey === parsed.meta &&
-    event.ctrlKey === parsed.ctrl &&
+    event.metaKey === wantsMeta &&
+    event.ctrlKey === wantsCtrl &&
     event.shiftKey === parsed.shift &&
     event.altKey === parsed.alt
   );
