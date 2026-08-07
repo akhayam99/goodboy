@@ -90,12 +90,22 @@ machine's writing.
 
 ## From issue to work
 
-- Accepted items land in `~/.goodboy-autonomous/BACKLOG.md` with the issue
-  number, so the next release captain sees them in Phase 1 with provenance.
+- Accepted items land in `~/.goodboy-autonomous/BACKLOG.md` carrying the
+  fields composition needs: the issue number, the author class (owner or
+  contributor, read from the GitHub record), the priority label, the date
+  accepted, and a skip count that the per-release sweep increments each time
+  a batch passes the item over. The next release captain sees all of it in
+  Phase 1 with provenance.
 - A PR that resolves an issue says `Closes #N`, and the triage sweep comments
   on the issue when the fix ships in a published release, naming the version.
+  When a batch passes over an accepted contributor item, the sweep's
+  follow-up comment says it was considered and what outranked it; the skip
+  count drives the aging promotion in
+  [composition.md](./composition.md).
 - Priorities: a confirmed regression outranks a feature request; a request
-  from the owner outranks a same-sized request from a contributor; neither
+  from the owner outranks a same-sized request from a contributor (the full
+  ordering, including the contributor floor, is
+  [composition.md](./composition.md)); neither
   outranks a stop condition or the safety file.
 
 ## Floods and rate limits

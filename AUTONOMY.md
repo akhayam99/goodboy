@@ -5,9 +5,11 @@ an autonomous delivery organization made of agents; a human reviews after, not
 before. This hub holds the model and the floor. The deep dives live in the
 [autonomy cluster](./docs/autonomy.md): [roles](./docs/autonomy/roles.md),
 [safety](./docs/autonomy/safety.md),
+[composition](./docs/autonomy/composition.md),
 [release loop](./docs/autonomy/release-loop.md),
 [issue triage](./docs/autonomy/issue-triage.md),
-[watchdogs](./docs/autonomy/watchdogs.md).
+[watchdogs](./docs/autonomy/watchdogs.md),
+[infrastructure](./docs/autonomy/infrastructure.md).
 
 ## Control lives in the documentation
 
@@ -28,18 +30,29 @@ Same queue, weighed by the [trust model](./docs/autonomy/safety.md).
 - A **delivery lead** runs an engagement of up to five releases: spawns one
   **release captain** per version, reviews and publishes each draft, keeps
   the ledger, runs the issue loop, watches for stalls. It never reads or
-  writes code.
+  writes code, and it reads verdicts and exceptions from disk, not
+  narratives.
 - A **release captain** owns one version through seven phases (audit, product
   decision, scouting, build, verify, serialized merge, draft), then dies.
   State survives on disk, not in agents.
-- A **product owner** on the strongest reasoning tier decides each release
-  and holds the right of push-back: work ships because it moves something for
-  a real user, never because it is possible. A **challenger** attacks every
-  plan cold, because one strong opinion is not a review.
+- A **product owner** on the strongest reasoning tier composes each release's
+  **batch** per [composition](./docs/autonomy/composition.md): by default
+  60% issue-backed and 40% internal work, owner-tunable in one line, with
+  authors weighed and contributors floored. It holds the right of push-back:
+  work ships because it moves something for a real user, never because it is
+  possible. A **challenger** assumes every plan is bad and attacks it cold,
+  because one strong opinion is not a review.
+- **Builds run concurrently when items share no files; merges never do.**
+  One PR merges, `main`'s own CI goes green, the next merges. The serial
+  merge lane pays for the parallel build lanes.
 - Nothing merges on its author's word: every PR is verified by a **different
-  agent** whose verdict outranks the builder's report and green CI.
+  agent** whose verdict outranks the builder's report and green CI. An
+  irreversible data change gets a second verifier, an owner question before
+  the build, and never merges on silence
+  ([safety](./docs/autonomy/safety.md)).
 - Every open issue gets a decision and a reply every cycle. No issue goes
-  dark.
+  dark, and a mandate nobody answers suspends itself loudly after three
+  written push-backs instead of being re-argued forever.
 
 ## The floor
 
@@ -60,13 +73,16 @@ everything else:
 
 Agents remember nothing between releases; the disk remembers everything.
 State lives outside the repo in `~/.goodboy-autonomous/`: `MANDATES.md`
-(standing direction from the owner), `BACKLOG.md` (what audits surfaced and
-nobody took yet), `LEDGER.md` (one entry per release:
-theme, PRs, verdict, risks), `OWNER_INBOX.md` (push-backs, questions, stop
+(standing direction from the owner, including the composition quota),
+`BACKLOG.md` (what audits surfaced and
+nobody took yet), `LEDGER.md` (one compact entry per release:
+theme, PRs, composition, verdict, risks; full narratives stay in the
+per-release scratch dirs), `OWNER_INBOX.md` (push-backs, questions, stop
 reports). The ledger doubles as the metric: items proposed versus shipped
 versus dropped per cycle (the captain's report records all three) is how the
 loop earns more frequency, per release and over time. The ratio is always
-read alongside `closed-tab`, the value actually shipped: inflating PR counts,
+read alongside `closed-tab` (the reason to open another tool that the
+release removed), the value actually shipped: inflating PR counts,
 splitting one feature into many PRs, or sandbagging proposals to look
 reliable is exactly the failure this metric exists to catch, not a way to
 score on it.
