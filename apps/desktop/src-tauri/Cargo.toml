@@ -21,7 +21,7 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.11.1", features = [] }
 tauri-plugin-log = "2"
-keyring = { version = "3", features = ["apple-native", "linux-native", "windows-native"] }
+keyring = { version = "3", features = ["apple-native", "sync-secret-service", "crypto-rust", "windows-native"] }
 thiserror = "2"
 rusqlite = { version = "0.40", features = ["bundled"] }
 dirs = "6"
