@@ -1,5 +1,5 @@
 import type { AgentId, ProviderId } from '@goodboy/types';
-import { Checkbox, cn } from '@goodboy/ui';
+import { Checkbox, Chip, cn } from '@goodboy/ui';
 import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw, Sparkles } from 'lucide-react';
 import { modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
@@ -62,6 +62,14 @@ export const ResolveCard = ({
             <span className="font-medium text-foreground">{head.author}</span>
             <span className="opacity-50">·</span>
             <span className="min-w-0 truncate font-mono text-2xs">{loc}</span>
+            {head.outdated === true ? (
+              <Chip
+                tone="neutral"
+                size="xs"
+                label="Outdated"
+                title="This comment is anchored to code that later commits changed"
+              />
+            ) : null}
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {link ? <ResolverStateBadge state={resolverBadgeState(link.status)} /> : null}
               {onOpenThread ? (

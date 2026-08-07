@@ -115,7 +115,7 @@ describe('fetchPrDetail', () => {
                     {
                       id: 'PRT_X',
                       isResolved: true,
-                      isOutdated: false,
+                      isOutdated: true,
                       path: 'pkg/a.ts',
                       line: 10,
                       comments: {
@@ -156,6 +156,7 @@ describe('fetchPrDetail', () => {
     const detail = await fetchPrDetail(runner, 'org/repo', 1);
     expect(detail.comments).toHaveLength(2);
     expect(detail.comments.every((c) => c.resolved === true)).toBe(true);
+    expect(detail.comments.every((c) => c.outdated === true)).toBe(true);
     expect(detail.comments[1]!.inReplyToId).toBe('review-1');
   });
 

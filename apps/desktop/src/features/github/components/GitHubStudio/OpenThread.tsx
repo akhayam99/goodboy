@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react';
+import { Chip } from '@goodboy/ui';
 import type { CommentThread } from '../../comment-threads';
 import { isBot } from '../../comment-threads';
 import {
@@ -42,6 +43,14 @@ export const OpenThread = ({ thread, link, onOpenUrl }: Props) => {
         ) : null}
         {link ? (
           <ResolverStateBadge state={resolverBadgeState(link.status)} className="ml-1" />
+        ) : null}
+        {head.outdated === true ? (
+          <Chip
+            tone="neutral"
+            size="xs"
+            label="Outdated"
+            title="This comment is anchored to code that later commits changed"
+          />
         ) : null}
         <button
           type="button"
