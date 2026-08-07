@@ -229,8 +229,8 @@ describe('AppFooter', () => {
     storeState.updaterStatus = 'available';
     render(<AppFooter {...footerProps()} />);
 
-    const beta = screen.getByText('Beta');
-    const row = beta.parentElement;
+    const beta = screen.getByRole('button', { name: 'Beta' });
+    const row = beta.parentElement?.parentElement;
     const cluster = row?.children[2];
     const buttons = Array.from(cluster?.querySelectorAll('button') ?? []).filter(
       (button) => button.closest('dialog') == null,
@@ -261,11 +261,11 @@ describe('AppFooter', () => {
     expect(providers().className).not.toContain('animate-soft-pulse');
   });
 
-  it('lays the row out as three grid regions so the beta chip cannot overlap a cluster', () => {
+  it('lays the row out as three grid regions so the beta badge cannot overlap a cluster', () => {
     render(<AppFooter {...footerProps()} />);
 
-    const beta = screen.getByText('Beta');
-    const row = beta.parentElement;
+    const beta = screen.getByRole('button', { name: 'Beta' });
+    const row = beta.parentElement?.parentElement;
 
     expect(row?.className).toContain('grid');
     expect(row?.className).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]');
