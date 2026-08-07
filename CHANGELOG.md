@@ -7,6 +7,30 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.71
+
+The window comes up while Goodboy looks for your CLIs instead of after, and a phone can now start a session from a Jira issue.
+
+### [#1314] The window opens before Goodboy has found your CLIs
+
+Launching Goodboy used to mean an empty desktop while it worked out which provider CLIs you have. On a machine with all five installed that was about 2.4 seconds of nothing on screen, most of it the login shell Goodboy runs to resolve your `PATH`.
+
+That work now happens in the background, once the window exists, and the five checks run together rather than one after another, which takes them from about 2.0 seconds to about 1.35 seconds. What you see is unchanged: the splash still names the phase it is in, and the provider list still arrives filled in.
+
+Follow-up: the window's place in the order comes from Tauri's own startup, which builds the window before the app's setup hook runs, and the work that moved was measured where it used to sit, though the app has not been launched from a packaged build with the change in it. If a CLI stalls, the window is already up and only the provider list waits.
+
+### [#1312] Start a session from a Jira issue on your phone
+
+The mobile companion could browse issues and start a session from Linear, Sentry and GitLab, but not Jira, so a team running on Jira had nothing to open. Jira now sits with the other three: its issues reach the phone, and a session starts from one with the goal already written. Every check that guards a Linear issue guards a Jira one identically.
+
+Asking the companion for a provider it does not support used to be answered with every issue from every connected provider instead, with no sign the request had been changed. It now refuses by name. GitHub, Slack and Bitbucket stay out on purpose: a GitHub session starts from a pull request, Slack threads are not issues, and Bitbucket has no issue tracking because Atlassian points that at Jira.
+
+Follow-up: the Jira calls reuse the client the desktop issue picker already runs, though no call has gone out to a live Jira workspace from a phone yet. If a shape differs, the phone's issue list leaves Jira out rather than showing an error, and a failed session start comes back as a plain refusal with the real error kept on your machine.
+
+### [#1313] The Beta badge carries a support message
+
+The Beta badge in the footer opens a popover now: Goodboy is free and open source, and one action opens GitHub Sponsors in your browser. The badge still reads Beta.
+
 ## Goodboy v0.1.70
 
 The session tells you the truth about what it holds, and filing a bug no longer costs you the page you were on.
