@@ -13,7 +13,7 @@ const AUTH_TIMEOUT: Duration = Duration::from_secs(5);
 const CODEX_AUTH_TIMEOUT: Duration = Duration::from_secs(8);
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ProviderStatus {
     pub id: String,
     pub binary: String,
@@ -1197,6 +1197,240 @@ mod tests {
             openrouter_credential(&names),
             Some(&"OpenRouter".to_string())
         );
+    }
+
+    fn fake(id: &str) -> ProviderStatus {
+        ProviderStatus {
+            id: id.to_string(),
+            binary: format!("{}-bin", id),
+            available: true,
+            version: Some(format!("{}-1.0", id)),
+            error: None,
+        }
+    }
+
+    const FAKE_DETECTORS: Detectors = Detectors {
+        claude: || fake("anthropic"),
+        cursor: || fake("cursor"),
+        codex: || fake("codex"),
+        gemini: || fake("gemini"),
+        opencode: || fake("opencode"),
+    };
+
+    #[tokio::test]
+    async fn gate_releases_waiters_once_opened() {
+        let (gate, opener) = detection_gate();
+        opener.open();
+        gate.wait().await;
+    }
+
+    #[tokio::test]
+    async fn gate_releases_waiters_when_the_task_panics() {
+        let (gate, opener) = detection_gate();
+        let task = tokio::spawn(async move {
+            let _held = opener;
+            panic!("detection task died");
+        });
+        assert!(task.await.is_err());
+        gate.wait().await;
+    }
+
+    #[tokio::test]
+    async fn gate_releases_waiters_when_the_opener_is_dropped_unused() {
+        let (gate, opener) = detection_gate();
+        drop(opener);
+        gate.wait().await;
+    }
+
+    #[tokio::test]
+    async fn concurrent_detection_routes_every_result_to_its_own_slot() {
+        let detected = detect_all_with(FAKE_DETECTORS).await;
+        assert_eq!(detected.claude.id, "anthropic");
+        assert_eq!(detected.cursor.id, "cursor");
+        assert_eq!(detected.codex.id, "codex");
+        assert_eq!(detected.gemini.id, "gemini");
+        assert_eq!(detected.opencode.id, "opencode");
+        assert_eq!(detected.claude.version.as_deref(), Some("anthropic-1.0"));
+        assert_eq!(detected.opencode.version.as_deref(), Some("opencode-1.0"));
+    }
+
+    #[tokio::test]
+    async fn concurrent_detection_matches_the_serial_result() {
+        let serial = DetectedProviders {
+            claude: (FAKE_DETECTORS.claude)(),
+            cursor: (FAKE_DETECTORS.cursor)(),
+            codex: (FAKE_DETECTORS.codex)(),
+            gemini: (FAKE_DETECTORS.gemini)(),
+            opencode: (FAKE_DETECTORS.opencode)(),
+        };
+        let concurrent = detect_all_with(FAKE_DETECTORS).await;
+        assert_eq!(serial.claude, concurrent.claude);
+        assert_eq!(serial.cursor, concurrent.cursor);
+        assert_eq!(serial.codex, concurrent.codex);
+        assert_eq!(serial.gemini, concurrent.gemini);
+        assert_eq!(serial.opencode, concurrent.opencode);
+    }
+
+    #[tokio::test]
+    async fn a_panicking_detection_still_produces_a_status_for_every_provider() {
+        let detectors = Detectors {
+            codex: || panic!("codex detector blew up"),
+            ..FAKE_DETECTORS
+        };
+        let detected = detect_all_with(detectors).await;
+        assert_eq!(detected.codex.id, "codex");
+        assert_eq!(detected.codex.binary, "codex");
+        assert!(!detected.codex.available);
+        assert!(detected.codex.error.is_some());
+        assert!(detected.claude.available);
+        assert!(detected.opencode.available);
+    }
+
+    #[tokio::test]
+    async fn the_gate_opens_after_a_panicking_detection() {
+        let (gate, opener) = detection_gate();
+        let detectors = Detectors {
+            gemini: || panic!("gemini detector blew up"),
+            ..FAKE_DETECTORS
+        };
+        tokio::spawn(async move {
+            let _ = detect_all_with(detectors).await;
+            opener.open();
+        });
+        gate.wait().await;
+    }
+
+    #[tokio::test]
+    async fn detections_run_concurrently_rather_than_one_after_another() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::sync::{Condvar, Mutex as StdMutex};
+
+        static IN_FLIGHT: StdMutex<usize> = StdMutex::new(0);
+        static ALL_ARRIVED: Condvar = Condvar::new();
+        static PEAK: AtomicUsize = AtomicUsize::new(0);
+
+        fn rendezvous(id: &str) -> ProviderStatus {
+            let deadline = Instant::now() + Duration::from_secs(3);
+            let mut count = IN_FLIGHT.lock().unwrap();
+            *count += 1;
+            PEAK.fetch_max(*count, Ordering::SeqCst);
+            ALL_ARRIVED.notify_all();
+            while *count < 5 {
+                let now = Instant::now();
+                if now >= deadline {
+                    break;
+                }
+                let (next, _) = ALL_ARRIVED.wait_timeout(count, deadline - now).unwrap();
+                count = next;
+                PEAK.fetch_max(*count, Ordering::SeqCst);
+            }
+            *count -= 1;
+            fake(id)
+        }
+
+        let detectors = Detectors {
+            claude: || rendezvous("anthropic"),
+            cursor: || rendezvous("cursor"),
+            codex: || rendezvous("codex"),
+            gemini: || rendezvous("gemini"),
+            opencode: || rendezvous("opencode"),
+        };
+        let _ = detect_all_with(detectors).await;
+        assert_eq!(
+            PEAK.load(Ordering::SeqCst),
+            5,
+            "all five detections must be in flight at the same time"
+        );
+    }
+
+    #[test]
+    fn aliased_rewrites_only_the_id() {
+        let base = ProviderStatus {
+            id: "opencode".to_string(),
+            binary: "opencode".to_string(),
+            available: true,
+            version: Some("1.2.3".to_string()),
+            error: None,
+        };
+        let router = aliased(base.clone(), "openrouter");
+        assert_eq!(router.id, "openrouter");
+        assert_eq!(router.binary, "opencode");
+        assert!(router.available);
+        assert_eq!(router.version.as_deref(), Some("1.2.3"));
+        let moonshot = aliased(base, "moonshot");
+        assert_eq!(moonshot.id, "moonshot");
+        assert_eq!(moonshot.binary, "opencode");
+    }
+
+    #[test]
+    fn initial_status_is_unavailable_without_an_error() {
+        let s = initial_status("anthropic", "claude");
+        assert_eq!(s.id, "anthropic");
+        assert_eq!(s.binary, "claude");
+        assert!(!s.available);
+        assert_eq!(s.version, None);
+        assert_eq!(s.error, None);
+    }
+
+    fn detect_all_serial() -> DetectedProviders {
+        DetectedProviders {
+            claude: detect_claude(),
+            cursor: detect_cursor(),
+            codex: detect_codex(),
+            gemini: detect_gemini(),
+            opencode: detect_opencode(),
+        }
+    }
+
+    fn print_detected(label: &str, detected: &DetectedProviders, elapsed: Duration) {
+        println!("{label} total {:?}", elapsed);
+        for status in [
+            &detected.claude,
+            &detected.cursor,
+            &detected.codex,
+            &detected.gemini,
+            &detected.opencode,
+        ] {
+            println!(
+                "  {:<10} available={} version={:?} error={:?}",
+                status.id, status.available, status.version, status.error
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "timing harness, run one mode per process: cargo test --lib bench_serial_detection -- --ignored --nocapture"]
+    fn bench_serial_detection() {
+        let started = Instant::now();
+        let detected = detect_all_serial();
+        print_detected("serial", &detected, started.elapsed());
+    }
+
+    #[test]
+    #[ignore = "timing harness, run one mode per process: cargo test --lib bench_concurrent_detection -- --ignored --nocapture"]
+    fn bench_concurrent_detection() {
+        let started = Instant::now();
+        let detected = tauri::async_runtime::block_on(detect_all());
+        print_detected("concurrent", &detected, started.elapsed());
+    }
+
+    #[test]
+    #[ignore = "requires the real provider binaries; opt in with --ignored"]
+    fn concurrent_and_serial_detection_agree_on_the_real_binaries() {
+        let serial = detect_all_serial();
+        let concurrent = tauri::async_runtime::block_on(detect_all());
+        for (a, b) in [
+            (&serial.claude, &concurrent.claude),
+            (&serial.cursor, &concurrent.cursor),
+            (&serial.codex, &concurrent.codex),
+            (&serial.gemini, &concurrent.gemini),
+            (&serial.opencode, &concurrent.opencode),
+        ] {
+            assert_eq!(a.id, b.id);
+            assert_eq!(a.binary, b.binary);
+            assert_eq!(a.available, b.available);
+            assert_eq!(a.version, b.version);
+        }
     }
 
     #[test]

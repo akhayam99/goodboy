@@ -21,17 +21,10 @@ type BootSplashProps = {
   phase: BootPhase;
   error: string | null;
   onRetry?: () => void;
-  onSkipProviderDetection?: () => void;
   onFinished?: () => void;
 };
 
-export const BootSplash = ({
-  phase,
-  error,
-  onRetry,
-  onSkipProviderDetection,
-  onFinished,
-}: BootSplashProps) => {
+export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProps) => {
   const hasError = error != null;
   const finishedRef = useRef(false);
 
@@ -49,12 +42,7 @@ export const BootSplash = ({
     return (
       <div className="relative flex h-screen flex-col items-center justify-center gap-10 bg-background text-foreground">
         <BootBrand />
-        <BootErrorRecovery
-          error={error}
-          phase={phase}
-          onRetry={onRetry}
-          onSkipProviderDetection={onSkipProviderDetection}
-        />
+        <BootErrorRecovery error={error} phase={phase} onRetry={onRetry} />
       </div>
     );
   }
@@ -95,15 +83,11 @@ function BootErrorRecovery({
   error,
   phase,
   onRetry,
-  onSkipProviderDetection,
 }: {
   error: string;
   phase: BootPhase;
   onRetry?: () => void;
-  onSkipProviderDetection?: () => void;
 }) {
-  const isDetectingCli = phase === 'detecting-cli' || phase === 'error';
-
   const openIssue = useCallback(() => {
     const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**phase:** ${phase}\n\n**error:**\n\`\`\`\n${error}\n\`\`\``)}`;
     void openUrl(url);
@@ -140,16 +124,6 @@ function BootErrorRecovery({
             className="rounded border border-danger/30 bg-background px-3 py-1.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
           >
             › retry
-          </button>
-        ) : null}
-
-        {isDetectingCli && onSkipProviderDetection ? (
-          <button
-            type="button"
-            onClick={onSkipProviderDetection}
-            className="rounded border border-border px-3 py-1.5 text-muted-foreground motion-safe:transition-colors hover:bg-muted"
-          >
-            › skip provider detection
           </button>
         ) : null}
 
