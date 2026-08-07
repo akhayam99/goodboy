@@ -43,6 +43,7 @@ vi.mock('../../../onboarding/onboarding-store', () => ({
 }));
 
 import { SettingsStudio } from './index';
+import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 beforeEach(() => {
@@ -101,6 +102,17 @@ describe('SettingsStudio', () => {
     expect(
       screen.getByText('Per-workspace overrides live in Workspace settings, Integrations.'),
     ).toBeDefined();
+  });
+
+  it('opens the report issue studio through the shared studio event', () => {
+    const listener = vi.fn();
+    window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
+    render(<SettingsStudio onClose={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /report an issue/i }));
+
+    expect(listener).toHaveBeenCalledOnce();
+    window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
   });
 
   it.each(['editor', 'integrations', 'advanced', 'initialization'])(

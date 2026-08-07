@@ -213,8 +213,12 @@ model, including what the loop is never allowed to do, is in
 ## Help out
 
 Try it. If something breaks, feels weird or is missing, open an issue.
-Half-formed thoughts welcome. Screenshots welcome. "This feels off" is a
-perfectly valid bug report.
+Report it from inside the app (Settings, or "Report an issue" in the command
+palette) or straight on GitHub. The in-app form sends four things: the version
+you are running, the area you pick, your title and your notes. Nothing else.
+It can't attach screenshots yet. Drag one onto the issue once it opens on
+GitHub. Half-formed thoughts welcome. "This feels off" is a perfectly valid
+bug report.
 
 Issues are triaged every release cycle, so you get an answer even when the
 answer is "not yet". A request that clashes with the zero-data rule (tracking,

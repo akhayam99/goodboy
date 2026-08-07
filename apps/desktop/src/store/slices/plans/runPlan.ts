@@ -1,7 +1,8 @@
 import type { AgentId, PlanId, SessionId } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { inferAgentKindFromName, kindConsumesPlan } from '../../../features/session/agent-kind';
-import { pickNextWorkflowStep } from '../../../features/workflows/pickNextWorkflowStep';
+import { resolveWorkflowAdvance } from '../../../features/workflows/advanceGate';
+import { viewWorkflowAdvance } from '../../../features/workflows/workflowAdvanceView';
 import { activateWorkflowAgentOrNotify } from '../workflows/activateWorkflowAgentOrNotify';
 import type { GetFn } from './types';
 
@@ -48,7 +49,15 @@ export const runPlan = (get: GetFn) => {
     }
 
     const runAgents = runsForWorkflowRun(runs, creatorRun.id);
-    const nextStep = pickNextWorkflowStep(template, runAgents);
+    const { chainStep: nextStep } = viewWorkflowAdvance({
+      state: resolveWorkflowAdvance({
+        workflow: template,
+        agents: runAgents,
+        hasOpenQuestions: false,
+        isSummarizerRunning: false,
+        isTurnRunning: false,
+      }),
+    });
     if (!nextStep) {
       return await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,

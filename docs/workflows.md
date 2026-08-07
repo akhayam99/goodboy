@@ -50,6 +50,21 @@ Nothing advances until the gate passes. `resolveWorkflowAdvance` in
 3. `failed-step`: `classifyWorkflowChain` reports the current step failed.
 4. `turn-running`: a step agent is still running.
 
+The reason is the one the user has to act on first, so a run that has both an open
+question and a failed step reads `questions`. The failed step itself is not a reason but a
+fact: `blocked` carries `failedStep` whenever the chain is blocked, whichever reason won,
+so the surfaces that name the failed step keep naming it while a transient gate is up.
+
+Five surfaces ask "what happens next in this run" and all five go through that one
+resolver: the chat CTA, the sidebar workflow row, the pipeline lane in the session
+overview, the stage board card, and `runPlan`. Four of them read the result through
+`viewWorkflowAdvance` (`apps/desktop/src/features/workflows/workflowAdvanceView.ts`), the
+exhaustive read of the four-state union, which splits it into the step a caller may
+target, the step a human may click right now, and the step that failed. The chat CTA is
+the exception: it renders nothing at all under `automatic`, a fact the view does not carry
+because `runPlan` needs the step an automatic run is about to take, so it narrows the
+union itself.
+
 `automatic` is what `auto_run` collapses the summarizer and turn-running cases into: the
 manual advance controls do not render, because automation is about to make that click. An
 open question and a failed step both survive autorun, because automation bails on both:
@@ -66,9 +81,24 @@ asks "Skip the blocked step and start the next agent?" first, then
 
 Hands-free (`auto_run`, per run, falling back to the session) lets
 `maybeAutoAdvanceWorkflow` activate the next pending agent with no click, still bailing
-on open questions, a busy summarizer, and any undismissed budget-exceeded alert.
-`trigger_mode = 'after_run'` holds a run until the one named by `chain_after_run_id`
-completes.
+on open questions, a busy summarizer, and any undismissed budget-exceeded alert. When it
+bails because a step failed it now says so: a `workflow blocked` warning notification
+naming the failed step, the same `error` kind and `warning` severity the dynamic path
+uses for `dynamic workflow blocked`. It says so once per stop, not once per pass:
+`announcedWorkflowBlocks` keys the failed step and the agent that failed on it by run, so
+a live sibling run completing steps does not re-announce a stop that has not changed,
+while a retry of the same step, being a new agent row, does. A quiet pass with nothing
+left to advance stays silent. `trigger_mode = 'after_run'` holds a run until the one named
+by `chain_after_run_id` completes.
+
+A run stuck on a failed step is visible outside the workflow lens too: the pipeline lane
+in the session overview reads `Blocked at <step>`, and the stage board card grows a
+`Skip blocked step` action that swaps itself for a confirm before calling
+`skipStuckStepAndAdvance`. Neither surface passes `isAutoRun` to the resolver. Only the
+chat CTA does, because only the chat CTA lives inside the lens the automation is driving.
+Out on the board and the overview the resolver cannot see the budget stop or a
+non-immediate `trigger_mode`, so it would call a run automatic that will never take
+another step, and the manual control the user needs would go missing.
 
 ## The post-step summarizer
 

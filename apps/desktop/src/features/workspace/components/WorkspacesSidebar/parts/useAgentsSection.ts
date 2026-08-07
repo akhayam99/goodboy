@@ -16,11 +16,11 @@ import {
   useSessionLoading,
   useSessionOpenQuestions,
 } from '../../../../../store';
-import { pickNextWorkflowStep } from '../../../../../features/workflows/pickNextWorkflowStep';
 import {
   resolveWorkflowAdvance,
   type WorkflowBlockReason,
 } from '../../../../../features/workflows/advanceGate';
+import { viewWorkflowAdvance } from '../../../../../features/workflows/workflowAdvanceView';
 import { WORKFLOW_BLOCK_COPY } from '../../../../../features/workflows/blockCopy';
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
 import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
@@ -141,35 +141,29 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     }),
   );
 
-  const actionableStepIdByRunId = useMemo(() => {
-    const map = new Map<string, string | null>();
+  const workflowAdvance = useMemo(() => {
+    const actionableStepIdByRunId = new Map<string, string | null>();
+    const blockReasonByRunId = new Map<string, WorkflowBlockReason | null>();
     for (const { run, workflow } of attachedRuns) {
-      if (run.discardedAt) {
-        map.set(run.id, null);
-        continue;
-      }
       const runAgents = tree.agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
-      map.set(run.id, pickNextWorkflowStep(workflow, runAgents)?.id ?? null);
-    }
-    return map;
-  }, [attachedRuns, tree.agentsByRunId]);
-  const blockReasonByRunId = useMemo(() => {
-    const map = new Map<string, WorkflowBlockReason | null>();
-    for (const { run, workflow } of attachedRuns) {
-      const state = resolveWorkflowAdvance({
-        workflow,
-        agents: tree.agentsByRunId.get(run.id) ?? EMPTY_ARRAY,
-        hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
-        isSummarizerRunning: summarizerBusy,
-        isTurnRunning: (tree.agentsByRunId.get(run.id) ?? EMPTY_ARRAY).some((agent) => {
-          const turn = agentTurnState[agent.id];
-          return turn?.kind === 'running' || turn?.kind === 'starting';
+      const view = viewWorkflowAdvance({
+        state: resolveWorkflowAdvance({
+          workflow,
+          agents: runAgents,
+          hasOpenQuestions: workflowRunHasOpenQuestions(openQuestions, run.id),
+          isSummarizerRunning: summarizerBusy,
+          isTurnRunning: runAgents.some((agent) => {
+            const turn = agentTurnState[agent.id];
+            return turn?.kind === 'running' || turn?.kind === 'starting';
+          }),
         }),
       });
-      map.set(run.id, state.kind === 'blocked' ? state.reason : null);
+      actionableStepIdByRunId.set(run.id, run.discardedAt ? null : (view.chainStep?.id ?? null));
+      blockReasonByRunId.set(run.id, view.blockReason);
     }
-    return map;
+    return { actionableStepIdByRunId, blockReasonByRunId };
   }, [attachedRuns, tree.agentsByRunId, openQuestions, summarizerBusy, agentTurnState]);
+  const { actionableStepIdByRunId, blockReasonByRunId } = workflowAdvance;
 
   const onDiscardWorkflow = useCallback(
     async (runId: WorkflowRunId) => {

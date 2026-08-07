@@ -7,7 +7,12 @@ export type WorkflowAdvanceState =
   | { readonly kind: 'complete' }
   | { readonly kind: 'automatic'; readonly step: Step }
   | { readonly kind: 'ready'; readonly step: Step }
-  | { readonly kind: 'blocked'; readonly reason: WorkflowBlockReason; readonly step: Step };
+  | {
+      readonly kind: 'blocked';
+      readonly reason: WorkflowBlockReason;
+      readonly step: Step;
+      readonly failedStep: Step | null;
+    };
 
 type Params = {
   readonly workflow: Workflow;
@@ -31,20 +36,21 @@ export const resolveWorkflowAdvance = ({
     return { kind: 'complete' };
   }
   const step = chain.kind === 'blocked' ? chain.failedStep : chain.step;
+  const failedStep = chain.kind === 'blocked' ? chain.failedStep : null;
   if (hasOpenQuestions) {
-    return { kind: 'blocked', reason: 'questions', step };
+    return { kind: 'blocked', reason: 'questions', step, failedStep };
   }
   if (isSummarizerRunning && !isAutoRun) {
-    return { kind: 'blocked', reason: 'summarizer', step };
+    return { kind: 'blocked', reason: 'summarizer', step, failedStep };
   }
   if (chain.kind === 'blocked') {
-    return { kind: 'blocked', reason: 'failed-step', step };
+    return { kind: 'blocked', reason: 'failed-step', step, failedStep };
   }
   if (isAutoRun) {
     return { kind: 'automatic', step };
   }
   if (isTurnRunning || agents.some((agent) => agent.status === 'running')) {
-    return { kind: 'blocked', reason: 'turn-running', step };
+    return { kind: 'blocked', reason: 'turn-running', step, failedStep };
   }
   return { kind: 'ready', step };
 };

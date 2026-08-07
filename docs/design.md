@@ -112,6 +112,7 @@ Current mounts, one each:
 | Session title (rename)          | `SessionOverviewPane/HeaderBand.tsx`                           |
 | Collapse the sessions column    | the toggle in `AppTopBar/index.tsx`, plus ⌘B                   |
 | Open app settings               | the launcher in `AppFooter/index.tsx`, plus ⌘, and the palette |
+| Report an issue                 | the button in Settings' App scope panel, and the palette       |
 
 `WorkspaceIdentityRow` is the trigger and the anchor at once: it holds the
 `triggerRef`, and `WorkspaceSwitcher` mounts as its child when open. The command

@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const { githubAuth } = vi.hoisted(() => ({ githubAuth: { isAuthenticated: false } }));
 
@@ -158,6 +158,9 @@ vi.mock('../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: () => <div data-testid="settings-studio" />,
 }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
+vi.mock('../features/settings/components/ReportIssueStudio', () => ({
+  ReportIssueStudio: () => <div data-testid="report-issue-studio" />,
+}));
 vi.mock('../features/workspace/components/WorkspaceSettingsPane', () => ({
   WorkspaceSettingsPane: () => null,
 }));
@@ -251,6 +254,7 @@ vi.mock('../features/github/hooks/useGithubPolling', () => ({ useGithubPolling: 
 vi.mock('../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPolling: vi.fn() }));
 
 import { App } from '../App';
+import { REPORT_ISSUE_STUDIO_EVENT } from '../features/settings/reportIssueStudioEvent';
 
 beforeEach(() => {
   state.workspaceIntegrations = {};
@@ -328,6 +332,32 @@ describe('Provider studio reachability from the command palette', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect a provider' }));
 
     expect(screen.getByTestId('provider-studio')).toBeDefined();
+  });
+});
+
+describe('Report issue studio reachability', () => {
+  it('mounts the studio when the shared open event fires', () => {
+    render(<App />);
+
+    expect(screen.queryByTestId('report-issue-studio')).toBeNull();
+    act(() => {
+      window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
+    });
+
+    expect(screen.getByTestId('report-issue-studio')).toBeDefined();
+  });
+
+  it('closes the settings studio when the report studio takes over', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
+    expect(screen.getByTestId('settings-studio')).toBeDefined();
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
+    });
+
+    expect(screen.queryByTestId('settings-studio')).toBeNull();
+    expect(screen.getByTestId('report-issue-studio')).toBeDefined();
   });
 });
 

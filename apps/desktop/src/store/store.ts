@@ -805,6 +805,7 @@ export const initialState: AppState = {
   sessionWorkflows: {},
   sessionPhaseRuns: {},
   orchestratingWorkflowRuns: {},
+  announcedWorkflowBlocks: {},
   selectedAgentId: {},
   agentRunHistory: {},
   agentTurnState: {},

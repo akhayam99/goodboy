@@ -33,6 +33,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 import { CommandPalette } from './index';
+import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
 
 beforeEach(() => {
   state.skills = {};
@@ -69,5 +70,16 @@ describe('CommandPalette', () => {
     fireEvent.mouseDown(screen.getByText('Connect a provider'));
 
     expect(onOpenProviders).toHaveBeenCalledOnce();
+  });
+
+  it('opens the report issue studio through the shared studio event', () => {
+    const listener = vi.fn();
+    window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
+    render(<CommandPalette onClose={vi.fn()} initialQuery="report an issue" />);
+
+    fireEvent.mouseDown(screen.getByText('Report an issue'));
+
+    expect(listener).toHaveBeenCalledOnce();
+    window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
   });
 });
