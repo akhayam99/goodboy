@@ -3,7 +3,8 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
+use tokio::sync::watch;
 
 use crate::path_env;
 
@@ -30,6 +31,128 @@ pub struct CodexState(pub Mutex<ProviderStatus>);
 pub struct GeminiState(pub Mutex<ProviderStatus>);
 
 pub struct OpencodeState(pub Mutex<ProviderStatus>);
+
+pub struct DetectionGate(watch::Receiver<bool>);
+
+pub struct DetectionGateOpener(watch::Sender<bool>);
+
+pub fn detection_gate() -> (DetectionGate, DetectionGateOpener) {
+    let (tx, rx) = watch::channel(false);
+    (DetectionGate(rx), DetectionGateOpener(tx))
+}
+
+impl DetectionGate {
+    pub async fn wait(&self) {
+        let mut rx = self.0.clone();
+        loop {
+            if *rx.borrow_and_update() {
+                return;
+            }
+            if rx.changed().await.is_err() {
+                return;
+            }
+        }
+    }
+}
+
+impl DetectionGateOpener {
+    pub fn open(self) {
+        let _ = self.0.send(true);
+    }
+}
+
+pub fn initial_status(id: &str, binary: &str) -> ProviderStatus {
+    ProviderStatus {
+        id: id.to_string(),
+        binary: binary.to_string(),
+        available: false,
+        version: None,
+        error: None,
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DetectedProviders {
+    pub claude: ProviderStatus,
+    pub cursor: ProviderStatus,
+    pub codex: ProviderStatus,
+    pub gemini: ProviderStatus,
+    pub opencode: ProviderStatus,
+}
+
+type Detector = fn() -> ProviderStatus;
+
+#[derive(Clone, Copy)]
+struct Detectors {
+    claude: Detector,
+    cursor: Detector,
+    codex: Detector,
+    gemini: Detector,
+    opencode: Detector,
+}
+
+const DEFAULT_DETECTORS: Detectors = Detectors {
+    claude: detect_claude,
+    cursor: detect_cursor,
+    codex: detect_codex,
+    gemini: detect_gemini,
+    opencode: detect_opencode,
+};
+
+async fn detect_isolated(detect: Detector, id: &'static str, binary: &'static str) -> ProviderStatus {
+    tauri::async_runtime::spawn_blocking(detect)
+        .await
+        .unwrap_or_else(|err| ProviderStatus {
+            id: id.to_string(),
+            binary: binary.to_string(),
+            available: false,
+            version: None,
+            error: Some(err.to_string()),
+        })
+}
+
+async fn detect_all_with(detectors: Detectors) -> DetectedProviders {
+    let (claude, cursor, codex, gemini, opencode) = tokio::join!(
+        detect_isolated(detectors.claude, "anthropic", "claude"),
+        detect_isolated(detectors.cursor, "cursor", "cursor-agent"),
+        detect_isolated(detectors.codex, "codex", "codex"),
+        detect_isolated(detectors.gemini, "gemini", "agy"),
+        detect_isolated(detectors.opencode, "opencode", "opencode"),
+    );
+    DetectedProviders {
+        claude,
+        cursor,
+        codex,
+        gemini,
+        opencode,
+    }
+}
+
+pub async fn detect_all() -> DetectedProviders {
+    detect_all_with(DEFAULT_DETECTORS).await
+}
+
+pub fn spawn_startup_detection(app: AppHandle, opener: DetectionGateOpener) {
+    tauri::async_runtime::spawn(async move {
+        let detected = detect_all().await;
+        store_detected(&app, detected);
+        opener.open();
+    });
+}
+
+fn store_detected(app: &AppHandle, detected: DetectedProviders) {
+    store_status(&app.state::<ProviderState>().0, detected.claude);
+    store_status(&app.state::<CursorState>().0, detected.cursor);
+    store_status(&app.state::<CodexState>().0, detected.codex);
+    store_status(&app.state::<GeminiState>().0, detected.gemini);
+    store_status(&app.state::<OpencodeState>().0, detected.opencode);
+}
+
+fn store_status(state: &Mutex<ProviderStatus>, next: ProviderStatus) {
+    if let Ok(mut current) = state.lock() {
+        *current = next;
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -647,8 +770,12 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
 }
 
 #[tauri::command]
-pub fn get_provider_status(state: State<'_, ProviderState>) -> ProviderStatus {
-    get_status(&state.0, "anthropic", "claude")
+pub async fn get_provider_status(
+    gate: State<'_, DetectionGate>,
+    state: State<'_, ProviderState>,
+) -> Result<ProviderStatus, String> {
+    gate.wait().await;
+    Ok(get_status(&state.0, "anthropic", "claude"))
 }
 
 #[tauri::command]
@@ -659,8 +786,12 @@ pub async fn refresh_provider_status(
 }
 
 #[tauri::command]
-pub fn get_cursor_status(state: State<'_, CursorState>) -> ProviderStatus {
-    get_status(&state.0, "cursor", "cursor-agent")
+pub async fn get_cursor_status(
+    gate: State<'_, DetectionGate>,
+    state: State<'_, CursorState>,
+) -> Result<ProviderStatus, String> {
+    gate.wait().await;
+    Ok(get_status(&state.0, "cursor", "cursor-agent"))
 }
 
 #[tauri::command]
@@ -671,8 +802,12 @@ pub async fn refresh_cursor_status(
 }
 
 #[tauri::command]
-pub fn get_codex_status(state: State<'_, CodexState>) -> ProviderStatus {
-    get_status(&state.0, "codex", "codex")
+pub async fn get_codex_status(
+    gate: State<'_, DetectionGate>,
+    state: State<'_, CodexState>,
+) -> Result<ProviderStatus, String> {
+    gate.wait().await;
+    Ok(get_status(&state.0, "codex", "codex"))
 }
 
 #[tauri::command]
@@ -681,8 +816,12 @@ pub async fn refresh_codex_status(state: State<'_, CodexState>) -> Result<Provid
 }
 
 #[tauri::command]
-pub fn get_gemini_status(state: State<'_, GeminiState>) -> ProviderStatus {
-    get_status(&state.0, "gemini", "agy")
+pub async fn get_gemini_status(
+    gate: State<'_, DetectionGate>,
+    state: State<'_, GeminiState>,
+) -> Result<ProviderStatus, String> {
+    gate.wait().await;
+    Ok(get_status(&state.0, "gemini", "agy"))
 }
 
 #[tauri::command]
@@ -693,22 +832,43 @@ pub async fn refresh_gemini_status(
 }
 
 #[tauri::command]
-pub fn get_opencode_status(state: State<'_, OpencodeState>) -> ProviderStatus {
-    get_status(&state.0, "opencode", "opencode")
+pub async fn get_opencode_status(
+    gate: State<'_, DetectionGate>,
+    state: State<'_, OpencodeState>,
+) -> Result<ProviderStatus, String> {
+    gate.wait().await;
+    Ok(get_status(&state.0, "opencode", "opencode"))
 }
 
 #[tauri::command]
-pub fn get_openrouter_status(state: State<'_, OpencodeState>) -> ProviderStatus {
-    let mut status = get_status(&state.0, "openrouter", "opencode");
-    status.id = "openrouter".to_string();
-    status
+pub async fn get_openrouter_status(
+    gate: State<'_, DetectionGate>,
+    state: State<'_, OpencodeState>,
+) -> Result<ProviderStatus, String> {
+    gate.wait().await;
+    Ok(aliased(
+        get_status(&state.0, "openrouter", "opencode"),
+        "openrouter",
+    ))
 }
 
 #[tauri::command]
-pub fn get_moonshot_status(state: State<'_, OpencodeState>) -> ProviderStatus {
-    let mut status = get_status(&state.0, "moonshot", "opencode");
-    status.id = "moonshot".to_string();
-    status
+pub async fn get_moonshot_status(
+    gate: State<'_, DetectionGate>,
+    state: State<'_, OpencodeState>,
+) -> Result<ProviderStatus, String> {
+    gate.wait().await;
+    Ok(aliased(
+        get_status(&state.0, "moonshot", "opencode"),
+        "moonshot",
+    ))
+}
+
+fn aliased(status: ProviderStatus, id: &str) -> ProviderStatus {
+    ProviderStatus {
+        id: id.to_string(),
+        ..status
+    }
 }
 
 #[tauri::command]

@@ -62,11 +62,21 @@ pub fn run() {
     suppress_webkit_media_remote();
     let database = db::open().expect("failed to open Goodboy database");
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
-    let provider_state = providers::ProviderState(Mutex::new(providers::detect_claude()));
-    let cursor_state = providers::CursorState(Mutex::new(providers::detect_cursor()));
-    let codex_state = providers::CodexState(Mutex::new(providers::detect_codex()));
-    let gemini_state = providers::GeminiState(Mutex::new(providers::detect_gemini()));
-    let opencode_state = providers::OpencodeState(Mutex::new(providers::detect_opencode()));
+    let (detection_gate, detection_opener) = providers::detection_gate();
+    let provider_state = providers::ProviderState(Mutex::new(providers::initial_status(
+        "anthropic", "claude",
+    )));
+    let cursor_state = providers::CursorState(Mutex::new(providers::initial_status(
+        "cursor",
+        "cursor-agent",
+    )));
+    let codex_state =
+        providers::CodexState(Mutex::new(providers::initial_status("codex", "codex")));
+    let gemini_state =
+        providers::GeminiState(Mutex::new(providers::initial_status("gemini", "agy")));
+    let opencode_state = providers::OpencodeState(Mutex::new(providers::initial_status(
+        "opencode", "opencode",
+    )));
     let turn_registry = turn::TurnRegistry::new();
     let summarize_registry = summarize::SummarizeRegistry::new();
     let script_registry = scripts::ScriptRegistry::new();
@@ -89,6 +99,7 @@ pub fn run() {
         .manage(codex_state)
         .manage(gemini_state)
         .manage(opencode_state)
+        .manage(detection_gate)
         .manage(turn_registry)
         .manage(summarize_registry)
         .manage(script_registry)
@@ -100,7 +111,8 @@ pub fn run() {
         .manage(jira_token_cache)
         .manage(bitbucket_token_cache)
         .manage(slack_token_cache)
-        .setup(|app| {
+        .setup(move |app| {
+            providers::spawn_startup_detection(app.handle().clone(), detection_opener);
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
