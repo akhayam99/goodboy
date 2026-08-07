@@ -261,4 +261,14 @@ describe('ReviewBoardPane', () => {
     expect(screen.getByRole('heading', { name: 'Review board' })).toBeDefined();
     expect(screen.queryByText('acme/web #41')).toBeNull();
   });
+
+  it('offers a retry when the diff fails to load', () => {
+    h.diff.error = 'network unreachable';
+    render(<ReviewBoardPane session={SESSION} />);
+
+    expect(screen.getByText(/network unreachable/)).toBeDefined();
+    const retry = screen.getByRole('button', { name: 'Retry' });
+    fireEvent.click(retry);
+    expect(h.diff.refresh).toHaveBeenCalled();
+  });
 });

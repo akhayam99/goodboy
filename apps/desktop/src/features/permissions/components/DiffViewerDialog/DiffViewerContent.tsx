@@ -24,6 +24,7 @@ import type {
 import { ghPrDiff } from '../../../../features/github/github';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { formatError } from '../../../../shared/lib/errors';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_DEFAULT_EDITOR,
@@ -993,7 +994,13 @@ export const DiffViewerContent = ({
             ))}
           </div>
         ) : error ? (
-          <div className="flex flex-1 items-center justify-center text-xs text-danger">{error}</div>
+          <div className="flex flex-1 items-center justify-center p-4">
+            <ErrorStrip
+              label="the diff"
+              error={new Error(error)}
+              onRetry={() => setRefreshTick((t) => t + 1)}
+            />
+          </div>
         ) : files.length === 0 ? (
           <ScrollFade className="min-h-0 min-w-0 flex-1">
             <div className={cn('mx-auto w-full max-w-5xl', !isPane && 'px-6 py-5')}>

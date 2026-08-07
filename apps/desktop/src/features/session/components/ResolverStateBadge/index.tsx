@@ -62,7 +62,7 @@ const TINT: Record<ResolverBadgeState, string> = {
 export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps) => (
   <span
     className={cn(
-      'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium uppercase tracking-wide',
+      'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium',
       TINT[state],
       className,
     )}

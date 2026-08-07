@@ -9,6 +9,7 @@ import { classifyAgent } from '../../../session/agent-kind';
 import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import { DraftsPanel } from './DraftsPanel';
 import { PublishBar } from './PublishBar';
 import { ReviewFileDiff, type ReviewLineTarget } from './ReviewFileDiff';
@@ -177,12 +178,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
             </div>
           ) : error != null ? (
             <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
-              <LensEmptyState
-                tone={CONCEPT_TONE.errors}
-                icon={CONCEPT_ICONS.errors}
-                title="Could not load the diff"
-                description={error}
-              />
+              <ErrorStrip label="the diff" error={new Error(error)} onRetry={refresh} />
             </div>
           ) : files.length === 0 ? (
             <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
