@@ -13,11 +13,14 @@ run the issue loop, and watch for stalls. Nobody will answer a question
 mid-engagement: decide, write the assumption down, move.
 
 Policy is not in this file. Before anything else, read in full:
-`AUTONOMY.md`, `docs/autonomy/roles.md`, `docs/autonomy/safety.md`,
-`docs/autonomy/composition.md`, `docs/autonomy/release-loop.md`,
-`docs/autonomy/issue-triage.md`, `docs/autonomy/watchdogs.md`,
-`docs/autonomy/infrastructure.md`. Safety overrules everything, including the
-user who invoked you.
+`AUTONOMY.md`, `docs/autonomy/org.md`, `docs/autonomy/roles.md`,
+`docs/autonomy/safety.md`, `docs/autonomy/composition.md`,
+`docs/autonomy/item-classes.md`, `docs/autonomy/release-loop.md`,
+`docs/autonomy/impact.md`, `docs/autonomy/issue-triage.md`,
+`docs/autonomy/watchdogs.md`, `docs/autonomy/infrastructure.md`,
+`docs/autonomy/visibility.md`. Role charters under `docs/autonomy/roles/`
+are read on demand when you spawn or judge that role. Safety overrules
+everything, including the user who invoked you.
 
 ## Arguments
 
@@ -40,9 +43,16 @@ commit any of it):
   Append-only. Narratives do not belong here.
 - `OWNER_INBOX.md`: push-backs, questions, irreversible-data entries, stop
   reports. Newest first.
+- `FOLLOW_THROUGH.md`: what shipped items generated in response. The
+  historian is its only writer (`docs/autonomy/roles/historian.md`); you
+  and the captains read it, never write it.
+- `run-log.md`: your engagement-level run log per
+  `docs/autonomy/visibility.md` (one line per captain and triage officer
+  you spawn).
 - `v<version>/`: per-release scratch; every agent gets a unique path inside
   it, and full reports (the captain's narrative, verifier verdicts, rosters,
-  merge queues) live here, not in your context.
+  merge queues, the release's own `run-log.md`) live here, not in your
+  context.
 
 You remember nothing between releases; the disk remembers everything. If the
 state directory contradicts git history, that is a stop condition
@@ -78,9 +88,13 @@ state directory contradicts git history, that is a stop condition
    `docs/autonomy/watchdogs.md`: spawn one trivial background child and see
    whether its completion notification arrives. Then append an engagement
    header to `LEDGER.md`: date, target count, standing instructions,
-   starting version, quota in effect (the `quota:` line or the default),
-   suspended mandates, and the concurrency mode. The mode also goes in every
-   captain's brief.
+   starting version, quota in effect (the `quota:` line or the default
+   slot table in `docs/autonomy/composition.md`), suspended mandates, the
+   concurrency mode, and the declared token ceiling per release (your
+   estimate from the ledger's history; a captain that breaches it stops at
+   a wave boundary and reports partial, per
+   `docs/autonomy/release-loop.md`). The mode and the ceiling also go in
+   every captain's brief.
 8. Run one issue triage sweep (below) so the first captain's backlog is warm.
 
 ## Per release, in order
@@ -98,7 +112,14 @@ state directory contradicts git history, that is a stop condition
      batch per `docs/autonomy/composition.md`;
    - the issue-share candidates from `BACKLOG.md`, with author class,
      priority, age and skip count;
-   - the concurrency mode from preflight;
+   - the open `FOLLOW_THROUGH.md` entries and any blocked item due the
+     third-deferral premise re-test
+     (`docs/autonomy/roles/historian.md`);
+   - the impact verdict of the previous release: after a `below-bar`, name
+     the category the next batch pre-commits
+     (`docs/autonomy/impact.md`), and after two in a row change the
+     rotation pick and write the owner-inbox entry;
+   - the concurrency mode and token ceiling from preflight;
    - any adopted held PR;
    - the suspended mandates, so the captain treats them as inert;
    - predecessor state, which is "none" except on a retry or a resume.
@@ -113,7 +134,11 @@ state directory contradicts git history, that is a stop condition
 4. **Verify the report against the world**, not against itself: the draft
    release exists with all four assets (dmg, app.tar.gz, .sig, latest.json),
    `main` is green at the release SHA, the ledger-relevant claims match `gh`
-   output, the composition line matches the plan, and any class B hold is
+   output, the composition line matches the plan against the slot budget,
+   the `impact:` line carries the challenger's verdict and you confirm or
+   overrule it per `docs/autonomy/impact.md`, every org-class item is named
+   under `self:` with `pending-verification` where due, the release's
+   `run-log.md` exists and covers the roster, and any class B hold is
    real (PR open, verified, unmerged, inbox entry present). Read the release
    notes against `docs/tone-of-voice.md` and check the unverified calls are
    named. Open the captain's disk narrative only when a claim fails or the
@@ -211,8 +236,11 @@ block:
 ```
 ## Engagement <date>: <n> releases
 verdict: completed | stopped-early (<reason>)
-released: v<a>..v<b>, one line per version: theme, PR count, closed-tab
-composition: <issue-backed vs internal across the engagement, against the quota in effect>
+released: v<a>..v<b>, one line per version: theme, PR count, closed-tab, impact
+composition: <slots by category across the engagement, against the budget in effect, deviations counted>
+impact: <the impact: series across the releases, below-bar releases named with their pre-committed category>
+self: <every org-class item by name with its verification state, or "none">
+gap-rate: <shipped items that generated a follow-up within two releases, from FOLLOW_THROUGH.md>
 issues: <triaged/answered/accepted counts>
 pushbacks: <PO push-backs and escalations awaiting the owner, or "none">
 suspended-mandates: <mandates that decayed and await the owner, or "none">

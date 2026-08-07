@@ -19,7 +19,11 @@ track of.
 
 Before spawning any batch of concurrent children, the parent writes a roster
 to its scratch state: one line per child (role, work item, branch, worktree,
-scratch path, spawn time). The roster is a crash-recovery manifest keyed on
+scratch path, spawn time). A build roster is bounded by the wave it belongs
+to (at most 7 slots, per [release-loop.md](./release-loop.md)): the 20-slot
+batch in [composition.md](./composition.md) never becomes a 20-child
+roster, because a roster is only as watchable as it is small, and one
+captain already lost track of five children at a fraction of that scale. The roster is a crash-recovery manifest keyed on
 git state, never on harness task ids: a replacement parent resumes from
 branches, worktrees and journals, because task ids die with the parent that
 held them.

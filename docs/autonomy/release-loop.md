@@ -1,9 +1,11 @@
 # Autonomy: the release loop
 
 Part of the [autonomy cluster](../autonomy.md). This file owns the shape of
-one autonomous release: the phases, the area rotation that keeps the whole
-product scouted, the verification standard, and the merge discipline. What
-goes into the batch is owned by [composition.md](./composition.md); outages
+one autonomous release: the phases, the waves that consume the batch, the
+area rotation that keeps the whole product scouted, the verification
+standard, and the merge discipline. What goes into the batch is owned by
+[composition.md](./composition.md); what each item class delivers and how
+it is verified by [item-classes.md](./item-classes.md); outages
 and the build-ahead mode by [infrastructure.md](./infrastructure.md). The
 mechanics of tagging and notarization live in
 [release-command.md](../release-command.md) and [release.md](../release.md);
@@ -33,11 +35,16 @@ raw diff.
    (scaffolding checklists, feasibility of the candidate headline). Audit
    from a worktree pinned at `origin/main`, never a possibly stale local
    checkout.
-2. **Product decision.** The product owner turns audit, mandates, VISION and
-   backlog into a theme plus a batch of 3 to 6 one-PR work items, sized,
-   persona-tagged, composed per [composition.md](./composition.md) (the
-   issue/internal split, author weighting, declared deviations), with
-   explicit non-goals and per-item risk. Items touching schema or stored
+2. **Product decision.** The product owner turns audit, mandates, VISION,
+   backlog, open follow-through entries
+   ([roles/historian.md](./roles/historian.md), which hold first claim on
+   the backlog share) and the product critic's UX list into a theme plus a
+   batch composed to the slot budget in
+   [composition.md](./composition.md): items sized S/M/L, persona-tagged,
+   classed per [item-classes.md](./item-classes.md), with explicit
+   non-goals and per-item risk. The head of engineering passes on
+   feasibility and sequencing before the challenge; the external scout is
+   consulted on-call for design decisions. Items touching schema or stored
    data carry their data class per the gate in [safety.md](./safety.md),
    and the owner question for any class A or B item is written **before
    Phase 4 starts**. The challenger attacks the plan cold; any item
@@ -55,9 +62,22 @@ raw diff.
    app shell, store slice barrels, provider gating lists, shared registries;
    the places most items meet). Contradictions go back to the PO once, at
    most twice, then the PO's last answer stands.
-4. **Build, concurrently where footprints allow.** One item, one builder,
-   one branch (`ak/<type>-<kebab-desc>`), one PR, one fresh worktree per
-   builder, every branch cut from `origin/main`.
+4. **Build, in waves, concurrently where footprints allow.** The batch is
+   consumed in **2 or 3 waves of at most 7 slots each**, and a wave closes
+   with `main` green (its merge units merged per Phase 6, or explicitly
+   carried) before the next wave's builds are planned. Waves exist because
+   a 20-slot batch as one flat roster is the guaranteed way to lose a
+   child in silence: one captain already ended its turn with five children
+   live at 6-item scale, and the roster contract in
+   [watchdogs.md](./watchdogs.md) is only as strong as the roster is
+   small. The captain declares its **token ceiling** in its plan (the
+   lead's brief carries the engagement figure); a captain that breaches it
+   stops at the wave boundary and reports partial, because tokens are the
+   binding constraint and wall clock never was. Within a wave: one item,
+   one builder, one branch (`ak/<type>-<kebab-desc>`), one PR, one fresh
+   worktree per builder, every branch cut from `origin/main`; grouped S
+   slots of one class are one merge unit
+   ([composition.md](./composition.md)).
    - Items whose footprints share no file and no hotspot build
      concurrently, spawned as one batch under the roster contract in
      [watchdogs.md](./watchdogs.md), **at most three at once**: whole
@@ -79,7 +99,11 @@ raw diff.
      are updated in the same PR that makes them wrong.
 5. **Verify, streaming.** A different agent per PR, always, spawned as each
    build lands rather than after all of them, in its own worktree checked
-   out at the PR branch, never the builder's. See the standard below. The
+   out at the PR branch, never the builder's. Code and refactor classes
+   follow the standard below; every other class follows its own standard in
+   [item-classes.md](./item-classes.md), with a verifier different from the
+   author (the voice steward for copy, a re-deriving agent for docs, and so
+   on). The
    verifier's verdict is the one the captain trusts, over the builder's
    report and over green CI. Repairs loop per PR (builder or a fresh
    repair agent, then re-verify) without holding the other lanes.
@@ -95,18 +119,30 @@ raw diff.
    attempts is closed and recorded as dropped. A class B data change with
    no owner answer does not merge; the release ships without it per
    [safety.md](./safety.md).
-7. **Cut the draft.** The challenger reviews the release notes first, per
-   its charter in [roles.md](./roles.md). Then: version bump in all five
-   files plus the changelog
+7. **Cut the draft.** Before anything is cut, the **security officer's
+   release pass** runs over the union of the merged diffs, per its charter
+   ([roles/security-officer.md](./roles/security-officer.md)); a veto here
+   is late and expensive, which is why its on-call Phase 2 pass exists,
+   but late beats shipped. The challenger then reviews the release notes
+   and judges the impact bar ([impact.md](./impact.md)), per its charter
+   in [roles/challenger.md](./roles/challenger.md). Then: version bump in
+   all five files plus the changelog
    section in one commit, release PR, merge, rc dry-run with notarization
    verified, then the real tag and the draft release. Stop there: the
    delivery lead publishes after review. Never tag while another tag build is
    in flight.
 
 Afterwards the captain updates the backlog (what it took, what it surfaced
-and left), writes its full narrative to its scratch dir, and returns its
-compact report block; the delivery lead is the only writer of the ledger and
-appends the block there.
+and left), spawns the historian's end-of-release pass
+([roles/historian.md](./roles/historian.md)), completes the release's run
+log per [visibility.md](./visibility.md), writes its full narrative to its
+scratch dir, and returns its compact report block; the delivery lead is the
+only writer of the ledger and appends the block there.
+
+The qa explorer's walk of the built app
+([roles/qa-explorer.md](./roles/qa-explorer.md)) runs between the last
+merge and the draft, because the seam between two green PRs is exactly what
+per-PR verification cannot see.
 
 ## Area rotation
 

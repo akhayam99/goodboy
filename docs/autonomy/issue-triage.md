@@ -102,6 +102,14 @@ machine's writing.
   follow-up comment says it was considered and what outranked it; the skip
   count drives the aging promotion in
   [composition.md](./composition.md).
+- **Feeding the follow-through record.** The sweep marks every issue that
+  references a version shipped in the last three releases and routes it to
+  the historian's `FOLLOW_THROUGH.md`
+  ([roles/historian.md](./roles/historian.md)), which owns the record and
+  is its only writer; triage marks and routes, never writes the file.
+  Without the mark, "great feature, missing this one action" sits in the
+  queue as just another issue and the org never learns whether its
+  releases land whole.
 - Priorities: a confirmed regression outranks a feature request; a request
   from the owner outranks a same-sized request from a contributor (the full
   ordering, including the contributor floor, is

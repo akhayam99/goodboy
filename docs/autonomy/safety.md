@@ -149,6 +149,19 @@ What the gate does:
 The gate strengthens the floor and never relaxes it: nothing here authorizes
 anything the Forbidden list refuses.
 
+## The security veto
+
+The Forbidden list above stops the flagrant case; the diff that widens a
+data-egress surface without breaking a single listed rule is stopped by the
+[security officer](./roles/security-officer.md), which holds a merge veto
+for its perimeter and may impose an owner question in the style of the
+class B gate on anything that widens the surface data can leave through.
+The charter owns the perimeter and the mechanics; what belongs in this file
+is the floor relationship: the veto strengthens the floor and never relaxes
+it, a veto is always written and motivated, and its use is reviewed (the
+challenger for proportionality, the delivery lead on publication) so that a
+blocking power nobody audits does not quietly become policy.
+
 ## Stop conditions
 
 The machine stops itself, mid-engagement, when any of these holds:
