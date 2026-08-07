@@ -14,6 +14,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { ShortcutsSection } from './ShortcutsSection';
 import { StorageSection } from './StorageSection';
 
@@ -242,6 +243,27 @@ export const AppScopePanel = ({ initialSection, requestClose }: Props) => {
                   Import
                 </Button>
               </span>
+            </FieldRow>
+          </section>
+
+          <Divider />
+
+          <section id="report-issue" ref={anchor('report-issue')} className="flex flex-col gap-4">
+            <SectionHeader label="Feedback" hint="Tell us what's broken or missing." />
+            <FieldRow
+              label="Report an issue"
+              help="Opens a form. You see exactly what gets sent before you send it."
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  requestClose();
+                  window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
+                }}
+              >
+                <CONCEPT_ICONS.reportIssue size={14} aria-hidden /> Report an issue
+              </Button>
             </FieldRow>
           </section>
 

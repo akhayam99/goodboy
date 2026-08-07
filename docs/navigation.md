@@ -217,9 +217,9 @@ persisted preference.
 ### Utility studios
 
 Settings, budget, providers, impact, changelog, notifications, Linear, Jira,
-Slack, Sentry, GitLab, Bitbucket, workflow, guide are modal overlays, all built on
-`StudioShell`'s fullscreen variant. They are not part of the breadcrumb IA and
-are exited via their close button or Esc.
+Slack, Sentry, GitLab, Bitbucket, workflow, guide, report an issue are modal
+overlays, all built on `StudioShell`'s fullscreen variant. They are not part
+of the breadcrumb IA and are exited via their close button or Esc.
 
 Bitbucket has two mounts. The footer opens `BitbucketWorkspaceStudio`, which
 resolves the repository from the workspace root path and its git remote and
@@ -239,6 +239,14 @@ its only entrance is the `Show more` row at the bottom of the bell popover in
 the top bar, which dispatches `goodboy:open-notifications-studio`. There is no
 footer button, no shortcut, and no command palette entry for it, because the
 bell already carries the unread count that makes the page worth opening.
+
+Report an issue has no footer entry either. It opens from Settings' App scope
+panel (a `FieldRow` button dispatching `goodboy:open-report-issue`, next to
+"Config backup") and from the command palette. It does not belong on the
+footer's studio row or inside the `More` popover: it is not something you
+reach for by workspace or by session, and adding a slot there would grow
+`MORE_STUDIOS` for a surface that is genuinely settings-adjacent, not a peer
+of budget, impact and changelog.
 
 Every integration studio (GitHub, GitLab, Bitbucket, Linear, Jira, Sentry,
 Slack) carries a disconnect control in `StudioShell`'s `headerAccessory` slot,
