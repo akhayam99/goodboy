@@ -62,7 +62,7 @@ export const Hero = () => (
               Star on GitHub
             </LinkButton>
             <p className="text-[12px] text-muted-foreground/75">
-              Free and open source, MIT. Install on your Mac.
+              Free and open source, MIT. Install on your Mac or Linux machine.
             </p>
           </div>
           <LinkButton href="#cta" size="lg" variant="ghost">
@@ -90,7 +90,7 @@ export const Hero = () => (
             </LinkButton>
           </div>
           <p className="text-[12.5px] text-muted-foreground/75">
-            Free and open source, MIT. Runs on macOS.
+            Free and open source, MIT. Installs on macOS and Linux.
           </p>
         </div>
       </div>

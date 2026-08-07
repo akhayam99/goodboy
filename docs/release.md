@@ -3,8 +3,12 @@
 Canonical guide for cutting a Goodboy release. **If you are asked to "do a
 release", "ship vX.Y.Z", or "cut a release", follow this file end to end.**
 
-Target: macOS **universal** `.dmg` (Intel + Apple Silicon), signed + notarized,
-published to GitHub Releases and Homebrew.
+Targets, both attached to the same draft release:
+
+- macOS **universal** `.dmg` (Intel + Apple Silicon), signed + notarized,
+  published to GitHub Releases and Homebrew.
+- Linux **x86_64** AppImage, `.deb` and `.rpm`, built on `ubuntu-latest`, with
+  no updater manifest and no signatures.
 
 ## How it works
 
@@ -13,8 +17,16 @@ published to GitHub Releases and Homebrew.
 - Signing + notarization run automatically because the six `APPLE_*` secrets are
   set on the repo (see "Signing" below). If those secrets were ever removed, the
   build still succeeds but produces an unsigned `.dmg`.
+- The Linux job attaches three more assets to that same draft:
+  `Goodboy_<version>_amd64.AppImage`, `Goodboy_<version>_amd64.deb` and
+  `Goodboy-<version>-1.x86_64.rpm`. The deb's dependency list is derived from
+  the binary by `dpkg-shlibdeps` at package time, so it tracks whatever the
+  build actually links against.
+- The Linux job publishes **no `latest.json` and no `.sig`**, so in-app updates
+  stay macOS-only. Only the AppImage could ever self-update and that is not
+  wired: a Linux user takes the next package from the release page.
 - Publishing the draft release triggers `.github/workflows/homebrew.yml`, which
-  bumps the cask in the Homebrew tap.
+  bumps the cask in the Homebrew tap. The cask is the macOS `.dmg` only.
 
 The git tag is the source of truth for the release name. The version baked into
 the build comes from `tauri.conf.json`, so the two must match.
@@ -108,6 +120,11 @@ only) it checks `releases/latest/download/latest.json`; when a newer version is
 found, a "Restart to update" control shows in the status bar and next to the
 sidebar logo, and clicking it downloads, installs, and relaunches.
 
+This is the macOS path. The Linux job emits no `latest.json` and no `.sig`, so
+nothing on the release page tells a Linux build that a newer version exists.
+Adding one means signing the AppImage with the updater keypair and pointing the
+plugin at a Linux target, which has not been done.
+
 Update artifacts are signed with a dedicated **updater keypair** (separate from
 Apple code-signing). The public key lives in `tauri.conf.json`
 (`plugins.updater.pubkey`); the private key + password are repo secrets
@@ -157,5 +174,9 @@ authorized for agents).
 - **macOS Keychain `.p12` uses legacy RC2-40**: reading it locally with OpenSSL 3
   needs `openssl pkcs12 ... -legacy`. The CI runner uses `security import`, which
   handles it natively, so this only affects local verification.
-- **Local manual build** to reproduce CI: `pnpm tauri:build`. For the universal
-  artifact: `pnpm --filter @goodboy/desktop tauri build --target universal-apple-darwin`.
+- **Local manual build** to reproduce CI: `pnpm tauri:build`. For the macOS
+  universal artifact:
+  `pnpm --filter @goodboy/desktop tauri build --target universal-apple-darwin`.
+  On an x86_64 Linux host the same `pnpm tauri:build` drops the AppImage, deb
+  and rpm under `apps/desktop/src-tauri/target/release/bundle/`. There is no
+  cross-build from macOS: the Linux packages come from a Linux runner.

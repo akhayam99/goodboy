@@ -87,7 +87,7 @@
         "description": "Goodboy is a local-first desktop app for running coding agents that keeps the thread. It carries shared context into every agent, lets an orchestrator pick each step, model, and effort at runtime, reviews pull requests and merge requests in one inbox, and tracks spend against the caps you set.",
         "url": "https://goodboy-ai.dev/",
         "applicationCategory": "DeveloperApplication",
-        "operatingSystem": "macOS",
+        "operatingSystem": ["macOS", "Linux"],
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -189,7 +189,7 @@
             "name": "Which platforms does Goodboy support?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "macOS today, as a universal build or via Homebrew. Prebuilt binaries for Linux and Windows coming; you can build from source in the meantime, with a Rust toolchain."
+              "text": "macOS and Linux. macOS ships as a universal build or via Homebrew. Linux ships as an AppImage, a .deb and an .rpm, x86_64. In-app updates stay macOS-only for now, so on Linux a new version is a new package from the release page. Windows still means building from source, with a Rust toolchain."
             }
           },
           {

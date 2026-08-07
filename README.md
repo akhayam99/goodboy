@@ -7,6 +7,7 @@
 [![stars](https://img.shields.io/github/stars/akhayam99/goodboy?label=stars&color=06b6d4)](https://github.com/akhayam99/goodboy/stargazers)
 [![providers](https://img.shields.io/badge/providers-Claude%20%C2%B7%20Cursor%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20OpenCode%20%C2%B7%20OpenRouter%20%C2%B7%20Moonshot-06b6d4)](#providers)
 [![platform](https://img.shields.io/badge/macOS-Intel%20%26%20Apple%20Silicon-111111)](#install)
+[![platform](https://img.shields.io/badge/Linux-AppImage%20%C2%B7%20deb%20%C2%B7%20rpm%20%C2%B7%20x86__64-111111)](#install)
 [![license](https://img.shields.io/github/license/akhayam99/goodboy?color=06b6d4)](./LICENSE)
 
 <img src=".github/readme-integrations.png" alt="Integrates with GitHub, GitLab, Linear and Sentry" width="480" />
@@ -164,25 +165,43 @@ One connected CLI is enough to start. Full guide:
 
 ## Install
 
-macOS only for now, Intel and Apple Silicon in one universal build. Signed
-and notarized by Apple, so it opens without the unidentified-developer
-warning. Linux and Windows builds are in progress.
-
-**Homebrew (recommended).**
+**macOS.** Intel and Apple Silicon in one universal build, signed and notarized
+by Apple, so it opens without the unidentified-developer warning.
 
 ```bash
 brew install --cask akhayam99/tap/goodboy
 ```
 
-**Direct download.** Grab the `.dmg` from the
-[latest release](https://github.com/akhayam99/goodboy/releases/latest) and
-drag Goodboy to Applications.
+Or grab the `.dmg` from the
+[latest release](https://github.com/akhayam99/goodboy/releases/latest) and drag
+Goodboy to Applications.
 
-**Updates are automatic.** When a new release ships, an update control appears
-in the footer, next to settings, and on the workspace launcher. One click
-downloads it and relaunches, and the footer's `More` control then carries a dot
-until you read the release notes; Homebrew users can also
-`brew upgrade --cask goodboy`.
+**Linux.** x86_64, as an AppImage, a `.deb` or an `.rpm`, all three attached to
+the same [release](https://github.com/akhayam99/goodboy/releases/latest).
+
+```bash
+sudo apt install ./Goodboy_<version>_amd64.deb
+sudo rpm -i Goodboy-<version>-1.x86_64.rpm
+chmod +x Goodboy_<version>_amd64.AppImage
+```
+
+The `.deb` declares what it links against (`libwebkit2gtk-4.1-0`, `libgtk-3-0`,
+`libsoup-3.0-0` and the rest of the GTK stack), read out of the binary with
+`dpkg-shlibdeps`, so apt resolves them for you. Credentials go to the
+freedesktop Secret Service, GNOME Keyring or KWallet, so a keyring daemon has to
+be running before you save a token. Windows is still a build from source.
+
+Follow-up: the Linux packages come out of the same tagged build as the macOS
+one, on a GitHub `ubuntu-latest` runner. If your distribution wants something
+the package does not declare, its own package manager says so before anything
+installs.
+
+**Updates.** On macOS they are automatic: when a new release ships, an update
+control appears in the footer, next to settings, and on the workspace launcher.
+One click downloads it and relaunches, and the footer's `More` control then
+carries a dot until you read the release notes; Homebrew users can also
+`brew upgrade --cask goodboy`. In-app updates stay macOS-only for now, so on
+Linux you take the new package from the release.
 
 ## Run it
 
