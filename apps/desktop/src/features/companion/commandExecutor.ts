@@ -30,6 +30,7 @@ import {
 } from './mobileConfinement';
 import type { AgentKind } from '../session/agent-kind';
 import type {
+  JiraIntegrationConfig,
   SessionExternalTaskProvider,
   WorkspaceId,
   WorkspaceIntegrationProvider,
@@ -48,6 +49,8 @@ import {
   type GitlabIssue,
 } from '../integrations/gitlab/client';
 import { goalFromIssue as gitlabGoalFromIssue } from '../integrations/gitlab/goal-from-issue';
+import { jiraListIssues, jiraGetIssue, type JiraIssue } from '../integrations/jira/client';
+import { goalFromIssue as jiraGoalFromIssue } from '../integrations/jira/goal-from-issue';
 
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
   'anthropic',
@@ -184,6 +187,7 @@ const ALL_ISSUE_PROVIDERS: ReadonlyArray<WorkspaceIntegrationProvider> = [
   'linear',
   'sentry',
   'gitlab',
+  'jira',
 ];
 
 const normalizeLinear = (i: LinearIssue): NormalizedIssue => ({
@@ -213,10 +217,25 @@ const normalizeGitlab = (i: GitlabIssue): NormalizedIssue => ({
   description: i.description ?? null,
 });
 
+const normalizeJira = (i: JiraIssue): NormalizedIssue => ({
+  provider: 'jira',
+  identifier: i.key,
+  title: i.summary,
+  url: i.url,
+  state: i.status ?? null,
+  description: i.description,
+});
+
 function gitlabHostFor(workspaceId: WorkspaceId): string | undefined {
   const rows = useAppStore.getState().workspaceIntegrations[workspaceId] ?? [];
   const row = rows.find((r) => r.provider === 'gitlab');
   return row && row.provider === 'gitlab' ? row.config.host : undefined;
+}
+
+function jiraConfigFor(workspaceId: WorkspaceId): JiraIntegrationConfig | undefined {
+  const rows = useAppStore.getState().workspaceIntegrations[workspaceId] ?? [];
+  const row = rows.find((r) => r.provider === 'jira');
+  return row && row.provider === 'jira' ? row.config : undefined;
 }
 
 function connectedProviders(workspaceId: WorkspaceId): ReadonlySet<WorkspaceIntegrationProvider> {
@@ -243,7 +262,20 @@ async function fetchIssuesFor(
         }
         return (await gitlabFetchAssignedIssues(workspaceId, host)).map(normalizeGitlab);
       }
-      case 'jira':
+      case 'jira': {
+        const config = jiraConfigFor(workspaceId);
+        if (config == null) {
+          return [];
+        }
+        const issues = await jiraListIssues({
+          workspaceId,
+          siteUrl: config.siteUrl,
+          email: config.email,
+          projectKey: config.projectKey,
+          assignedOnly: true,
+        });
+        return issues.map(normalizeJira);
+      }
       case 'bitbucket':
       case 'slack':
         return [];
@@ -349,8 +381,28 @@ async function resolveIssueForSession(
         },
       };
     }
-    case 'jira':
-      throw new BridgeSafeError(`jira issue creation is not available from mobile: ${identifier}`);
+    case 'jira': {
+      const config = jiraConfigFor(workspaceId);
+      if (config == null) {
+        throw new BridgeSafeError('jira is not configured for this workspace');
+      }
+      const issue = await jiraGetIssue({
+        workspaceId,
+        siteUrl: config.siteUrl,
+        email: config.email,
+        issueKey: identifier,
+      });
+      return {
+        goal: jiraGoalFromIssue({ issue }),
+        externalTask: {
+          provider: 'jira',
+          externalId: issue.id,
+          identifier: issue.key,
+          url: issue.url,
+          title: issue.summary,
+        },
+      };
+    }
     case 'bitbucket':
       throw new BridgeSafeError(`bitbucket does not expose issues to Goodboy: ${identifier}`);
     case 'slack':
@@ -438,11 +490,13 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'queryIssues': {
       const rawProvider = asString(data.provider);
-      const filter =
-        rawProvider && ALL_ISSUE_PROVIDERS.includes(rawProvider as WorkspaceIntegrationProvider)
-          ? (rawProvider as WorkspaceIntegrationProvider)
-          : undefined;
-      return queryIssuesForMobile(filter);
+      if (rawProvider === undefined) {
+        return queryIssuesForMobile(undefined);
+      }
+      if (!ALL_ISSUE_PROVIDERS.includes(rawProvider as WorkspaceIntegrationProvider)) {
+        throw new BridgeSafeError(`unsupported provider: ${rawProvider}`);
+      }
+      return queryIssuesForMobile(rawProvider as WorkspaceIntegrationProvider);
     }
 
     case 'queryFileDiff': {

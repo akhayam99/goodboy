@@ -90,25 +90,46 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 // Integration clients + goal derivation: the executor fetches issues + resolves
 // them through these. Stub with faithful shapes so queryIssues normalization and
 // createSessionFromIssue resolution are exercised without any real network.
-const integ = vi.hoisted(() => ({
-  linearFetch: vi.fn(
-    async () =>
-      [
-        {
-          id: 'lin-uuid-1',
-          identifier: 'ENG-1',
-          title: 'Fix the thing',
-          description: 'desc',
-          url: 'https://linear.app/x/issue/ENG-1',
-          state: { name: 'In Progress', type: 'started' },
-          team: { key: 'ENG' },
-          updatedAt: '2026-06-22T00:00:00Z',
-        },
-      ] as unknown[],
-  ),
-  gitlabFetch: vi.fn(async () => [] as unknown[]),
-  sentryFetch: vi.fn(async () => ({ issues: [], next_cursor: null })),
-}));
+const integ = vi.hoisted(() => {
+  const jiraIssueFixture = {
+    id: 'jira-10001',
+    key: 'PROJ-1',
+    summary: 'Fix the thing',
+    description: 'desc',
+    status: 'To Do',
+    statusCategory: 'new',
+    issueType: 'Task',
+    priority: null,
+    assignee: null,
+    reporter: null,
+    labels: [] as string[],
+    created: '2026-06-22T00:00:00Z',
+    updated: '2026-06-22T00:00:00Z',
+    url: 'https://example.atlassian.net/browse/PROJ-1',
+  };
+  return {
+    linearFetch: vi.fn(
+      async () =>
+        [
+          {
+            id: 'lin-uuid-1',
+            identifier: 'ENG-1',
+            title: 'Fix the thing',
+            description: 'desc',
+            url: 'https://linear.app/x/issue/ENG-1',
+            state: { name: 'In Progress', type: 'started' },
+            team: { key: 'ENG' },
+            updatedAt: '2026-06-22T00:00:00Z',
+          },
+        ] as unknown[],
+    ),
+    gitlabFetch: vi.fn(async () => [] as unknown[]),
+    sentryFetch: vi.fn(async () => ({ issues: [], next_cursor: null })),
+    jiraIssueFixture,
+    jiraListFetch: vi.fn(async () => [jiraIssueFixture]),
+    jiraGetFetch: vi.fn(async () => jiraIssueFixture),
+  };
+});
 
 vi.mock('../integrations/linear/client', () => ({
   linearFetchAssignedIssues: integ.linearFetch,
@@ -130,6 +151,14 @@ vi.mock('../integrations/gitlab/client', () => ({
 }));
 vi.mock('../integrations/gitlab/goal-from-issue', () => ({
   goalFromIssue: (i: { title: string }) => i.title,
+}));
+vi.mock('../integrations/jira/client', () => ({
+  jiraListIssues: integ.jiraListFetch,
+  jiraGetIssue: integ.jiraGetFetch,
+}));
+vi.mock('../integrations/jira/goal-from-issue', () => ({
+  goalFromIssue: (i: { issue: { key: string; summary: string } }) =>
+    `[${i.issue.key}] ${i.issue.summary}`,
 }));
 
 import { executeBridgeCommand } from './commandExecutor';
@@ -706,6 +735,62 @@ describe('queryIssues (read-only issue inbox RPC)', () => {
     expect(integ.linearFetch).not.toHaveBeenCalled();
   });
 
+  it('returns normalized jira issues when jira is connected for a workspace', async () => {
+    h.state.value = makeStore({
+      workspaceIntegrations: {
+        w1: [
+          {
+            provider: 'jira',
+            config: {
+              siteUrl: 'https://example.atlassian.net',
+              email: 'pm@example.com',
+              projectKey: 'PROJ',
+            },
+          },
+        ],
+      },
+    });
+    const res = await executeBridgeCommand(cmd('queryIssues', { provider: 'jira' }));
+    expect(res.ok).toBe(true);
+    expect((res.data as { issues: Array<Record<string, unknown>> }).issues).toEqual([
+      {
+        provider: 'jira',
+        identifier: 'PROJ-1',
+        title: 'Fix the thing',
+        url: 'https://example.atlassian.net/browse/PROJ-1',
+        state: 'To Do',
+        description: 'desc',
+      },
+    ]);
+    expect(integ.jiraListFetch).toHaveBeenCalledWith({
+      workspaceId: 'w1',
+      siteUrl: 'https://example.atlassian.net',
+      email: 'pm@example.com',
+      projectKey: 'PROJ',
+      assignedOnly: true,
+    });
+  });
+
+  // The fix under test: an unsupported filter must REFUSE, not silently widen to
+  // "every connected provider". Before the fix this call returned every issue
+  // from every connected provider instead of erroring.
+  it('refuses an unsupported provider filter instead of silently answering with everything', async () => {
+    const res = await executeBridgeCommand(cmd('queryIssues', { provider: 'bitbucket' }));
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/unsupported provider: bitbucket/i);
+    // Nothing was fetched: the filter was refused before any provider query ran.
+    expect(integ.linearFetch).not.toHaveBeenCalled();
+    expect(integ.sentryFetch).not.toHaveBeenCalled();
+    expect(integ.gitlabFetch).not.toHaveBeenCalled();
+    expect(integ.jiraListFetch).not.toHaveBeenCalled();
+  });
+
+  it('refuses a slack provider filter the same way it refuses bitbucket', async () => {
+    const res = await executeBridgeCommand(cmd('queryIssues', { provider: 'slack' }));
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/unsupported provider: slack/i);
+  });
+
   it('does not need a session and never leaks a provider token', async () => {
     const res = await executeBridgeCommand(cmd('queryIssues', {}));
     expect(JSON.stringify(res)).not.toMatch(/token|credential|secret/i);
@@ -808,6 +893,87 @@ describe('createSessionFromIssue (security-gated write)', () => {
     });
     // The new session is mobile-shared so its turns clamp at sendTurn.
     expect(isSessionMobileShared('new-session-1' as SessionId)).toBe(true);
+  });
+
+  it('resolves a jira issue server-side, creates the session, and confines it', async () => {
+    h.state.value = makeStore({
+      workspaceIntegrations: {
+        w1: [
+          {
+            provider: 'jira',
+            config: {
+              siteUrl: 'https://example.atlassian.net',
+              email: 'pm@example.com',
+              projectKey: 'PROJ',
+            },
+          },
+        ],
+      },
+    });
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'jira',
+        issueIdentifier: 'PROJ-1',
+        setupWorkflow: false,
+      }),
+    );
+    expect(res.ok).toBe(true);
+    expect(res.data).toEqual({ sessionId: 'new-session-1' });
+    expect(h.createSession).toHaveBeenCalledWith({
+      workspaceId: 'w1',
+      goal: '[PROJ-1] Fix the thing',
+      externalTask: {
+        provider: 'jira',
+        externalId: 'jira-10001',
+        identifier: 'PROJ-1',
+        url: 'https://example.atlassian.net/browse/PROJ-1',
+        title: 'Fix the thing',
+      },
+      mobileShared: true,
+    });
+    expect(integ.jiraGetFetch).toHaveBeenCalledWith({
+      workspaceId: 'w1',
+      siteUrl: 'https://example.atlassian.net',
+      email: 'pm@example.com',
+      issueKey: 'PROJ-1',
+    });
+    expect(isSessionMobileShared('new-session-1' as SessionId)).toBe(true);
+  });
+
+  it('masks a raw jira client error when resolving the issue (no body leaks to phone)', async () => {
+    h.state.value = makeStore({
+      workspaceIntegrations: {
+        w1: [
+          {
+            provider: 'jira',
+            config: {
+              siteUrl: 'https://example.atlassian.net',
+              email: 'pm@example.com',
+              projectKey: 'PROJ',
+            },
+          },
+        ],
+      },
+    });
+    const secret = 'HTTP 401 {"token":"sk-live-JIRA","trace":"/Users/ak/secret"}';
+    integ.jiraGetFetch.mockRejectedValueOnce(new Error(secret));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const res = await executeBridgeCommand(
+      cmd('createSessionFromIssue', {
+        workspaceId: 'w1',
+        provider: 'jira',
+        issueIdentifier: 'PROJ-1',
+      }),
+    );
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('could not resolve issue PROJ-1');
+    expect(JSON.stringify(res)).not.toMatch(/sk-live|JIRA|secret/i);
+    expect(errSpy).toHaveBeenCalled();
+    expect(h.createSession).not.toHaveBeenCalled();
+    errSpy.mockRestore();
   });
 
   // FINDING 2 (ordering): the executor MUST pass mobileShared so createSession
