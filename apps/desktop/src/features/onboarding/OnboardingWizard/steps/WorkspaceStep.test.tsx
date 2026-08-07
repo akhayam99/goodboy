@@ -63,15 +63,27 @@ describe('WorkspaceStep', () => {
     window.removeEventListener('goodboy:add-workspace', onAddWorkspace);
   });
 
-  it('offers the repository paths to a developer', () => {
+  it('offers the repository paths and the standalone path to a developer', () => {
     render(<Harness workspace={null} />);
 
     fireEvent.click(screen.getByRole('button', { name: /I write code/ }));
 
     expect(screen.getByRole('heading', { name: 'Add workspace' })).toBeDefined();
     expect(screen.getByTestId('workspace-link-form').getAttribute('data-modes')).toBe(
-      'single,multi',
+      'single,multi,simple',
     );
+  });
+
+  it('tells a developer what standalone gives up until a code host is linked', () => {
+    render(<Harness workspace={null} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /I write code/ }));
+
+    expect(
+      screen.getByText(
+        /Standalone skips git: plain folders, no branch, no diff and no pull requests until you link a code host\./,
+      ),
+    ).toBeDefined();
   });
 
   it('keeps the form open after adding the first single-project workspace', () => {

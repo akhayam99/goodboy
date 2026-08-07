@@ -1,4 +1,5 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { AppState } from '../../types';
 
 export type SessionRepo = Readonly<{
@@ -59,10 +60,14 @@ export const resolveSessionRepo = ({ state, sessionId }: ResolveParams): Session
   if (worktreePath == null) {
     return null;
   }
+  const branch = state.sessionBranches[sessionId];
+  if (isBranchlessSession({ workspaceKind: workspace.kind, branch })) {
+    return null;
+  }
   return {
     repoRoot: workspace.rootPath,
     worktreePath,
-    branch: state.sessionBranches[sessionId] ?? '',
+    branch: branch ?? '',
     mountName: null,
     workspaceId: workspace.id,
   };

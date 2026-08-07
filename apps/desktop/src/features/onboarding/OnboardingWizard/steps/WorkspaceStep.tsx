@@ -23,7 +23,7 @@ const WORKSPACE_KIND_LABELS: Record<WorkspaceKind, string> = {
 };
 
 const AUDIENCE_MODES: Record<WorkspaceAudience, ReadonlyArray<WorkspaceLinkMode>> = {
-  developer: ['single', 'multi'],
+  developer: ['single', 'multi', 'simple'],
   'everyone-else': ['simple'],
 };
 
@@ -136,7 +136,7 @@ export const WorkspaceStep = ({
       title={workspace === null ? 'Add workspace' : 'Change workspace'}
       subtitle={
         audience === 'developer'
-          ? 'Point Goodboy at a repository, or link several of them into one workspace.'
+          ? 'Point Goodboy at a repository, or link several of them into one workspace. Standalone skips git: plain folders, no branch, no diff and no pull requests until you link a code host.'
           : 'Name the workspace and pick where its files live.'
       }
     >

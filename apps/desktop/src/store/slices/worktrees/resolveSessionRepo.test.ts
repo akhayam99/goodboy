@@ -133,6 +133,18 @@ describe('resolveSessionRepo', () => {
     expect(result).toBeNull();
   });
 
+  it('keeps a converted workspace from resolving the sessions it created while standalone', () => {
+    const standalone = buildState({
+      workspace: buildWorkspace({ kind: 'simple' }),
+      worktrees: ['/sessions/session-1'],
+      branch: '',
+    });
+    const converted = { ...standalone, workspaces: [buildWorkspace({ kind: 'repo' })] };
+
+    expect(resolveSessionRepo({ state: standalone, sessionId: SESSION_ID })).toBeNull();
+    expect(resolveSessionRepo({ state: converted, sessionId: SESSION_ID })).toBeNull();
+  });
+
   it('uses the first composite mount when no active mount is explicit', () => {
     const result = resolveSessionRepo({
       state: buildState({
