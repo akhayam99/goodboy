@@ -76,6 +76,14 @@ describe('ReviewFileDiff unified layout', () => {
     expect(screen.getByRole('button', { name: 'Draft a comment on line 1' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Draft a comment on line 2' })).toBeDefined();
   });
+
+  it('reveals the line actions on keyboard focus, not only on hover', () => {
+    renderDiff({ file: fileOf([del(1, 'gone')]), layoutMode: 'unified' });
+    const draftButton = screen.getByRole('button', { name: 'Draft a comment on line 1' });
+    const askAgentButton = screen.getByRole('button', { name: 'Ask the agent about line 1' });
+    expect(draftButton.className).toContain('focus-visible:opacity-100');
+    expect(askAgentButton.className).toContain('focus-visible:opacity-100');
+  });
 });
 
 describe('ReviewFileDiff split layout', () => {

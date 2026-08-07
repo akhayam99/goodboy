@@ -53,7 +53,7 @@ export const CommentItem = ({
             {statusPill.label}
           </span>
         ) : null}
-        <div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {comment.status === 'open' && (
             <button
               type="button"

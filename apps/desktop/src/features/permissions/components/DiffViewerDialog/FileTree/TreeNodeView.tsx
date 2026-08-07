@@ -86,7 +86,11 @@ export const TreeNodeView = ({
           value={file.path}
           label="copy file path"
           size={10}
-          className="shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+          className={cn(
+            'shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground',
+            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            'group-hover:opacity-100 motion-reduce:opacity-60',
+          )}
         />
       </div>
     );

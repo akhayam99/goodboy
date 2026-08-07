@@ -67,4 +67,17 @@ describe('PrConversation', () => {
     fireEvent.click(screen.getByRole('button', { name: '3 replies' }));
     expect(screen.getByText('third reply')).toBeDefined();
   });
+
+  it('marks an outdated open thread but not a fresh one', () => {
+    renderConversation([
+      comment({ id: 'c1', threadId: 't1', outdated: true }),
+      comment({ id: 'c2', threadId: 't2', outdated: false }),
+    ]);
+    expect(screen.getAllByText('Outdated').length).toBe(1);
+  });
+
+  it('marks an outdated resolved thread', () => {
+    renderConversation([comment({ resolved: true, outdated: true })]);
+    expect(screen.getByText('Outdated')).toBeDefined();
+  });
 });

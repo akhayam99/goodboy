@@ -288,6 +288,23 @@ describe('ResolveBoard', () => {
     expect(screen.getByText('bob')).toBeDefined();
   });
 
+  it('marks an outdated thread but not a fresh one', () => {
+    render(
+      <ResolveBoard
+        roleModels={null}
+        threads={[
+          thread({ id: 'c1', outdated: true }),
+          thread({ id: 'c2', threadId: 'PRRT_2', outdated: false }),
+        ]}
+        onSpawnOne={vi.fn()}
+        onSpawnBatch={vi.fn()}
+        onSpawnCombined={vi.fn()}
+        onOpenThread={vi.fn()}
+      />,
+    );
+    expect(screen.getAllByText('Outdated').length).toBe(1);
+  });
+
   it('renders an empty state when there are no open comments', () => {
     render(
       <ResolveBoard

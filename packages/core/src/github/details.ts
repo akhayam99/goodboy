@@ -267,6 +267,7 @@ async function fetchReviewThreads(
           path: t.path ?? undefined,
           line: t.line ?? undefined,
           resolved: t.isResolved,
+          outdated: t.isOutdated,
           inReplyToId: c.replyTo?.id
             ? (nodeIdToCommentId.get(c.replyTo.id) ?? undefined)
             : undefined,
