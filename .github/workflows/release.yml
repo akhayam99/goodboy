@@ -183,11 +183,23 @@ jobs:
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}
-          # Do not remove. Default is false, and on the false path the action
-          # looks the tag up with getReleaseByTag, which cannot see drafts. It
-          # would 404 and create a SECOND, published release for the same tag,
-          # repointing releases/latest/download/latest.json at a release with no
-          # macOS assets and firing homebrew.yml against a release with no dmg.
+          # Do not remove, though not for the reason it may look like. On the
+          # true path the action scans listReleases, which does include drafts,
+          # and reuses the macOS job's draft for this tag. Because the release
+          # it finds is a draft, updateRelease is skipped, so the
+          # CHANGELOG-derived body macOS wrote is left exactly as it is.
+          #
+          # Without it, the default false path looks the tag up with
+          # getReleaseByTag, which cannot see drafts, and 404s. This job passes
+          # no releaseName, so nothing is created and the action throws
+          # "Release not found or created." That fails closed: the Linux job
+          # goes red and the macOS release is untouched.
+          #
+          # The real hazard is arming the create path. Adding releaseName or
+          # releaseBody here turns a missed lookup into a SECOND release for
+          # this tag instead of a throw, and with releaseDraft false that one is
+          # published, repointing releases/latest/download/latest.json at a
+          # release with no macOS assets and firing homebrew.yml against it.
           releaseDraft: true
           # No TAURI_SIGNING_PRIVATE_KEY is passed here, and this job needs no
           # secrets at all. --no-sign skips updater signing, which would
