@@ -291,6 +291,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
         autoRun: false,
+        navigate: true,
         goal: 'test goal',
       }),
     );
@@ -309,6 +310,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
         autoRun: false,
+        navigate: true,
         goal: 'just the auth module',
       }),
     );
@@ -389,6 +391,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
         autoRun: true,
+        navigate: true,
         goal: 'test goal',
       }),
     );
@@ -459,6 +462,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
         autoRun: true,
+        navigate: true,
         goal: 'test goal',
         executionMode: 'dynamic',
       }),
@@ -566,6 +570,7 @@ describe('WorkflowBuilderView (preset mode)', () => {
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', 'wf-preset-1', {
         autoRun: false,
+        navigate: true,
         goal: 'review only the db layer',
       }),
     );
@@ -604,6 +609,7 @@ describe('WorkflowBuilderView (trigger modes)', () => {
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
         autoRun: false,
+        navigate: true,
         goal: 'test goal',
         triggerMode: 'manual',
       }),
@@ -641,6 +647,7 @@ describe('WorkflowBuilderView (trigger modes)', () => {
     await waitFor(() =>
       expect(mockAttach).toHaveBeenCalledWith('sess-1', 'wf-next', {
         autoRun: false,
+        navigate: true,
         goal: 'test goal',
         triggerMode: 'after_run',
         chainAfterId: 'run-prev',

@@ -316,6 +316,7 @@ export type AppActions = {
       chainAfterId?: WorkflowRunId;
       attachmentInputs?: ReadonlyArray<AttachmentInput>;
       executionMode?: WorkflowExecutionMode;
+      navigate?: boolean;
     },
   ): Promise<void>;
   detachWorkflowFromSession(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;

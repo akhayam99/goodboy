@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Input, Textarea, Tooltip } from '@goodboy/ui';
 import { X } from 'lucide-react';
 import { recommendedModelForRole } from '@goodboy/core';
@@ -41,6 +41,9 @@ export const LibraryStepForm = ({
   const [role, setRole] = useState<AgentRole>(def?.role ?? 'custom');
   const [promptPrefix, setPromptPrefix] = useState(def?.promptPrefix ?? '');
   const [providerOverride, setProviderOverride] = useState<ProviderId | ''>(
+    (def?.providerDefault as ProviderId | undefined) ?? '',
+  );
+  const pendingProvider = useRef<ProviderId | ''>(
     (def?.providerDefault as ProviderId | undefined) ?? '',
   );
   const [modelOverride, setModelOverride] = useState(def?.modelDefault ?? '');
@@ -172,13 +175,17 @@ export const LibraryStepForm = ({
               verbosity={verbosity}
               disabled={false}
               onProvider={(p) => {
+                pendingProvider.current = p;
                 setProviderOverride(p);
                 commit({ providerOverride: p });
               }}
               onModel={(m) => {
                 const clamped = clampEffort(m === '' ? recommendedMod : m, effort);
                 setModelOverride(m);
-                const over: Partial<FormState> = { modelOverride: m };
+                const over: Partial<FormState> = {
+                  modelOverride: m,
+                  providerOverride: pendingProvider.current,
+                };
                 if (clamped !== effort) {
                   setEffort(clamped);
                   over.effort = clamped;

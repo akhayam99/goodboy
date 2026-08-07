@@ -176,6 +176,8 @@ describe('LinkedWorkSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'GitLab issues' }));
     fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'GitHub issues' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Jira issues' }));
     fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Slack threads' }));
@@ -184,6 +186,7 @@ describe('LinkedWorkSection', () => {
       ['linear'],
       ['sentry'],
       ['gitlab_issues'],
+      ['github_issue'],
       ['jira_issues'],
       ['slack_threads'],
     ]);
