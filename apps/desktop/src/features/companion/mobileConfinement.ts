@@ -68,6 +68,7 @@ const CREATE_SESSION_PROVIDERS: ReadonlySet<string> = new Set<WorkspaceIntegrati
   'linear',
   'sentry',
   'gitlab',
+  'jira',
 ]);
 
 export const isCreateSessionProvider = (v: unknown): v is WorkspaceIntegrationProvider =>
