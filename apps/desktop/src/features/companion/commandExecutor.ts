@@ -633,6 +633,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       await store.attachWorkflowToSession(gate.sessionId, gate.workflowId, {
         autoRun: false,
         triggerMode: 'manual',
+        navigate: false,
       });
       return undefined;
     }

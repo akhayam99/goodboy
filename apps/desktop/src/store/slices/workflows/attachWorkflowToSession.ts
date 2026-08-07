@@ -25,6 +25,7 @@ type Options = {
   chainAfterId?: WorkflowRunId;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   executionMode?: WorkflowExecutionMode;
+  navigate?: boolean;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -149,7 +150,9 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       focusedWorkflowRunId: { ...state.focusedWorkflowRunId, [sessionId]: workflowRunId },
     }));
 
-    get().setActiveLens(sessionId, 'workflows');
+    if (options?.navigate === true) {
+      get().setActiveLens(sessionId, 'workflows');
+    }
 
     const attachmentInputs = options?.attachmentInputs;
     if (attachmentInputs && attachmentInputs.length > 0) {

@@ -90,7 +90,7 @@ export function useChatPrefix({
       setValue('');
       setShowPopover(false);
       try {
-        await attachWorkflowToSession(session.id, workflow.id);
+        await attachWorkflowToSession(session.id, workflow.id, { navigate: true });
         showToast('success', `workflow "${workflow.name}" started`);
       } catch (err) {
         showToast('error', formatError(err));
