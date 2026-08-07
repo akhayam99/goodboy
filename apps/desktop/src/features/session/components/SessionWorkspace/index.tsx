@@ -33,6 +33,7 @@ import { resolveOverlayHome } from './resolveOverlayHome';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
+import { LinkTicketPopover } from './parts/IntegrationPane/LinkTicketPopover';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
@@ -404,6 +405,17 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                         tone={CONCEPT_TONE.github}
                         title="No GitHub issue linked"
                         description="Link a GitHub issue to this session to see it here."
+                        action={
+                          <LinkTicketPopover
+                            sessionId={sessionId}
+                            workspaceId={session.workspaceId}
+                            provider="github"
+                            providerLabel="GitHub"
+                            noun="issue"
+                            nounPhrase="an issue"
+                            nounPlural="issues"
+                          />
+                        }
                       />
                     </PaneShell>
                   )

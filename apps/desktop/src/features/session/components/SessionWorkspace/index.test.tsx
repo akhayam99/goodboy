@@ -188,6 +188,13 @@ vi.mock('./parts/IntegrationPane/GithubTaskDetail', () => ({
     <div data-testid="github-task-detail">{issueNumber}</div>
   ),
 }));
+vi.mock('./parts/IntegrationPane/LinkTicketPopover', () => ({
+  LinkTicketPopover: ({ provider }: { provider: string }) => (
+    <button type="button" data-testid="link-ticket-popover">
+      {`Link ${provider} issue`}
+    </button>
+  ),
+}));
 vi.mock('../../../../shared/components/PaneShell', () => ({
   PaneShell: ({ title, meta, children }: PaneShellMockProps) => (
     <div>
@@ -858,6 +865,24 @@ describe('SessionWorkspace github issue lens', () => {
 
     expect(screen.getByText('No GitHub issue linked')).toBeDefined();
     expect(screen.queryByTestId('github-task-detail')).toBeNull();
+    expect(screen.getByTestId('link-ticket-popover').textContent).toBe('Link github issue');
+  });
+
+  it('swaps the empty state for the linked issue once linking writes an external task', () => {
+    store.activeLens = { [SESSION_ID]: 'github_issue' };
+    store.selectedAgentId = {};
+    store.sessionExternalTasks = {};
+
+    const { rerender } = render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByText('No GitHub issue linked')).toBeDefined();
+    fireEvent.click(screen.getByTestId('link-ticket-popover'));
+
+    store.sessionExternalTasks = { [SESSION_ID]: [githubTask] };
+    rerender(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByText('No GitHub issue linked')).toBeNull();
+    expect(screen.getByTestId('github-task-detail').textContent).toBe('42');
   });
 
   it('renders the focused issue with no linked task at all', () => {
