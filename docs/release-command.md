@@ -44,7 +44,10 @@ Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`; any
    other team is a failure). Detach. Then delete the rc (release + remote tag +
    local tag).
 5. Cut real: `git tag vX <merge-sha> && git push origin vX`. Wait for the build
-   to produce the draft release (dmg + app.tar.gz + .sig + latest.json).
+   to produce the draft release: macOS gives dmg + app.tar.gz + .sig +
+   latest.json, Linux gives AppImage + deb + rpm (x86_64, no updater manifest
+   and no signatures). Seven assets, and a missing Linux one is a red job, not
+   an expected skip.
 
 ## Release notes (from source, not memory)
 

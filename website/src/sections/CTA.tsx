@@ -5,23 +5,52 @@ import { useInView } from '../components/Reveal';
 const RELEASES_LATEST = 'https://github.com/akhayam99/goodboy/releases/latest';
 const LATEST_RELEASE_API = 'https://api.github.com/repos/akhayam99/goodboy/releases/latest';
 
-function useLatestDmgUrl(): { href: string; direct: boolean } {
-  const [url, setUrl] = useState<string | null>(null);
+const ASSET_SUFFIX = {
+  dmg: '.dmg',
+  appImage: '.appimage',
+  deb: '.deb',
+  rpm: '.rpm',
+} as const;
+
+type AssetKey = keyof typeof ASSET_SUFFIX;
+type AssetLink = { href: string; direct: boolean };
+
+const ASSET_KEYS = Object.keys(ASSET_SUFFIX) as ReadonlyArray<AssetKey>;
+
+const useLatestAssets = (): Record<AssetKey, AssetLink> => {
+  const [urls, setUrls] = useState<Partial<Record<AssetKey, string>>>({});
   useEffect(() => {
     let cancelled = false;
     fetch(LATEST_RELEASE_API, { headers: { Accept: 'application/vnd.github+json' } })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((data: { assets?: Array<{ name?: string; browser_download_url?: string }> }) => {
-        const dmg = data.assets?.find((a) => a.name?.toLowerCase().endsWith('.dmg'));
-        if (!cancelled && dmg?.browser_download_url) setUrl(dmg.browser_download_url);
+        const found: Partial<Record<AssetKey, string>> = {};
+        for (const key of ASSET_KEYS) {
+          const asset = data.assets?.find((a) => a.name?.toLowerCase().endsWith(ASSET_SUFFIX[key]));
+          if (asset?.browser_download_url) found[key] = asset.browser_download_url;
+        }
+        if (!cancelled) setUrls(found);
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
   }, []);
-  return url ? { href: url, direct: true } : { href: RELEASES_LATEST, direct: false };
-}
+  return ASSET_KEYS.reduce(
+    (acc, key) => {
+      const url = urls[key];
+      acc[key] = url ? { href: url, direct: true } : { href: RELEASES_LATEST, direct: false };
+      return acc;
+    },
+    {} as Record<AssetKey, AssetLink>,
+  );
+};
+
+const LINUX_PACKAGES: ReadonlyArray<{ key: AssetKey; label: string }> = [
+  { key: 'appImage', label: 'AppImage' },
+  { key: 'deb', label: '.deb' },
+  { key: 'rpm', label: '.rpm' },
+];
 
 const brewLine = 'brew install --cask akhayam99/tap/goodboy';
 
@@ -49,7 +78,7 @@ function TerminalFrame({ label, children }: { label: string; children: ReactNode
 
 export function CTA() {
   const { ref, inView } = useInView<HTMLElement>();
-  const dmg = useLatestDmgUrl();
+  const assets = useLatestAssets();
   return (
     <section
       id="cta"
@@ -70,13 +99,14 @@ export function CTA() {
 
         <div className="mx-auto mt-12 max-w-lg pointer-fine:hidden">
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            When you&apos;re on your Mac
+            When you&apos;re back at your machine
           </p>
           <code className="mt-2.5 block overflow-x-auto whitespace-nowrap rounded-lg border border-border-soft bg-[oklch(0.22_0.007_255)] px-4 py-2.5 text-left font-mono text-[12.5px] text-foreground">
             {brewLine}
           </code>
           <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
-            Or grab the .dmg from the GitHub releases.
+            That is macOS. The .dmg is on the GitHub releases too, next to the Linux AppImage, .deb
+            and .rpm, x86_64 on glibc 2.39 or newer.
           </p>
           <div className="mt-7 flex flex-col items-center gap-3">
             <LinkButton
@@ -106,9 +136,9 @@ export function CTA() {
 
         <div className="mx-auto mt-12 hidden max-w-lg pointer-fine:block">
           <LinkButton
-            href={dmg.href}
-            target={dmg.direct ? undefined : '_blank'}
-            rel={dmg.direct ? undefined : 'noreferrer'}
+            href={assets.dmg.href}
+            target={assets.dmg.direct ? undefined : '_blank'}
+            rel={assets.dmg.direct ? undefined : 'noreferrer'}
             size="lg"
             variant="primary"
             className="w-full sm:w-auto"
@@ -130,7 +160,32 @@ export function CTA() {
 
           <div className="mt-9 text-left">
             <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Linux &amp; Windows &middot; from source
+              Linux &middot; x86_64
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {LINUX_PACKAGES.map(({ key, label }) => (
+                <LinkButton
+                  key={key}
+                  href={assets[key].href}
+                  target={assets[key].direct ? undefined : '_blank'}
+                  rel={assets[key].direct ? undefined : 'noreferrer'}
+                  size="md"
+                  variant="secondary"
+                >
+                  {label}
+                </LinkButton>
+              ))}
+            </div>
+            <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
+              Built from the release tag on a GitHub Ubuntu runner, so it needs glibc 2.39 or newer:
+              Ubuntu 24.04 and Debian 13 upward. In-app updates stay macOS-only for now, so a new
+              version is a new package from the same page.
+            </p>
+          </div>
+
+          <div className="mt-9 text-left">
+            <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Windows &middot; from source
             </p>
             <TerminalFrame label="~/work">
               {sourceLines.map((l) => (
@@ -141,7 +196,7 @@ export function CTA() {
               ))}
             </TerminalFrame>
             <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
-              Needs a Rust toolchain. Prebuilt binaries for Linux and Windows coming.
+              Needs a Rust toolchain. A prebuilt Windows binary is still to come.
             </p>
           </div>
         </div>

@@ -64,8 +64,10 @@ const ITEMS: ReadonlyArray<Qa> = [
     q: 'Which platforms?',
     a: (
       <>
-        <B>macOS today</B>, as a universal build or via Homebrew. Prebuilt binaries for Linux and
-        Windows coming; you can build from source in the meantime, with a Rust toolchain.
+        <B>macOS and Linux</B>. macOS ships as a universal build or via Homebrew. Linux ships as an
+        AppImage, a .deb and an .rpm, x86_64 on glibc 2.39 or newer, so Ubuntu 24.04 and Debian 13
+        upward. In-app updates stay macOS-only for now, so on Linux a new version is a new package
+        from the release page. Windows still means building from source, with a Rust toolchain.
       </>
     ),
   },
