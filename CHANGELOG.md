@@ -7,6 +7,40 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.70
+
+The session tells you the truth about what it holds, and filing a bug no longer costs you the page you were on.
+
+### [#1309] File an issue from the top bar
+
+A bug control now sits in the top bar, between running scripts and notifications, and opens a popover that takes an issue type and a description right where you hit the problem. Close it and the draft is still there when you come back. Reset empties it, and the trigger carries a dot while a draft is waiting.
+
+The popover's primary action opens the full form on the same draft, which is where the title, the area and the preview live. Settings keeps its entry, the command palette keeps its command, and all three land on that same form. The full form now closes and clears the draft once the report is filed, instead of showing a success state and sitting there with your text still in it, and on the direct path the created issue opens in your browser.
+
+The issue type is a new field rather than a rename of the area, and it reaches GitHub as the first line of the issue body. Screenshots are not part of this: the app has no screen capture of its own, and there is nowhere to put an image that survives GitHub's issue renderer.
+
+Follow-up: the filing path is the one v0.1.69 shipped, with the type line added at the top of the issue body, though no issue has gone out to a live GitHub account since. A failed send keeps the draft.
+
+### [#1308] Read a linked Sentry issue whole in the session
+
+A Sentry issue linked to a session showed less than the same issue shows in the Sentry studio. The session pane never fetched the issue at all, only its latest event, so the culprit, the level and the status were blank by construction.
+
+The session pane now reads the issue itself and lists level, culprit, status, events, users, first seen and last seen. Those last four had no path to the screen anywhere in the app before this. Loading is a skeleton and a failure is a retryable error strip.
+
+Follow-up: the issue endpoint and its response come from the same Sentry shape the issue list already reads, though no call has gone out to a live Sentry workspace yet. If a field differs, the pane shows a retryable error rather than a blank one that could pass for data.
+
+### [#1306] Link a GitHub issue to a session by hand
+
+A GitHub issue could only reach a session by accident, through a pull request that happened to say "Closes #N". The link menu offered Linear, Sentry, GitLab, Jira and Slack but not GitHub, and the empty state asked you to link a GitHub issue while giving you no way to do it.
+
+GitHub now sits in the link menu with the others, and the empty state carries the action it was asking for. A hand-linked issue is stored the way every other linked issue is stored, so it survives the next pull request refresh.
+
+### Fixes
+
+- A workflow attaching in the background no longer pulls you out of the lens you are reading, and the new run is still focused for when you open the workflows lens yourself [#1305]
+- A workflow run now waits for the session summarizer, up to a minute, before reporting done, instead of flipping to complete and then being summarized again [#1304]
+- Picking a model from a different provider in an orchestrator routing row or a library step form now saves the pair you picked, though a pair saved wrong before this release stays as it is [#1307]
+
 ## Goodboy v0.1.69
 
 When something fails, Goodboy stops leaving you stuck: your message survives a spent budget, a stalled workflow says so where you can see it, and a saved setting stops disappearing.
