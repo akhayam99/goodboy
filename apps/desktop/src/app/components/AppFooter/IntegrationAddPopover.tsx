@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, Popover, Tooltip } from '@goodboy/ui';
+import { cn, Popover, ScrollFade, Tooltip } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { FooterIntegrationEntry } from './categories';
@@ -138,27 +138,25 @@ export const IntegrationAddPopover = ({
               <Popover
                 role="dialog"
                 ariaLabel={panelLabel}
-                className="fixed z-popover w-56"
+                className="fixed z-popover flex max-h-60 w-56 flex-col"
                 style={{
                   top: coordinates.top,
                   bottom: coordinates.bottom,
                   left: coordinates.left,
                 }}
               >
-                <ul
-                  aria-label={panelLabel}
-                  className="flex flex-col overflow-y-auto py-1"
-                  style={{ maxHeight: PANEL_MAX_HEIGHT }}
-                >
-                  {members.map((member) => (
-                    <IntegrationAddRow
-                      key={member.provider}
-                      member={member}
-                      connected={enabled[member.provider]}
-                      onSelect={() => select(member.provider)}
-                    />
-                  ))}
-                </ul>
+                <ScrollFade className="min-h-0 flex-1" viewportClassName="py-1" fadeSize={12}>
+                  <ul aria-label={panelLabel} className="flex flex-col">
+                    {members.map((member) => (
+                      <IntegrationAddRow
+                        key={member.provider}
+                        member={member}
+                        connected={enabled[member.provider]}
+                        onSelect={() => select(member.provider)}
+                      />
+                    ))}
+                  </ul>
+                </ScrollFade>
               </Popover>
             </>,
             document.body,

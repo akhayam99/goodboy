@@ -60,7 +60,7 @@ export const TokensSection = ({}: Props) => (
           Reserve for hard reasoning, refactors, last-resort fixes.
         </Tile>
       </div>
-      <p className="mt-3 text-2xs leading-relaxed text-muted-foreground/70">
+      <p className="text-2xs leading-relaxed text-muted-foreground/70">
         The picker sorts <strong className="font-semibold text-foreground">cheapest first</strong>{' '}
         on purpose. Switching down a tier often costs nothing in quality on routine tasks.
       </p>
