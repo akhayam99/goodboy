@@ -1,14 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { ModelEffort, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
-import { clampEffort, modelEffortLevels } from '../../../chat/utils/chat-constants';
-import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { useAppStore } from '../../../../store/store';
+import { clampEffort, modelEffortLevels } from '../../../../chat/utils/chat-constants';
+import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { useAppStore } from '../../../../../store/store';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly run: WorkflowRun;
   readonly disabled: boolean;
+};
+
+type ApplyParams = {
+  readonly providerId: ProviderId;
+  readonly model: string;
+  readonly effort?: ModelEffort;
 };
 
 const DEFAULT_EFFORT: ModelEffort = 'medium';
@@ -32,9 +38,9 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     'anthropic') as ProviderId;
   const automatic = resolveTaskModel('workflow_orchestrator', taskModels, defaultProvider);
   const pinned = run.orchestratorRouting ?? null;
-  const [providerId, setProviderId] = useState<ProviderId>(
-    pinned?.providerId ?? automatic.providerId,
-  );
+  const preferredProviderId = pinned?.providerId ?? automatic.providerId;
+  const [providerId, setProviderId] = useState<ProviderId>(preferredProviderId);
+  const pendingProvider = useRef<ProviderId>(preferredProviderId);
   const model = pinned?.model ?? '';
   const recommendedModel = resolveTaskModel('workflow_orchestrator', taskModels, providerId).model;
   const effortModel = model === '' ? recommendedModel : model;
@@ -44,11 +50,16 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     .map((provider) => provider.id)
     .filter((candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0);
 
-  const apply = (next: { readonly model: string; readonly effort?: ModelEffort }) => {
+  useEffect(() => {
+    setProviderId(preferredProviderId);
+    pendingProvider.current = preferredProviderId;
+  }, [preferredProviderId]);
+
+  const apply = ({ providerId: nextProvider, model: nextModel, effort }: ApplyParams) => {
     void setWorkflowOrchestratorRouting(sessionId, run.id, {
-      providerId,
-      model: next.model,
-      ...(next.effort != null && { effort: next.effort }),
+      providerId: nextProvider,
+      model: nextModel,
+      ...(effort != null && { effort }),
     });
   };
 
@@ -69,6 +80,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           onChange: (effort) => {
             const applied = effortForModel(effortModel, effort);
             apply({
+              providerId: pendingProvider.current,
               model: effortModel,
               ...(applied != null && { effort: applied }),
             });
@@ -84,6 +96,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
             return;
           }
           setProviderId(next);
+          pendingProvider.current = next;
           if (pinned == null) {
             return;
           }
@@ -95,7 +108,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
             return;
           }
           const carried = pinned?.effort == null ? null : effortForModel(nextModel, pinned.effort);
-          apply({ model: nextModel, ...(carried != null && { effort: carried }) });
+          apply({
+            providerId: pendingProvider.current,
+            model: nextModel,
+            ...(carried != null && { effort: carried }),
+          });
         }}
       />
     </div>
