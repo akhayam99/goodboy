@@ -29,15 +29,9 @@ describe('BootSplash error recovery', () => {
     expect(onRetry).toHaveBeenCalledOnce();
   });
 
-  it('shows skip provider detection when phase is detecting-cli', () => {
-    const onSkip = vi.fn();
-    render(
-      <BootSplash phase="detecting-cli" error="cli not found" onSkipProviderDetection={onSkip} />,
-    );
-    const skipBtn = screen.getByRole('button', { name: /skip provider detection/i });
-    expect(skipBtn).toBeDefined();
-    fireEvent.click(skipBtn);
-    expect(onSkip).toHaveBeenCalledOnce();
+  it('offers no skip affordance while detecting agents', () => {
+    render(<BootSplash phase="detecting-cli" error="cli not found" />);
+    expect(screen.queryByRole('button', { name: /skip provider detection/i })).toBeNull();
   });
 
   it('renders the report issue button', () => {
