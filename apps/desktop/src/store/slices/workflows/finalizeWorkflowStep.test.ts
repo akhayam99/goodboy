@@ -38,7 +38,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { finalizeWorkflowStep, degradedNotifiedAgents } from './finalizeWorkflowStep';
-import { SUMMARY_TIMEOUT_MS } from '../../summarizeAgentOutput';
+import { SUMMARY_TIMEOUT_MS, stepSummaryDegraded } from '../../summarizeAgentOutput';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -111,6 +111,7 @@ describe('finalizeWorkflowStep output summary', () => {
     invokeAgentListSpy.mockResolvedValue([{ ...agent, status: 'completed' }]);
     invokeAgentUpdateStatusSpy.mockResolvedValue({ ...agent, status: 'completed' });
     degradedNotifiedAgents.clear();
+    stepSummaryDegraded.clear();
   });
 
   afterEach(() => {
