@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import {
   PROVIDER_CAPABILITIES,
   defaultsForRole,
+  getModelProvider,
   recommendedModelForRole,
   resolveRoleRouting,
   type ResolvedRoleFallback,
+  type ResolvedRoleRouting,
 } from '@goodboy/core';
 import type {
   AgentRole,
@@ -51,11 +53,35 @@ type StoredFallbackParams = {
   readonly resolved: ResolvedRoleFallback | undefined;
 };
 
+type RepairParams = {
+  readonly role: AgentRole;
+  readonly candidate: RoleModelPreference;
+};
+
 const storedFallback = ({ resolved }: StoredFallbackParams): RoleModelFallback | undefined => {
   if (resolved == null) {
     return undefined;
   }
   return { providerId: resolved.provider, model: resolved.model };
+};
+
+const repairedRouting = ({ role, candidate }: RepairParams): ResolvedRoleRouting | null => {
+  const direct = resolveRoleRouting({ role, prefs: { [role]: candidate } });
+  if (direct.isOverride) {
+    return direct;
+  }
+  const owner = getModelProvider(candidate.model);
+  if (owner == null || owner === candidate.providerId) {
+    return null;
+  }
+  const repaired = resolveRoleRouting({
+    role,
+    prefs: { [role]: { ...candidate, providerId: owner } },
+  });
+  if (!repaired.isOverride) {
+    return null;
+  }
+  return repaired;
 };
 
 export const RoleModelRow = ({
@@ -105,8 +131,6 @@ export const RoleModelRow = ({
   }, [resolvedFallbackProviderId]);
 
   const commit = ({ providerId: nextProvider, model, effort }: CommitParams) => {
-    pendingProvider.current = nextProvider;
-    pendingModel.current = model;
     const carried = storedFallback({ resolved: resolved.fallback });
     const candidate: RoleModelPreference = {
       providerId: nextProvider,
@@ -114,11 +138,12 @@ export const RoleModelRow = ({
       effort,
       ...(carried != null && { fallback: carried }),
     };
-    const next = resolveRoleRouting({ role, prefs: { [role]: candidate } });
-    if (!next.isOverride) {
-      onChange(null);
+    const next = repairedRouting({ role, candidate });
+    if (next == null) {
       return;
     }
+    pendingProvider.current = next.provider;
+    pendingModel.current = next.model;
     const kept = storedFallback({ resolved: next.fallback });
     onChange({
       providerId: next.provider,
@@ -135,9 +160,8 @@ export const RoleModelRow = ({
       effort: resolved.effort,
       ...(fallback != null && { fallback }),
     };
-    const next = resolveRoleRouting({ role, prefs: { [role]: candidate } });
-    if (!next.isOverride) {
-      onChange(null);
+    const next = repairedRouting({ role, candidate });
+    if (next == null) {
       return;
     }
     const kept = storedFallback({ resolved: next.fallback });
@@ -243,7 +267,7 @@ export const RoleModelRow = ({
                     }
                     commitFallback({
                       fallback: {
-                        providerId: pendingFallbackProvider.current,
+                        providerId: getModelProvider(nextModel) ?? pendingFallbackProvider.current,
                         model: nextModel,
                       },
                     });

@@ -58,4 +58,21 @@ describe('TaskModelRow', () => {
 
     expect(onChange.mock.calls.at(-1)?.[0]?.providerId).toBe('cursor');
   });
+
+  it('clamps the effort onto the provider just picked, not onto the one React still holds', () => {
+    const onChange = vi.fn<(preference: TaskModelPreference | null) => void>();
+    renderRow({
+      preference: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'high' },
+      onChange,
+    });
+
+    openPicker();
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+
+    expect(onChange.mock.calls.length).toBeGreaterThan(1);
+    for (const [preference] of onChange.mock.calls) {
+      expect(preference?.providerId).toBe('cursor');
+      expect(getModelProvider(preference?.model ?? '')).toBe('cursor');
+    }
+  });
 });

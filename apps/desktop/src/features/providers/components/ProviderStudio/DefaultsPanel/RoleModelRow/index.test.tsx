@@ -5,25 +5,34 @@ import type { ProviderId, RoleModelPreference } from '@goodboy/types';
 import { RoleModelRow } from './index';
 
 const CONNECTED = ['anthropic', 'cursor'] satisfies ReadonlyArray<ProviderId>;
+const ANTHROPIC_ONLY = ['anthropic'] satisfies ReadonlyArray<ProviderId>;
 
 type RenderParams = {
   readonly preference: RoleModelPreference | null;
   readonly onChange: (preference: RoleModelPreference | null) => void;
 };
 
+type RowParams = {
+  readonly preference: RoleModelPreference | null;
+  readonly connected: ReadonlyArray<ProviderId>;
+  readonly onChange: (preference: RoleModelPreference | null) => void;
+};
+
+const row = ({ preference, connected, onChange }: RowParams) => (
+  <RoleModelRow
+    role="planner"
+    label="Planner"
+    help="plans the work"
+    preference={preference}
+    defaultProviderId="anthropic"
+    connectedProviderIds={connected}
+    disabled={false}
+    onChange={onChange}
+  />
+);
+
 const renderRow = ({ preference, onChange }: RenderParams) =>
-  render(
-    <RoleModelRow
-      role="planner"
-      label="Planner"
-      help="plans the work"
-      preference={preference}
-      defaultProviderId="anthropic"
-      connectedProviderIds={CONNECTED}
-      disabled={false}
-      onChange={onChange}
-    />,
-  );
+  render(row({ preference, connected: CONNECTED, onChange }));
 
 const openPrimary = () =>
   fireEvent.click(screen.getByRole('button', { name: /^Planner routing:/ }));
@@ -33,6 +42,8 @@ const openFallback = () =>
 
 const pickProvider = (label: string) =>
   fireEvent.click(screen.getByRole('button', { name: label }));
+
+const pickChip = (label: string) => fireEvent.click(screen.getByRole('button', { name: label }));
 
 afterEach(() => {
   cleanup();
@@ -132,5 +143,120 @@ describe('RoleModelRow', () => {
 
     expect(onChange).not.toHaveBeenCalledWith(null);
     expect(onChange.mock.calls.at(-1)?.[0]?.fallback?.providerId).toBe('cursor');
+  });
+
+  it('keeps the role on the provider connected inline while the picker is open', () => {
+    const onChange = vi.fn<(preference: RoleModelPreference | null) => void>();
+    const preference: RoleModelPreference = {
+      providerId: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'high',
+    };
+    const view = render(row({ preference, connected: ANTHROPIC_ONLY, onChange }));
+
+    openPrimary();
+    pickProvider('Cursor');
+    view.rerender(row({ preference, connected: CONNECTED, onChange }));
+    pickChip('Auto');
+
+    expect(onChange.mock.calls.length).toBeGreaterThan(0);
+    for (const [emitted] of onChange.mock.calls) {
+      expect(emitted).not.toBeNull();
+      expect(emitted?.providerId).toBe('cursor');
+      expect(emitted?.model).toBe('auto');
+    }
+  });
+
+  it('keeps the fallback on the provider connected inline while the picker is open', () => {
+    const onChange = vi.fn<(preference: RoleModelPreference | null) => void>();
+    const preference: RoleModelPreference = {
+      providerId: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'high',
+      fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+    };
+    const view = render(row({ preference, connected: ANTHROPIC_ONLY, onChange }));
+
+    openFallback();
+    pickProvider('Cursor');
+    view.rerender(row({ preference, connected: CONNECTED, onChange }));
+    pickChip('Auto');
+
+    expect(onChange).not.toHaveBeenCalledWith(null);
+    expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      providerId: 'anthropic',
+      model: 'opus-5',
+      fallback: { providerId: 'cursor', model: 'auto' },
+    });
+  });
+
+  it('tunes the effort of the model just picked, not of the model the props still carry', () => {
+    const onChange = vi.fn<(preference: RoleModelPreference | null) => void>();
+    const preference: RoleModelPreference = {
+      providerId: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'high',
+    };
+    const view = render(row({ preference, connected: ANTHROPIC_ONLY, onChange }));
+
+    openPrimary();
+    pickProvider('Cursor');
+    view.rerender(row({ preference, connected: CONNECTED, onChange }));
+    pickChip('Auto');
+
+    expect(onChange.mock.calls.length).toBeGreaterThan(1);
+    expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      providerId: 'cursor',
+      model: 'auto',
+      effort: 'low',
+    });
+  });
+
+  it('tunes the effort of the model the props last delivered', () => {
+    const onChange = vi.fn<(preference: RoleModelPreference | null) => void>();
+    const view = render(
+      row({
+        preference: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'high' },
+        connected: CONNECTED,
+        onChange,
+      }),
+    );
+    view.rerender(
+      row({
+        preference: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+        connected: CONNECTED,
+        onChange,
+      }),
+    );
+
+    openPrimary();
+    pickChip('Low');
+
+    expect(onChange.mock.calls.length).toBeGreaterThan(0);
+    for (const [emitted] of onChange.mock.calls) {
+      expect(emitted?.model).toBe('opus-5');
+    }
+  });
+
+  it('keeps the role override when the fallback goes back to automatic', () => {
+    const onChange = vi.fn<(preference: RoleModelPreference | null) => void>();
+    renderRow({
+      preference: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
+      },
+      onChange,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset routing override' }));
+
+    expect(onChange).not.toHaveBeenCalledWith(null);
+    expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      providerId: 'anthropic',
+      model: 'opus-5',
+    });
+    expect(onChange.mock.calls.at(-1)?.[0]?.fallback).toBeUndefined();
   });
 });
