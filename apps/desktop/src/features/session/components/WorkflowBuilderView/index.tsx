@@ -563,6 +563,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     const after = triggerMode === 'after_run' ? resolvedChainId : null;
     return {
       autoRun,
+      navigate: true,
       ...(goal.length > 0 && { goal }),
       ...(triggerMode !== 'immediate' && { triggerMode }),
       ...(triggerMode === 'after_run' && after && { chainAfterId: after }),

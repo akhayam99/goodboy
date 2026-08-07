@@ -62,6 +62,13 @@ export const LinkedWorkSection = ({ sessionId, onSelectLens }: Props) => {
     },
     {
       kind: 'item',
+      key: 'github',
+      label: 'GitHub issues',
+      icon: CONCEPT_ICONS.github,
+      onClick: () => onSelectLens('github_issue'),
+    },
+    {
+      kind: 'item',
       key: 'jira',
       label: 'Jira issues',
       icon: CONCEPT_ICONS.jira,

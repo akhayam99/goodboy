@@ -80,6 +80,7 @@ import {
   ROLE_DEFAULTS,
 } from '@goodboy/core';
 import { orchestrateNextStep } from './orchestrateNextStep';
+import { continueWorkflowRun } from './continueWorkflowRun';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;
@@ -192,6 +193,7 @@ const baseState = (): State => {
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     transcripts: { [AGENT_ID]: [] },
     sessionTelemetry: {},
+    summarizerStatus: {},
     agentRunHistory: {},
     agentTurnState: {},
     agentModelOverride: {},
@@ -217,6 +219,7 @@ const harness = (state: State) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.useRealTimers();
   listOpenQuestionsSpy.mockResolvedValue([]);
   updateOutcomeSpy.mockResolvedValue(undefined);
   invokeWorkflowUpsertSpy.mockImplementation(async (input: Record<string, unknown>) => ({
@@ -979,5 +982,177 @@ describe('orchestrateNextStep', () => {
       focus: 'agent',
       bypassGate: true,
     });
+  });
+});
+
+describe('orchestrateNextStep and the session context summarizer', () => {
+  const mockDone = (): void => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'done', reason: 'Every step landed.' },
+    });
+  };
+
+  const runOutcomeOf = (state: State): string | undefined =>
+    (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!.orchestrationOutcome;
+
+  it('does not call the run done while the session summarizer is still writing', async () => {
+    vi.useFakeTimers();
+    mockDone();
+    const state = baseState();
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    const { set, get } = harness(state);
+
+    const pending = orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(decideSpy).not.toHaveBeenCalled();
+    expect(runOutcomeOf(state)).toBeUndefined();
+
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
+    await vi.advanceTimersByTimeAsync(500);
+    await pending;
+  });
+
+  it('still reaches done once the summarizer finishes, so the advance is not dropped', async () => {
+    vi.useFakeTimers();
+    mockDone();
+    const state = baseState();
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    const { set, get } = harness(state);
+
+    const pending = orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(decideSpy).not.toHaveBeenCalled();
+
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
+    await vi.advanceTimersByTimeAsync(500);
+    await pending;
+
+    expect(decideSpy).toHaveBeenCalledTimes(1);
+    expect(updateOutcomeSpy).toHaveBeenCalledWith(
+      {},
+      WORKFLOW_RUN_ID,
+      'done',
+      'Every step landed.',
+    );
+    expect(runOutcomeOf(state)).toBe('done');
+  });
+
+  it('caps the summarizer wait at exactly sixty seconds, not a moment sooner', async () => {
+    vi.useFakeTimers();
+    mockDone();
+    const state = baseState();
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    const { set, get } = harness(state);
+
+    const pending = orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.advanceTimersByTimeAsync(59_999);
+    expect(decideSpy).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(200);
+    await pending;
+
+    expect(decideSpy).toHaveBeenCalledTimes(1);
+    expect(runOutcomeOf(state)).toBe('done');
+  });
+
+  it('gives up on a summarizer that never settles instead of parking the run forever', async () => {
+    vi.useFakeTimers();
+    mockDone();
+    const state = baseState();
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    const { set, get } = harness(state);
+
+    const pending = orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.advanceTimersByTimeAsync(120_000);
+    await pending;
+
+    expect(decideSpy).toHaveBeenCalledTimes(1);
+    expect(runOutcomeOf(state)).toBe('done');
+  });
+
+  it('abandons the pass when the run was discarded during the summarizer wait', async () => {
+    vi.useFakeTimers();
+    mockDone();
+    const state = baseState();
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    const { set, get } = harness(state);
+
+    const pending = orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    state['sessions'] = [
+      {
+        ...sessions[0]!,
+        workflowRuns: [{ ...sessions[0]!.workflowRuns[0]!, discardedAt: NOW }],
+      },
+    ];
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
+    await vi.advanceTimersByTimeAsync(500);
+    await pending;
+
+    expect(decideSpy).not.toHaveBeenCalled();
+    expect(updateOutcomeSpy).not.toHaveBeenCalled();
+  });
+
+  it('abandons the pass when the run settled from elsewhere during the summarizer wait', async () => {
+    vi.useFakeTimers();
+    mockDone();
+    const state = baseState();
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    const { set, get } = harness(state);
+
+    const pending = orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    const sessions = state['sessions'] as ReadonlyArray<Session>;
+    state['sessions'] = [
+      {
+        ...sessions[0]!,
+        workflowRuns: [
+          { ...sessions[0]!.workflowRuns[0]!, orchestrationOutcome: 'blocked' as const },
+        ],
+      },
+    ];
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
+    await vi.advanceTimersByTimeAsync(500);
+    await pending;
+
+    expect(decideSpy).not.toHaveBeenCalled();
+    expect(updateOutcomeSpy).not.toHaveBeenCalled();
+  });
+
+  it('lets a forced skip past the summarizer, as it already cleared the gate', async () => {
+    mockDone();
+    const state = baseState();
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID, { bypassGate: true });
+
+    expect(decideSpy).toHaveBeenCalledTimes(1);
+    expect(runOutcomeOf(state)).toBe('done');
+  });
+
+  it('gates continue-in-place too, which never passed through the autorun gate', async () => {
+    vi.useFakeTimers();
+    mockDone();
+    const state = baseState();
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'running' } };
+    const { set, get } = harness(state);
+    state['orchestrateNextStep'] = orchestrateNextStep(set, get);
+
+    const pending = continueWorkflowRun(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'keep going');
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(decideSpy).not.toHaveBeenCalled();
+
+    state['summarizerStatus'] = { [SESSION_ID]: { status: 'idle' } };
+    await vi.advanceTimersByTimeAsync(500);
+    await pending;
+
+    expect(runOutcomeOf(state)).toBe('done');
   });
 });
