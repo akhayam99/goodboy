@@ -6,6 +6,7 @@ import {
   recommendedModelForRole,
   resolveRoleRouting,
   type ResolvedRoleFallback,
+  type ResolvedRoleRouting,
 } from '@goodboy/core';
 import type {
   AgentRole,
@@ -21,9 +22,9 @@ import {
   clampEffort,
   modelEffortLevels,
   modelLabel,
-} from '../../../../chat/utils/chat-constants';
-import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
-import { RoutingStatusControl } from './RoutingStatusControl';
+} from '../../../../../chat/utils/chat-constants';
+import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { RoutingStatusControl } from '../RoutingStatusControl';
 
 const AUTOMATIC_FALLBACK_SUMMARY = 'Automatic';
 
@@ -52,11 +53,35 @@ type StoredFallbackParams = {
   readonly resolved: ResolvedRoleFallback | undefined;
 };
 
+type RepairParams = {
+  readonly role: AgentRole;
+  readonly candidate: RoleModelPreference;
+};
+
 const storedFallback = ({ resolved }: StoredFallbackParams): RoleModelFallback | undefined => {
   if (resolved == null) {
     return undefined;
   }
   return { providerId: resolved.provider, model: resolved.model };
+};
+
+const repairedRouting = ({ role, candidate }: RepairParams): ResolvedRoleRouting | null => {
+  const direct = resolveRoleRouting({ role, prefs: { [role]: candidate } });
+  if (direct.isOverride) {
+    return direct;
+  }
+  const owner = getModelProvider(candidate.model);
+  if (owner == null || owner === candidate.providerId) {
+    return null;
+  }
+  const repaired = resolveRoleRouting({
+    role,
+    prefs: { [role]: { ...candidate, providerId: owner } },
+  });
+  if (!repaired.isOverride) {
+    return null;
+  }
+  return repaired;
 };
 
 export const RoleModelRow = ({
@@ -76,12 +101,15 @@ export const RoleModelRow = ({
   const resolvedFallbackProviderId = resolved.fallback?.provider ?? defaultProviderId;
   const [providerId, setProviderId] = useState(resolvedProviderId);
   const [isChoosingFallback, setIsChoosingFallback] = useState(false);
+  const pendingProvider = useRef(resolvedProviderId);
   const pendingFallbackProvider = useRef(resolvedFallbackProviderId);
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
   const recommendedModel = recommendedModelForRole({ role, provider: providerId });
   const defaultModel = recommendedModelForRole({ role, provider: defaultProviderId });
+  const primaryModel = resolved.isOverride ? resolved.model : recommendedModel;
+  const pendingModel = useRef(primaryModel);
   const compiledRouting = `${PROVIDER_LABEL[defaultProviderId]} · ${modelLabel(defaultModel)}`;
   const defaultSummary =
     modelEffortLevels(defaultModel) == null
@@ -91,7 +119,12 @@ export const RoleModelRow = ({
 
   useEffect(() => {
     setProviderId(resolvedProviderId);
+    pendingProvider.current = resolvedProviderId;
   }, [resolvedProviderId]);
+
+  useEffect(() => {
+    pendingModel.current = primaryModel;
+  }, [primaryModel]);
 
   useEffect(() => {
     pendingFallbackProvider.current = resolvedFallbackProviderId;
@@ -105,11 +138,12 @@ export const RoleModelRow = ({
       effort,
       ...(carried != null && { fallback: carried }),
     };
-    const next = resolveRoleRouting({ role, prefs: { [role]: candidate } });
-    if (!next.isOverride) {
-      onChange(null);
+    const next = repairedRouting({ role, candidate });
+    if (next == null) {
       return;
     }
+    pendingProvider.current = next.provider;
+    pendingModel.current = next.model;
     const kept = storedFallback({ resolved: next.fallback });
     onChange({
       providerId: next.provider,
@@ -120,18 +154,14 @@ export const RoleModelRow = ({
   };
 
   const commitFallback = ({ fallback }: CommitFallbackParams) => {
-    if (!resolved.isOverride) {
-      return;
-    }
     const candidate: RoleModelPreference = {
       providerId: resolved.provider,
       model: resolved.model,
       effort: resolved.effort,
       ...(fallback != null && { fallback }),
     };
-    const next = resolveRoleRouting({ role, prefs: { [role]: candidate } });
-    if (!next.isOverride) {
-      onChange(null);
+    const next = repairedRouting({ role, candidate });
+    if (next == null) {
       return;
     }
     const kept = storedFallback({ resolved: next.fallback });
@@ -168,8 +198,8 @@ export const RoleModelRow = ({
               value: resolved.effort,
               onChange: (effort) =>
                 commit({
-                  providerId,
-                  model: resolved.isOverride ? resolved.model : recommendedModel,
+                  providerId: pendingProvider.current,
+                  model: pendingModel.current,
                   effort,
                 }),
             }}
@@ -183,10 +213,12 @@ export const RoleModelRow = ({
                 return;
               }
               setProviderId(next);
+              pendingProvider.current = next;
+              const nextModel = recommendedModelForRole({ role, provider: next });
+              pendingModel.current = nextModel;
               if (!resolved.isOverride) {
                 return;
               }
-              const nextModel = recommendedModelForRole({ role, provider: next });
               commit({
                 providerId: next,
                 model: nextModel,
@@ -199,7 +231,7 @@ export const RoleModelRow = ({
                 return;
               }
               commit({
-                providerId,
+                providerId: pendingProvider.current,
                 model: nextModel,
                 effort: clampEffort(nextModel, resolved.effort),
               });

@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { AuxTaskId, ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
-import { clampEffort, modelEffortLevels } from '../../../../chat/utils/chat-constants';
-import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
-import { RoutingStatusControl } from './RoutingStatusControl';
+import { clampEffort, modelEffortLevels } from '../../../../../chat/utils/chat-constants';
+import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { RoutingStatusControl } from '../RoutingStatusControl';
 
 const DEFAULT_EFFORT: ModelEffort = 'medium';
 
@@ -35,6 +35,7 @@ export const TaskModelRow = ({
   const automatic = resolveTaskModel(task, null, defaultProviderId);
   const preferredProviderId = preference?.providerId ?? automatic.providerId;
   const [providerId, setProviderId] = useState(preferredProviderId);
+  const pendingProvider = useRef(preferredProviderId);
   const model = preference?.model ?? '';
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
@@ -42,10 +43,16 @@ export const TaskModelRow = ({
   const recommendedModel = resolveTaskModel(task, null, providerId).model;
   const effortModel = model === '' ? recommendedModel : model;
   const effortValue = preference?.effort ?? DEFAULT_EFFORT;
+  const pendingModel = useRef(effortModel);
 
   useEffect(() => {
     setProviderId(preferredProviderId);
+    pendingProvider.current = preferredProviderId;
   }, [preferredProviderId]);
+
+  useEffect(() => {
+    pendingModel.current = effortModel;
+  }, [effortModel]);
 
   return (
     <FieldRow label={label} help={help}>
@@ -66,10 +73,10 @@ export const TaskModelRow = ({
               editable: true,
               value: effortForModel(effortModel, effortValue) ?? effortValue,
               onChange: (effort) => {
-                const applied = effortForModel(effortModel, effort);
+                const applied = effortForModel(pendingModel.current, effort);
                 onChange({
-                  providerId,
-                  model: model === '' ? recommendedModel : model,
+                  providerId: pendingProvider.current,
+                  model: pendingModel.current,
                   ...(applied != null && { effort: applied }),
                 });
               },
@@ -81,6 +88,8 @@ export const TaskModelRow = ({
                 return;
               }
               setProviderId(next);
+              pendingProvider.current = next;
+              pendingModel.current = resolveTaskModel(task, null, next).model;
               if (preference == null) {
                 return;
               }
@@ -93,8 +102,9 @@ export const TaskModelRow = ({
               }
               const carried =
                 preference?.effort == null ? null : effortForModel(nextModel, preference.effort);
+              pendingModel.current = nextModel;
               onChange({
-                providerId,
+                providerId: pendingProvider.current,
                 model: nextModel,
                 ...(carried != null && { effort: carried }),
               });
