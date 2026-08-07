@@ -7,6 +7,45 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.73
+
+A workspace no longer needs a repository to exist first, and a failed integration list is no longer a dead end.
+
+### [#1325] Start a workspace without a repository, then link one
+
+Goodboy could already run a workspace with no git behind it, as plain folders, but only for people who said they do not write code. It is now offered on the developer path too, so you can start on a goal before the repository exists.
+
+The onboarding step says what the choice costs while you are making it: plain folders, no branch, no diff and no pull requests until you link a code host. Linking one later is the control that already sits in the footer, and from that point new sessions get their own branch and worktree.
+
+Sessions you created before linking keep working as plain folders. They are also no longer mistaken for branch-backed sessions afterwards, which is what used to let a push or a pull request start against a branch that was never there.
+
+### [#1321] A failed integration inbox offers its retry
+
+Open a studio, have a token expire or a request drop, and the list collapsed to a red box with the error text and nothing to click. In GitLab, GitHub and Bitbucket there was no way to try again without closing the studio and opening it again.
+
+The retry now sits in the error itself, in all five studio inboxes and on a Linear task opened inside a session. Jira and Slack already kept a working refresh in their header; they get the same in-place control.
+
+### [#1323] A workflow step hands over the summary it produced
+
+A workflow step passes its output to the next one through a short summary. When that summary ran past the size the handoff allows, the whole thing was discarded and replaced with a raw head-and-tail cut of the full output, which is longer and less useful than the summary it replaced.
+
+The summary is now trimmed to the last whole line that fits, so nothing is cut mid-line, and it says so: it ends by naming the trim and pointing at the full step output. An empty summary is still treated as a failure, because there is nothing there to keep. The "degraded handoff" marker in the transcript used to guess by matching the shape of the discarded text and could not recognise a short output at all, so within the session it now appears when the handoff actually degraded and stays away when it did not. After a restart it goes back to reading the summary's shape.
+
+Follow-up: this stands on the mechanism, not on a count of how often the old path fired. If a summary still cannot be produced, the handoff degrades as before and the notification keeps its retry.
+
+### [#1326] The merge request form keeps its submit button in view
+
+Opening a GitLab merge request from Goodboy put the Create button inside the scrolling form, so expanding the agent options pushed it off screen. It is now pinned below the form the way the pull request equivalent already was.
+
+### Smaller fixes
+
+- A busy button shows a pulsing dot instead of a spinner [#1324]
+- Two animated styles in the app now stop entirely when the system asks for reduced motion [#1324]
+- The new-script form drops the box drawn around it, matching every other create surface in the app [#1326]
+- The budget cap editor separates its threshold section with a divider instead of a border [#1326]
+- The integrations menu in the footer scrolls with a fade instead of a hard cut [#1326]
+- The cost colors block in the guide no longer sits with more space above it than its neighbors [#1326]
+
 ## Goodboy v0.1.72
 
 The release now carries Linux packages, credentials there go to the system keyring, and the shortcuts answer to Ctrl.
