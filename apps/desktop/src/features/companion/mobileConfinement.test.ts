@@ -197,6 +197,51 @@ describe('evaluateMobileCreateSession', () => {
     if (!gate.ok) expect(gate.reason).toMatch(/not connected/i);
   });
 
+  // PARITY: jira must pass through the exact same gate shape as linear —
+  // adding a provider to the allowlist is not a special case, it is another
+  // member of the same set.
+  it('accepts jira exactly as it accepts linear (same connected-workspace shape)', () => {
+    const gate = evaluateMobileCreateSession({
+      workspaceId: 'w1',
+      provider: 'jira',
+      workspaces,
+      integrations: [{ provider: 'jira' as const }],
+    });
+    expect(gate.ok).toBe(true);
+    if (gate.ok) {
+      expect(gate.workspaceId).toBe('w1');
+      expect(gate.provider).toBe('jira');
+    }
+  });
+
+  // PARITY: an unconnected jira integration is refused the same way an
+  // unconnected linear integration is refused above.
+  it('refuses jira when it is not connected for the target workspace', () => {
+    const gate = evaluateMobileCreateSession({
+      workspaceId: 'w1',
+      provider: 'jira',
+      workspaces,
+      integrations: linearOnW1, // only linear connected on w1
+    });
+    expect(gate.ok).toBe(false);
+    if (!gate.ok) expect(gate.reason).toMatch(/not connected/i);
+  });
+
+  // PARITY: bitbucket and slack remain outside the create-session allowlist,
+  // same refusal shape as any other unsupported provider (e.g. github).
+  it('refuses bitbucket and slack exactly as it refuses github', () => {
+    for (const provider of ['bitbucket', 'slack']) {
+      const gate = evaluateMobileCreateSession({
+        workspaceId: 'w1',
+        provider,
+        workspaces,
+        integrations: [{ provider: provider as never }],
+      });
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.reason).toMatch(/unsupported provider/i);
+    }
+  });
+
   // ADVERSARIAL: w2 exists but has no integrations at all — can't launch from it.
   it('refuses a workspace with no integrations connected', () => {
     const gate = evaluateMobileCreateSession({
