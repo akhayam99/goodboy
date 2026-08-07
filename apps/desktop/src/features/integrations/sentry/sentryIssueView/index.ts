@@ -8,6 +8,10 @@ type Params = {
   readonly culprit: string | null;
   readonly status: string | null;
   readonly permalink: string | null;
+  readonly count?: string | null;
+  readonly userCount?: number | null;
+  readonly firstSeen?: string | null;
+  readonly lastSeen?: string | null;
   readonly detail: SentryIssueDetail | null;
   readonly isLoading: boolean;
   readonly error: string | null;
@@ -20,6 +24,10 @@ export const sentryIssueView = ({
   culprit,
   status,
   permalink,
+  count = null,
+  userCount = null,
+  firstSeen = null,
+  lastSeen = null,
   detail,
   isLoading,
   error,
@@ -33,6 +41,10 @@ export const sentryIssueView = ({
     culprit: detail?.culprit ?? culprit,
     status,
     permalink,
+    count,
+    userCount,
+    firstSeen,
+    lastSeen,
     tags: visibleSentryTags({ detail }),
     frames: detail?.frames ?? [],
     breadcrumbs,

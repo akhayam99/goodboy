@@ -282,6 +282,7 @@ pub fn run() {
             sentry::sentry_connect,
             sentry::sentry_disconnect,
             sentry::sentry_fetch_issues,
+            sentry::sentry_fetch_issue,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_connect,
             gitlab::gitlab_disconnect,
