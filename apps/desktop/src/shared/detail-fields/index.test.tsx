@@ -40,6 +40,10 @@ const LINEAR_ISSUE: LinearIssue = {
 const SENTRY_ISSUE: SentryIssueProperties = {
   culprit: 'api/items',
   status: 'unresolved',
+  count: '128',
+  userCount: 9,
+  firstSeen: '2026-07-01T09:00:00Z',
+  lastSeen: '2026-07-23T10:00:00Z',
   tags: [
     { key: 'release', value: 'desktop@1.2.3' },
     { key: 'environment', value: 'production' },
@@ -112,7 +116,15 @@ describe('detail field registries', () => {
       'linkedPullRequests',
       'updated',
     ]);
-    expect(sentryIssueFields.map((field) => field.key)).toEqual(['culprit', 'status', 'tags']);
+    expect(sentryIssueFields.map((field) => field.key)).toEqual([
+      'culprit',
+      'status',
+      'events',
+      'users',
+      'firstSeen',
+      'lastSeen',
+      'tags',
+    ]);
     expect(githubIssueFields.map((field) => field.key)).toEqual(['labels', 'updated']);
     expect(githubPullRequestFields.map((field) => field.key)).toEqual(['baseBranch', 'updated']);
     expect(gitlabIssueFields.map((field) => field.key)).toEqual(['milestone', 'labels', 'updated']);
@@ -135,7 +147,16 @@ describe('detail field registries', () => {
       resolveDetailFields({ registry: sentryIssueFields, entity: SENTRY_ISSUE }).map(
         (entry) => entry.label,
       ),
-    ).toEqual(['Culprit', 'Status', 'release', 'environment']);
+    ).toEqual([
+      'Culprit',
+      'Status',
+      'Events',
+      'Users',
+      'First seen',
+      'Last seen',
+      'release',
+      'environment',
+    ]);
     expect(
       resolveDetailFields({ registry: githubIssueFields, entity: GITHUB_ISSUE }).map(
         (entry) => entry.label,

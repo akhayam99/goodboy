@@ -25,6 +25,10 @@ type Props = {
   readonly level: string | null;
   readonly status: string | null;
   readonly permalink: string | null;
+  readonly count?: string | null;
+  readonly userCount?: number | null;
+  readonly firstSeen?: string | null;
+  readonly lastSeen?: string | null;
   readonly detail: Detail | null;
   readonly isLoading: boolean;
   readonly error: string | null;
@@ -39,6 +43,10 @@ export const SentryIssueDetail = ({
   level,
   status,
   permalink,
+  count = null,
+  userCount = null,
+  firstSeen = null,
+  lastSeen = null,
   detail,
   isLoading,
   error,
@@ -53,6 +61,10 @@ export const SentryIssueDetail = ({
     level,
     status,
     permalink,
+    count,
+    userCount,
+    firstSeen,
+    lastSeen,
     detail,
     isLoading,
     error,
