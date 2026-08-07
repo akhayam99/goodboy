@@ -10,7 +10,7 @@ type Props = {
 };
 
 const ACTION_BTN =
-  'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground';
+  'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]';
 
 export const ReviewLineActions = ({ target, isActive, onToggleComposer, onAskAgent }: Props) => {
   if (target === null || onToggleComposer === null || onAskAgent === null) {
