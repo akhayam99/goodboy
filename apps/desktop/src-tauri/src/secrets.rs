@@ -1,6 +1,18 @@
 use keyring::Entry;
 use thiserror::Error;
 
+#[cfg(all(target_os = "macos", not(feature = "secret-store-apple")))]
+compile_error!("keyring/apple-native is off, so macOS falls back to keyring's in-memory mock store and every saved credential disappears when the app exits");
+
+#[cfg(all(target_os = "linux", not(feature = "secret-store-secret-service")))]
+compile_error!("keyring/sync-secret-service is off, so Linux falls back to the kernel keyutils store or the in-memory mock, neither of which keeps a credential across a restart");
+
+#[cfg(all(target_os = "linux", not(feature = "secret-store-encrypted-session")))]
+compile_error!("keyring/crypto-rust is off, so the Secret Service session negotiates EncryptionType::Plain and every credential crosses the DBus session bus in cleartext");
+
+#[cfg(all(target_os = "windows", not(feature = "secret-store-windows")))]
+compile_error!("keyring/windows-native is off, so Windows falls back to keyring's in-memory mock store and every saved credential disappears when the app exits");
+
 const SERVICE: &str = "com.goodboy.desktop";
 
 #[derive(Debug, Error)]
