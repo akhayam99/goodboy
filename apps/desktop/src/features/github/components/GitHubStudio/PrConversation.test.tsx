@@ -75,4 +75,9 @@ describe('PrConversation', () => {
     ]);
     expect(screen.getAllByText('Outdated').length).toBe(1);
   });
+
+  it('marks an outdated resolved thread', () => {
+    renderConversation([comment({ resolved: true, outdated: true })]);
+    expect(screen.getByText('Outdated')).toBeDefined();
+  });
 });
