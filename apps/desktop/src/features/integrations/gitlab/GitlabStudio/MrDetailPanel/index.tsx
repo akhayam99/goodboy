@@ -5,7 +5,6 @@ import type { GitlabWorkspaceIntegration, SessionId, WorkspaceId } from '@goodbo
 import {
   DetailSection,
   HeaderBand,
-  RailBlock,
   StudioDetailLayout,
   StudioDetailTabs,
 } from '../../../../../shared/components/StudioDetail';
@@ -378,11 +377,7 @@ export const MrDetailPanel = ({
           actions={refreshButton}
         />
       }
-      rail={
-        <RailBlock label="Branch">
-          <span className="font-mono">{branch ?? 'no branch'}</span>
-        </RailBlock>
-      }
+      fit="bleed"
     >
       {sessionId != null && (
         <CreateMrForm sessionId={sessionId} branch={branch} error={error} onClose={onClose} />

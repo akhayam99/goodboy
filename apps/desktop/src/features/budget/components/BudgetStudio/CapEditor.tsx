@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, InlineConfirm, Input, formatUsd } from '@goodboy/ui';
+import { Button, Divider, InlineConfirm, Input, formatUsd } from '@goodboy/ui';
 import { parseCap } from '../../../../shared/lib/parse-cap';
 import { StudioWidget } from '../../../../shared/components/StudioWidget';
 
@@ -164,39 +164,42 @@ export const CapEditor = ({
         ) : null}
       </div>
       {threshold !== undefined && currentCapUsd !== null ? (
-        <div className="flex flex-col gap-2 border-t border-border-soft pt-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">at</span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              value={thresholdDraft}
-              placeholder="80"
-              disabled={busy}
-              onChange={(e) => setThresholdDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && canSaveThreshold && !busy) {
-                  void saveThreshold();
-                }
-              }}
-              className="max-w-20 font-mono tabular-nums"
-              aria-label="alert threshold percent"
-            />
-            <span className="text-sm text-muted-foreground">% of the cap</span>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={!canSaveThreshold || busy}
-              onClick={() => void saveThreshold()}
-            >
-              Update threshold
-            </Button>
+        <>
+          <Divider />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">at</span>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={thresholdDraft}
+                placeholder="80"
+                disabled={busy}
+                onChange={(e) => setThresholdDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && canSaveThreshold && !busy) {
+                    void saveThreshold();
+                  }
+                }}
+                className="max-w-20 font-mono tabular-nums"
+                aria-label="alert threshold percent"
+              />
+              <span className="text-sm text-muted-foreground">% of the cap</span>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!canSaveThreshold || busy}
+                onClick={() => void saveThreshold()}
+              >
+                Update threshold
+              </Button>
+            </div>
+            <p className="text-2xs text-muted-foreground">
+              this number does two things: it raises the budget alert, and it moves the next turn to
+              another provider. spend above it still runs here if no other provider has room.
+            </p>
           </div>
-          <p className="text-2xs text-muted-foreground">
-            this number does two things: it raises the budget alert, and it moves the next turn to
-            another provider. spend above it still runs here if no other provider has room.
-          </p>
-        </div>
+        </>
       ) : null}
     </StudioWidget>
   );

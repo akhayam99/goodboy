@@ -20,33 +20,35 @@ export const NewScriptCard = ({
   onSave,
   onCancel,
 }: Props) => (
-  <div className="flex flex-col rounded-lg border border-border-soft bg-background px-3">
-    <FieldRow label="Name">
-      <Input
-        value={name}
-        onChange={(event) => onNameChange(event.target.value)}
-        placeholder="Script name (e.g. copy environments)"
-        autoFocus
-        className="w-full sm:w-72"
-      />
-    </FieldRow>
+  <section className="flex flex-col gap-6">
+    <section className="flex flex-col">
+      <FieldRow label="Name">
+        <Input
+          value={name}
+          onChange={(event) => onNameChange(event.target.value)}
+          placeholder="Script name (e.g. copy environments)"
+          autoFocus
+          className="w-full sm:w-72"
+        />
+      </FieldRow>
+      <Divider />
+      <FieldRow label="Command" help="Runs from the session worktree.">
+        <Textarea
+          value={body}
+          onChange={(event) => onBodyChange(event.target.value)}
+          placeholder={'#!/bin/bash\ncp ../main/.env .env'}
+          className="w-full font-mono text-xs sm:w-96"
+          autoGrow
+          minRows={5}
+          maxRows={24}
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+        />
+      </FieldRow>
+    </section>
     <Divider />
-    <FieldRow label="Command" help="Runs from the session worktree.">
-      <Textarea
-        value={body}
-        onChange={(event) => onBodyChange(event.target.value)}
-        placeholder={'#!/bin/bash\ncp ../main/.env .env'}
-        className="w-full font-mono text-xs sm:w-96"
-        autoGrow
-        minRows={5}
-        maxRows={24}
-        spellCheck={false}
-        autoCorrect="off"
-        autoCapitalize="off"
-      />
-    </FieldRow>
-    <Divider />
-    <footer className="flex shrink-0 items-center gap-3 py-3">
+    <footer className="flex shrink-0 items-center gap-3">
       <div className="min-w-0 flex-1">
         {error !== null ? (
           <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
@@ -62,5 +64,5 @@ export const NewScriptCard = ({
         Save
       </Button>
     </footer>
-  </div>
+  </section>
 );

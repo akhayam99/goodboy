@@ -177,6 +177,23 @@ describe('MrDetailPanel', () => {
     );
   });
 
+  it('keeps the create button outside the scrolling region', () => {
+    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
+
+    const button = screen.getByRole('button', { name: 'Create MR' });
+    const scrollAncestors: Array<HTMLElement> = [];
+    let current: HTMLElement | null = button.parentElement;
+    while (current != null) {
+      if (current.className.includes('overflow-y-auto')) {
+        scrollAncestors.push(current);
+      }
+      current = current.parentElement;
+    }
+
+    expect(scrollAncestors).toEqual([]);
+    expect(button.closest('footer')).not.toBeNull();
+  });
+
   it('respects the draft toggle on manual create', async () => {
     render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Merge request title' }), {

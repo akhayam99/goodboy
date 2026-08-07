@@ -5,6 +5,7 @@ import {
   Divider,
   FieldRow,
   Input,
+  ScrollFade,
   SectionHeader,
   SegmentedTabs,
   Textarea,
@@ -137,88 +138,95 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
   };
 
   return (
-    <section className="flex flex-col gap-6">
-      <section className="flex flex-col">
-        <SectionHeader
-          label="How"
-          hint="Fill the merge request yourself, or hand it to an agent that drafts and opens it."
-          action={
-            <SegmentedTabs
-              ariaLabel="Creation mode"
-              size="sm"
-              options={[
-                { value: 'manual', label: 'Manual', icon: PenLine },
-                { value: 'agent', label: 'With an agent', icon: Sparkles },
-              ]}
-              value={mode}
-              onChange={setMode}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+        <section className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+          <section className="flex flex-col">
+            <SectionHeader
+              label="How"
+              hint="Fill the merge request yourself, or hand it to an agent that drafts and opens it."
+              action={
+                <SegmentedTabs
+                  ariaLabel="Creation mode"
+                  size="sm"
+                  options={[
+                    { value: 'manual', label: 'Manual', icon: PenLine },
+                    { value: 'agent', label: 'With an agent', icon: Sparkles },
+                  ]}
+                  value={mode}
+                  onChange={setMode}
+                />
+              }
             />
-          }
-        />
-        {mode === 'manual' ? (
-          <>
-            <FieldRow label="Title" help="A short summary of the change.">
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={busy !== null}
-                aria-label="Merge request title"
-                className="h-8 w-full text-sm sm:w-96"
-              />
-            </FieldRow>
+            {mode === 'manual' ? (
+              <>
+                <FieldRow label="Title" help="A short summary of the change.">
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    disabled={busy !== null}
+                    aria-label="Merge request title"
+                    className="h-8 w-full text-sm sm:w-96"
+                  />
+                </FieldRow>
+                <Divider />
+                <FieldRow label="Description" help="What changed and why. Markdown supported.">
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    autoGrow
+                    minRows={3}
+                    maxRows={10}
+                    disabled={busy !== null}
+                    aria-label="Merge request description"
+                    className="w-full text-sm sm:w-96"
+                  />
+                </FieldRow>
+                <Divider />
+                <FieldRow label="Target branch" help="The branch this merge request merges into.">
+                  <Input
+                    value={targetBranch}
+                    onChange={(e) => setTargetBranch(e.target.value)}
+                    placeholder="main"
+                    className="h-8 w-full font-mono text-sm sm:w-96"
+                    disabled={busy !== null}
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    aria-label="Target branch"
+                  />
+                </FieldRow>
+              </>
+            ) : (
+              <FieldRow
+                label="Agent"
+                layout="stacked"
+                help="Routing and optional notes for the agent that drafts the title and description, then opens the merge request."
+              >
+                <AgentSpawnConfig
+                  value={agentConfig}
+                  onChange={(value) => {
+                    setAgentConfigUserTouched(true);
+                    setAgentConfig(value);
+                  }}
+                  disabled={busy !== null}
+                />
+              </FieldRow>
+            )}
             <Divider />
-            <FieldRow label="Description" help="What changed and why. Markdown supported.">
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                autoGrow
-                minRows={3}
-                maxRows={10}
-                disabled={busy !== null}
-                aria-label="Merge request description"
-                className="w-full text-sm sm:w-96"
-              />
+            <FieldRow
+              label="Open as draft"
+              help="Creates the merge request in GitLab's draft state."
+            >
+              <Checkbox checked={draft} onChange={setDraft} disabled={busy !== null} />
             </FieldRow>
-            <Divider />
-            <FieldRow label="Target branch" help="The branch this merge request merges into.">
-              <Input
-                value={targetBranch}
-                onChange={(e) => setTargetBranch(e.target.value)}
-                placeholder="main"
-                className="h-8 w-full font-mono text-sm sm:w-96"
-                disabled={busy !== null}
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Target branch"
-              />
-            </FieldRow>
-          </>
-        ) : (
-          <FieldRow
-            label="Agent"
-            layout="stacked"
-            help="Routing and optional notes for the agent that drafts the title and description, then opens the merge request."
-          >
-            <AgentSpawnConfig
-              value={agentConfig}
-              onChange={(value) => {
-                setAgentConfigUserTouched(true);
-                setAgentConfig(value);
-              }}
-              disabled={busy !== null}
-            />
-          </FieldRow>
-        )}
-        <Divider />
-        <FieldRow label="Open as draft" help="Creates the merge request in GitLab's draft state.">
-          <Checkbox checked={draft} onChange={setDraft} disabled={busy !== null} />
-        </FieldRow>
-      </section>
+          </section>
+        </section>
+      </ScrollFade>
 
       <Divider />
 
-      <footer className="flex shrink-0 items-center gap-3">
+      <footer className="flex shrink-0 items-center gap-3 px-6 py-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {error != null ? (
             <span
@@ -263,6 +271,6 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
           </Button>
         )}
       </footer>
-    </section>
+    </div>
   );
 };
