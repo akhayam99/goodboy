@@ -92,4 +92,19 @@ describe('ReportIssuePopover', () => {
     expect(screen.queryByRole('dialog', { name: 'Report an issue' })).toBeNull();
     expect(useAppStore.getState().bugReportDraft.description).toBe('Session cost is stale');
   });
+
+  it('shows a dot on the trigger while a draft is waiting, and hides it once reset', () => {
+    render(<ReportIssuePopover />);
+
+    expect(screen.queryByTestId('report-issue-draft-dot')).toBeNull();
+
+    openPopover();
+    describeIssue('Session cost is stale');
+
+    expect(screen.getByTestId('report-issue-draft-dot')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+
+    expect(screen.queryByTestId('report-issue-draft-dot')).toBeNull();
+  });
 });

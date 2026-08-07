@@ -163,6 +163,27 @@ describe('ReportIssueStudio', () => {
     );
   });
 
+  it('empties the draft and leaves the form once the fallback link opens', async () => {
+    setGithubStatus({ available: false, mode: 'absent' });
+    const onClose = vi.fn();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<ReportIssueStudio onClose={onClose} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open on GitHub' }));
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(400);
+    });
+    vi.useRealTimers();
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().bugReportDraft).toEqual(
+      initialBugReportDraftState.bugReportDraft,
+    );
+  });
+
   it('keeps the draft when the send fails, so nothing typed is lost', async () => {
     setGithubStatus({ available: true, mode: 'gh-cli' });
     mocks.run.mockImplementation(async () => ({

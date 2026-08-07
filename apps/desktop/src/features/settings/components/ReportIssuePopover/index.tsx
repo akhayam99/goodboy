@@ -58,6 +58,7 @@ export const ReportIssuePopover = () => {
           <ReportIssueIcon size={14} aria-hidden />
           {hasDraft && (
             <span
+              data-testid="report-issue-draft-dot"
               aria-hidden
               className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-info"
             />
