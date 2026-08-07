@@ -26,7 +26,8 @@ export type NotificationAction =
       readonly agentId: AgentId;
     }
   | { readonly kind: 'open-budget'; readonly sessionId: SessionId | null }
-  | { readonly kind: 'open-orphan-worktrees'; readonly workspaceId: WorkspaceId };
+  | { readonly kind: 'open-orphan-worktrees'; readonly workspaceId: WorkspaceId }
+  | { readonly kind: 'retry-push-resolutions'; readonly sessionId: SessionId };
 
 export type Notification = {
   readonly id: string;

@@ -3,7 +3,12 @@ import {
   listPendingResolutionsForSession,
   queuePendingResolution,
 } from '@goodboy/db';
-import type { AgentId, PendingResolutionOutcome, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  PendingResolution,
+  PendingResolutionOutcome,
+  SessionId,
+} from '@goodboy/types';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { closedThreadIds } from '../../../features/session/closedThreadIds';
 import { resolverThreadSettlements } from '../../../features/session/resolverThreadSettlements';
@@ -79,7 +84,19 @@ export const resolveAgentThreads = (set: SetFn, get: GetFn) => {
           ...(workspace !== undefined && { workspaceId: workspace.id }),
         };
         const outcomes = get().resolverThreadOutcomes[agentId] ?? {};
-        const persisted = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+        let persisted: ReadonlyArray<PendingResolution>;
+        try {
+          persisted = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+        } catch (err) {
+          void get().emitNotification(
+            'error',
+            'error',
+            "couldn't read the comment queue, threads left open",
+            formatError(err),
+            { ...notifyTarget, action: { kind: 'retry-push-resolutions', sessionId } },
+          );
+          return false;
+        }
         const threadIds = [...new Set([...agentThreadIds(agent), ...Object.keys(outcomes)])];
         if (threadIds.length === 0) {
           void get().emitNotification(
