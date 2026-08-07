@@ -31,7 +31,7 @@ const INSTALL_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
       },
       {
         title: 'If it asks for your password',
-        body: 'A global npm install can need sudo on macOS without nvm. Click in the terminal and type your password, the prompt accepts input directly.',
+        body: 'A global npm install can need sudo when node is not managed by nvm or a similar tool. Click in the terminal and type your password, the prompt accepts input directly.',
       },
       {
         title: 'After install',

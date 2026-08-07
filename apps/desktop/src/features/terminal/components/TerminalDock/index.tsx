@@ -9,6 +9,7 @@ import {
   GenericTerminalPanel,
   type TerminalDriver,
 } from '../../../../shared/components/GenericTerminalPanel';
+import { currentPlatform } from '../../../../shared/platform';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
 import {
   invokeTerminalOpen,
@@ -112,10 +113,14 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
 
   const handleKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (!isActive || !event.metaKey || event.shiftKey || event.altKey || event.ctrlKey) {
+      if (!isActive || event.code !== 'KeyT' || event.altKey) {
         return;
       }
-      if (event.code !== 'KeyT') {
+      const onMac = currentPlatform() === 'darwin';
+      const matches = onMac
+        ? event.metaKey && !event.ctrlKey && !event.shiftKey
+        : event.ctrlKey && event.shiftKey && !event.metaKey;
+      if (!matches) {
         return;
       }
       event.preventDefault();

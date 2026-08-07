@@ -67,7 +67,7 @@ export const StorageSection = () => {
     <div className="flex flex-col gap-4">
       <SectionHeader
         label="Storage"
-        hint="What the local database and archived sessions hold on this Mac."
+        hint="What the local database and archived sessions hold on this computer."
       />
       <div className="flex flex-col">
         <FieldRow label="Database" help="Every workspace, session, message, and streamed event.">

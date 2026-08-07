@@ -7,6 +7,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 
 const { githubAuth } = vi.hoisted(() => ({ githubAuth: { isAuthenticated: false } }));
 
+vi.mock('../shared/platform', () => ({ currentPlatform: () => 'darwin' }));
+
 const { state, workspace } = vi.hoisted(() => {
   const currentWorkspace = {
     id: 'workspace-1',

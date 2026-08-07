@@ -3,6 +3,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 
+const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
+
+vi.mock('../../shared/platform', () => ({ currentPlatform: () => platform.current }));
+
 const { setActiveLens, sessionList, state } = vi.hoisted(() => {
   const activeLensSetter = vi.fn();
   const sessions = [
@@ -159,6 +163,7 @@ const press = (init: KeyInit): void => {
 };
 
 beforeEach(() => {
+  platform.current = 'darwin';
   state.workspaces = [{ id: 'workspace-1', name: 'Workspace', rootPath: '/repo', kind: 'repo' }];
   state.sessions = [
     { id: 'session-0', workspaceId: 'workspace-1' },
@@ -183,7 +188,47 @@ afterEach(() => {
   setActiveLens.mockClear();
 });
 
-describe('App lens shortcuts', () => {
+describe('App lens shortcuts off darwin', () => {
+  beforeEach(() => {
+    platform.current = 'linux';
+  });
+
+  it('jumps to the agents lens on ctrl, where the command key does not exist', () => {
+    render(<App />);
+
+    press({ code: 'KeyA', key: 'a', ctrlKey: true, altKey: true });
+
+    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'agents');
+  });
+
+  it('walks to the previous session on ctrl', () => {
+    render(<App />);
+
+    press({ code: 'BracketLeft', key: '{', ctrlKey: true, shiftKey: true });
+
+    expect(state.setCurrentSession).toHaveBeenCalledWith('session-0');
+  });
+
+  it('reloads on ctrl', () => {
+    render(<App />);
+
+    press({ code: 'KeyR', key: 'r', ctrlKey: true });
+
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the command key inert, so nothing double-fires', () => {
+    render(<App />);
+
+    press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
+    press({ code: 'KeyR', key: 'r', metaKey: true });
+
+    expect(setActiveLens).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
+  });
+});
+
+describe('App lens shortcuts on darwin', () => {
   it('jumps to the agents lens on the lens plane modifier', () => {
     render(<App />);
 

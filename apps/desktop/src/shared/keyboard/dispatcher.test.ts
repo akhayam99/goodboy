@@ -1,6 +1,11 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
+
+vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
+
 import { eventMatches, registerShortcut } from './dispatcher';
 import { SHORTCUTS } from './registry';
 
@@ -11,6 +16,7 @@ afterEach(() => {
     cleanups.pop()?.();
   }
   document.body.innerHTML = '';
+  platform.current = 'darwin';
 });
 
 const bind = (id: Parameters<typeof registerShortcut>[0], handler: () => void) => {
@@ -23,7 +29,11 @@ const press = (init: KeyboardEventInit): KeyboardEvent => {
   return event;
 };
 
-describe('shortcut dispatcher', () => {
+describe('shortcut dispatcher on darwin', () => {
+  beforeEach(() => {
+    platform.current = 'darwin';
+  });
+
   it('fires a shifted bracket, which the character-based matcher could never see', () => {
     const onPrev = vi.fn();
     bind('session.prev', onPrev);
@@ -94,5 +104,85 @@ describe('shortcut dispatcher', () => {
         SHORTCUTS['palette.open'].combo,
       ),
     ).toBe(false);
+  });
+
+  it('ignores the ctrl spelling of a combo, which belongs to the terminal here', () => {
+    const onPalette = vi.fn();
+    bind('palette.open', onPalette);
+
+    press({ key: 'k', code: 'KeyK', ctrlKey: true });
+
+    expect(onPalette).not.toHaveBeenCalled();
+  });
+});
+
+describe('shortcut dispatcher off darwin', () => {
+  beforeEach(() => {
+    platform.current = 'linux';
+  });
+
+  it('fires the command plane on ctrl, which is the only modifier the platform sends', () => {
+    const onPalette = vi.fn();
+    bind('palette.open', onPalette);
+
+    press({ key: 'k', code: 'KeyK', ctrlKey: true });
+
+    expect(onPalette).toHaveBeenCalledOnce();
+  });
+
+  it('never fires on the command key, which no keyboard here carries', () => {
+    const onPalette = vi.fn();
+    bind('palette.open', onPalette);
+
+    press({ key: 'k', code: 'KeyK', metaKey: true });
+
+    expect(onPalette).not.toHaveBeenCalled();
+  });
+
+  it('keeps the session and lens planes on their own modifiers', () => {
+    const onPrev = vi.fn();
+    const onAgents = vi.fn();
+    bind('session.prev', onPrev);
+    bind('lens.agents', onAgents);
+
+    press({ key: '{', code: 'BracketLeft', ctrlKey: true, shiftKey: true });
+    press({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
+
+    expect(onPrev).toHaveBeenCalledOnce();
+    expect(onAgents).toHaveBeenCalledOnce();
+  });
+
+  it('still separates two combos that differ only by a modifier', () => {
+    const onResolve = vi.fn();
+    const onReload = vi.fn();
+    bind('lens.resolve', onResolve);
+    bind('app.reload', onReload);
+
+    press({ key: 'r', code: 'KeyR', ctrlKey: true });
+
+    expect(onReload).toHaveBeenCalledOnce();
+    expect(onResolve).not.toHaveBeenCalled();
+  });
+
+  it('resolves every registry combo to ctrl and never to the command key', () => {
+    for (const entry of Object.values(SHORTCUTS)) {
+      const code = entry.combo.split('+').at(-1) ?? '';
+      const shiftKey = entry.combo.includes('shift');
+      const altKey = entry.combo.includes('alt');
+      expect(
+        eventMatches(
+          new KeyboardEvent('keydown', { code, ctrlKey: true, shiftKey, altKey }),
+          entry.combo,
+        ),
+        `${entry.combo} does not resolve to ctrl`,
+      ).toBe(true);
+      expect(
+        eventMatches(
+          new KeyboardEvent('keydown', { code, metaKey: true, shiftKey, altKey }),
+          entry.combo,
+        ),
+        `${entry.combo} still answers to the command key`,
+      ).toBe(false);
+    }
   });
 });
