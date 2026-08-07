@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCheck, ExternalLink } from 'lucide-react';
+import { Chip } from '@goodboy/ui';
 import type { CommentThread } from '../../comment-threads';
 import { isBot } from '../../comment-threads';
 import { TranscriptDisclosure } from '../../../chat/components/TranscriptDisclosure';
@@ -32,7 +33,17 @@ export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
           icon={<CheckCheck size={12} aria-hidden />}
           eyebrow="resolved"
           badge={
-            <span className="shrink-0 text-2xs font-medium text-foreground/70">{head.author}</span>
+            <span className="flex shrink-0 items-center gap-1.5">
+              <span className="text-2xs font-medium text-foreground/70">{head.author}</span>
+              {head.outdated === true ? (
+                <Chip
+                  tone="neutral"
+                  size="xs"
+                  label="Outdated"
+                  title="This comment is anchored to code that later commits changed"
+                />
+              ) : null}
+            </span>
           }
           preview={threadPreview({ body: head.body })}
           meta={formatRelativeAge({ fromIso: head.createdAt })}

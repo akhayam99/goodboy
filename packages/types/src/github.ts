@@ -129,16 +129,13 @@ export type PrComment = {
   path?: string;
   line?: number;
   resolved?: boolean;
+  outdated?: boolean;
   inReplyToId?: string;
   threadId?: string;
 };
 
 export type PrReviewState =
-  | 'approved'
-  | 'changes_requested'
-  | 'commented'
-  | 'dismissed'
-  | 'pending';
+  'approved' | 'changes_requested' | 'commented' | 'dismissed' | 'pending';
 
 export type PrReview = {
   id: string;
