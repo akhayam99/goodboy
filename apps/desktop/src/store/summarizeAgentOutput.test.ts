@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
 import {
   SUMMARY_TIMEOUT_MS,
+  stepSummaryDegraded,
   summarizeAgentOutput,
   summarizedStepOutputs,
 } from './summarizeAgentOutput';
@@ -36,6 +37,7 @@ describe('summarizeAgentOutput', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     invokeSpy.mockReset();
     summarizedStepOutputs.clear();
+    stepSummaryDegraded.clear();
   });
 
   afterEach(() => {
@@ -184,5 +186,35 @@ describe('summarizeAgentOutput', () => {
       taskModel: TASK_MODEL,
     });
     expect(summarizedStepOutputs.has(AGENT_ONE)).toBe(false);
+  });
+
+  it('records whether each agent summary degraded, and leaves unseen agents unknown', async () => {
+    invokeSpy.mockResolvedValueOnce({ stdout: '', stderr: 'cli exploded', exitCode: 1 });
+    await summarizeAgentOutput({
+      agentId: AGENT_ONE,
+      output: 'raw output',
+      taskModel: TASK_MODEL,
+    });
+    expect(stepSummaryDegraded.get(AGENT_ONE)).toBe(true);
+
+    invokeSpy.mockResolvedValueOnce(successEnvelope('a good summary'));
+    await summarizeAgentOutput({
+      agentId: AGENT_TWO,
+      output: 'raw output',
+      taskModel: TASK_MODEL,
+    });
+    expect(stepSummaryDegraded.get(AGENT_TWO)).toBe(false);
+    expect(stepSummaryDegraded.get('agent-never-run' as AgentId)).toBeUndefined();
+  });
+
+  it('clears the degraded record once a retry succeeds', async () => {
+    invokeSpy.mockResolvedValueOnce({ stdout: '', stderr: 'cli exploded', exitCode: 1 });
+    await summarizeAgentOutput({ agentId: AGENT_ONE, output: 'raw', taskModel: TASK_MODEL });
+    expect(stepSummaryDegraded.get(AGENT_ONE)).toBe(true);
+
+    invokeSpy.mockResolvedValueOnce(successEnvelope('a good summary'));
+    await summarizeAgentOutput({ agentId: AGENT_ONE, output: 'raw', taskModel: TASK_MODEL });
+
+    expect(stepSummaryDegraded.get(AGENT_ONE)).toBe(false);
   });
 });

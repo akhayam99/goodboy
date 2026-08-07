@@ -18,7 +18,11 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { retryStepSummary } from './retryStepSummary';
-import { summarizeAgentOutput, summarizedStepOutputs } from '../../summarizeAgentOutput';
+import {
+  stepSummaryDegraded,
+  summarizeAgentOutput,
+  summarizedStepOutputs,
+} from '../../summarizeAgentOutput';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -94,6 +98,7 @@ describe('retryStepSummary', () => {
   beforeEach(() => {
     invokeAgentUpdateStatusSpy.mockResolvedValue({ ...agent });
     summarizedStepOutputs.clear();
+    stepSummaryDegraded.clear();
   });
 
   afterEach(() => {
