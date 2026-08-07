@@ -108,7 +108,7 @@ describe('summarizeStepOutput', () => {
     ).resolves.toBe('Review passed.\n- No blockers');
   });
 
-  it('rejects summaries that violate the output contract', async () => {
+  it('rejects a summary whose outcome line runs past its own budget', async () => {
     const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
       return { stdout: 'x'.repeat(121), stderr: '', exitCode: 0 } as T;
     };
@@ -121,6 +121,67 @@ describe('summarizeStepOutput', () => {
         output: 'raw',
       }),
     ).rejects.toBeInstanceOf(SummarizerParseError);
+  });
+
+  it('rejects an empty summary', async () => {
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
+      return { stdout: '   \n  ', stderr: '', exitCode: 0 } as T;
+    };
+
+    await expect(
+      summarizeStepOutput({
+        providerId: 'cursor',
+        model: 'composer-2-fast',
+        invokeFn,
+        output: 'raw',
+      }),
+    ).rejects.toBeInstanceOf(SummarizerParseError);
+  });
+
+  it('keeps a summary that lands exactly on the budget', async () => {
+    const exact = `ok\n${'x'.repeat(1197)}`;
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
+      return { stdout: exact, stderr: '', exitCode: 0 } as T;
+    };
+
+    await expect(
+      summarizeStepOutput({
+        providerId: 'cursor',
+        model: 'composer-2-fast',
+        invokeFn,
+        output: 'raw',
+      }),
+    ).resolves.toBe(exact);
+  });
+
+  it('clamps an over-budget summary on a line boundary and says it clamped', async () => {
+    const outcome = 'Wired the workflow handoff.';
+    const bullets = Array.from(
+      { length: 40 },
+      (_value, index) => `- note ${index}: ${'d'.repeat(40)}`,
+    );
+    const overBudget = [outcome, ...bullets].join('\n');
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(): Promise<T> => {
+      return { stdout: overBudget, stderr: '', exitCode: 0 } as T;
+    };
+
+    const result = await summarizeStepOutput({
+      providerId: 'cursor',
+      model: 'composer-2-fast',
+      invokeFn,
+      output: 'raw',
+    });
+    const notice =
+      '(clamped to the handoff budget, the full step output is in the step transcript)';
+    const kept = result.slice(0, result.length - notice.length).trimEnd();
+
+    expect(overBudget.length).toBeGreaterThan(1200);
+    expect(result.length).toBeLessThanOrEqual(1200);
+    expect(result.endsWith(notice)).toBe(true);
+    expect(kept.startsWith(outcome)).toBe(true);
+    expect(kept).toContain(bullets[0]);
+    expect(kept).not.toContain(bullets[39]);
+    expect(kept.split('\n').every((line) => overBudget.split('\n').includes(line))).toBe(true);
   });
 });
 
