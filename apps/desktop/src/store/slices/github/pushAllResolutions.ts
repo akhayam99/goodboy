@@ -1,5 +1,5 @@
 import { deletePendingResolution, listPendingResolutionsForSession } from '@goodboy/db';
-import type { PendingResolutionOutcome, SessionId } from '@goodboy/types';
+import type { PendingResolution, PendingResolutionOutcome, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
@@ -40,7 +40,19 @@ export const pushAllResolutions = (set: SetFn, get: GetFn) => {
           ...(workspace !== undefined && { workspaceId: workspace.id }),
         };
 
-        const pending = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+        let pending: ReadonlyArray<PendingResolution>;
+        try {
+          pending = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+        } catch (err) {
+          void get().emitNotification(
+            'error',
+            'error',
+            "couldn't read the comment queue, nothing pushed",
+            formatError(err),
+            { ...notifyTarget, action: { kind: 'retry-push-resolutions', sessionId } },
+          );
+          return { pushed: false, resolved: 0, failed: 0 };
+        }
         if (pending.length === 0) {
           return { pushed: false, resolved: 0, failed: 0 };
         }
@@ -161,10 +173,20 @@ export const pushAllResolutions = (set: SetFn, get: GetFn) => {
           }
         }
 
-        const rows = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
-        set((state) => ({
-          sessionPendingResolutions: { ...state.sessionPendingResolutions, [sessionId]: rows },
-        }));
+        try {
+          const rows = await listPendingResolutionsForSession({ db: tauriDatabase, sessionId });
+          set((state) => ({
+            sessionPendingResolutions: { ...state.sessionPendingResolutions, [sessionId]: rows },
+          }));
+        } catch (err) {
+          void get().emitNotification(
+            'error',
+            'warning',
+            'queue refresh failed after push',
+            `${formatError(err)}. some comments may still show as pending until you retry.`,
+            { ...notifyTarget, action: { kind: 'retry-push-resolutions', sessionId } },
+          );
+        }
         await get().refreshSessionPrDetail(sessionId, { force: true });
 
         if (failed > 0) {

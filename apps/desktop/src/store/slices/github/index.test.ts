@@ -1901,6 +1901,115 @@ describe('store contract', () => {
       expect(result).toEqual({ pushed: false, resolved: 0, failed: 0 });
     });
 
+    it('pushAllResolutions surfaces the initial queue read failure instead of rejecting', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        notifications: [],
+        resolverThreadOutcomes: {},
+        sessionPendingResolutions: {},
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy.mockRejectedValueOnce(new Error('database is locked'));
+
+      const result = await store.getState().pushAllResolutions(SESSION_ID);
+
+      expect(result).toEqual({ pushed: false, resolved: 0, failed: 0 });
+      expect(gitPushSpy).not.toHaveBeenCalled();
+      const notification = store.getState().notifications[0];
+      expect(notification?.title).toBe("couldn't read the comment queue, nothing pushed");
+      expect(notification?.body).toBe('database is locked');
+      expect(notification?.action).toEqual({
+        kind: 'retry-push-resolutions',
+        sessionId: SESSION_ID,
+      });
+    });
+
+    it('pushAllResolutions surfaces the post-push queue refresh failure instead of rejecting', async () => {
+      const store = await getStore();
+      const fix = {
+        id: 'pending-fix',
+        sessionId: SESSION_ID,
+        prNumber: 1,
+        threadId: 'PRRT_1',
+        commitSha: 'abcdef1234567890',
+        reply: 'fixed it',
+        outcome: 'resolved',
+        replyPostedAt: null,
+        createdAt: NOW,
+      } satisfies PendingResolution;
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'ak/feat-x' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/x'] },
+        notifications: [],
+        resolverThreadOutcomes: {},
+        sessionPendingResolutions: { [SESSION_ID]: [fix] },
+        refreshSessionPrDetail: vi.fn(async () => undefined),
+      });
+      listPendingResolutionsForSessionSpy
+        .mockResolvedValueOnce([fix])
+        .mockRejectedValueOnce(new Error('database is locked'));
+
+      const result = await store.getState().pushAllResolutions(SESSION_ID);
+
+      expect(result).toEqual({ pushed: true, resolved: 1, failed: 0 });
+      expect(deletePendingResolutionSpy).toHaveBeenCalledOnce();
+      const notification = store.getState().notifications[0];
+      expect(notification?.title).toBe('queue refresh failed after push');
+      expect(notification?.body).toBe(
+        'database is locked. some comments may still show as pending until you retry.',
+      );
+      expect(notification?.body?.split('. ')).toHaveLength(2);
+      expect(notification?.sessionId).toBe(SESSION_ID);
+      expect(notification?.workspaceId).toBe(WS_ID);
+      expect(notification?.action).toEqual({
+        kind: 'retry-push-resolutions',
+        sessionId: SESSION_ID,
+      });
+    });
+
+    it('resolveAgentThreads surfaces the queue read failure instead of rejecting', async () => {
+      const store = await getStore();
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        notifications: [],
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            {
+              id: AGENT_ID,
+              sessionId: SESSION_ID,
+              ordinal: 0,
+              name: 'combined resolver',
+              status: 'completed',
+              sourceThreadIds: ['PRRT_1'],
+            },
+          ],
+        },
+        resolverThreadOutcomes: {
+          [AGENT_ID]: {
+            PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+          },
+        },
+      });
+      listPendingResolutionsForSessionSpy.mockRejectedValueOnce(new Error('database is locked'));
+
+      const didResolve = await store.getState().resolveAgentThreads(SESSION_ID, AGENT_ID);
+
+      expect(didResolve).toBe(false);
+      expect(gitPushSpy).not.toHaveBeenCalled();
+      const notification = store.getState().notifications[0];
+      expect(notification?.title).toBe("couldn't read the comment queue, threads left open");
+      expect(notification?.body).toBe('database is locked');
+      expect(notification?.action).toEqual({
+        kind: 'retry-push-resolutions',
+        sessionId: SESSION_ID,
+      });
+    });
+
     it('resolveAgentThreads keeps closing after one thread throws and still refreshes', async () => {
       const store = await getStore();
       const refresh = vi.fn(async () => undefined);

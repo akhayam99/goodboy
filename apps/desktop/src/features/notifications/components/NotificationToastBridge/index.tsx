@@ -82,6 +82,15 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'retry-push-resolutions') {
+    const { sessionId } = action;
+    return {
+      label: 'Retry',
+      onClick: () => {
+        void store.pushAllResolutions(sessionId);
+      },
+    };
+  }
   if (action.kind === 'open-orphan-worktrees') {
     const { workspaceId } = action;
     return {

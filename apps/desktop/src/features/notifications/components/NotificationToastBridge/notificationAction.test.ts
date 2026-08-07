@@ -9,6 +9,7 @@ import { mapNotificationAction } from './';
 
 const retrySummarizerSpy = vi.fn();
 const retryStepSummarySpy = vi.fn(async () => undefined);
+const pushAllResolutionsSpy = vi.fn(async () => ({ pushed: true, resolved: 0, failed: 0 }));
 
 type FakeStore = {
   summarizerStatus: Record<
@@ -17,6 +18,7 @@ type FakeStore = {
   >;
   retrySummarizer: typeof retrySummarizerSpy;
   retryStepSummary: typeof retryStepSummarySpy;
+  pushAllResolutions: typeof pushAllResolutionsSpy;
 };
 
 function buildStore(overrides: Partial<FakeStore> = {}): FakeStore {
@@ -24,6 +26,7 @@ function buildStore(overrides: Partial<FakeStore> = {}): FakeStore {
     summarizerStatus: {},
     retrySummarizer: retrySummarizerSpy,
     retryStepSummary: retryStepSummarySpy,
+    pushAllResolutions: pushAllResolutionsSpy,
     ...overrides,
   };
 }
@@ -78,5 +81,20 @@ describe('mapNotificationAction', () => {
     const toastAction = mapNotificationAction(action, store as never);
     toastAction?.onClick();
     expect(retryStepSummarySpy).toHaveBeenCalledWith({ sessionId: SESSION_ID, agentId: AGENT_ID });
+  });
+
+  it('retry-push-resolutions: returns action with Retry label', () => {
+    const action: NotificationAction = { kind: 'retry-push-resolutions', sessionId: SESSION_ID };
+    const store = buildStore();
+    const toastAction = mapNotificationAction(action, store as never);
+    expect(toastAction?.label).toBe('Retry');
+  });
+
+  it('retry-push-resolutions: onClick calls pushAllResolutions with sessionId', () => {
+    const action: NotificationAction = { kind: 'retry-push-resolutions', sessionId: SESSION_ID };
+    const store = buildStore();
+    const toastAction = mapNotificationAction(action, store as never);
+    toastAction?.onClick();
+    expect(pushAllResolutionsSpy).toHaveBeenCalledWith(SESSION_ID);
   });
 });
