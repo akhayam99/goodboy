@@ -2,7 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ProviderId, WorkspaceId } from '@goodboy/types';
+import { getModelProvider } from '@goodboy/core';
+import type { IsoDateTime, ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 
 type Store = {
   readonly workspaceOverrides: null;
@@ -43,5 +44,42 @@ describe('LibraryStepForm', () => {
         verbosityDefault: 'verbose',
       }),
     );
+  });
+
+  it('never pairs a model with a provider that does not own it', () => {
+    const onCommit = vi.fn();
+    const def: StepDef = {
+      id: 'step-1' as StepDefId,
+      workspaceId: 'workspace-1' as WorkspaceId,
+      role: 'custom',
+      name: 'Draft the summary',
+      promptPrefix: '',
+      providerDefault: 'anthropic' as ProviderId,
+      modelDefault: 'claude-sonnet-4-6',
+      createdAt: '2025-01-01T00:00:00.000Z' as IsoDateTime,
+      updatedAt: '2025-01-01T00:00:00.000Z' as IsoDateTime,
+    };
+    render(
+      <LibraryStepForm
+        def={def}
+        workspaceId={'workspace-1' as WorkspaceId}
+        connectedProviders={['anthropic', 'cursor'] as ReadonlyArray<ProviderId>}
+        onCommit={onCommit}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /^Step routing:/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+
+    expect(onCommit.mock.calls.length).toBeGreaterThan(0);
+    const last = onCommit.mock.calls.at(-1)?.[0];
+    expect(last?.providerDefault).toBe('cursor');
+    expect(getModelProvider(last?.modelDefault ?? '')).toBe('cursor');
+    for (const [args] of onCommit.mock.calls) {
+      expect(args.providerDefault === 'anthropic' && args.modelDefault !== def.modelDefault).toBe(
+        false,
+      );
+    }
   });
 });
