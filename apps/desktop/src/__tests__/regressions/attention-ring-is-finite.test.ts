@@ -11,7 +11,7 @@ const findNoPreferenceRanges = ({ lines }: { lines: ReadonlyArray<string> }) => 
   let depth = 0;
   let activeStart: number | null = null;
   for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
+    const line = lines[index] ?? '';
     const opensNoPreference =
       depth === 0 &&
       line.includes('@media') &&
