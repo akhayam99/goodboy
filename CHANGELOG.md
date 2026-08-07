@@ -7,6 +7,37 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.74
+
+Review threads carry GitHub's outdated mark, the note you send the orchestrator is kept with its decision, and a failed comment push names what broke.
+
+### [#1330] See what you told the orchestrator
+
+The note you type into "Not done? Say what is missing" now stays with the decision it triggered. It used to be sent to the model for that one call and then cleared, so afterwards there was no way to read back what you had asked for.
+
+It shows up on the orchestrator's decision card in the transcript: a "your note" chip on the card head, and the note in full under its own label when you open the card, above the orchestrator's own text so the two never read as one voice. Terminal decisions carry it too, so a `done` or `blocked` verdict shows what it was answering.
+
+Standing hints are unchanged. They persist by design, are read before every step the orchestrator decides, and have their own Clear hints control.
+
+### [#1328] Outdated review threads carry a mark
+
+GitHub marks a review thread whose code a later commit superseded. Goodboy fetched that fact and dropped it. Now the thread head carries an "Outdated" mark in the pull request conversation and on the resolve board, so you can tell a live comment from a stale one before you spend a resolver agent on it. Outdated threads are not hidden or collapsed and stay selected when you resolve all, so the mark tells you what to skip rather than skipping it for you.
+
+Follow-up: the mark reads the outdated flag GitHub already returns on a review thread, though no live pull request carrying one has been opened in the app yet. If the flag is absent, the mark is too and the thread reads as it did before.
+
+### [#1331] A failed comment push carries its stage and a retry
+
+Pushing a batch of resolve verdicts could fail while reading or refreshing the queue, and the only trace was a generic "an action failed in the background" row with no session link and no way back. Those failures now name the stage, say what is still queued, and link to the session. The Retry re-runs the push, which skips any reply already posted.
+
+Follow-up: the guards sit on the queue read, though no real database failure has hit them yet. If one takes a different shape, it still reaches the notification inbox through the global failure notice.
+
+### Fixes
+
+- The diff viewer and the review board dead-ended on a load error. Both now show the error with a retry in place [#1329]
+- Hover-only actions on the file tree, the review lines and the diff comment rows are revealed by keyboard focus too [#1329]
+- Resolver verdict and status chips read in sentence case instead of all caps [#1329]
+- The reduced-motion gate on the spinning border, the pulsing border and the attention ring is pinned by a test [#1329]
+
 ## Goodboy v0.1.73
 
 A workspace no longer needs a repository to exist first, and a failed integration list is no longer a dead end.
