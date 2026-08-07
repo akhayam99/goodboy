@@ -183,7 +183,7 @@ export const pushAllResolutions = (set: SetFn, get: GetFn) => {
             'error',
             'warning',
             'queue refresh failed after push',
-            `${formatError(err)} some comments may still show as pending until you retry.`,
+            `${formatError(err)}. some comments may still show as pending until you retry.`,
             { ...notifyTarget, action: { kind: 'retry-push-resolutions', sessionId } },
           );
         }

@@ -1959,7 +1959,12 @@ describe('store contract', () => {
       expect(deletePendingResolutionSpy).toHaveBeenCalledOnce();
       const notification = store.getState().notifications[0];
       expect(notification?.title).toBe('queue refresh failed after push');
-      expect(notification?.body).toContain('database is locked');
+      expect(notification?.body).toBe(
+        'database is locked. some comments may still show as pending until you retry.',
+      );
+      expect(notification?.body?.split('. ')).toHaveLength(2);
+      expect(notification?.sessionId).toBe(SESSION_ID);
+      expect(notification?.workspaceId).toBe(WS_ID);
       expect(notification?.action).toEqual({
         kind: 'retry-push-resolutions',
         sessionId: SESSION_ID,
