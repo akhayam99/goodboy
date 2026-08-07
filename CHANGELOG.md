@@ -7,6 +7,32 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.72
+
+The release now carries Linux packages, credentials there go to the system keyring, and the shortcuts answer to Ctrl.
+
+### [#1316] Download Goodboy for Linux as an AppImage, deb or rpm
+
+Until now a tagged build produced one thing, a macOS universal `.dmg`. The same tag now also builds on Linux and attaches three x86_64 packages to the same release: an AppImage, a `.deb` and an `.rpm`, needing glibc 2.39 or newer, so Ubuntu 24.04 and Debian 13 upward.
+
+The `.deb` and the `.rpm` declare what they link against, read out of the binary with `dpkg-shlibdeps` rather than written by hand, so your package manager resolves the GTK and WebKit stack for you. The AppImage carries its own and needs FUSE 2 on the machine, which recent Ubuntu does not install by default (`sudo apt install libfuse2`, or run it with `--appimage-extract-and-run`). None of the three is signed, and in-app updates stay macOS-only for now, so on Linux a new version is a new package from the release page.
+
+macOS is untouched: the same universal build, the same Apple signing and notarization, the same four assets, the same Homebrew cask. The Linux leg runs after the macOS one, passes no release body and no updater key, and goes red on its own.
+
+Follow-up: the packages come off a GitHub `ubuntu-latest` runner, built from this tag, though the app has not been launched from one of them on a Linux desktop yet. If your distribution cannot satisfy something the `.deb` or the `.rpm` declares, apt or rpm says which one before anything is written.
+
+### [#1317] Credentials on Linux go to your keyring
+
+Integration tokens and provider credentials live in the operating system's credential store. On Linux that is the freedesktop Secret Service, GNOME Keyring or KWallet, so a keyring daemon has to be running before a token can be saved, and the session negotiates a Diffie-Hellman key so a secret does not cross the session bus in the clear. macOS keeps the Keychain exactly as before.
+
+Follow-up: the backend is the one the `keyring` crate selects on Linux, checked by compiling the dependency graph for each platform, though no token has been stored and read back on a Linux desktop yet. With no daemon running, saving fails with the keyring's own error and the token is not saved.
+
+### [#1318] Shortcuts use Ctrl on Linux
+
+Every shortcut asked for Command, which a Linux keyboard labels Super and the desktop environment mostly keeps for itself, so none of them fired. They resolve to Ctrl off macOS now, and the shortcuts screen and every hover hint show the combination you press. macOS bindings are unchanged.
+
+One exception, and it is GNOME's rather than ours: the terminal lens sits on Ctrl+Alt+T, which GNOME takes for its own terminal, so there the shortcuts screen lists a combination that will not open it. Open that lens from the session's lens list instead.
+
 ## Goodboy v0.1.71
 
 The window comes up while Goodboy looks for your CLIs instead of after, and a phone can now start a session from a Jira issue.
