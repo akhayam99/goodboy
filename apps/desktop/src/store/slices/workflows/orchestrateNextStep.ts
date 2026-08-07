@@ -56,6 +56,29 @@ export type OrchestrateOptions = {
 
 const orchestrationInFlight = new Set<WorkflowRunId>();
 
+const SUMMARIZER_GATE_POLL_MS = 100;
+const SUMMARIZER_GATE_TIMEOUT_MS = 60_000;
+
+type SummarizerGateParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+};
+
+const waitForSessionSummarizer = async ({
+  get,
+  sessionId,
+}: SummarizerGateParams): Promise<void> => {
+  const deadline = Date.now() + SUMMARIZER_GATE_TIMEOUT_MS;
+  while (get().summarizerStatus[sessionId]?.status === 'running') {
+    if (Date.now() >= deadline) {
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, SUMMARIZER_GATE_POLL_MS);
+    });
+  }
+};
+
 type DecidingParams = {
   readonly set: SetFn;
   readonly workflowRunId: WorkflowRunId;
@@ -384,6 +407,19 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       setDeciding({ set, workflowRunId, isDeciding: true });
+      if (options?.bypassGate !== true) {
+        await waitForSessionSummarizer({ get, sessionId });
+        const settled = get()
+          .sessions.find((candidate) => candidate.id === sessionId)
+          ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+        if (
+          settled == null ||
+          settled.discardedAt != null ||
+          settled.orchestrationOutcome != null
+        ) {
+          return;
+        }
+      }
       const agents = [
         ...runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId),
       ].sort((left, right) => left.ordinal - right.ordinal);
