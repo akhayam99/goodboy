@@ -46,6 +46,19 @@ done` works; nested-quote jq inside single quotes does not.
 - commitlint rejects camelCase identifiers in the commit subject: plain
   lowercase prose in the subject, identifiers in the body. Subjects over 72
   chars do not land.
+- A stacked PR whose parent is squash-merged does **not** auto-retarget: it
+  keeps pointing at the dead branch, and once retargeted to `main` it can go
+  `CONFLICTING` (a modify/delete needing hand resolution). Stacking is
+  banned by release-loop.md; if you inherit one, retarget it **before**
+  merging it and expect one conflict per squashed parent.
+- Neither `ci.yml` nor `rust.yml` has a `workflow_dispatch` trigger. When
+  webhooks are throttled or a run was never dispatched, the only way to
+  summon one for an open PR is closing and reopening it. Adding the trigger
+  is a one-line `ci`-scoped change worth proposing as backlog work; until it
+  lands, close and reopen is the only lever.
+- Turbo caches are shared across worktrees: a `FULL TURBO` green can be a
+  sibling's replayed log, not a run. `pnpm exec turbo run test --force` and
+  a log saying `0 cached` is what a verifier's green claim rests on.
 
 ## Git hygiene
 
