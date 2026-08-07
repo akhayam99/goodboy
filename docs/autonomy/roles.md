@@ -27,10 +27,12 @@ delivery lead (one per engagement, up to 5 releases)
 │   ├── builders (one per PR, mid or strong tier)
 │   ├── verifiers (one per PR, never the builder)
 │   └── watchdog (periodic, checks siblings)
-├── issue triage officer (periodic loop)
-│   └── responder (per issue, drafts the reply)
-└── watchdog (checks the release captain)
+└── issue triage officer (periodic loop)
+    └── responder (per issue, drafts the reply)
 ```
+
+The lead has no watchdog of its own: it inspects its captains directly, from
+git and the PR list, per [watchdogs.md](./watchdogs.md).
 
 Roles with no data dependency on each other run concurrently:
 archaeologists as one batch, scouts as one batch, builders on disjoint items
@@ -45,12 +47,12 @@ The tier names used across this cluster and the skill, mapped once here.
 Examples are the current best fit, not a lock-in: when the provider landscape
 moves, update this table, not every brief.
 
-| Tier      | Meaning                                            | Current example    |
-| --------- | -------------------------------------------------- | ------------------ |
-| cheap     | read, list, grep, summarize; disposable            | Haiku class        |
-| mid       | mechanical or localized build work, triage replies | Sonnet class       |
-| strong    | cross-cutting build, migrations, protocols, Rust   | Opus class         |
-| reasoning | product decisions, challenges, orchestration       | Fable / Opus class |
+| Tier      | Meaning                                            | Current example  |
+| --------- | -------------------------------------------------- | ---------------- |
+| cheap     | read, list, grep, summarize; disposable            | Haiku class      |
+| mid       | mechanical or localized build work, triage replies | Sonnet class     |
+| strong    | cross-cutting build, migrations, protocols, Rust   | Opus class       |
+| reasoning | product decisions, challenges, orchestration       | Fable, then Opus |
 
 ## The roles
 
@@ -79,8 +81,9 @@ touches git. Model: cheap tier.
 
 ### Product owner
 
-The role that decides what the release is. Runs on the strongest reasoning
-tier available, with the audit, the mandates, VISION and the backlog in hand.
+The role that decides what the release is. Runs on the reasoning tier, first
+example in the table above, with the audit, the mandates, VISION and the
+backlog in hand.
 Its output is a theme plus a batch of 3 to 6 sized work items, each tagged
 with a persona, the three questions (what do I see, what can I do, where
 does it take me next), and the three composition tags (provenance, author
@@ -109,8 +112,8 @@ to the same user value, and anything that contradicts VISION or the audit. The
 release captain reconciles PO and challenger; on an unresolved disagreement
 the safer scope wins and the disagreement is recorded in the ledger. The
 challenger also reviews the release notes before the draft is cut, and any
-migration-touching plan item ([safety.md](./safety.md)) gets a dedicated
-challenge of its schema design on top of the plan-level attack.
+plan item touching schema or stored data ([safety.md](./safety.md)) gets a
+dedicated challenge of its schema design on top of the plan-level attack.
 
 ### Scout
 
@@ -143,10 +146,12 @@ A different agent from the builder, always. Runs the full workspace checks,
 reads the diff against the work item, hunts the known regression classes, and
 sabotages the implementation to prove the tests can fail. The verifier's
 verdict outranks the builder's report and CI. The full playbook is in
-[release-loop.md](./release-loop.md). Any migration-touching PR
+[release-loop.md](./release-loop.md). Any PR touching schema or stored data
 ([safety.md](./safety.md)) takes two independent verifiers, the
-second running the data playbook. Model: the tier of the build it checks,
-never below mid; a cheap verifier is not a verifier.
+second running the data playbook. It commits the checked-out state before
+sabotaging anything, so the branch survives its own experiments. Model: the
+tier of the build it checks, never below mid; a cheap verifier is not a
+verifier.
 
 ### Issue triage officer
 

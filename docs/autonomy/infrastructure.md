@@ -19,7 +19,8 @@ Read the evidence before assigning blame:
 
 - **Infrastructure**: the same failure across unrelated agents or PRs
   (provider rate limits, auth errors on every spawn); workflow runs
-  cancelled with zero steps executed; workflows never dispatched at all for
+  cancelled with zero steps executed, including at the runner timeout;
+  workflows never dispatched at all for
   a pushed SHA; runs sitting `queued` with no runner while earlier identical
   runs started immediately; a declared incident on githubstatus.com. The
   component to check for CI is `Actions`, and its incident notices name
@@ -35,11 +36,10 @@ condition nothing in the repo earned.
 
 ## Preflight
 
-The delivery lead checks at engagement start and at every release boundary:
-`main` green on its own CI, no tag build in flight, and, whenever anything
-looks slow or silent, the `Actions` component on githubstatus.com. A new
-release is not started into a declared major outage; a release already
-running continues under build-ahead mode.
+These checks run at engagement start and again at every release boundary;
+the checklist itself is the skill's preflight step. A new release is not
+started into a declared major outage; a release already running continues
+under build-ahead mode.
 
 ## Build-ahead mode
 
@@ -71,19 +71,15 @@ The most valuable hours of one real outage were spent exactly this way:
 building and verifying the next fix while the merges waited. Build-ahead is
 the institutional version of that improvisation.
 
-## Facts about this repo's pipelines
+## Pipeline facts
 
-- Neither `ci.yml` nor `rust.yml` has a `workflow_dispatch` trigger. When
-  webhooks are throttled, the only way to summon a run for an open PR is
-  closing and reopening it, which forces a fresh `pull_request` event.
-  Adding the trigger is a one-line `ci`-scoped change worth proposing as
-  backlog work; until it lands, close/reopen is the only lever.
-- A release build takes roughly 9 to 12 minutes. The homebrew cask bump is
-  its own workflow after publish and can lag a recovered outage: a
-  published release with all four assets is complete even while the cask is
-  stale. Re-run the cask workflow; never re-release for it.
-- Jobs cancelled at the runner timeout with zero steps executed are the
-  outage signature, not the diff's.
+Build timings, the missing `workflow_dispatch` trigger and the close/reopen
+lever it forces live in the skill's repo-gotchas file, which is where this
+repo's pipeline trivia is maintained and kept true. One fact belongs here
+instead, because it is outage recovery rather than trivia: the homebrew cask
+bump is its own workflow after publish and can lag a recovered outage. A
+published release with all four assets is complete even while the cask is
+stale, so re-run the cask workflow and never re-release for it.
 
 ## Provider outages
 

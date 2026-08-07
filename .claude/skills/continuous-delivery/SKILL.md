@@ -32,8 +32,7 @@ commit any of it):
 
 - `MANDATES.md`: standing direction from the owner, including the optional
   `quota:` line from `docs/autonomy/composition.md`. Re-read before every
-  release; the owner may edit it mid-engagement, and any edit that touches a
-  mandate resets that mandate's push-back count.
+  release; the owner may edit it mid-engagement.
 - `BACKLOG.md`: what audits surfaced and nobody took, plus accepted issues
   with author class, priority, date and skip count. Captains consume and
   append it.
@@ -53,59 +52,64 @@ state directory contradicts git history, that is a stop condition
 
 1. Take the engagement lock: if `~/.goodboy-autonomous/ENGAGEMENT.lock`
    exists and is younger than 24 hours, another engagement may be live; stop
-   with a one-line report instead of racing it. Otherwise write the lock
-   (date, invoker) and remove it in the report step, including on early
-   stops.
+   with a one-line report instead of racing it. A lock older than 24 hours
+   is stale: replace it with your own and note the replacement in the ledger
+   header. Write the lock (date, invoker) and remove it in the report step,
+   including on early stops.
 2. Read the policy docs above, `MANDATES.md`, `BACKLOG.md`, the tail of
    `LEDGER.md`, `docs/release-command.md`.
-3. Verify per `docs/autonomy/infrastructure.md`: `main` green on its own CI;
-   no tag build in flight (previous release's `release.yml` and
-   `homebrew.yml` finished); no leftover draft releases or rc tags; which
-   PRs are open (dependabot is left alone); and, if anything looks slow,
-   the `Actions` component on githubstatus.com. Do not start into a
-   declared major outage. Clean up leftover rc tags and rc draft
-   pre-releases per `docs/release-command.md`; a leftover non-rc draft
-   release is a stop-and-report. A held class B PR from a prior engagement
-   is adopted, not closed: list it in the next captain's brief, that
-   captain keeps it green, and once the owner has answered it merges first
-   in that release's Phase 6.
-4. Compute mandate push-back counts from the ledger, and mark any mandate at
+3. **Verify the world** per `docs/autonomy/infrastructure.md`: `main` green
+   on its own CI; no tag build in flight (previous release's `release.yml`
+   and `homebrew.yml` finished); which PRs are open (dependabot is left
+   alone); and, if anything looks slow, the `Actions` component on
+   githubstatus.com. Do not start into a declared major outage.
+4. **Clean up** leftover rc tags and rc draft pre-releases per
+   `docs/release-command.md`. A leftover non-rc draft release is a
+   stop-and-report.
+5. **Adopt held PRs**: a held class B PR from a prior engagement is adopted,
+   not closed. List it in the next captain's brief; that captain keeps it
+   green, and once the owner has answered it merges first in that release's
+   Phase 6.
+6. Compute mandate push-back counts from the ledger, and mark any mandate at
    three unanswered push-backs as suspended per
    `docs/autonomy/composition.md` (inbox entry plus report line) so no
    captain re-argues it.
-5. Append an engagement header to `LEDGER.md`: date, target count, standing
-   instructions, starting version, quota in effect (the `quota:` line or the
-   default), suspended mandates, and the concurrency mode: probe whether
-   the harness supports background children with completion notifications
-   by spawning one trivial background child and seeing whether the
-   notification arrives (the degraded-mode call in
-   `docs/autonomy/watchdogs.md`); the verdict goes in the header and in
-   every captain's brief.
-6. Run one issue triage sweep (below) so the first captain's backlog is warm.
+7. Decide the concurrency mode with the degraded-mode probe in
+   `docs/autonomy/watchdogs.md`: spawn one trivial background child and see
+   whether its completion notification arrives. Then append an engagement
+   header to `LEDGER.md`: date, target count, standing instructions,
+   starting version, quota in effect (the `quota:` line or the default),
+   suspended mandates, and the concurrency mode. The mode also goes in every
+   captain's brief.
+8. Run one issue triage sweep (below) so the first captain's backlog is warm.
 
 ## Per release, in order
 
 1. **Compute the version**: current latest plus a patch bump unless a mandate
    says otherwise.
 2. **Compose the captain's brief** from
-   [references/release-captain-prompt.md](references/release-captain-prompt.md):
-   fill every `{{placeholder}}` (predecessor state is "none" except on a
-   retry), including what the previous release covered (from the ledger, so
-   it is not repeated), the focus area chosen per the rotation in
-   `docs/autonomy/release-loop.md` (least recently visited per the ledger),
-   the quota in effect, the issue-share candidates from `BACKLOG.md` (with
-   author class, priority, age, skip count), the concurrency mode from
-   preflight, any adopted held PR, and the suspended mandates so the
-   captain treats them as inert. When you declare a queue-drain batch per
-   `docs/autonomy/composition.md`, say so in the quota placeholder.
+   [references/release-captain-prompt.md](references/release-captain-prompt.md).
+   Fill every `{{placeholder}}`:
+   - what the previous release covered, from the ledger, so it is not
+     repeated;
+   - the focus area, per the rotation in `docs/autonomy/release-loop.md`,
+     least recently visited per the ledger;
+   - the quota in effect, saying so there when you declare a queue-drain
+     batch per `docs/autonomy/composition.md`;
+   - the issue-share candidates from `BACKLOG.md`, with author class,
+     priority, age and skip count;
+   - the concurrency mode from preflight;
+   - any adopted held PR;
+   - the suspended mandates, so the captain treats them as inert;
+   - predecessor state, which is "none" except on a retry or a resume.
 3. **Spawn the release captain** on the reasoning tier with the brief. When
    the harness supports background tasks with notifications, spawn it in the
    background and use the waiting time for the triage sweep and the watchdog
    checks below; otherwise spawn it foreground. Tell it: its final message
    is its compact report block, its narrative goes to its scratch dir, it
    has no peers, it must not message anyone, it stops at a reviewed draft.
-   Never start the next release before this one is published or abandoned:
-   releases are serial even when their internals are not.
+   Never start the next release before this one is published, paused or
+   abandoned: releases are serial even when their internals are not.
 4. **Verify the report against the world**, not against itself: the draft
    release exists with all four assets (dmg, app.tar.gz, .sig, latest.json),
    `main` is green at the release SHA, the ledger-relevant claims match `gh`
@@ -113,7 +117,7 @@ state directory contradicts git history, that is a stop condition
    real (PR open, verified, unmerged, inbox entry present). Read the release
    notes against `docs/tone-of-voice.md` and check the unverified calls are
    named. Open the captain's disk narrative only when a claim fails or the
-   verdict is not `draft-ready`; your context is for decisions.
+   verdict is not `draft-ready`.
 5. **Publish**: `gh release edit v<version> --draft=false`, confirm
    `homebrew.yml` fires and succeeds. Publication is yours alone; a captain
    that published on its own is an incident, record it.
@@ -124,48 +128,57 @@ state directory contradicts git history, that is a stop condition
 8. **Between releases**: re-read `MANDATES.md` and `OWNER_INBOX.md`; the
    owner may have answered an escalation, an irreversible-data question, or
    edited a mandate (which resets its push-back count). Update suspension
-   state, then loop.
+   state, re-run the world check from preflight step 3, then loop.
 
 If a captain returns `abandoned` or `merged-partial` (some PRs merged for
 the version but no draft cut) or dies (see the watchdog ladder in
 `docs/autonomy/watchdogs.md`: nudge, replace, drop, stop), one retry with a
 fresh captain, filling the brief's predecessor-state block from the world:
 PRs already merged for this version, PRs open, phase reached, the roster and
-merge queue in its scratch dir. A retry that fails is a failed release. Two failures on one version, or two failed
-releases in a row, is a stop condition: write the handoff and end the
-engagement early with an honest report.
+merge queue in its scratch dir. A retry that fails is a failed release, and
+the stop conditions in `docs/autonomy/safety.md` take it from there: write
+the handoff and end the engagement early with an honest report.
 
 Distinguish the work failing from the infrastructure failing, per
 `docs/autonomy/infrastructure.md`: outages pause, they never burn the stop
-budget, and a captain in build-ahead mode that reports
-`paused (infrastructure)` left a verified merge queue on disk that the
-resume executes first, before any new audit. A true signing or notarization
-stop report names the failing step and the credential to check first
-(certificate expiry, app-specific password, team membership).
+budget. A true signing or notarization stop report names the failing step
+and the credential to check first (certificate expiry, app-specific
+password, team membership).
 
-You share one context across the whole engagement. Reports living on disk is
-what makes five releases fit in it; do not defeat that by reading
-narratives you do not need. When you feel context nearing exhaustion, finish
-the current release through its publish step, write the engagement state to
-the ledger, and report `stopped-early (context)`: the disk is the memory,
-and a re-invocation of this skill resumes from the ledger. Never start a
-release you cannot see through to publish.
+On `paused (infrastructure)` the captain left a verified merge queue on
+disk. Re-check the outage at each boundary; when it clears, spawn a fresh
+captain with the predecessor-state block filled, and that queue executes
+first, before any new audit. A resume is not a retry and burns no failure
+budget. A pause that outlasts the engagement's remaining budget ends the
+engagement as `stopped-early (infrastructure)`, with the queue's location in
+the handoff.
+
+You share one context across the whole engagement. When you feel it nearing
+exhaustion, finish the current release through its publish step, write the
+engagement state to the ledger, and report `stopped-early (context)`: the
+disk is the memory, and a re-invocation of this skill resumes from the
+ledger. Never start a release you cannot see through to publish.
 
 ## Issue triage sweep
 
 Spawn an issue triage officer (mid tier), brief: follow
 `docs/autonomy/issue-triage.md` exactly; sweep every open issue plus new
 comments since the last sweep (timestamp in the ledger header); post replies
-under your own identity with the disclosure line; append accepted work to
-`BACKLOG.md` with issue number, author class, priority, date and skip count;
-increment the skip count of accepted items passed over by batches not yet
-swept (keyed on the sweep timestamp in the ledger header, so an engagement
-boundary never double-counts a skip), and say so on their threads;
-escalations to `OWNER_INBOX.md`; final message is a
-compact list of issue -> decision. You spot-check its replies against the
+under your own identity with the disclosure line; carry accepted work into
+`BACKLOG.md` with issue number, author class, priority, date and skip count,
+by the writer rule below; increment the skip count of accepted items passed
+over by batches not yet swept (keyed on the sweep timestamp in the ledger
+header, so an engagement boundary never double-counts a skip), and say so on
+their threads; escalations to `OWNER_INBOX.md`; final message is a
+compact list of issue -> decision plus the backlog mutations it made or is
+handing back. You spot-check its replies against the
 trust model in `docs/autonomy/safety.md` before counting the sweep done. The
 sweep may run concurrently with a background captain; it touches issues and
-state files, never the release's branches. If the harness supports scheduled
+state files, never the release's branches. While a captain is live the sweep
+never edits `BACKLOG.md` itself: it returns its backlog mutations (accepted
+items, skip increments) in its report and you apply them once the captain's
+report lands, so the file has one writer per window. It edits the file
+directly only when no captain is running. If the harness supports scheduled
 tasks, you may additionally schedule a light new-issue check on a ~30 minute
 cadence; never let a scheduled check replace the per-release sweep.
 

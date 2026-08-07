@@ -67,13 +67,12 @@ reading it.
 Run the seven phases of `docs/autonomy/release-loop.md`, with these
 operational specifics:
 
-- **Phase 1, archaeology**: 3 to 5 cheap agents spawned in one message as a
-  concurrent batch under the roster contract in
-  `docs/autonomy/watchdogs.md`, disjoint slices, compact structured lists.
-  Audit from a detached worktree pinned at `origin/main`. Feed them
-  `docs/file-system.md`. They report, fix nothing, never touch git.
-- **Phase 2, product decision**: one agent on the strongest reasoning tier,
-  effort high, with the merged audit, the mandates, VISION and the backlog.
+- **Phase 1, archaeology**: cheap agents per release-loop.md Phase 1,
+  spawned in one message as a concurrent batch under the roster contract in
+  `docs/autonomy/watchdogs.md`. Feed them `docs/file-system.md`. They
+  report, fix nothing, never touch git.
+- **Phase 2, product decision**: one agent on the reasoning tier, effort
+  high, with the merged audit, the mandates, VISION and the backlog.
   It composes the batch to the quota above, tags every item with
   provenance, author class and data class, and declares any deviation. It
   has the explicit right of push-back defined in safety.md: an item that
@@ -92,43 +91,42 @@ operational specifics:
 - **Phase 4, build**: one item = one agent = one branch
   (`ak/<type>-<kebab-desc>`, never a worktree codename) = one PR. Each
   builder gets its own fresh worktree under `.claude/worktrees/`, cut from
-  `origin/main`, never from a sibling's branch: no stacked PRs, ever.
-  Footprint-disjoint items spawn as one concurrent batch, at most three at
-  once (four only when the items are docs- or UI-light); overlapping items
-  collapse or serialize per release-loop.md. Mid tier for mechanical or
-  localized work, strong tier for cross-cutting, state-machine, migration,
-  protocol, OAuth, or Rust work. Every builder brief carries: the item's
-  footprint and the stop-and-report rule on leaving it; the heartbeat
-  journal duty from watchdogs.md; commit before any sabotage or risky
-  operation; and the house rules: zero code comments, no em-dashes, English
-  only, `type` never `interface`, arrow exports, one object param, guard
-  clauses, `satisfies` over `as`, store changes as slice packages, hooks as
-  `useFoo/index.ts`, no `--no-verify`, never touch local `main`, and never
-  quote or reference the state directory, the mandates or the owner inbox
-  in code, commits or PR bodies. Update
-  README, docs and website in the PR that makes them wrong (`website/`
-  installs with `pnpm install --ignore-workspace`, scope `repo`).
+  `origin/main`. Footprint-disjoint items spawn as one concurrent batch;
+  the concurrency cap, the stacking ban and the rule for overlapping items
+  are release-loop.md Phase 4 and are not yours to relax. Mid tier for
+  mechanical or localized work, strong tier for cross-cutting,
+  state-machine, migration, protocol, OAuth, or Rust work. Every builder
+  brief carries: the item's footprint and the stop-and-report rule on
+  leaving it; the heartbeat journal duty from watchdogs.md; commit before
+  any risky operation; and the house rules: zero code comments, no
+  em-dashes, English only, `type` never `interface`, arrow exports, one
+  object param, guard clauses, `satisfies` over `as`, store changes as slice
+  packages, hooks as `useFoo/index.ts`, no `--no-verify`, never touch local
+  `main`, and never quote or reference the state directory, the mandates or
+  the owner inbox in code, commits or PR bodies. Update README, docs and
+  website in the PR that makes them wrong (`website/` installs with
+  `pnpm install --ignore-workspace`, scope `repo`).
 - **Phase 5, verify**: a different agent per PR, spawned as each build
   lands, in its own worktree checked out at the PR branch (never the
   builder's), running the full standard in release-loop.md, sabotage table
-  included. A migration-touching PR gets a second verifier running the data
-  playbook. A verifier's verdict outranks the builder and CI; full verdicts
-  go to its scratch path, you read the verdict line and the exceptions.
-- **Phase 6, merge**: serialized, server-side, and serial no matter how
-  parallel the builds were. `gh pr merge --squash` for
-  single-concern PRs; a multi-commit PR whose commits matter individually
-  merges per CONVENTIONS.md. Re-fetch `origin/main` before each merge (a
-  human or dependabot may have landed something), then poll `main`'s own CI
-  green (foreground until-loop, 60-120s) before the next merge. When the
-  just-merged PR and the next one touch the same package, refresh the next
-  branch with `git merge origin/main` and let its CI re-run first. Never
-  advance local `main`; `git fetch origin main` for SHAs. A PR red after two
-  honest repairs is closed and reported as dropped. A CI failure unrelated
-  to the diff gets one re-run; the same test failing twice is red, not
-  flake; before blaming any diff, check the outage signals in
-  `docs/autonomy/infrastructure.md`, and when merging is blocked by an
+  included, committing the checked-out state before it sabotages anything.
+  A PR touching schema or stored data gets a second verifier running the
+  data playbook. A verifier's verdict outranks the builder and CI; full
+  verdicts go to its scratch path, you read the verdict line and the
+  exceptions.
+- **Phase 6, merge**: the merge discipline is release-loop.md Phase 6 and
+  stays serial no matter how parallel the builds were. Squash-merge
+  single-concern PRs; a multi-commit PR whose commits matter
+  individually merges per CONVENTIONS.md. Re-fetch `origin/main` before each
+  merge (a human or dependabot may have landed something), and poll `main`'s
+  own CI green in a foreground until-loop on a 60-120s interval before the
+  next merge. Never advance local `main`; `git fetch origin main` for SHAs.
+  A CI failure unrelated to the diff gets one re-run; the same test failing
+  twice is red, not flake; before blaming any diff, check the outage signals
+  in `docs/autonomy/infrastructure.md`, and when merging is blocked by an
   outage, switch to build-ahead mode from that file instead of idling. A
-  class B item with no owner answer stays unmerged and is reported as held.
+  class B item the owner has not answered stays unmerged and is reported as
+  held.
 - **Phase 7, cut**: hand the draft notes to the challenger for review
   first, then follow `docs/release-command.md` up to and including the
   draft, with the rc dry-run and notarization check (team M3R9H4QX65; any
@@ -190,5 +188,9 @@ next: <one line for the next captain>
 `merged-partial` means some PRs merged for this version but no draft could
 be cut and you cannot honestly continue; your caller retries the version
 with a fresh captain resuming from your scratch dir.
+`paused (infrastructure)` means the work is sound and the world is not: an
+outage you verified per `docs/autonomy/infrastructure.md` outlasted the
+useful local work, and you left a merge queue on disk for the resume. A
+pause is not a failure and your caller does not count it as one.
 
 No progress narration, no questions. One report, at the end.

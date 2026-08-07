@@ -40,9 +40,9 @@ raw diff.
    explicit non-goals and per-item risk. Items touching schema or stored
    data carry their data class per the gate in [safety.md](./safety.md),
    and the owner question for any class A or B item is written **before
-   Phase 4 starts**. The challenger attacks the plan cold; any
-   migration-touching item's schema design gets its own dedicated
-   challenge. The captain
+   Phase 4 starts**. The challenger attacks the plan cold; any item
+   touching schema or stored data gets its schema design challenged on its
+   own. The captain
    reconciles, re-reading the result against the mandates, not only against
    the objections.
 3. **Scouting.** Cheap agents, one concurrent batch, pressure-test every
@@ -146,7 +146,9 @@ Every PR, before merge:
   present, otherwise the "green" claim covers one package), and the CI knip
   gate `pnpm knip --include files,duplicates,unlisted`.
 - Read the diff against the work item, not against the PR body.
-- **Sabotage the implementation and confirm a test fails.** Sabotage the
+- **Sabotage the implementation and confirm a test fails.** Commit the
+  checked-out state first, so an interrupted verifier leaves a branch and
+  not a wreck. Sabotage the
   wrapper as well as the pure function; builders' helpers have survived
   sabotage while the commands calling them did not. A test nobody can make
   fail is not a test. Report sabotages as a table with a survived column:

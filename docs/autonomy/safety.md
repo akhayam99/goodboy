@@ -126,16 +126,20 @@ What the gate does:
   named as a consequence, never a choice the captain invents. The release
   never stalls on the answer; the machine continues per the push-back
   protocol above.
-- **More adversaries.** Any migration-touching item gets a dedicated
-  challenge of its schema design at plan time (is the shape right, is there
-  a reversible way to the same value, what does a crash halfway through
-  leave behind), and two independent verifiers at verify time, the second
-  running the data playbook in [release-loop.md](./release-loop.md).
+- **More adversaries.** Any class A or B item, which is to say anything
+  touching schema or stored data whether or not a migration file is
+  involved, gets a dedicated challenge of its schema design at plan time (is
+  the shape right, is there a reversible way to the same value, what does a
+  crash halfway through leave behind), and two independent verifiers at
+  verify time, the second running the data playbook in
+  [release-loop.md](./release-loop.md).
 - **Class A merges** once both verifiers pass. Its inbox entry is
   informational and needs no answer.
 - **Class B holds its merge for the owner.** The PR is built, verified and
   kept green, but it does not merge until the owner answers: an edit to the
-  mandates, or a comment on the PR or its issue from the owner's handle.
+  mandates, or a comment on the PR or its issue from the owner's handle. A
+  comment that asks something back rather than approving is not an answer:
+  the hold stands and the question gets a reply.
   Unanswered at merge time, the release ships without it; the PR stays open
   and verified, the branch survives, and the hold is recorded in the report
   and the handoff. A held PR survives engagements: successors adopt it, keep
@@ -150,7 +154,8 @@ anything the Forbidden list refuses.
 The machine stops itself, mid-engagement, when any of these holds:
 
 - `main` is red and two honest repair attempts have failed.
-- Two consecutive releases failed to reach a publishable draft. A release
+- Two consecutive releases failed to reach a publishable draft, or one
+  version failed twice (the captain's retry included). A release
   paused for a verified infrastructure outage
   ([infrastructure.md](./infrastructure.md)) is a pause, not a failure; a
   failure the evidence cannot pin on infrastructure counts.

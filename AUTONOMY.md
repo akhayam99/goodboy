@@ -35,7 +35,7 @@ Same queue, weighed by the [trust model](./docs/autonomy/safety.md).
 - A **release captain** owns one version through seven phases (audit, product
   decision, scouting, build, verify, serialized merge, draft), then dies.
   State survives on disk, not in agents.
-- A **product owner** on the strongest reasoning tier composes each release's
+- A **product owner** on the reasoning tier composes each release's
   **batch** per [composition](./docs/autonomy/composition.md): by default
   60% issue-backed and 40% internal work, owner-tunable in one line, with
   authors weighed and contributors floored. It holds the right of push-back:
@@ -46,9 +46,9 @@ Same queue, weighed by the [trust model](./docs/autonomy/safety.md).
   One PR merges, `main`'s own CI goes green, the next merges. The serial
   merge lane pays for the parallel build lanes.
 - Nothing merges on its author's word: every PR is verified by a **different
-  agent** whose verdict outranks the builder's report and green CI. An
-  irreversible data change gets a second verifier, an owner question before
-  the build, and never merges on silence
+  agent** whose verdict outranks the builder's report and green CI. A change
+  touching schema or stored data gets a second verifier and an owner
+  question before the build; the irreversible kind never merges on silence
   ([safety](./docs/autonomy/safety.md)).
 - Every open issue gets a decision and a reply every cycle. No issue goes
   dark, and a mandate nobody answers suspends itself loudly after three
@@ -81,8 +81,8 @@ per-release scratch dirs), `OWNER_INBOX.md` (push-backs, questions, stop
 reports). The ledger doubles as the metric: items proposed versus shipped
 versus dropped per cycle (the captain's report records all three) is how the
 loop earns more frequency, per release and over time. The ratio is always
-read alongside `closed-tab` (the reason to open another tool that the
-release removed), the value actually shipped: inflating PR counts,
+read alongside `closed-tab`, the reason to open another tool that the
+release removed: that is the value actually shipped. Inflating PR counts,
 splitting one feature into many PRs, or sandbagging proposals to look
 reliable is exactly the failure this metric exists to catch, not a way to
 score on it.

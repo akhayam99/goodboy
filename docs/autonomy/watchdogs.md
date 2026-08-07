@@ -30,7 +30,8 @@ held them.
   child that was never told to journal cannot be judged by its silence.
 - **First-activity check**: within about ten minutes of a spawn, every
   child's journal must exist. A child with no first activity is a failed
-  spawn, not a slow thinker; respawn it foreground, once.
+  spawn, not a slow thinker; respawn it foreground, once. A respawn that
+  also produces no first activity drops the item per the ladder below.
 - A completion notification resolves a roster entry. A parent reaching a
   phase boundary with unresolved entries either waits there doing bounded
   work (watchdog passes, reading finished verdicts, merge-tree checks),
@@ -67,8 +68,8 @@ held them.
 3. **Drop**: if the same item kills two agents, the item is the problem.
    Drop it, record it in the backlog with what was observed, move on.
 4. **Stop**: if the captain itself dies twice on one version, the
-   engagement stops, per the two-failed-releases family of stop conditions
-   in [safety.md](./safety.md) and the skill.
+   engagement stops, per the stop conditions in
+   [safety.md](./safety.md).
 
 ## Rules for the watchers themselves
 

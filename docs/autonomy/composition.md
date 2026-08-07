@@ -26,8 +26,9 @@ Every work item carries three tags from the moment it enters the plan:
 - **Author class**, for issue-backed items: owner or contributor, read from
   the GitHub record per the trust model.
 - **Data class**: reversible or irreversible, per the gate in
-  [safety.md](./safety.md). An irreversible item files its owner question
-  before any builder spawns and may hold its merge; it still occupies a
+  [safety.md](./safety.md). Either class files its owner-inbox entry before
+  any builder spawns, informational for a reversible item and a
+  merge-holding question for an irreversible one; it still occupies a
   normal batch slot and counts against its share whether or not it merges
   this release, because composition measures what was committed, not what
   survived.
@@ -59,15 +60,20 @@ releases where an audit-found release blocker was deferred for quota reasons
 `~/.goodboy-autonomous/MANDATES.md`, for example
 `quota: 8 issues / 2 internal per 10`. When the line exists it replaces the
 default; when it does not, the default above applies. No other surface sets
-it, and no agent edits it.
+it, and no agent edits it. The line is read as a ratio, not as a batch size:
+`8 / 2 per 10` against a four-item batch is three issue-backed items and
+one internal, rounded toward the issue share like the default. A line the
+lead cannot read as a ratio is an owner-inbox escalation, and the default
+applies until the owner fixes it.
 
 The quota is a target with declared deviations, not a hard constraint:
 
 - **Precedence, highest first**: safety, explicit mandates, the product
   owner's filler ban and push-back right, the quota, the area rotation. A
   mandate that eats slots beats the quota. An item that fails the filler bar
-  is never forced in to satisfy a ratio: a quota-mandated weak item is
-  exactly the filler the PO exists to refuse.
+  (it must move something for a real user, per the PO's charter in
+  [roles.md](./roles.md)) is never forced in to satisfy a ratio: a
+  quota-mandated weak item is exactly the filler the PO exists to refuse.
 - **Empty queues flow.** When a share's queue holds nothing that passes the
   filler bar, the unfilled share flows to the other source, and the plan
   states the shortfall and why.
@@ -93,10 +99,10 @@ Issue-backed candidates are ordered by, in this order:
    prioritization, two is a pattern, and the third batch acts. Triage keeps
    the skip count on the backlog entry.
 3. **Author.** The owner's issue outranks a contributor issue of the same
-   priority and comparable size. This is the trust model applied to
-   composition, not a wall: contributor work is protected by the aging step
-   above and by triage's no-issue-goes-dark contract.
-4. **Age.** Older first.
+   priority. This is the trust model applied to composition, not a wall:
+   contributor work is protected by the aging step above and by triage's
+   no-issue-goes-dark contract.
+4. **Age.** Older accepted date first.
 
 That aging step is the contributor floor. Not a reserved slot, which would
 force weak work in thin queues, but a starvation bound: an actionable
@@ -104,10 +110,18 @@ contributor item cannot be passed over indefinitely on author weight alone,
 and every skip is visible on the issue thread through the per-release triage
 sweep, with the reason it was passed over.
 
+Aging deliberately protects contributor items only. An owner item can sit
+skipped forever without a counter promoting it, because the owner already
+has a faster lever for anything he wants sooner: the mandates. That
+asymmetry is the design, not a gap in it.
+
 ## Mandate decay
 
-A standing mandate the product owner has pushed back on, in writing, for
-**three consecutive batches without an owner answer suspends itself**. One
+A standing mandate the product owner has pushed back on, in writing, in
+**three batches without an owner answer suspends itself**. The three need
+not be consecutive: the count is the raw number of unanswered push-backs the
+ledger records for that mandate, which is what the delivery lead can
+actually derive. One
 push-back is a question, two is a disagreement, three unanswered is a
 deadlock, and re-litigating a deadlock every cycle burns reasoning-tier
 tokens to produce no new information; this organization has argued one
