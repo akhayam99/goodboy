@@ -63,9 +63,8 @@ pub fn run() {
     let database = db::open().expect("failed to open Goodboy database");
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
     let (detection_gate, detection_opener) = providers::detection_gate();
-    let provider_state = providers::ProviderState(Mutex::new(providers::initial_status(
-        "anthropic", "claude",
-    )));
+    let provider_state =
+        providers::ProviderState(Mutex::new(providers::initial_status("anthropic", "claude")));
     let cursor_state = providers::CursorState(Mutex::new(providers::initial_status(
         "cursor",
         "cursor-agent",

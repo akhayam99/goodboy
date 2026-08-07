@@ -99,7 +99,11 @@ const DEFAULT_DETECTORS: Detectors = Detectors {
     opencode: detect_opencode,
 };
 
-async fn detect_isolated(detect: Detector, id: &'static str, binary: &'static str) -> ProviderStatus {
+async fn detect_isolated(
+    detect: Detector,
+    id: &'static str,
+    binary: &'static str,
+) -> ProviderStatus {
     tauri::async_runtime::spawn_blocking(detect)
         .await
         .unwrap_or_else(|err| ProviderStatus {
