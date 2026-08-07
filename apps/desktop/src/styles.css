@@ -446,8 +446,13 @@ dialog[open]::backdrop {
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: spin-border 3.6s linear infinite;
   pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spin-border::before {
+    animation: spin-border 3.6s linear infinite;
+  }
 }
 
 .spin-border-info {
@@ -460,8 +465,10 @@ dialog[open]::backdrop {
   --spin-border-color: var(--color-primary);
 }
 
-.animate-border-pulse {
-  animation: border-pulse 2.8s ease-in-out infinite;
+@media (prefers-reduced-motion: no-preference) {
+  .animate-border-pulse {
+    animation: border-pulse 2.8s ease-in-out infinite;
+  }
 }
 
 .density-trigger-label {

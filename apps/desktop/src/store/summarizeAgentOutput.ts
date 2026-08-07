@@ -23,6 +23,8 @@ export type SummarizeAgentOutputResult = {
 
 export const summarizedStepOutputs = new Map<AgentId, string>();
 
+export const stepSummaryDegraded = new Map<AgentId, boolean>();
+
 const inFlightSummaries = new Map<AgentId, Promise<SummarizeAgentOutputResult>>();
 
 const runSummarization = async ({
@@ -84,6 +86,7 @@ export const summarizeAgentOutput = ({
     ...(expectedOutput != null && { expectedOutput }),
   })
     .then((result) => {
+      stepSummaryDegraded.set(agentId, result.degraded);
       if (!result.degraded) {
         summarizedStepOutputs.delete(agentId);
       }
