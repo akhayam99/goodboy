@@ -16,13 +16,19 @@ const REPLACEMENT_CHAR = '�';
 const SURROGATE_SCAN = /[\uD800-\uDBFF][\uDC00-\uDFFF]|([\uD800-\uDFFF])/g;
 
 type BuildIssueBodyParams = {
+  readonly typeLabel: string;
   readonly version: string;
   readonly areaLabel: string;
   readonly notes: string;
 };
 
-export const buildIssueBody = ({ version, areaLabel, notes }: BuildIssueBodyParams): string =>
-  `Area: ${areaLabel}\nVersion: ${version}\n\n${notes}`;
+export const buildIssueBody = ({
+  typeLabel,
+  version,
+  areaLabel,
+  notes,
+}: BuildIssueBodyParams): string =>
+  `Type: ${typeLabel}\nArea: ${areaLabel}\nVersion: ${version}\n\n${notes}`;
 
 type SanitizeParams = {
   readonly text: string;
@@ -86,6 +92,7 @@ const capFallbackTitle = ({ title }: CapFallbackTitleParams): string => {
 
 type BuildFallbackIssueParams = {
   readonly title: string;
+  readonly typeLabel: string;
   readonly version: string;
   readonly areaLabel: string;
   readonly notes: string;
@@ -101,6 +108,7 @@ type FallbackIssue = {
 
 export const buildFallbackIssue = ({
   title,
+  typeLabel,
   version,
   areaLabel,
   notes,
@@ -110,7 +118,7 @@ export const buildFallbackIssue = ({
   const fallbackTitle = capFallbackTitle({ title: safeTitle });
   const titleTruncated = fallbackTitle !== safeTitle;
 
-  const fullBody = buildIssueBody({ version, areaLabel, notes: safeNotes });
+  const fullBody = buildIssueBody({ typeLabel, version, areaLabel, notes: safeNotes });
   if (fitsFallbackUrl({ title: fallbackTitle, body: fullBody })) {
     return {
       url: buildFallbackIssueUrl({ title: fallbackTitle, body: fullBody }),
@@ -127,10 +135,10 @@ export const buildFallbackIssue = ({
     fits: ({ candidate }) =>
       fitsFallbackUrl({
         title: fallbackTitle,
-        body: buildIssueBody({ version, areaLabel, notes: candidate }),
+        body: buildIssueBody({ typeLabel, version, areaLabel, notes: candidate }),
       }),
   });
-  const truncatedBody = buildIssueBody({ version, areaLabel, notes: truncatedNotes });
+  const truncatedBody = buildIssueBody({ typeLabel, version, areaLabel, notes: truncatedNotes });
   return {
     url: buildFallbackIssueUrl({ title: fallbackTitle, body: truncatedBody }),
     title: fallbackTitle,

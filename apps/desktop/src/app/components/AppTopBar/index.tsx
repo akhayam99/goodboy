@@ -2,6 +2,7 @@ import { Moon, PanelLeft, PanelLeftClose, Sun } from 'lucide-react';
 import { cn, Divider, Tooltip } from '@goodboy/ui';
 import { DogMascot } from '../../../shared/components/DogMascot';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
+import { ReportIssuePopover } from '../../../features/settings/components/ReportIssuePopover';
 import { RunningScriptsIndicator } from '../../../features/scripts/components/RunningScriptsIndicator';
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
@@ -91,6 +92,7 @@ export const AppTopBar = ({
 
         <div className="flex shrink-0 items-center gap-0.5">
           <RunningScriptsIndicator />
+          <ReportIssuePopover />
           <NotificationCenter />
           <Tooltip content={themeActionLabel}>
             <button

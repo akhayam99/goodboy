@@ -49,7 +49,11 @@ vi.mock('../../../store', () => ({
 }));
 
 vi.mock('../../../features/notifications/components/NotificationCenter', () => ({
-  NotificationCenter: () => null,
+  NotificationCenter: () => <span data-testid="notification-center" />,
+}));
+
+vi.mock('../../../features/settings/components/ReportIssuePopover', () => ({
+  ReportIssuePopover: () => <span data-testid="report-issue-popover" />,
 }));
 
 vi.mock('../../../features/onboarding/OnboardingCard', () => ({
@@ -117,6 +121,19 @@ describe('AppTopBar', () => {
     renderBar({ onOpenBudget: vi.fn() });
 
     expect(screen.getByTestId('onboarding-chip')).toBeDefined();
+  });
+
+  it('seats the report control ahead of notifications, leaving theme beside them', () => {
+    renderBar();
+
+    const report = screen.getByTestId('report-issue-popover');
+    const notifications = screen.getByTestId('notification-center');
+    const themeToggle = screen.getByRole('button', { name: /switch to (light|dark) mode/i });
+
+    expect(report.compareDocumentPosition(notifications)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(notifications.compareDocumentPosition(themeToggle)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it('keeps set-once preferences out of the bar, except theme', () => {

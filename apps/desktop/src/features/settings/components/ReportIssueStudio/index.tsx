@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ExternalLink } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import {
   Button,
   Divider,
   FieldRow,
   ScrollFade,
   SectionHeader,
+  SegmentedTabs,
   Select,
   Skeleton,
   Textarea,
@@ -19,6 +20,7 @@ import { openUrl } from '../../../../shared/lib/editor';
 import { useAppStore } from '../../../../store';
 import { tauriGhRunner } from '../../../github/github';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
+import { ISSUE_TYPE_OPTIONS, issueTypeLabel, type IssueTypeValue } from '../../reportIssueTypes';
 import { AREA_OPTIONS, type AreaValue } from './areas';
 import {
   buildFallbackIssue,
@@ -34,19 +36,24 @@ type Props = {
   readonly onClose: () => void;
 };
 
-type SendState = 'idle' | 'sending' | 'success' | 'error';
+type Params = {
+  readonly requestClose: () => void;
+};
+
+type SendState = 'idle' | 'sending' | 'error';
 
 export const ReportIssueStudio = ({ onClose }: Props) => {
   const version = useInstalledVersion();
   const status = useAppStore((s) => s.githubStatus);
   const refreshGithubStatus = useAppStore((s) => s.refreshGithubStatus);
+  const draft = useAppStore((s) => s.bugReportDraft);
+  const setBugReportDraft = useAppStore((s) => s.setBugReportDraft);
+  const clearBugReportDraft = useAppStore((s) => s.clearBugReportDraft);
 
   const [area, setArea] = useState<AreaValue | ''>('');
   const [title, setTitle] = useState('');
-  const [notes, setNotes] = useState('');
   const [sendState, setSendState] = useState<SendState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [issueUrl, setIssueUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (status == null) {
@@ -58,25 +65,27 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
   const sendsDirectly = mode === 'gh-cli' || mode === 'pat';
 
   const trimmedTitle = title.trim();
-  const trimmedNotes = notes.trim();
+  const trimmedNotes = draft.description.trim();
   const areaLabel = useMemo(
     () => AREA_OPTIONS.find((option) => option.value === area)?.label ?? '',
     [area],
   );
+  const typeLabel = issueTypeLabel({ issueType: draft.issueType });
 
   const directBody = useMemo(
-    () => buildIssueBody({ version: version ?? '', areaLabel, notes: trimmedNotes }),
-    [version, areaLabel, trimmedNotes],
+    () => buildIssueBody({ typeLabel, version: version ?? '', areaLabel, notes: trimmedNotes }),
+    [typeLabel, version, areaLabel, trimmedNotes],
   );
   const fallback = useMemo(
     () =>
       buildFallbackIssue({
         title: trimmedTitle,
+        typeLabel,
         version: version ?? '',
         areaLabel,
         notes: trimmedNotes,
       }),
-    [trimmedTitle, version, areaLabel, trimmedNotes],
+    [trimmedTitle, typeLabel, version, areaLabel, trimmedNotes],
   );
 
   const previewBody = sendsDirectly ? directBody : fallback.body;
@@ -95,13 +104,12 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     mode != null &&
     sendState !== 'sending';
 
-  const onSend = async () => {
+  const onSend = async ({ requestClose }: Params) => {
     if (!canSend) {
       return;
     }
     setSendState('sending');
     setErrorMessage(null);
-    setIssueUrl(null);
 
     if (sendsDirectly) {
       try {
@@ -124,8 +132,11 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
           setErrorMessage(parsed.message);
           return;
         }
-        setIssueUrl(parsed.url);
-        setSendState('success');
+        if (parsed.url != null) {
+          await openUrl(parsed.url);
+        }
+        clearBugReportDraft();
+        requestClose();
       } catch (err) {
         setSendState('error');
         setErrorMessage(formatError(err));
@@ -142,7 +153,8 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     }
     try {
       await openUrl(fallback.url);
-      setSendState('success');
+      clearBugReportDraft();
+      requestClose();
     } catch (err) {
       setSendState('error');
       setErrorMessage(formatError(err));
@@ -174,6 +186,15 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                   ) : (
                     <Skeleton className="h-4 w-14" />
                   )}
+                </FieldRow>
+                <FieldRow label="Type" help="What kind of report this is.">
+                  <SegmentedTabs
+                    size="sm"
+                    ariaLabel="Issue type"
+                    options={ISSUE_TYPE_OPTIONS}
+                    value={draft.issueType}
+                    onChange={(issueType: IssueTypeValue) => setBugReportDraft({ issueType })}
+                  />
                 </FieldRow>
                 <FieldRow label="Area" help="Which part of the app this is about.">
                   <Select
@@ -209,8 +230,8 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                     autoGrow
                     minRows={4}
                     maxRows={12}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
+                    value={draft.description}
+                    onChange={(e) => setBugReportDraft({ description: e.target.value })}
                     placeholder="Steps to reproduce, what you expected, what happened instead"
                   />
                 </FieldRow>
@@ -233,28 +254,6 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 <p className="text-2xs leading-relaxed text-muted-foreground">
                   This posts publicly on GitHub, under your own account.
                 </p>
-                {sendState === 'success' ? (
-                  <div className="flex items-center gap-2 text-2xs text-success">
-                    {sendsDirectly ? (
-                      issueUrl != null ? (
-                        <>
-                          <span>Issue filed.</span>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => void openUrl(issueUrl)}
-                          >
-                            <ExternalLink size={12} aria-hidden /> Open on GitHub
-                          </Button>
-                        </>
-                      ) : (
-                        <span>Issue filed. Check your GitHub account for the link.</span>
-                      )
-                    ) : (
-                      <span>Opened in your browser. Finish submitting it there.</span>
-                    )}
-                  </div>
-                ) : null}
               </section>
             </div>
           </ScrollFade>
@@ -272,7 +271,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
               Cancel
             </Button>
             <Button
-              onClick={() => void onSend()}
+              onClick={() => void onSend({ requestClose })}
               disabled={!canSend}
               className={cn(sendState === 'sending' && 'animate-border-pulse')}
             >

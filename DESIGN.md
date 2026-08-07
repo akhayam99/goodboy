@@ -35,7 +35,8 @@ functional. One register per surface; let the other supply only texture.
 - **App chrome**: a single top bar (`AppTopBar`), one 36px row closed by a
   hairline, holds context on the left (mascot, the sessions-column control,
   workspace identity, the session breadcrumb) and state on the right (cost
-  rollup, attention count, running scripts, notifications, theme, onboarding).
+  rollup, attention count, running scripts, the report control, notifications,
+  theme, onboarding).
   The top bar carries state and identity, not destinations: what it holds
   reports something happening right now. Theme is the one set-once preference
   exposed there, next to notifications, because it is reached often enough to
@@ -57,7 +58,15 @@ functional. One register per surface; let the other supply only texture.
   yet. Every shipped integration belongs to exactly one group: that group is
   where a workspace connects it, so an integration in no group is unreachable.
   The top bar is context, never content: every control in it opens
-  something elsewhere, none of them edits a record in place. See
+  something elsewhere, none of them edits a record in place. The report control
+  is the one carve-out, and a narrow one: its popover drafts a bug report, which
+  is not a record and reaches nothing until the report is filed, and its primary
+  action still opens the full report form. Unsent input held in chrome is the
+  same exception the composer's pre-send routing line earns under
+  [Status & signals](#status--signals). VS Code hangs its issue reporter off a
+  top-level menu for the same reason: the moment worth capturing a bug is the
+  moment you hit it, and the type and the description are what you can write
+  before you lose it. See
   [docs/design.md](docs/design.md) for what each surface is made of and
   [docs/navigation.md](docs/navigation.md) for the full IA and breadcrumb
   derivation rules.

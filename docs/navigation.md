@@ -116,7 +116,12 @@ its switcher popover, then the session breadcrumb, which does render here and is
 rooted at the session title.
 
 Right side: workspace rollup (attention count and today's spend), a divider,
-then running scripts, notifications, the theme toggle and onboarding. Theme is
+then running scripts, the report control, notifications, the theme toggle and
+onboarding. The report control (`ReportIssuePopover`) opens a popover holding an
+issue type and a description, both kept in the `bugReportDraft` store slice, so
+closing the popover keeps what was typed and a `Reset` empties it. Its primary
+action dispatches `goodboy:open-report-issue`, which opens the full form on the
+same draft. Theme is
 the one set-once preference kept here, because it is flipped often enough to
 earn the slot; the guide and pair-device left this row and live in the settings
 studio and the command palette. Settings and the update control left it too,
@@ -240,9 +245,11 @@ the top bar, which dispatches `goodboy:open-notifications-studio`. There is no
 footer button, no shortcut, and no command palette entry for it, because the
 bell already carries the unread count that makes the page worth opening.
 
-Report an issue has no footer entry either. It opens from Settings' App scope
-panel (a `FieldRow` button dispatching `goodboy:open-report-issue`, next to
-"Config backup") and from the command palette. It does not belong on the
+Report an issue has no footer entry either. It opens from the top bar's report
+control, from Settings' App scope panel (a `FieldRow` button dispatching
+`goodboy:open-report-issue`, next to "Config backup") and from the command
+palette. All three land on the same form, and the form sends the draft the
+popover holds. It does not belong on the
 footer's studio row or inside the `More` popover: it is not something you
 reach for by workspace or by session, and adding a slot there would grow
 `MORE_STUDIOS` for a surface that is genuinely settings-adjacent, not a peer
