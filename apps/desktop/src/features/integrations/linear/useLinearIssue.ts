@@ -12,12 +12,14 @@ type Result = {
   readonly issue: LinearIssue | null;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly refetch: () => void;
 };
 
 export const useLinearIssue = ({ workspaceId, issueId }: Params): Result => {
   const [issue, setIssue] = useState<LinearIssue | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let isCancelled = false;
@@ -47,7 +49,7 @@ export const useLinearIssue = ({ workspaceId, issueId }: Params): Result => {
     return () => {
       isCancelled = true;
     };
-  }, [issueId, workspaceId]);
+  }, [issueId, workspaceId, attempt]);
 
-  return { issue, isLoading, error };
+  return { issue, isLoading, error, refetch: () => setAttempt((count) => count + 1) };
 };

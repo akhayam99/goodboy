@@ -1,5 +1,6 @@
 import { Skeleton } from '@goodboy/ui';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
+import { ErrorStrip } from '../../../../../../shared/components/ErrorStrip';
 import { HeaderBand, StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { LinearIssueDetail } from '../../../../../integrations/linear/LinearIssueDetail';
 import { useLinearIssue } from '../../../../../integrations/linear/useLinearIssue';
@@ -10,7 +11,7 @@ type Props = {
 };
 
 export const LinearTaskDetail = ({ workspaceId, task }: Props) => {
-  const { issue, isLoading, error } = useLinearIssue({
+  const { issue, isLoading, error, refetch } = useLinearIssue({
     workspaceId,
     issueId: task.externalId,
   });
@@ -40,7 +41,9 @@ export const LinearTaskDetail = ({ workspaceId, task }: Props) => {
           <Skeleton className="h-3 w-3/4 rounded" />
         </div>
       ) : null}
-      {error != null ? <p className="text-sm text-danger">{error}</p> : null}
+      {error != null ? (
+        <ErrorStrip label="the Linear issue" error={new Error(error)} onRetry={refetch} />
+      ) : null}
     </StudioDetailLayout>
   );
 };

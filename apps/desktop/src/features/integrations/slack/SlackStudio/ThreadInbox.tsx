@@ -9,6 +9,7 @@ import {
 } from '@goodboy/ui';
 import { MessagesSquare, Search } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
 import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 import { slackThreadFirstLine } from '../threadFormulas';
@@ -86,9 +87,7 @@ export const ThreadInbox = ({
         </div>
       ) : error != null ? (
         <div className="px-3 pb-3">
-          <div className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
-            {error}
-          </div>
+          <ErrorStrip label="threads" error={new Error(error)} onRetry={onRefresh} />
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
