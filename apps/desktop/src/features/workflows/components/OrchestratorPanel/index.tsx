@@ -231,7 +231,7 @@ export const OrchestratorPanel = ({
             <OrchestratorDrawer
               inputId="orchestrator-continue-note-field"
               title="Not done? Say what is missing"
-              help="Optional. Leave it empty and the orchestrator decides what comes next on its own."
+              help="Optional. Leave it empty and the orchestrator decides what comes next. What you write stays on the decision it triggers."
             >
               <textarea
                 id="orchestrator-continue-note-field"

@@ -113,6 +113,7 @@ type EmitParams = {
   readonly action: 'next' | 'done' | 'blocked';
   readonly reason: string;
   readonly stepName?: string;
+  readonly operatorNote?: string;
   readonly preferredAgentId?: AgentId;
 };
 
@@ -123,6 +124,7 @@ const emitDecision = ({
   action,
   reason,
   stepName,
+  operatorNote,
   preferredAgentId,
 }: EmitParams): AgentId | null => {
   const runAgents = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
@@ -137,6 +139,7 @@ const emitDecision = ({
     action,
     reason,
     ...(stepName != null && { stepName }),
+    ...(operatorNote != null && operatorNote !== '' && { operatorNote }),
     at: new Date().toISOString() as IsoDateTime,
   };
   get().appendTurnEvent(agentId, sessionId, event);
@@ -348,6 +351,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       return;
     }
     orchestrationInFlight.add(workflowRunId);
+    const operatorNote = options?.extraHints?.trim() ?? '';
     try {
       const session = get().sessions.find((candidate) => candidate.id === sessionId);
       const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
@@ -396,7 +400,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           outcome: 'blocked',
           reason,
         });
-        emitDecision({ get, sessionId, workflowRunId, action: 'blocked', reason });
+        emitDecision({ get, sessionId, workflowRunId, action: 'blocked', reason, operatorNote });
         void get().emitNotification(
           'error',
           'warning',
@@ -439,7 +443,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         defaultProvider,
       );
       const routing = options?.routing ?? run.orchestratorRouting ?? taskModel;
-      const hints = [run.orchestratorHints, options?.extraHints]
+      const hints = [run.orchestratorHints, operatorNote]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');
@@ -474,6 +478,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           action: 'blocked',
           reason: `orchestrator failed: ${message}`,
+          operatorNote,
         });
         void get().emitNotification('error', 'warning', 'orchestrator failed', message, {
           sessionId,
@@ -494,6 +499,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           workflowRunId,
           action: 'blocked',
           reason: 'the orchestrator reply could not be parsed, retry to continue',
+          operatorNote,
         });
         await recordOrchestratorUsage({
           set,
@@ -548,6 +554,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           action: decision.action,
           reason,
           stepName: agent.name,
+          operatorNote,
           preferredAgentId: agent.id,
         });
         if (enforced.rejection != null) {
@@ -590,6 +597,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         workflowRunId,
         action: decision.action,
         reason: decision.reason,
+        operatorNote,
       });
       await recordOrchestratorUsage({
         set,

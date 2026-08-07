@@ -119,6 +119,7 @@ export type TurnEvent =
       action: 'next' | 'done' | 'blocked';
       reason: string;
       stepName?: string;
+      operatorNote?: string;
       at: IsoDateTime;
     }
   | {
