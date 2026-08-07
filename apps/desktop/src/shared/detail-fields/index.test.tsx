@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
 
+import { isValidElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { GithubIssue, PullRequestState } from '@goodboy/types';
 import type { LinearIssue } from '../../features/integrations/linear/client';
 import type { GitlabIssue, GitlabMergeRequest } from '../../features/integrations/gitlab/client';
+import { formatAbsoluteDateTime } from '../utils/relativeDate';
 import {
   githubIssueFields,
   githubPullRequestFields,
@@ -16,6 +18,24 @@ import {
   type ResolvedDetailFields,
   type SentryIssueProperties,
 } from '.';
+
+type NodeChildren = {
+  readonly children?: ReactNode;
+};
+
+const nodeText = (node: ReactNode): string => {
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node);
+  }
+  if (isValidElement<NodeChildren>(node)) {
+    return nodeText(node.props.children);
+  }
+  return '';
+};
+
+const entryTextByKey = (entries: ResolvedDetailFields): Record<string, string> => {
+  return Object.fromEntries(entries.map((entry) => [entry.key, nodeText(entry.node)]));
+};
 
 type ForgedDetailFields = ReadonlyArray<DetailEntry> & {
   readonly __brand: 'ResolvedDetailFields';
@@ -40,6 +60,10 @@ const LINEAR_ISSUE: LinearIssue = {
 const SENTRY_ISSUE: SentryIssueProperties = {
   culprit: 'api/items',
   status: 'unresolved',
+  count: '128',
+  userCount: 9,
+  firstSeen: '2026-07-01T09:00:00Z',
+  lastSeen: '2026-07-23T10:00:00Z',
   tags: [
     { key: 'release', value: 'desktop@1.2.3' },
     { key: 'environment', value: 'production' },
@@ -112,7 +136,15 @@ describe('detail field registries', () => {
       'linkedPullRequests',
       'updated',
     ]);
-    expect(sentryIssueFields.map((field) => field.key)).toEqual(['culprit', 'status', 'tags']);
+    expect(sentryIssueFields.map((field) => field.key)).toEqual([
+      'culprit',
+      'status',
+      'events',
+      'users',
+      'firstSeen',
+      'lastSeen',
+      'tags',
+    ]);
     expect(githubIssueFields.map((field) => field.key)).toEqual(['labels', 'updated']);
     expect(githubPullRequestFields.map((field) => field.key)).toEqual(['baseBranch', 'updated']);
     expect(gitlabIssueFields.map((field) => field.key)).toEqual(['milestone', 'labels', 'updated']);
@@ -135,7 +167,16 @@ describe('detail field registries', () => {
       resolveDetailFields({ registry: sentryIssueFields, entity: SENTRY_ISSUE }).map(
         (entry) => entry.label,
       ),
-    ).toEqual(['Culprit', 'Status', 'release', 'environment']);
+    ).toEqual([
+      'Culprit',
+      'Status',
+      'Events',
+      'Users',
+      'First seen',
+      'Last seen',
+      'release',
+      'environment',
+    ]);
     expect(
       resolveDetailFields({ registry: githubIssueFields, entity: GITHUB_ISSUE }).map(
         (entry) => entry.label,
@@ -156,6 +197,21 @@ describe('detail field registries', () => {
         (entry) => entry.label,
       ),
     ).toEqual(['Source branch', 'Target branch', 'Merge status', 'Updated']);
+  });
+
+  it('pins every sentry field to its own value, never a neighboring one', () => {
+    const text = entryTextByKey(
+      resolveDetailFields({ registry: sentryIssueFields, entity: SENTRY_ISSUE }),
+    );
+
+    expect(text.culprit).toBe(SENTRY_ISSUE.culprit);
+    expect(text.status).toBe(SENTRY_ISSUE.status);
+    expect(text.events).toBe(SENTRY_ISSUE.count);
+    expect(text.users).toBe(String(SENTRY_ISSUE.userCount));
+    expect(text.firstSeen).toBe(formatAbsoluteDateTime({ iso: SENTRY_ISSUE.firstSeen ?? '' }));
+    expect(text.lastSeen).toBe(formatAbsoluteDateTime({ iso: SENTRY_ISSUE.lastSeen ?? '' }));
+    expect(text.events).not.toBe(text.users);
+    expect(text.firstSeen).not.toBe(text.lastSeen);
   });
 
   it('only a resolver run carries the resolved brand', () => {

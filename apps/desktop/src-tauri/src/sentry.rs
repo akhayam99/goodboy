@@ -363,6 +363,29 @@ pub async fn sentry_fetch_issues(
 }
 
 #[tauri::command]
+pub async fn sentry_fetch_issue(
+    workspace_id: String,
+    issue_id: String,
+    cache: State<'_, SentryTokenCache>,
+) -> Result<SentryIssue, SentryError> {
+    let cfg = read_config(&workspace_id, &cache)?;
+    let url = format!("{}/issues/{}/", BASE_URL, issue_id);
+    let res = http_client()
+        .get(&url)
+        .bearer_auth(&cfg.token)
+        .send()
+        .await?;
+    let status = res.status();
+    if !status.is_success() {
+        let body = res.text().await.unwrap_or_default();
+        return Err(SentryError::Http(format!("status {}: {}", status, body)));
+    }
+    let body = res.text().await?;
+    let issue: SentryIssue = serde_json::from_str(&body)?;
+    Ok(issue)
+}
+
+#[tauri::command]
 pub async fn sentry_fetch_issue_detail(
     workspace_id: String,
     issue_id: String,
@@ -447,6 +470,37 @@ mod tests {
     fn extract_frames_empty_without_entries() {
         let event = serde_json::json!({ "title": "x" });
         assert!(extract_frames(&event).is_empty());
+    }
+
+    #[test]
+    fn issue_deserializes_counts_and_seen_timestamps() {
+        let payload = serde_json::json!({
+            "id": "42",
+            "shortId": "GOODBOY-42",
+            "title": "TypeError: request failed",
+            "culprit": "api/items",
+            "level": "error",
+            "status": "unresolved",
+            "count": "128",
+            "userCount": 9,
+            "firstSeen": "2026-07-01T09:00:00Z",
+            "lastSeen": "2026-07-23T10:00:00Z",
+            "permalink": "https://sentry.io/issues/42"
+        });
+        let issue: SentryIssue = serde_json::from_value(payload).unwrap();
+        assert_eq!(issue.count.as_deref(), Some("128"));
+        assert_eq!(issue.user_count, Some(9));
+        assert_eq!(issue.first_seen.as_deref(), Some("2026-07-01T09:00:00Z"));
+        assert_eq!(issue.last_seen.as_deref(), Some("2026-07-23T10:00:00Z"));
+    }
+
+    #[test]
+    fn issue_deserializes_when_optional_fields_are_absent() {
+        let payload = serde_json::json!({ "id": "42", "title": "Boom" });
+        let issue: SentryIssue = serde_json::from_value(payload).unwrap();
+        assert_eq!(issue.id, "42");
+        assert!(issue.count.is_none());
+        assert!(issue.metadata.is_none());
     }
 
     #[test]
