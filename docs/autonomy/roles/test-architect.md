@@ -1,9 +1,7 @@
 # Role: test architect
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/test-architect.md` in the continuous-delivery skill;
-soul in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/test-architect.md in the continuous-delivery skill.
 
 **Mandate**: judge whether the suite means anything: does a test exercise
 the domain, or is it a false positive with a green checkmark.

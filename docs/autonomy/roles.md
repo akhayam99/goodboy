@@ -12,11 +12,9 @@ Goodboy is built by a simulated company, and the shape is a working delivery
 org, not a metaphor: a product owner decides what a batch is worth, a
 challenger assumes every plan is wrong, builders build, verifiers assume
 every build is broken, and a lead ships. Each role is an agent with a
-bounded mandate, and no role reviews its own work. The org stays small on
-one test: **a role earns its place by owning a decision nobody else can
-make.** Frontend and backend fail that test (they are builder competencies);
-so did a separate privacy officer and a seasonal-delight scout, which is why
-they were folded into existing charters rather than created.
+bounded mandate, and no role reviews its own work. The test a role must pass
+to exist, and the examples of roles that failed it, are owned by
+[org.md](./org.md); this file does not restate them.
 
 ## Model tiers
 
@@ -36,19 +34,20 @@ title.
 
 ## The roles
 
-One line each; the charter has the rest.
+One line each, describing the mandate only. [org.md](./org.md)'s table maps
+who blocks whom and the charter is the definition; an index that repeated
+either would be a third copy, and third copies drift.
 
 - [delivery-lead](./roles/delivery-lead.md): runs the engagement, publishes
-  every release, keeps the ledger; the only role that publishes.
+  each reviewed draft, keeps the ledger.
 - [release-captain](./roles/release-captain.md): owns one version through
   the seven phases, stops at a reviewed draft, dies.
 - [archaeologist](./roles/archaeologist.md): read-only auditor of a
   disjoint slice; returns facts, fixes nothing.
-- [product-owner](./roles/product-owner.md): composes the batch and holds
-  the filler ban and the push-back right.
-- [head-of-engineering](./roles/head-of-engineering.md): feasibility and
-  sequencing; sends back what the code cannot carry, with the condition
-  that would make it yes.
+- [product-owner](./roles/product-owner.md): composes the batch: theme,
+  sizes, classes, tags, declared deviations.
+- [head-of-engineering](./roles/head-of-engineering.md): judges feasibility
+  and sequencing, stating the condition that would turn a no into a yes.
 - [challenger](./roles/challenger.md): attacks the plan cold, reviews the
   notes, judges the impact bar.
 - [product-critic](./roles/product-critic.md): walks the shipped app and
@@ -62,13 +61,14 @@ One line each; the charter has the rest.
 - [debt-surgeon](./roles/debt-surgeon.md): owns the refactor floor; picks
   the release's legacy slices and brings them to the conventions.
 - [verifier](./roles/verifier.md): assumes the build is broken and proves
-  the tests can fail; verdict outranks builder and CI.
+  the tests can fail.
 - [test-architect](./roles/test-architect.md): judges whether a test
   exercises the domain or is a false positive.
 - [qa-explorer](./roles/qa-explorer.md): walks the built app, not the diff,
   and reports what breaks between two green PRs.
-- [design-system-steward](./roles/design-system-steward.md): owns tokens,
-  primitives and shared components; no duplicate components.
+- [design-system-steward](./roles/design-system-steward.md): steward of
+  tokens, primitives and shared components; names every duplicate before it
+  ships.
 - [ux-designer](./roles/ux-designer.md): owns the flow: where a feature
   lives in navigation and what the non-coder sees.
 - [brand-steward](./roles/brand-steward.md): owns visual identity and the
@@ -80,9 +80,10 @@ One line each; the charter has the rest.
 - [integrations-owner](./roles/integrations-owner.md): owns the health of
   the outward-facing surfaces; hired with a sunset clause.
 - [security-officer](./roles/security-officer.md): owns security and
-  privacy enforcement, with a merge veto.
+  privacy enforcement on every diff that ships.
 - [historian](./roles/historian.md): owns the follow-through record and the
-  items stalled for N cycles.
+  judgment calls on it: when an entry closes, when a stalled item is due a
+  premise re-test.
 - [issue-triage-officer](./roles/issue-triage-officer.md): owns the issue
   loop; every open issue gets a decision and a reply every cycle.
 - [watchdog](./roles/watchdog.md): the liveness check on siblings; reads
@@ -108,27 +109,29 @@ One line each; the charter has the rest.
 - **Evidence over opinion.** Every role output cites a file, a line, an
   issue or a run. A finding without a pointer is discarded, not escalated
   ([org.md](./org.md) owns the resolution ladder this feeds).
-- **One writer per state file per window.** The ledger has one writer (the
-  lead), the backlog has one writer per window, `FOLLOW_THROUGH.md` has one
-  (the historian), the ADR sequence has one assigner per release (the
-  captain, per [../adr/README.md](../adr/README.md)). Two writers on one
-  file is how state directories start contradicting git history, which is a
-  stop condition.
-- Every role gets a unique scratch path. Children with no data dependency on
-  each other are spawned together, in one message, as concurrent background
-  tasks with completion notifications; five builders once ran as the sum of
-  their durations instead of the longest one, and that time bought nothing.
-  Concurrency is bounded by the roster contract in
-  [watchdogs.md](./watchdogs.md): roster before spawning, heartbeat
-  journals, first-activity check, and a parent that never proceeds past an
-  unresolved child. Where the harness cannot notify on background
-  completion, the degraded mode is foreground spawning, one child at a time:
-  slower, never silent.
-- Every builder and verifier keeps the heartbeat journal defined in
-  [watchdogs.md](./watchdogs.md). Watchdogs read journals and git, never
-  self-descriptions. Spawned agent types must be write-capable enough to
-  journal: read-only agent types cannot, and a child that cannot journal
-  cannot be told apart from a dead one.
+- **One writer per state file.** The enumerated files and their writers:
+  `LEDGER.md` (the delivery lead), `BACKLOG.md` (one writer per window:
+  the live captain appends during its release, the triage officer mutates
+  it only when no captain is running per the hand-back protocol in the
+  continuous-delivery skill, the lead otherwise), `FOLLOW_THROUGH.md`
+  (the historian), the ADR sequence (one assigner per release, the
+  captain, per [../adr/README.md](../adr/README.md)), the per-release
+  run-log (its captain, per [visibility.md](./visibility.md)), the
+  engagement-level run-log (the delivery lead), and `BASELINES.md` (the
+  lead; the compact carry file defined in the continuous-delivery skill).
+  Two writers on one file is how state directories start contradicting git
+  history, which is a stop condition. `OWNER_INBOX.md` is the deliberate
+  exception: append-only and multi-writer by design. Entries are dated,
+  author-tagged, and prepended newest-first; its writers (product-owner
+  push-backs, captain gate entries, triage escalations, the lead) never
+  edit existing entries, which is why concurrent windows are safe.
+  Escalations are time-critical, and routing them through a parent adds
+  latency without protecting anything an append cannot.
+- Every child gets a unique scratch path; two children writing to one path
+  is how reports overwrite each other silently.
+- Concurrency, rosters, heartbeat journals and liveness follow
+  [watchdogs.md](./watchdogs.md), which owns the cadence numbers and the
+  degraded mode.
 - Every spawn leaves a run-log line, written by its parent, per
   [visibility.md](./visibility.md).
 - Token discipline is part of the job: load only what the current step needs,
@@ -139,6 +142,7 @@ One line each; the charter has the rest.
   pattern by default; when a pattern is the problem, restructuring it is in
   scope, stated as such in the plan and sized honestly. Decisions that bind
   future releases get an ADR per [../adr/README.md](../adr/README.md).
-- Personality is a separate layer with a hard bound, owned by
-  [souls.md](./souls.md): a soul changes what a role notices and how it
-  writes, never what it may approve, block, or skip.
+- Personality is a separate layer owned by [souls.md](./souls.md). Policy
+  documents may link to it but never define a soul or use one as grounds
+  for a decision; the bound on what a soul may influence lives there, not
+  here.

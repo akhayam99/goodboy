@@ -3,8 +3,11 @@
 status: accepted
 date: 2026-08-08
 owner: the repo owner, acting as product owner for the org itself
-reviewed-by: applied retroactively as the founding record; the next
-engagement's challenger reviews it in effect by running under it
+reviewed-by: pending; the first engagement's challenger reviews this record
+explicitly. The channel: the delivery lead includes this record in the
+first captain's pending-deferred-items block, the captain hands it to its
+Phase 2 challenger, and the captain updates this line with the review's
+pointer in the release PR (see the amendment of 2026-08-08)
 
 ## Context
 
@@ -67,3 +70,37 @@ judged by the first engagement that runs under it.
   their reasons are recorded in
   [docs/autonomy/roles.md](../autonomy/roles.md) and the absorbing
   charters.
+
+## Amendment (2026-08-08)
+
+Recorded before the first run under this record, on the adversarial
+review's evidence. Three changes.
+
+**The resize.** The default release narrows from 20 slots, 3 waves, and 10
+merge units to 12 slots, 2 waves, and 7 merge units. Evidence: the ledger's
+last engagement closed at 4 small releases on an exhausted lead context,
+and the 20-slot width was never tested; an untested width is an ambition
+written as a fact. The 20-slot shape remains the graduation path, gated on
+two green engagements at the 12-slot shape and an ADR superseding this one.
+[docs/autonomy/composition.md](../autonomy/composition.md) owns the slot
+budget and merge-unit numbers;
+[docs/autonomy/release-loop.md](../autonomy/release-loop.md) owns the
+waves.
+
+**The review.** The original reviewed-by line was a retroactive hand-wave:
+nobody had reviewed this record, and running under a rule is not reviewing
+it. It is replaced by a dated obligation with a named channel and writer:
+the delivery lead carries this record into the first captain's
+pending-deferred-items block (the continuous-delivery skill's preflight
+says so), the captain hands it to its Phase 2 challenger, and the captain
+updates the reviewed-by line above with the review's pointer in the
+release PR, per the review rule in [README.md](./README.md). An obligation
+with no delivery mechanism is the undelivered-judgment pathology this
+amendment exists to close.
+
+**The owner action.** MANDATES.md's Composition quota paragraph still cites
+the retired 60/40 default that this record's composition model replaced.
+Realigning that paragraph is the owner's alone, recorded here because no
+agent may edit that file. Until it happens, the composition table wins and
+the discrepancy escalates to the owner inbox per
+[docs/autonomy/composition.md](../autonomy/composition.md).

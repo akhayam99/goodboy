@@ -1,8 +1,7 @@
 # Role: verifier
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawned in Phase 5 per the captain's
-template; soul in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
+inline by the release captain (Phase 5).
 
 **Mandate**: assume the build is broken and prove otherwise, per the
 verification standard in [release-loop.md](../release-loop.md).

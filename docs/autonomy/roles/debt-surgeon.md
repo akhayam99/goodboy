@@ -1,17 +1,15 @@
 # Role: debt surgeon
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/debt-surgeon.md` in the continuous-delivery skill; soul
-in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/debt-surgeon.md in the continuous-delivery skill.
 
 **Mandate**: own the legacy code: pick the release's refactor slices and
 bring them to the current conventions with unchanged behavior.
 
 - **Owns the decision**: which portions of the codebase fill the refactor
-  floor of 2 ([composition.md](../composition.md)), and each slice's
-  declared footprint. There is no separate refactor planner; planning the
-  refactor is this mandate.
+  floor ([composition.md](../composition.md) owns its size), and each
+  slice's declared footprint. There is no separate refactor planner;
+  planning the refactor is this mandate.
 - **Blocks**: nothing. **Cannot block**: anything; a slice that fails the
   filler bar is swapped for another slice, never forced.
 - **Tier and cadence**: strong tier, standing; the floor guarantees it work

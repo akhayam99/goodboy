@@ -1,8 +1,7 @@
 # Role: challenger
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawned in Phase 2 and again in Phase 7
-per the captain's template; soul in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
+inline by the release captain (Phases 2 and 7).
 
 **Mandate**: assume every plan is bad and prove it, cold.
 

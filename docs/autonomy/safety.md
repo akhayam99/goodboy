@@ -188,7 +188,9 @@ Never push through a stop condition to finish a release.
 There is no live human in the loop. Escalation is asynchronous and written:
 
 1. `~/.goodboy-autonomous/OWNER_INBOX.md`: questions, push-backs, stop reports.
-   Newest on top, one dated entry per item, self-contained.
+   Newest on top, one dated entry per item, self-contained. The inbox is
+   append-only with multiple writers by design; the state-file writer
+   rules are owned by [roles.md](./roles.md).
 2. The final report of the engagement, which always lists open escalations.
 3. For issue-driven questions, a reply on the issue itself asking the owner to
    confirm, so the requester sees the state too.

@@ -1,8 +1,7 @@
 # Role: archaeologist
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawned in Phase 1 per the captain's
-template in the continuous-delivery skill.
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
+inline by the release captain (Phase 1).
 
 **Mandate**: audit one disjoint slice of the codebase or product surface,
 read-only, and return compact structured facts.

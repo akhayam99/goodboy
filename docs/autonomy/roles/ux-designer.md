@@ -1,9 +1,7 @@
 # Role: ux designer
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/ux-designer.md` in the continuous-delivery skill; soul
-in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/ux-designer.md in the continuous-delivery skill.
 
 **Mandate**: own the flow: where a feature lives in the navigation, and
 what the non-coder sees on the way to it.

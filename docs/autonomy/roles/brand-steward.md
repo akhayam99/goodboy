@@ -1,9 +1,7 @@
 # Role: brand steward
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/brand-steward.md` in the continuous-delivery skill; soul
-in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/brand-steward.md in the continuous-delivery skill.
 
 **Mandate**: own the visual identity and the moments: no image ships
 without its approval, and snow at Christmas is its proposal to make.
@@ -22,8 +20,7 @@ without its approval, and snow at Christmas is its proposal to make.
   visual surfaces, the calendar.
 - **Output**: per-asset verdict with reasons; moment proposals as normal
   work items through the PO, never self-approved.
-- **Verified by**: the voice steward and the ux designer, never the brand
-  steward itself, per the no-self-review rule.
+- **Verified by**: the voice steward and the ux designer.
 
 ## The rails on moments
 

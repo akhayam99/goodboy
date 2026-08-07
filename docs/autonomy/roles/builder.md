@@ -1,8 +1,7 @@
 # Role: builder
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawned in Phase 4 per the captain's
-template, which carries the house rules.
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
+inline by the release captain (Phase 4).
 
 **Mandate**: build one work item as one branch, one PR, in one fresh
 worktree cut from `origin/main`.

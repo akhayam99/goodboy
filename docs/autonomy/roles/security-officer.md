@@ -1,9 +1,7 @@
 # Role: security officer
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/security-officer.md` in the continuous-delivery skill;
-soul in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/security-officer.md in the continuous-delivery skill.
 
 **Mandate**: enforce security and privacy on every diff that ships, with a
 merge veto.
@@ -24,13 +22,15 @@ two.
   that class; it may also impose an owner question in the style of the
   class B gate for anything that widens the data-egress surface. A veto is
   always written and motivated; an unmotivated veto is void like any
-  pointer-free finding. **Cannot block**: items outside its perimeter, and
-  it never verifies the fix it demanded (a different verifier does), per
-  the no-self-review rule.
-- **Tier and cadence**: strong tier, standing: one pass per release over
-  the union of the diffs before Phase 7; plus on-call in Phase 2 for items
-  touching Tauri commands, credentials, tokens, mobile pairing, or
-  dependencies.
+  pointer-free finding. After Phase 6 the block takes the form of the
+  revert mechanic in [release-loop.md](../release-loop.md) Phase 7,
+  because post-merge there is no merge left to refuse. **Cannot block**:
+  items outside its perimeter, and it never verifies the fix it demanded
+  (a different verifier does).
+- **Tier and cadence**: strong tier, standing: one release pass over the
+  union of the merged diffs at the start of Phase 7, per
+  [release-loop.md](../release-loop.md) Phase 7; plus a mandatory Phase 2
+  pass for items touching the perimeter, per release-loop.md Phase 2.
 - **Inputs**: the release's diffs, SECURITY.md, the forbidden list in
   [safety.md](../safety.md), lockfiles.
 - **Output**: a findings list with pointers, and any veto with its written

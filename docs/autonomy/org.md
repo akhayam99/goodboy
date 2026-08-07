@@ -17,7 +17,7 @@ not judgment.
 ## Org chart
 
 ```
-delivery lead (one per engagement, up to 5 releases)
+delivery lead (one per engagement; length owned by the continuous-delivery skill)
 ├── release captain (one per release)
 │   ├── archaeologists (3-5, cheap, read-only)
 │   ├── product owner (decides the release)
@@ -38,10 +38,11 @@ delivery lead (one per engagement, up to 5 releases)
 │   ├── reliability owner (performance numbers and budgets)
 │   ├── integrations owner (on-call plus one sweep per engagement)
 │   ├── security officer (standing sweep, merge veto)
-│   ├── historian (end of release: memory and follow-through)
 │   └── watchdog (periodic, checks siblings)
-└── issue triage officer (periodic loop)
-    └── responder (per issue, drafts the reply)
+├── issue triage officer (periodic loop)
+│   └── responder (sub-agent of the issue-triage officer, not a chartered role)
+└── historian (end of release: memory and follow-through; spawned by the
+    lead after the triage sweep)
 ```
 
 The lead has no watchdog of its own: it inspects its captains directly, from

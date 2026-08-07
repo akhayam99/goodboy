@@ -1,8 +1,8 @@
 # Role: watchdog
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawned on the cadence in
-[watchdogs.md](../watchdogs.md), which owns everything it does.
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
+inline by its parent, on the cadence in [watchdogs.md](../watchdogs.md),
+which owns everything it does.
 
 **Mandate**: check the liveness of its parent's live children, once, from
 disk and git, and report.
@@ -11,9 +11,10 @@ disk and git, and report.
   journal lines, commits, test runs. Never from self-descriptions.
 - **Blocks**: nothing; it only reports, the parent acts.
   **Cannot block**: anything.
-- **Tier and cadence**: cheap tier; spawned roughly every 30 minutes while
-  children run, foreground, because the liveness answer must not depend on
-  the mechanism it exists to check.
+- **Tier and cadence**: cheap tier; spawned on the cadence
+  [watchdogs.md](../watchdogs.md) owns while children run, foreground,
+  because the liveness answer must not depend on the mechanism it exists
+  to check.
 - **Inputs**: the parent's roster, each child's journal, branch and
   worktree.
 - **Output**: one compact report, one line per checked child, plus one

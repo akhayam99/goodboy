@@ -2,9 +2,11 @@
 
 Part of the [autonomy cluster](../autonomy.md). This file owns liveness: how
 the delivery organization notices a dead or stalled agent and what it does
-about it. Chains have stalled before with zero progress because an agent was
-backgrounded and its turn ended silently; concurrency is now the default, so
-these rules are what make that failure impossible to repeat quietly.
+about it, the check cadences, the degraded-mode definition, and the
+roster-incident record. Chains have stalled before with zero progress
+because an agent was backgrounded and its turn ended silently; concurrency
+is now the default, so these rules are what make that failure impossible to
+repeat quietly.
 
 ## The principle
 
@@ -20,10 +22,12 @@ track of.
 Before spawning any batch of concurrent children, the parent writes a roster
 to its scratch state: one line per child (role, work item, branch, worktree,
 scratch path, spawn time). A build roster is bounded by the wave it belongs
-to (at most 7 slots, per [release-loop.md](./release-loop.md)): the 20-slot
-batch in [composition.md](./composition.md) never becomes a 20-child
-roster, because a roster is only as watchable as it is small, and one
-captain already lost track of five children at a fraction of that scale. The roster is a crash-recovery manifest keyed on
+to ([release-loop.md](./release-loop.md) owns the wave shape): the full
+batch in [composition.md](./composition.md) never becomes one flat roster,
+because a roster is only as watchable as it is small. The incident this
+file exists to never repeat: one captain ended its turn with five children
+still live at 6-item scale, having lost track of them; every rule below
+descends from it. The roster is a crash-recovery manifest keyed on
 git state, never on harness task ids: a replacement parent resumes from
 branches, worktrees and journals, because task ids die with the parent that
 held them.

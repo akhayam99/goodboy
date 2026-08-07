@@ -1,8 +1,7 @@
 # Role: scout
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawned in Phase 3 per the captain's
-template.
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
+inline by the release captain (Phase 3).
 
 **Mandate**: pressure-test every surviving plan item against the real code
 before a line is written.

@@ -12,9 +12,10 @@ A release passes the bar when it moves at least one of five things in a way
 a user could name in one sentence without reading a diff: **feature,
 documentation, navigability, copy, user experience.**
 
-The bar exists because a 20-slot budget
-([composition.md](./composition.md)) makes it possible to spend an entire
-release on true, verified, worthwhile work that no user would ever notice:
+The bar exists because a slot budget wide enough to fill a release
+([composition.md](./composition.md) owns the numbers) makes it possible to
+spend that entire release on true, verified, worthwhile work that no user
+would ever notice:
 audits with no findings, refactors with unchanged behavior, org rules
 pending verification. All of that is legitimate; a release made only of it
 is the machine polishing its own gears. Two releases in the last engagement

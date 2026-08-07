@@ -1,8 +1,7 @@
 # Role: product owner
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawned in Phase 2 per the captain's
-template; soul in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
+inline by the release captain (Phase 2).
 
 **Mandate**: decide what the release is, by composing the slot budget in
 [composition.md](../composition.md) into a theme plus sized, tagged work

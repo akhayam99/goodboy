@@ -3,8 +3,8 @@
 Part of the [autonomy cluster](../autonomy.md). This file owns the
 personality layer: the casting, the shape of a soul block, and the hard
 bound on what a soul may influence. Policy lives everywhere else in this
-cluster and never here; a soul is not policy and policy documents never
-mention souls.
+cluster and never here: policy documents may link to this file, but they
+never define a soul and never use one as grounds for a decision.
 
 ## Why souls exist
 
@@ -18,7 +18,15 @@ second opinion that is the first opinion with a signature.
 
 Each role's spawn brief (under
 `.claude/skills/continuous-delivery/references/briefs/`) carries a soul
-block of three or four lines: name, temperament, what makes it suspicious.
+block quoting its casting-table row below verbatim: name and temperament.
+A brief may add one sentence of what makes the soul suspicious; that
+sentence is brief-local flavor, not part of the table, and recasting a
+role rewrites it along with the row. Roles whose spawn instructions are
+still inline (the product owner, the challenger, the verifier, the issue
+triage officer) get the same row quoted in the spawner's inline
+instructions, named in the captain prompt and `SKILL.md`; the adversarial
+pairs this layer exists for must not run uncast just because their briefs
+were never extracted.
 Coordination and mechanical roles (delivery lead, release captain,
 archaeologist, scout, builder, watchdog) run uncast: souls exist to
 diversify judgment, and those roles are paid for throughput and fidelity,
@@ -44,7 +52,10 @@ approve, block, or skip.** This is the layer's one hard rule:
 
 Names come from Game of Thrones. The trait is what the soul makes the role
 notice; it is never what the role is allowed to decide, which lives in the
-charter under [roles/](./roles.md).
+charter under [roles/](./roles.md). This table is the single source of each
+soul's name and temperament: a soul block quotes its row verbatim, so
+recasting a role edits exactly one row plus the brief-local suspicion
+sentence, and nothing else can drift.
 
 | Role                  | Soul                 | Temperament                                                                                                   |
 | --------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------- |

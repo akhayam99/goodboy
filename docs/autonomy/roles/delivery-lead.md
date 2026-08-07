@@ -1,11 +1,10 @@
 # Role: delivery lead
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawned by invoking the
-`continuous-delivery` skill, which is its operating manual.
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
+by invoking the continuous-delivery skill, which is its operating manual.
 
-**Mandate**: run one engagement of up to five releases end to end, publish
-each reviewed draft, and report once.
+**Mandate**: run one engagement end to end (length owned by the
+continuous-delivery skill), publish each reviewed draft, and report once.
 
 - **Owns the decision**: whether a draft release publishes. Also: declaring
   a queue-drain batch, changing the rotation pick after two below-bar
@@ -28,7 +27,7 @@ It never reads or writes code, never runs tests, never builds a release
 itself: it spawns release captains, reviews their drafts against the world
 (assets, CI, `gh` output) rather than against their reports, keeps the
 ledger, runs the issue loop, and watches for stalled children. It reads
-verdicts and exceptions from disk, not narratives: one engagement's release
-count was capped by a lead whose context filled with narratives it never
-needed. It also reviews every use of a veto in the release it publishes,
-per [org.md](../org.md).
+verdicts and exceptions from disk, not narratives, per the reports-on-disk
+rule in [roles.md](../roles.md), which narrates the incident behind it. It
+also reviews every use of a veto in the release it publishes, per
+[org.md](../org.md).

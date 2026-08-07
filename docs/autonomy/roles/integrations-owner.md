@@ -1,9 +1,7 @@
 # Role: integrations owner
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/integrations-owner.md` in the continuous-delivery
-skill; soul in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/integrations-owner.md in the continuous-delivery skill.
 
 **Mandate**: own the health of the outward-facing surfaces: providers,
 CLIs, gating lists, and the vendor API shapes the app depends on.
@@ -11,13 +9,13 @@ CLIs, gating lists, and the vendor API shapes the app depends on.
 - **Owns the decision**: the verdict "this external surface has drifted":
   a provider CLI changed its flags, a vendor API shape moved, a gating
   list is missing an arm, an integration's write path was never exercised.
-  It fills the integrations-and-providers slot in
-  [composition.md](../composition.md).
+  Its findings feed the once-per-engagement integrations sweep defined in
+  [composition.md](../composition.md), which holds no slot in the budget.
 - **Blocks**: nothing. **Cannot block**: a merge; drift findings route
   through the plan and through verifier briefs.
 - **Tier and cadence**: mid tier, on-call for batches touching provider or
-  integration surfaces, **plus exactly one sweep per engagement** across
-  the whole outward perimeter.
+  integration surfaces, plus the whole-perimeter sweep on the cadence
+  [composition.md](../composition.md) owns.
 - **Inputs**: `docs/providers.md`, the gating lists, vendor docs read
   rather than remembered (guessing an API shape is forbidden by
   [safety.md](../safety.md)), the ledger's `unverified:` lines, which have

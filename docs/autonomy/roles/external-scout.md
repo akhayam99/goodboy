@@ -1,9 +1,7 @@
 # Role: external scout
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/external-scout.md` in the continuous-delivery skill;
-soul in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/external-scout.md in the continuous-delivery skill.
 
 **Mandate**: report whether and how a comparable tool solves the problem,
 before the product owner invents a solution.
@@ -24,8 +22,9 @@ before the product owner invents a solution.
   faithful version of what it does rather than the convenient one. "No
   comparable tool does this" is a valid and useful answer.
 - **Verified by**: the challenger, which can check a cited precedent
-  directly; a precedent claim without a pointer is discarded like any
-  other pointer-free finding ([org.md](../org.md)).
+  directly; a precedent claim without a pointer, or a pointer the
+  challenger cannot load, is discarded like any other pointer-free finding
+  ([org.md](../org.md)).
 
 The failure mode this role exists against is invented convergence: a
 precedent summarized into what the plan wanted to hear. The report states

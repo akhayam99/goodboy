@@ -1,9 +1,7 @@
 # Role: reliability owner
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/reliability-owner.md` in the continuous-delivery skill;
-soul in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/reliability-owner.md in the continuous-delivery skill.
 
 **Mandate**: own the performance and startup numbers, and the verdict
 "this regresses": the budget, never the impression.
@@ -16,7 +14,10 @@ soul in [souls.md](../souls.md).
 - **Blocks**: nothing; a measured regression is evidence the captain and
   the precedence rules act on. **Cannot block**: a merge on an impression.
 - **Tier and cadence**: mid tier, standing; one measured pass per release,
-  including actually launching a built app.
+  spawned unconditionally, including actually launching a built app. When
+  no build can be launched, the pass still runs and reports could-not-run
+  with the reason; a skipped spawn is how the five-release
+  nobody-ran-the-app gap happened, a conditional spawn recreates it.
 - **Inputs**: a packaged or dev build, the previous release's numbers from
   its own reports, the measurement methods it has published there.
 - **Output**: numbers with method ("measured three ways at 1.75s to 2.40s

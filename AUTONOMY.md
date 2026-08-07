@@ -2,8 +2,12 @@
 
 Goodboy ships Goodboy. Releases are decided, built, verified, and drafted by
 an autonomous delivery organization made of agents; a human reviews after, not
-before. This hub holds the model and the floor. The deep dives live in the
-[autonomy cluster](./docs/autonomy.md): [org](./docs/autonomy/org.md),
+before. This is the human hub: it owns the model, the floor, and the single
+enumeration of the cluster's files, and nothing else. It is not agent read
+material: the release captain's reading list lives in the continuous-delivery
+skill's captain prompt and the delivery lead's in that skill's `SKILL.md`,
+and neither includes this file. The deep dives live in the autonomy cluster
+under `docs/autonomy/`: [org](./docs/autonomy/org.md),
 [roles](./docs/autonomy/roles.md) with a charter per role under
 `docs/autonomy/roles/`, [safety](./docs/autonomy/safety.md),
 [composition](./docs/autonomy/composition.md),
@@ -33,33 +37,41 @@ Same queue, weighed by the [trust model](./docs/autonomy/safety.md).
 
 ## The shape
 
-- A **delivery lead** runs an engagement of up to five releases: spawns one
-  **release captain** per version, reviews and publishes each draft, keeps
-  the ledger, runs the issue loop, watches for stalls. It never reads or
+- A **delivery lead** runs an engagement of a few releases (length and
+  default owned by the continuous-delivery skill): spawns one **release
+  captain** per version, reviews and publishes each draft, keeps the
+  ledger, runs the issue loop, watches for stalls. It never reads or
   writes code, and it reads verdicts and exceptions from disk, not
   narratives.
-- A **release captain** owns one version through seven phases (audit, product
-  decision, scouting, build, verify, serialized merge, draft), then dies.
-  State survives on disk, not in agents.
+- A **release captain** owns one version through the phases of the
+  [release loop](./docs/autonomy/release-loop.md), then dies. State
+  survives on disk, not in agents.
 - A **product owner** on the reasoning tier composes each release's
-  **batch** per [composition](./docs/autonomy/composition.md): a budget of
-  20 slots allocated across categories (issues first, a refactor floor
-  that never flows away, audit slots always spent), owner-tunable per
+  **batch** per [composition](./docs/autonomy/composition.md): a fixed
+  slot budget allocated across categories, issues first, a refactor floor
+  that never flows away, audit slots always spent, owner-tunable per
   category in one `quota:` line, with authors weighed and contributors
-  floored. Items belong to [classes](./docs/autonomy/item-classes.md),
-  each with its own deliverable and its own verifier: code is one class
-  among eight, not the definition of work. The PO holds the right of
-  push-back: work ships because it moves something for a real user, never
-  because it is possible. A **challenger** assumes every plan is bad and
-  attacks it cold, because one strong opinion is not a review; it also
-  judges the [impact bar](./docs/autonomy/impact.md), so a release that no
-  user could name in a sentence is marked, published, and answered for in
-  the next one.
+  floored. The slot budget and the merge-unit ceiling live only in
+  composition.md; the org deliberately runs a narrower shape than its
+  founding ambition, because the width the ledger never tested is not a
+  width it gets to assume, and the wider shape survives as a
+  [graduation path](./docs/autonomy/composition.md) earned by green
+  engagements. Items belong to
+  [classes](./docs/autonomy/item-classes.md), each with its own
+  deliverable and its own verifier: code is one class among several, not
+  the definition of work. The PO holds the right of push-back: work ships
+  because it moves something for a real user, never because it is
+  possible. A **challenger** assumes every plan is bad and attacks it
+  cold, because one strong opinion is not a review; it also judges the
+  [impact bar](./docs/autonomy/impact.md), so a release that no user
+  could name in a sentence is marked, published, and answered for in the
+  next one.
 - **Builds run in waves, concurrently when items share no files; merges
-  never do.** The batch is consumed in waves of at most seven slots with
-  `main` green between waves; within a wave, one PR merges, `main`'s own
-  CI goes green, the next merges. The serial merge lane pays for the
-  parallel build lanes.
+  never do.** The batch is consumed in waves with `main` green at the
+  boundaries; within a wave, one PR merges, `main`'s own CI goes green,
+  the next merges. The wave shape and the suite concurrency cap live in
+  the [release loop](./docs/autonomy/release-loop.md). The serial merge
+  lane pays for the parallel build lanes.
 - Nothing merges on its author's word: every PR is verified by a **different
   agent** whose verdict outranks the builder's report and green CI. A change
   touching schema or stored data gets a second verifier and an owner
@@ -68,8 +80,9 @@ Same queue, weighed by the [trust model](./docs/autonomy/safety.md).
   every release's diffs with a merge veto for the surfaces data can leave
   through.
 - Every open issue gets a decision and a reply every cycle. No issue goes
-  dark, and a mandate nobody answers suspends itself loudly after three
-  written push-backs instead of being re-argued forever.
+  dark, and a mandate nobody answers suspends itself loudly after repeated
+  written push-backs ([composition](./docs/autonomy/composition.md))
+  instead of being re-argued forever.
 
 ## The floor
 
@@ -91,21 +104,23 @@ everything else:
 Agents remember nothing between releases; the disk remembers everything.
 State lives outside the repo in `~/.goodboy-autonomous/`: `MANDATES.md`
 (standing direction from the owner, including the composition quota),
-`BACKLOG.md` (what audits surfaced and
-nobody took yet), `LEDGER.md` (one compact entry per release:
-theme, PRs, composition, impact, verdict, risks; full narratives stay in
-the per-release scratch dirs), `OWNER_INBOX.md` (push-backs, questions,
-stop reports), `FOLLOW_THROUGH.md` (what shipped items generated in
-response, owned by the historian per
-[its charter](./docs/autonomy/roles/historian.md)), and a per-release run
-log per [visibility](./docs/autonomy/visibility.md). The ledger doubles as the metric: items proposed versus shipped
-versus dropped per cycle (the captain's report records all three) is how the
-loop earns more frequency, per release and over time. The ratio is always
-read alongside `closed-tab`, the reason to open another tool that the
-release removed: that is the value actually shipped. Inflating PR counts,
-splitting one feature into many PRs, or sandbagging proposals to look
-reliable is exactly the failure this metric exists to catch, not a way to
-score on it.
+`BACKLOG.md` (what audits surfaced and nobody took yet), `LEDGER.md` (one
+compact entry per release: theme, PRs, composition, impact, verdict, risks;
+full narratives stay in the per-release scratch dirs), `OWNER_INBOX.md`
+(push-backs, questions, stop reports), `FOLLOW_THROUGH.md` (what shipped
+items generated in response, owned by the historian per
+[its charter](./docs/autonomy/roles/historian.md)), `BASELINES.md` (the
+compact cross-release carry the delivery lead distills from report blocks
+before a published release's scratch dirs are deleted, defined in the
+continuous-delivery skill), and a per-release run log per
+[visibility](./docs/autonomy/visibility.md). The ledger doubles as the
+metric: items proposed versus shipped versus dropped per cycle (the
+captain's report records all three) is how the loop earns more frequency,
+per release and over time. The ratio is always read alongside `closed-tab`,
+the reason to open another tool that the release removed: that is the value
+actually shipped. Inflating PR counts, splitting one feature into many PRs,
+or sandbagging proposals to look reliable is exactly the failure this metric
+exists to catch, not a way to score on it.
 
 ## Running it
 

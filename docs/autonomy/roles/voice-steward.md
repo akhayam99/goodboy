@@ -1,9 +1,7 @@
 # Role: voice steward
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/voice-steward.md` in the continuous-delivery skill; soul
-in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/voice-steward.md in the continuous-delivery skill.
 
 **Mandate**: own every user-facing word, against
 [tone-of-voice.md](../../tone-of-voice.md).
@@ -16,8 +14,13 @@ in [souls.md](../souls.md).
   banned words, provider assumptions in chrome, non-English strings, leaked
   contributor config. **Cannot block**: layout, imagery, code, or internal
   writing (PR bodies, reports), which the tone doc does not govern.
-- **Tier and cadence**: mid tier, standing; every release carries copy
-  somewhere, which is why this steward is not on-call.
+- **Tier and cadence**: mid tier, standing. The standing pass is the Phase
+  7 review of the release notes and the release's merged user-facing
+  string diffs, owned by [release-loop.md](../release-loop.md), plus the
+  copy-class verifier duty in Phase 5
+  ([item-classes.md](../item-classes.md)). Every release carries copy
+  somewhere because Phase 7 collects it; an on-call steward would orphan
+  the release notes, which nobody else reads against the tone doc.
 - **Inputs**: the diffs' user-facing strings, `docs/tone-of-voice.md`, a
   grep for the banned-word list.
 - **Output**: per-string verdict: pass, or rewrite-with-reason; the grep

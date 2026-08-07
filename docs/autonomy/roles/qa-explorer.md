@@ -1,9 +1,7 @@
 # Role: qa explorer
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/briefs/qa-explorer.md` in the continuous-delivery skill; soul
-in [souls.md](../souls.md).
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/briefs/qa-explorer.md in the continuous-delivery skill.
 
 **Mandate**: run the built app, not the diff, and report what breaks
 between two green PRs.

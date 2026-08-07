@@ -1,8 +1,8 @@
 # Role: release captain
 
-Charter in the [autonomy cluster](../../autonomy.md); index and binding
-rules in [roles.md](../roles.md). Spawn template:
-`references/release-captain-prompt.md` in the continuous-delivery skill.
+Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief:
+references/release-captain-prompt.md in the continuous-delivery skill,
+filled by the delivery lead.
 
 **Mandate**: own one version end to end through the seven phases of
 [release-loop.md](../release-loop.md), stop at a reviewed draft, and exit.
@@ -29,8 +29,8 @@ rules in [roles.md](../roles.md). Spawn template:
   report: assets present, `main` green at the release SHA, claims matching
   `gh` output.
 
-A captain's turn ends only at its report block: one captain once ended its
-turn with five children still live, which is exactly the silent-stall
-failure [watchdogs.md](../watchdogs.md) exists to prevent. Children report
-to the captain by its name; two verifiers once could not resolve their
-parent and a sleeping lead would have stalled the release.
+A captain's turn ends only at its report block, never with children still
+live; the roster incident behind that rule is narrated in
+[watchdogs.md](../watchdogs.md). Children report to the captain by its
+name; two verifiers once could not resolve their parent and a sleeping
+lead would have stalled the release.

@@ -9,11 +9,11 @@ in AUTONOMY.md; the liveness checks that read the same disk are in
 ## Why a run log
 
 At 3 to 6 items per release, a captain could reconstruct its release from
-memory and the roster. At 20 slots ([composition.md](./composition.md)) a
-release runs dozens of spawns across waves, and nobody's context survives
-holding all of them: one real engagement's release count was capped by a
-lead whose context filled with narratives it never needed
-([roles.md](./roles.md)), and the engagement that closed 2026-08-07 could
+memory and the roster. At the full slot budget
+([composition.md](./composition.md)) a release runs dozens of spawns across
+waves, and nobody's context survives holding all of them: one engagement's
+release count was capped by lead-context exhaustion ([roles.md](./roles.md)
+owns that incident), and the engagement that closed 2026-08-07 could
 state its own composition only because the ledger happened to record enough.
 The run log makes the record deliberate instead of incidental: first you see
 the machine, then you change it.
@@ -50,7 +50,9 @@ covers this file like every other state file.
 ## What derives from it
 
 The delivery lead derives, at engagement close, without opening any child
-narrative:
+narrative, and always before a published release's scratch dir is deleted
+(the continuous-delivery skill orders its exit that way, because the log
+lives inside the scratch dir it summarizes):
 
 - **The timeline**: which phases and waves dominated wall time, which spawns
   died or were replaced. Cross-checked against the watchdog one-liners the
@@ -61,6 +63,11 @@ narrative:
 - **Tier discipline**: spawns that ran above the tier their charter names
   are visible as lines, not as a feeling. The tier rules exist as cost
   controls, and a cost control nobody can audit is a suggestion.
+- **The cost baseline**: the per-tier spawn count per release, derivable
+  from the `tier` column, is the baseline the next engagement's cost
+  ceiling is set from ([release-loop.md](./release-loop.md) owns the
+  ceiling rule). The ceiling is stated in this unit precisely because the
+  log already records it and token totals are recorded nowhere.
 - **The engagement report's per-release lines**: spawn counts and verdict
   ratios per role, which is how a role like the integrations owner, hired
   with an explicit sunset clause
