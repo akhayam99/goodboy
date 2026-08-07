@@ -100,6 +100,15 @@ jobs:
           echo "== Depends recorded in the generated deb =="
           deb="$(find apps/desktop/src-tauri/target/release/bundle/deb -name '*.deb' | head -n1)"
           dpkg-deb -f "$deb" Depends || echo '(no Depends field)'
+          # ubuntu-latest is 24.04, where the time_t transition renamed some
+          # packages with a t64 suffix. dpkg-shlibdeps reports the noble names,
+          # which do not exist on Debian 12 or Ubuntu 22.04. Print what the t64
+          # packages Provide so the depends list can use names that resolve on
+          # both, derived rather than assumed.
+          for pkg in libglib2.0-0t64 libgtk-3-0t64; do
+            echo "== apt-cache show $pkg | Provides =="
+            apt-cache show "$pkg" | grep -E '^(Package|Version|Provides):' || true
+          done
 
       - name: upload bundles
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
