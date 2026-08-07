@@ -176,8 +176,9 @@ Or grab the `.dmg` from the
 [latest release](https://github.com/akhayam99/goodboy/releases/latest) and drag
 Goodboy to Applications.
 
-**Linux.** x86_64, as an AppImage, a `.deb` or an `.rpm`, all three attached to
-the same [release](https://github.com/akhayam99/goodboy/releases/latest).
+**Linux.** x86_64 on glibc 2.39 or newer, so Ubuntu 24.04 and Debian 13 upward,
+as an AppImage, a `.deb` or an `.rpm`, all three attached to the same
+[release](https://github.com/akhayam99/goodboy/releases/latest).
 
 ```bash
 sudo apt install ./Goodboy_<version>_amd64.deb
@@ -185,16 +186,23 @@ sudo rpm -i Goodboy-<version>-1.x86_64.rpm
 chmod +x Goodboy_<version>_amd64.AppImage
 ```
 
-The `.deb` declares what it links against (`libwebkit2gtk-4.1-0`, `libgtk-3-0`,
-`libsoup-3.0-0` and the rest of the GTK stack), read out of the binary with
-`dpkg-shlibdeps`, so apt resolves them for you. Credentials go to the
-freedesktop Secret Service, GNOME Keyring or KWallet, so a keyring daemon has to
-be running before you save a token. Windows is still a build from source.
+The `.deb` declares what it links against (`libc6 (>= 2.39)`,
+`libwebkit2gtk-4.1-0`, `libgtk-3-0`, `libsoup-3.0-0` and the rest of the GTK
+stack), read out of the binary with `dpkg-shlibdeps`, so apt resolves them for
+you. The `libc6` entry is the one that sets the distribution floor above, and
+the AppImage and the `.rpm` carry the same floor because all three come out of
+one `ubuntu-latest` build. Credentials go to the freedesktop Secret Service,
+GNOME Keyring or KWallet, so a keyring daemon has to be running before you save
+a token. Windows is still a build from source.
 
-Follow-up: the Linux packages come out of the same tagged build as the macOS
-one, on a GitHub `ubuntu-latest` runner. If your distribution wants something
-the package does not declare, its own package manager says so before anything
-installs.
+Follow-up: the three packages are built from the release tag on a GitHub
+`ubuntu-latest` runner, with the dependency list read out of that binary. On an
+older distribution the install stops on a declared dependency the distribution
+cannot satisfy, and apt or rpm says which one before anything is written. The
+credential path stands on the backend the `keyring` crate selects on Linux,
+though no token has been stored and read back on a Linux desktop yet. If the
+backend disagrees, its own error comes back where you saved the token, with the
+token not saved.
 
 **Updates.** On macOS they are automatic: when a new release ships, an update
 control appears in the footer, next to settings, and on the workspace launcher.

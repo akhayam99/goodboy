@@ -106,7 +106,7 @@ export function CTA() {
           </code>
           <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
             That is macOS. The .dmg is on the GitHub releases too, next to the Linux AppImage, .deb
-            and .rpm.
+            and .rpm, x86_64 on glibc 2.39 or newer.
           </p>
           <div className="mt-7 flex flex-col items-center gap-3">
             <LinkButton
@@ -177,7 +177,8 @@ export function CTA() {
               ))}
             </div>
             <p className="mt-2.5 text-[11.5px] text-muted-foreground/70">
-              Same tagged build as the macOS one. In-app updates stay macOS-only for now, so a new
+              Built from the release tag on a GitHub Ubuntu runner, so it needs glibc 2.39 or newer:
+              Ubuntu 24.04 and Debian 13 upward. In-app updates stay macOS-only for now, so a new
               version is a new package from the same page.
             </p>
           </div>

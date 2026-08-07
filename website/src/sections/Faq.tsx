@@ -65,9 +65,9 @@ const ITEMS: ReadonlyArray<Qa> = [
     a: (
       <>
         <B>macOS and Linux</B>. macOS ships as a universal build or via Homebrew. Linux ships as an
-        AppImage, a .deb and an .rpm, x86_64. In-app updates stay macOS-only for now, so on Linux a
-        new version is a new package from the release page. Windows still means building from
-        source, with a Rust toolchain.
+        AppImage, a .deb and an .rpm, x86_64 on glibc 2.39 or newer, so Ubuntu 24.04 and Debian 13
+        upward. In-app updates stay macOS-only for now, so on Linux a new version is a new package
+        from the release page. Windows still means building from source, with a Rust toolchain.
       </>
     ),
   },

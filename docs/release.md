@@ -7,8 +7,9 @@ Targets, both attached to the same draft release:
 
 - macOS **universal** `.dmg` (Intel + Apple Silicon), signed + notarized,
   published to GitHub Releases and Homebrew.
-- Linux **x86_64** AppImage, `.deb` and `.rpm`, built on `ubuntu-latest`, with
-  no updater manifest and no signatures.
+- Linux **x86_64** AppImage, `.deb` and `.rpm`, built on `ubuntu-latest` and so
+  carrying its glibc floor (Ubuntu 24.04 and Debian 13 upward), with no updater
+  manifest and no signatures.
 
 ## How it works
 
@@ -21,7 +22,9 @@ Targets, both attached to the same draft release:
   `Goodboy_<version>_amd64.AppImage`, `Goodboy_<version>_amd64.deb` and
   `Goodboy-<version>-1.x86_64.rpm`. The deb's dependency list is derived from
   the binary by `dpkg-shlibdeps` at package time, so it tracks whatever the
-  build actually links against.
+  build actually links against. That list includes `libc6 (>= 2.39)`, which is
+  what pins the deb to Ubuntu 24.04 or newer and Debian 13 or newer. Moving the
+  runner to an older Ubuntu is what lowers that floor.
 - The Linux job publishes **no `latest.json` and no `.sig`**, so in-app updates
   stay macOS-only. Only the AppImage could ever self-update and that is not
   wired: a Linux user takes the next package from the release page.

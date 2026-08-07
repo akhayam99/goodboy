@@ -36,5 +36,10 @@ The Linux AppImage, deb and rpm carry no updater signature, and the release
 publishes no update manifest for them, so a Linux build never fetches anything
 on its own: every new version is a package you take from the release page.
 The OS credential store named above is the Keychain on macOS and the
-freedesktop Secret Service on Linux, GNOME Keyring or KWallet, so the daemon
-you already unlock at login is what holds the token.
+freedesktop Secret Service on Linux, GNOME Keyring or KWallet, so on Linux a
+keyring daemon has to be running before a token can be saved.
+
+Follow-up: the Linux backend is the one the `keyring` crate selects, though no
+token has been stored and read back on a Linux desktop yet. If the backend
+disagrees, its own error comes back where you saved the token, with the token
+not saved.
