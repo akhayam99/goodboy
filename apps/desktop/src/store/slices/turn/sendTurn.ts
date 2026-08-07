@@ -71,6 +71,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { detectParallelGroup } from '../../parallel-turn';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { relinkSimpleSessionDirectories } from '../workspaces/relinkSimpleSessionDirectories';
 import { flushTurnEvents } from '../transcripts/buffer';
 import {
@@ -333,9 +334,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               })),
             });
             const predecessorSummary = immediatePredecessor.outputSummary ?? '';
+            const recordedDegraded = stepSummaryDegraded.get(immediatePredecessor.id);
             const isDegraded =
-              predecessorSummary.trim().length === 0 ||
-              isFallbackStepOutputSummary({ summary: predecessorSummary });
+              recordedDegraded ??
+              (predecessorSummary.trim().length === 0 ||
+                isFallbackStepOutputSummary({ summary: predecessorSummary }));
             const durationMs =
               immediatePredecessor.startedAt != null && immediatePredecessor.completedAt != null
                 ? new Date(immediatePredecessor.completedAt).getTime() -

@@ -1,0 +1,23 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { IssueInbox } from './IssueInbox';
+
+afterEach(cleanup);
+
+describe('IssueInbox', () => {
+  it('offers a retry when the issue fetch fails', () => {
+    const onRefresh = vi.fn();
+    render(
+      <IssueInbox
+        groups={[]}
+        focusedIssueNumber={null}
+        onSelect={vi.fn()}
+        loading={false}
+        error="Network error"
+        onRefresh={onRefresh}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+});

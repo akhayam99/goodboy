@@ -9,6 +9,8 @@ const MAX_FIRST_LINE_LENGTH = 120;
 const FALLBACK_HEAD_LENGTH = 1500;
 const FALLBACK_TAIL_LENGTH = 400;
 const FALLBACK_JOINER = '\n...\n';
+const CLAMP_NOTICE =
+  '\n\n(clamped to the handoff budget, the full step output is in the step transcript)';
 
 const STEP_OUTPUT_SYSTEM_PROMPT = `Condense an AI coding agent step output into compact markdown for the next workflow step.
 
@@ -54,6 +56,26 @@ type FallbackDetection = {
   readonly summary: string;
 };
 
+type ClampParams = {
+  readonly summary: string;
+};
+
+const clampToSummaryBudget = ({ summary }: ClampParams): string => {
+  const [outcomeLine = '', ...remainingLines] = summary.split(/\r?\n/);
+  const budget = MAX_SUMMARY_LENGTH - CLAMP_NOTICE.length;
+  const kept = [outcomeLine];
+  let used = outcomeLine.length;
+  for (const line of remainingLines) {
+    const grown = used + line.length + 1;
+    if (grown > budget) {
+      break;
+    }
+    kept.push(line);
+    used = grown;
+  }
+  return `${kept.join('\n').trimEnd()}${CLAMP_NOTICE}`;
+};
+
 export const summarizeStepOutput = async ({
   providerId,
   binary,
@@ -95,12 +117,11 @@ export const summarizeStepOutput = async ({
   }
   const summary = extracted.text.trim();
   const firstLine = summary.split(/\r?\n/, 1)[0] ?? '';
-  if (
-    summary.length === 0 ||
-    summary.length > MAX_SUMMARY_LENGTH ||
-    firstLine.length > MAX_FIRST_LINE_LENGTH
-  ) {
+  if (summary.length === 0 || firstLine.length > MAX_FIRST_LINE_LENGTH) {
     throw new SummarizerParseError('step output summary violated the response contract', summary);
+  }
+  if (summary.length > MAX_SUMMARY_LENGTH) {
+    return clampToSummaryBudget({ summary });
   }
   return summary;
 };

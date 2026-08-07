@@ -240,6 +240,8 @@ vi.mock('../features/plans/plans', () => ({
   listConsumptionsForPlan: vi.fn(async () => []),
 }));
 
+import { stepSummaryDegraded } from './summarizeAgentOutput';
+
 const SESSION_ID = 'session-rt-1' as SessionId;
 const AGENT_A = 'agent-a' as AgentId;
 const AGENT_B = 'agent-b' as AgentId;
@@ -916,19 +918,131 @@ describe('sendTurn, workflow carry-forward', () => {
       expect.stringContaining(expectedCarryForward),
     ]);
 
-    const fallbackSummary = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+    const lastStepTransition = () =>
+      (useAppStore.getState().transcripts[reviewAgentId] ?? [])
+        .filter((event) => event.kind === 'step_transition')
+        .at(-1);
+
+    const shortDegradedSummary = 'the step died before it wrote anything worth carrying';
     agents = agents.map((agent) =>
-      agent.id === implementAgentId ? { ...agent, outputSummary: fallbackSummary } : agent,
+      agent.id === implementAgentId ? { ...agent, outputSummary: shortDegradedSummary } : agent,
     );
+
+    stepSummaryDegraded.clear();
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'short summary retry' });
+
+    expect(lastStepTransition()).toEqual(
+      expect.objectContaining({
+        carryForwardContext: expect.stringContaining(shortDegradedSummary),
+      }),
+    );
+    expect(lastStepTransition()?.degraded).toBeUndefined();
+
+    stepSummaryDegraded.set(implementAgentId, true);
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'ground truth retry' });
+
+    expect(lastStepTransition()).toEqual(
+      expect.objectContaining({
+        degraded: true,
+        carryForwardContext: expect.stringContaining(shortDegradedSummary),
+      }),
+    );
+  });
+
+  it('falls back to the fallback shape when no ground truth survived a restart', async () => {
+    const useAppStore = await importStore();
+    const workflowId = 'workflow-restart' as WorkflowId;
+    const workflowRunId = 'workflow-run-restart' as WorkflowRunId;
+    const implementStepId = 'step-restart-implement' as StepId;
+    const reviewStepId = 'step-restart-review' as StepId;
+    const implementAgentId = 'agent-restart-implement' as AgentId;
+    const reviewAgentId = 'agent-restart-review' as AgentId;
+    const fallbackSummary = `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`;
+    const workflow: Workflow = {
+      id: workflowId,
+      workspaceId: WORKSPACE_ID,
+      name: 'restart workflow',
+      description: '',
+      steps: [
+        { id: implementStepId, workflowId, ordinal: 0, name: 'Implement', promptPrefix: '' },
+        { id: reviewStepId, workflowId, ordinal: 1, name: 'Review', promptPrefix: 'review' },
+      ],
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    const agents: Agent[] = [
+      {
+        ...buildAgent(implementAgentId, 0),
+        stepId: implementStepId,
+        workflowRunId,
+        name: 'Implement',
+        status: 'completed',
+        outputSummary: fallbackSummary,
+      },
+      {
+        ...buildAgent(reviewAgentId, 1),
+        stepId: reviewStepId,
+        workflowRunId,
+        name: 'Review',
+      },
+    ];
+    const workflowsMod = await import('../features/workflows/workflows');
+    (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => agents,
+    );
+    invokeAgentUpdateStatusSpy.mockImplementation(
+      async (id: AgentId) => agents.find((agent) => agent.id === id) ?? agents[0]!,
+    );
+    useAppStore.setState({
+      sessions: [
+        {
+          ...buildSession(),
+          workflowRuns: [
+            {
+              id: workflowRunId,
+              workflowId,
+              ordinal: 0,
+              currentStep: 1,
+              autoRun: false,
+              triggerMode: 'immediate',
+              executionMode: 'static',
+            },
+          ],
+        },
+      ],
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/wt'] },
+      sessionPhaseRuns: { [SESSION_ID]: agents },
+      selectedAgentId: { [SESSION_ID]: reviewAgentId },
+      transcripts: { [reviewAgentId]: [] },
+      phaseTemplates: { [WORKSPACE_ID]: [workflow] },
+      providers: [
+        {
+          id: 'anthropic',
+          binary: 'claude',
+          connection: 'connected',
+          name: 'Claude',
+          installation: 'installed',
+        } as never,
+      ],
+      authResults: { anthropic: { state: 'connected', identity: 'test' } } as never,
+      workspaces: [
+        { id: WORKSPACE_ID, name: 'ws', rootPath: '/tmp', createdAt: NOW, updatedAt: NOW },
+      ],
+    });
+    stepSummaryDegraded.clear();
 
     await useAppStore
       .getState()
-      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'fallback retry' });
+      .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'after restart' });
 
-    const fallbackTransition = (useAppStore.getState().transcripts[reviewAgentId] ?? [])
+    const transition = (useAppStore.getState().transcripts[reviewAgentId] ?? [])
       .filter((event) => event.kind === 'step_transition')
       .at(-1);
-    expect(fallbackTransition).toEqual(
+    expect(transition).toEqual(
       expect.objectContaining({
         degraded: true,
         carryForwardContext: expect.stringContaining(fallbackSummary),
