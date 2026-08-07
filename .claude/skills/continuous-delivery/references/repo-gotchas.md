@@ -106,11 +106,17 @@ return []` arm, and `issueSources.ts` deliberately has no bitbucket entry.
   "Fixing" either ships a picker that lists nothing forever.
 - `RemoteHostKind` deliberately has no `'bitbucket'`; adding it breaks the
   `never`-checked `resolveSessionStudioOpenEvent` and `remoteHost.test.ts`.
-- The mobile companion's `fetchIssuesFor` and `resolveIssueForSession` fall
-  through to GitLab for unknown providers; the gating lists
-  (`ALL_ISSUE_PROVIDERS`, `CREATE_SESSION_PROVIDERS`) are hand-enumerated.
-  Adding a provider to a list without a matching arm silently queries
-  GitLab.
+- The mobile companion's `fetchIssuesFor` and `resolveIssueForSession` are
+  exhaustive switches over `WorkspaceIntegrationProvider` with a
+  `never`-checked default, and neither falls through to another provider:
+  `fetchIssuesFor` returns `[]` for providers with no mobile fetch
+  (currently bitbucket, slack) and `resolveIssueForSession` throws a named
+  refusal for each. The gating lists (`ALL_ISSUE_PROVIDERS`,
+  `CREATE_SESSION_PROVIDERS`) are still hand-enumerated separately from
+  those switches: the compiler forces a switch arm for every provider, but
+  nothing forces a gating-list entry, so a provider can compile cleanly
+  while staying silently absent from mobile issue queries and session
+  creation.
 - `pending_resolutions` is a transient push queue, not a durable verdict
   log; making it durable was investigated and rejected. The durable source
   is message replay via `hydrateResolverOutcomes`.
