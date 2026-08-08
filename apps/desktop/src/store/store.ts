@@ -310,6 +310,7 @@ export type AppActions = {
     workflowRunId: WorkflowRunId,
     autoRun: boolean,
   ): Promise<void>;
+  stopWorkflowRunNow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   startWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   attachWorkflowToSession(
     sessionId: SessionId,

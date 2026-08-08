@@ -18,6 +18,7 @@ type OrchestratorPhase =
   | 'blocked'
   | 'failed'
   | 'step-failed'
+  | 'stopped'
   | 'done';
 
 export type OrchestratorState = {
@@ -62,6 +63,19 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
     sentence: 'Paused · an open question needs your answer',
     showsMessage: false,
   },
+  operator: {
+    phase: 'stopped',
+    tone: 'warning',
+    sentence: 'Stopped by you · the step in flight was skipped',
+    showsMessage: true,
+  },
+};
+
+const UNKNOWN_STOP: StopPresentation = {
+  phase: 'failed',
+  tone: 'danger',
+  sentence: 'Stopped · reason not recognized',
+  showsMessage: true,
 };
 
 const isDone = (agent: Agent): boolean =>
@@ -102,7 +116,8 @@ export const resolveOrchestratorState = ({
   const stop = run.orchestrationStop;
   const isAnsweredQuestionStop = stop?.kind === 'questions' && hasOpenQuestions === false;
   if (stop != null && isAnsweredQuestionStop === false) {
-    const presentation = STOP_PRESENTATION[stop.kind];
+    const known: StopPresentation | undefined = STOP_PRESENTATION[stop.kind];
+    const presentation = known ?? UNKNOWN_STOP;
     return {
       ...base,
       phase: presentation.phase,
