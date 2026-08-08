@@ -18,6 +18,7 @@ import {
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 import type { GetFn, SetFn } from './types';
 
 export const SCOUT_DEPTH_CAP = 2;
@@ -457,14 +458,26 @@ const settleAgent = async ({
   get,
   sessionId,
   agentId,
+  agentName,
   summary,
 }: {
   readonly set: SetFn;
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+  readonly agentName: string;
   readonly summary: string;
 }): Promise<void> => {
+  if (!degradedNotifiedAgents.has(agentId)) {
+    degradedNotifiedAgents.add(agentId);
+    void get().emitNotification(
+      'summarizer-degraded',
+      'warning',
+      `step summary degraded: ${agentName}`,
+      'fan-out branch summaries skip the LLM summarizer, showing raw output instead.',
+      { sessionId, action: { kind: 'retry-step-summary', sessionId, agentId } },
+    );
+  }
   await invokeAgentUpdateStatus(agentId, {
     status: 'completed',
     outputSummary: summary,
@@ -525,6 +538,7 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
       get,
       sessionId,
       agentId,
+      agentName: agent.name,
       summary: fallbackStepOutputSummary({ output: assistantText }),
     });
   };

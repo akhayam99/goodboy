@@ -15,6 +15,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { completeResolvedAgent } from './completeResolvedAgent';
+import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -37,6 +38,7 @@ type Harness = {
     resolverThreadOutcomes: Record<AgentId, Record<string, ResolverThreadOutcome>>;
     refreshUnreadWorkspaces: ReturnType<typeof vi.fn>;
     activateNextResolver: ReturnType<typeof vi.fn>;
+    emitNotification: ReturnType<typeof vi.fn>;
   };
   readonly set: SetFn;
   readonly get: GetFn;
@@ -52,6 +54,7 @@ const createHarness = ({}: HarnessParams): Harness => {
     resolverThreadOutcomes: {},
     refreshUnreadWorkspaces: vi.fn(async () => undefined),
     activateNextResolver: vi.fn(async () => undefined),
+    emitNotification: vi.fn(async () => undefined),
   };
   const set = ((update: unknown) => {
     if (typeof update === 'function') {
@@ -178,5 +181,29 @@ describe('completeResolvedAgent', () => {
       kind: 'resolved',
       commitSha: 'abcdef1234567890',
     });
+  });
+
+  it('completes a plain non-workflow agent via raw fallback without notifying the inbox', async () => {
+    const { state, set, get } = createHarness({});
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ ...agent, kind: 'implementer', sourceThreadIds: undefined }],
+    };
+    degradedNotifiedAgents.clear();
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: 'did the thing, no markers here',
+      now: () => NOW,
+    });
+
+    expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'completed' }),
+    );
+    expect(state.emitNotification).not.toHaveBeenCalled();
+    expect(degradedNotifiedAgents.has(AGENT_ID)).toBe(false);
   });
 });

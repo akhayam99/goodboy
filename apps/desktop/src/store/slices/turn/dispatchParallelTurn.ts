@@ -19,6 +19,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { formatError } from '../../../shared/lib/errors';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
 import { runParallelBranch, type ParallelBranchEffects } from '../../parallel-turn';
 import { applySessionUpdate } from '../../session-mutators';
@@ -178,6 +179,19 @@ export const dispatchParallelTurn = async (
       }));
     },
     setMergeConflicts: (sid, conflicts) => get().setSessionMergeConflicts(sid, conflicts),
+    notifyDegradedStepSummary: ({ agentId, sessionId: sid, agentName }) => {
+      if (degradedNotifiedAgents.has(agentId)) {
+        return;
+      }
+      degradedNotifiedAgents.add(agentId);
+      void get().emitNotification(
+        'summarizer-degraded',
+        'warning',
+        `step summary degraded: ${agentName}`,
+        'parallel branch output is not summarized, showing raw output instead.',
+        { sessionId: sid, action: { kind: 'retry-step-summary', sessionId: sid, agentId } },
+      );
+    },
   };
 
   try {
