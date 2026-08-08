@@ -68,7 +68,7 @@ function AttachmentChip({
       onClick={onRemove}
       title={`Remove ${attachment.fileName}`}
       aria-label={`Remove ${attachment.fileName}`}
-      className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity hover:bg-foreground group-hover:opacity-100"
+      className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity hover:bg-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
     >
       <X size={10} aria-hidden />
     </button>

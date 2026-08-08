@@ -1,6 +1,6 @@
 import { CheckCheck, Pencil } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, cn, Input, StatusDot } from '@goodboy/ui';
+import { Button, cn, Input, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
 import { agentHasUnread, EMPTY_ARRAY, useAppStore, useCurrentWorkspace } from '../../../../store';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../session-stage';
@@ -49,9 +49,11 @@ export const HeaderBand = ({ session, stage }: Props) => {
             {SESSION_STAGE_META[stage.stage].label}
           </span>
           {stage.reason !== '' ? (
-            <span className="min-w-0 truncate text-xs text-muted-foreground/70">
-              {stage.reason}
-            </span>
+            <Tooltip content={stage.reason} side="top">
+              <span className="min-w-0 truncate text-xs text-muted-foreground/70">
+                {stage.reason}
+              </span>
+            </Tooltip>
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
