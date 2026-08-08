@@ -7,7 +7,7 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
 } from '@goodboy/types';
-import { buildModelBreakdown, coverageTurnCounts } from './lib';
+import { buildModelBreakdown, coverageTurnCounts, PROVIDER_IDS } from './lib';
 
 type RecordParams = {
   readonly id: string;
@@ -27,6 +27,20 @@ const record = ({ id, provider, model, costUsd = 1 }: RecordParams): TelemetryRe
   outputTokens: 20,
   estimatedCostUsd: costUsd,
   recordedAt: '2026-08-01T00:00:00.000Z' as IsoDateTime,
+});
+
+describe('PROVIDER_IDS', () => {
+  it('keeps its order', () => {
+    expect(PROVIDER_IDS).toEqual([
+      'anthropic',
+      'cursor',
+      'codex',
+      'gemini',
+      'opencode',
+      'openrouter',
+      'moonshot',
+    ]);
+  });
 });
 
 describe('buildModelBreakdown', () => {

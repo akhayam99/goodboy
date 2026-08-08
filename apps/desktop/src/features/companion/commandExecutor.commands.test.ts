@@ -391,6 +391,15 @@ describe('provider/model override coercion', () => {
       expect.objectContaining({ override: { providerId: 'gemini' } }),
     );
   });
+
+  it.each(['anthropic', 'cursor', 'codex', 'gemini', 'opencode', 'openrouter', 'moonshot'])(
+    'accepts %s as a whitelisted override provider',
+    async (providerId) => {
+      await executeBridgeCommand(cmd('send', { sessionId: 's1', content: 'go', providerId }));
+      const arg = lastCall(h.sendTurn)[0] as Record<string, unknown>;
+      expect((arg.override as { providerId: string }).providerId).toBe(providerId);
+    },
+  );
 });
 
 describe('spawnAgent option mapping', () => {

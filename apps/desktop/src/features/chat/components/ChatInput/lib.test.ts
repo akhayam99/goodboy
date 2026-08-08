@@ -7,6 +7,7 @@ import {
   extFromMime,
   readFileAsDataUrl,
   toAttachmentInput,
+  VALID_PROVIDERS,
   type PendingAttachment,
 } from './lib';
 
@@ -83,6 +84,20 @@ describe('asProvider', () => {
 
   it('rejects null input', () => {
     expect(asProvider(null)).toBeNull();
+  });
+});
+
+describe('VALID_PROVIDERS', () => {
+  it('keeps its order', () => {
+    expect(VALID_PROVIDERS).toEqual([
+      'anthropic',
+      'cursor',
+      'codex',
+      'gemini',
+      'opencode',
+      'openrouter',
+      'moonshot',
+    ]);
   });
 });
 
