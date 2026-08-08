@@ -36,7 +36,8 @@ the build comes from `tauri.conf.json`, so the two must match.
 
 ## Step 1: bump the version and write the notes
 
-Set the same version in all five places (they must match the tag, minus the `v`):
+Set the same version in all six places (they must match the tag, minus the `v`,
+except the website which keeps it):
 
 - `package.json`
 - `apps/desktop/package.json`
@@ -44,6 +45,9 @@ Set the same version in all five places (they must match the tag, minus the `v`)
 - `apps/desktop/src-tauri/Cargo.toml` (`package.version`)
 - `apps/desktop/src-tauri/Cargo.lock` (the `goodboy-desktop` package entry;
   `rust.yml` runs `cargo test --locked`, so a stale lock is red CI)
+- `website/src/site.ts` (`SITE.version`, the badge in the landing page nav; this
+  one keeps the leading `v`, so `v0.1.74`). Nothing breaks if it is stale, which
+  is exactly why it gets forgotten: the site just advertises an old version.
 
 Add a `## Goodboy vX` section to `CHANGELOG.md` above the previous release (see
 `docs/release-command.md` → "Release notes" for the format and sourcing rules).

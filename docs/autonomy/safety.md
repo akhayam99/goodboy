@@ -149,6 +149,19 @@ What the gate does:
 The gate strengthens the floor and never relaxes it: nothing here authorizes
 anything the Forbidden list refuses.
 
+## The security veto
+
+The Forbidden list above stops the flagrant case; the diff that widens a
+data-egress surface without breaking a single listed rule is stopped by the
+[security officer](./roles/security-officer.md), which holds a merge veto
+for its perimeter and may impose an owner question in the style of the
+class B gate on anything that widens the surface data can leave through.
+The charter owns the perimeter and the mechanics; what belongs in this file
+is the floor relationship: the veto strengthens the floor and never relaxes
+it, a veto is always written and motivated, and its use is reviewed (the
+challenger for proportionality, the delivery lead on publication) so that a
+blocking power nobody audits does not quietly become policy.
+
 ## Stop conditions
 
 The machine stops itself, mid-engagement, when any of these holds:
@@ -175,7 +188,9 @@ Never push through a stop condition to finish a release.
 There is no live human in the loop. Escalation is asynchronous and written:
 
 1. `~/.goodboy-autonomous/OWNER_INBOX.md`: questions, push-backs, stop reports.
-   Newest on top, one dated entry per item, self-contained.
+   Newest on top, one dated entry per item, self-contained. The inbox is
+   append-only with multiple writers by design; the state-file writer
+   rules are owned by [roles.md](./roles.md).
 2. The final report of the engagement, which always lists open escalations.
 3. For issue-driven questions, a reply on the issue itself asking the owner to
    confirm, so the requester sees the state too.

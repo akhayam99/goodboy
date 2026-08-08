@@ -1,23 +1,10 @@
-# Autonomy cluster
+# Autonomy cluster (pointer)
 
-Thin index for the autonomy deep dives. The hub is [AUTONOMY.md](../AUTONOMY.md):
-read it first for the model and the floor. One line per file:
-
-- [autonomy/roles.md](./autonomy/roles.md): the role charter of the delivery
-  organization, model tiers, and the rules that bind every role.
-- [autonomy/safety.md](./autonomy/safety.md): authorized and forbidden
-  actions, the trust model, push-back, the irreversible-data gate, stop
-  conditions, escalation.
-- [autonomy/composition.md](./autonomy/composition.md): the batch, the
-  issue/internal quota, author weighting, the contributor floor, mandate
-  decay.
-- [autonomy/release-loop.md](./autonomy/release-loop.md): the seven phases of
-  one release, concurrency and merge discipline, the area rotation, the
-  verification standard.
-- [autonomy/issue-triage.md](./autonomy/issue-triage.md): the issue loop,
-  decision tree, voice and identity of replies.
-- [autonomy/watchdogs.md](./autonomy/watchdogs.md): liveness checks, the
-  roster contract for concurrent children, and the recovery ladder for
-  stalled agents.
-- [autonomy/infrastructure.md](./autonomy/infrastructure.md): outage versus
-  work failure, the preflight, and build-ahead mode.
+This file is a pointer and owns no content. The autonomy cluster lives under
+[docs/autonomy/](./autonomy/): how Goodboy ships itself, from the org chart
+and role charters to safety, composition, the release loop, and the
+personality layer. The hub, and the single enumeration of the cluster's
+files, is [AUTONOMY.md](../AUTONOMY.md) at the repo root: read it first.
+This file enumerates nothing on purpose: two link lists over one cluster is
+two lists to maintain, and one of them always rots. Decisions that bind
+future releases live in [adr/](./adr/README.md).

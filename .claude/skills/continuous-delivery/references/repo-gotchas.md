@@ -26,11 +26,10 @@ the behavior.
 - The CI knip gate is `pnpm knip --include files,duplicates,unlisted`. Bare
   `pnpm knip` is red on `main`; do not chase its extra findings unless the
   work item is exactly that.
-- After every merge, poll `main`'s own CI green before the next merge.
-  `gh pr checks` on a branch proves nothing about the merge result: an
-  exhaustiveness guard meeting a widened union, or a deleted shared file
-  meeting a new importer, is invisible to `git merge-tree` and broke `main`
-  twice in one release.
+- The merge lane and its polling rule are owned by
+  `docs/autonomy/release-loop.md` Phase 6; the one fact it lacks:
+  `gh pr checks` on a branch proves nothing about the merge result, only
+  `main`'s own CI does.
 - `gh pr view --json mergeable` returns UNKNOWN for 20-30s after a sibling
   merges; poll until it settles.
 - Background bash is killed at the turn boundary: poll CI in a foreground
@@ -83,6 +82,23 @@ only what it does not say.
   mounted; detach before asserting paths.
 - To smoke-test a dmg against real data safely, point `GOODBOY_DB_FILE` at a
   `VACUUM INTO` copy, never `copyFileSync` of the live DB.
+
+## Running the built app
+
+The Phase 7 walks (qa explorer, reliability owner, product critic) consume
+a runnable build of merged `main`; this recipe fills their app-state
+placeholder, so could-not-run is the exception, not the default.
+
+- Build: `pnpm tauri:build` from a worktree pinned at merged `main`
+  (a release build takes ~12 minutes; see the Bash-ceiling line above).
+  The bundle lands at
+  `apps/desktop/src-tauri/target/release/bundle/macos/Goodboy.app`.
+- Launch the binary directly, never via `open`, so the env var applies:
+  `GOODBOY_DB_FILE=<copy> .../Goodboy.app/Contents/MacOS/Goodboy`.
+- Database isolation is mandatory for every walk, not only dmg smoke
+  tests: `GOODBOY_DB_FILE` points at a `VACUUM INTO` copy per the line
+  above. A walk against the owner's live database corrupts real state to
+  test a draft.
 
 ## Audit and verification
 
