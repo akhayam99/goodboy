@@ -322,6 +322,10 @@ describe('OrchestratorPanel state ladder', () => {
     expect(screen.getByTestId('orchestrator-panel').getAttribute('data-phase')).toBe('stopping');
     expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
     expect(screen.queryByTestId('orchestrator-resume')).toBeNull();
+
+    const dot = screen.getByRole('img', { name: sentence() });
+    expect(dot.className).toContain('bg-warning');
+    expect(dot.className).not.toContain('bg-info');
   });
 
   it('falls back to a generic presentation for a stop kind it does not recognize', () => {
