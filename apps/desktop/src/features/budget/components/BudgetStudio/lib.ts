@@ -50,7 +50,7 @@ export type CoverageTurnCounts = {
   readonly unpriced: number;
 };
 
-const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
+export const PROVIDER_IDS = [
   'anthropic',
   'cursor',
   'codex',
@@ -58,7 +58,13 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
   'opencode',
   'openrouter',
   'moonshot',
-];
+] satisfies ReadonlyArray<ProviderId>;
+
+type Expect<T extends true> = T;
+type ProviderIdsAreTotal =
+  Exclude<ProviderId, (typeof PROVIDER_IDS)[number]> extends never ? true : false;
+type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
+
 export const toProviderId = (provider: string): ProviderId | null => {
   return PROVIDER_IDS.includes(provider as ProviderId) ? (provider as ProviderId) : null;
 };

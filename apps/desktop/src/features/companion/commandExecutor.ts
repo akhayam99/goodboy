@@ -52,7 +52,7 @@ import { goalFromIssue as gitlabGoalFromIssue } from '../integrations/gitlab/goa
 import { jiraListIssues, jiraGetIssue, type JiraIssue } from '../integrations/jira/client';
 import { goalFromIssue as jiraGoalFromIssue } from '../integrations/jira/goal-from-issue';
 
-const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
+export const BRIDGE_PROVIDER_ALLOWLIST = [
   'anthropic',
   'cursor',
   'codex',
@@ -60,7 +60,25 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = [
   'opencode',
   'openrouter',
   'moonshot',
-];
+] satisfies ReadonlyArray<ProviderId>;
+
+export const PROVIDER_MENU_ORDER = [
+  'anthropic',
+  'cursor',
+  'codex',
+  'gemini',
+  'opencode',
+  'openrouter',
+  'moonshot',
+] satisfies ReadonlyArray<ProviderId>;
+
+type Expect<T extends true> = T;
+type BridgeProviderAllowlistIsTotal =
+  Exclude<ProviderId, (typeof BRIDGE_PROVIDER_ALLOWLIST)[number]> extends never ? true : false;
+type _BridgeProviderAllowlistTotalCheck = Expect<BridgeProviderAllowlistIsTotal>;
+type ProviderMenuOrderIsTotal =
+  Exclude<ProviderId, (typeof PROVIDER_MENU_ORDER)[number]> extends never ? true : false;
+type _ProviderMenuOrderTotalCheck = Expect<ProviderMenuOrderIsTotal>;
 
 const MOBILE_EDITABLE_SLOTS: ReadonlySet<SlotKey> = new Set<SlotKey>([
   'goal',
@@ -140,7 +158,7 @@ function coerceAttachments(v: unknown): ReadonlyArray<AttachmentInput> {
 
 function coerceOverride(data: Record<string, unknown>): TurnProviderOverride | undefined {
   const providerId = asString(data.providerId);
-  if (!providerId || !PROVIDER_IDS.includes(providerId as ProviderId)) {
+  if (!providerId || !BRIDGE_PROVIDER_ALLOWLIST.includes(providerId as ProviderId)) {
     return undefined;
   }
   const model = asString(data.model);
@@ -157,7 +175,7 @@ function buildProviderMenu(): {
   }>;
 } {
   const known = useAppStore.getState().providers;
-  const providers = PROVIDER_IDS.map((id) => {
+  const providers = PROVIDER_MENU_ORDER.map((id) => {
     const info = known.find((p) => p.id === id);
     return {
       id,

@@ -8,7 +8,7 @@ import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provid
 import { StatusPill } from '../../../providers/components/ProviderLifecycleTile/StatusPill';
 import { ProviderConnectModal } from '../../../providers/components/ProviderConnectModal';
 
-const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
+export const PROVIDER_ORDER = [
   'anthropic',
   'codex',
   'cursor',
@@ -16,7 +16,12 @@ const PROVIDER_ORDER: ReadonlyArray<ProviderId> = [
   'opencode',
   'openrouter',
   'moonshot',
-];
+] satisfies ReadonlyArray<ProviderId>;
+
+type Expect<T extends true> = T;
+type ProviderOrderIsTotal =
+  Exclude<ProviderId, (typeof PROVIDER_ORDER)[number]> extends never ? true : false;
+type _ProviderOrderTotalCheck = Expect<ProviderOrderIsTotal>;
 
 export const ProvidersStep = () => {
   const providers = useAppStore((s) => s.providers);

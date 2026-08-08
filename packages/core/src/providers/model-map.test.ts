@@ -1,5 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { resolveModelForProvider } from './model-map';
+import { PROVIDER_IDS } from '@goodboy/types';
+import { PROVIDERS, resolveModelForProvider } from './model-map';
+
+describe('PROVIDERS', () => {
+  it('keeps its order', () => {
+    expect(PROVIDERS).toEqual([
+      'anthropic',
+      'cursor',
+      'codex',
+      'gemini',
+      'opencode',
+      'openrouter',
+      'moonshot',
+    ]);
+  });
+});
+
+describe('PROVIDER_IDS (packages/types/src/provider-registry.ts)', () => {
+  it('keeps the canonical registry order', () => {
+    expect(PROVIDER_IDS).toEqual([
+      'anthropic',
+      'cursor',
+      'codex',
+      'gemini',
+      'opencode',
+      'openrouter',
+      'moonshot',
+    ]);
+  });
+});
 
 describe('resolveModelForProvider', () => {
   it('keeps current ids and migrates retired ids for the same provider', () => {

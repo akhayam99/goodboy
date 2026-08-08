@@ -1,11 +1,5 @@
 export type ProviderId =
-  | 'anthropic'
-  | 'cursor'
-  | 'codex'
-  | 'gemini'
-  | 'opencode'
-  | 'openrouter'
-  | 'moonshot';
+  'anthropic' | 'cursor' | 'codex' | 'gemini' | 'opencode' | 'openrouter' | 'moonshot';
 
 export const PROVIDER_IDS = [
   'anthropic',
@@ -17,16 +11,15 @@ export const PROVIDER_IDS = [
   'moonshot',
 ] as const satisfies readonly ProviderId[];
 
+type Expect<T extends true> = T;
+type ProviderIdsAreTotal =
+  Exclude<ProviderId, (typeof PROVIDER_IDS)[number]> extends never ? true : false;
+type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
+
 export type ProviderConnectionState = 'connected' | 'installed_disconnected' | 'missing' | 'error';
 
 export type ModelFamily =
-  | 'claude'
-  | 'gpt'
-  | 'codex'
-  | 'gemini'
-  | 'composer'
-  | 'cursor-auto'
-  | 'other';
+  'claude' | 'gpt' | 'codex' | 'gemini' | 'composer' | 'cursor-auto' | 'other';
 
 export type ModelCostTier = 'cheap' | 'mid' | 'expensive';
 
