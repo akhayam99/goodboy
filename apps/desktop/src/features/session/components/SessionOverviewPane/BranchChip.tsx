@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, GitBranch, Pencil } from 'lucide-react';
-import { cn, Popover } from '@goodboy/ui';
+import { cn, Popover, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { formatError } from '../../../../shared/lib/errors';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
@@ -65,22 +65,23 @@ export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Pro
       </button>
 
       {canEdit ? (
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label="Edit branch"
-          title="Edit branch"
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          className={cn(
-            'inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50',
-            'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
-            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-            'group-hover/branch:opacity-100 motion-reduce:opacity-60',
-          )}
-        >
-          <Pencil size={10} aria-hidden />
-        </button>
+        <Tooltip content="Edit branch" side="top">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label="Edit branch"
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            className={cn(
+              'inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground/50',
+              'opacity-0 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground',
+              'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              'group-hover/branch:opacity-100 motion-reduce:opacity-60',
+            )}
+          >
+            <Pencil size={10} aria-hidden />
+          </button>
+        </Tooltip>
       ) : null}
 
       {open ? (

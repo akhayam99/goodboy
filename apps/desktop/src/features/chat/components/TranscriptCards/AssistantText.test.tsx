@@ -3,11 +3,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
+const { extractAllCommentResolvedMock } = vi.hoisted(() => ({
+  extractAllCommentResolvedMock: vi.fn(() => [] as ReadonlyArray<{ threadId: string }>),
+}));
+
 vi.mock('@goodboy/core', () => ({
-  extractAllCommentResolved: () => [
-    { threadId: 'local-1', commitSha: 'abcdef1' },
-    { threadId: 'PRRT_2', commitSha: 'abcdef2' },
-  ],
+  extractAllCommentResolved: extractAllCommentResolvedMock,
   isReviewThreadId: (threadId: string) => threadId.startsWith('PRRT_'),
   stripControlMarkers: (text: string) => text,
 }));
@@ -34,8 +35,21 @@ describe('AssistantText', () => {
   });
 
   it('hides copy when a non-first resolved marker belongs to a review thread', () => {
+    extractAllCommentResolvedMock.mockReturnValueOnce([
+      { threadId: 'local-1' },
+      { threadId: 'PRRT_2' },
+    ]);
     render(<AssistantText text="assistant response" sessionId={null} />);
 
     expect(screen.queryByRole('button', { name: 'copy' })).toBeNull();
+  });
+
+  it('reveals copy when focus lands anywhere inside the message, not on copy itself', () => {
+    render(<AssistantText text="hello" sessionId={null} />);
+    const copyButton = screen.getByRole('button', { name: 'copy' });
+    const revealWrapper = copyButton.parentElement as HTMLElement;
+
+    expect(revealWrapper.className).toContain('group-focus-within:opacity-100');
+    expect(revealWrapper.className).not.toContain('focus-visible:');
   });
 });

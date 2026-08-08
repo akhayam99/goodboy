@@ -192,6 +192,19 @@ export const OrchestratorPanel = ({
               />
             ) : null}
 
+            {state.phase === 'stopped' ? (
+              <OrchestratorAction
+                icon={Play}
+                label="Resume the run"
+                variant="primary"
+                tone="warning"
+                testId="orchestrator-resume"
+                title="Clear the stop, put autorun back on, and ask for the next step"
+                disabled={busy}
+                onClick={() => void guard(() => retryWorkflowOrchestration(sessionId, run.id))}
+              />
+            ) : null}
+
             {state.phase === 'failed' || state.phase === 'blocked' ? (
               <OrchestratorAction
                 icon={RotateCcw}

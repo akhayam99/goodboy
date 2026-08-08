@@ -304,12 +304,12 @@ export type AppActions = {
     sessionId: SessionId,
     args: { sha: string; message: string },
   ): Promise<RewrittenHead>;
-  setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   setWorkflowRunAutoRun(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     autoRun: boolean,
   ): Promise<void>;
+  stopWorkflowRunNow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   startWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   attachWorkflowToSession(
     sessionId: SessionId,

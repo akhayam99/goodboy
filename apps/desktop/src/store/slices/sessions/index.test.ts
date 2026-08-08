@@ -659,13 +659,6 @@ describe('store contract', () => {
       expect(store.getState().sessions[0]?.permissionMode).toBe('default');
     });
 
-    it('setSessionAutoRun toggles the flag', async () => {
-      const store = await getStore();
-      store.setState({ sessions: [buildSession({ autoRun: false })] });
-      await store.getState().setSessionAutoRun(SESSION_ID, true);
-      expect(store.getState().sessions[0]?.autoRun).toBe(true);
-    });
-
     it('archiveTask removes the session from active list and clears currentSessionId if it was current', async () => {
       const store = await getStore();
       store.setState({

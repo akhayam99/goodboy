@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type {
   Agent,
+  AgentId,
   IsoDateTime,
+  SessionId,
   Workflow,
   WorkflowId,
   WorkflowRun,
@@ -83,6 +85,39 @@ describe('WorkflowRunStatus', () => {
       'usage limit',
     );
     expect(screen.queryByTestId('workflow-orchestrator-budget-paused')).toBeNull();
+  });
+
+  it('never reads an operator stop as an orchestrator failure', () => {
+    renderStatus({
+      runOverride: { ...run, orchestrationStop: { kind: 'operator', message: 'you stopped it' } },
+    });
+
+    expect(screen.getByTestId('workflow-orchestrator-stopped').textContent).toContain('Stopped');
+    expect(screen.queryByTestId('workflow-orchestrator-failed')).toBeNull();
+  });
+
+  it('says a run was stopped even while an agent still reads as running', () => {
+    const stillRunning: ReadonlyArray<Agent> = [
+      {
+        id: 'agent-1' as AgentId,
+        sessionId: 'session-1' as SessionId,
+        workflowRunId: RUN_ID,
+        ordinal: 0,
+        name: 'Implement',
+        status: 'running',
+      },
+    ];
+    render(
+      <WorkflowRunStatus
+        run={{ ...run, orchestrationStop: { kind: 'operator', message: 'you stopped it' } }}
+        workflow={workflow}
+        agents={stillRunning}
+        predecessorName=""
+      />,
+    );
+
+    expect(screen.getByTestId('workflow-orchestrator-stopped')).toBeDefined();
+    expect(screen.queryByText('Running')).toBeNull();
   });
 
   it('never calls a paused run ready when the strip already owns the phase', () => {

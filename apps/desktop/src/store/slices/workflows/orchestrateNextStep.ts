@@ -519,6 +519,21 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         );
         return;
       }
+      const afterDecide = get()
+        .sessions.find((candidate) => candidate.id === sessionId)
+        ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+      if (afterDecide?.orchestrationStop?.kind === 'operator') {
+        await recordOrchestratorUsage({
+          set,
+          get,
+          sessionId,
+          agentId: null,
+          provider: routing.providerId,
+          model: result.model,
+          usage: result.usage,
+        });
+        return;
+      }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
       if (decision.action === 'next') {
         const enforced = enforceOrchestratorModelPool({
