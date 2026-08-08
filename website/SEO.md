@@ -6,16 +6,16 @@ Questo file descrive tutto ciò che serve a un agente (o a te) per mantenere, ag
 
 ## Stato attuale
 
-| Layer                       | File                  | Status        |
-| --------------------------- | --------------------- | ------------- |
-| Robots                      | `public/robots.txt`   | ✓ presente    |
-| Sitemap                     | `public/sitemap.xml`  | ✓ presente    |
-| OG image (SVG placeholder)  | `public/og-image.svg` | ✓ presente    |
-| OG image (PNG produzione)   | `public/og-image.png` | ⚠ da generare |
-| Meta tags completi          | `index.html`          | ✓ completo    |
-| JSON-LD SoftwareApplication | `index.html`          | ✓ presente    |
-| Twitter/X card              | `index.html`          | ✓ presente    |
-| Canonical                   | `index.html`          | ✓ presente    |
+| Layer                       | File                  | Status     |
+| --------------------------- | --------------------- | ---------- |
+| Robots                      | `public/robots.txt`   | ✓ presente |
+| Sitemap                     | `public/sitemap.xml`  | ✓ presente |
+| OG image (SVG placeholder)  | `public/og-image.svg` | ✓ presente |
+| OG image (PNG produzione)   | `public/og-image.png` | ✓ generata |
+| Meta tags completi          | `index.html`          | ✓ completo |
+| JSON-LD SoftwareApplication | `index.html`          | ✓ presente |
+| Twitter/X card              | `index.html`          | ✓ presente |
+| Canonical                   | `index.html`          | ✓ presente |
 
 ---
 
@@ -38,33 +38,23 @@ grep -rn "goodboy-ai.dev" website/public/ website/index.html
 
 ## OG image
 
-### Problema attuale
-
-`og:image` punta a `https://goodboy-ai.dev/og-image.png`. Il file PNG non esiste ancora . c'è solo `og-image.svg` (placeholder usabile in sviluppo, non valido per crawler che richiedono PNG/JPG).
-
 ### Come generare il PNG
 
-Opzione A . Puppeteer one-liner (headless Chrome):
+`og:image` punta a `https://goodboy-ai.dev/og-image.png`, che è generato:
 
 ```bash
-cd website
-node -e "
-const puppeteer = require('puppeteer');
-(async () => {
-  const b = await puppeteer.launch();
-  const p = await b.newPage();
-  await p.setViewport({ width: 1200, height: 630 });
-  await p.goto('file://' + process.cwd() + '/public/og-image.svg');
-  await p.screenshot({ path: 'public/og-image.png', type: 'png' });
-  await b.close();
-  console.log('done');
-})();
-"
+node website/scripts/build-og.mjs
 ```
 
-Opzione B . tool online: carica `public/og-image.svg` su [Squoosh](https://squoosh.app/) → esporta PNG 1200×630.
+Lo script compone la card in HTML e la fotografa con il Chrome di sistema in
+headless, senza puppeteer. Legge la mascotte da `src/assets/mascot.png` e i
+loghi dei provider da `src/components/BrandIcons.tsx`, quindi i marchi restano
+allineati a quelli della landing senza copiarli a mano. Il titolo e il
+sottotitolo stanno dentro lo script: se cambia l'headline della hero, vanno
+cambiati lì e il PNG va rigenerato.
 
-Opzione C . sito live: usa `mcp__Claude_Preview__preview_screenshot` sulla pagina `/og-image.svg` a 1200×630 e salva come PNG.
+`public/og-image.svg` è il vecchio placeholder scuro, non più usato da nessuna
+parte.
 
 ### Quando aggiornare l'OG image
 
@@ -152,7 +142,7 @@ Non bloccare mai `/` o le risorse statiche (CSS/JS/immagini) . penalizza il rend
 ## Checklist pre-deploy
 
 - [x] Sostituire `goodboy.dev` con il dominio reale (`goodboy-ai.dev`)
-- [ ] Generare `public/og-image.png` (1200×630 px, < 8 MB)
+- [x] Generare `public/og-image.png` (1200×630 px, < 8 MB)
 - [ ] Verificare JSON-LD con Google Rich Results Test
 - [ ] Aggiornare `<lastmod>` in `sitemap.xml` con la data di deploy
 - [ ] Aggiornare `twitter:site` in `index.html` con l'handle Twitter reale
@@ -212,6 +202,6 @@ website/
 │   ├── sitemap.xml         ← URL index
 │   ├── favicon.svg         ← browser tab icon
 │   ├── og-image.svg        ← og image placeholder (dev)
-│   └── og-image.png        ← og image produzione (da generare)
+│   └── og-image.png        ← og image produzione (node scripts/build-og.mjs)
 └── SEO.md                  ← questo file
 ```
