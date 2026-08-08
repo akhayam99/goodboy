@@ -50,7 +50,7 @@ export const ChatWorkflowHeader = ({
         {attached != null && attached.run.discardedAt == null ? (
           <ChatWorkflowAdvance
             sessionId={sessionId}
-            workflowRunId={attached.run.id}
+            run={attached.run}
             workflow={attached.workflow}
           />
         ) : null}
