@@ -9,50 +9,41 @@ if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
 ## Goodboy v0.1.76
 
-Stopping a hands-free run is now where you are watching it, and a run you stopped says what it is doing.
+v0.1.75 gave a hands-free run a stop. This one puts it in the pane you are already watching, not only in the sidebar.
 
-### [#1349] Stop a hands-free run from the pane you are watching
+### [#1349] Stop a hands-free run from the chat header
 
 The stop existed, on the workflow row in the sidebar and on the workflow detail. The chat header, the one you actually read while an agent works, offered nothing at all during a hands-free run.
 
-It now carries the autorun state and the stop, in the slot the manual advance button used to sit in. Same control as the sidebar, same label, same confirm, so one run never shows you two different stops.
+It now carries the autorun state and the stop, in the slot the manual advance button used to sit in. The same control the workflow detail already carried, same label, same confirm.
 
 After a stop the control stays put and becomes the way back: a static run resumes from the same click, and a run the orchestrator is driving gets a Resume beside it. You are not sent back to a sidebar you had already navigated away from.
 
-Manual advance still does not render while autorun is on. Stopping is not advancing.
+Follow-up: the stop and the resume write the same operator record and read the same phase derivation the sidebar control and the orchestrator panel have used since v0.1.75, though no live orchestrated run has driven them from the chat header yet. If the decision already in flight lands after your stop, the stop holds and nothing advances.
 
-### [#1346] A run stopped mid-decision says it is stopping
+### [#1346] A run stopped mid-decision reads as stopping
 
-Stop a run while the orchestrator is choosing the next step and the panel kept saying "Choosing the next step" until that choice landed, which its own timeout bounds at two minutes. It now says it is stopping, and waits.
+Stop a run while the orchestrator is choosing the next step and the panel kept reading "Choosing the next step" until that choice landed, which its own timeout bounds at two minutes. It now reads as stopping, and waits.
 
-It does not say the run is stopped. The decision has not come back, and the run is not stopped until it does.
+It does not read as stopped. The decision has not come back, and the run is not stopped until it does.
 
 ### [#1350] Draft comments are readable in the dark theme
 
-The draft-comment badges on the board, in the review inbox and in the diff used a fixed indigo that lands at 2.54 to 1 against the dark background, under the contrast floor at any size. They now use a theme-aware tone that clears it in both themes.
+The draft-comment badges on the board and in the diff, and the review-requested badge beside them, used a fixed indigo that lands at 2.54 to 1 against the dark background, under the contrast floor at any size. They now use a theme-aware tone that clears it in both themes.
 
 ### [#1351] Disconnecting an integration asks first
 
 The Disconnect button inside an integration's form removed the token and the connection the moment you clicked it. It now asks, the way the button in the studio header already did. Each integration keeps its own description of what disconnecting does, which is not the same for all of them.
 
-The stage reason on a session's overview no longer shows a tooltip repeating the line already in front of you. It adds the stage that reason belongs to.
-
-The autorun toggle says whether it is on or off, instead of reading "Autorun" either way.
-
-### [#1348] Six popovers moved onto the shared dropdown
-
-The notification centre, the integrations and studios menus in the footer, the needs-you popover, the running-scripts indicator and the session view menu each carried their own anchoring, backdrop and dismissal. They now use the shared hook, which gained a backdrop and the named layer scale to carry them.
-
-One visible change came with it: the session view menu opens above a full-page studio, where it used to open underneath one.
-
 ### Fixes
 
-- One word for the hands-free mode across the app. It was called Autorun, Auto-run and hands-free in different places [#1352]
+- The stage reason on a session's overview adds the stage it belongs to, instead of a tooltip repeating the line already in front of you [#1351]
+- The autorun toggle on the workflow detail says whether it is on or off, instead of reading "Autorun" either way [#1351]
 - Deleting a single session asks "Delete 1 session?" instead of "Delete 1 sessions?" [#1352]
+- The workflow builder, the cluster notice and the step notice all call the hands-free mode Autorun. The session overview still labels it `auto` [#1352]
 - The Slack setup text now says that connecting also reads your workspace's member list, and describes the token check and where the token is kept in the order they actually happen [#1352]
-- The seven provider lists behind chat, routing, budgets, onboarding and the phone companion now fail the build when a new provider is missing from one, instead of dropping it from that surface silently [#1347]
-
-Follow-up: the stop, the resume and the stopping state were exercised against the app's own state rather than against a live orchestrated run, so no provider call went out to prove them end to end. A stop still writes the same operator record the sidebar control has always written, and a run recovers through the same Resume.
+- A provider Goodboy supports now reaches every list that offers one: chat, routing, budgets, onboarding and the phone companion [#1347]
+- The session view menu keeps its place near the screen edge, flipping upward when there is no room below [#1348]
 
 ## Goodboy v0.1.75
 
