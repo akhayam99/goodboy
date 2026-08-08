@@ -71,6 +71,8 @@ const RUN_ID = 'run-1' as WorkflowRunId;
 const AGENT_ID = 'agent-1' as AgentId;
 const NOW = '2026-08-08T00:00:00.000Z' as IsoDateTime;
 
+const SECOND_AGENT_ID = 'agent-2' as AgentId;
+
 const runningAgent = (): Agent => ({
   id: AGENT_ID,
   sessionId: SESSION_ID,
@@ -78,6 +80,16 @@ const runningAgent = (): Agent => ({
   workflowRunId: RUN_ID,
   ordinal: 0,
   name: 'Implement',
+  status: 'running',
+});
+
+const secondRunningAgent = (): Agent => ({
+  id: SECOND_AGENT_ID,
+  sessionId: SESSION_ID,
+  stepId: 'step-2' as StepId,
+  workflowRunId: RUN_ID,
+  ordinal: 1,
+  name: 'Review',
   status: 'running',
 });
 
@@ -156,13 +168,20 @@ describe('stopWorkflowRunNow', () => {
 
   it('leaves no agent stranded on running', async () => {
     const state = baseState();
-    invokeAgentListSpy.mockResolvedValue([{ ...runningAgent(), status: 'skipped' }] as never);
+    state['sessionPhaseRuns'] = { [SESSION_ID]: [runningAgent(), secondRunningAgent()] };
+    invokeAgentListSpy.mockResolvedValue([]);
     const { set, get } = harness(state);
 
     await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
 
-    const agents = (state['sessionPhaseRuns'] as Record<string, ReadonlyArray<Agent>>)[SESSION_ID]!;
-    expect(agents.some((agent) => agent.status === 'running')).toBe(false);
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'skipped' }),
+    );
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      SECOND_AGENT_ID,
+      expect.objectContaining({ status: 'skipped' }),
+    );
   });
 
   it('clears the operator stop when autorun goes back on', async () => {

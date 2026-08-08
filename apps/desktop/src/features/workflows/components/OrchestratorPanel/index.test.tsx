@@ -12,6 +12,7 @@ import type {
   Step,
   StepId,
   WorkflowId,
+  WorkflowOrchestrationStop,
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -302,6 +303,22 @@ describe('OrchestratorPanel state ladder', () => {
     fireEvent.click(screen.getByTestId('orchestrator-resume'));
 
     expect(storeState['retryWorkflowOrchestration']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('falls back to a generic presentation for a stop kind it does not recognize', () => {
+    renderPanel({
+      runOverride: run({
+        orchestrationStop: {
+          kind: 'legacy-manual-hold' as WorkflowOrchestrationStop['kind'],
+          message: 'written by a build this app no longer ships',
+        },
+      }),
+    });
+
+    expect(sentence()).toContain('Stopped · reason not recognized');
+    expect(screen.getByTestId('orchestrator-detail').textContent).toContain(
+      'written by a build this app no longer ships',
+    );
   });
 
   it('shows the failure with its reason and offers a retry', () => {

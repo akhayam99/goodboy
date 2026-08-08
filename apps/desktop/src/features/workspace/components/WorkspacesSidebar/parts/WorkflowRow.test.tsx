@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
@@ -20,6 +20,7 @@ import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 const storeMocks = vi.hoisted(() => ({
   renameWorkflow: vi.fn(async () => undefined),
   stopWorkflowRunNow: vi.fn(async () => undefined),
+  orchestratingWorkflowRuns: {} as Record<string, boolean>,
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -28,6 +29,7 @@ vi.mock('../../../../../store', () => ({
     selector({
       renameWorkflow: storeMocks.renameWorkflow,
       stopWorkflowRunNow: storeMocks.stopWorkflowRunNow,
+      orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
       agentEffortOverride: {},
     }),
 }));
@@ -199,7 +201,15 @@ const renderDetail = ({
     />,
   );
 
-afterEach(cleanup);
+beforeEach(() => {
+  storeMocks.renameWorkflow.mockClear();
+  storeMocks.stopWorkflowRunNow.mockClear();
+});
+
+afterEach(() => {
+  cleanup();
+  storeMocks.orchestratingWorkflowRuns = {};
+});
 
 describe('WorkflowRow detail dashboard', () => {
   it('declares navigation and lifecycle action slots', () => {
@@ -372,6 +382,38 @@ describe('WorkflowRow detail dashboard', () => {
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
     expect(onDeleteWorkflow).toHaveBeenCalledWith(RUN_ID);
+  });
+});
+
+describe('WorkflowRow sidebar autorun stop', () => {
+  it('wires the sidebar stop confirmation to stopWorkflowRunNow independently of the detail mount', () => {
+    const running = agents.map((agent, index) =>
+      index === 1 ? { ...agent, status: 'running' as const } : agent,
+    );
+    renderDetail({
+      runOverride: { ...run, autoRun: true },
+      agentsOverride: running,
+      variant: 'sidebar',
+    });
+
+    expect(screen.queryByRole('heading', { name: 'Refactor' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+    const confirm = screen.getByRole('group', { name: 'Stop this run?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop the run' }));
+
+    expect(storeMocks.stopWorkflowRunNow).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+});
+
+describe('WorkflowRow step-in-flight predicate', () => {
+  it('arms the stop confirm while the orchestrator is deciding, even with no agent running', () => {
+    storeMocks.orchestratingWorkflowRuns[RUN_ID] = true;
+    renderDetail({ runOverride: { ...run, autoRun: true } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+
+    expect(screen.getByRole('group', { name: 'Stop this run?' })).toBeDefined();
   });
 });
 
