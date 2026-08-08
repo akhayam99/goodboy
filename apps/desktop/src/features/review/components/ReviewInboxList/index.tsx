@@ -2,12 +2,14 @@ import { useEffect, useMemo } from 'react';
 import {
   Button,
   Chip,
+  cn,
   Divider,
   EmptyState,
   Eyebrow,
   ScrollFade,
   SelectableRow,
   Skeleton,
+  tintClasses,
 } from '@goodboy/ui';
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -18,6 +20,8 @@ import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
+
+const draftTint = tintClasses('draft');
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -169,7 +173,14 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
                         </span>
                       ) : null}
                       {pr.reviewRequested ? (
-                        <span className="shrink-0 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-3xs font-semibold text-indigo-600 ring-1 ring-indigo-400/30">
+                        <span
+                          className={cn(
+                            'shrink-0 rounded-full px-1.5 py-0.5 text-3xs font-semibold ring-1',
+                            draftTint.bg,
+                            draftTint.text,
+                            draftTint.ring,
+                          )}
+                        >
                           Review requested
                         </span>
                       ) : null}

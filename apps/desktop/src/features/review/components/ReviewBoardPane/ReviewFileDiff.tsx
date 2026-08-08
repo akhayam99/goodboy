@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Bot, ChevronRight, MessageSquarePlus } from 'lucide-react';
-import { Divider, EmptyState, cn } from '@goodboy/ui';
+import { Divider, EmptyState, cn, tintClasses } from '@goodboy/ui';
 import type { DiffHunkLine, FileDiff, PrReviewDraft, ReviewDraftSide } from '@goodboy/types';
 import {
   INITIAL_VISIBLE_LINES,
@@ -23,6 +23,8 @@ import type { DiffLayoutMode } from '../../../../shared/utils/diffLayoutMode';
 import { buildDiffPairRows, type DiffPairRow } from '../../../../shared/utils/diffPairRows';
 import { buildDiffRows, type DiffRow } from '../../../../shared/utils/diffRows';
 import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
+
+const draftTint = tintClasses('draft');
 
 export type ReviewLineTarget = {
   readonly path: string;
@@ -155,7 +157,13 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
             {file.path}
           </button>
           {drafts.length > 0 ? (
-            <span className="shrink-0 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-3xs font-medium text-indigo-600">
+            <span
+              className={cn(
+                'shrink-0 rounded-full px-1.5 py-0.5 text-3xs font-medium',
+                draftTint.bg,
+                draftTint.text,
+              )}
+            >
               {drafts.length} {drafts.length === 1 ? 'draft' : 'drafts'}
             </span>
           ) : null}
@@ -275,14 +283,14 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                               'group',
                               line.kind === 'add' && 'bg-success/[0.07]',
                               line.kind === 'del' && 'bg-danger/[0.07]',
-                              hasDraft && 'bg-indigo-400/[0.08]',
+                              hasDraft && 'bg-draft/[0.07]',
                             )}
                           >
                             <td
                               className={cn(
                                 'w-11 select-none border-l-2 px-0.5 align-top',
                                 hasDraft
-                                  ? 'border-indigo-400/70'
+                                  ? 'border-draft/50'
                                   : line.kind === 'add'
                                     ? 'border-success/50'
                                     : line.kind === 'del'

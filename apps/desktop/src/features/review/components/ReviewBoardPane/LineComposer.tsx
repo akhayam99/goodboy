@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
-import { Textarea } from '@goodboy/ui';
+import { Textarea, cn, tintClasses } from '@goodboy/ui';
 import { formatCombo } from '../../../../shared/keyboard/registry';
 import { ComposerActionRow } from './ComposerActionRow';
 
 const SUBMIT_HINT = formatCombo('cmd+Enter');
+const draftTint = tintClasses('draft');
 
 type Props = {
   readonly label: string;
@@ -17,7 +18,7 @@ export const LineComposer = ({ label, onSubmit, onCancel }: Props) => {
   const trimmed = body.trim();
   return (
     <div className="flex gap-2">
-      <MessageSquarePlus size={13} aria-hidden className="shrink-0 text-indigo-500" />
+      <MessageSquarePlus size={13} aria-hidden className={cn('shrink-0', draftTint.icon)} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-3xs font-medium text-muted-foreground">{label}</span>
         <Textarea

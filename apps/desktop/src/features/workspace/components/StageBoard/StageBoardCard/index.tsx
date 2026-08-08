@@ -9,7 +9,7 @@ import {
   SquareTerminal,
   Trash2,
 } from 'lucide-react';
-import { Chip, cn, formatUsd, Tooltip } from '@goodboy/ui';
+import { Chip, cn, formatUsd, tintClasses, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -28,6 +28,8 @@ import { CardActionSlot } from '../../../../../shared/components/CardActionSlot'
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { useDynamicActions } from './useDynamicActions';
+
+const draftTint = tintClasses('draft');
 
 export type CardSelectionEvent = {
   readonly shiftKey: boolean;
@@ -185,7 +187,13 @@ export const StageBoardCard = memo(function StageBoardCard({
             </Tooltip>
           )}
           {reviewDraftCount > 0 && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-400/15 px-1.5 py-0.5 text-3xs font-medium text-indigo-600">
+            <span
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium',
+                draftTint.bg,
+                draftTint.text,
+              )}
+            >
               <MessageSquareDiff size={10} aria-hidden />
               <span className="tabular-nums">{reviewDraftCount}</span>
               <span>draft {reviewDraftCount === 1 ? 'comment' : 'comments'}</span>

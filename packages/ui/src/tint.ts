@@ -6,6 +6,7 @@ export type Tone =
   | 'primary'
   | 'accent'
   | 'merged'
+  | 'draft'
   | 'operations'
   | 'neutral';
 
@@ -130,6 +131,21 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-merged',
     dot: 'bg-merged',
     solid: 'bg-merged text-merged-foreground',
+  },
+  draft: {
+    bg: 'bg-draft/10',
+    bgSoft: 'bg-draft/5',
+    ring: 'ring-draft/20',
+    border: 'border-draft/40',
+    borderSoft: 'border-draft/20',
+    hoverBorder: 'hover:border-draft/40',
+    hoverBg: 'hover:bg-draft/20',
+    hoverBgSoft: 'hover:bg-draft/5',
+    hoverText: 'hover:text-draft',
+    text: 'text-draft',
+    icon: 'text-draft',
+    dot: 'bg-draft',
+    solid: 'bg-draft text-draft-foreground',
   },
   operations: {
     bg: 'bg-muted/30',
