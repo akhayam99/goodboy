@@ -23,4 +23,9 @@ describe('provider model display', () => {
     expect(getModelDescriptor('claude-4.6-sonnet-medium')?.contextWindow).toBe(1_000_000);
     expect(getModelDescriptor('composer-2.5-fast')?.contextWindow).toBe(200_000);
   });
+
+  it('resolves the gpt-5.5/gpt-5.6 keys shared by codex and cursor to codex', () => {
+    expect(getModelProvider('gpt-5.6')).toBe('codex');
+    expect(getModelProvider('gpt-5.5')).toBe('codex');
+  });
 });
