@@ -49,6 +49,38 @@ describe('useDropdown', () => {
     expect(result.current.popupClassName).toContain('w-80');
   });
 
+  it('keeps a backdrop-less dropdown off the app-global scale', () => {
+    const { result } = renderHook(() => useDropdown({}));
+    expect(result.current.popupClassName).toContain('z-50');
+    expect(result.current.popupClassName).not.toContain('z-popover');
+  });
+
+  it('lifts a dropdown that renders a backdrop onto the named popover layer', () => {
+    const { result } = renderHook(() => useDropdown({ hasBackdrop: true }));
+    expect(result.current.popupClassName).toContain('z-popover');
+    expect(result.current.popupClassName).not.toContain('z-50');
+  });
+
+  it('centres a fixed popup on its trigger when asked', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 500, y: 40, width: 40, height: 24 });
+    const { result } = renderHook(() =>
+      useDropdown({ align: 'center', expectedWidth: 384, strategy: 'fixed' }),
+    );
+
+    act(() => {
+      result.current.containerRef.current = trigger;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ left: 328 });
+    trigger.remove();
+  });
+
   it('clamps a fixed popup within the viewport and updates on ancestor scroll', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });

@@ -44,4 +44,40 @@ describe('SessionViewMenu', () => {
     fireEvent.click(screen.getByText('A–Z'));
     expect(state.setSessionSort).toHaveBeenCalledWith('ws-1', 'goal');
   });
+
+  it('closes on escape and returns focus to the trigger', () => {
+    render(<SessionViewMenu workspaceId={'ws-1' as never} />);
+    const trigger = screen.getByLabelText(/display options/i);
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole('menu', { name: 'Session display options' })).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('menu', { name: 'Session display options' })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('closes when the backdrop is clicked', () => {
+    render(<SessionViewMenu workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByLabelText(/display options/i));
+    const backdrop = document.body.querySelector('.z-popover-backdrop');
+    expect(backdrop).not.toBeNull();
+
+    fireEvent.click(backdrop as Element);
+
+    expect(screen.queryByRole('menu', { name: 'Session display options' })).toBeNull();
+  });
+
+  it('opens on the named popover scale rather than the raw z-30 and z-40 it carried before', () => {
+    render(<SessionViewMenu workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(screen.getByLabelText(/display options/i));
+
+    expect(document.body.querySelector('.z-popover-backdrop')).not.toBeNull();
+    expect(document.body.querySelector('.z-popover')).not.toBeNull();
+    expect(document.body.querySelector('.z-30')).toBeNull();
+    expect(document.body.querySelector('.z-40')).toBeNull();
+  });
 });

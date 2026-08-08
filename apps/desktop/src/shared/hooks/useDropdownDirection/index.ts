@@ -5,13 +5,15 @@ type Direction = 'up' | 'down';
 
 type Strategy = 'absolute' | 'fixed';
 
+type Align = 'start' | 'end' | 'center';
+
 type Params = {
   readonly triggerRef: RefObject<HTMLElement | null>;
   readonly popupRef: RefObject<HTMLElement | null>;
   readonly open: boolean;
   readonly expectedHeight: number;
   readonly expectedWidth: number;
-  readonly align: 'start' | 'end';
+  readonly align: Align;
   readonly strategy: Strategy;
 };
 
@@ -24,8 +26,24 @@ type FindClippingAncestorParams = {
   readonly element: HTMLElement;
 };
 
+type ResolveDesiredLeftParams = {
+  readonly rect: DOMRect;
+  readonly popupWidth: number;
+  readonly align: Align;
+};
+
 const VIEWPORT_MARGIN = 8;
 const DROPDOWN_GAP = 4;
+
+const resolveDesiredLeft = ({ rect, popupWidth, align }: ResolveDesiredLeftParams): number => {
+  if (align === 'end') {
+    return rect.right - popupWidth;
+  }
+  if (align === 'center') {
+    return rect.left + rect.width / 2 - popupWidth / 2;
+  }
+  return rect.left;
+};
 
 const findClippingAncestor = ({ element }: FindClippingAncestorParams): HTMLElement | null => {
   let current = element.parentElement;
@@ -78,7 +96,7 @@ export const useDropdownDirection = ({
       const measuredWidth = popupRef.current?.getBoundingClientRect().width ?? 0;
       const viewportWidth = Math.max(window.innerWidth - VIEWPORT_MARGIN * 2, 0);
       const popupWidth = Math.min(measuredWidth > 0 ? measuredWidth : expectedWidth, viewportWidth);
-      const desiredLeft = align === 'end' ? rect.right - popupWidth : rect.left;
+      const desiredLeft = resolveDesiredLeft({ rect, popupWidth, align });
       const maxLeft = Math.max(window.innerWidth - popupWidth - VIEWPORT_MARGIN, VIEWPORT_MARGIN);
       const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
       const spaceBelow = Math.max(

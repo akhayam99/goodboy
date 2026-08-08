@@ -24,4 +24,57 @@ describe('NeedsYouPopover', () => {
     expect(document.body.querySelector('.z-popover-backdrop')).not.toBeNull();
     expect(document.body.querySelector('.z-popover')).not.toBeNull();
   });
+
+  it('closes on escape without pulling focus back to the trigger', async () => {
+    render(<NeedsYouPopover sessions={[]} count={1} />);
+    const trigger = screen.getByRole('button', { name: /needs you/i });
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+    expect(screen.getByRole('dialog', { name: 'Sessions needing attention' })).toBeDefined();
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'Escape' });
+    });
+
+    expect(screen.queryByRole('dialog', { name: 'Sessions needing attention' })).toBeNull();
+    expect(document.activeElement).not.toBe(trigger);
+  });
+
+  it('closes when the backdrop is clicked', async () => {
+    render(<NeedsYouPopover sessions={[]} count={1} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /needs you/i }));
+    });
+    const backdrop = document.body.querySelector('.z-popover-backdrop');
+    expect(backdrop).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.click(backdrop as Element);
+    });
+
+    expect(screen.queryByRole('dialog', { name: 'Sessions needing attention' })).toBeNull();
+  });
+
+  it('reopens after a second click on the trigger', async () => {
+    render(<NeedsYouPopover sessions={[]} count={1} />);
+    const trigger = screen.getByRole('button', { name: /needs you/i });
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+    expect(screen.getByRole('dialog', { name: 'Sessions needing attention' })).toBeDefined();
+  });
 });

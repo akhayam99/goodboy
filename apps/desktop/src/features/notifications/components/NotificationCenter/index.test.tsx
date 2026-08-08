@@ -96,6 +96,53 @@ describe('NotificationCenter', () => {
     expect(state.markNotificationsRead).toHaveBeenCalled();
   });
 
+  it('leaves the popover open on escape, because it has no escape handler', async () => {
+    render(<NotificationCenter />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'Escape' });
+    });
+
+    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
+  });
+
+  it('closes when the backdrop is clicked', async () => {
+    render(<NotificationCenter />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^notifications$/i }));
+    });
+    const backdrop = document.body.querySelector('.z-popover-backdrop');
+    expect(backdrop).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.click(backdrop as Element);
+    });
+
+    expect(screen.queryByText(/nothing to catch up on/i)).toBeNull();
+  });
+
+  it('marks read on the first open request only, not on one that finds it already open', async () => {
+    render(<NotificationCenter />);
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
+    });
+    expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
+    });
+
+    expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/nothing to catch up on/i)).toBeDefined();
+  });
+
   it('shows the unread badge when there are unread notifications', () => {
     state.notifications = [
       {

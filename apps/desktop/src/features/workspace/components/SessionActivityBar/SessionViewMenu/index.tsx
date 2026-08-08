@@ -1,8 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useRef } from 'react';
 import { Check, SlidersHorizontal } from 'lucide-react';
 import { Divider, Eyebrow, Popover, Tooltip, cn } from '@goodboy/ui';
 import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
+import { DropdownBackdrop } from '../../../../../shared/hooks/useDropdown/DropdownBackdrop';
+import { DropdownPortal } from '../../../../../shared/hooks/useDropdown/DropdownPortal';
+import { useDropdown } from '../../../../../shared/hooks/useDropdown';
 import { useAppStore, useSessionViewPrefs } from '../../../../../store';
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
 
@@ -31,7 +33,6 @@ const GROUP_OPTIONS: ReadonlyArray<GroupOption> = [
 ];
 
 const MENU_WIDTH = 200;
-const VIEWPORT_MARGIN = 8;
 
 type SessionViewMenuProps = {
   readonly workspaceId: WorkspaceId;
@@ -43,34 +44,26 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
   const setSessionGroup = useAppStore((s) => s.setSessionGroup);
 
   const { hold, release } = useSidebarPeekHold();
-  const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
-
-  useLayoutEffect(() => {
-    if (!open) {
-      return;
-    }
-    const updatePosition = () => {
-      const el = triggerRef.current;
-      if (!el) {
-        return;
-      }
-      const rect = el.getBoundingClientRect();
-      const desiredLeft = rect.left;
-      const maxLeft = window.innerWidth - MENU_WIDTH - VIEWPORT_MARGIN;
-      const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
-      const top = rect.bottom + 6;
-      setCoords({ top, left });
-    };
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open]);
+  const {
+    open,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupStyle,
+    popupClassName,
+    portal,
+    portalTarget,
+  } = useDropdown({
+    align: 'start',
+    width: 'w-[200px]',
+    expectedWidth: MENU_WIDTH,
+    expectedHeight: 220,
+    strategy: 'fixed',
+    isEscapeEnabled: false,
+    hasBackdrop: true,
+  });
 
   useEffect(() => {
     if (!open) {
@@ -79,13 +72,13 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        setOpen(false);
+        close();
         triggerRef.current?.focus();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  }, [close, open]);
 
   useEffect(() => {
     if (!open) {
@@ -96,12 +89,12 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
   }, [hold, open, release]);
 
   return (
-    <>
+    <div ref={containerRef} className="relative">
       <Tooltip content="Display options" side="bottom">
         <button
           ref={triggerRef}
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={toggle}
           aria-haspopup="menu"
           aria-expanded={open}
           aria-label="Display options"
@@ -116,49 +109,49 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
         </button>
       </Tooltip>
 
-      {open && coords
-        ? createPortal(
-            <>
-              <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden />
-              <Popover
-                role="menu"
-                ariaLabel="Session display options"
-                className="fixed z-40 py-1"
-                style={{ top: coords.top, left: coords.left, width: MENU_WIDTH }}
-              >
-                <MenuSection title="Sort by">
-                  {SORT_OPTIONS.map((opt) => (
-                    <MenuItem
-                      key={opt.key}
-                      label={opt.label}
-                      hint={opt.hint}
-                      selected={prefs.sort === opt.key}
-                      onClick={() => {
-                        setSessionSort(workspaceId, opt.key);
-                      }}
-                    />
-                  ))}
-                </MenuSection>
-                <Divider />
-                <MenuSection title="Group by">
-                  {GROUP_OPTIONS.map((opt) => (
-                    <MenuItem
-                      key={opt.key}
-                      label={opt.label}
-                      hint={opt.hint}
-                      selected={prefs.group === opt.key}
-                      onClick={() => {
-                        setSessionGroup(workspaceId, opt.key);
-                      }}
-                    />
-                  ))}
-                </MenuSection>
-              </Popover>
-            </>,
-            document.body,
-          )
-        : null}
-    </>
+      <DropdownPortal portal={portal} portalTarget={portalTarget}>
+        {open && (
+          <>
+            <DropdownBackdrop onClose={close} />
+            <Popover
+              innerRef={popupRef}
+              role="menu"
+              ariaLabel="Session display options"
+              className={cn(popupClassName, 'py-1')}
+              style={popupStyle}
+            >
+              <MenuSection title="Sort by">
+                {SORT_OPTIONS.map((opt) => (
+                  <MenuItem
+                    key={opt.key}
+                    label={opt.label}
+                    hint={opt.hint}
+                    selected={prefs.sort === opt.key}
+                    onClick={() => {
+                      setSessionSort(workspaceId, opt.key);
+                    }}
+                  />
+                ))}
+              </MenuSection>
+              <Divider />
+              <MenuSection title="Group by">
+                {GROUP_OPTIONS.map((opt) => (
+                  <MenuItem
+                    key={opt.key}
+                    label={opt.label}
+                    hint={opt.hint}
+                    selected={prefs.group === opt.key}
+                    onClick={() => {
+                      setSessionGroup(workspaceId, opt.key);
+                    }}
+                  />
+                ))}
+              </MenuSection>
+            </Popover>
+          </>
+        )}
+      </DropdownPortal>
+    </div>
   );
 };
 
