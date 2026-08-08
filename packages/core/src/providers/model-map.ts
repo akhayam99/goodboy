@@ -10,7 +10,7 @@ type Params = {
   readonly modelId: string;
 };
 
-const PROVIDERS = [
+export const PROVIDERS = [
   'anthropic',
   'cursor',
   'codex',
@@ -19,6 +19,11 @@ const PROVIDERS = [
   'openrouter',
   'moonshot',
 ] satisfies ReadonlyArray<ProviderId>;
+
+type Expect<T extends true> = T;
+type ProvidersAreTotal =
+  Exclude<ProviderId, (typeof PROVIDERS)[number]> extends never ? true : false;
+type _ProvidersTotalCheck = Expect<ProvidersAreTotal>;
 
 export const resolveModelForProvider = ({ provider, modelId }: Params): string => {
   const keyed = MODEL_CATALOGS[provider].find((model) => model.key === modelId);

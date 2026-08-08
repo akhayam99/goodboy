@@ -7,7 +7,7 @@ export const CHAT_PREFIX_RE = /^\s*[$/~@][^\s]*$/;
 
 export const CHAT_PLACEHOLDER = 'Message Claude · $ scripts · ~ workflows · @ agents';
 
-export const VALID_PROVIDERS: ReadonlyArray<ProviderId> = [
+export const VALID_PROVIDERS = [
   'anthropic',
   'cursor',
   'codex',
@@ -15,7 +15,12 @@ export const VALID_PROVIDERS: ReadonlyArray<ProviderId> = [
   'opencode',
   'openrouter',
   'moonshot',
-];
+] satisfies ReadonlyArray<ProviderId>;
+
+type Expect<T extends true> = T;
+type ValidProvidersAreTotal =
+  Exclude<ProviderId, (typeof VALID_PROVIDERS)[number]> extends never ? true : false;
+type _ValidProvidersTotalCheck = Expect<ValidProvidersAreTotal>;
 
 export const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 export const ATTACHMENT_LIMIT = 10;
