@@ -1,134 +1,64 @@
-import type { ReactNode } from 'react';
-import { Eyebrow, SectionTitle } from '../components/ui';
-import { useInView } from '../components/Reveal';
+import { delay } from '../components/Reveal';
 
-type Qa = {
-  q: string;
-  a: ReactNode;
+type FaqItem = {
+  readonly q: string;
+  readonly a: string;
 };
 
-const B = ({ children }: { children: ReactNode }) => (
-  <strong className="font-semibold text-foreground">{children}</strong>
-);
-
-const ITEMS: ReadonlyArray<Qa> = [
+const FAQS: readonly FaqItem[] = [
   {
-    q: 'Is it free?',
-    a: (
-      <>
-        Yes. Goodboy is open source under the <B>MIT license</B>. It runs on the agent subscriptions
-        and logins you already have.
-      </>
-    ),
+    q: 'Do I need to be a developer to use this?',
+    a: 'The deep parts, worktrees, branches, diffs, pull requests, expect a git repository. Point Goodboy at one and you get the full flow. Point it at a plain folder instead and agents still run on it, just without worktrees, branches, or PRs.',
+  },
+  {
+    q: 'Is it really free? What is the catch?',
+    a: 'MIT license, no paywall, no account, every feature included from the first launch. Nothing is phoned home: what the app tracks about your work stays in the file on your own computer. The only thing you pay for is the subscription you already have.',
+  },
+  {
+    q: 'Will this cost me anything on top of what I already pay?',
+    a: 'No new bill. Goodboy runs on the Claude, Cursor, Codex, or other subscription you already have. The numbers you see in the app are what that work would have cost by the token, not a separate charge.',
   },
   {
     q: 'Do I need API keys?',
-    a: (
-      <>
-        No, except OpenRouter and Moonshot. Goodboy drives the command-line tools you already
-        installed and signed into: Claude, Cursor, Codex, Google (Antigravity), and OpenCode.
-        OpenRouter and Moonshot run through the <B>OpenCode runtime</B> on an API key you provide.
-      </>
-    ),
+    a: 'For most providers, no. Claude, Cursor, Codex, Gemini and OpenCode reuse the login you already have with each CLI or app. OpenRouter and Moonshot are API-only, so those two need a key, kept in your OS keychain and never written to disk.',
   },
   {
-    q: 'Where do my credentials live?',
-    a: (
-      <>
-        Your provider logins stay inside the CLI tools you already signed into. Any optional API key
-        you add to Goodboy lives in your <B>OS keychain</B>, read at spawn and never written to
-        disk.
-      </>
-    ),
+    q: 'Do I need to connect every provider to start?',
+    a: 'No. One connected CLI is enough to get going. Connect more later if you want to spread work across models or compare them on the same task.',
   },
   {
-    q: 'Does my code leave my machine?',
-    a: (
-      <>
-        Goodboy itself is <B>local-first</B>: your sessions, history, and keys stay on your machine.
-        The agents you run reach their own providers exactly as they do in your terminal.
-      </>
-    ),
+    q: 'Where does my data go?',
+    a: 'Conversations, plans, decisions and PR state sit in a local SQLite file on your machine. There is no backend and no account. Prompts and responses go straight from you to whichever provider you picked, the same path as running their CLI yourself.',
   },
   {
-    q: 'Can I control what agents are allowed to do?',
-    a: (
-      <>
-        Yes. Tool rules let you <B>allow, deny, or ask</B> for each tool, at global, workspace, or
-        session scope. A blocked call surfaces in the transcript and you can approve it inline.
-        Enforcement lands on Claude sessions first.
-      </>
-    ),
+    q: 'What if I do not like what the agents did?',
+    a: 'You read the diff before anything ships. Agents open a draft pull request; they never merge it themselves. If you want out of a session entirely, deleting it removes its branch and worktree too, so your main branch never sees it.',
   },
   {
-    q: 'Which platforms?',
-    a: (
-      <>
-        <B>macOS and Linux</B>. macOS ships as a universal build or via Homebrew. Linux ships as an
-        AppImage, a .deb and an .rpm, x86_64 on glibc 2.39 or newer, so Ubuntu 24.04 and Debian 13
-        upward. In-app updates stay macOS-only for now, so on Linux a new version is a new package
-        from the release page. Windows still means building from source, with a Rust toolchain.
-      </>
-    ),
-  },
-  {
-    q: 'Is there a mobile app?',
-    a: (
-      <>
-        Not a separate app. An <B>early companion</B> pairs your phone with the desktop through a
-        bridge: enough to spawn a workflow or merge a PR while you&apos;re away.
-      </>
-    ),
+    q: 'Which platforms does it run on?',
+    a: 'macOS and Linux. On a Mac it is one build for both Intel and Apple Silicon, or Homebrew if you prefer, and it keeps itself up to date. On Linux take the AppImage, the .deb or the .rpm, x86_64 on Ubuntu 24.04 or Debian 13 and newer, and pick up the next version from the release page yourself: updating in place is macOS only so far. Windows means building from source for now.',
   },
 ];
 
-const Chevron = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 16 16"
-    fill="none"
-    aria-hidden
-    className="shrink-0 text-muted-foreground/60 transition-transform duration-200 group-open:rotate-180"
-  >
-    <path
-      d="M4 6l4 4 4-4"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-export const Faq = () => {
-  const { ref, inView } = useInView<HTMLElement>();
-  return (
-    <section
-      id="faq"
-      ref={ref}
-      className={`scene reveal-group relative ${inView ? 'is-visible' : ''}`}
-    >
-      <div className="mx-auto w-full max-w-2xl px-6">
-        <div className="reveal max-w-2xl">
-          <Eyebrow>Questions</Eyebrow>
-          <SectionTitle>Before you install</SectionTitle>
-        </div>
-
-        <div className="reveal mt-12 flex flex-col" style={{ animationDelay: '100ms' }}>
-          {ITEMS.map((item) => (
-            <details key={item.q} className="group border-t border-border-soft py-4 last:border-b">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-                <span className="text-[16px] font-medium text-foreground">{item.q}</span>
-                <Chevron />
-              </summary>
-              <p className="mt-3 max-w-prose text-pretty text-[14.5px] leading-[1.6] text-muted-foreground">
-                {item.a}
-              </p>
-            </details>
-          ))}
-        </div>
+export const Faq = () => (
+  <section className="block alt" id="faq" aria-labelledby="h2-faq">
+    <div className="wrap">
+      <div className="blockHead">
+        <h2 className="rv" id="h2-faq">
+          Questions people ask before they install
+        </h2>
+        <p className="sub rv" style={delay(80)}>
+          The stuff that comes up first, answered straight.
+        </p>
       </div>
-    </section>
-  );
-};
+      <div className="faq">
+        {FAQS.map((item, i) => (
+          <details key={item.q} className="rv" style={delay(i * 40)} open={i === 0}>
+            <summary>{item.q}</summary>
+            <p>{item.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+);

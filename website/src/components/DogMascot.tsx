@@ -1,16 +1,18 @@
 import type { CSSProperties } from 'react';
 import mascot from '../assets/mascot.png';
 
-interface DogMascotProps {
-  size?: number;
-  className?: string;
-}
+type Props = {
+  readonly size?: number;
+  readonly color?: string;
+};
 
-export function DogMascot({ size = 16, className }: DogMascotProps) {
+export const DogMascot = ({ size = 16, color = 'currentColor' }: Props) => {
   const style: CSSProperties = {
+    display: 'inline-block',
+    flexShrink: 0,
     width: size,
     height: size,
-    backgroundColor: 'currentColor',
+    backgroundColor: color,
     maskImage: `url(${mascot})`,
     maskRepeat: 'no-repeat',
     maskPosition: 'center',
@@ -21,5 +23,5 @@ export function DogMascot({ size = 16, className }: DogMascotProps) {
     WebkitMaskSize: 'contain',
   };
 
-  return <span aria-hidden style={style} className={`inline-block shrink-0 ${className ?? ''}`} />;
-}
+  return <span aria-hidden style={style} />;
+};

@@ -1,64 +1,48 @@
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { useRevealAll } from './components/Reveal';
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
-import { Solutions } from './sections/Solutions';
-import { Ship, Resolve } from './sections/Ship';
-import { Issues } from './sections/Issues';
+import { Providers } from './sections/Providers';
+import { How } from './sections/How';
+import { Briefing } from './sections/Briefing';
+import { Board } from './sections/Board';
+import { Context } from './sections/Context';
+import { Integrations } from './sections/Integrations';
 import { Routing } from './sections/Routing';
-import { Fanout } from './sections/Fanout';
-import { Budget } from './sections/Budget';
-import { Workflows } from './sections/Workflows';
-import { Terminal } from './sections/Terminal';
-import { Skills } from './sections/Skills';
-import { Proof } from './sections/Proof';
-import { MoreBriefly } from './sections/MoreBriefly';
+import { BuiltFor } from './sections/BuiltFor';
+import { AlsoInApp } from './sections/AlsoInApp';
+import { Privacy } from './sections/Privacy';
 import { Faq } from './sections/Faq';
-import { CTA } from './sections/CTA';
+import { Install } from './sections/Install';
+import { Closer } from './sections/Closer';
 import { Footer } from './sections/Footer';
 
 export const App = () => {
+  useRevealAll();
+
   return (
-    <div className="relative min-h-screen overflow-x-clip">
+    <>
       <Nav />
-      <main>
+      <main id="main">
         <Hero />
-        <Solutions />
-        <Issues />
+        <Providers />
+        <How />
+        <Briefing />
+        <Board />
+        <Context />
+        <Integrations />
         <Routing />
-        <Fanout />
-        <Workflows />
-        <Budget />
-        <Ship />
-        <Resolve />
-        <Terminal />
-        <Skills />
-        <MoreBriefly />
-        <Proof />
+        <BuiltFor />
+        <AlsoInApp />
+        <Privacy />
         <Faq />
-        <CTA />
-        <div aria-hidden className="sr-only">
-          <span id="problem" />
-          <span id="solution" />
-          <span id="shift" />
-          <span id="studios" />
-          <span id="studio" />
-          <span id="linear" />
-          <span id="sessions" />
-          <span id="board" />
-          <span id="context" />
-          <span id="providers" />
-          <span id="diff" />
-          <span id="budget" />
-          <span id="github" />
-          <span id="workspaces" />
-          <span id="compare" />
-          <span id="note" />
-        </div>
+        <Install />
+        <Closer />
       </main>
       <Footer />
       <Analytics />
       <SpeedInsights />
-    </div>
+    </>
   );
 };
