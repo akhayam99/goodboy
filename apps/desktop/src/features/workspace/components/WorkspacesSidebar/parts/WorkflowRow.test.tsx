@@ -17,12 +17,19 @@ import type {
 } from '@goodboy/types';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 
-const storeMocks = vi.hoisted(() => ({ renameWorkflow: vi.fn(async () => undefined) }));
+const storeMocks = vi.hoisted(() => ({
+  renameWorkflow: vi.fn(async () => undefined),
+  stopWorkflowRunNow: vi.fn(async () => undefined),
+}));
 
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: unknown) => T) =>
-    selector({ renameWorkflow: storeMocks.renameWorkflow, agentEffortOverride: {} }),
+    selector({
+      renameWorkflow: storeMocks.renameWorkflow,
+      stopWorkflowRunNow: storeMocks.stopWorkflowRunNow,
+      agentEffortOverride: {},
+    }),
 }));
 
 vi.mock(
@@ -122,6 +129,11 @@ type RenderParams = {
   readonly onDeleteWorkflow?: (runId: WorkflowRunId) => Promise<void>;
   readonly onPickAgent?: (agentId: AgentId) => void;
   readonly startWorkflowRun?: (sessionId: SessionId, runId: WorkflowRunId) => Promise<void>;
+  readonly setWorkflowRunAutoRun?: (
+    sessionId: SessionId,
+    runId: WorkflowRunId,
+    autoRun: boolean,
+  ) => Promise<void>;
   readonly variant?: 'sidebar' | 'detail';
 };
 
@@ -135,6 +147,7 @@ const renderDetail = ({
   onDeleteWorkflow = vi.fn(async () => undefined),
   onPickAgent = vi.fn(),
   startWorkflowRun = vi.fn(async () => undefined),
+  setWorkflowRunAutoRun = vi.fn(async () => undefined),
   variant = 'detail',
 }: RenderParams = {}) =>
   render(
@@ -155,7 +168,7 @@ const renderDetail = ({
       variant={variant}
       toggleWorkflowExpand={vi.fn()}
       startWorkflowRun={startWorkflowRun}
-      setWorkflowRunAutoRun={vi.fn(async () => undefined)}
+      setWorkflowRunAutoRun={setWorkflowRunAutoRun}
       onReorderWorkflow={vi.fn(async () => undefined)}
       onDiscardWorkflow={vi.fn(async () => undefined)}
       onDeleteWorkflow={onDeleteWorkflow}
@@ -239,6 +252,38 @@ describe('WorkflowRow detail dashboard', () => {
     expect(toggle.className).toContain('rounded-full');
     expect(lifecycleSlot.querySelector('[role="separator"]')).not.toBeNull();
     expect(toggle.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('turns autorun off with no confirm when nothing is in flight', () => {
+    const setAutoRun = vi.fn(async () => undefined);
+    renderDetail({ runOverride: { ...run, autoRun: true }, setWorkflowRunAutoRun: setAutoRun });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+
+    expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
+    expect(screen.queryByRole('group', { name: 'Stop this run?' })).toBeNull();
+  });
+
+  it('names the consequence before stopping a step in flight', () => {
+    const setAutoRun = vi.fn(async () => undefined);
+    const running = agents.map((agent, index) =>
+      index === 1 ? { ...agent, status: 'running' as const } : agent,
+    );
+    renderDetail({
+      runOverride: { ...run, autoRun: true },
+      agentsOverride: running,
+      setWorkflowRunAutoRun: setAutoRun,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+
+    const confirm = screen.getByRole('group', { name: 'Stop this run?' });
+    expect(confirm.textContent).toContain('the step in flight is skipped');
+    expect(setAutoRun).not.toHaveBeenCalled();
+
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop the run' }));
+
+    expect(storeMocks.stopWorkflowRunNow).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
   it('keeps completed detail navigation non-empty without lifecycle actions in it', () => {

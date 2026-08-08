@@ -286,6 +286,24 @@ describe('OrchestratorPanel state ladder', () => {
     expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
+  it('reads an operator stop as a stop, and resumes hands-free from it', () => {
+    renderPanel({
+      runOverride: run({
+        orchestrationStop: {
+          kind: 'operator',
+          message: 'You stopped this run. The step in flight was skipped.',
+        },
+      }),
+      agents: [agent(0, 'skipped')],
+    });
+
+    expect(sentence()).toContain('Stopped by you');
+    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
+    fireEvent.click(screen.getByTestId('orchestrator-resume'));
+
+    expect(storeState['retryWorkflowOrchestration']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
   it('shows the failure with its reason and offers a retry', () => {
     renderPanel({
       runOverride: run({
