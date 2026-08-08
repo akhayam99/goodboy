@@ -7,6 +7,53 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.76
+
+Stopping a hands-free run is now where you are watching it, and a run you stopped says what it is doing.
+
+### [#1349] Stop a hands-free run from the pane you are watching
+
+The stop existed, on the workflow row in the sidebar and on the workflow detail. The chat header, the one you actually read while an agent works, offered nothing at all during a hands-free run.
+
+It now carries the autorun state and the stop, in the slot the manual advance button used to sit in. Same control as the sidebar, same label, same confirm, so one run never shows you two different stops.
+
+After a stop the control stays put and becomes the way back: a static run resumes from the same click, and a run the orchestrator is driving gets a Resume beside it. You are not sent back to a sidebar you had already navigated away from.
+
+Manual advance still does not render while autorun is on. Stopping is not advancing.
+
+### [#1346] A run stopped mid-decision says it is stopping
+
+Stop a run while the orchestrator is choosing the next step and the panel kept saying "Choosing the next step" until that choice landed, which its own timeout bounds at two minutes. It now says it is stopping, and waits.
+
+It does not say the run is stopped. The decision has not come back, and the run is not stopped until it does.
+
+### [#1350] Draft comments are readable in the dark theme
+
+The draft-comment badges on the board, in the review inbox and in the diff used a fixed indigo that lands at 2.54 to 1 against the dark background, under the contrast floor at any size. They now use a theme-aware tone that clears it in both themes.
+
+### [#1351] Disconnecting an integration asks first
+
+The Disconnect button inside an integration's form removed the token and the connection the moment you clicked it. It now asks, the way the button in the studio header already did. Each integration keeps its own description of what disconnecting does, which is not the same for all of them.
+
+The stage reason on a session's overview no longer shows a tooltip repeating the line already in front of you. It adds the stage that reason belongs to.
+
+The autorun toggle says whether it is on or off, instead of reading "Autorun" either way.
+
+### [#1348] Six popovers moved onto the shared dropdown
+
+The notification centre, the integrations and studios menus in the footer, the needs-you popover, the running-scripts indicator and the session view menu each carried their own anchoring, backdrop and dismissal. They now use the shared hook, which gained a backdrop and the named layer scale to carry them.
+
+One visible change came with it: the session view menu opens above a full-page studio, where it used to open underneath one.
+
+### Fixes
+
+- One word for the hands-free mode across the app. It was called Autorun, Auto-run and hands-free in different places [#1352]
+- Deleting a single session asks "Delete 1 session?" instead of "Delete 1 sessions?" [#1352]
+- The Slack setup text now says that connecting also reads your workspace's member list, and describes the token check and where the token is kept in the order they actually happen [#1352]
+- The seven provider lists behind chat, routing, budgets, onboarding and the phone companion now fail the build when a new provider is missing from one, instead of dropping it from that surface silently [#1347]
+
+Follow-up: the stop, the resume and the stopping state were exercised against the app's own state rather than against a live orchestrated run, so no provider call went out to prove them end to end. A stop still writes the same operator record the sidebar control has always written, and a run recovers through the same Resume.
+
 ## Goodboy v0.1.75
 
 Turning autorun off now stops the step in flight, raw output standing in for a summary is labeled as such, and controls that only showed on hover now show on keyboard focus.
