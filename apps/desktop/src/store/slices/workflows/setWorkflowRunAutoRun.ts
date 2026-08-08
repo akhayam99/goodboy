@@ -1,6 +1,7 @@
 import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
 import { updateSessionWorkflowAutoRun } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { persistOrchestrationStop } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
 
 export const setWorkflowRunAutoRun = (set: SetFn, get: GetFn) => {
@@ -20,8 +21,15 @@ export const setWorkflowRunAutoRun = (set: SetFn, get: GetFn) => {
           : s,
       ),
     }));
-    if (autoRun) {
-      void get().maybeAutoAdvanceWorkflow(sessionId);
+    if (!autoRun) {
+      return;
     }
+    const run = get()
+      .sessions.find((s) => s.id === sessionId)
+      ?.workflowRuns.find((r) => r.id === workflowRunId);
+    if (run?.orchestrationStop?.kind === 'operator') {
+      await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
+    }
+    void get().maybeAutoAdvanceWorkflow(sessionId);
   };
 };
