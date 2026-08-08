@@ -9,6 +9,7 @@ import type {
 
 type OrchestratorPhase =
   | 'deciding'
+  | 'stopping'
   | 'waiting'
   | 'automatic'
   | 'ready-first'
@@ -71,6 +72,13 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   },
 };
 
+const OPERATOR_STOP_IN_FLIGHT: StopPresentation = {
+  phase: 'stopping',
+  tone: 'warning',
+  sentence: 'Stopping · waiting for the decision already in flight',
+  showsMessage: false,
+};
+
 const UNKNOWN_STOP: StopPresentation = {
   phase: 'failed',
   tone: 'danger',
@@ -92,6 +100,14 @@ export const resolveOrchestratorState = ({
   const doneCount = ordered.filter(isDone).length;
   const base = { detail: null, waitingSince: null };
 
+  if (isOrchestrating && run.orchestrationStop?.kind === 'operator') {
+    return {
+      ...base,
+      phase: OPERATOR_STOP_IN_FLIGHT.phase,
+      tone: OPERATOR_STOP_IN_FLIGHT.tone,
+      sentence: OPERATOR_STOP_IN_FLIGHT.sentence,
+    };
+  }
   if (isOrchestrating) {
     return { ...base, phase: 'deciding', tone: 'info', sentence: 'Choosing the next step' };
   }

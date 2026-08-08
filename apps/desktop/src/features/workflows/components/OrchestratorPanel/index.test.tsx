@@ -305,6 +305,29 @@ describe('OrchestratorPanel state ladder', () => {
     expect(storeState['retryWorkflowOrchestration']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
+  it('says it is stopping instead of still choosing, when stopped mid-decision', () => {
+    renderPanel({
+      runOverride: run({
+        orchestrationStop: {
+          kind: 'operator',
+          message: 'You stopped this run. The step in flight was skipped.',
+        },
+      }),
+      agents: [agent(0, 'skipped')],
+      isOrchestrating: true,
+    });
+
+    expect(sentence()).not.toContain('Choosing the next step');
+    expect(sentence()).toContain('Stopping');
+    expect(screen.getByTestId('orchestrator-panel').getAttribute('data-phase')).toBe('stopping');
+    expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
+    expect(screen.queryByTestId('orchestrator-resume')).toBeNull();
+
+    const dot = screen.getByRole('img', { name: sentence() });
+    expect(dot.className).toContain('bg-warning');
+    expect(dot.className).not.toContain('bg-info');
+  });
+
   it('falls back to a generic presentation for a stop kind it does not recognize', () => {
     renderPanel({
       runOverride: run({
