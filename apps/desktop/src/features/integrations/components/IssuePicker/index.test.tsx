@@ -113,6 +113,21 @@ describe('IssuePicker', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
+  it('closes on Escape pressed while focus sits outside the input', () => {
+    renderPicker();
+    fireEvent.focus(input());
+    expect(screen.getByRole('listbox')).toBeDefined();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('anchors the list by measured direction instead of a hardcoded offset', () => {
+    renderPicker();
+    fireEvent.focus(input());
+    const popup = screen.getByRole('listbox').closest('div.absolute');
+    expect(popup?.className).toContain('top-[calc(100%+0.25rem)]');
+  });
+
   it('closes on a mousedown outside the picker', () => {
     renderPicker();
     fireEvent.focus(input());

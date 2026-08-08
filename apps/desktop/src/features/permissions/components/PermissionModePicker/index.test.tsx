@@ -76,6 +76,14 @@ describe('PermissionModePicker', () => {
     expect(screen.queryByRole('dialog', { name: /permission mode/i })).toBeNull();
   });
 
+  it('anchors the panel by measured direction instead of a hardcoded one', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
+    fireEvent.click(screen.getByRole('button', { name: /default/i }));
+    const panel = screen.getByRole('dialog', { name: /permission mode/i });
+    expect(panel.className).toContain('top-[calc(100%+0.25rem)]');
+    expect(panel.className).not.toContain('bottom-full');
+  });
+
   it('opens on the goodboy:open-permission-picker event', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     act(() => {

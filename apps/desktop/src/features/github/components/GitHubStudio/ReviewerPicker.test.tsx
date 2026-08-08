@@ -52,6 +52,22 @@ describe('ReviewerPicker', () => {
     expect(screen.queryByPlaceholderText('filter collaborators')).toBeNull();
   });
 
+  it('closes on Escape', async () => {
+    renderPicker();
+    openPanel();
+    await waitFor(() => expect(screen.getByText('octocat')).toBeDefined());
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(screen.queryByPlaceholderText('filter collaborators')).toBeNull();
+  });
+
+  it('anchors the panel by measured direction instead of a hardcoded offset', async () => {
+    renderPicker();
+    openPanel();
+    const panel = await screen.findByPlaceholderText('filter collaborators');
+    const popup = panel.closest('div.absolute');
+    expect(popup?.className).toContain('top-[calc(100%+0.25rem)]');
+  });
+
   it('closes on a mousedown outside the picker', async () => {
     renderPicker();
     openPanel();

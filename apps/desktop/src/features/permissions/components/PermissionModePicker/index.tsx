@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn, StatusDot, type Tone } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useDropdown } from '../../../../shared/hooks/useDropdown';
 
 const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini'];
 
@@ -55,50 +55,25 @@ type Props = {
 };
 
 export const PermissionModePicker = ({ session, activeProvider }: Props) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const { open, close, toggle, containerRef, popupClassName } = useDropdown({
+    width: 'w-64',
+    expectedHeight: 240,
+    openEvent: 'goodboy:open-permission-picker',
+  });
   const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
   const current = permissionModeMeta(session.permissionMode);
   const unenforced = MODE_UNENFORCED_PROVIDERS.includes(activeProvider);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false);
-      }
-    };
-    window.addEventListener('mousedown', onClick);
-    window.addEventListener('keydown', onEsc);
-    return () => {
-      window.removeEventListener('mousedown', onClick);
-      window.removeEventListener('keydown', onEsc);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    const handler = () => setOpen(true);
-    window.addEventListener('goodboy:open-permission-picker', handler);
-    return () => window.removeEventListener('goodboy:open-permission-picker', handler);
-  }, []);
-
   const onPick = (mode: ClaudePermissionMode) => {
     void setSessionPermissionMode(session.id, mode);
-    setOpen(false);
+    close();
   };
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         title={unenforced ? 'Not enforced for cursor and gemini' : current.description}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -112,7 +87,10 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
         <div
           role="dialog"
           aria-label="Permission mode"
-          className="absolute bottom-full left-0 z-30 mb-1.5 w-64 overflow-hidden rounded-lg bg-subtle py-1.5 text-xs shadow-lg ring-1 ring-border-soft"
+          className={cn(
+            popupClassName,
+            'overflow-hidden rounded-lg bg-subtle py-1.5 text-xs shadow-lg ring-1 ring-border-soft',
+          )}
         >
           <div className="flex items-center px-2.5 pb-0.5 pt-1">
             <span className="text-2xs uppercase tracking-wide text-muted-foreground/70">

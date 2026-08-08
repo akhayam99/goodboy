@@ -87,6 +87,14 @@ describe('ResolverOverflowMenu', () => {
     );
   });
 
+  it('anchors the menu by measured direction instead of a hardcoded offset', () => {
+    renderMenu();
+    fireEvent.click(trigger());
+    const menu = screen.getByRole('menu', { name: /more resolver actions/i });
+    expect(menu.className).toContain('top-[calc(100%+0.25rem)]');
+    expect(menu.className).toContain('right-0');
+  });
+
   it('closes on Escape and drops the armed action', () => {
     renderMenu();
     fireEvent.click(trigger());

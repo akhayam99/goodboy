@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { useEffect, useState } from 'react';
+import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../store';
 import type { WorkspaceId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
 import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { useDropdown } from '../../../../shared/hooks/useDropdown';
 
 type Props = {
   readonly workspaceRoot: string | null;
@@ -15,27 +16,17 @@ type Props = {
 };
 
 export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAdd }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [logins, setLogins] = useState<ReadonlyArray<string> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const workspaceId = useCurrentWorkspace()?.id;
-
-  useEffect(() => {
-    if (isOpen === false) {
-      return;
-    }
-
-    const onDocumentMouseDown = (event: MouseEvent) => {
-      if (ref.current != null && ref.current.contains(event.target as Node) === false) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', onDocumentMouseDown);
-    return () => document.removeEventListener('mousedown', onDocumentMouseDown);
-  }, [isOpen]);
+  const {
+    open: isOpen,
+    close,
+    toggle,
+    containerRef,
+    popupClassName,
+  } = useDropdown({ width: 'w-52', expectedHeight: 220 });
 
   useEffect(() => {
     if (isOpen === false || logins !== null || workspaceRoot == null || workspaceRoot === '') {
@@ -55,10 +46,10 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
     .slice(0, 8);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={containerRef} className="relative">
       <button
         type="button"
-        onClick={() => setIsOpen((value) => value === false)}
+        onClick={toggle}
         title="Request review"
         aria-label="Request review"
         className="inline-flex items-center gap-0.5 rounded-md border border-border-soft px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
@@ -67,7 +58,12 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
         Add
       </button>
       {isOpen ? (
-        <div className="absolute left-0 top-6 z-10 flex w-52 flex-col gap-1 rounded-md border border-border-soft bg-background p-1.5 shadow-lg">
+        <div
+          className={cn(
+            popupClassName,
+            'flex flex-col gap-1 rounded-md border border-border-soft bg-background p-1.5 shadow-lg',
+          )}
+        >
           <div className="flex items-center gap-1.5 px-1.5 py-1">
             <Search size={12} aria-hidden className="shrink-0 text-muted-foreground" />
             <input
@@ -104,7 +100,7 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
                       type="button"
                       onClick={() => {
                         onAdd([login]);
-                        setIsOpen(false);
+                        close();
                         setQuery('');
                       }}
                       className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-xs text-foreground hover:bg-muted/60"
