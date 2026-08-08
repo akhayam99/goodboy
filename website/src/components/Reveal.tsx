@@ -1,88 +1,80 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
-/* Scroll-reveal primitive. `useInView` flips to true the first time the
-   element crosses into the viewport, then disconnects. Pairs with the
-   `.reveal-group` / `.reveal` CSS in styles.css. Falls back to visible when
-   IntersectionObserver is unavailable so content never gets stuck hidden. */
-export function useInView<T extends Element = HTMLDivElement>() {
+export const delay = (ms: number) => ({ '--d': `${ms}ms` }) as CSSProperties;
+
+export const useRevealAll = () => {
+  useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>('.rv'));
+    if (typeof IntersectionObserver === 'undefined') {
+      nodes.forEach((node) => node.classList.add('in'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in');
+            io.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15 },
+    );
+    nodes.forEach((node) => io.observe(node));
+    return () => io.disconnect();
+  }, []);
+};
+
+export const useInViewOnce = <T extends Element = HTMLDivElement>() => {
   const ref = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
+    if (el == null || typeof IntersectionObserver === 'undefined') {
       setInView(true);
       return;
     }
     const io = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setInView(true);
             io.disconnect();
-            break;
           }
-        }
+        });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+      { threshold: 0.25 },
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
   return { ref, inView };
-}
+};
 
-/* Toggling variant for looping mockups: reports every intersection change so a
-   beat machine can hold its state while scrolled away instead of burning
-   timers. Defaults to visible when IntersectionObserver is unavailable. */
-export function useToggleInView<T extends Element = HTMLDivElement>() {
+export const useToggleInView = <T extends Element = HTMLDivElement>() => {
   const ref = useRef<T | null>(null);
-  const [inView, setInView] = useState(true);
+  const [inView, setInView] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      return undefined;
+    if (el == null || typeof IntersectionObserver === 'undefined') {
+      setInView(true);
+      return;
     }
     const io = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          setInView(entry.isIntersecting);
-        }
+        entries.forEach((entry) => setInView(entry.isIntersecting));
       },
-      { threshold: 0.12 },
+      { threshold: 0.25 },
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
   return { ref, inView };
-}
+};
 
-/* Self-contained single-block reveal. Use for one-shot blocks; for multi-part
-   layouts drive `useInView` on the section and tag children `.reveal`. */
-export function Reveal({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const { ref, inView } = useInView<HTMLDivElement>();
-  return (
-    <div
-      ref={ref}
-      className={['reveal-group', inView ? 'is-visible' : ''].filter(Boolean).join(' ')}
-    >
-      <div
-        className={['reveal', className].filter(Boolean).join(' ')}
-        style={{ animationDelay: `${delay}ms` }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
+export const prefersReducedMotion = () =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;

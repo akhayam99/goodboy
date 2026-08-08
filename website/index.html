@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
 
@@ -22,10 +22,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Primary -->
-    <title>Goodboy: orchestrate coding agents without losing the thread</title>
+    <title>Goodboy: stop re-explaining yourself to AI agents</title>
     <meta
       name="description"
-      content="Goodboy carries shared context into every coding agent it runs. An orchestrator picks each step, model, and effort. Local-first, open source, MIT."
+      content="Goodboy is a free, open source desktop app that runs a team of AI agents on your work. Describe a task once and Goodboy decides which agent goes next, on the plans you already pay for. Local, no account."
     />
     <meta
       name="keywords"
@@ -40,18 +40,18 @@
     <meta property="og:url" content="https://goodboy-ai.dev/" />
     <meta
       property="og:title"
-      content="Goodboy: orchestrate coding agents without losing the thread"
+      content="Goodboy: stop re-explaining yourself to AI agents"
     />
     <meta
       property="og:description"
-      content="Stop re-explaining the goal to every new agent. Goodboy carries shared context across Claude, Cursor, Codex, Antigravity, OpenCode, and OpenRouter, and an orchestrator picks each next step. Open source, local-first, MIT."
+      content="Describe a task once. Goodboy decides which agent goes next, across Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot, on the plans you already pay for. Free, open source, local."
     />
     <meta property="og:image" content="https://goodboy-ai.dev/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Goodboy: orchestrate coding agents without losing the thread"
+      content="Goodboy: stop re-explaining yourself to AI agents"
     />
     <meta property="og:locale" content="en_US" />
 
@@ -61,21 +61,21 @@
     <meta name="twitter:creator" content="@akhayam99" />
     <meta
       name="twitter:title"
-      content="Goodboy: orchestrate coding agents without losing the thread"
+      content="Goodboy: stop re-explaining yourself to AI agents"
     />
     <meta
       name="twitter:description"
-      content="Shared context carried into every agent, an orchestrator picking each step, model, and effort, and a review inbox for GitHub and GitLab. Open source, MIT."
+      content="Describe a task once. Goodboy decides which agent goes next, across Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter and Moonshot, on the plans you already pay for. Free, open source, local."
     />
     <meta name="twitter:image" content="https://goodboy-ai.dev/og-image.png" />
     <meta
       name="twitter:image:alt"
-      content="Goodboy: orchestrate coding agents without losing the thread"
+      content="Goodboy: stop re-explaining yourself to AI agents"
     />
 
     <!-- Theme / PWA hints -->
-    <meta name="theme-color" content="#1a1c26" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light" />
 
     <!-- JSON-LD: SoftwareApplication -->
     <script type="application/ld+json">
@@ -112,28 +112,20 @@
           "open source"
         ],
         "featureList": [
-          "Shared context carried into every agent",
-          "Orchestrated workflow runs with a step budget, drawn as a graph",
-          "Provider, model, and effort chosen per step",
-          "Fixed workflow sequences you can rerun",
-          "Plans kept as artifacts",
-          "Scout fan-out and plan clusters",
-          "Stage board home with derived stages",
+          "One briefing carried into every agent on the task",
+          "An orchestrator that picks the next agent, model, and thinking effort",
+          "Seven providers in one session: Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter, Moonshot",
+          "A board where every task shows its own stage",
+          "Agents working in their own git worktree",
           "Review inbox for GitHub pull requests and GitLab merge requests",
-          "Draft review comments published in one batch",
-          "Resolver agents that answer a review comment with a local commit",
-          "Studios for GitHub, GitLab, Linear, Jira, Sentry, and Slack",
-          "Bitbucket Cloud pull requests with checks, diff, review verbs and merge",
-          "Slack threads read and replied to, with reactions, from inside the app",
-          "Impact Studio analytics on shipped work",
-          "Unified model picker with families, versions, and effort",
+          "Resolver agents that answer a review comment with a commit",
+          "Integrations for GitHub, GitLab, Bitbucket, Linear, Jira, Sentry, and Slack",
           "Budget caps with a live cost meter",
-          "Tool permission rules in beta",
+          "Model picker with families, versions, and effort",
           "Per-workspace markdown skills",
-          "Syntax-highlighted diffs across a dozen languages",
           "GPU terminal on xterm 6",
-          "Simple and composite workspaces",
-          "Six providers in one session, only OpenRouter needs an API key"
+          "Simple, multi project, and plain folder workspaces",
+          "Everything stored in one local SQLite file"
         ]
       }
     </script>
@@ -146,10 +138,26 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "Is Goodboy free?",
+            "name": "Do I need to be a developer to use this?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Goodboy is open source under the MIT license. It runs on the agent subscriptions and logins you already have."
+              "text": "The deep parts, worktrees, branches, diffs, pull requests, expect a git repository. Point Goodboy at one and you get the full flow. Point it at a plain folder instead and agents still run on it, just without worktrees, branches, or PRs."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is it really free? What is the catch?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "MIT license, no paywall, no account, every feature included from the first launch. Nothing is phoned home: what the app tracks about your work stays in the file on your own computer. The only thing you pay for is the subscription you already have."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will this cost me anything on top of what I already pay?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No new bill. Goodboy runs on the Claude, Cursor, Codex, or other subscription you already have. The numbers you see in the app are what that work would have cost by the token, not a separate charge."
             }
           },
           {
@@ -157,47 +165,39 @@
             "name": "Do I need API keys?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No, except OpenRouter. Goodboy drives the command-line tools you already installed and signed into: Claude, Cursor, Codex, Google (Antigravity), and OpenCode. OpenRouter runs through the OpenCode runtime on an API key you provide."
+              "text": "For most providers, no. Claude, Cursor, Codex, Gemini and OpenCode reuse the login you already have with each CLI or app. OpenRouter and Moonshot are API-only, so those two need a key, kept in your OS keychain and never written to disk."
             }
           },
           {
             "@type": "Question",
-            "name": "Where do my credentials live?",
+            "name": "Do I need to connect every provider to start?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Your provider logins stay inside the CLI tools you already signed into. Any optional API key you add to Goodboy lives in your OS keychain, read at spawn and never written to disk."
+              "text": "No. One connected CLI is enough to get going. Connect more later if you want to spread work across models or compare them on the same task."
             }
           },
           {
             "@type": "Question",
-            "name": "Does my code leave my machine?",
+            "name": "Where does my data go?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Goodboy itself is local-first: your sessions, history, and keys stay on your machine. The agents you run reach their own providers exactly as they do in your terminal."
+              "text": "Conversations, plans, decisions and PR state sit in a local SQLite file on your machine. There is no backend and no account. Prompts and responses go straight from you to whichever provider you picked, the same path as running their CLI yourself."
             }
           },
           {
             "@type": "Question",
-            "name": "Can I control what agents are allowed to do?",
+            "name": "What if I do not like what the agents did?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Tool rules let you allow, deny, or ask for each tool, at global, workspace, or session scope. A blocked call surfaces in the transcript and you can approve it inline. The feature is in beta, enforced on Claude sessions first."
+              "text": "You read the diff before anything ships. Agents open a draft pull request; they never merge it themselves. If you want out of a session entirely, deleting it removes its branch and worktree too, so your main branch never sees it."
             }
           },
           {
             "@type": "Question",
-            "name": "Which platforms does Goodboy support?",
+            "name": "Which platforms does it run on?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "macOS and Linux. macOS ships as a universal build or via Homebrew. Linux ships as an AppImage, a .deb and an .rpm, x86_64 on glibc 2.39 or newer, so Ubuntu 24.04 and Debian 13 upward. In-app updates stay macOS-only for now, so on Linux a new version is a new package from the release page. Windows still means building from source, with a Rust toolchain."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is there a mobile app?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not a separate app. A beta companion pairs your phone with the desktop through a bridge: enough to spawn a workflow or merge a PR while you're away."
+              "text": "macOS and Linux. On a Mac it is one build for both Intel and Apple Silicon, or Homebrew if you prefer, and it keeps itself up to date. On Linux take the AppImage, the .deb or the .rpm, x86_64 on Ubuntu 24.04 or Debian 13 and newer, and pick up the next version from the release page yourself: updating in place is macOS only so far. Windows means building from source for now."
             }
           }
         ]
