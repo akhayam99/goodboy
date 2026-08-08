@@ -111,7 +111,6 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
           ],
         };
       case 'fresh':
-      default:
         return {
           eyebrow: 'fresh session',
           title: 'Populate the context',
@@ -122,6 +121,10 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
             <span key="first">the first agent</span>,
           ],
         };
+      default: {
+        const exhaustive: never = scenario;
+        throw new Error(`unknown empty scenario: ${String(exhaustive)}`);
+      }
     }
   }, [scenario, selectedKind, phaseRuns.length]);
 
