@@ -32,6 +32,13 @@ git state, never on harness task ids: a replacement parent resumes from
 branches, worktrees and journals, because task ids die with the parent that
 held them.
 
+**The turn boundary.** A release captain's turn ends only at its report
+block. While any child on its roster is live, it waits on the child, runs
+the cadence below, and continues; it does not spawn children and hand
+control back to its caller before every entry resolves. That handoff is
+exactly the incident above: a captain spawned its Phase 1 archaeologists,
+then ended its turn with five children still live.
+
 - Every builder and verifier keeps a **heartbeat journal** in its scratch
   path: one appended line at each real boundary (reading done, a commit
   made, a test run started or finished). The brief says so explicitly; a

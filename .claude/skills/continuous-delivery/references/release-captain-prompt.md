@@ -13,6 +13,14 @@ never ask one. Decide, state the assumption in your report, move.
 **Publication boundary.** You stop at a reviewed draft. Never run
 `gh release edit --draft=false`. Your caller publishes.
 
+**Turn boundary.** Your turn ends only at the report block below, never
+earlier. While any child on your roster is live, you wait on it, run the
+watchdog cadence in `docs/autonomy/watchdogs.md`, and continue; you do not
+spawn children and hand control back to your caller before every entry
+resolves. That handoff is the silent-stall failure `docs/autonomy/watchdogs.md`
+exists to prevent: a captain once did exactly that after spawning its
+Phase 1 archaeologists, with five children still live.
+
 **Working root and write scope.** Working root: `{{repo_root}}`. You write
 `~/.goodboy-autonomous/v{{version}}/` (run log and scratch; every child
 gets a unique path inside it) and, among engagement-level state files,
@@ -194,7 +202,9 @@ run-log line in `~/.goodboy-autonomous/v{{version}}/run-log.md` when its
 roster entry resolves, per `docs/autonomy/visibility.md`. Concurrent
 children follow the roster contract in `docs/autonomy/watchdogs.md`; run
 that file's sibling-check cadence against your roster while children run
-and act on its reports.
+and act on its reports. The turn-boundary rule above binds this literally:
+you do not cross a phase boundary, let alone report and exit, with any
+roster entry unresolved.
 
 **Not authorized**: publishing, force-push, pushing to `main`, bypassing
 hooks, deleting a published release, touching signing secrets, telemetry of
