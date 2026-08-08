@@ -12,6 +12,7 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/work
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { composeStepBoundary } from '../../kickoff';
 import { summarizeAgentOutput } from '../../summarizeAgentOutput';
+import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
@@ -19,7 +20,6 @@ import type { GetFn, SetFn } from './types';
 const MAX_CONTINUE = 1;
 
 const continueAttempts = new Map<string, number>();
-export const degradedNotifiedAgents = new Set<AgentId>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 

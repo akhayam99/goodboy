@@ -69,6 +69,11 @@ export type ParallelBranchEffects = {
   appendTurnEvent: (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => void;
   refreshPhaseRuns: (sessionId: SessionId) => Promise<void>;
   setMergeConflicts: (sessionId: SessionId, conflicts: ReadonlyArray<FileConflict>) => void;
+  notifyDegradedStepSummary: (params: {
+    readonly agentId: AgentId;
+    readonly sessionId: SessionId;
+    readonly agentName: string;
+  }) => void;
 };
 
 export type ParallelBranchResult = {
@@ -429,15 +434,24 @@ export const runParallelBranch = async (
       const phaseRunsAfter = await invokeAgentList(session.id);
       const row = phaseRunsAfter.find((r) => r.runId === runId && r.stepId === def.id);
       if (row) {
+        const isRepresentative =
+          status?.runId === representativeRunId && carryForwardContext.length > 0;
         await invokeAgentUpdateStatus(row.id, {
           status: (status?.status ?? 'failed') as AgentStatus,
           completedAt: now(),
-          ...(status?.runId === representativeRunId && carryForwardContext.length > 0
+          ...(isRepresentative
             ? { outputSummary: carryForwardContext }
             : status?.outputSummary != null
               ? { outputSummary: fallbackStepOutputSummary({ output: status.outputSummary }) }
               : {}),
         });
+        if (!isRepresentative && status?.outputSummary != null) {
+          effects.notifyDegradedStepSummary({
+            agentId: row.id,
+            sessionId: session.id,
+            agentName: def.name,
+          });
+        }
       }
     }
     await effects.refreshPhaseRuns(session.id);

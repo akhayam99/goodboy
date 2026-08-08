@@ -634,9 +634,14 @@ describe('advanceClusterImplementation', () => {
   });
 
   it('stores deterministic head and tail output for a completed cluster', async () => {
-    const child = childAgent({ id: 'summary-child', ordinal: 0, status: 'running' });
+    const child = childAgent({
+      id: 'summary-child',
+      ordinal: 0,
+      status: 'running',
+      name: 'summary-child',
+    });
     const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
-    const { get, set } = makeStore({
+    const { get, set, emitNotification } = makeStore({
       sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
       sessionPlans: { [SID]: [plan({})] },
     });
@@ -652,6 +657,56 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({
         outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
       }),
+    );
+    expect(emitNotification).toHaveBeenCalledWith(
+      'summarizer-degraded',
+      'warning',
+      expect.stringContaining('summary-child'),
+      expect.any(String),
+      { sessionId: SID, action: { kind: 'retry-step-summary', sessionId: SID, agentId: child.id } },
+    );
+  });
+
+  it('notifies the degraded summary only once for the same child (dedupe)', async () => {
+    const child = childAgent({ id: 'dedupe-child', ordinal: 0, status: 'running' });
+    const { get, set, emitNotification } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'dedupe-child', ordinal: 0, status: 'completed' }),
+    ]);
+    const advance = advanceClusterImplementation(set, get);
+
+    await advance(SID, child.id, 'raw output', { force: true });
+    await advance(SID, child.id, 'raw output again', { force: true });
+
+    expect(emitNotification).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not notify degraded when the child advances with no output to summarize', async () => {
+    const child = childAgent({ id: 'manual-advance', ordinal: 0, status: 'running' });
+    const { get, set, emitNotification } = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'manual-advance', ordinal: 0, status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(set, get)(SID, child.id, '', { force: true });
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      child.id,
+      expect.objectContaining({ outputSummary: 'advanced to next cluster manually' }),
+    );
+    expect(emitNotification).not.toHaveBeenCalledWith(
+      'summarizer-degraded',
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
     );
   });
 

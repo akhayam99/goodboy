@@ -14,6 +14,7 @@ import {
   invokeAgentUpdateStatus,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
+import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 import { composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { childRoutingFromParent } from './childRoutingFromParent';
 import { isHandsFree } from './handsFree';
@@ -352,10 +353,20 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     }
 
     continueAttempts.delete(childAgentId);
-    const outputSummary =
-      assistantText.length > 0
-        ? fallbackStepOutputSummary({ output: assistantText })
-        : 'advanced to next cluster manually';
+    const usesFallbackSummary = assistantText.length > 0;
+    const outputSummary = usesFallbackSummary
+      ? fallbackStepOutputSummary({ output: assistantText })
+      : 'advanced to next cluster manually';
+    if (usesFallbackSummary && !degradedNotifiedAgents.has(childAgentId)) {
+      degradedNotifiedAgents.add(childAgentId);
+      void get().emitNotification(
+        'summarizer-degraded',
+        'warning',
+        `step summary degraded: ${child.name}`,
+        'cluster continuation summaries skip the LLM summarizer, showing raw output instead.',
+        { sessionId, action: { kind: 'retry-step-summary', sessionId, agentId: childAgentId } },
+      );
+    }
     await invokeAgentUpdateStatus(childAgentId, {
       status: 'completed',
       outputSummary,

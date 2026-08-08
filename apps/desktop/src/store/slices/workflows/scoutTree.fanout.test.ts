@@ -176,7 +176,7 @@ function makeAdvanceStore(runs: ReadonlyArray<Agent>, fanout: boolean) {
         : (u as Record<string, unknown>);
     Object.assign(state, patch);
   }) as unknown as SetFn;
-  return { state, get, set, sendTurn };
+  return { state, get, set, sendTurn, emitNotification };
 }
 
 const scoutAgent = (over: Partial<Agent> = {}): Agent => ({
@@ -234,9 +234,9 @@ describe('advanceScoutTree split decision', () => {
   });
 
   it('stores deterministic head and tail output for a completed scout', async () => {
-    const scout = scoutAgent({ id: 'summary-scout' as AgentId });
+    const scout = scoutAgent({ id: 'summary-scout' as AgentId, name: 'summary-scout' });
     const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
-    const { get, set } = makeAdvanceStore([scout], true);
+    const { get, set, emitNotification } = makeAdvanceStore([scout], true);
 
     await advanceScoutTree(set, get)(SID, scout.id, assistantText);
 
@@ -246,5 +246,26 @@ describe('advanceScoutTree split decision', () => {
         outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
       }),
     );
+    expect(emitNotification).toHaveBeenCalledWith(
+      'summarizer-degraded',
+      'warning',
+      expect.stringContaining('summary-scout'),
+      expect.any(String),
+      {
+        sessionId: SID,
+        action: { kind: 'retry-step-summary', sessionId: SID, agentId: scout.id },
+      },
+    );
+  });
+
+  it('notifies the degraded summary only once for the same scout (dedupe)', async () => {
+    const scout = scoutAgent({ id: 'dedupe-scout' as AgentId });
+    const { get, set, emitNotification } = makeAdvanceStore([scout], true);
+    const advance = advanceScoutTree(set, get);
+
+    await advance(SID, scout.id, 'raw output');
+    await advance(SID, scout.id, 'raw output again');
+
+    expect(emitNotification).toHaveBeenCalledTimes(1);
   });
 });
