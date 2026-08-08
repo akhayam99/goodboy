@@ -2,15 +2,19 @@ import type { ModelDescriptor, ProviderId } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 import { MODEL_CATALOGS } from './catalogs';
 
-const PROVIDER_PRIORITY: ReadonlyArray<ProviderId> = [
-  'anthropic',
-  'codex',
-  'gemini',
-  'cursor',
-  'opencode',
-  'openrouter',
-  'moonshot',
-];
+const PROVIDER_RANK: Readonly<Record<ProviderId, number>> = {
+  anthropic: 0,
+  codex: 1,
+  gemini: 2,
+  cursor: 3,
+  opencode: 4,
+  openrouter: 5,
+  moonshot: 6,
+};
+
+const PROVIDER_PRIORITY: ReadonlyArray<ProviderId> = (
+  Object.keys(PROVIDER_RANK) as ProviderId[]
+).sort((a, b) => PROVIDER_RANK[a] - PROVIDER_RANK[b]);
 
 const DESCRIPTOR_BY_ID: ReadonlyMap<string, ModelDescriptor> = (() => {
   const map = new Map<string, ModelDescriptor>();
