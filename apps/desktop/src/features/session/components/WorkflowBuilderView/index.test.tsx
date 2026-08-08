@@ -384,7 +384,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     await draftPlan();
     fireEvent.click(screen.getByRole('switch', { name: /save as preset/i }));
-    fireEvent.click(screen.getByRole('switch', { name: /auto-run/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /autorun/i }));
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     expect(mockSavePhaseTemplate.mock.calls[0]![0].isPreset).toBe(true);
@@ -512,7 +512,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     });
     fireEvent.click(continueBtn());
 
-    const autoRunSwitch = screen.getByRole('switch', { name: /auto-run/i });
+    const autoRunSwitch = screen.getByRole('switch', { name: /autorun/i });
     expect(autoRunSwitch.getAttribute('aria-checked')).toBe('true');
     fireEvent.click(autoRunSwitch);
     fireEvent.click(startBtn());

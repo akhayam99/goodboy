@@ -94,11 +94,19 @@ placeholder, so could-not-run is the exception, not the default.
   The bundle lands at
   `apps/desktop/src-tauri/target/release/bundle/macos/Goodboy.app`.
 - Launch the binary directly, never via `open`, so the env var applies:
-  `GOODBOY_DB_FILE=<copy> .../Goodboy.app/Contents/MacOS/Goodboy`.
+  `GOODBOY_DB_FILE=<copy> .../Goodboy.app/Contents/MacOS/goodboy-desktop`.
+  The bundle is named `Goodboy.app` after `productName`, but the binary
+  inside it is named after the Cargo package, `goodboy-desktop`, not
+  `Goodboy`.
 - Database isolation is mandatory for every walk, not only dmg smoke
   tests: `GOODBOY_DB_FILE` points at a `VACUUM INTO` copy per the line
   above. A walk against the owner's live database corrupts real state to
   test a draft.
+- One GUI walker at a time. `GOODBOY_DB_FILE` isolates the database, not
+  the process table: a walker that kills a stray instance by process name
+  (`pkill`) can take down a sibling walker's app, including one still
+  pointed at the owner's live database. Kill only the PID your own walk
+  launched.
 
 ## Audit and verification
 

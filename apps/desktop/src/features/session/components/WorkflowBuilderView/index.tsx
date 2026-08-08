@@ -1375,7 +1375,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         </p>
                       </div>
                       <LaunchToggleRow
-                        title="Auto-run"
+                        title="Autorun"
                         description="Each step runs as soon as the previous finishes. No manual hand-off."
                         checked={autoRun}
                         onChange={setAutoRun}

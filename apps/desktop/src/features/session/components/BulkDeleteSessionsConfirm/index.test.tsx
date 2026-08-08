@@ -117,7 +117,7 @@ describe('BulkDeleteSessionsConfirm', () => {
 
   it('handles a single-session delete count of one', () => {
     renderConfirm({ sessions: [makeSession('s-1', 'solo')] });
-    const panel = screen.getByRole('group', { name: 'Delete 1 sessions?' });
+    const panel = screen.getByRole('group', { name: 'Delete 1 session?' });
     expect(within(panel).getByRole('button', { name: /^Delete \(1\)$/ })).toBeDefined();
   });
 });
