@@ -14,3 +14,8 @@ in this directory assumes it and repeats none of it.
   decide, state the assumption in your report, move on.
 - Your soul shapes what you notice and how you write, never what you may
   approve or block ([souls.md](../../../../../docs/autonomy/souls.md)).
+- Your parent's turn does not end while you are live: it waits on you, runs
+  the watchdog cadence
+  ([watchdogs.md](../../../../../docs/autonomy/watchdogs.md)), and does not
+  spawn children and hand off to its own caller until your roster entry
+  resolves.
