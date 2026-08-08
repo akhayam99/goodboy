@@ -37,7 +37,7 @@ export const BulkDeleteSessionsConfirm = ({ sessions, onClose, onConfirmed, clas
     <InlineConfirm
       role="danger"
       icon={<Trash2 size={12} aria-hidden />}
-      title={`Delete ${count} ${count === 1 ? 'session' : 'sessions'}?`}
+      title={`Delete ${count} sessions?`}
       description="Permanently removes the worktrees and transcripts for these sessions from this device. Branches are preserved for manual merge."
       confirmLabel={`Delete (${count})`}
       onConfirm={onConfirm}

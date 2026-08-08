@@ -345,7 +345,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
           `cluster paused: ${child.name}`,
           handsFree
             ? 'the implementer stopped before completing this cluster. open the agent and continue manually.'
-            : 'autorun is off, so this cluster will not continue on its own. open the agent and continue manually, or enable autorun.',
+            : 'hands-free is off, so this cluster will not continue on its own. open the agent and continue manually, or enable hands-free.',
           { sessionId },
         );
       }

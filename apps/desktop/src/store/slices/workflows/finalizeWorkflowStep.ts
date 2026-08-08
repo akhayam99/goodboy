@@ -88,7 +88,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
           `step paused: ${agent.name}`,
           handsFree
             ? 'the agent stopped before emitting a step-done marker. open the agent and continue manually.'
-            : 'autorun is off, so this step will not continue on its own. open the agent and continue manually, or enable autorun.',
+            : 'hands-free is off, so this step will not continue on its own. open the agent and continue manually, or enable hands-free.',
           { sessionId },
         );
       }
