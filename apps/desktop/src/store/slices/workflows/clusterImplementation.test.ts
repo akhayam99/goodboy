@@ -481,7 +481,7 @@ describe('advanceClusterImplementation', () => {
       'error',
       'warning',
       expect.stringContaining('cluster paused'),
-      expect.stringContaining('hands-free is off'),
+      expect.stringContaining('autorun is off'),
       { sessionId: SID },
     );
   });

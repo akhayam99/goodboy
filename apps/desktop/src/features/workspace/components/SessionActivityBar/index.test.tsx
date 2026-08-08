@@ -179,7 +179,7 @@ describe('SessionActivityBar, bulk selection', () => {
     toggleArchivedTab();
     clickCheckbox(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
-    const panel = screen.getByRole('group', { name: 'Delete 1 sessions?' });
+    const panel = screen.getByRole('group', { name: 'Delete 1 session?' });
     expect(state.bulkDeleteTask).not.toHaveBeenCalled();
     fireEvent.click(within(panel).getByRole('button', { name: /^Delete \(1\)$/ }));
     await waitFor(() => expect(state.bulkDeleteTask).toHaveBeenCalledWith(['s-1']));
@@ -252,10 +252,10 @@ describe('SessionActivityBar, bulk selection', () => {
     toggleArchivedTab();
     clickCheckbox(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
-    const panel = screen.getByRole('group', { name: 'Delete 1 sessions?' });
+    const panel = screen.getByRole('group', { name: 'Delete 1 session?' });
     fireEvent.click(within(panel).getByRole('button', { name: /^Cancel$/ }));
     expect(state.bulkDeleteTask).not.toHaveBeenCalled();
-    expect(screen.queryByRole('group', { name: 'Delete 1 sessions?' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Delete 1 session?' })).toBeNull();
     expect(screen.getByText(/1 selected/)).toBeDefined();
   });
 
@@ -274,7 +274,7 @@ describe('SessionActivityBar, bulk selection', () => {
     toggleArchivedTab();
     clickCheckbox(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
-    const panel = screen.getByRole('group', { name: 'Delete 1 sessions?' });
+    const panel = screen.getByRole('group', { name: 'Delete 1 session?' });
     fireEvent.click(within(panel).getByRole('button', { name: /^Delete \(1\)$/ }));
     await waitFor(() => expect(state.bulkDeleteTask).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByText(/selected/)).toBeNull());
