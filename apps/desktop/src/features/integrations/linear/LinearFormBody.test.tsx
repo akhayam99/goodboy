@@ -87,9 +87,17 @@ describe('LinearFormBody', () => {
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
-    it('disconnects Linear for the workspace', () => {
+    it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      expect(screen.getByText(/Disconnect Linear\?/i)).toBeDefined();
+      expect(state.disconnectLinear).not.toHaveBeenCalled();
+    });
+
+    it('disconnects Linear for the workspace once the confirm is confirmed', () => {
+      render(<LinearFormBody workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect linear$/i }));
       expect(state.disconnectLinear).toHaveBeenCalledWith(WS_ID);
     });
   });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SlackWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
-import { Button, Input } from '@goodboy/ui';
+import { Button, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { formatError } from '../../../shared/lib/errors';
@@ -30,6 +30,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
   const [botToken, setBotToken] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
 
   const trimmedToken = botToken.trim();
   const canConnect = trimmedToken !== '';
@@ -76,10 +77,28 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
               {slack.config.botUserName ?? slack.config.botUserId}
             </dd>
           </dl>
-          <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={isBusy}>
-            <Unplug size={12} aria-hidden />
-            {isBusy ? 'Disconnecting…' : 'Disconnect'}
-          </Button>
+          {isDisconnectArmed ? (
+            <InlineConfirm
+              role="danger"
+              icon={<Unplug size={12} aria-hidden />}
+              title="Disconnect Slack?"
+              description="Deletes the saved Slack bot token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              confirmLabel="Disconnect Slack"
+              autoDisarmMs={4000}
+              onConfirm={onDisconnect}
+              onCancel={() => setIsDisconnectArmed(false)}
+            />
+          ) : (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setIsDisconnectArmed(true)}
+              disabled={isBusy}
+            >
+              <Unplug size={12} aria-hidden />
+              Disconnect
+            </Button>
+          )}
         </div>
       ) : (
         <>

@@ -49,7 +49,10 @@ export const HeaderBand = ({ session, stage }: Props) => {
             {SESSION_STAGE_META[stage.stage].label}
           </span>
           {stage.reason !== '' ? (
-            <Tooltip content={stage.reason} side="top">
+            <Tooltip
+              content={`${SESSION_STAGE_META[stage.stage].label} · ${stage.reason}`}
+              side="top"
+            >
               <span className="min-w-0 truncate text-xs text-muted-foreground/70">
                 {stage.reason}
               </span>

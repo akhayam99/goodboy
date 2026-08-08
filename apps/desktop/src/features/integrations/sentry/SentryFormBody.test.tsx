@@ -94,9 +94,17 @@ describe('SentryFormBody', () => {
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
-    it('disconnects Sentry for the workspace', () => {
+    it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      expect(screen.getByText(/Disconnect Sentry\?/i)).toBeDefined();
+      expect(state.disconnectSentry).not.toHaveBeenCalled();
+    });
+
+    it('disconnects Sentry for the workspace once the confirm is confirmed', () => {
+      render(<SentryFormBody workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect sentry$/i }));
       expect(state.disconnectSentry).toHaveBeenCalledWith(WS_ID);
     });
   });

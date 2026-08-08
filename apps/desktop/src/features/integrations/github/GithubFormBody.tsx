@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Input } from '@goodboy/ui';
+import { Button, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, Unplug } from 'lucide-react';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
@@ -18,6 +18,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -74,10 +75,28 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
           <p className="text-2xs leading-relaxed text-muted-foreground">
             This workspace uses its own token for every gh call.
           </p>
-          <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>
-            <Unplug size={12} aria-hidden />
-            {busy ? 'Disconnecting…' : 'Disconnect'}
-          </Button>
+          {isDisconnectArmed ? (
+            <InlineConfirm
+              role="danger"
+              icon={<Unplug size={12} aria-hidden />}
+              title="Disconnect GitHub?"
+              description="Deletes this workspace's GitHub token from your keychain. This does not sign you out of the system gh CLI."
+              confirmLabel="Disconnect GitHub"
+              autoDisarmMs={4000}
+              onConfirm={onDisconnect}
+              onCancel={() => setIsDisconnectArmed(false)}
+            />
+          ) : (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setIsDisconnectArmed(true)}
+              disabled={busy}
+            >
+              <Unplug size={12} aria-hidden />
+              Disconnect
+            </Button>
+          )}
         </div>
       ) : (
         <>

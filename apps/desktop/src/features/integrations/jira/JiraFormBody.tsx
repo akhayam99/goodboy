@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { JiraWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
-import { Button, Input } from '@goodboy/ui';
+import { Button, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { formatError } from '../../../shared/lib/errors';
@@ -32,6 +32,7 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
   const [apiToken, setApiToken] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
 
   const normalizedSiteUrl = normalizeSiteUrl({ input: siteUrl });
   const trimmedEmail = email.trim();
@@ -89,10 +90,28 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
             <dt className="text-muted-foreground">project</dt>
             <dd className="font-mono text-foreground">{jira.config.projectKey}</dd>
           </dl>
-          <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={isBusy}>
-            <Unplug size={12} aria-hidden />
-            {isBusy ? 'Disconnecting…' : 'Disconnect'}
-          </Button>
+          {isDisconnectArmed ? (
+            <InlineConfirm
+              role="danger"
+              icon={<Unplug size={12} aria-hidden />}
+              title="Disconnect Jira?"
+              description="Deletes the saved Jira API token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              confirmLabel="Disconnect Jira"
+              autoDisarmMs={4000}
+              onConfirm={onDisconnect}
+              onCancel={() => setIsDisconnectArmed(false)}
+            />
+          ) : (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setIsDisconnectArmed(true)}
+              disabled={isBusy}
+            >
+              <Unplug size={12} aria-hidden />
+              Disconnect
+            </Button>
+          )}
         </div>
       ) : (
         <>

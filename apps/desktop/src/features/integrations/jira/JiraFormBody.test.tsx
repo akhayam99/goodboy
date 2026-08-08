@@ -104,9 +104,17 @@ describe('JiraFormBody', () => {
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
-    it('disconnects Jira for the workspace', () => {
+    it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<JiraFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      expect(screen.getByText(/Disconnect Jira\?/i)).toBeDefined();
+      expect(state.disconnectJira).not.toHaveBeenCalled();
+    });
+
+    it('disconnects Jira for the workspace once the confirm is confirmed', () => {
+      render(<JiraFormBody workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect jira$/i }));
       expect(state.disconnectJira).toHaveBeenCalledWith({ workspaceId: WS_ID });
     });
   });
