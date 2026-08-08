@@ -68,6 +68,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[id]?.mr ?? null);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[id] ?? EMPTY_ARRAY);
   const agentCount = useNonResolverStandaloneAgents(id).length;
+  const agentCountLabel = `${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`;
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
   const dynamicActions = useDynamicActions(session, nav, stage);
   const sessionCost = useSessionCost(id);
@@ -173,9 +174,9 @@ export const StageBoardCard = memo(function StageBoardCard({
 
         <span className="flex min-h-5 flex-nowrap items-center gap-1.5 overflow-hidden">
           {agentCount > 0 && (
-            <Tooltip content={`${agentCount} agents`} side="top">
+            <Tooltip content={agentCountLabel} side="top">
               <span
-                aria-label={`${agentCount} agents`}
+                aria-label={agentCountLabel}
                 className="inline-flex shrink-0 items-center gap-1 text-2xs text-muted-foreground"
               >
                 <Bot size={12} aria-hidden />

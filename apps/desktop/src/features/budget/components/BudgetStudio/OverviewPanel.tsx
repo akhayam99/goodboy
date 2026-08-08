@@ -70,7 +70,10 @@ export const OverviewPanel = ({
   const isEmpty = sessionCount === 0 && providers.length === 0 && recordCount === 0;
 
   return (
-    <StudioPanel title="Overview" subtitle={`Workspace spend across ${sessionCount} sessions`}>
+    <StudioPanel
+      title="Overview"
+      subtitle={`Workspace spend across ${sessionCount} ${sessionCount === 1 ? 'session' : 'sessions'}`}
+    >
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip label="budget alerts" error={alertsResult.error} onRetry={onRetryAlerts} />
       <ErrorStrip

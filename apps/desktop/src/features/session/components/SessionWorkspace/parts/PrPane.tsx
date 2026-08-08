@@ -691,13 +691,13 @@ type WorkItemsSectionsProps = {
 const WorkItemsSections = ({ groups, workspace, onOpenWorkItem }: WorkItemsSectionsProps) => (
   <>
     <WorkItemsSection
-      label="External tasks"
+      label="Linked work"
       items={groups.current}
       workspace={workspace}
       onOpenWorkItem={onOpenWorkItem}
     />
     <WorkItemsSection
-      label={`Completed work (${groups.history.length})`}
+      label={`Completed linked work (${groups.history.length})`}
       items={groups.history}
       workspace={workspace}
       onOpenWorkItem={onOpenWorkItem}
