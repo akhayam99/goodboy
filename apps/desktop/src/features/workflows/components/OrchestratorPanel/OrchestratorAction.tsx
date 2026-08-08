@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses, type Tone } from '@goodboy/ui';
 
 type Props = {
   readonly icon: LucideIcon;
@@ -26,10 +26,9 @@ export const OrchestratorAction = ({
 }: Props) => {
   const tint = tintClasses(tone);
 
-  return (
+  const button = (
     <button
       type="button"
-      title={title}
       data-testid={testId}
       aria-expanded={expanded}
       disabled={disabled}
@@ -44,5 +43,15 @@ export const OrchestratorAction = ({
       <Icon size={12} aria-hidden className="shrink-0" />
       {label}
     </button>
+  );
+
+  if (title == null || title === '') {
+    return button;
+  }
+
+  return (
+    <Tooltip content={title} side="top">
+      <span className="inline-flex shrink-0">{button}</span>
+    </Tooltip>
   );
 };

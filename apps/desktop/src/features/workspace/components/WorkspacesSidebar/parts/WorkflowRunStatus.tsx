@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, Check, Link2, Pause, Wand2 } from 'lucide-react';
+import { AlertTriangle, Ban, Check, CircleStop, Link2, Pause, Wand2 } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { StatusDot, cn } from '@goodboy/ui';
 
@@ -59,6 +59,18 @@ export const WorkflowRunStatus = ({
     );
   }
   const stop = run.orchestrationStop;
+  if (stop?.kind === 'operator' && !hasOrchestratorStrip) {
+    return (
+      <span
+        className={cn(baseClass, 'bg-warning/10 text-warning')}
+        title={stop.message}
+        data-testid="workflow-orchestrator-stopped"
+      >
+        <CircleStop size={10} aria-hidden />
+        Stopped
+      </span>
+    );
+  }
   if (stop?.kind === 'budget' && !isRunning && !hasOrchestratorStrip) {
     return (
       <span

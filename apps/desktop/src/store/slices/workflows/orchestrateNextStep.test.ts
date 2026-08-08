@@ -813,6 +813,47 @@ describe('orchestrateNextStep', () => {
     expect(cleared.orchestrationStop).toBeUndefined();
   });
 
+  it('keeps a stop the operator wrote while the decision was still in flight', async () => {
+    const state = baseState();
+    const { set, get } = harness(state);
+    decideSpy.mockImplementationOnce(async () => {
+      const sessions = state['sessions'] as ReadonlyArray<Session>;
+      state['sessions'] = [
+        {
+          ...sessions[0]!,
+          workflowRuns: [
+            {
+              ...sessions[0]!.workflowRuns[0]!,
+              autoRun: false,
+              orchestrationStop: { kind: 'operator', message: 'You stopped this run.' },
+            },
+          ],
+        },
+      ];
+      return {
+        decision: {
+          action: 'next',
+          reason: 'Keep going.',
+          step: {
+            name: 'Implement',
+            role: 'implementer',
+            promptPrefix: 'Implement the mapped change.',
+          },
+        },
+        usage: NO_USAGE,
+        model: 'claude-haiku-4-5',
+      };
+    });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const stopped = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(stopped.orchestrationStop?.kind).toBe('operator');
+    expect(updateStopSpy).not.toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, null);
+    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+    expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+  });
+
   it('hands the operator hints of the run to the orchestrator', async () => {
     const state = baseState();
     const sessions = state['sessions'] as ReadonlyArray<Session>;

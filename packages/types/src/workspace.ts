@@ -86,7 +86,7 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
-export type WorkflowOrchestrationStopKind = 'failure' | 'budget' | 'questions';
+export type WorkflowOrchestrationStopKind = 'failure' | 'budget' | 'questions' | 'operator';
 
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;
@@ -151,12 +151,7 @@ export type WorkspaceScript = Readonly<{
 }>;
 
 export type WorkspaceIntegrationProvider =
-  | 'linear'
-  | 'sentry'
-  | 'gitlab'
-  | 'jira'
-  | 'bitbucket'
-  | 'slack';
+  'linear' | 'sentry' | 'gitlab' | 'jira' | 'bitbucket' | 'slack';
 
 export type LinearIntegrationConfig = Readonly<{
   workspaceUrlKey: string;
@@ -261,13 +256,7 @@ export type WorkspaceIntegration =
   | SlackWorkspaceIntegration;
 
 export type SessionExternalTaskProvider =
-  | 'linear'
-  | 'sentry'
-  | 'gitlab'
-  | 'github'
-  | 'jira'
-  | 'bitbucket'
-  | 'slack';
+  'linear' | 'sentry' | 'gitlab' | 'github' | 'jira' | 'bitbucket' | 'slack';
 
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
