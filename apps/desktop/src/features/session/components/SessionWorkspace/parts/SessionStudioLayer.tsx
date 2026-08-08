@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useCurrentWorkspace, type SessionStudio } from '../../../../../store';
@@ -60,6 +60,44 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
     return null;
   }
   const workspaceName = workspace.name;
+
+  const renderStudioContent = (): ReactNode => {
+    switch (studio.kind) {
+      case 'workflow':
+        return <WorkflowBuilderView session={session} onClose={requestClose} />;
+      case 'github':
+        return (
+          <GitHubSessionPane
+            sessionId={session.id}
+            workspaceName={workspaceName}
+            initialPrNumber={studio.prNumber ?? null}
+            initialThreadId={studio.threadId ?? null}
+            onClose={requestClose}
+          />
+        );
+      case 'bitbucket':
+        return (
+          <BitbucketStudio
+            sessionId={session.id}
+            workspaceName={workspaceName}
+            onClose={requestClose}
+          />
+        );
+      case 'mr':
+        return (
+          <MrSessionPane
+            sessionId={session.id}
+            workspaceName={workspaceName}
+            onClose={requestClose}
+          />
+        );
+      default: {
+        const exhaustive: never = studio;
+        throw new Error(`unknown session studio kind: ${String(exhaustive)}`);
+      }
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -67,29 +105,7 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >
-      {studio.kind === 'workflow' ? (
-        <WorkflowBuilderView session={session} onClose={requestClose} />
-      ) : studio.kind === 'github' ? (
-        <GitHubSessionPane
-          sessionId={session.id}
-          workspaceName={workspaceName}
-          initialPrNumber={studio.prNumber ?? null}
-          initialThreadId={studio.threadId ?? null}
-          onClose={requestClose}
-        />
-      ) : studio.kind === 'bitbucket' ? (
-        <BitbucketStudio
-          sessionId={session.id}
-          workspaceName={workspaceName}
-          onClose={requestClose}
-        />
-      ) : (
-        <MrSessionPane
-          sessionId={session.id}
-          workspaceName={workspaceName}
-          onClose={requestClose}
-        />
-      )}
+      {renderStudioContent()}
     </div>
   );
 };
