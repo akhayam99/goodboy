@@ -42,7 +42,7 @@ export const SessionsSection = ({}: Props) => (
             ? [
                 {
                   term: 'budget (optional)',
-                  desc: 'Soft cap in USD. Warning at 80%, error at 100%. Turns you send keep running, auto-run workflows stop.',
+                  desc: 'Soft cap in USD. Warning at 80%, error at 100%. Turns you send keep running, autorun workflows stop.',
                   icon: <CONCEPT_ICONS.budget size={11} aria-hidden />,
                   tone: 'warning' as const,
                 },

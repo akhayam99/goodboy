@@ -145,9 +145,10 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
           </div>
           <p className="text-2xs leading-relaxed text-muted-foreground">
             Public channels only, and Goodboy sees only the ones the bot has joined. Invite it to a
-            channel in Slack to read that conversation here. Stored encrypted in your operating
-            system keychain. Goodboy sends it directly to Slack over HTTPS; it never touches
-            Goodboy&apos;s own servers.
+            channel in Slack to read that conversation here. Goodboy also pulls your
+            workspace&apos;s full member list, names and avatars, to show who posted in a thread.
+            Your token is checked against Slack over HTTPS before anything is stored, then kept in
+            your OS keychain, encrypted at rest. It never touches Goodboy&apos;s own servers.
           </p>
         </>
       )}
