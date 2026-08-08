@@ -16,7 +16,7 @@ export const RoutingStatusControl = ({ label, isCustom, disabled, onReset }: Pro
       <Chip
         tone={isCustom ? 'primary' : 'neutral'}
         width="md"
-        label={status.toUpperCase()}
+        label={status}
         ariaLabel={`${label} routing status: ${status}`}
         bordered={false}
         trailing={

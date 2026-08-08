@@ -24,11 +24,12 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
   }
 
   const totalBytes = orphans.reduce((sum, orphan) => sum + orphan.sizeBytes, 0);
+  const folderLabel = `${orphans.length} ${orphans.length === 1 ? 'folder' : 'folders'}`;
 
   const onConfirm = async () => {
     try {
       await removeOrphanWorktrees({ workspaceId, paths: orphans.map((o) => o.path) });
-      showToast('success', `removed ${orphans.length} folders`);
+      showToast('success', `removed ${folderLabel}`);
     } catch (error) {
       showToast('error', formatError(error));
     } finally {
@@ -62,7 +63,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
         <InlineConfirm
           role="danger"
           icon={<FolderX size={13} aria-hidden />}
-          title={`Delete ${orphans.length} folders`}
+          title={`Delete ${folderLabel}`}
           description={`${formatDiskSize({ bytes: totalBytes })} will be removed from disk. This cannot be undone.`}
           confirmLabel="Delete"
           onConfirm={onConfirm}
@@ -72,7 +73,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
         <div className="flex justify-start">
           <Button variant="danger" size="sm" onClick={() => setIsArmed(true)}>
             <Trash2 size={13} aria-hidden />
-            Delete {orphans.length} folders ({formatDiskSize({ bytes: totalBytes })})
+            Delete {folderLabel} ({formatDiskSize({ bytes: totalBytes })})
           </Button>
         </div>
       )}

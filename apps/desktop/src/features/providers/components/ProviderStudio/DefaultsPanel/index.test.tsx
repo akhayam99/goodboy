@@ -210,11 +210,11 @@ describe('DefaultsPanel', () => {
     }
     expect(screen.queryByText(/auto/)).toBeNull();
     expect(screen.getByLabelText('Step summaries routing status: default').textContent).toBe(
-      'DEFAULT',
+      'default',
     );
 
     openRolesTab();
-    expect(screen.getByLabelText('Planner routing status: default').textContent).toBe('DEFAULT');
+    expect(screen.getByLabelText('Planner routing status: default').textContent).toBe('default');
   });
 
   it('marks a task override as custom and resets it to default', async () => {
@@ -234,7 +234,7 @@ describe('DefaultsPanel', () => {
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
     expect(screen.getByLabelText('Step summaries routing status: custom').textContent).toBe(
-      'CUSTOM',
+      'custom',
     );
     const reset = screen.getByRole('button', { name: 'Reset to default' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));

@@ -480,9 +480,9 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByText('Completed work (1)')).toBeDefined();
+    expect(screen.getByText('Completed linked work (1)')).toBeDefined();
     expect(screen.getByText('ak/previous-work')).toBeDefined();
-    expect(screen.queryByText('External tasks')).toBeNull();
+    expect(screen.queryByText('Linked work')).toBeNull();
   });
 
   it('reads a merged pull request as completed work', () => {
@@ -513,8 +513,8 @@ describe('PrPane', () => {
 
     render(<PrPane session={session} onSelectLens={h.onSelectLens} />);
 
-    expect(screen.getByText('Completed work (1)')).toBeDefined();
-    expect(screen.queryByText('External tasks')).toBeNull();
+    expect(screen.getByText('Completed linked work (1)')).toBeDefined();
+    expect(screen.queryByText('Linked work')).toBeNull();
   });
 
   it('never offers create-PR actions inside a PR review session', () => {

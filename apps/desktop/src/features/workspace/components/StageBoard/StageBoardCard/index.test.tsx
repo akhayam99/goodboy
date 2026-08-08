@@ -340,4 +340,17 @@ describe('StageBoardCard footer', () => {
       auto,
     ]);
   });
+
+  it('singularizes the agent count label at one agent', () => {
+    hooks.agents = [{}];
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByLabelText('1 agent')).toBeDefined();
+    expect(screen.queryByLabelText('1 agents')).toBeNull();
+  });
+
+  it('hides the agent count when there are no agents', () => {
+    hooks.agents = [];
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByLabelText(/agent/)).toBeNull();
+  });
 });

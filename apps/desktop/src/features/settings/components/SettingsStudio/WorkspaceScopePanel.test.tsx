@@ -97,7 +97,7 @@ describe('WorkspaceScopePanel', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
 
     expect(screen.getByText('gb-ghost')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /delete 1 folders \(2 kb\)/i }));
+    fireEvent.click(screen.getByRole('button', { name: /delete 1 folder \(2 kb\)/i }));
 
     expect(state.removeOrphanWorktrees).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /^delete$/i }));
