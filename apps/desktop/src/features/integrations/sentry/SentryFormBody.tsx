@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
-import { Button, Input } from '@goodboy/ui';
+import { Button, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { formatError } from '../../../shared/lib/errors';
@@ -24,6 +24,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
   const [project, setProject] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
 
   const onConnect = async () => {
     setBusy(true);
@@ -69,10 +70,28 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
             <dt className="text-muted-foreground">project</dt>
             <dd className="font-mono text-foreground">{sentryConfig.project}</dd>
           </dl>
-          <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={busy}>
-            <Unplug size={12} aria-hidden />
-            {busy ? 'Disconnecting…' : 'Disconnect'}
-          </Button>
+          {isDisconnectArmed ? (
+            <InlineConfirm
+              role="danger"
+              icon={<Unplug size={12} aria-hidden />}
+              title="Disconnect Sentry?"
+              description="Deletes the saved Sentry token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              confirmLabel="Disconnect Sentry"
+              autoDisarmMs={4000}
+              onConfirm={onDisconnect}
+              onCancel={() => setIsDisconnectArmed(false)}
+            />
+          ) : (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setIsDisconnectArmed(true)}
+              disabled={busy}
+            >
+              <Unplug size={12} aria-hidden />
+              Disconnect
+            </Button>
+          )}
         </div>
       ) : (
         <>

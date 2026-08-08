@@ -101,9 +101,17 @@ describe('BitbucketFormBody', () => {
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
-    it('disconnects Bitbucket for the workspace', () => {
+    it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<BitbucketFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      expect(screen.getByText(/Disconnect Bitbucket\?/i)).toBeDefined();
+      expect(state.disconnectBitbucket).not.toHaveBeenCalled();
+    });
+
+    it('disconnects Bitbucket for the workspace once the confirm is confirmed', () => {
+      render(<BitbucketFormBody workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect bitbucket$/i }));
       expect(state.disconnectBitbucket).toHaveBeenCalledWith({ workspaceId: WS_ID });
     });
   });

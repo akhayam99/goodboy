@@ -161,9 +161,17 @@ describe('GithubFormBody', () => {
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
-    it('clears the token for the workspace on Disconnect', async () => {
+    it('arms the disconnect confirm instead of clearing the token immediately', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
       fireEvent.click(await screen.findByRole('button', { name: /^disconnect$/i }));
+      expect(await screen.findByText(/Disconnect GitHub\?/i)).toBeDefined();
+      expect(ghClearTokenMock).not.toHaveBeenCalled();
+    });
+
+    it('clears the token for the workspace once the confirm is confirmed', async () => {
+      render(<GithubFormBody workspaceId={WS_ID} />);
+      fireEvent.click(await screen.findByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /^disconnect github$/i }));
       await waitFor(() => expect(ghClearTokenMock).toHaveBeenCalledWith(WS_ID));
     });
   });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { BitbucketWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
-import { Button, Input } from '@goodboy/ui';
+import { Button, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
 import { formatError } from '../../../shared/lib/errors';
@@ -32,6 +32,7 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
   const [apiToken, setApiToken] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDisconnectArmed, setIsDisconnectArmed] = useState(false);
 
   const normalizedSlug = normalizeWorkspaceSlug({ input: workspaceSlug });
   const trimmedEmail = email.trim();
@@ -83,10 +84,28 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
             <dt className="text-muted-foreground">account</dt>
             <dd className="font-mono text-foreground">{bitbucket.config.email}</dd>
           </dl>
-          <Button variant="danger" size="sm" onClick={() => void onDisconnect()} disabled={isBusy}>
-            <Unplug size={12} aria-hidden />
-            {isBusy ? 'Disconnecting…' : 'Disconnect'}
-          </Button>
+          {isDisconnectArmed ? (
+            <InlineConfirm
+              role="danger"
+              icon={<Unplug size={12} aria-hidden />}
+              title="Disconnect Bitbucket?"
+              description="Deletes the saved Bitbucket API token from your keychain and forgets this workspace's connection. Reconnect anytime."
+              confirmLabel="Disconnect Bitbucket"
+              autoDisarmMs={4000}
+              onConfirm={onDisconnect}
+              onCancel={() => setIsDisconnectArmed(false)}
+            />
+          ) : (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setIsDisconnectArmed(true)}
+              disabled={isBusy}
+            >
+              <Unplug size={12} aria-hidden />
+              Disconnect
+            </Button>
+          )}
         </div>
       ) : (
         <>

@@ -101,9 +101,17 @@ describe('SlackFormBody', () => {
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
-    it('disconnects Slack for the workspace', () => {
+    it('arms the disconnect confirm instead of disconnecting immediately', () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      expect(screen.getByText(/Disconnect Slack\?/i)).toBeDefined();
+      expect(state.disconnectSlack).not.toHaveBeenCalled();
+    });
+
+    it('disconnects Slack for the workspace once the confirm is confirmed', () => {
+      render(<SlackFormBody workspaceId={WS_ID} />);
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^disconnect slack$/i }));
       expect(state.disconnectSlack).toHaveBeenCalledWith({ workspaceId: WS_ID });
     });
   });

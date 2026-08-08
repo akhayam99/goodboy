@@ -1,0 +1,113 @@
+// @vitest-environment happy-dom
+
+import type { ReactElement, ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
+
+type Store = {
+  sessions: ReadonlyArray<Session>;
+  workspaces: ReadonlyArray<unknown>;
+  sessionBranches: Record<string, string>;
+  sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  sessionMounts: Record<string, ReadonlyArray<never>>;
+  sessionActiveMount: Record<string, string>;
+  sessionGithub: Record<string, { pr?: unknown; linkedIssues?: ReadonlyArray<unknown> }>;
+  sessionGitlabMr: Record<string, { mr?: unknown }>;
+  sessionExternalTasks: Record<string, ReadonlyArray<unknown>>;
+  sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
+  markAllAgentsSeen: ReturnType<typeof vi.fn>;
+  renameTask: ReturnType<typeof vi.fn>;
+};
+
+const { store } = vi.hoisted(() => ({
+  store: {
+    sessions: [] as ReadonlyArray<Session>,
+    workspaces: [] as ReadonlyArray<unknown>,
+    sessionBranches: {} as Record<string, string>,
+    sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
+    sessionMounts: {} as Record<string, ReadonlyArray<never>>,
+    sessionActiveMount: {} as Record<string, string>,
+    sessionGithub: {} as Record<string, { pr?: unknown; linkedIssues?: ReadonlyArray<unknown> }>,
+    sessionGitlabMr: {} as Record<string, { mr?: unknown }>,
+    sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    markAllAgentsSeen: vi.fn(async () => undefined),
+    renameTask: vi.fn(async () => undefined),
+  } as Store,
+}));
+
+vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
+  agentHasUnread: () => false,
+  useAppStore: <T,>(selector: (s: Store) => T) => selector(store),
+  useCurrentWorkspace: () => null,
+}));
+
+vi.mock('../SummarizerBadge', () => ({
+  SummarizerBadge: () => <span data-testid="summarizer-badge" />,
+}));
+
+vi.mock('./BranchChip', () => ({
+  BranchChip: () => <span data-testid="branch-chip" />,
+}));
+
+vi.mock('./SessionCostChip', () => ({
+  SessionCostChip: () => <span data-testid="cost-chip" />,
+}));
+
+vi.mock('@goodboy/ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/ui')>();
+  return {
+    ...actual,
+    Tooltip: ({ content, children }: { content: string; children: ReactElement }) => (
+      <span data-tooltip={content}>{children as ReactNode}</span>
+    ),
+  };
+});
+
+import { HeaderBand } from './HeaderBand';
+
+const SESSION_ID = 'sess-1' as SessionId;
+
+const baseSession = (): Session =>
+  ({
+    id: SESSION_ID,
+    workspaceId: 'ws-1',
+    goal: 'refactor auth',
+    state: { kind: 'idle' },
+    createdAt: '2026-06-22T10:00:00.000Z',
+    workflowRuns: [],
+  }) as unknown as Session;
+
+beforeEach(() => {
+  store.sessions = [];
+  store.workspaces = [];
+  store.sessionBranches = {};
+  store.sessionWorktrees = {};
+  store.sessionMounts = {};
+  store.sessionActiveMount = {};
+  store.sessionGithub = {};
+  store.sessionGitlabMr = {};
+  store.sessionExternalTasks = {};
+  store.sessionPhaseRuns = {};
+  store.markAllAgentsSeen.mockReset();
+  store.renameTask.mockReset();
+});
+afterEach(cleanup);
+
+describe('HeaderBand', () => {
+  it('states the stage label and the reason together, not the reason alone', () => {
+    const stage: SessionStageInfo = { stage: 'attention', reason: 'PR needs review' };
+    render(<HeaderBand session={baseSession()} stage={stage} />);
+    const tooltip = screen.getByText('PR needs review').closest('[data-tooltip]');
+    expect(tooltip?.getAttribute('data-tooltip')).toBe('needs you · PR needs review');
+  });
+
+  it('renders no tooltip at all when there is no reason to say more', () => {
+    const stage: SessionStageInfo = { stage: 'building', reason: '' };
+    render(<HeaderBand session={baseSession()} stage={stage} />);
+    expect(screen.queryByText('', { selector: '[data-tooltip]' })).toBeNull();
+    expect(document.querySelector('[data-tooltip]')).toBeNull();
+  });
+});

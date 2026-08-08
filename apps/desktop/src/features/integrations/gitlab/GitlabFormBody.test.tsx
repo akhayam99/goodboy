@@ -130,9 +130,17 @@ describe('GitlabFormBody', () => {
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
 
-    it('disconnects GitLab for the workspace', async () => {
+    it('arms the disconnect confirm instead of disconnecting immediately', async () => {
       render(<GitlabFormBody workspaceId={WS_ID} />);
       fireEvent.click(await screen.findByRole('button', { name: /^disconnect$/i }));
+      expect(await screen.findByText(/Disconnect GitLab\?/i)).toBeDefined();
+      expect(state.disconnectGitlab).not.toHaveBeenCalled();
+    });
+
+    it('disconnects GitLab for the workspace once the confirm is confirmed', async () => {
+      render(<GitlabFormBody workspaceId={WS_ID} />);
+      fireEvent.click(await screen.findByRole('button', { name: /^disconnect$/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /^disconnect gitlab$/i }));
       expect(state.disconnectGitlab).toHaveBeenCalledWith(WS_ID);
     });
   });
