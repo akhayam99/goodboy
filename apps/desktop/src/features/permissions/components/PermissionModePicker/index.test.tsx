@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
 const { setModeMock } = vi.hoisted(() => ({
@@ -59,6 +59,37 @@ describe('PermissionModePicker', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider={provider} />);
     fireEvent.click(screen.getByRole('button', { name: /default/i }));
     expect(screen.queryByText(/not enforced for cursor and gemini/i)).toBeNull();
+  });
+
+  it('closes on Escape', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
+    fireEvent.click(screen.getByRole('button', { name: /default/i }));
+    expect(screen.getByRole('dialog', { name: /permission mode/i })).toBeDefined();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: /permission mode/i })).toBeNull();
+  });
+
+  it('closes on a mousedown outside the picker', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
+    fireEvent.click(screen.getByRole('button', { name: /default/i }));
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('dialog', { name: /permission mode/i })).toBeNull();
+  });
+
+  it('anchors the panel by measured direction instead of a hardcoded one', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
+    fireEvent.click(screen.getByRole('button', { name: /default/i }));
+    const panel = screen.getByRole('dialog', { name: /permission mode/i });
+    expect(panel.className).toContain('top-[calc(100%+0.25rem)]');
+    expect(panel.className).not.toContain('bottom-full');
+  });
+
+  it('opens on the goodboy:open-permission-picker event', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
+    act(() => {
+      window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'));
+    });
+    expect(screen.getByRole('dialog', { name: /permission mode/i })).toBeDefined();
   });
 });
 

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { Divider, Popover, cn } from '@goodboy/ui';
+import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import type { Agent, BranchCommit } from '@goodboy/types';
 import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
 import type { ResolverAction, ResolverActionKind } from '../../resolverActions';
@@ -30,48 +31,28 @@ export const ResolverOverflowMenu = ({
   onAmend,
   onSquash,
 }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [armed, setArmed] = useState<Armed | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const {
+    open: isOpen,
+    close,
+    toggle,
+    containerRef,
+    popupClassName,
+  } = useDropdown({ align: 'end', width: 'w-72', expectedHeight: 320 });
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       return;
     }
-    const onPointerDown = (event: MouseEvent) => {
-      if (containerRef.current?.contains(event.target as Node) === true) {
-        return;
-      }
-      setIsOpen(false);
-      setArmed(null);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      setIsOpen(false);
-      setArmed(null);
-    };
-    window.addEventListener('mousedown', onPointerDown);
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.removeEventListener('mousedown', onPointerDown);
-      window.removeEventListener('keydown', onKeyDown);
-    };
+    setArmed(null);
   }, [isOpen]);
 
   useEffect(() => {
-    setIsOpen(false);
-    setArmed(null);
-  }, [agent.id]);
+    close();
+  }, [agent.id, close]);
 
   const armedAction: ResolverAction | null =
     actions.plan.overflow.find((action) => action.kind === armed) ?? null;
-
-  const close = () => {
-    setArmed(null);
-    setIsOpen(false);
-  };
 
   if (actions.plan.overflow.length === 0 && commits.length === 0) {
     return null;
@@ -81,7 +62,7 @@ export const ResolverOverflowMenu = ({
     <div className="relative" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setIsOpen((value) => !value)}
+        onClick={toggle}
         aria-label="More resolver actions"
         aria-haspopup="menu"
         aria-expanded={isOpen}
@@ -96,7 +77,7 @@ export const ResolverOverflowMenu = ({
         <Popover
           role="menu"
           ariaLabel="More resolver actions"
-          className="absolute right-0 top-full z-40 mt-1 w-72 py-1"
+          className={cn(popupClassName, 'py-1')}
         >
           {armedAction !== null && (
             <div className="p-2">
