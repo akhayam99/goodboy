@@ -71,7 +71,8 @@ export const OrchestratorPanel = ({
   const elapsed = useElapsedLabel({ since: state.waitingSince });
   const tint = tintClasses(state.tone);
   const isDeciding = state.phase === 'deciding';
-  const isPulsing = isDeciding || state.phase === 'automatic';
+  const isPulsing = isDeciding || state.phase === 'automatic' || state.phase === 'stopping';
+  const pulseTone = state.tone === 'neutral' ? 'info' : state.tone;
 
   const guard = async (action: () => Promise<void>) => {
     if (busy) {
@@ -128,7 +129,7 @@ export const OrchestratorPanel = ({
             )}
           >
             {isPulsing ? (
-              <StatusDot tone="info" size="sm" pulsing ariaLabel={state.sentence} />
+              <StatusDot tone={pulseTone} size="sm" pulsing ariaLabel={state.sentence} />
             ) : null}
             <span className="min-w-0">{state.sentence}</span>
             {elapsed != null ? (

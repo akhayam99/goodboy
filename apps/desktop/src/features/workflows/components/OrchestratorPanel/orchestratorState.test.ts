@@ -68,6 +68,42 @@ describe('resolveOrchestratorState', () => {
     expect(state.sentence).toBe('Choosing the next step');
   });
 
+  it('reports stopping when the user stops while a decision is in flight', () => {
+    const state = resolve({
+      run: makeRun({ orchestrationStop: { kind: 'operator', message: 'you stopped this run' } }),
+      agents: [makeAgent(0, 'skipped')],
+      isOrchestrating: true,
+    });
+
+    expect(state.phase).toBe('stopping');
+    expect(state.tone).toBe('warning');
+    expect(state.sentence).toBe('Stopping · waiting for the decision already in flight');
+  });
+
+  it('never claims the run is stopped before the decision returns', () => {
+    const stopped = resolve({
+      run: makeRun({ orchestrationStop: { kind: 'operator', message: 'you stopped this run' } }),
+      isOrchestrating: false,
+    });
+    const stopping = resolve({
+      run: makeRun({ orchestrationStop: { kind: 'operator', message: 'you stopped this run' } }),
+      isOrchestrating: true,
+    });
+
+    expect(stopped.phase).toBe('stopped');
+    expect(stopping.phase).not.toBe('stopped');
+    expect(stopping.detail).toBeNull();
+  });
+
+  it('keeps deciding for stops the orchestrator raises about itself', () => {
+    const state = resolve({
+      run: makeRun({ orchestrationStop: { kind: 'failure', message: 'provider refused' } }),
+      isOrchestrating: true,
+    });
+
+    expect(state.phase).toBe('deciding');
+  });
+
   it('reports done with the step count and the run cost', () => {
     const state = resolve({
       run: makeRun({ orchestrationOutcome: 'done' }),
