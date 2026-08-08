@@ -13,12 +13,13 @@ role that would be bound by it").
 
 ## Context
 
-`docs/autonomy/watchdogs.md:27-30` records the incident this decision
-closes: "one captain ended its turn with five children still live at
-6-item scale, having lost track of them." A release captain spawned
-children and returned control to its caller while they were still running,
-which is the silent-stall failure the watchdog cadence in that same file
-exists to catch, not to prevent at the source.
+`docs/autonomy/watchdogs.md`'s roster-contract section (lines 27-30)
+records the incident this decision closes: "one captain ended its turn
+with five children still live at 6-item scale, having lost track of
+them." A release captain spawned children and returned control to its
+caller while they were still running, which is the silent-stall failure
+the watchdog cadence in that same file exists to catch, not to prevent at
+the source.
 
 The rule that would have prevented it already exists in one place: the
 captain's own role charter, `docs/autonomy/roles/release-captain.md:32-36`,
@@ -27,9 +28,9 @@ still live" and points to `watchdogs.md` for the incident. But the
 captain's actual reading list, in
 `.claude/skills/continuous-delivery/references/release-captain-prompt.md`,
 never includes that charter file: the brief's phase-triggered-reads
-paragraph (its lines 48-49, before this PR) names a role's charter as read
-"when you spawn that role," and a captain never spawns itself. A rule that
-lives only in a
+paragraph's closing clause (base `a2d5066b5`, lines 46-47, before this PR)
+names a role's charter as read "when you spawn that role," and a captain
+never spawns itself. A rule that lives only in a
 document the bound role never reads is not a rule that role follows, it is
 a rule that role happens to satisfy until it does not.
 
@@ -69,13 +70,14 @@ touch nothing else:
   lines 16-22, next to the existing Publication boundary, stating the turn
   ends only at the report block and that spawning children then handing
   back to the caller is the failure watchdogs.md exists to prevent. The
-  roster-contract paragraph at lines 199-207 gained one sentence (205-207)
-  tying the rule to the phase-boundary mechanics already in
-  `docs/autonomy/watchdogs.md`.
+  **Every agent you spawn** paragraph (lines 199-207, the roster-contract
+  paragraph) gained one sentence (205-207) tying the rule to the
+  phase-boundary mechanics already in `docs/autonomy/watchdogs.md`.
 - `.claude/skills/continuous-delivery/references/briefs/_contract.md` (the
-  contract every spawned child receives): a new bullet at lines 17-21
-  stating, from the child's side, that its parent's turn does not end
-  while it is live.
+  contract every spawned child receives): a new bullet at lines 17-21,
+  opening "Your parent's turn does not end while you are live," stating,
+  from the child's side, that its parent's turn does not end while it is
+  live.
 - `docs/autonomy/watchdogs.md` (the file that owns liveness policy): a new
   **The turn boundary** paragraph at lines 35-40, inside the roster
   contract section, stating the rule as policy and naming it as the direct
