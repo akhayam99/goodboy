@@ -3,11 +3,21 @@
 status: accepted
 date: 2026-08-08
 owner: the repo owner, acting as product owner for the org itself
-reviewed-by: pending; the first engagement's challenger reviews this record
-explicitly. The channel: the delivery lead includes this record in the
-first captain's pending-deferred-items block, the captain hands it to its
-Phase 2 challenger, and the captain updates this line with the review's
-pointer in the release PR (see the amendment of 2026-08-08)
+reviewed-by: the first engagement's challenger, during the v0.1.75 release
+cycle. Verdict: **sound-with-reservations**. The diagnosis and its counted
+evidence justify item classes, the refactor floor and the impact bar
+completely; the reservations are about derivation and self-compliance, not
+direction. Five claims named as thin: (1) the resize to twelve replaces one
+untested number with another and derives neither; (2) the graduation gate
+fires on "two green engagements", a phrase nothing in this repo defines;
+(3) moving the headline numbers down by amendment contradicts the
+supersession rule in README.md, which the graduation clause itself relies on
+for moving them up; (4) this very line named one reviewer where README.md
+requires the challenger **plus one role that would be bound**, so the review
+it demanded was under-specified; (5) the cost control asserted in
+Consequences was replaced by this record's own second amendment before a
+single release ran. The bound-role reviewer remains unsupplied and is owed
+by a later cycle
 
 ## Context
 

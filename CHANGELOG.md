@@ -7,6 +7,37 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.75
+
+Turning autorun off now stops the step in flight, raw output standing in for a summary is labeled as such, and controls that only showed on hover now show on keyboard focus.
+
+### [#1339] Stop an orchestrated run, then resume it
+
+The autorun toggle sits on the workflow's row, in the sidebar and on the workflow detail. Turning it off while a step is still running now asks first: "Stop this run?" Confirm, and the turn is canceled, the step in flight is marked skipped, and everything it already wrote is kept. Turning autorun off when nothing is running is unchanged, with no confirm and no extra write.
+
+A run you stopped reads as stopped rather than "Orchestrator failed", both in the orchestrator panel and in the sidebar. Resume clears the stop, turns autorun back on and asks for the next step, rather than advancing one step and stopping again.
+
+A stop you send while the orchestrator is choosing the next step is no longer erased when that choice lands.
+
+Follow-up: a stop sent while a decision is in flight is honored, though the panel keeps reading "Choosing the next step" until the model returns, which can take a couple of minutes. Nothing advances in the meantime.
+
+### [#1337] Steps that could not be summarized are flagged everywhere
+
+When a step's output cannot be summarized, Goodboy shows the raw truncated output in its place. Sequential steps already labeled that substitution and put a notification in the inbox with a retry action. Steps inside a cluster, a scout's branches, and parallel steps made the same substitution silently. All four now behave the same way, one notification per agent, so raw output is labeled as raw output rather than passing for a summary.
+
+### [#1340] Hover-only controls stay visible under keyboard focus
+
+The remove and delete buttons on chat attachments, goal attachments and provider credentials only appeared on hover. They were always in the tab order, so a keyboard user could land on an invisible control and press it. They now appear on focus, as does the copy affordance on an assistant message.
+
+### Fixes
+
+- Counts read "1 agent", "1 session" and "1 folder", not "1 agents" [#1341]
+- The pull request pane calls linked work "Linked work" and "Completed linked work", one name where it used to carry two [#1341]
+- The routing status chip reads in sentence case rather than all caps, and its label and its screen-reader label now match [#1341]
+- The permission, issue, reviewer and resolver menus close on Escape and flip upward when there is no room below them [#1338]
+- The stage reason and the edit-branch control on the session overview use Goodboy's own tooltip, not the browser's [#1340]
+- A provider added without a routing priority is caught before it ships, rather than dropping out of the priority list unnoticed [#1343]
+
 ## Goodboy v0.1.74
 
 Review threads carry GitHub's outdated mark, the note you send the orchestrator is kept with its decision, and a failed comment push names what broke.
