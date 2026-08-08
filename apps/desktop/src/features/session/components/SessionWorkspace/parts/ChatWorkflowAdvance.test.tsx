@@ -12,25 +12,24 @@ import type {
   StepId,
   Workflow,
   WorkflowId,
+  WorkflowRun,
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-
-type StoreSession = {
-  id: string;
-  workflowRuns: ReadonlyArray<{ id: string; autoRun: boolean }>;
-};
 
 type Store = {
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   agentTurnState: Record<string, { kind: string }>;
   summarizerStatus: Record<string, { status: string }>;
-  sessions: ReadonlyArray<StoreSession>;
+  orchestratingWorkflowRuns: Record<string, boolean>;
   agentModelOverride: Record<string, string>;
   agentProviderOverride: Record<string, ProviderId>;
   agentEffortOverride: Record<string, string>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
+  setWorkflowRunAutoRun: ReturnType<typeof vi.fn>;
+  stopWorkflowRunNow: ReturnType<typeof vi.fn>;
+  retryWorkflowOrchestration: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
 };
 
@@ -39,12 +38,15 @@ const { store, gate } = vi.hoisted(() => ({
     sessionPhaseRuns: {},
     agentTurnState: {},
     summarizerStatus: {},
-    sessions: [],
+    orchestratingWorkflowRuns: {},
     agentModelOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},
     activateWorkflowAgent: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
+    setWorkflowRunAutoRun: vi.fn(async () => undefined),
+    stopWorkflowRunNow: vi.fn(async () => undefined),
+    retryWorkflowOrchestration: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
   } as Store,
   gate: { hasOpenQuestions: false },
@@ -98,24 +100,37 @@ const agent = (index: number, status: Agent['status']): Agent => ({
   status,
 });
 
-const renderStrip = () =>
-  render(<ChatWorkflowAdvance sessionId={SESSION_ID} workflowRunId={RUN_ID} workflow={workflow} />);
+const buildRun = (overrides: Partial<WorkflowRun> = {}): WorkflowRun => ({
+  id: RUN_ID,
+  workflowId: WORKFLOW_ID,
+  ordinal: 0,
+  currentStep: 0,
+  autoRun: false,
+  triggerMode: 'immediate',
+  executionMode: 'static',
+  ...overrides,
+});
 
-const withAutoRun = (autoRun: boolean): ReadonlyArray<StoreSession> => [
-  { id: SESSION_ID, workflowRuns: [{ id: RUN_ID, autoRun }] },
-];
+const renderStrip = (run: WorkflowRun = buildRun()) =>
+  render(<ChatWorkflowAdvance sessionId={SESSION_ID} run={run} workflow={workflow} />);
 
 beforeEach(() => {
   store.sessionPhaseRuns = {};
   store.agentTurnState = {};
   store.summarizerStatus = {};
-  store.sessions = withAutoRun(false);
+  store.orchestratingWorkflowRuns = {};
   store.agentModelOverride = {};
   store.agentProviderOverride = {};
   store.agentEffortOverride = {};
   store.activateWorkflowAgent.mockReset();
   store.activateWorkflowAgent.mockResolvedValue(undefined);
   store.skipStuckStepAndAdvance.mockReset();
+  store.setWorkflowRunAutoRun.mockReset();
+  store.setWorkflowRunAutoRun.mockResolvedValue(undefined);
+  store.stopWorkflowRunNow.mockReset();
+  store.stopWorkflowRunNow.mockResolvedValue(undefined);
+  store.retryWorkflowOrchestration.mockReset();
+  store.retryWorkflowOrchestration.mockResolvedValue(undefined);
   store.emitNotification.mockReset();
   store.emitNotification.mockResolvedValue(undefined);
   gate.hasOpenQuestions = false;
@@ -180,18 +195,52 @@ describe('ChatWorkflowAdvance', () => {
     });
   });
 
-  it('offers no manual advance while autorun drives the run', () => {
+  it('offers a stop instead of manual advance while autorun drives the run', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    store.sessions = withAutoRun(true);
-    const { container } = renderStrip();
+    renderStrip(buildRun({ autoRun: true }));
 
-    expect(container.innerHTML).toBe('');
+    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
+    const toggle = screen.getByTestId('workflow-autorun-toggle');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.textContent).toMatch(/autorun/i);
+  });
+
+  it('lets autorun resume a stopped static run from the same toggle', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    renderStrip(
+      buildRun({ autoRun: false, orchestrationStop: { kind: 'operator', message: 'stopped' } }),
+    );
+
+    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
+    expect(screen.queryByTestId('chat-workflow-orchestrator-resume')).toBeNull();
+    const toggle = screen.getByTestId('workflow-autorun-toggle');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(toggle);
+
+    expect(store.setWorkflowRunAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, true);
+  });
+
+  it('offers a dedicated resume next to the toggle for a stopped dynamic run', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    renderStrip(
+      buildRun({
+        autoRun: false,
+        executionMode: 'dynamic',
+        orchestrationStop: { kind: 'operator', message: 'stopped' },
+      }),
+    );
+
+    const resume = screen.getByTestId('chat-workflow-orchestrator-resume');
+    fireEvent.click(resume);
+
+    expect(store.retryWorkflowOrchestration).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(store.setWorkflowRunAutoRun).not.toHaveBeenCalled();
   });
 
   it('keeps the skip control under autorun once a step has failed', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
-    store.sessions = withAutoRun(true);
-    renderStrip();
+    renderStrip(buildRun({ autoRun: true }));
 
     expect(screen.getByTestId('workflow-force-next-step-cta')).toBeDefined();
   });
@@ -219,7 +268,7 @@ describe('ChatWorkflowAdvance', () => {
   it('shows the routing frozen on the pending agent, not the one preferences resolve today', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
     const withoutOverride = render(
-      <ChatWorkflowAdvance sessionId={SESSION_ID} workflowRunId={RUN_ID} workflow={workflow} />,
+      <ChatWorkflowAdvance sessionId={SESSION_ID} run={buildRun()} workflow={workflow} />,
     );
     const defaultLabel = withoutOverride
       .getByTestId('workflow-next-step-cta')
