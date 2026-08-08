@@ -29,7 +29,7 @@ const sideTone = ({ line, hasDraft }: SideStateParams): string => {
     return 'bg-muted/20';
   }
   if (hasDraft) {
-    return 'bg-indigo-400/[0.08]';
+    return 'bg-draft/[0.07]';
   }
   if (line.kind === 'add') {
     return 'bg-success/[0.07]';
@@ -42,7 +42,7 @@ const sideTone = ({ line, hasDraft }: SideStateParams): string => {
 
 const sideAccent = ({ line, hasDraft }: SideStateParams): string => {
   if (hasDraft) {
-    return 'border-indigo-400/70';
+    return 'border-draft/50';
   }
   if (line?.kind === 'add') {
     return 'border-success/50';

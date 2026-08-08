@@ -9,6 +9,7 @@ const SEMANTIC_TONES: ReadonlyArray<Tone> = [
   'primary',
   'accent',
   'merged',
+  'draft',
 ];
 
 describe('tintClasses', () => {
@@ -29,6 +30,28 @@ describe('tintClasses', () => {
       border: 'border-primary/20',
       bg: 'bg-muted/30',
       icon: 'text-primary/60',
+    });
+  });
+
+  it('pins draft to the SEMANTIC_TONES coverage list', () => {
+    expect(SEMANTIC_TONES).toContain('draft');
+  });
+
+  it('exposes a draft tone bound to the draft token, not indigo hardcodes', () => {
+    expect(tintClasses('draft')).toMatchObject({
+      bg: 'bg-draft/10',
+      bgSoft: 'bg-draft/5',
+      ring: 'ring-draft/20',
+      border: 'border-draft/40',
+      borderSoft: 'border-draft/20',
+      hoverBorder: 'hover:border-draft/40',
+      hoverBg: 'hover:bg-draft/20',
+      hoverBgSoft: 'hover:bg-draft/5',
+      hoverText: 'hover:text-draft',
+      text: 'text-draft',
+      icon: 'text-draft',
+      dot: 'bg-draft',
+      solid: 'bg-draft text-draft-foreground',
     });
   });
 });

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Textarea, cn } from '@goodboy/ui';
+import { Textarea, cn, tintClasses } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
 import { ComposerActionRow } from './ComposerActionRow';
+
+const draftTint = tintClasses('draft');
 
 type Props = {
   readonly draft: PrReviewDraft;
@@ -32,7 +34,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
     <div
       className={cn(
         'flex flex-col gap-1.5 rounded-md border-l-2 bg-muted/20 px-3 py-2',
-        draft.stale ? 'border-warning/70 opacity-70' : 'border-indigo-400/70',
+        draft.stale ? 'border-warning/70 opacity-70' : 'border-draft/50',
       )}
     >
       <div className="flex items-center gap-1.5">
@@ -43,7 +45,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
           className={cn(
             'shrink-0 rounded-full px-1.5 py-0.5 text-3xs font-medium',
             draft.origin === 'agent'
-              ? 'bg-indigo-400/15 text-indigo-600'
+              ? cn(draftTint.bg, draftTint.text)
               : 'bg-muted text-muted-foreground',
           )}
         >
