@@ -14,8 +14,17 @@ export const resolverBadgeState = (status: ResolverStatus): ResolverBadgeState =
       return 'failed';
     case 'resolved':
       return 'resolved';
-    default:
+    case 'committed':
+    case 'analyzed':
+    case 'wontfix':
+    case 'awaiting':
+    case 'stopped':
+    case 'done':
       return 'needsYou';
+    default: {
+      const exhaustive: never = status;
+      throw new Error(`unknown resolver status: ${String(exhaustive)}`);
+    }
   }
 };
 
@@ -33,8 +42,15 @@ export const resolverStateSentence = (status: ResolverStatus): string | null => 
       return 'stopped before a verdict';
     case 'done':
       return 'finished without a verdict';
-    default:
+    case 'pending':
+    case 'running':
+    case 'failed':
+    case 'resolved':
       return null;
+    default: {
+      const exhaustive: never = status;
+      throw new Error(`unknown resolver status: ${String(exhaustive)}`);
+    }
   }
 };
 
