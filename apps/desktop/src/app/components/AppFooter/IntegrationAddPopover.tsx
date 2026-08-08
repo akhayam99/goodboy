@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { cn, Popover, ScrollFade, Tooltip } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
+import { DropdownBackdrop } from '../../../shared/hooks/useDropdown/DropdownBackdrop';
+import { DropdownPortal } from '../../../shared/hooks/useDropdown/DropdownPortal';
+import { useDropdown } from '../../../shared/hooks/useDropdown';
 import type { FooterIntegrationEntry } from './categories';
 import { IntegrationAddRow } from './IntegrationAddRow';
 
@@ -19,15 +20,8 @@ type Props = {
   readonly active: boolean;
 };
 
-type PopoverCoordinates = {
-  readonly top?: number;
-  readonly bottom?: number;
-  readonly left: number;
-};
-
 const PANEL_WIDTH = 224;
 const PANEL_MAX_HEIGHT = 240;
-const VIEWPORT_MARGIN = 8;
 
 export const IntegrationAddPopover = ({
   addLabel,
@@ -41,72 +35,35 @@ export const IntegrationAddPopover = ({
   showLabel,
   active,
 }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coordinates, setCoordinates] = useState<PopoverCoordinates | null>(null);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen]);
-
-  useLayoutEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const updatePosition = () => {
-      const trigger = triggerRef.current;
-      if (trigger == null) {
-        return;
-      }
-
-      const rect = trigger.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const desiredLeft = centerX - PANEL_WIDTH / 2;
-      const maxLeft = window.innerWidth - PANEL_WIDTH - VIEWPORT_MARGIN;
-      const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const shouldOpenAbove = spaceBelow < PANEL_MAX_HEIGHT + VIEWPORT_MARGIN;
-      const top = shouldOpenAbove ? undefined : rect.bottom + 6;
-      const bottom = shouldOpenAbove ? window.innerHeight - rect.top + 6 : undefined;
-      setCoordinates({ top, bottom, left });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [isOpen]);
-
-  const toggle = () => {
-    if (isExhausted) {
-      return;
-    }
-    setIsOpen((current) => !current);
-  };
+  const {
+    open: isOpen,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupStyle,
+    popupClassName,
+    portal,
+    portalTarget,
+  } = useDropdown({
+    disabled: isExhausted,
+    align: 'center',
+    width: 'w-56',
+    expectedWidth: PANEL_WIDTH,
+    expectedHeight: PANEL_MAX_HEIGHT,
+    strategy: 'fixed',
+    hasBackdrop: true,
+  });
 
   const select = (provider: IntegrationGlyphProvider) => {
-    setIsOpen(false);
+    close();
     openers[provider]();
   };
 
   return (
-    <>
+    <div ref={containerRef} className="relative">
       <Tooltip content={isExhausted ? exhaustedLabel : addLabel}>
         <button
-          ref={triggerRef}
           type="button"
           onClick={toggle}
           aria-label={isExhausted ? exhaustedLabel : addLabel}
@@ -127,41 +84,37 @@ export const IntegrationAddPopover = ({
         </button>
       </Tooltip>
 
-      {isOpen && coordinates != null
-        ? createPortal(
-            <>
-              <div
-                className="fixed inset-0 z-popover-backdrop"
-                onMouseDown={() => setIsOpen(false)}
-                aria-hidden
-              />
-              <Popover
-                role="dialog"
-                ariaLabel={panelLabel}
-                className="fixed z-popover flex max-h-60 w-56 flex-col"
-                style={{
-                  top: coordinates.top,
-                  bottom: coordinates.bottom,
-                  left: coordinates.left,
-                }}
+      <DropdownPortal portal={portal} portalTarget={portalTarget}>
+        {isOpen && (
+          <>
+            <DropdownBackdrop onClose={close} />
+            <Popover
+              innerRef={popupRef}
+              role="dialog"
+              ariaLabel={panelLabel}
+              className={cn(popupClassName, 'flex flex-col')}
+              style={popupStyle}
+            >
+              <ScrollFade
+                className="max-h-60 min-h-0 flex-1"
+                viewportClassName="py-1"
+                fadeSize={12}
               >
-                <ScrollFade className="min-h-0 flex-1" viewportClassName="py-1" fadeSize={12}>
-                  <ul aria-label={panelLabel} className="flex flex-col">
-                    {members.map((member) => (
-                      <IntegrationAddRow
-                        key={member.provider}
-                        member={member}
-                        connected={enabled[member.provider]}
-                        onSelect={() => select(member.provider)}
-                      />
-                    ))}
-                  </ul>
-                </ScrollFade>
-              </Popover>
-            </>,
-            document.body,
-          )
-        : null}
-    </>
+                <ul aria-label={panelLabel} className="flex flex-col">
+                  {members.map((member) => (
+                    <IntegrationAddRow
+                      key={member.provider}
+                      member={member}
+                      connected={enabled[member.provider]}
+                      onSelect={() => select(member.provider)}
+                    />
+                  ))}
+                </ul>
+              </ScrollFade>
+            </Popover>
+          </>
+        )}
+      </DropdownPortal>
+    </div>
   );
 };

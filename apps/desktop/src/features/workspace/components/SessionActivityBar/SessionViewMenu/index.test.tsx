@@ -62,7 +62,7 @@ describe('SessionViewMenu', () => {
     render(<SessionViewMenu workspaceId={'ws-1' as never} />);
 
     fireEvent.click(screen.getByLabelText(/display options/i));
-    const backdrop = document.body.querySelector('.inset-0');
+    const backdrop = document.body.querySelector('.z-popover-backdrop');
     expect(backdrop).not.toBeNull();
 
     fireEvent.click(backdrop as Element);
@@ -70,13 +70,14 @@ describe('SessionViewMenu', () => {
     expect(screen.queryByRole('menu', { name: 'Session display options' })).toBeNull();
   });
 
-  it('stays on the local z-30 and z-40 layers rather than the app-global popover scale', () => {
+  it('opens on the named popover scale rather than the raw z-30 and z-40 it carried before', () => {
     render(<SessionViewMenu workspaceId={'ws-1' as never} />);
 
     fireEvent.click(screen.getByLabelText(/display options/i));
 
-    expect(document.body.querySelector('.z-30')).not.toBeNull();
-    expect(document.body.querySelector('.z-40')).not.toBeNull();
-    expect(document.body.querySelector('.z-popover')).toBeNull();
+    expect(document.body.querySelector('.z-popover-backdrop')).not.toBeNull();
+    expect(document.body.querySelector('.z-popover')).not.toBeNull();
+    expect(document.body.querySelector('.z-30')).toBeNull();
+    expect(document.body.querySelector('.z-40')).toBeNull();
   });
 });

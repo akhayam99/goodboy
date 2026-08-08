@@ -1,5 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Bell, Trash2 } from 'lucide-react';
 import {
   Button,
@@ -17,6 +16,9 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
+import { DropdownBackdrop } from '../../../../shared/hooks/useDropdown/DropdownBackdrop';
+import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
+import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -26,10 +28,10 @@ import { NOTIFICATION_SEVERITY } from '../../severity';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 
 const DROPDOWN_WIDTH = 384;
-const VIEWPORT_MARGIN = 8;
 const LIST_MAX_HEIGHT = 400;
 const HEADER_HEIGHT = 37;
 const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
+const OPEN_EVENT = 'goodboy:open-notifications';
 
 export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
@@ -38,11 +40,31 @@ export const NotificationCenter = () => {
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
   const clearNotifications = useAppStore((s) => s.clearNotifications);
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState<{ top?: number; bottom?: number; left: number } | null>(
-    null,
-  );
+  const {
+    open,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupStyle,
+    popupClassName,
+    portal,
+    portalTarget,
+  } = useDropdown({
+    align: 'center',
+    width: 'w-96',
+    expectedWidth: DROPDOWN_WIDTH,
+    expectedHeight: DROPDOWN_MAX_HEIGHT,
+    strategy: 'fixed',
+    openEvent: OPEN_EVENT,
+    isEscapeEnabled: false,
+    hasBackdrop: true,
+  });
+  const openRef = useRef(open);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   useEffect(() => {
     void loadNotifications();
@@ -50,50 +72,19 @@ export const NotificationCenter = () => {
 
   useEffect(() => {
     const handleOpenRequest = () => {
-      setOpen((prev) => {
-        if (!prev) {
-          void markNotificationsRead();
-        }
-        return true;
-      });
+      if (openRef.current) {
+        return;
+      }
+      void markNotificationsRead();
     };
-    window.addEventListener('goodboy:open-notifications', handleOpenRequest);
+    window.addEventListener(OPEN_EVENT, handleOpenRequest);
     return () => {
-      window.removeEventListener('goodboy:open-notifications', handleOpenRequest);
+      window.removeEventListener(OPEN_EVENT, handleOpenRequest);
     };
   }, [markNotificationsRead]);
 
-  useLayoutEffect(() => {
-    if (!open) {
-      return;
-    }
-    const updatePosition = () => {
-      const el = triggerRef.current;
-      if (!el) {
-        return;
-      }
-      const rect = el.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const desiredLeft = centerX - DROPDOWN_WIDTH / 2;
-      const maxLeft = window.innerWidth - DROPDOWN_WIDTH - VIEWPORT_MARGIN;
-      const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const openAbove = spaceBelow < DROPDOWN_MAX_HEIGHT + VIEWPORT_MARGIN;
-      const top = openAbove ? undefined : rect.bottom + 6;
-      const bottom = openAbove ? window.innerHeight - rect.top + 6 : undefined;
-      setCoords({ top, bottom, left });
-    };
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
-  }, [open]);
-
   const handleOpen = () => {
-    setOpen((v) => !v);
+    toggle();
     if (!open) {
       void markNotificationsRead();
     }
@@ -102,10 +93,9 @@ export const NotificationCenter = () => {
   const { total, unread } = notificationCounts;
 
   return (
-    <div role="region" aria-label="Notifications" aria-live="polite">
+    <div ref={containerRef} role="region" aria-label="Notifications" aria-live="polite">
       <Tooltip content="notifications" side="top">
         <button
-          ref={triggerRef}
           type="button"
           onClick={handleOpen}
           className={cn(
@@ -130,112 +120,104 @@ export const NotificationCenter = () => {
         </button>
       </Tooltip>
 
-      {open && coords
-        ? createPortal(
-            <>
-              <div
-                className="fixed inset-0 z-popover-backdrop"
-                onClick={() => setOpen(false)}
-                aria-hidden
-              />
-              <Popover
-                className="fixed z-popover w-96"
-                style={{ top: coords.top, bottom: coords.bottom, left: coords.left }}
-              >
-                <header className="flex items-center justify-between gap-2 px-3 py-2">
-                  <span className="text-xs font-semibold text-foreground">
-                    {total} {total === 1 ? 'notification' : 'notifications'}
-                  </span>
-                  {notifications.length > 0 && (
+      <DropdownPortal portal={portal} portalTarget={portalTarget}>
+        {open && (
+          <>
+            <DropdownBackdrop onClose={close} />
+            <Popover innerRef={popupRef} className={popupClassName} style={popupStyle}>
+              <header className="flex items-center justify-between gap-2 px-3 py-2">
+                <span className="text-xs font-semibold text-foreground">
+                  {total} {total === 1 ? 'notification' : 'notifications'}
+                </span>
+                {notifications.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void clearNotifications()}
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
+                    aria-label="Clear all notifications"
+                    title="Clear all notifications"
+                  >
+                    <Trash2 size={11} aria-hidden />
+                    Clear all
+                  </button>
+                )}
+              </header>
+              <Divider />
+              {notificationsLoading && notifications.length === 0 ? (
+                <div
+                  className="flex flex-col gap-3 px-3 py-2.5"
+                  role="status"
+                  aria-label="Loading notifications"
+                >
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
+                      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <Skeleton className="h-3 w-2/3 rounded" />
+                        <Skeleton className="h-2.5 w-1/3 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : notifications.length === 0 ? (
+                <EmptyState
+                  icon={CONCEPT_ICONS.notifications}
+                  tone={CONCEPT_TONE.notifications}
+                  title="Nothing to catch up on"
+                  description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
+                  size="inline"
+                  action={
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        close();
+                        window.dispatchEvent(new CustomEvent('goodboy:new-session'));
+                      }}
+                    >
+                      Start a session
+                    </Button>
+                  }
+                  className="px-3 py-6"
+                />
+              ) : (
+                <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
+                  <ul>
+                    {notifications.map((n, i) => (
+                      <Fragment key={n.id}>
+                        {i > 0 && (
+                          <li aria-hidden className="px-3">
+                            <Divider />
+                          </li>
+                        )}
+                        <NotificationItem notification={n} onNavigated={close} />
+                      </Fragment>
+                    ))}
+                  </ul>
+                </ScrollFade>
+              )}
+              {notifications.length > 0 && (
+                <>
+                  <Divider />
+                  <footer className="flex items-center justify-end px-3 py-2">
                     <button
                       type="button"
-                      onClick={() => void clearNotifications()}
-                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
-                      aria-label="Clear all notifications"
-                      title="Clear all notifications"
+                      onClick={() => {
+                        close();
+                        window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
+                      }}
+                      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
-                      <Trash2 size={11} aria-hidden />
-                      Clear all
+                      Show more
+                      <ArrowRight size={11} aria-hidden />
                     </button>
-                  )}
-                </header>
-                <Divider />
-                {notificationsLoading && notifications.length === 0 ? (
-                  <div
-                    className="flex flex-col gap-3 px-3 py-2.5"
-                    role="status"
-                    aria-label="Loading notifications"
-                  >
-                    {Array.from({ length: 4 }).map((_, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
-                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                          <Skeleton className="h-3 w-2/3 rounded" />
-                          <Skeleton className="h-2.5 w-1/3 rounded" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : notifications.length === 0 ? (
-                  <EmptyState
-                    icon={CONCEPT_ICONS.notifications}
-                    tone={CONCEPT_TONE.notifications}
-                    title="Nothing to catch up on"
-                    description="Session milestones, retries, and budget alerts land here as they happen, so you don't have to babysit a running session."
-                    size="inline"
-                    action={
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => {
-                          setOpen(false);
-                          window.dispatchEvent(new CustomEvent('goodboy:new-session'));
-                        }}
-                      >
-                        Start a session
-                      </Button>
-                    }
-                    className="px-3 py-6"
-                  />
-                ) : (
-                  <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
-                    <ul>
-                      {notifications.map((n, i) => (
-                        <Fragment key={n.id}>
-                          {i > 0 && (
-                            <li aria-hidden className="px-3">
-                              <Divider />
-                            </li>
-                          )}
-                          <NotificationItem notification={n} onNavigated={() => setOpen(false)} />
-                        </Fragment>
-                      ))}
-                    </ul>
-                  </ScrollFade>
-                )}
-                {notifications.length > 0 && (
-                  <>
-                    <Divider />
-                    <footer className="flex items-center justify-end px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setOpen(false);
-                          window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
-                        }}
-                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      >
-                        Show more
-                        <ArrowRight size={11} aria-hidden />
-                      </button>
-                    </footer>
-                  </>
-                )}
-              </Popover>
-            </>,
-            document.body,
-          )
-        : null}
+                  </footer>
+                </>
+              )}
+            </Popover>
+          </>
+        )}
+      </DropdownPortal>
     </div>
   );
 };

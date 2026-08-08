@@ -160,11 +160,15 @@ define a control's own shape (buttons, inputs, popovers, chips) are fine.
 
 Anything that belongs to a control opens anchored to that control, as a `Popover`
 from `@goodboy/ui` portaled to `document.body` and positioned off the trigger's
-`getBoundingClientRect()`. `AppTopBar/NeedsYouPopover` and
-`workspace/components/WorkspaceSwitcher` are the reference implementations: fixed
-coordinates, a `z-popover-backdrop` click-catcher behind, Escape to close, and a
-flip above the trigger when the space below runs out. A centred overlay for a menu
-that has an obvious on-screen owner is a bug, not a style choice.
+`getBoundingClientRect()`. The mechanism lives in the
+`shared/hooks/useDropdown` hook, which owns all of it: fixed coordinates, the
+`DropdownBackdrop` click-catcher, the `DropdownPortal`, Escape to close, and a flip
+above the trigger when the space below runs out. Reach for the hook rather than
+hand-rolling any of those pieces; `AppTopBar/NeedsYouPopover` is a worked example of
+a full app-global popover on it (`hasBackdrop`, `strategy: 'fixed'`), and
+`workspace/components/WorkspaceSwitcher` is the one still hand-rolled, because it is
+props-controlled. A centred overlay for a menu that has an obvious on-screen owner is
+a bug, not a style choice.
 
 ## z-index: a named scale, not a magic number per file
 
@@ -175,20 +179,20 @@ open underneath) use named tokens from `apps/desktop/src/styles.css`'
 into a `z-<name>` utility automatically, the same mechanism already used for
 `--animate-*`.
 
-| token                        | value | utility                   | who                                                                                                                                                                    |
-| ---------------------------- | ----- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| (StudioShell fullscreen)     | 50    | `z-50` (Tailwind default) | `StudioShell`'s fullscreen variant. The floor: never lowered.                                                                                                          |
-| `--z-index-popover-backdrop` | 55    | `z-popover-backdrop`      | click-catcher behind the six app-global popovers below                                                                                                                 |
-| `--z-index-popover`          | 65    | `z-popover`               | `NotificationCenter`, `WorkspaceSwitcher`, `RunningScriptsIndicator`, `AppTopBar/NeedsYouPopover`, `AppFooter/IntegrationAddPopover`, `AppFooter/MoreStudiosPopover`   |
-| `--z-index-command-palette`  | 70    | `z-command-palette`       | `CommandPalette` (⌘K), a global "transit" surface: it fires on a keyboard shortcut regardless of what else is open, so it must clear a popover left open underneath it |
-| `--z-index-tooltip`          | 75    | `z-tooltip`               | `Tooltip` (`packages/ui`), portaled; must win over a popover or the command palette it's triggered from inside                                                         |
-| `--z-index-toast`            | 85    | `z-toast`                 | the toast stack (`app/components/Toast`)                                                                                                                               |
-| (native `<dialog>`)          | n/a   | n/a                       | `Dialog` renders through the browser's top layer, always above every z-indexed element regardless of number                                                            |
+| token                        | value | utility                   | who                                                                                                                                                                                                                                                                         |
+| ---------------------------- | ----- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (StudioShell fullscreen)     | 50    | `z-50` (Tailwind default) | `StudioShell`'s fullscreen variant. The floor: never lowered.                                                                                                                                                                                                               |
+| `--z-index-popover-backdrop` | 55    | `z-popover-backdrop`      | click-catcher behind the seven app-global popovers below, rendered by `DropdownBackdrop`                                                                                                                                                                                    |
+| `--z-index-popover`          | 65    | `z-popover`               | `NotificationCenter`, `WorkspaceSwitcher`, `RunningScriptsIndicator`, `AppTopBar/NeedsYouPopover`, `AppFooter/IntegrationAddPopover`, `AppFooter/MoreStudiosPopover`, `SessionViewMenu`. Every one but `WorkspaceSwitcher` gets there through `useDropdown`'s `hasBackdrop` |
+| `--z-index-command-palette`  | 70    | `z-command-palette`       | `CommandPalette` (⌘K), a global "transit" surface: it fires on a keyboard shortcut regardless of what else is open, so it must clear a popover left open underneath it                                                                                                      |
+| `--z-index-tooltip`          | 75    | `z-tooltip`               | `Tooltip` (`packages/ui`), portaled; must win over a popover or the command palette it's triggered from inside                                                                                                                                                              |
+| `--z-index-toast`            | 85    | `z-toast`                 | the toast stack (`app/components/Toast`)                                                                                                                                                                                                                                    |
+| (native `<dialog>`)          | n/a   | n/a                       | `Dialog` renders through the browser's top layer, always above every z-indexed element regardless of number                                                                                                                                                                 |
 
 Everything else keeps its existing, unnamed `z-10`/`z-20`/`z-30`/`z-40`
-value: those are local, scoped to one card, toolbar, or pane (`SessionViewMenu`,
-the jira/GitHub in-studio pickers, `SessionStudioLayer`'s session-scoped studio
-at `z-20`, and so on). They are never compared against a full-page studio in
+value: those are local, scoped to one card, toolbar, or pane (the jira/GitHub
+in-studio pickers, `SessionStudioLayer`'s session-scoped studio at `z-20`, and so
+on). They are never compared against a full-page studio in
 normal use, so they stay off the named scale. A control needs a name on this
 ladder only when it must render above `StudioShell`'s fullscreen `z-50`
 regardless of what else is open; anything narrower in scope takes the nearest
