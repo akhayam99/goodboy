@@ -163,6 +163,7 @@ function makeEffects(): { effects: ParallelBranchEffects; events: TurnEvent[] } 
       appendTurnEvent: (_agentId: AgentId, _sid: SessionId, e: TurnEvent) => events.push(e),
       refreshPhaseRuns: vi.fn(async () => undefined),
       setMergeConflicts: vi.fn(),
+      notifyDegradedStepSummary: vi.fn(),
     },
     events,
   };
@@ -359,6 +360,38 @@ describe('parallel e2e, fan-out/fan-in', () => {
       expect.objectContaining({
         outputSummary: `${'h'.repeat(1500)}\n...\n${'t'.repeat(400)}`,
       }),
+    );
+    expect(effects.notifyDegradedStepSummary).toHaveBeenCalledTimes(1);
+    expect(effects.notifyDegradedStepSummary).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: 'pr-d-b', agentName: 'd-b' }),
+    );
+  });
+
+  it('does not mark the representative branch as degraded', async () => {
+    const insertedPhaseRuns: Parameters<typeof wirePhaseRunSpies>[0] = [];
+    wirePhaseRunSpies(insertedPhaseRuns);
+    const { effects } = makeEffects();
+    const inputs = makeInputs([makeDef('d-a', 1), makeDef('d-b', 2)]);
+    const branchPromise = runParallelBranch(inputs, makeDeps(effects));
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const spawnedRunIds = (
+      invokeParallelPhaseRunSpawnSpy.mock.calls as unknown as ReadonlyArray<
+        [{ runs: ReadonlyArray<{ runId: string }> }]
+      >
+    ).map(([args]) => args.runs[0]!.runId) as [string, string];
+    const [representativeRunId, otherRunId] = spawnedRunIds;
+    emitLine(representativeRunId, 'representative output');
+    emitLine(otherRunId, 'other output');
+    emitEnd(representativeRunId, 0);
+    emitEnd(otherRunId, 0);
+
+    await branchPromise;
+
+    expect(effects.notifyDegradedStepSummary).toHaveBeenCalledTimes(1);
+    expect(effects.notifyDegradedStepSummary).not.toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: 'pr-d-a' }),
     );
   });
 

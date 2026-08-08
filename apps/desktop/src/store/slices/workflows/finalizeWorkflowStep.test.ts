@@ -37,8 +37,9 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
 }));
 
-import { finalizeWorkflowStep, degradedNotifiedAgents } from './finalizeWorkflowStep';
+import { finalizeWorkflowStep } from './finalizeWorkflowStep';
 import { SUMMARY_TIMEOUT_MS, stepSummaryDegraded } from '../../summarizeAgentOutput';
+import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -317,5 +318,31 @@ describe('finalizeWorkflowStep output summary', () => {
       }),
     );
     expect(result).toEqual({ shouldAutoAdvance: true });
+  });
+
+  it('does not notify the inbox for the session-missing guard fallback (excluded from I6)', async () => {
+    const state = {
+      sessionPhaseRuns: { [SESSION_ID]: [agent] },
+      sessions: [],
+      workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+      sessionMounts: {},
+      sessionActiveMount: {},
+      sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+      sessionBranches: { [SESSION_ID]: 'ak/workflow' },
+      refreshUnreadWorkspaces: vi.fn(),
+      emitNotification: vi.fn(),
+      sendTurn: vi.fn(),
+    };
+    const set = vi.fn();
+    const get = (() => state) as unknown as Parameters<typeof finalizeWorkflowStep>[1];
+    const finalize = finalizeWorkflowStep(
+      set as unknown as Parameters<typeof finalizeWorkflowStep>[0],
+      get,
+    );
+
+    await finalize(SESSION_ID, AGENT_ID, 'short output', false, { force: true });
+
+    expect(state.emitNotification).not.toHaveBeenCalled();
+    expect(degradedNotifiedAgents.has(AGENT_ID)).toBe(false);
   });
 });
