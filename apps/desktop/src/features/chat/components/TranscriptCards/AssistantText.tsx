@@ -20,7 +20,7 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
   return (
     <div className="group relative flex flex-col gap-2 text-sm leading-relaxed">
       {hasCommentResolvedMarker ? null : (
-        <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100">
+        <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <CopyButton value={text} label="message" />
         </div>
       )}

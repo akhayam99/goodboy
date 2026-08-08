@@ -59,6 +59,7 @@ describe('BranchChip', () => {
     const edit = screen.getByRole('button', { name: 'Edit branch' });
 
     expect(edit.className).toContain('opacity-0');
+    expect(edit.className).toContain('focus-visible:opacity-100');
     fireEvent.click(edit);
     expect(screen.getByRole('dialog', { name: 'Switch branch' })).toBeDefined();
 
@@ -70,5 +71,12 @@ describe('BranchChip', () => {
     render(<BranchChip branch="ak/feat-thing" sessionId={'sess-1' as never} canEdit={false} />);
 
     expect(screen.queryByRole('button', { name: 'Edit branch' })).toBeNull();
+  });
+
+  it('drops the native title in favor of the house tooltip on the edit control', () => {
+    render(<BranchChip branch="ak/feat-thing" sessionId={'sess-1' as never} canEdit />);
+    const edit = screen.getByRole('button', { name: 'Edit branch' });
+
+    expect(edit.getAttribute('title')).toBeNull();
   });
 });
