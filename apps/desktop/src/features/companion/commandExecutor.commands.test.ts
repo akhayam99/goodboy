@@ -161,7 +161,11 @@ vi.mock('../integrations/jira/goal-from-issue', () => ({
     `[${i.issue.key}] ${i.issue.summary}`,
 }));
 
-import { executeBridgeCommand } from './commandExecutor';
+import {
+  BRIDGE_PROVIDER_ALLOWLIST,
+  PROVIDER_MENU_ORDER,
+  executeBridgeCommand,
+} from './commandExecutor';
 import { invoke } from '@tauri-apps/api/core';
 import {
   clearMobileCreateRateState,
@@ -400,6 +404,29 @@ describe('provider/model override coercion', () => {
       expect((arg.override as { providerId: string }).providerId).toBe(providerId);
     },
   );
+
+  it('keeps the bridge allowlist and the menu order as separate arrays', () => {
+    expect(BRIDGE_PROVIDER_ALLOWLIST).not.toBe(PROVIDER_MENU_ORDER);
+  });
+
+  it('rejects a provider still listed in the menu order once removed from the bridge allowlist', async () => {
+    const original = [...BRIDGE_PROVIDER_ALLOWLIST];
+    BRIDGE_PROVIDER_ALLOWLIST.splice(
+      0,
+      BRIDGE_PROVIDER_ALLOWLIST.length,
+      ...original.filter((id) => id !== 'openrouter'),
+    );
+    try {
+      expect(PROVIDER_MENU_ORDER).toContain('openrouter');
+      await executeBridgeCommand(
+        cmd('send', { sessionId: 's1', content: 'go', providerId: 'openrouter' }),
+      );
+      const arg = lastCall(h.sendTurn)[0] as Record<string, unknown>;
+      expect(arg.override).toBeUndefined();
+    } finally {
+      BRIDGE_PROVIDER_ALLOWLIST.splice(0, BRIDGE_PROVIDER_ALLOWLIST.length, ...original);
+    }
+  });
 });
 
 describe('spawnAgent option mapping', () => {

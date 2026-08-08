@@ -52,7 +52,7 @@ import { goalFromIssue as gitlabGoalFromIssue } from '../integrations/gitlab/goa
 import { jiraListIssues, jiraGetIssue, type JiraIssue } from '../integrations/jira/client';
 import { goalFromIssue as jiraGoalFromIssue } from '../integrations/jira/goal-from-issue';
 
-const BRIDGE_PROVIDER_ALLOWLIST = [
+export const BRIDGE_PROVIDER_ALLOWLIST = [
   'anthropic',
   'cursor',
   'codex',
@@ -62,7 +62,7 @@ const BRIDGE_PROVIDER_ALLOWLIST = [
   'moonshot',
 ] satisfies ReadonlyArray<ProviderId>;
 
-const PROVIDER_MENU_ORDER = [
+export const PROVIDER_MENU_ORDER = [
   'anthropic',
   'cursor',
   'codex',

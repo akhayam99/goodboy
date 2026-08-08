@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PROVIDER_IDS } from '@goodboy/types';
 import { PROVIDER_ORDER } from './providerOrder';
 
 describe('PROVIDER_ORDER', () => {
@@ -12,5 +13,9 @@ describe('PROVIDER_ORDER', () => {
       'openrouter',
       'moonshot',
     ]);
+  });
+
+  it('covers every id the registry declares', () => {
+    expect(new Set(PROVIDER_ORDER)).toEqual(new Set(PROVIDER_IDS));
   });
 });
