@@ -12,7 +12,8 @@ its place by owning a decision nobody else can make; frontend and backend are
 not roles, they are builder competencies. Roles split into **standing** (runs
 every release) and **on-call** (runs only when the batch touches its
 surface), because an org that spawns everyone every time pays for attendance,
-not judgment.
+not judgment. That split priced per release is the derived cost ceiling,
+owned by [cost-ceiling.md](./cost-ceiling.md).
 
 ## Org chart
 

@@ -64,10 +64,13 @@ lives inside the scratch dir it summarizes):
   are visible as lines, not as a feeling. The tier rules exist as cost
   controls, and a cost control nobody can audit is a suggestion.
 - **The cost baseline**: the per-tier spawn count per release, derivable
-  from the `tier` column, is the baseline the next engagement's cost
-  ceiling is set from ([release-loop.md](./release-loop.md) owns the
-  ceiling rule). The ceiling is stated in this unit precisely because the
-  log already records it and token totals are recorded nowhere.
+  from the `tier` column with its repair share (repair agents,
+  re-verifies, replacements) split out, is the empirical input the next
+  engagement's repair margin is declared from and every derived ceiling
+  is reality-checked against ([cost-ceiling.md](./cost-ceiling.md) owns
+  the derivation; [release-loop.md](./release-loop.md) the breach rule).
+  The ceiling is stated in this unit precisely because the log already
+  records it and token totals are recorded nowhere.
 - **The engagement report's per-release lines**: spawn counts and verdict
   ratios per role, which is how a role like the integrations owner, hired
   with an explicit sunset clause

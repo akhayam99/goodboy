@@ -26,4 +26,7 @@ disk and git, and report.
 One pass, then gone. It never fixes anything and never messages the watched
 agent's siblings. Chains have stalled with zero progress because an agent
 was backgrounded and its turn ended silently; the watchdog is why that
-cannot repeat quietly.
+cannot repeat quietly. It stands outside the release's cost ceiling
+([cost-ceiling.md](../cost-ceiling.md)): its cadence follows wall clock,
+not the batch, and a ceiling that counted it would punish liveness; it
+still leaves a run-log line like every spawn.

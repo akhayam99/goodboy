@@ -74,14 +74,20 @@ raw diff.
    lead exhausted its context at 4 small releases, and a flat roster
    loses children in silence (one captain lost five;
    [watchdogs.md](./watchdogs.md) owns that incident and the roster
-   contract). The **cost ceiling** is declared once, by the delivery
-   lead, at preflight, per release, in **per-tier spawn counts**, the
-   unit the run log already records ([visibility.md](./visibility.md));
-   the brief carries it as `{{cost_ceiling}}`; the captain obeys, and a
-   breach means **stop at the wave boundary and report partial**. Not
-   tokens: nothing records token totals (the ledger holds zero token
-   figures across two engagements), and a ceiling in a quantity nobody
-   measures is void. This file alone states the breach consequence.
+   contract). The **cost ceiling** is derived once per release, by the
+   captain, at the Phase 3/4 boundary, from the composed batch plus the
+   repair margin the delivery lead declared at preflight; the formula,
+   the role classification and the declarer split are owned by
+   [cost-ceiling.md](./cost-ceiling.md), the brief carries the lead's
+   inputs as `{{ceiling_inputs}}`, and the derivation lands on the
+   report's `ceiling:` line. A **breach** is either a spawn with no term
+   in the derivation (a role the batch never triggered, a mechanical
+   spawn past its term) or repairs exhausting the declared margin in any
+   tier; both mean **stop at the wave boundary and report partial**. A
+   ceiling breached by correct behaviour taught every agent the rule was
+   decorative, which is why the constant it replaced is gone; a derived
+   breach names real misbehaviour. This file alone states the breach
+   consequence.
    Within a wave: one item, one builder, one branch
    (`ak/<type>-<kebab-desc>`), one PR, one fresh worktree per builder,
    every branch cut from `origin/main`; grouped S slots of one class are

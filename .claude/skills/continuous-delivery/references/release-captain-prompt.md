@@ -35,7 +35,8 @@ everything else waits for the phase that needs it):
 7. `references/repo-gotchas.md` (in this skill)
 8. `docs/autonomy/roles.md`: only the binding-rules and tier-table sections.
 
-**Phase-triggered reads**: `docs/release-command.md`,
+**Phase-triggered reads**: `docs/autonomy/cost-ceiling.md` at the Phase
+3/4 boundary, for the ceiling derivation; `docs/release-command.md`,
 `docs/tone-of-voice.md` and `docs/autonomy/impact.md` at Phase 7;
 `docs/autonomy/infrastructure.md` at the first CI anomaly;
 `docs/autonomy/org.md` when a disagreement or veto occurs; `BACKLOG.md`
@@ -88,8 +89,12 @@ explorer, the ux designer, and the debt surgeon respectively.
 
 **Concurrency mode**: {{concurrency_mode}}, from the lead's preflight
 probe; what each mode means is `docs/autonomy/watchdogs.md`'s to say.
-Cost ceiling: {{cost_ceiling}}, declared by the delivery lead in per-tier
-spawn counts; the breach rule is release-loop.md's.
+Ceiling inputs: {{ceiling_inputs}}, the per-tier repair margin the
+delivery lead declared plus the previous release's per-tier actuals. You
+derive the release's cost ceiling yourself, once, at the Phase 3/4
+boundary, from the composed batch per `docs/autonomy/cost-ceiling.md`
+(read it at that step): derivation to your scratch dir, result on your
+report's `ceiling:` line. The breach rule is release-loop.md's.
 
 **Adopted held PRs** (class B changes a prior release built and held):
 {{held_prs}}. Keep each green; one the owner has answered merges first in
@@ -211,6 +216,7 @@ pick: <headline choice and why, two lines>       (when the theme was yours to pi
 proposed: <n items in the plan after the challenge>
 composition: <slots by category against the budget, deviations declared>
 waves: <n waves, slots per wave, any wave carried or stopped at>
+ceiling: <derived per-tier ceiling vs per-tier actuals, margin consumed, breach or "none"; derivation in scratch, per docs/autonomy/cost-ceiling.md>
 impact: pass | below-bar (<missing categories>)   (the challenger's verdict, per docs/autonomy/impact.md)
 self: <org-class items by name, each pending-verification, or "none">; <newly shipped experiments: name, criterion, reading window, revert shape, or "none">; <per inherited deferred item: kept | reverted | still-pending, one line of reason each>
 audits: security <findings count or "no-findings", pointer>; perf <findings count or "no-findings", pointer>   (the two never-flowing audit slots; this line is how their outcome reaches the ledger)

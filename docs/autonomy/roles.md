@@ -137,7 +137,9 @@ either would be a third copy, and third copies drift.
 - Token discipline is part of the job: load only what the current step needs,
   keep reports compact and structured, and use the cheapest tier that can do
   the work. Standing roles run every release; on-call roles spawn only when
-  the batch touches their surface, and their charters name the trigger.
+  the batch touches their surface, and their charters name the trigger;
+  [cost-ceiling.md](./cost-ceiling.md) aggregates that split into the
+  release's derived spawn ceiling.
 - The current code is a strong precedent, not scripture. Copy the existing
   pattern by default; when a pattern is the problem, restructuring it is in
   scope, stated as such in the plan and sized honestly. Decisions that bind

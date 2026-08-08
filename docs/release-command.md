@@ -22,10 +22,11 @@ Below, `X` is the new version and `X-1` is the current latest.
 
 ## Process
 
-1. Bump `X-1` -> `X` in ALL 5 files: `package.json`,
+1. Bump `X-1` -> `X` in ALL 6 files: `package.json`,
    `apps/desktop/package.json`, `apps/desktop/src-tauri/tauri.conf.json`,
    `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/Cargo.lock`
-   (the `goodboy-desktop` package entry). In the same commit, add the `## Goodboy
+   (the `goodboy-desktop` package entry), and `website/src/site.ts`
+   (`SITE.version`, which keeps the leading `v`: `vX`). In the same commit, add the `## Goodboy
 vX` section to `CHANGELOG.md` (see "Release notes" below): the release
    build reads its body from there and fails if the section is missing, so this
    is not optional.

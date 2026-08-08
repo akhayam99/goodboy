@@ -98,6 +98,22 @@ release PR, per the review rule in [README.md](./README.md). An obligation
 with no delivery mechanism is the undelivered-judgment pathology this
 amendment exists to close.
 
+## Second amendment (2026-08-08)
+
+**The ceiling becomes derived.** The flat cost ceiling (50 spawns per
+release, at most 8 reasoning) is replaced by a per-release ceiling the
+captain derives from the composed batch plus a repair margin the delivery
+lead declares from history. Evidence: counted against the charters, the
+minimum roster of a 12-slot, 2-wave release reached the constant before a
+single repair once watchdogs were included, so correct behaviour breached
+it on release one; and a constant cannot say that a docs-and-copy batch
+needs no ux designer while a schema batch needs a second data verifier.
+[docs/autonomy/cost-ceiling.md](../autonomy/cost-ceiling.md) owns the
+formula and the roster classification;
+[docs/autonomy/release-loop.md](../autonomy/release-loop.md) keeps the
+breach rule, now meaning a spawn the batch never called for or repair
+past the margin.
+
 **The owner action.** MANDATES.md's Composition quota paragraph still cites
 the retired 60/40 default that this record's composition model replaced.
 Realigning that paragraph is the owner's alone, recorded here because no
