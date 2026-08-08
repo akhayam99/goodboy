@@ -205,6 +205,16 @@ describe('ChatWorkflowAdvance', () => {
     expect(toggle.textContent).toMatch(/autorun/i);
   });
 
+  it('renders no advance control of any kind while autorun drives the run', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    renderStrip(buildRun({ autoRun: true }));
+
+    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
+    expect(screen.queryByTestId('workflow-force-next-step-cta')).toBeNull();
+    expect(screen.queryByTestId('workflow-next-step-blocked')).toBeNull();
+    expect(screen.getByTestId('workflow-autorun-toggle')).toBeDefined();
+  });
+
   it('lets autorun resume a stopped static run from the same toggle', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
     renderStrip(
@@ -236,6 +246,30 @@ describe('ChatWorkflowAdvance', () => {
 
     expect(store.retryWorkflowOrchestration).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
     expect(store.setWorkflowRunAutoRun).not.toHaveBeenCalled();
+  });
+
+  it('falls through to the manual advance CTA on a provider-failure stop, same as before this PR', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    renderStrip(
+      buildRun({
+        autoRun: false,
+        orchestrationStop: { kind: 'failure', message: 'provider died' },
+      }),
+    );
+
+    expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
+    expect(screen.queryByTestId('chat-workflow-orchestrator-resume')).toBeNull();
+    expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
+  });
+
+  it('falls through to the manual advance CTA on a budget stop, same as before this PR', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
+    renderStrip(
+      buildRun({ autoRun: false, orchestrationStop: { kind: 'budget', message: 'cap' } }),
+    );
+
+    expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
+    expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
   });
 
   it('keeps the skip control under autorun once a step has failed', () => {
