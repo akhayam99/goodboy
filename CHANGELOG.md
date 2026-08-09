@@ -76,14 +76,15 @@ resolver started without a source comment now counts on both.
 
 ### [#1361] Two removals on the security perimeter
 
-Two Tauri commands that could read any credential out of the keychain and
-return it to the interface had no callers and are gone. The webview's standing
+Two Tauri commands were removed: one could return any credential from the
+keychain to the interface, the other reported whether one existed. Neither
+had a caller. The webview's standing
 permission to reach Linear's API has been removed too: those calls are all made
 outside the interface.
 
-Follow-up: every fix above is pinned by its own test and a re-read of the diff, not by
-a run through the built app; nobody has clicked these controls yet. If one behaves
-differently than described, the fix's own test names the exact ground it stands on.
+Follow-up: every fix above is pinned by its own test, and none of them has been walked
+in the built app yet. If one behaves differently from what is written here, that
+difference is new, and worth reporting.
 
 ## Goodboy v0.1.76
 
