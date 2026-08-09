@@ -12,6 +12,11 @@ export const Privacy = () => (
           Your tasks, chats, plans and stats live in one file on your computer.{' '}
           <b>No account, no server, nothing leaves your computer.</b>
         </p>
+        <p className="caption rv" style={delay(120)}>
+          That is the app. This page is not the app: it runs Google Tag Manager and Vercel's
+          analytics and speed tools to see how the site itself is doing. The desktop app carries no
+          telemetry and never phones home, by policy.
+        </p>
       </div>
 
       <div className="dbcard rv" style={delay(160)}>
@@ -25,7 +30,7 @@ export const Privacy = () => (
         <div className="dtbl">
           <span className="t">workspaces</span>
           <span className="t">sessions</span>
-          <span className="t">agents</span>
+          <span className="t">provider_runs</span>
           <span className="t">messages</span>
           <span className="t">context_slots</span>
           <span className="t">plans</span>

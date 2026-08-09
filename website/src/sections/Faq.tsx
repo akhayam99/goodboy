@@ -12,7 +12,7 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     q: 'Is it really free? What is the catch?',
-    a: 'MIT license, no paywall, no account, every feature included from the first launch. Nothing is phoned home: what the app tracks about your work stays in the file on your own computer. The only thing you pay for is the subscription you already have.',
+    a: 'MIT license, no paywall, no account, every feature included from the first launch. Nothing in the app is phoned home: what it tracks about your work stays in the file on your own computer. This website runs its own analytics; the app does not. The only thing you pay for is the subscription you already have.',
   },
   {
     q: 'Will this cost me anything on top of what I already pay?',
@@ -28,7 +28,7 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     q: 'Where does my data go?',
-    a: 'Conversations, plans, decisions and PR state sit in a local SQLite file on your machine. There is no backend and no account. Prompts and responses go straight from you to whichever provider you picked, the same path as running their CLI yourself.',
+    a: 'Conversations, plans, decisions and PR state sit in a local SQLite file on your machine. The app itself has no backend and no account. Prompts and responses go straight from you to whichever provider you picked, the same path as running their CLI yourself.',
   },
   {
     q: 'What if I do not like what the agents did?',
