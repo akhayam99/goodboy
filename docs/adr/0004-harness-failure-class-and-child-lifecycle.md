@@ -4,8 +4,22 @@ status: accepted
 date: 2026-08-09
 owner: head of engineering, per its charter's structural-decision clause
 reviewed-by: the challenger, on the PR that lands this record, verdict on
-the PR thread; plus the release captain as the bound role, owed by the
-first release run under these rules
+the PR thread; plus the release captain as the bound role, delivered by
+v0.1.77, the first release run under these rules. Verdict: **sound**, on
+evidence that is uncomfortable for one half of it. The parent-identity
+clause did not achieve its stated goal: every one of the release's
+twenty-odd children reported that it could not resolve its parent by name,
+so the placeholder the captain filled in was inert in this harness. What
+carried every single report was the other clause, the disk fallback, and
+the record chose it deliberately over the alternative it rejected (children
+falling back to messaging the delivery lead), which would have reproduced
+the original failure with a different addressee. The disk discipline held
+across six phases and left a successor everything it would have needed. A
+record whose decision is right and one of whose mechanisms is inert on this
+host is sound; the next release should either fix parent addressing or
+delete the clause rather than keep filling a placeholder nothing reads.
+The harness-failure class itself went unexercised: no host death occurred,
+so it remains asserted rather than demonstrated.
 
 ## Context
 
