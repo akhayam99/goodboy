@@ -343,14 +343,20 @@ before sending, a running total after.
   compact default or inline size and do not add a heading to the document
   outline.
 - **Loading is a skeleton; running is a moving border. Spinners are
-  forbidden.** No `Loader2`, no hand-built dot loaders, no parked spinner
-  anywhere. _Loading_ uses the Skeleton primitive, a greyed placeholder
-  mirroring the real layout (image block, title, chips), so the surface does
-  not jump when content lands. _Running_ is expressed intrinsically by the
-  element: a moving border (the `.spin-border` family) or a pulsing StatusDot,
-  never a spinner beside it. The skeleton is part of the component: change the
-  layout, update the skeleton in the same change. All of it stays motion-safe
-  and reduced-motion gated.
+  forbidden.** No `Loader2`, no hand-built dot loaders, no parked spinner in
+  the shared `packages/ui` package; `no-loader2-in-ui-package.test.ts`
+  enforces that boundary in CI. Two feature-level exceptions still exist in
+  `apps/desktop` pending cleanup: `GhostActionButton`
+  (`apps/desktop/src/shared/components/GhostActionButton/index.tsx`) and
+  `AssigneePicker` (`apps/desktop/src/features/integrations/jira/AssigneePicker.tsx`)
+  both render a spinning `Loader2` for a busy state. _Loading_ uses the
+  Skeleton primitive, a greyed placeholder mirroring the real layout (image
+  block, title, chips), so the surface does not jump when content lands.
+  _Running_ is expressed intrinsically by the element: a moving border (the
+  `.spin-border` family) or a pulsing StatusDot, never a spinner beside it.
+  The skeleton is part of the component: change the layout, update the
+  skeleton in the same change. All of it stays motion-safe and
+  reduced-motion gated.
 - **Confirm what is destructive, nothing else.** Two-step confirms are for
   irreversible actions only; they must not tax routine clicks. The confirm
   happens in place: the row or button being acted on swaps itself for it, so

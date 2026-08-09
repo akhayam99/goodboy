@@ -32,12 +32,13 @@ goodboy/
 - Use `pnpm --filter <pkg>` for scoped scripts. Use `pnpm --filter "...<pkg>"` to include dependents.
 - `website/` is outside the workspace and keeps its own `website/pnpm-lock.yaml`. Any change to `website/package.json` must regenerate it with `pnpm install --ignore-workspace` from `website/`: a plain root `pnpm install` never touches that lockfile, and Vercel installs with `--frozen-lockfile`, so a stale lockfile fails every website build.
 
-## TypeScript (project references)
+## TypeScript
 
-- Every package has `composite: true`, `declaration: true`, `declarationMap: true`.
-- Root `tsconfig.json` declares `references` to all packages.
-- Build with `tsc -b` (incremental, cached). Never plain `tsc` in CI.
-- `noEmit: true` in app packages, `emitDeclarationOnly: true` for libraries that ship types only.
+- No root `tsconfig.json` and no project references. Every package's
+  `tsconfig.json` extends the shared `tsconfig.base.json` directly.
+- Typecheck is `tsc --noEmit` per package, run through `turbo run typecheck`
+  at the root. No package sets `composite` or `declaration`.
+- `noEmit: true` in every package's own `tsconfig.json`.
 - `skipLibCheck: true` everywhere. `strict: true` everywhere. `noUncheckedIndexedAccess: true`.
 - `verbatimModuleSyntax: true`: explicit `import type` for type-only imports.
 - Path aliases: per-package only. No global `@/` aliases that span workspaces (use package names).

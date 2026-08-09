@@ -58,10 +58,10 @@ Requires **Claude Max** (or Claude Pro). Goodboy uses your subscription cap, not
 
 Per the compiled registry in `packages/core/src/providers/capabilities.ts`:
 
-- **Turn**: `claude-opus-5` (default), `claude-opus-4-8`, `claude-fable-5`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-sonnet-4-5`.
+- **Turn**: `claude-opus-5` (default), `claude-opus-4-8`, `claude-fable-5`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-sonnet-5`, `claude-sonnet-4-6`, `claude-sonnet-4-5`.
 - **Cheap**: `claude-haiku-4-5`.
 
-Fable 5, Opus 5, Opus 4.8, Opus 4.7, and Sonnet 4.6 carry a 1M-token context window. Sonnet 4.5, Haiku 4.5, Opus 4.6, and older Opus models carry a 200k-token context window. Auxiliary operations (summaries, branch names, planning, agent titles) default to the cheap tier of the workspace default provider. See Defaults and task models below to pin a different model.
+Fable 5, Opus 5, Opus 4.8, Opus 4.7, Sonnet 5, and Sonnet 4.6 carry a 1M-token context window. Sonnet 4.5, Haiku 4.5, Opus 4.6, and older Opus models carry a 200k-token context window. Auxiliary operations (summaries, branch names, planning, agent titles) default to the cheap tier of the workspace default provider. See Defaults and task models below to pin a different model.
 
 ### Setting sources
 
@@ -147,10 +147,12 @@ Requires **ChatGPT Plus/Pro/Business/Edu/Enterprise** (preferred) or an `OPENAI_
 
 ### Default models
 
-Per <https://developers.openai.com/codex/models> (May 2026):
+Per `packages/core/src/providers/codex/catalog.ts`:
 
-- **Turn**: `gpt-5.6` (default), `gpt-5.5`, `gpt-5.4`, `gpt-5.2`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`.
+- **Turn**: `gpt-5.6` (default), `gpt-5.5`, `gpt-5.4`.
 - **Cheap**: `gpt-5.4-mini`.
+
+`gpt-5.2`, `gpt-5.3-codex` and `gpt-5.3-codex-spark` are retired ids: a session created on one of them still resolves through `parseLegacyId.ts`, which remaps `gpt-5.2` and `gpt-5.3-codex` to `gpt-5.4` and `gpt-5.3-codex-spark` to `gpt-5.4-mini`.
 
 ### Turn spawn args
 
@@ -293,8 +295,8 @@ Effort is the third axis of every model picker, next to provider and model. How 
 
 - **Claude Opus and Fable**: `low`, `medium`, `high`, `extra-high`, `max`.
 - **Claude Sonnet**: `low`, `medium`, `high`.
-- **Codex turn models**: `minimal`, `low`, `medium`, `high`.
-- **`gpt-5.4-mini`**: `minimal`, `low`, `medium`.
+- **Codex turn models**: `low`, `medium`, `high`, `xhigh`; `gpt-5.6` additionally accepts `max`.
+- **`gpt-5.4-mini`**: `low`, `medium`, `high`, `xhigh`, the same ladder as `gpt-5.5` and `gpt-5.4`.
 
 Cursor is the exception to the ladder shape: effort is baked into the model slug, so each catalog entry lists the combos it has and the reachable levels depend on the Thinking and Fast toggles. `claude-haiku-4-5` and every Gemini model have no ladder at all and emit no effort arg. Picking a level a model does not support clamps to the top of what it supports (`clampEffort` in `packages/core/src/providers/clampEffort.ts`).
 

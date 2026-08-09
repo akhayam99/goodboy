@@ -263,14 +263,21 @@ anchored popover so the header never grows, and confirming clears the
 workspace credential (keychain entry, database row, and any in-memory cache)
 without leaving the studio. This is the only way to disconnect an integration
 short of Settings' "Run setup again", which re-opens the onboarding wizard and
-does not cover Slack. GitHub only shows the control when the workspace has its
-own token (`gh_status`'s `scoped` flag): a workspace falling back to the
-system `gh` CLI has nothing workspace-scoped to clear, and disconnecting never
-touches that system session. The GitHub control is gated on that credential
-state alone, not on whether the workspace's git remote is GitHub, so a mixed
-workspace (a GitLab or Bitbucket remote that still carries a leftover scoped
-GitHub token) still shows a way to clear it even though the pull request and
-issue browsing panes stay hidden.
+does not cover Slack. GitHub only renders that Disconnect control when the workspace is
+authenticated via its own PAT (`status.mode === 'pat'` in
+`apps/desktop/src/features/github/components/Panel/index.tsx`). A workspace
+falling back to the system `gh` CLI has nothing workspace-scoped to clear, so
+the panel shows no Disconnect button there; instead it tells the user to run
+`gh auth logout` in a terminal, and offers a field to connect a PAT instead.
+Either way, disconnecting through the GitHub studio only clears the
+workspace-scoped credential (`gh_clear_token` in
+`apps/desktop/src-tauri/src/github.rs:368-372`, which removes the keychain
+entry for that workspace); it never touches the system `gh` session. The
+GitHub control is gated on that credential state alone, not on whether the
+workspace's git remote is GitHub, so a mixed workspace (a GitLab or
+Bitbucket remote that still carries a leftover scoped GitHub token) still
+shows a way to clear it even though the pull request and issue browsing
+panes stay hidden.
 
 ### Workspace creation
 

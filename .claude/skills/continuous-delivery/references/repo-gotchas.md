@@ -80,8 +80,9 @@ only what it does not say.
   each version file in its own invocation.
 - `hdiutil` mounts a second copy at `/Volumes/Goodboy 1` when one is already
   mounted; detach before asserting paths.
-- To smoke-test a dmg against real data safely, point `GOODBOY_DB_FILE` at a
-  `VACUUM INTO` copy, never `copyFileSync` of the live DB.
+- Never point `GOODBOY_DB_FILE` at a copy of the real database, whether made
+  with `cp`, `copyFileSync` or `VACUUM INTO`. See "Running the built app"
+  below for the binding recipe.
 
 ## Running the built app
 
@@ -94,19 +95,32 @@ placeholder, so could-not-run is the exception, not the default.
   The bundle lands at
   `apps/desktop/src-tauri/target/release/bundle/macos/Goodboy.app`.
 - Launch the binary directly, never via `open`, so the env var applies:
-  `GOODBOY_DB_FILE=<copy> .../Goodboy.app/Contents/MacOS/goodboy-desktop`.
+  `GOODBOY_DB_FILE=<new-empty-path> .../Goodboy.app/Contents/MacOS/goodboy-desktop`.
   The bundle is named `Goodboy.app` after `productName`, but the binary
   inside it is named after the Cargo package, `goodboy-desktop`, not
   `Goodboy`.
-- Database isolation is mandatory for every walk, not only dmg smoke
-  tests: `GOODBOY_DB_FILE` points at a `VACUUM INTO` copy per the line
-  above. A walk against the owner's live database corrupts real state to
-  test a draft.
+- No agent walks the app against a copy of the production database. Point
+  `GOODBOY_DB_FILE` at a path that does not exist yet, let the app's own
+  migrations build the schema on first launch, and seed exactly the rows
+  the pass needs with SQL. Never `cp`, never `VACUUM INTO` from `data.db`,
+  never reuse a walk file from a previous release. If a claim cannot be
+  reached from an empty database plus deliberate seed rows, that is a
+  finding about the app's testability, not something to work around.
 - One GUI walker at a time. `GOODBOY_DB_FILE` isolates the database, not
   the process table: a walker that kills a stray instance by process name
   (`pkill`) can take down a sibling walker's app, including one still
   pointed at the owner's live database. Kill only the PID your own walk
   launched.
+- The app can be seen. Bash `screencapture` fails on this machine
+  ("could not create image from display"), but the computer-use interface's
+  screenshot and zoom actions render the display fine. One release
+  concluded there was no display access at all and skipped its visual
+  work; the next proved that wrong.
+- Keystrokes are blocked on this machine, and the mouse is not: the
+  computer-use `key`, `type`, `computer_batch` and `wait` actions all abort
+  with `user interrupt` before executing, while every mouse action
+  (clicks, drags, scrolls) succeeds. Any Escape-to-close or
+  focus-then-type claim rests on class assertions until that is solved.
 
 ## Audit and verification
 
