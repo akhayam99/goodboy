@@ -135,11 +135,13 @@ the discrepancy escalates to the owner inbox per
 
 Recorded when the composition decision above was superseded. Three notes.
 
-**The shape.** The slot budget, the merge-unit ceiling and the graduation
+**The shape.** The slot budget, the per-category allocation and its flow
+rules, the merge-unit ceiling, the wave widths, and the graduation
 path this record and its first amendment defined are superseded by
 [0003](./0003-compose-to-demand-at-a-defended-total.md), which records the
 owner's direction to widen and the safeguards riding it. Every other
-decision here stands.
+decision here stands: item classes, the roles, the impact bar, waves as a
+mechanism, the follow-through record, the run log, and the ADR directory.
 
 **The record corrected.** The graduation gate's "two green engagements at
 the 12-slot shape" was never met: the 2026-08-06/07 engagement ran the

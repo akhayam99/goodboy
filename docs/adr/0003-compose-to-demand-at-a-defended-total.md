@@ -64,8 +64,10 @@ Replace composition.md's fixed-slot model:
   configuration, so the rule degrades gracefully while it is absent.
 
 This record supersedes the composition decision of
-[0001](./0001-expand-the-delivery-org.md): the slot budget, the merge-unit
-ceiling, and the graduation path. 0001's other decisions (item classes, the
+[0001](./0001-expand-the-delivery-org.md): the slot budget, the
+per-category allocation and its flow rules, the merge-unit
+ceiling, the wave widths, and the graduation path. 0001's other decisions
+(item classes, the
 roles, the impact bar, waves as a mechanism, the follow-through record, the
 run log, this directory) stand, and 0001 carries a third amendment pointing
 here.
@@ -81,9 +83,18 @@ and child lifecycle, the captain prompt's disk discipline that the leg
 handoff leans on, and composition.md's ratchet-back (a wide release that
 breaches its ceiling, trips a stop condition, or leaves `main` red sends
 the next release back to 12 slots and 7 merge units, declared by the
-delivery lead in the ledger header). Twenty serial merges cost about two
+delivery lead in the release's ledger entry). Twenty serial merges cost
+about two
 hours of merge-lane wall clock; that price is accepted here, on the record.
 Each captain leg carries no more context than the tested shape did.
+
+One substitution is deliberate and named: the owner asked for roughly 20
+PRs, and this model defends 20 slots, which are not the same thing because
+S slots group into single PRs. His underlying complaint was legibility (21
+work items shipped across two releases, about 12 reported), and slots
+count work items, the unit he was undercounted in; the merge-unit ceiling
+of 20 keeps the PR count able to reach his number whenever the batch does
+not group.
 
 ## Alternatives considered
 

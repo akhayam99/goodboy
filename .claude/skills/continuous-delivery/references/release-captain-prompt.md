@@ -98,7 +98,9 @@ premise re-tested against the code before you defer it again.
 **Pending deferred items** (org items and experiments shipped by earlier
 releases, awaiting judgment): {{pending_deferred_items}}. Judge each
 against what actually happened; verdict `kept | reverted | still-pending`
-with one line of reason on your report's `self:` line; still-pending needs
+with one line of reason on your report's `self:` line, or
+`sound | unsound` when the item is a record review (an ADR or a spike
+conclusion, per `docs/autonomy/item-classes.md`); still-pending needs
 a reason, not a shrug.
 
 **Baselines carry** (from `~/.goodboy-autonomous/BASELINES.md`, the
@@ -106,13 +108,18 @@ delivery lead's cross-release carry file; `none` where no history exists
 yet): reliability baseline {{baseline}}; surfaces the previous
 product-critic walk covered {{previous_walk}}; journeys the previous qa
 explorer walked {{previous_journeys}}; the product critic's current list
-{{critic_list}}; debt slices recent releases treated {{recent_slices}};
+{{critic_list}}, its `condemned:` verdict included when the previous walk
+named one; debt slices recent releases treated {{recent_slices}};
 the design system steward's latest named-duplicates list {{steward_list}}.
 Each value fills the matching placeholder in the brief of the specialist
-that consumes it: the reliability owner, the product critic, the qa
+that consumes it: the reliability owner, the product critic (whose brief
+takes both the previous walk and the previous condemnation from the
+critic list), the qa
 explorer, the ux designer, and the debt surgeon (which takes both the
 slices and the steward list); the steward list also feeds the
-first-claim check in `docs/autonomy/composition.md` at Phase 2.
+first-claim check in `docs/autonomy/composition.md` at Phase 2, and the
+previous condemnation is what lets the product owner evaluate the
+two-walk rethink trigger in `docs/autonomy/item-classes.md`.
 
 **Concurrency mode**: {{concurrency_mode}}, from the lead's preflight
 probe; what each mode means is `docs/autonomy/watchdogs.md`'s to say.
@@ -256,7 +263,7 @@ composition: <slots by category against the budget, deviations declared>
 waves: <n waves, slots per wave, any wave carried or stopped at>
 ceiling: <derived per-tier ceiling vs per-tier actuals, margin consumed, breach or "none"; derivation in scratch, per docs/autonomy/cost-ceiling.md>
 impact: pass | below-bar (<missing categories>)   (the challenger's verdict, per docs/autonomy/impact.md)
-self: <org-class items by name, each pending-verification, or "none">; <newly shipped experiments: name, criterion, reading window, revert shape, or "none">; <per inherited deferred item: kept | reverted | still-pending, one line of reason each>
+self: <org-class items by name, each pending-verification, or "none">; <newly shipped experiments: name, criterion, reading window, revert shape, or "none">; <per inherited deferred item: kept | reverted | still-pending, or sound | unsound for a record review, one line of reason each>
 audits: security <findings count or "no-findings", pointer>; perf <findings count or "no-findings", pointer>   (the two never-flowing audit slots; this line is how their outcome reaches the ledger)
 prs: #NNNN <title>   (one line each, merged only)
 held: #NNNN <class B change awaiting the owner>  (omit if none)

@@ -15,8 +15,9 @@ filled by the delivery lead.
   **Cannot block**: publication (the lead's), a verifier or security
   verdict (it can loop repairs, never overrule), an owner hold on class B
   data.
-- **Tier and cadence**: reasoning tier, standing; one per release, then it
-  dies. State survives on disk, never in agents.
+- **Tier and cadence**: reasoning tier, standing; one per release, or one
+  per leg on a composition handoff ([composition.md](../composition.md)),
+  then it dies. State survives on disk, never in agents.
 - **Inputs**: the brief the delivery lead fills from the template, the
   policy cluster, `MANDATES.md`, `BACKLOG.md`, open `FOLLOW_THROUGH.md`
   entries, the repo gotchas file.

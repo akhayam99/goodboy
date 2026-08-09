@@ -77,7 +77,10 @@ fills the batch from every queue at once, under these rules, in this order:
    issues are the owner's sanctioned steering channel and the side that has
    actually starved (seventeen owner issues once waited while a standing
    mandate spent every headline elsewhere). Inside the issue share, the
-   author-weighting order below applies unchanged.
+   author-weighting order below applies unchanged. An issue share that
+   runs thin is not the model's to fix: when candidates are scarce because
+   they wait on owner answers, the lever is answering the inbox, never
+   admitting weaker items in their place.
 4. **Breadth breaks ties.** Between two candidates of equal standing, the
    one from the category with less representation in the batch so far wins.
    This is the intelligent balance made mechanical: the loudest queue wins
@@ -112,7 +115,9 @@ total; a named category takes the given count as a floor for that
 engagement, guaranteed space whenever its queue can fill it at the bar. The
 line cannot lower the standing floors (refactor 2, the two audit slots) and
 cannot raise the org cap: those are policy, not allocation. A line the lead
-cannot read this way, or whose surrounding prose describes a policy these
+cannot read this way, whose floors sum past its total
+(`quota: total 5, issues 6`), or whose surrounding prose describes a policy
+these
 docs no longer contain, is an owner-inbox escalation, and the defaults apply
 until the owner fixes it. That last clause is the repair path for owner-only
 MANDATES.md itself, which no agent may edit. No other surface sets the
@@ -138,10 +143,13 @@ including what the one wide outing actually showed (an unconditional role
 lost in both releases, parent-addressing failures, a captain killed by its
 host) and the fixes that ship alongside the widening.
 
-**The ratchet-back is the safeguard with an actor.** After any release at
-this shape that breaches its ceiling, trips a stop condition, or leaves
-`main` red, the delivery lead runs the next release at 12 slots and 7 merge
-units and says so in the ledger header. A ratcheted release that is green by
+**The ratchet-back is the safeguard with an actor and a moment.** At
+brief-compose time the delivery lead checks the previous release's ledger
+entry for a ceiling breach, a tripped stop condition, or a red `main`; on
+any of the three, the next release runs at 12 slots and 7 merge
+units, declared in the captain's brief through the quota placeholder and
+recorded in that release's own ledger entry. A ratcheted release that is
+green by
 the definition above returns the shape to 20 for the release after it.
 
 ## Slots are sized; slots are not PRs
@@ -177,7 +185,9 @@ Hard ceilings, none of them owner-tunable through the `quota:` line:
   `handoff (composition)`; the delivery lead spawns the successor with the
   predecessor-state block; only the final leg cuts the draft. Legs are
   sequential, never concurrent: `main` stays one resource. A handoff is not
-  a retry and burns no failure budget. Twelve slots never meant twelve PRs
+  a retry and burns no failure budget. The two-leg budget counts **plan
+  splits, never processes**: a captain replaced after a death or a harness
+  failure resumes its own leg and does not consume the second. Twelve slots never meant twelve PRs
   and twenty do not mean twenty: **S slots of the same class group into one
   PR** (all copy fixes in one, all doc fixes in one), keeping per-item
   provenance in the PR body.

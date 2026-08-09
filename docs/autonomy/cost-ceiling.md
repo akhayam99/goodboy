@@ -49,8 +49,12 @@ one thing to declare:
   are known only then. The derivation goes to the captain's scratch dir;
   the result goes on its report's `ceiling:` line. In a two-leg release
   ([composition.md](./composition.md)) each captain derives the ceiling
-  for its own leg from the merge units that leg owns; the Phase 1 to 3
-  terms and the Phase 7 roster count in the leg that runs them.
+  for its own leg, and the general rule is that **a spawn counts in the
+  leg that performs it**: the Phase 1 to 3 terms and the Phase 2 roster
+  in the first leg, the Phase 7 roster in the final leg, builders and
+  verifiers where they run. The unconditional roster is split across the
+  legs by phase, never counted once per leg: two full rosters would
+  inflate both ceilings until a breach could not fire.
 - **The delivery lead audits the derivation** at its report-verification
   step, against the release's run log, never against the report alone.
 

@@ -135,11 +135,19 @@ deciding, forever.
 - While an issue is settled-pending-owner, **the per-release sweep posts no
   further comments on it**. The last comment already names the question;
   repeating it is noise.
+- **The clock has a store**, because sweeps are fresh agents and the rule
+  above deletes the comment trail that would otherwise carry it: each
+  sweep's report names every issue it found settled-pending-owner, the
+  delivery lead records that list on the ledger's sweep line, and the next
+  sweep receives it in its brief, the same path the skip count and the
+  sweep timestamp already travel.
 - When **two consecutive per-release sweeps** find the same issue
   settled-pending-owner with no owner reply in between, the triage officer
   **closes it during the second sweep**, with a closure comment naming what
   shipped (versions and PRs), what was refused and why, and where any
-  remainder now lives. A remainder the org still intends becomes one fresh,
+  remainder now lives. The officer closes only an issue its brief already
+  lists as settled once: a fresh finding starts the clock, never fires it.
+  A remainder the org still intends becomes one fresh,
   narrowly scoped issue with provenance `internal` and no inherited author
   weight.
 - Any owner comment resets the clock. The officer never closes over a live

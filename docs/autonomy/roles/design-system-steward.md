@@ -40,7 +40,10 @@ did not know the first copy existed.
 **Sunset clause, part of the charter.** An advisory role proves itself by
 being consumed: if no shipped work has carried the `design-system` marker
 after two engagements, the delivery lead kills the role, judged from the
-ledger and the run log ([visibility.md](../visibility.md)). Consumption
+ledger and the run log ([visibility.md](../visibility.md)). The count
+starts at the marker's introduction (v0.1.77): the two engagements are the
+first two run under the marker, and pre-marker work neither counts nor
+condemns. Consumption
 counts through either channel; the marker is what makes it countable,
 because for four releases running design-system work shipped through the
 refactor floor and fix slots, invisible to this clause and to the owner.

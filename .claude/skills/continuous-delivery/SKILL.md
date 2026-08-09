@@ -75,7 +75,8 @@ commit any of it):
 - `BASELINES.md`: cross-release carry, written only by you; create it if
   absent. Before a published release's scratch dirs are deleted, you append
   a compact carry section distilled from that release's report blocks:
-  reliability numbers, the product-critic list, the design system
+  reliability numbers, the product-critic list with its `condemned:`
+  verdict when one was named, the design system
   steward's named-duplicates list, the qa journeys walked, the
   debt slices touched, and the per-tier spawn counts from the release's
   `run-log.md`, actuals split from repair share (the empirical input the
@@ -174,8 +175,12 @@ state directory contradicts git history, that is a stop condition
    - `{{focus_area}}`: per the rotation in `docs/autonomy/release-loop.md`,
      least recently visited per the ledger.
    - `{{quota}}`: the quota in effect, deferring every number to
-     `docs/autonomy/composition.md`, including any ratchet-back you
-     declared per that file's record section.
+     `docs/autonomy/composition.md`. Check the ratchet-back trigger here,
+     at brief-compose, against the previous release's ledger entry (a
+     ceiling breach, a tripped stop condition, or a red `main`); when it
+     fires, declare the narrow shape in this placeholder and record the
+     ratchet in the new release's ledger entry, per that file's record
+     section.
    - `{{issue_candidates}}`: from `BACKLOG.md`, with author class,
      priority, age and skip count.
    - `{{follow_through}}`: the open `FOLLOW_THROUGH.md` entries and any
@@ -197,18 +202,20 @@ state directory contradicts git history, that is a stop condition
    - `{{pending_deferred_items}}`: pending-verification org items and
      unread experiment criteria from earlier releases' ledger `self:`
      lines. `docs/autonomy/item-classes.md` owns the verdict rule and
-     names this brief as the delivery channel. On the first engagement,
-     while `docs/adr/0001-expand-the-delivery-org.md`'s reviewed-by line
-     still reads pending, include that record: the captain hands it to
-     its Phase 2 challenger and updates the line with the review's
-     pointer in the release PR.
+     names this brief as the delivery channel. While any ADR's
+     reviewed-by line still names an owed review (0001's bound-role
+     review, 0003's product-owner review, 0004's release-captain
+     review), include that record: the captain delivers it to the named
+     role and updates the reviewed-by line with the review's pointer in
+     the release PR.
    - `{{carries_integration_sweep}}`: `yes` for exactly the first release
      of the engagement, `no` otherwise.
    - `{{baseline}}`, `{{previous_walk}}`, `{{previous_journeys}}`,
      `{{critic_list}}`, `{{recent_slices}}`, `{{steward_list}}`: from
      `BASELINES.md`; `none`
      where the file or section does not exist yet.
-   - `{{predecessor_state}}`: `none` except on a retry or a resume.
+   - `{{predecessor_state}}`: `none` except on a retry, a resume, or a
+     leg handoff.
 3. **Spawn the release captain** on the reasoning tier with the brief. When
    the harness supports background tasks with notifications, spawn it in the
    background and use the waiting time for the triage sweep and the watchdog
@@ -219,7 +226,13 @@ state directory contradicts git history, that is a stop condition
    spawn the successor leg immediately with `{{predecessor_state}}` filled
    from its scratch, per the two-leg rule in
    `docs/autonomy/composition.md`; a handoff is not a retry and burns no
-   failure budget.
+   failure budget. Before spawning the successor, run the step 4
+   verification on the handoff report and append its block to `LEDGER.md`:
+   the first leg's `composition:`, `audits:`, `self:`, `pushback:`,
+   `held:`, `dropped:` and `prs:` lines exist only there. A release's
+   ledger entry is the union of its legs' blocks, and steps 4 to 7 after
+   the final leg read that union (the historian's `{{report_block}}`
+   included).
 4. **Verify the report against the world**, not against itself. Each check
    is backed by the file you read on demand when auditing it:
    the draft release exists with all four assets (dmg, app.tar.gz, .sig,
@@ -244,9 +257,10 @@ state directory contradicts git history, that is a stop condition
    reading window and revert shape (so the ledger entry can deliver them
    to the later judging release), and every inherited item from
    `{{pending_deferred_items}}` carries a `kept | reverted |
-still-pending` verdict with a one-line reason; a report that ignores
+still-pending` verdict, or `sound | unsound` when the item is a record
+   review, with a one-line reason; a report that ignores
    an inherited item is rejected (`docs/autonomy/item-classes.md` owns
-   the rule). The `audits:` line states the security and perf outcome
+   the rule and both verdict pairs). The `audits:` line states the security and perf outcome
    (findings count or no-findings, with a pointer): the two audit slots
    never flow, and a slot whose outcome reaches no record is decorative. Read the release notes
    against `docs/tone-of-voice.md` (read it at this check) and check the
@@ -313,18 +327,24 @@ ledger. Never start a release you cannot see through to publish.
 
 ## Issue triage sweep
 
-Spawn an issue triage officer (mid tier), brief: quote the officer's
+Spawn an issue triage officer (mid tier), brief: prepend
+`references/briefs/_contract.md` with yourself as the parent identity (the
+officer does the same for its responders); quote the officer's
 casting-table row from `docs/autonomy/souls.md` (its spawn instructions
 are inline, so the row travels here); follow
 `docs/autonomy/issue-triage.md` exactly; sweep every open issue plus new
-comments since the last sweep (timestamp in the ledger header); post replies
+comments since the last sweep (timestamp in the ledger header); hand it
+the previous sweep's settled-pending-owner list from the ledger's sweep
+line, the store the closure-on-silence clock runs on; post replies
 under your own identity with the disclosure line; carry accepted work into
 `BACKLOG.md` with issue number, author class, priority, date and skip count,
 by the writer rule below; increment the skip count of accepted items passed
 over by batches not yet swept (keyed on the sweep timestamp in the ledger
 header, so an engagement boundary never double-counts a skip), and say so on
 their threads; escalations to `OWNER_INBOX.md`; final message is a
-compact list of issue -> decision plus the backlog mutations it made or is
+compact list of issue -> decision plus its settled-pending-owner list
+(which you record on the ledger's sweep line) plus the backlog mutations
+it made or is
 handing back. You spot-check its replies against the trust model in
 `docs/autonomy/safety.md` (reading `docs/autonomy/issue-triage.md` at the
 first spot-check) before counting the sweep done. The

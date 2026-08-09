@@ -60,7 +60,9 @@ Class-specific notes, each carrying its reason:
   can say. Admission bar mirrors the org-item citation bar: an owner ask
   for a rethink on the record, or the same surface named whole by two
   consecutive product-critic walks ([roles/product-critic.md](./roles/product-critic.md)
-  owns the naming); no citation, the challenger rejects it, because the
+  owns the naming; the previous walk's condemnation travels in the
+  delivery lead's baselines carry, so the second walk and the product
+  owner can both see it); no citation, the challenger rejects it, because the
   filler bar exists precisely to refuse redesigns on taste. Deliverable: a
   written redesign of the surface (entry point, states, verbs, the three
   questions answered at surface level, and what it deletes), contested by
