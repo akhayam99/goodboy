@@ -103,12 +103,12 @@ export const LegendSection = ({}: Props) => (
       />
     </LegendBlock>
 
-    <LegendBlock title="Auto badge">
+    <LegendBlock title="Autorun badge">
       <LegendaGrid
         rows={[
           {
-            dot: 'bg-warning',
-            label: 'AUTO',
+            dot: 'bg-primary',
+            label: 'Autorun',
             desc: 'autorun mode: next action fires without user confirmation',
           },
         ]}
