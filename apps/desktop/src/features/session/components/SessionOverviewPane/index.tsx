@@ -19,7 +19,10 @@ import {
   selectStandaloneAgents,
   type AgentHomeLens,
 } from '../../agent-kind';
+import { agentThreadIds } from '../../agentThreadIds';
 import { useResolvableCount } from '../../hooks/useResolvableCount';
+import { useResolverIndex } from '../../hooks/useResolverIndex';
+import { resolverLaneEntries } from '../ResolverAgentsLane/resolverLaneEntries';
 import { selectOpenQuestions } from './lib';
 import {
   selectNextUp,
@@ -54,6 +57,14 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const nonResolverAgents = useNonResolverStandaloneAgents(sessionId);
   const resolvable = useResolvableCount(sessionId);
+  const resolverIndex = useResolverIndex(sessionId);
+  const threadlessActiveResolverCount = useMemo(
+    () =>
+      resolverLaneEntries({ links: resolverIndex.links }).active.filter(
+        (link) => agentThreadIds(link.agent).length === 0,
+      ).length,
+    [resolverIndex.links],
+  );
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
@@ -69,7 +80,8 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     resolvable.diffComments +
     resolvable.pending +
     runs.resolveQueue.length +
-    (runs.completedResolveQueue?.length ?? 0);
+    (runs.completedResolveQueue?.length ?? 0) +
+    threadlessActiveResolverCount;
   const questionBlocksRun = openQuestions.some(
     (question) =>
       question.workflowRunId != null && activeRuns.some((run) => run.id === question.workflowRunId),
