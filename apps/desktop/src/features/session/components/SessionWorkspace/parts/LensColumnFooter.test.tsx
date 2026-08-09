@@ -134,4 +134,16 @@ describe('LensColumnFooter', () => {
     expect(state.unarchiveTask).toHaveBeenCalledWith('sess-1');
     expect(screen.queryByRole('button', { name: /^archive session$/i })).toBeNull();
   });
+
+  it('wraps every control in a horizontal scroll container so an unbounded project switcher cannot push archive or delete out of reach', () => {
+    render(<LensColumnFooter session={session()} />);
+    const project = screen.getByRole('button', { name: /active project/i });
+    const archive = screen.getByRole('button', { name: /archive session/i });
+    const remove = screen.getByRole('button', { name: /delete session/i });
+
+    const scrollContainer = project.closest('[class*="overflow-x-auto"]');
+    expect(scrollContainer).not.toBeNull();
+    expect(scrollContainer?.contains(archive)).toBe(true);
+    expect(scrollContainer?.contains(remove)).toBe(true);
+  });
 });
