@@ -38,6 +38,7 @@ import {
 } from './slices/session-view';
 import { agentHasUnread } from './slices/agents/agentHasUnread';
 import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
+import { isSessionPrFetchable } from './slices/github/resolveSessionPrFetch';
 import { resolveSessionRepo } from './slices/worktrees/resolveSessionRepo';
 export { agentHasUnread } from './slices/agents/agentHasUnread';
 
@@ -81,8 +82,12 @@ const EMPTY_WORKSPACES: ReadonlyArray<Workspace> = [];
 
 type StageInfoState = Pick<
   AppState,
+  | 'sessions'
   | 'workspaces'
   | 'sessionBranches'
+  | 'sessionWorktrees'
+  | 'sessionMounts'
+  | 'sessionActiveMount'
   | 'sessionGithub'
   | 'sessionGitlabMr'
   | 'sessionOpenQuestions'
@@ -133,6 +138,7 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
       githubAvailable: state.githubStatus?.available ?? null,
       fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
       failedAt: state.sessionGithub[sessionId]?.failedAt ?? null,
+      fetchable: isSessionPrFetchable({ state, sessionId }),
     }),
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
@@ -154,6 +160,7 @@ export const useSessionPrFetchState = (sessionId: SessionId): SessionPrFetchStat
       githubAvailable: s.githubStatus?.available ?? null,
       fetchedAt: s.sessionGithub[sessionId]?.fetchedAt ?? null,
       failedAt: s.sessionGithub[sessionId]?.failedAt ?? null,
+      fetchable: isSessionPrFetchable({ state: s, sessionId }),
     }),
   );
 
@@ -185,10 +192,23 @@ export const useSortedGroupedSessions = (
   const sessionBranches = useAppStore((s) =>
     needsStage ? s.sessionBranches : (EMPTY_GITHUB_STATE as typeof s.sessionBranches),
   );
+  const sessionWorktrees = useAppStore((s) =>
+    needsStage ? s.sessionWorktrees : (EMPTY_GITHUB_STATE as typeof s.sessionWorktrees),
+  );
+  const sessionMounts = useAppStore((s) =>
+    needsStage ? s.sessionMounts : (EMPTY_GITHUB_STATE as typeof s.sessionMounts),
+  );
+  const sessionActiveMount = useAppStore((s) =>
+    needsStage ? s.sessionActiveMount : (EMPTY_GITHUB_STATE as typeof s.sessionActiveMount),
+  );
   return useMemo(() => {
     const partial: StageInfoState = {
+      sessions,
       workspaces,
       sessionBranches,
+      sessionWorktrees,
+      sessionMounts,
+      sessionActiveMount,
       sessionGithub,
       sessionGitlabMr,
       sessionOpenQuestions,
@@ -210,6 +230,9 @@ export const useSortedGroupedSessions = (
     needsStage,
     workspaces,
     sessionBranches,
+    sessionWorktrees,
+    sessionMounts,
+    sessionActiveMount,
     sessionGithub,
     sessionGitlabMr,
     sessionOpenQuestions,
@@ -262,11 +285,18 @@ export const useStageGroupedSessions = (
   const githubStatus = useAppStore((s) => s.githubStatus);
   const workspaces = useAppStore((s) => s.workspaces);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
+  const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
+  const sessionMounts = useAppStore((s) => s.sessionMounts);
+  const sessionActiveMount = useAppStore((s) => s.sessionActiveMount);
   const previousRef = useRef<ReadonlyArray<GroupedSessions> | null>(null);
   const grouped = useMemo(() => {
     const partial: StageInfoState = {
+      sessions,
       workspaces,
       sessionBranches,
+      sessionWorktrees,
+      sessionMounts,
+      sessionActiveMount,
       sessionGithub,
       sessionGitlabMr,
       sessionOpenQuestions,
@@ -290,6 +320,9 @@ export const useStageGroupedSessions = (
     prefs.sort,
     workspaces,
     sessionBranches,
+    sessionWorktrees,
+    sessionMounts,
+    sessionActiveMount,
     sessionGithub,
     sessionGitlabMr,
     sessionOpenQuestions,
