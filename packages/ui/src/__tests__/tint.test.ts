@@ -33,8 +33,8 @@ describe('tintClasses', () => {
     });
   });
 
-  it('pins draft to the SEMANTIC_TONES coverage list', () => {
-    expect(SEMANTIC_TONES).toContain('draft');
+  it('reads the draft tone from the TINT record, not a hardcoded coverage list', () => {
+    expect(tintClasses('draft').bg).toBe('bg-draft/10');
   });
 
   it('exposes a draft tone bound to the draft token, not indigo hardcodes', () => {
