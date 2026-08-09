@@ -9,7 +9,7 @@ import {
   SquareTerminal,
   Trash2,
 } from 'lucide-react';
-import { Chip, cn, formatUsd, tintClasses, Tooltip } from '@goodboy/ui';
+import { Chip, cn, Divider, formatUsd, tintClasses, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -181,7 +181,7 @@ export const StageBoardCard = memo(function StageBoardCard({
                 aria-label={agentCountLabel}
                 className="inline-flex shrink-0 items-center gap-1 text-2xs text-muted-foreground"
               >
-                <Bot size={12} aria-hidden />
+                <Bot size={14} aria-hidden />
                 <span className="tabular-nums">{agentCount}</span>
               </span>
             </Tooltip>
@@ -213,7 +213,7 @@ export const StageBoardCard = memo(function StageBoardCard({
               className="shrink-0 text-2xs font-medium tabular-nums text-muted-foreground"
             />
           )}
-          {isAutoMode && <Chip tone="danger" size="sm" label="Auto" className="shrink-0" />}
+          {isAutoMode && <Chip tone="primary" size="sm" label="Autorun" className="shrink-0" />}
         </span>
       </span>
 
@@ -299,6 +299,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         ) : (
           <CardAction icon={Archive} label="Archive" onClick={() => onArchive?.(session)} />
         )}
+        <Divider orientation="vertical" className="mx-0.5 h-4 shrink-0 self-center" />
         <CardAction
           icon={Trash2}
           tone="danger"
