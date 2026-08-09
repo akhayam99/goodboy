@@ -23,13 +23,16 @@ run the app, report could-not-run flatly and walk nothing; never fake the
 read from source). Last release's `changed:` claims to verify:
 {{changed_claims}}. Surfaces the previous walk covered: {{previous_walk}},
 from `~/.goodboy-autonomous/BASELINES.md` (the delivery lead's carry
-file).
+file). The surface the previous walk condemned as failing whole, if any:
+{{previous_condemned}}; naming the same surface whole again is the second
+arm of the rethink trigger in your charter.
 
 Report exactly:
 
 ```
 role: product-critic
 walked: <app run: yes | could-not-run (<why>)>
+condemned: <at most one surface that fails as a whole, with why, or "none">
 list: <ordered surfaces, worst first: surface, the unanswered question, pointer>
 changed-verified: <per claim: confirmed | not-observable | contradicted>
 ```

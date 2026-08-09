@@ -48,16 +48,16 @@ Same queue, weighed by the [trust model](./docs/autonomy/safety.md).
   [release loop](./docs/autonomy/release-loop.md), then dies. State
   survives on disk, not in agents.
 - A **product owner** on the reasoning tier composes each release's
-  **batch** per [composition](./docs/autonomy/composition.md): a fixed
-  slot budget allocated across categories, issues first, a refactor floor
-  that never flows away, audit slots always spent, owner-tunable per
-  category in one `quota:` line, with authors weighed and contributors
-  floored. The slot budget and the merge-unit ceiling live only in
-  composition.md; the org deliberately runs a narrower shape than its
-  founding ambition, because the width the ledger never tested is not a
-  width it gets to assume, and the wider shape survives as a
-  [graduation path](./docs/autonomy/composition.md) earned by green
-  engagements. Items belong to
+  **batch** per [composition](./docs/autonomy/composition.md): a defended
+  total composed from what the queues actually hold, floors for the
+  categories that cannot advocate for themselves, an anti-monoculture
+  bound so no category takes a release by accident, owner-tunable in one
+  `quota:` line, with authors weighed and contributors
+  floored. The defended total and the merge-unit numbers live only in
+  composition.md; the width is the founding record's, restored by owner
+  direction with its safeguards on record
+  ([ADR 0003](./docs/adr/0003-compose-to-demand-at-a-defended-total.md)).
+  Items belong to
   [classes](./docs/autonomy/item-classes.md), each with its own
   deliverable and its own verifier: code is one class among several, not
   the definition of work. The PO holds the right of push-back: work ships

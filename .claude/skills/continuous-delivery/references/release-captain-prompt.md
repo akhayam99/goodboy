@@ -21,6 +21,22 @@ resolves. That handoff is the silent-stall failure `docs/autonomy/watchdogs.md`
 exists to prevent: a captain once did exactly that after spawning its
 Phase 1 archaeologists, with five children still live.
 
+**Leg boundary.** If the reconciled plan exceeds the per-leg merge-unit
+ceiling in `docs/autonomy/composition.md`, you own the first leg: build,
+verify and merge at most 10 units, run no Phase 7, and report the verdict
+`handoff (composition)` with the remainder (surviving items, footprints,
+verifier verdicts, merge queue) in your scratch dir. Your caller spawns
+the successor leg on the same version; a handoff is not a failure and not
+a retry.
+
+**Disk discipline.** Each phase's deciding artifact reaches your scratch
+dir when the phase completes, never batched at report time: the merged
+audit, the reconciled plan, the footprints, the ceiling derivation, the
+roster before each spawn batch, the merge queue, and verdict lines as they
+land. A handoff, a successor, or a resume is only as good as what reached
+disk; a harness death between phases must cost one phase, never the
+release.
+
 **Working root and write scope.** Working root: `{{repo_root}}`. You write
 `~/.goodboy-autonomous/v{{version}}/` (run log and scratch; every child
 gets a unique path inside it) and, among engagement-level state files,
@@ -65,7 +81,7 @@ Phase 1 audit digs here even when recent PRs point elsewhere.
 extract, as constraints not inputs: {{mandate_extract}}. Suspended mandates,
 inert until the owner answers, never re-argued: {{suspended_mandates}}.
 
-**Composition**: the slot budget in effect is {{quota}}, per
+**Composition**: the defaults and overrides in effect are {{quota}}, per
 `docs/autonomy/composition.md`. Issue-share candidates, with author class,
 priority, age and skip count: {{issue_candidates}}. Take or explicitly
 decline each candidate listed.
@@ -82,7 +98,9 @@ premise re-tested against the code before you defer it again.
 **Pending deferred items** (org items and experiments shipped by earlier
 releases, awaiting judgment): {{pending_deferred_items}}. Judge each
 against what actually happened; verdict `kept | reverted | still-pending`
-with one line of reason on your report's `self:` line; still-pending needs
+with one line of reason on your report's `self:` line, or
+`sound | unsound` when the item is a record review (an ADR or a spike
+conclusion, per `docs/autonomy/item-classes.md`); still-pending needs
 a reason, not a shrug.
 
 **Baselines carry** (from `~/.goodboy-autonomous/BASELINES.md`, the
@@ -90,10 +108,18 @@ delivery lead's cross-release carry file; `none` where no history exists
 yet): reliability baseline {{baseline}}; surfaces the previous
 product-critic walk covered {{previous_walk}}; journeys the previous qa
 explorer walked {{previous_journeys}}; the product critic's current list
-{{critic_list}}; debt slices recent releases treated {{recent_slices}}.
+{{critic_list}}, its `condemned:` verdict included when the previous walk
+named one; debt slices recent releases treated {{recent_slices}};
+the design system steward's latest named-duplicates list {{steward_list}}.
 Each value fills the matching placeholder in the brief of the specialist
-that consumes it: the reliability owner, the product critic, the qa
-explorer, the ux designer, and the debt surgeon respectively.
+that consumes it: the reliability owner, the product critic (whose brief
+takes both the previous walk and the previous condemnation from the
+critic list), the qa
+explorer, the ux designer, and the debt surgeon (which takes both the
+slices and the steward list); the steward list also feeds the
+first-claim check in `docs/autonomy/composition.md` at Phase 2, and the
+previous condemnation is what lets the product owner evaluate the
+two-walk rethink trigger in `docs/autonomy/item-classes.md`.
 
 **Concurrency mode**: {{concurrency_mode}}, from the lead's preflight
 probe; what each mode means is `docs/autonomy/watchdogs.md`'s to say.
@@ -108,11 +134,15 @@ report's `ceiling:` line. The breach rule is release-loop.md's.
 {{held_prs}}. Keep each green; one the owner has answered merges first in
 Phase 6; the rest stay held and are reported as such.
 
-**Predecessor state** (only when a previous captain died on or paused this
+**Predecessor state** (only when a previous captain died on, paused, or
+handed off this
 version): {{predecessor_state}}. When present: its merged PRs are on
 `main` and in scope for the notes, a verified merge queue in its scratch
 dir executes before any new planning, resume from the phase it reached,
-and reuse its scratch dir after reading it.
+and reuse its scratch dir after reading it. On a `handoff (composition)`
+predecessor, skip Phases 1 to 3, consume the remaining plan from its
+scratch, and run Phase 7 once for the whole version, notes covering both
+legs' merged PRs.
 
 ## Process
 
@@ -197,9 +227,14 @@ The historian is not yours to spawn: the delivery lead spawns it after the
 triage sweep.
 
 **Every agent you spawn**: prepend `references/briefs/_contract.md`, fill
-its brief's placeholders, give it a unique scratch path, and write its
+its brief's placeholders including the contract's parent identity
+(`{{parent_name}}`, `{{parent_role}}`: your own name and role), give it a
+unique scratch path, and write its
 run-log line in `~/.goodboy-autonomous/v{{version}}/run-log.md` when its
-roster entry resolves, per `docs/autonomy/visibility.md`. Concurrent
+roster entry resolves, per `docs/autonomy/visibility.md`. At roster
+resolution also confirm the child's harness task reached a terminal state
+and that it left no running process; kill survivors by pid, never by
+name. Concurrent
 children follow the roster contract in `docs/autonomy/watchdogs.md`; run
 that file's sibling-check cadence against your roster while children run
 and act on its reports. The turn-boundary rule above binds this literally:
@@ -220,7 +255,7 @@ ledger is your caller's to write. Return only:
 
 ```
 ## v{{version}}: <theme in six words>
-verdict: draft-ready | merged-partial | paused (infrastructure) | abandoned
+verdict: draft-ready | merged-partial | handoff (composition) | paused (infrastructure) | abandoned
 focus-area: <area>: <what the dig found, one line>
 pick: <headline choice and why, two lines>       (when the theme was yours to pick)
 proposed: <n items in the plan after the challenge>
@@ -228,7 +263,7 @@ composition: <slots by category against the budget, deviations declared>
 waves: <n waves, slots per wave, any wave carried or stopped at>
 ceiling: <derived per-tier ceiling vs per-tier actuals, margin consumed, breach or "none"; derivation in scratch, per docs/autonomy/cost-ceiling.md>
 impact: pass | below-bar (<missing categories>)   (the challenger's verdict, per docs/autonomy/impact.md)
-self: <org-class items by name, each pending-verification, or "none">; <newly shipped experiments: name, criterion, reading window, revert shape, or "none">; <per inherited deferred item: kept | reverted | still-pending, one line of reason each>
+self: <org-class items by name, each pending-verification, or "none">; <newly shipped experiments: name, criterion, reading window, revert shape, or "none">; <per inherited deferred item: kept | reverted | still-pending, or sound | unsound for a record review, one line of reason each>
 audits: security <findings count or "no-findings", pointer>; perf <findings count or "no-findings", pointer>   (the two never-flowing audit slots; this line is how their outcome reaches the ledger)
 prs: #NNNN <title>   (one line each, merged only)
 held: #NNNN <class B change awaiting the owner>  (omit if none)
@@ -245,7 +280,10 @@ next: <one line for the next captain>
 
 `merged-partial` means some PRs merged but no draft could be cut and you
 cannot honestly continue; your caller retries with a fresh captain
-resuming from your scratch dir. `paused (infrastructure)` means the work
+resuming from your scratch dir. `handoff (composition)` means your leg
+completed its merge units clean and the rest of the plan awaits a
+successor, per the leg boundary above; it is neither a failure nor a
+retry. `paused (infrastructure)` means the work
 is sound and the world is not: a verified outage outlasted the useful
 local work, and you left a merge queue on disk for the resume; a pause is
 not a failure.

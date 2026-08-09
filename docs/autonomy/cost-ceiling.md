@@ -47,7 +47,14 @@ one thing to declare:
   Phase 3/4 boundary: after scouting settles the plan and before the first
   builder spawns, because merge units, groupings and conditional triggers
   are known only then. The derivation goes to the captain's scratch dir;
-  the result goes on its report's `ceiling:` line.
+  the result goes on its report's `ceiling:` line. In a two-leg release
+  ([composition.md](./composition.md)) each captain derives the ceiling
+  for its own leg, and the general rule is that **a spawn counts in the
+  leg that performs it**: the Phase 1 to 3 terms and the Phase 2 roster
+  in the first leg, the Phase 7 roster in the final leg, builders and
+  verifiers where they run. The unconditional roster is split across the
+  legs by phase, never counted once per leg: two full rosters would
+  inflate both ceilings until a breach could not fire.
 - **The delivery lead audits the derivation** at its report-verification
   step, against the release's run log, never against the report alone.
 
@@ -146,20 +153,15 @@ misapplied or the batch was misread, and the captain resolves that before
 the first builder spawns, in writing, in the derivation. History corrects
 the formula; the formula never argues with history.
 
-## Worked examples
+## Worked example
 
-Full batch, 12 slots, 7 merge units of which 1 is the debt surgeon's, UI
-items, one class A data item, 4 archaeologists, 11 surviving items:
-11 unconditional + 4 + 11 + 6 builders + 7 verifiers + 1 second data
+Single-leg batch, 10 merge units of which 1 is the debt surgeon's, UI
+items, one class A data item, 4 archaeologists, 16 surviving items:
+11 unconditional + 4 + 16 + 9 builders + 10 verifiers + 1 second data
 verifier + ux designer + design system steward + security Phase 2 pass
-= 43 roster, 6 reasoning; margin at 25 percent adds 11 (2 reasoning);
-ceiling 54 total, 8 reasoning. The retired constant of 50 sat below this
-release's correct behaviour once watchdogs were counted.
-
-Docs-and-copy batch, 6 slots, 3 merge units, no UI, no schema, 3
-archaeologists, 6 surviving items: 11 + 3 + 6 + 3 builders + 3 verifiers
-(the voice steward fills the copy unit's slot) = 26 roster, 5 reasoning;
-margin adds 7; ceiling 33 total, 7 reasoning. A ux designer spawn inside this release is
-a breach the moment it happens, which is the point: the ceiling now
-detects roles the batch never called for instead of penalizing a normal
-roster.
+= 54 roster, 6 reasoning; margin at 25 percent adds 14 (2 reasoning);
+ceiling 68 total, 8 reasoning. The retired constant of 50 sat below a
+smaller release's correct behaviour once watchdogs were counted, which is
+why the constant is gone: the ceiling detects roles the batch never called
+for instead of penalizing a normal roster, and a ux designer spawn inside
+a docs-and-copy batch is a breach the moment it happens.

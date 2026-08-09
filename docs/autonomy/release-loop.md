@@ -13,7 +13,11 @@ Tagging and notarization live in
 the repo-specific gotchas live with the `continuous-delivery` skill.
 
 One release captain owns one version, runs these phases in order, stops at a
-reviewed draft, and exits. The next version gets a fresh captain: state lives
+reviewed draft, and exits. A release whose reconciled plan exceeds the
+per-leg merge-unit ceiling is carried by two sequential captains
+([composition.md](./composition.md) owns the split and the handoff); each
+leg runs the phases it owns and only the final leg runs Phase 7. The next
+version gets a fresh captain: state lives
 on disk (ledger, backlog, mandates), never in a surviving agent. The phases
 are ordered but not barriered: build and verify stream, so a verifier starts
 the moment its build lands while other builds still run. Only the merge
@@ -40,7 +44,7 @@ raw diff.
    backlog, open follow-through entries
    ([roles/historian.md](./roles/historian.md), which hold first claim on
    the backlog share) and the product critic's UX list into a theme plus a
-   batch composed to the slot budget in
+   batch composed per the rules in
    [composition.md](./composition.md): items sized S/M/L, persona-tagged,
    classed per [item-classes.md](./item-classes.md), with explicit
    non-goals and per-item risk. The head of engineering passes on
@@ -66,12 +70,14 @@ raw diff.
    the places most items meet). Contradictions go back to the PO once, at
    most twice, then the PO's last answer stands.
 4. **Build, in waves, concurrently where footprints allow.** The batch is
-   consumed in **2 waves of at most 6 slots each**; a wave closes with
+   consumed in **waves of at most 7 slots each**, as many waves as the
+   batch needs; a wave closes with
    `main` green (merge units merged per Phase 6, or explicitly carried)
-   before the next wave's builds are planned. The resize recorded in
-   [ADR 0001's amendment](../adr/0001-expand-the-delivery-org.md) cut
-   the never-tested 3-wave shape to this width: the previous engagement's
-   lead exhausted its context at 4 small releases, and a flat roster
+   before the next wave's builds are planned, and a captain-leg boundary
+   ([composition.md](./composition.md)) is a wave boundary. The wave cap
+   bounds the roster, not ambition
+   ([ADR 0003](../adr/0003-compose-to-demand-at-a-defended-total.md)
+   records the width): a flat roster
    loses children in silence (one captain lost five;
    [watchdogs.md](./watchdogs.md) owns that incident and the roster
    contract). The **cost ceiling** is derived once per release, by the
@@ -135,6 +141,11 @@ raw diff.
    re-run. A PR red after two honest repair attempts is closed and
    recorded as dropped. A class B data change with no owner answer does
    not merge; the release ships without it per [safety.md](./safety.md).
+   When the owner enables GitHub's merge queue
+   ([composition.md](./composition.md) owns the recommendation and its
+   price), this lane changes shape: verified PRs enqueue in merge order
+   and the queue tests them in combination; the two-repair drop rule is
+   unchanged. Until then, nothing here degrades.
 7. **Cut the draft.** Before anything is cut, the **security officer's
    release pass** runs over the union of the merged diffs, per its charter
    ([roles/security-officer.md](./roles/security-officer.md)); a veto here

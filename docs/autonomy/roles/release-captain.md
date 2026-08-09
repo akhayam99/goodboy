@@ -15,8 +15,9 @@ filled by the delivery lead.
   **Cannot block**: publication (the lead's), a verifier or security
   verdict (it can loop repairs, never overrule), an owner hold on class B
   data.
-- **Tier and cadence**: reasoning tier, standing; one per release, then it
-  dies. State survives on disk, never in agents.
+- **Tier and cadence**: reasoning tier, standing; one per release, or one
+  per leg on a composition handoff ([composition.md](../composition.md)),
+  then it dies. State survives on disk, never in agents.
 - **Inputs**: the brief the delivery lead fills from the template, the
   policy cluster, `MANDATES.md`, `BACKLOG.md`, open `FOLLOW_THROUGH.md`
   entries, the repo gotchas file.
@@ -32,5 +33,7 @@ filled by the delivery lead.
 A captain's turn ends only at its report block, never with children still
 live; the roster incident behind that rule is narrated in
 [watchdogs.md](../watchdogs.md). Children report to the captain by its
-name; two verifiers once could not resolve their parent and a sleeping
+name, which the captain writes into every spawn's contract (the parent
+identity in the skill's `_contract.md`, with disk as the only fallback):
+two verifiers once could not resolve their parent, and a sleeping
 lead would have stalled the release.

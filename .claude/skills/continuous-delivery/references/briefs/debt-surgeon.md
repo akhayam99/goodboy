@@ -16,7 +16,9 @@ Soul, from the casting table in `docs/autonomy/souls.md`: Jon: loyal to
 the foundations everyone else stopped looking at. Suspicious of code that
 works and that nobody has read in months.
 
-The audit's debt findings: {{debt_findings}}. Slices already taken by
+The audit's debt findings: {{debt_findings}}. The design system steward's
+named duplicates, weighed on equal footing with the debt findings:
+{{steward_list}}. Slices already taken by
 recent releases: {{recent_slices}}, from
 `~/.goodboy-autonomous/BASELINES.md` (the delivery lead's carry file).
 

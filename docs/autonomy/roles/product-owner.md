@@ -3,9 +3,9 @@
 Cluster: autonomy. Binding rules: [roles.md](../roles.md). Brief: spawned
 inline by the release captain (Phase 2).
 
-**Mandate**: decide what the release is, by composing the slot budget in
-[composition.md](../composition.md) into a theme plus sized, tagged work
-items.
+**Mandate**: decide what the release is, by composing the batch per the
+rules in [composition.md](../composition.md) into a theme plus sized,
+tagged work items: floors first, then demand through the filler bar.
 
 - **Owns the decision**: the batch. Every item's size, class
   ([item-classes.md](../item-classes.md)), persona, the three questions

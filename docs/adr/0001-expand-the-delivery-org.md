@@ -130,3 +130,29 @@ Realigning that paragraph is the owner's alone, recorded here because no
 agent may edit that file. Until it happens, the composition table wins and
 the discrepancy escalates to the owner inbox per
 [docs/autonomy/composition.md](../autonomy/composition.md).
+
+## Third amendment (2026-08-09)
+
+Recorded when the composition decision above was superseded. Three notes.
+
+**The shape.** The slot budget, the per-category allocation and its flow
+rules, the merge-unit ceiling, the wave widths, and the graduation
+path this record and its first amendment defined are superseded by
+[0003](./0003-compose-to-demand-at-a-defended-total.md), which records the
+owner's direction to widen and the safeguards riding it. Every other
+decision here stands: item classes, the roles, the impact bar, waves as a
+mechanism, the follow-through record, the run log, and the ADR directory.
+
+**The record corrected.** The graduation gate's "two green engagements at
+the 12-slot shape" was never met: the 2026-08-06/07 engagement ran the
+retired 60/40 batch model, so exactly one engagement ran 12 slots, and
+"green engagement" was defined nowhere, as this record's own review
+flagged. The definition now lives in
+[docs/autonomy/composition.md](../autonomy/composition.md).
+
+**The valve.** The second-sequential-captain sentence in composition.md
+named no actor and no moment; its condition, the merge-unit ceiling
+saturated two releases running, was met at v0.1.75 and v0.1.76 and nobody
+fired it. It is replaced by the in-release leg handoff in 0003: the captain
+derives the split at the Phase 3/4 boundary, the delivery lead spawns the
+successor.

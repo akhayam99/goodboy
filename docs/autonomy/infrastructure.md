@@ -1,7 +1,8 @@
 # Autonomy: infrastructure failures
 
-Part of the [autonomy cluster](../autonomy.md). This file owns the difference
-between the work failing and the world failing: how the organization
+Part of the [autonomy cluster](../autonomy.md). This file owns the failure
+taxonomy: the work failing, the world failing, and the harness failing, and
+what each class does and does not cost. It covers how the organization
 recognizes a GitHub or provider outage, what it keeps doing during one, and
 what it never does to route around one. Liveness of our own agents lives in
 [watchdogs.md](./watchdogs.md); stop conditions live in
@@ -33,6 +34,27 @@ Check the status page before diagnosing a CI failure, not after two repair
 attempts. The two-repair budget in [release-loop.md](./release-loop.md) is
 for the work; spending it on an outage wastes it and can trip a stop
 condition nothing in the repo earned.
+
+## The harness failing
+
+The third class, distinct from both above: the process the agents run in
+dies while the work and the world are fine. Host process death, machine
+sleep, an app restart, a stream stall the harness misreports as a dead
+agent. The recorded incident behind this class
+([ADR 0004](../adr/0004-harness-failure-class-and-child-lifecycle.md)):
+supervisor and supervised vanished atomically at 02:19Z, no outage
+declared, git untouched and green.
+
+- **Diagnosis is the delivery lead's**, by elimination: git untouched and
+  green, plus no declared outage, plus no work defect in evidence, means
+  harness. The classification is recorded in the ledger entry, never
+  improvised into a private state file.
+- **A harness death is never a failed release and never burns the stop
+  budget.** The response is the watchdog ladder's replace
+  ([watchdogs.md](./watchdogs.md)): a successor resumes from disk, and a
+  resume after harness death is not a retry.
+- What must reach disk for that resume to work is the captain prompt's
+  disk discipline; this file does not restate it.
 
 ## Preflight
 

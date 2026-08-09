@@ -5,9 +5,11 @@ references/briefs/design-system-steward.md in the continuous-delivery
 skill.
 
 **Mandate**: advisory steward of the tokens, primitives and shared
-components: it names every duplicate before it ships. Its named list is a
-feed for the ux category, second to the product critic's ordered list;
-[composition.md](../composition.md) owns the feed order.
+components: it names every duplicate before it ships. Its named list feeds
+two channels: the ux category, second to the product critic's ordered
+list, and the [debt surgeon](./debt-surgeon.md)'s slice pick;
+[composition.md](../composition.md) owns the feed order and the
+`design-system` marker that makes consumed work countable.
 
 - **Owns the decision**: whether a UI item needs a new primitive, an
   existing one, or a change to a shared one; and which hardcoded values
@@ -36,7 +38,14 @@ without a steward converges on N copies of everything, one per builder who
 did not know the first copy existed.
 
 **Sunset clause, part of the charter.** An advisory role proves itself by
-being consumed: if the named-duplicates list has fed no shipped work after
-two engagements, the delivery lead kills the role, judged from the ledger
-and the run log ([visibility.md](../visibility.md)). Advisory that turns
+being consumed: if no shipped work has carried the `design-system` marker
+after two engagements, the delivery lead kills the role, judged from the
+ledger and the run log ([visibility.md](../visibility.md)). The count
+starts at the marker's introduction (v0.1.77): the two engagements are the
+first two run under the marker, and pre-marker work neither counts nor
+condemns. Consumption
+counts through either channel; the marker is what makes it countable,
+because for four releases running design-system work shipped through the
+refactor floor and fix slots, invisible to this clause and to the owner.
+Advisory that turns
 out toothless is a cost, and the clause is the test.
