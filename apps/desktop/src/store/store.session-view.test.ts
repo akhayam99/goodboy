@@ -73,6 +73,7 @@ function githubWith(
       pr: e.pr,
       linkedIssues: [],
       fetchedAt: null,
+      failedAt: null,
       loading: false,
       error: null,
       detail: null,

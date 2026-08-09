@@ -1,4 +1,6 @@
-use std::process::Stdio;
+use std::io::Read;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use thiserror::Error;
@@ -19,6 +21,13 @@ const CERTIFICATE_MESSAGE: &str = "Goodboy cannot verify the certificate github.
 const RATE_LIMIT_MESSAGE: &str =
     "GitHub is rate limiting this token. Wait a few minutes, then try again.";
 const UNVERIFIED_MESSAGE: &str = "Goodboy could not verify this token.";
+const TIMEOUT_MESSAGE: &str =
+    "The gh CLI stopped responding, so Goodboy gave up waiting. Check your connection, then try again.";
+
+const GH_BIN: &str = "gh";
+const GH_TIMEOUT: Duration = Duration::from_secs(60);
+const GH_PROBE_TIMEOUT: Duration = Duration::from_secs(10);
+const GH_POLL_INTERVAL: Duration = Duration::from_millis(25);
 
 const CERTIFICATE_MARKERS: &[&str] = &["x509", "certificate", "unknown authority"];
 
@@ -129,6 +138,8 @@ pub enum GithubError {
     Validation(String),
     #[error("{0}")]
     TokenRejected(String),
+    #[error("{}", TIMEOUT_MESSAGE)]
+    Timeout,
 }
 
 impl Serialize for GithubError {
@@ -156,25 +167,26 @@ pub struct GhRunResult {
     pub exit_code: i32,
 }
 
-fn gh_available() -> bool {
-    crate::path_env::command("gh")
-        .arg("--version")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .map(|s| s.success())
+fn command_succeeds(cmd: Command, timeout: Duration) -> bool {
+    run_with_timeout(cmd, timeout)
+        .map(|res| res.exit_code == 0)
         .unwrap_or(false)
 }
 
-fn run_gh(
+fn gh_available() -> bool {
+    let mut cmd = crate::path_env::command(GH_BIN);
+    cmd.arg("--version");
+    command_succeeds(cmd, GH_PROBE_TIMEOUT)
+}
+
+fn run_binary(
+    binary: &str,
+    timeout: Duration,
     args: &[&str],
     cwd: Option<&str>,
     token: Option<&str>,
 ) -> Result<GhRunResult, GithubError> {
-    if !gh_available() {
-        return Err(GithubError::NotFound);
-    }
-    let mut cmd = crate::path_env::command("gh");
+    let mut cmd = crate::path_env::command(binary);
     cmd.args(args);
     if let Some(dir) = cwd {
         if !dir.is_empty() {
@@ -187,12 +199,56 @@ fn run_gh(
             cmd.env("GITHUB_TOKEN", t);
         }
     }
-    let output = cmd.output()?;
-    Ok(GhRunResult {
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-        exit_code: output.status.code().unwrap_or(-1),
+    match run_with_timeout(cmd, timeout) {
+        Err(GithubError::Spawn(err)) if err.kind() == std::io::ErrorKind::NotFound => {
+            Err(GithubError::NotFound)
+        }
+        outcome => outcome,
+    }
+}
+
+fn run_gh(
+    args: &[&str],
+    cwd: Option<&str>,
+    token: Option<&str>,
+) -> Result<GhRunResult, GithubError> {
+    run_binary(GH_BIN, GH_TIMEOUT, args, cwd, token)
+}
+
+fn drain<R: Read + Send + 'static>(stream: Option<R>) -> std::thread::JoinHandle<Vec<u8>> {
+    std::thread::spawn(move || {
+        let mut buffer = Vec::new();
+        if let Some(mut stream) = stream {
+            let _ = stream.read_to_end(&mut buffer);
+        }
+        buffer
     })
+}
+
+fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<GhRunResult, GithubError> {
+    let mut child = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
+    let stdout = drain(child.stdout.take());
+    let stderr = drain(child.stderr.take());
+    let deadline = Instant::now() + timeout;
+    loop {
+        if let Some(status) = child.try_wait()? {
+            let out = stdout.join().unwrap_or_default();
+            let err = stderr.join().unwrap_or_default();
+            return Ok(GhRunResult {
+                stdout: String::from_utf8_lossy(&out).to_string(),
+                stderr: String::from_utf8_lossy(&err).to_string(),
+                exit_code: status.code().unwrap_or(-1),
+            });
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = stdout.join();
+            let _ = stderr.join();
+            return Err(GithubError::Timeout);
+        }
+        std::thread::sleep(GH_POLL_INTERVAL);
+    }
 }
 
 fn run_git_push(args: &[&str], cwd: &str, token: Option<&str>) -> Result<GhRunResult, GithubError> {
@@ -270,21 +326,24 @@ pub(crate) fn token_for_workspace(workspace_id: Option<&str>) -> Option<String> 
     read_token(workspace_id, None).filter(|t| !t.is_empty())
 }
 
+fn absent_status() -> GhStatus {
+    GhStatus {
+        available: false,
+        mode: "absent".to_string(),
+        version: None,
+        user: None,
+        scopes: Vec::new(),
+        scoped: false,
+    }
+}
+
 fn status_blocking(workspace_id: Option<String>, member_workspace_id: Option<String>) -> GhStatus {
     let ws = workspace_id.as_deref();
-    if !gh_available() {
-        return GhStatus {
-            available: false,
-            mode: "absent".to_string(),
-            version: None,
-            user: None,
-            scopes: Vec::new(),
-            scoped: false,
-        };
-    }
-    let version = run_gh(&["--version"], None, None)
-        .ok()
-        .and_then(|r| parse_version(&r.stdout));
+    let version = match run_gh(&["--version"], None, None) {
+        Ok(res) => parse_version(&res.stdout),
+        Err(GithubError::NotFound) => return absent_status(),
+        Err(_) => None,
+    };
 
     let pat = read_token(ws, member_workspace_id.as_deref());
     let token_ref = pat.as_deref();
@@ -322,14 +381,7 @@ pub async fn gh_status(
 ) -> GhStatus {
     tauri::async_runtime::spawn_blocking(move || status_blocking(workspace_id, member_workspace_id))
         .await
-        .unwrap_or_else(|_| GhStatus {
-            available: false,
-            mode: "absent".to_string(),
-            version: None,
-            user: None,
-            scopes: Vec::new(),
-            scoped: false,
-        })
+        .unwrap_or_else(|_| absent_status())
 }
 
 fn validate_token_with<F>(token: &str, run: F) -> Result<(), GithubError>
@@ -435,11 +487,105 @@ pub async fn gh_pr_diff(
 #[cfg(test)]
 mod tests {
     use super::{
-        read_token_from, token_failure_message, token_key, validate_token_with, GhRunResult,
-        GithubError, BAD_CREDENTIALS_MESSAGE, CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE,
-        EXPIRED_MESSAGE, MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, TOKEN_KEY,
-        UNVERIFIED_MESSAGE,
+        command_succeeds, read_token_from, run_binary, run_with_timeout, token_failure_message,
+        token_key, validate_token_with, GhRunResult, GithubError, BAD_CREDENTIALS_MESSAGE,
+        CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE, EXPIRED_MESSAGE, GH_PROBE_TIMEOUT, GH_TIMEOUT,
+        MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, TOKEN_KEY, UNVERIFIED_MESSAGE,
     };
+    use std::process::Command;
+    use std::time::{Duration, Instant};
+
+    const MISSING_BIN: &str = "goodboy-no-such-binary";
+
+    #[test]
+    fn the_gh_call_path_gives_up_on_a_command_that_never_returns() {
+        let started = Instant::now();
+        let outcome = run_binary(
+            "sleep",
+            Duration::from_millis(150),
+            &["30"],
+            None,
+            Some("ghp_token"),
+        );
+        assert!(
+            matches!(outcome, Err(GithubError::Timeout)),
+            "every gh call runs under the timeout, not a bare wait"
+        );
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn the_gh_call_path_still_returns_output_for_a_command_that_finishes() {
+        let outcome = run_binary(
+            "sh",
+            GH_TIMEOUT,
+            &["-c", "printf out; printf err >&2; exit 3"],
+            None,
+            None,
+        )
+        .expect("the command runs");
+        assert_eq!(outcome.stdout, "out");
+        assert_eq!(outcome.stderr, "err");
+        assert_eq!(outcome.exit_code, 3);
+    }
+
+    #[test]
+    fn a_gh_binary_that_is_not_installed_reads_as_a_missing_binary() {
+        let outcome = run_binary(MISSING_BIN, GH_TIMEOUT, &["--version"], None, None);
+        assert!(matches!(outcome, Err(GithubError::NotFound)));
+    }
+
+    #[test]
+    fn the_availability_probe_gives_up_rather_than_hanging_the_boot_path() {
+        let mut cmd = Command::new("sleep");
+        cmd.arg("30");
+        let started = Instant::now();
+        assert!(!command_succeeds(cmd, Duration::from_millis(150)));
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn the_availability_probe_still_reports_a_binary_that_answers() {
+        let mut cmd = Command::new("sh");
+        cmd.args(["-c", "exit 0"]);
+        assert!(command_succeeds(cmd, GH_PROBE_TIMEOUT));
+    }
+
+    #[test]
+    fn a_hanging_gh_call_is_killed_once_the_timeout_passes() {
+        let mut cmd = Command::new("sleep");
+        cmd.arg("30");
+        let started = Instant::now();
+        let result = run_with_timeout(cmd, Duration::from_millis(150));
+        assert!(matches!(result, Err(GithubError::Timeout)));
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn a_timed_out_call_reports_it_rather_than_pretending_the_command_ran() {
+        let mut cmd = Command::new("sleep");
+        cmd.arg("30");
+        let message = run_with_timeout(cmd, Duration::from_millis(150))
+            .err()
+            .map(|err| err.to_string())
+            .unwrap_or_default();
+        assert!(message.contains("stopped responding"));
+    }
+
+    #[test]
+    fn a_command_that_finishes_keeps_its_output_and_exit_code() {
+        let mut cmd = Command::new("sh");
+        cmd.args(["-c", "printf out; printf err >&2; exit 3"]);
+        let result = run_with_timeout(cmd, GH_TIMEOUT).expect("command should run");
+        assert_eq!(result.stdout, "out");
+        assert_eq!(result.stderr, "err");
+        assert_eq!(result.exit_code, 3);
+    }
+
+    #[test]
+    fn the_gh_timeout_is_bounded_so_a_stuck_call_cannot_wedge_a_card() {
+        assert!(GH_TIMEOUT <= Duration::from_secs(120));
+    }
 
     fn gh_failure(stderr: &str) -> GhRunResult {
         GhRunResult {

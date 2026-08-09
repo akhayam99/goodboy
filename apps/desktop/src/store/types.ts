@@ -144,6 +144,7 @@ export type SessionGithubState = {
   readonly pr: PullRequestState | null;
   readonly linkedIssues: ReadonlyArray<LinkedIssue>;
   readonly fetchedAt: IsoDateTime | null;
+  readonly failedAt: IsoDateTime | null;
   readonly loading: boolean;
   readonly error: string | null;
   readonly detail: PrDetail | null;

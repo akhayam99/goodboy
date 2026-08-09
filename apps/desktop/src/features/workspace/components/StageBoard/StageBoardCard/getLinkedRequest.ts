@@ -6,7 +6,7 @@ type Params = {
   readonly mergeRequest: GitlabMergeRequest | null;
 };
 
-type LinkedRequest = {
+export type LinkedRequest = {
   readonly state: PullRequestStateKind | 'none';
   readonly number?: number;
   readonly title?: string;

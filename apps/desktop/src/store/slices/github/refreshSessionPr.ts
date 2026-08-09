@@ -2,8 +2,7 @@ import { detectRepoSlug, fetchLinkedIssues, listPrsForBranch } from '@goodboy/co
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { formatError } from '../../../shared/lib/errors';
-import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -17,22 +16,12 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     if (!opts?.force && get().sessionGithub[sessionId]?.loading) {
       return;
     }
-    const branch = get().sessionBranches[sessionId];
-    if (!branch) {
+    const target = resolveSessionPrFetch({ state: get(), sessionId });
+    if (target == null) {
       return;
     }
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) {
-      return;
-    }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace || isBranchlessSession({ workspaceKind: workspace.kind, branch })) {
-      return;
-    }
-    const repo = getSessionRepo({ get, sessionId });
-    if (repo == null) {
-      return;
-    }
+    const session = target.session;
+    const repo = target.repo;
     const repoRoot = repo.repoRoot;
     const repoBranch = repo.branch;
     const memberWorkspaceId = repo.workspaceId;
@@ -43,6 +32,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           pr: state.sessionGithub[sessionId]?.pr ?? null,
           linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
           fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+          failedAt: state.sessionGithub[sessionId]?.failedAt ?? null,
           loading: true,
           error: null,
           detail: state.sessionGithub[sessionId]?.detail ?? null,
@@ -75,6 +65,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
                 pr: null,
                 linkedIssues: [],
                 fetchedAt: new Date().toISOString() as IsoDateTime,
+                failedAt: null,
                 loading: false,
                 error: null,
                 detail: null,
@@ -133,6 +124,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
                 pr: canonicalPr,
                 linkedIssues: linked,
                 fetchedAt: new Date().toISOString() as IsoDateTime,
+                failedAt: null,
                 loading: false,
                 error: null,
                 detail: hasDisplayedPrChanged ? null : (existing?.detail ?? null),
@@ -155,6 +147,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
           pr: state.sessionGithub[sessionId]?.pr ?? null,
           linkedIssues: state.sessionGithub[sessionId]?.linkedIssues ?? [],
           fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+          failedAt: new Date().toISOString() as IsoDateTime,
           loading: false,
           error: opts?.silent ? null : formatError(lastErr),
           detail: state.sessionGithub[sessionId]?.detail ?? null,

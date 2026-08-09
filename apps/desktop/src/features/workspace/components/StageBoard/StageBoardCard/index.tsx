@@ -16,17 +16,18 @@ import {
   useAppStore,
   useNonResolverStandaloneAgents,
   useSessionCost,
+  useSessionPrFetchState,
   useSessionStageInfo,
 } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { CostBadge } from '../../../../providers/components/CostBadge';
-import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { CardAction } from '../../../../../shared/components/CardAction';
 import { STAGE_TONE } from '../../../../session/session-stage';
 import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
+import { PrRequestSlot } from './PrRequestSlot';
 import { useDynamicActions } from './useDynamicActions';
 
 const draftTint = tintClasses('draft');
@@ -67,6 +68,7 @@ export const StageBoardCard = memo(function StageBoardCard({
     stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
 
   const pullRequest = useAppStore((s) => s.sessionGithub[id]?.pr ?? null);
+  const prFetchState = useSessionPrFetchState(id);
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[id]?.mr ?? null);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[id] ?? EMPTY_ARRAY);
   const agentCount = useNonResolverStandaloneAgents(id).length;
@@ -92,18 +94,6 @@ export const StageBoardCard = memo(function StageBoardCard({
 
   const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
   const isGitlab = mergeRequest != null && pullRequest == null;
-  const hasLinkedRequest = linkedRequest.state !== 'none';
-
-  const prMeta = pullRequestMeta(linkedRequest.state);
-  const prLabel =
-    linkedRequest.title ??
-    prMeta.label +
-      (linkedRequest.number !== undefined
-        ? isGitlab
-          ? ` · !${linkedRequest.number}`
-          : ` · #${linkedRequest.number}`
-        : '');
-  const prTooltip = prLabel + (isGitlab ? ', open in GitLab' : ', open in GitHub');
 
   const handlePrClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -149,24 +139,12 @@ export const StageBoardCard = memo(function StageBoardCard({
     >
       <span className="row-span-2 flex min-w-0 flex-col justify-between gap-2">
         <span className="flex min-h-10 items-start gap-1.5">
-          {hasLinkedRequest && (
-            <Tooltip content={prTooltip} side="top">
-              <button
-                type="button"
-                aria-label={prTooltip}
-                onClick={handlePrClick}
-                className="-ml-0.5 mt-px inline-flex size-5 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-muted"
-              >
-                <PullRequestChip
-                  state={linkedRequest.state}
-                  variant="icon"
-                  number={linkedRequest.number}
-                  iconSize={14}
-                  title={linkedRequest.title}
-                />
-              </button>
-            </Tooltip>
-          )}
+          <PrRequestSlot
+            linkedRequest={linkedRequest}
+            isGitlab={isGitlab}
+            prFetchState={prFetchState}
+            onOpen={handlePrClick}
+          />
           <Tooltip content={`${session.goal}${reason ? ` · ${reason}` : ''}`} side="top">
             <span className="line-clamp-2 min-h-10 min-w-0 flex-1 text-sm font-medium leading-snug">
               {session.goal}

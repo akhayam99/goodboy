@@ -27,6 +27,8 @@ vi.mock('./store', () => ({
 import {
   sumSessionCost,
   useLiveTerminalCount,
+  useSessionPrFetchState,
+  useSessionStageInfo,
   useSessionUnreadLens,
   useSortedGroupedSessions,
   useStageGroupedSessions,
@@ -102,9 +104,152 @@ beforeEach(() => {
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
     getSessionViewPrefs: vi.fn(),
+    sessions: [],
     workspaces: [],
     sessionBranches: {},
+    sessionWorktrees: {},
+    sessionMounts: {},
+    sessionActiveMount: {},
+    githubStatus: null,
   };
+});
+
+describe('useSessionStageInfo pull request freshness', () => {
+  const repoSession = () => {
+    const session = createSession(SESSION_ID);
+    store.state.sessions = [session];
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
+    return session;
+  };
+
+  it('does not claim a session has no PR before the first fetch lands', () => {
+    const session = repoSession();
+    store.state.githubStatus = { available: true };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.stage).toBe('building');
+    expect(result.current.reason).toBe('checking GitHub');
+  });
+
+  it('claims no PR once that session fetch has landed with none', () => {
+    const session = repoSession();
+    store.state.githubStatus = { available: true };
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no PR yet');
+  });
+
+  it('claims no PR right away when gh is absent, leaving nothing to wait for', () => {
+    const session = repoSession();
+    store.state.githubStatus = { available: false };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no PR yet');
+  });
+
+  it('says GitHub is unreachable when every attempt for that session failed', () => {
+    const session = repoSession();
+    store.state.githubStatus = { available: true };
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('GitHub unreachable');
+  });
+
+  it('claims no PR for a session with no branch, which no fetch will ever cover', () => {
+    const session = repoSession();
+    store.state.sessionBranches = {};
+    store.state.githubStatus = { available: true };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no PR yet');
+  });
+
+  it('claims no PR for a session whose worktree never landed', () => {
+    const session = repoSession();
+    store.state.sessionWorktrees = {};
+    store.state.githubStatus = { available: true };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no PR yet');
+  });
+});
+
+describe('useSessionPrFetchState', () => {
+  const fetchableSession = () => {
+    const session = createSession(SESSION_ID);
+    store.state.sessions = [session];
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
+    store.state.githubStatus = { available: true };
+    return session;
+  };
+
+  it('reports unknown while a fetchable session is still waiting on its first fetch', () => {
+    fetchableSession();
+
+    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
+
+    expect(result.current).toBe('unknown');
+  });
+
+  it('reports known once that session fetch has landed', () => {
+    fetchableSession();
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    };
+
+    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
+
+    expect(result.current).toBe('known');
+  });
+
+  it('reports unreachable once every attempt for that session failed', () => {
+    fetchableSession();
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
+    };
+
+    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
+
+    expect(result.current).toBe('unreachable');
+  });
+
+  it('reports known for a simple workspace, which never gets a pull request fetched', () => {
+    const session = createSession(SESSION_ID);
+    store.state.sessions = [session];
+    store.state.workspaces = [createWorkspace('simple')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
+    store.state.githubStatus = { available: true };
+
+    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
+
+    expect(result.current).toBe('known');
+  });
+
+  it('reports known for a session with no branch, which the sweep skips', () => {
+    fetchableSession();
+    store.state.sessionBranches = {};
+
+    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
+
+    expect(result.current).toBe('known');
+  });
 });
 
 describe('useLiveTerminalCount', () => {
