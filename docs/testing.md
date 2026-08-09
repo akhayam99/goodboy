@@ -37,3 +37,27 @@ same treatment: assert it from source, in that folder.
 ## The golden rule
 
 If a test fails because the component / store / hook does the wrong thing, **fix the code, not the test**. Never weaken a test to make it pass.
+
+## Reaching a state that only exists in memory
+
+Some run states live only in the store while an async call is in flight, so
+no database row reaches them and only a live provider run produces them. The
+orchestrator "stopping" state is one: it needs an operator stop on the run
+plus a decision still in flight, and the in-flight flag
+(`orchestratingWorkflowRuns`) is never persisted, because a decision does not
+survive the process that started it.
+
+To see that state in a real build without spawning agents, name the run ids
+in `GOODBOY_QA_DECIDING_RUNS` when launching the binary:
+
+```
+GOODBOY_QA_DECIDING_RUNS=<run-id>[,<run-id>] \
+  GOODBOY_DB_FILE=<path> .../Goodboy.app/Contents/MacOS/goodboy-desktop
+```
+
+Boot marks those runs as deciding in memory only. Seed the operator stop
+itself as a normal row (`workflow_runs.orchestration_stop`) and the run
+reports **Stopping** on the rail card, the collapsed sidebar row and the
+orchestrator strip. Nothing is written back, so a relaunch without the
+variable reports **Stopped** again. Never persist the in-flight flag: a
+stored "deciding right now" is false the moment the app restarts.

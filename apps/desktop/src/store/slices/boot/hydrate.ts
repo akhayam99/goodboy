@@ -26,6 +26,7 @@ import {
 } from '../../../features/settings/settings';
 import { formatError } from '../../../shared/lib/errors';
 import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVersions';
+import { applyQaDecidingPreview } from '../workflows/applyQaDecidingPreview';
 import { drainAuditRetryQueue } from './auditRetryQueue';
 import type { GetFn, SetFn } from './types';
 
@@ -173,6 +174,8 @@ export const hydrate = (set: SetFn, get: GetFn) => {
             formatError(error),
           );
         }
+
+        await applyQaDecidingPreview({ set }).catch(() => {});
 
         set({ bootPhase: 'restoring-session' });
         const reloadIntent = consumeReloadIntent();
