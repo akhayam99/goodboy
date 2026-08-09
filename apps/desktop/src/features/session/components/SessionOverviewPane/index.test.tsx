@@ -99,6 +99,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     openQuestions: [] as ReadonlyArray<OpenQuestion>,
     stage: { stage: 'building', reason: '' } as SessionStageInfo,
     unreadLens: null as 'agents' | 'resolve' | 'workflows' | null,
+    resolverLinks: [] as ReadonlyArray<unknown>,
   },
   runs: {
     lanes: [],
@@ -140,6 +141,10 @@ vi.mock('../../../../store', () => ({
 
 vi.mock('../../../orchestration/hooks/useWorkspaceRuns', () => ({
   useWorkspaceRuns: () => runs,
+}));
+
+vi.mock('../../hooks/useResolverIndex', () => ({
+  useResolverIndex: () => ({ links: hooks.resolverLinks, byThreadId: new Map() }),
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
@@ -273,6 +278,7 @@ beforeEach(() => {
   hooks.openQuestions = [];
   hooks.stage = { stage: 'building', reason: '' } as SessionStageInfo;
   hooks.unreadLens = null;
+  hooks.resolverLinks = [];
   runs.lanes = [];
   runs.freeAgents = [];
   runs.resolveQueue = [];
@@ -517,6 +523,28 @@ describe('SessionOverviewPane next up', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
     renderPane();
     expect(screen.getByText('Nothing needs you right now')).toBeDefined();
+  });
+
+  it('surfaces a resolver that has no source thread instead of claiming nothing needs you', () => {
+    hooks.resolverLinks = [
+      {
+        agent: {
+          id: 'resolver-no-thread',
+          name: 'resolve the flaky test',
+          status: 'pending',
+          doneAt: null,
+          ordinal: 0,
+          sourceThreadId: null,
+          sourceThreadIds: null,
+        },
+        status: 'pending',
+      },
+    ];
+    const { onSelectLens } = renderPane();
+    expect(screen.queryByText('Nothing needs you right now')).toBeNull();
+    expect(screen.getByText('1 comment to resolve')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+    expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
 });
 
