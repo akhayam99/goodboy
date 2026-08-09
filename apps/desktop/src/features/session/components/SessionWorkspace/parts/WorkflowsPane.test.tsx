@@ -12,6 +12,7 @@ type Store = {
   messages: Record<string, ReadonlyArray<never>>;
   agentRunHistory: Record<string, ReadonlyArray<never>>;
   focusedWorkflowRunId: Record<string, string | null>;
+  orchestratingWorkflowRuns: Record<string, boolean>;
   lensHistory: Record<string, { readonly index: number }>;
   lensGo: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
@@ -45,6 +46,7 @@ const store: Store = {
   messages: {},
   agentRunHistory: {},
   focusedWorkflowRunId: {},
+  orchestratingWorkflowRuns: {},
   lensHistory: {},
   lensGo: vi.fn(),
   setFocusedWorkflowRun: vi.fn(),
@@ -155,6 +157,7 @@ beforeEach(() => {
   store.messages = {};
   store.agentRunHistory = {};
   store.focusedWorkflowRunId = {};
+  store.orchestratingWorkflowRuns = {};
   store.setFocusedWorkflowRun.mockReset();
   store.makeWorkflowPreset.mockReset();
   store.restoreWorkflow.mockReset();
@@ -437,6 +440,45 @@ describe('WorkflowsPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     expect(store.restoreWorkflow).toHaveBeenCalledWith(SESSION_ID, 'run-1');
+  });
+
+  it('reads a stopped run as stopping while the decision it started is still in flight', () => {
+    store.orchestratingWorkflowRuns = { 'run-1': true };
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1'],
+          runOverrides: {
+            'run-1': {
+              executionMode: 'dynamic',
+              orchestrationStop: { kind: 'operator', message: 'you stopped it' },
+            },
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Stopping')).toBeDefined();
+    expect(screen.queryByText('Stopped')).toBeNull();
+  });
+
+  it('reads a stopped run as stopped once no decision is in flight', () => {
+    render(
+      <WorkflowsPane
+        session={buildSession({
+          runIds: ['run-1'],
+          runOverrides: {
+            'run-1': {
+              executionMode: 'dynamic',
+              orchestrationStop: { kind: 'operator', message: 'you stopped it' },
+            },
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Stopped')).toBeDefined();
+    expect(screen.queryByText('Stopping')).toBeNull();
   });
 
   it('files a completed dynamic run under the completed toggle', () => {

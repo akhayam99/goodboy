@@ -7,6 +7,7 @@ type Props = {
   readonly workflow: Workflow;
   readonly agents: ReadonlyArray<Agent>;
   readonly predecessorName: string;
+  readonly isOrchestrating: boolean;
   readonly hasOrchestratorStrip?: boolean;
 };
 
@@ -15,6 +16,7 @@ export const WorkflowRunStatus = ({
   workflow,
   agents,
   predecessorName,
+  isOrchestrating,
   hasOrchestratorStrip = false,
 }: Props) => {
   const completedSteps = agents.filter(
@@ -59,6 +61,18 @@ export const WorkflowRunStatus = ({
     );
   }
   const stop = run.orchestrationStop;
+  if (stop?.kind === 'operator' && isOrchestrating && !hasOrchestratorStrip) {
+    return (
+      <span
+        className={cn(baseClass, 'bg-warning/10 text-warning')}
+        title="Waiting for the decision already in flight"
+        data-testid="workflow-orchestrator-stopping"
+      >
+        <CircleStop size={10} aria-hidden />
+        Stopping
+      </span>
+    );
+  }
   if (stop?.kind === 'operator' && !hasOrchestratorStrip) {
     return (
       <span

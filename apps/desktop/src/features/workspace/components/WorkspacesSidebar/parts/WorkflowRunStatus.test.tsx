@@ -44,12 +44,14 @@ const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 type RenderParams = {
   readonly runOverride: WorkflowRun;
   readonly hasOrchestratorStrip?: boolean;
+  readonly isOrchestrating?: boolean;
   readonly predecessorName?: string;
 };
 
 const renderStatus = ({
   runOverride,
   hasOrchestratorStrip = false,
+  isOrchestrating = false,
   predecessorName = '',
 }: RenderParams) =>
   render(
@@ -58,6 +60,7 @@ const renderStatus = ({
       workflow={workflow}
       agents={EMPTY_AGENTS}
       predecessorName={predecessorName}
+      isOrchestrating={isOrchestrating}
       hasOrchestratorStrip={hasOrchestratorStrip}
     />,
   );
@@ -96,6 +99,37 @@ describe('WorkflowRunStatus', () => {
     expect(screen.queryByTestId('workflow-orchestrator-failed')).toBeNull();
   });
 
+  it('says stopping, not stopped, while the decision it interrupted is in flight', () => {
+    renderStatus({
+      runOverride: { ...run, orchestrationStop: { kind: 'operator', message: 'you stopped it' } },
+      isOrchestrating: true,
+    });
+
+    expect(screen.getByText('Stopping')).toBeDefined();
+    expect(screen.queryByTestId('workflow-orchestrator-stopped')).toBeNull();
+    expect(screen.queryByTestId('workflow-orchestrator-failed')).toBeNull();
+  });
+
+  it('settles on stopped once the decision in flight has landed', () => {
+    renderStatus({
+      runOverride: { ...run, orchestrationStop: { kind: 'operator', message: 'you stopped it' } },
+      isOrchestrating: false,
+    });
+
+    expect(screen.getByText('Stopped')).toBeDefined();
+    expect(screen.queryByTestId('workflow-orchestrator-stopping')).toBeNull();
+  });
+
+  it('leaves the stopping sentence to the strip when the strip is there', () => {
+    const { container } = renderStatus({
+      runOverride: { ...run, orchestrationStop: { kind: 'operator', message: 'you stopped it' } },
+      isOrchestrating: true,
+      hasOrchestratorStrip: true,
+    });
+
+    expect(container.textContent).toBe('');
+  });
+
   it('says a run was stopped even while an agent still reads as running', () => {
     const stillRunning: ReadonlyArray<Agent> = [
       {
@@ -113,6 +147,7 @@ describe('WorkflowRunStatus', () => {
         workflow={workflow}
         agents={stillRunning}
         predecessorName=""
+        isOrchestrating={false}
       />,
     );
 

@@ -79,7 +79,7 @@ import {
   OrchestratorClient,
   ROLE_DEFAULTS,
 } from '@goodboy/core';
-import { orchestrateNextStep } from './orchestrateNextStep';
+import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { continueWorkflowRun } from './continueWorkflowRun';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -205,6 +205,19 @@ const baseState = (): State => {
     emitNotification: vi.fn(async () => undefined),
   };
 };
+
+const OPERATOR_STOP = {
+  kind: 'operator',
+  message: 'You stopped this run. The step in flight was skipped.',
+} as const;
+
+const stopFromOperator = async (set: never): Promise<void> =>
+  persistOrchestrationStop({
+    set,
+    sessionId: SESSION_ID,
+    workflowRunId: WORKFLOW_RUN_ID,
+    stop: OPERATOR_STOP,
+  });
 
 const harness = (state: State) => {
   const set = vi.fn((updater: unknown) => {
@@ -852,6 +865,43 @@ describe('orchestrateNextStep', () => {
     expect(updateStopSpy).not.toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, null);
     expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
     expect(state['activateWorkflowAgent']).not.toHaveBeenCalled();
+  });
+
+  it('reads as stopped by you when the decision in flight then throws', async () => {
+    const state = baseState();
+    const { set, get } = harness(state);
+    decideSpy.mockImplementationOnce(async () => {
+      await stopFromOperator(set);
+      throw new Error('the orchestrator timed out after 120s');
+    });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const stopped = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(stopped.orchestrationStop).toEqual(OPERATOR_STOP);
+    expect(updateStopSpy).toHaveBeenLastCalledWith({}, WORKFLOW_RUN_ID, OPERATOR_STOP);
+    expect(state['appendTurnEvent']).not.toHaveBeenCalled();
+    expect(state['emitNotification']).not.toHaveBeenCalled();
+  });
+
+  it('reads as stopped by you when the reply in flight is not a decision', async () => {
+    const state = baseState();
+    const { set, get } = harness(state);
+    decideSpy.mockImplementationOnce(async () => {
+      await stopFromOperator(set);
+      return { decision: null, usage: BILLED_USAGE, model: 'claude-haiku-4-5' };
+    });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const stopped = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(stopped.orchestrationStop).toEqual(OPERATOR_STOP);
+    expect(updateStopSpy).toHaveBeenLastCalledWith({}, WORKFLOW_RUN_ID, OPERATOR_STOP);
+    expect(state['appendTurnEvent']).not.toHaveBeenCalled();
+    expect(insertTelemetrySpy).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({ kind: 'orchestrator', estimatedCostUsd: 0.0123 }),
+    );
   });
 
   it('hands the operator hints of the run to the orchestrator', async () => {

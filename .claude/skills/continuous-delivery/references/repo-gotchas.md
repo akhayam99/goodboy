@@ -106,6 +106,10 @@ placeholder, so could-not-run is the exception, not the default.
   never reuse a walk file from a previous release. If a claim cannot be
   reached from an empty database plus deliberate seed rows, that is a
   finding about the app's testability, not something to work around.
+- A state that only exists in memory while a call is in flight has an env
+  var to reach it: `GOODBOY_QA_DECIDING_RUNS` marks workflow runs as
+  deciding at boot, so the orchestrator "stopping" state is reachable from a
+  seeded database with no provider agent. See `docs/testing.md`.
 - One GUI walker at a time. `GOODBOY_DB_FILE` isolates the database, not
   the process table: a walker that kills a stray instance by process name
   (`pkill`) can take down a sibling walker's app, including one still

@@ -137,6 +137,7 @@ type RenderParams = {
     autoRun: boolean,
   ) => Promise<void>;
   readonly variant?: 'sidebar' | 'detail';
+  readonly focusedWorkflowRunId?: WorkflowRunId | null;
 };
 
 const renderDetail = ({
@@ -151,6 +152,7 @@ const renderDetail = ({
   startWorkflowRun = vi.fn(async () => undefined),
   setWorkflowRunAutoRun = vi.fn(async () => undefined),
   variant = 'detail',
+  focusedWorkflowRunId = null,
 }: RenderParams = {}) =>
   render(
     <WorkflowRow
@@ -163,7 +165,7 @@ const renderDetail = ({
       actionableStepIdByRunId={new Map([[RUN_ID, actionableStepId]])}
       blockReasonByRunId={new Map([[RUN_ID, blockReason]])}
       countUnread={() => 0}
-      focusedWorkflowRunId={null}
+      focusedWorkflowRunId={focusedWorkflowRunId}
       workflowExpand={undefined}
       workflowNameByRunId={new Map()}
       forceExpanded
@@ -414,6 +416,37 @@ describe('WorkflowRow step-in-flight predicate', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
 
     expect(screen.getByRole('group', { name: 'Stop this run?' })).toBeDefined();
+  });
+
+  it('reads the collapsed row as stopping while the decision is still in flight', () => {
+    storeMocks.orchestratingWorkflowRuns[RUN_ID] = true;
+    renderDetail({
+      runOverride: {
+        ...run,
+        executionMode: 'dynamic',
+        orchestrationStop: { kind: 'operator', message: 'you stopped it' },
+      },
+      variant: 'sidebar',
+      focusedWorkflowRunId: 'run-2' as WorkflowRunId,
+    });
+
+    expect(screen.getByText('Stopping')).toBeDefined();
+    expect(screen.queryByText('Stopped')).toBeNull();
+  });
+
+  it('reads the collapsed row as stopped once nothing is in flight', () => {
+    renderDetail({
+      runOverride: {
+        ...run,
+        executionMode: 'dynamic',
+        orchestrationStop: { kind: 'operator', message: 'you stopped it' },
+      },
+      variant: 'sidebar',
+      focusedWorkflowRunId: 'run-2' as WorkflowRunId,
+    });
+
+    expect(screen.getByText('Stopped')).toBeDefined();
+    expect(screen.queryByText('Stopping')).toBeNull();
   });
 });
 

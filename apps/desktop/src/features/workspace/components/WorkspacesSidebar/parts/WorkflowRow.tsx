@@ -236,6 +236,7 @@ export const WorkflowRow = ({
                   workflow={workflow}
                   agents={wfAgents}
                   predecessorName={predecessorName}
+                  isOrchestrating={isOrchestrating}
                   hasOrchestratorStrip={hasOrchestratorStrip}
                 />
               </div>
@@ -283,6 +284,7 @@ export const WorkflowRow = ({
               workflow={workflow}
               agents={wfAgents}
               predecessorName={predecessorName}
+              isOrchestrating={isOrchestrating}
               hasOrchestratorStrip={hasOrchestratorStrip}
             />
             {total > 0 ? (

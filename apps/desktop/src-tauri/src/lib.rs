@@ -21,6 +21,7 @@ mod planner;
 mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
+mod qa_preview;
 mod releases;
 mod repo;
 mod scripts;
@@ -354,6 +355,7 @@ pub fn run() {
             slack::slack_list_users,
             slack::slack_post_reply,
             slack::slack_add_reaction,
+            qa_preview::qa_deciding_workflow_runs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

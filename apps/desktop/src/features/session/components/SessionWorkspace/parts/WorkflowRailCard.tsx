@@ -17,6 +17,7 @@ type Props = {
   readonly agents: ReadonlyArray<Agent>;
   readonly costUsd: number | null;
   readonly predecessorName: string;
+  readonly isOrchestrating: boolean;
   readonly onSelect: () => void;
   readonly onRestore: () => void;
 };
@@ -27,6 +28,7 @@ export const WorkflowRailCard = ({
   agents,
   costUsd,
   predecessorName,
+  isOrchestrating,
   onSelect,
   onRestore,
 }: Props) => {
@@ -80,6 +82,7 @@ export const WorkflowRailCard = ({
               workflow={workflow}
               agents={agents}
               predecessorName={predecessorName}
+              isOrchestrating={isOrchestrating}
             />
             {stepLine != null ? (
               <span className="line-clamp-1 text-2xs text-muted-foreground">{stepLine}</span>
