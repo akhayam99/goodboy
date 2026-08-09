@@ -29,6 +29,16 @@ describe('Markdown images', () => {
     expect(image?.getAttribute('alt')).toBe('chart');
   });
 
+  it('refuses a data image that carries markup, as the backend does', () => {
+    const { container } = render(
+      <Markdown text={'![shape](data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=)'} />,
+    );
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.innerHTML).not.toContain('svg');
+    expect(container.textContent).toContain('shape');
+  });
+
   it('leaves a relative image alone', () => {
     const { container } = render(<Markdown text="![diagram](./docs/diagram.png)" />);
 

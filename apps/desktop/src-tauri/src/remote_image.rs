@@ -1,10 +1,11 @@
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::future::Future;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::time::Duration;
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use reqwest::redirect::Policy;
-use reqwest::Url;
+use reqwest::{Client, Url};
 use tokio::net::lookup_host;
 
 const MAX_URL_LEN: usize = 4096;
@@ -104,7 +105,9 @@ fn check_status(status: u16) -> Result<(), String> {
 }
 
 fn is_image_content_type(value: &str) -> bool {
-    value.trim().to_ascii_lowercase().starts_with("image/")
+    let lowered = value.trim().to_ascii_lowercase();
+    let essence = lowered.split(';').next().unwrap_or("").trim();
+    essence.starts_with("image/") && !essence.contains("svg")
 }
 
 fn sniff_image_mime(bytes: &[u8]) -> Option<&'static str> {
@@ -136,71 +139,95 @@ fn check_size(len: usize) -> Result<(), String> {
     Ok(())
 }
 
-async fn ensure_public_host(host: &str) -> Result<(), String> {
+async fn resolve_public_addrs(host: &str) -> Result<Vec<SocketAddr>, String> {
     if host_literal_ip(host).is_some() {
-        return Ok(());
+        return Ok(Vec::new());
     }
     let addresses = lookup_host((host, 443))
         .await
         .map_err(|_| format!("could not reach {host}"))?;
-    let mut resolved = false;
+    let mut vetted: Vec<SocketAddr> = Vec::new();
     for address in addresses {
-        resolved = true;
         if is_blocked_ip(address.ip()) {
             return Err(format!(
                 "{host} points at a private address, so nothing was loaded"
             ));
         }
+        vetted.push(address);
     }
-    if !resolved {
+    if vetted.is_empty() {
         return Err(format!("could not reach {host}"));
     }
-    Ok(())
+    Ok(vetted)
 }
 
-#[tauri::command]
-pub async fn fetch_remote_image(url: String) -> Result<String, String> {
-    let parsed = validate_image_url(&url)?;
-    let host = parsed
-        .host_str()
-        .ok_or_else(|| "that image address names no host".to_string())?
-        .to_string();
-    ensure_public_host(&host).await?;
+fn image_redirect_policy() -> Policy {
+    Policy::none()
+}
 
-    let client = reqwest::Client::builder()
-        .redirect(Policy::none())
+fn build_image_client(host: &str, addresses: &[SocketAddr]) -> Result<Client, String> {
+    let mut builder = Client::builder()
+        .redirect(image_redirect_policy())
         .https_only(true)
-        .timeout(REQUEST_TIMEOUT)
-        .build()
-        .map_err(|e| e.to_string())?;
+        .timeout(REQUEST_TIMEOUT);
+    if !addresses.is_empty() {
+        builder = builder.resolve_to_addrs(host, addresses);
+    }
+    builder.build().map_err(|e| e.to_string())
+}
 
-    let mut response = client
-        .get(parsed)
-        .send()
-        .await
-        .map_err(|_| format!("could not load the image from {host}"))?;
+trait ImageResponse {
+    fn status_code(&self) -> u16;
+    fn declared_content_type(&self) -> Option<String>;
+    fn declared_length(&self) -> Option<u64>;
+    fn next_chunk(&mut self) -> impl Future<Output = Result<Option<Vec<u8>>, String>> + Send;
+}
 
-    check_status(response.status().as_u16())?;
+impl ImageResponse for reqwest::Response {
+    fn status_code(&self) -> u16 {
+        self.status().as_u16()
+    }
 
-    let content_type = response
-        .headers()
-        .get(reqwest::header::CONTENT_TYPE)
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or("")
-        .to_string();
+    fn declared_content_type(&self) -> Option<String> {
+        self.headers()
+            .get(reqwest::header::CONTENT_TYPE)?
+            .to_str()
+            .ok()
+            .map(str::to_string)
+    }
+
+    fn declared_length(&self) -> Option<u64> {
+        self.content_length()
+    }
+
+    async fn next_chunk(&mut self) -> Result<Option<Vec<u8>>, String> {
+        self.chunk()
+            .await
+            .map(|chunk| chunk.map(|bytes| bytes.to_vec()))
+            .map_err(|e| e.to_string())
+    }
+}
+
+async fn read_image_response<R: ImageResponse + Send>(
+    host: &str,
+    response: &mut R,
+) -> Result<String, String> {
+    check_status(response.status_code())?;
+
+    let content_type = response.declared_content_type().unwrap_or_default();
     if !is_image_content_type(&content_type) {
         return Err(format!(
             "{host} answered with something that is not an image"
         ));
     }
 
-    if let Some(length) = response.content_length() {
+    if let Some(length) = response.declared_length() {
         check_size(length as usize)?;
     }
 
     let mut body: Vec<u8> = Vec::new();
     while let Some(chunk) = response
-        .chunk()
+        .next_chunk()
         .await
         .map_err(|_| format!("could not load the image from {host}"))?
     {
@@ -214,12 +241,222 @@ pub async fn fetch_remote_image(url: String) -> Result<String, String> {
     Ok(format!("data:{};base64,{}", mime, STANDARD.encode(&body)))
 }
 
+#[tauri::command]
+pub async fn fetch_remote_image(url: String) -> Result<String, String> {
+    let parsed = validate_image_url(&url)?;
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| "that image address names no host".to_string())?
+        .to_string();
+    let addresses = resolve_public_addrs(&host).await?;
+    let client = build_image_client(&host, &addresses)?;
+
+    let mut response = client
+        .get(parsed)
+        .send()
+        .await
+        .map_err(|_| format!("could not load the image from {host}"))?;
+
+    read_image_response(&host, &mut response).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        check_size, check_status, is_blocked_host, is_image_content_type, sniff_image_mime,
-        validate_image_url, MAX_IMAGE_BYTES,
+        build_image_client, check_size, check_status, image_redirect_policy, is_blocked_host,
+        is_image_content_type, read_image_response, resolve_public_addrs, sniff_image_mime,
+        validate_image_url, ImageResponse, MAX_IMAGE_BYTES,
     };
+    use std::collections::VecDeque;
+    use std::time::Duration;
+
+    const LIB_SRC: &str = include_str!("lib.rs");
+    const SELF_SRC: &str = include_str!("remote_image.rs");
+    const PNG_HEADER: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a];
+
+    struct FakeResponse {
+        status: u16,
+        content_type: Option<String>,
+        length: Option<u64>,
+        chunks: VecDeque<Vec<u8>>,
+        pulls: usize,
+    }
+
+    impl FakeResponse {
+        fn image(chunks: Vec<Vec<u8>>) -> Self {
+            Self {
+                status: 200,
+                content_type: Some("image/png".to_string()),
+                length: None,
+                chunks: chunks.into(),
+                pulls: 0,
+            }
+        }
+    }
+
+    impl ImageResponse for FakeResponse {
+        fn status_code(&self) -> u16 {
+            self.status
+        }
+
+        fn declared_content_type(&self) -> Option<String> {
+            self.content_type.clone()
+        }
+
+        fn declared_length(&self) -> Option<u64> {
+            self.length
+        }
+
+        async fn next_chunk(&mut self) -> Result<Option<Vec<u8>>, String> {
+            self.pulls += 1;
+            Ok(self.chunks.pop_front())
+        }
+    }
+
+    fn command_body() -> &'static str {
+        let start = SELF_SRC
+            .find("pub async fn fetch_remote_image")
+            .expect("command");
+        let rest = &SELF_SRC[start..];
+        let end = rest.find("\n}\n").expect("command end");
+        &rest[..end]
+    }
+
+    #[tokio::test]
+    async fn pins_the_connection_to_the_address_it_resolved() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let accepted = tokio::spawn(async move { listener.accept().await.is_ok() });
+
+        let client = build_image_client("pinned.invalid", &[address]).unwrap();
+        let _ = client.get("https://pinned.invalid/a.png").send().await;
+
+        let reached = tokio::time::timeout(Duration::from_secs(5), accepted).await;
+        assert!(
+            matches!(reached, Ok(Ok(true))),
+            "the request did not reach the checked address"
+        );
+    }
+
+    #[tokio::test]
+    async fn refuses_a_host_whose_dns_answer_is_private() {
+        assert!(resolve_public_addrs("localhost").await.is_err());
+    }
+
+    #[tokio::test]
+    async fn leaves_a_literal_address_to_the_client() {
+        assert_eq!(resolve_public_addrs("93.184.216.34").await.unwrap(), vec![]);
+    }
+
+    #[test]
+    fn refuses_to_follow_redirects() {
+        let policy = format!("{:?}", image_redirect_policy());
+        assert!(policy.contains("None"), "{policy}");
+        assert!(!policy.contains("Limit"), "{policy}");
+        assert!(!policy.contains("Custom"), "{policy}");
+    }
+
+    #[tokio::test]
+    async fn refuses_a_response_that_is_not_a_success() {
+        for status in [301u16, 302, 307, 404, 500] {
+            let mut response = FakeResponse {
+                status,
+                ..FakeResponse::image(vec![PNG_HEADER.to_vec()])
+            };
+            assert!(
+                read_image_response("h.example.com", &mut response)
+                    .await
+                    .is_err(),
+                "accepted {status}"
+            );
+            assert_eq!(response.pulls, 0);
+        }
+    }
+
+    #[tokio::test]
+    async fn refuses_a_response_that_does_not_declare_an_image() {
+        for content_type in [
+            Some("text/html".to_string()),
+            Some("image/svg+xml".to_string()),
+            Some("image/svg+xml; charset=utf-8".to_string()),
+            None,
+        ] {
+            let mut response = FakeResponse {
+                content_type,
+                ..FakeResponse::image(vec![PNG_HEADER.to_vec()])
+            };
+            assert!(read_image_response("h.example.com", &mut response)
+                .await
+                .is_err());
+            assert_eq!(response.pulls, 0);
+        }
+    }
+
+    #[tokio::test]
+    async fn refuses_a_declared_length_over_the_cap() {
+        let mut response = FakeResponse {
+            length: Some(MAX_IMAGE_BYTES as u64 + 1),
+            ..FakeResponse::image(vec![PNG_HEADER.to_vec()])
+        };
+
+        assert!(read_image_response("h.example.com", &mut response)
+            .await
+            .is_err());
+        assert_eq!(response.pulls, 0);
+    }
+
+    #[tokio::test]
+    async fn stops_reading_a_body_that_grows_past_the_cap() {
+        let chunk = vec![0u8; 1024 * 1024];
+        let mut response = FakeResponse::image(vec![chunk; 12]);
+
+        assert!(read_image_response("h.example.com", &mut response)
+            .await
+            .is_err());
+        assert!(response.pulls < 12, "read {} chunks", response.pulls);
+    }
+
+    #[tokio::test]
+    async fn names_the_mime_from_the_bytes_and_not_the_header() {
+        let mut response = FakeResponse::image(vec![vec![0xff, 0xd8, 0xff, 0xe0], vec![0x00]]);
+
+        let uri = read_image_response("h.example.com", &mut response)
+            .await
+            .unwrap();
+
+        assert!(uri.starts_with("data:image/jpeg;base64,"), "{uri}");
+    }
+
+    #[tokio::test]
+    async fn refuses_markup_the_header_calls_an_image() {
+        let mut response = FakeResponse::image(vec![b"<svg xmlns=\"x\">".to_vec()]);
+
+        assert!(read_image_response("h.example.com", &mut response)
+            .await
+            .is_err());
+    }
+
+    #[test]
+    fn the_command_vets_dns_and_pins_before_it_connects() {
+        let body = command_body();
+        assert!(
+            body.contains("resolve_public_addrs(&host).await?"),
+            "{body}"
+        );
+        assert!(
+            body.contains("build_image_client(&host, &addresses)?"),
+            "{body}"
+        );
+        assert!(
+            body.contains("read_image_response(&host, &mut response)"),
+            "{body}"
+        );
+    }
+
+    #[test]
+    fn the_command_stays_registered_with_the_webview() {
+        assert!(LIB_SRC.contains("remote_image::fetch_remote_image"));
+    }
 
     #[test]
     fn accepts_a_github_user_attachment_url() {
@@ -288,6 +525,8 @@ mod tests {
         assert!(is_image_content_type("Image/JPEG; charset=binary"));
         assert!(!is_image_content_type("text/html"));
         assert!(!is_image_content_type(""));
+        assert!(!is_image_content_type("image/svg+xml"));
+        assert!(!is_image_content_type("Image/SVG+XML; charset=utf-8"));
     }
 
     #[test]

@@ -115,6 +115,9 @@ type ImageParams = {
 };
 
 const renderImage = ({ alt, url, key, variant }: ImageParams): ReactNode => {
+  if (/^data:image\/svg/i.test(url)) {
+    return alt;
+  }
   if (/^data:image\//i.test(url)) {
     return (
       <img
