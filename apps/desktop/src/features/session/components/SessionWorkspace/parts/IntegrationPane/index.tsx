@@ -12,7 +12,6 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { formatError } from '../../../../../../shared/lib/errors';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
-import { GithubConnectionEmptyState } from '../../../../../github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '../../../../../../shared/components/GhostActionButton';
@@ -30,7 +29,7 @@ import { WorkItemList } from './WorkItemList';
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
-  readonly provider: SessionExternalTaskProvider;
+  readonly provider: Exclude<SessionExternalTaskProvider, 'github'>;
 };
 
 type ProviderMeta = Readonly<{
@@ -134,9 +133,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     integrations,
     externalTasks,
     isGithubAuthenticated:
-      provider !== 'github' ||
-      githubConnection.isResolved === false ||
-      githubConnection.isAuthenticated,
+      githubConnection.isResolved === false || githubConnection.isAuthenticated,
   });
   const hasTasks = tasks.length > 0;
   const linkAction = (
@@ -242,16 +239,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
     >
       {!connection.isConnected ? (
-        provider === 'github' ? (
-          <GithubConnectionEmptyState
-            workspaceId={workspaceId}
-            isConnected={connection.isConnected}
-            compact
-            onConnected={() => void githubConnection.refresh()}
-          />
-        ) : (
-          <ConnectIntegrationEmptyState provider={provider} workspaceId={workspaceId} compact />
-        )
+        <ConnectIntegrationEmptyState provider={provider} workspaceId={workspaceId} compact />
       ) : null}
       {connection.isConnected && !hasTasks ? (
         <LensEmptyState
