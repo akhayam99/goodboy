@@ -23,6 +23,8 @@ export type SessionAttentionReason =
   | 'changes-requested'
   | 'pr-approved';
 
+export type SessionPrFetchState = 'unknown' | 'unreachable' | 'known';
+
 export type SessionStageInfo = Readonly<{
   stage: SessionStage;
   reason: string;
@@ -30,10 +32,4 @@ export type SessionStageInfo = Readonly<{
 }>;
 
 export type SessionPrGroup =
-  | 'not-open'
-  | 'draft'
-  | 'reviewable'
-  | 'reviewed'
-  | 'queued'
-  | 'closed'
-  | 'merged';
+  'not-open' | 'draft' | 'reviewable' | 'reviewed' | 'queued' | 'closed' | 'merged';

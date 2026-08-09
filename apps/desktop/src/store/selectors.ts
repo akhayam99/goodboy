@@ -17,6 +17,7 @@ import type {
   PlanWithCount,
   Session,
   SessionId,
+  SessionPrFetchState,
   SessionStage,
   SessionStageInfo,
   SessionViewPrefs,
@@ -36,6 +37,7 @@ import {
   type GroupedSessions,
 } from './slices/session-view';
 import { agentHasUnread } from './slices/agents/agentHasUnread';
+import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
 import { resolveSessionRepo } from './slices/worktrees/resolveSessionRepo';
 export { agentHasUnread } from './slices/agents/agentHasUnread';
 
@@ -87,6 +89,7 @@ type StageInfoState = Pick<
   | 'sessionPhaseRuns'
   | 'selectedAgentId'
   | 'currentSessionId'
+  | 'githubStatus'
 >;
 
 function countOpenQuestions(state: StageInfoState, sessionId: SessionId): number {
@@ -126,6 +129,11 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
     session,
     pr: request.pr,
     requestLabel: request.requestLabel,
+    prFetchState: sessionPrFetchState({
+      githubAvailable: state.githubStatus?.available ?? null,
+      fetchedAt: state.sessionGithub[sessionId]?.fetchedAt ?? null,
+      failedAt: state.sessionGithub[sessionId]?.failedAt ?? null,
+    }),
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
     hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
@@ -139,6 +147,15 @@ export const useSessionStageInfo = (session: Session): SessionStageInfo => {
   const reason = useAppStore((s) => stageInfoOf(s, session).reason);
   return useMemo(() => ({ stage, reason }), [stage, reason]);
 };
+
+export const useSessionPrFetchState = (sessionId: SessionId): SessionPrFetchState =>
+  useAppStore((s) =>
+    sessionPrFetchState({
+      githubAvailable: s.githubStatus?.available ?? null,
+      fetchedAt: s.sessionGithub[sessionId]?.fetchedAt ?? null,
+      failedAt: s.sessionGithub[sessionId]?.failedAt ?? null,
+    }),
+  );
 
 export const useSortedGroupedSessions = (
   workspaceId: WorkspaceId | null,
@@ -163,6 +180,7 @@ export const useSortedGroupedSessions = (
     needsStage ? s.selectedAgentId : (EMPTY_GITHUB_STATE as typeof s.selectedAgentId),
   );
   const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
+  const githubStatus = useAppStore((s) => (needsStage ? s.githubStatus : null));
   const workspaces = useAppStore((s) => (needsStage ? s.workspaces : EMPTY_WORKSPACES));
   const sessionBranches = useAppStore((s) =>
     needsStage ? s.sessionBranches : (EMPTY_GITHUB_STATE as typeof s.sessionBranches),
@@ -177,6 +195,7 @@ export const useSortedGroupedSessions = (
       sessionPhaseRuns,
       selectedAgentId,
       currentSessionId,
+      githubStatus,
     };
     const stages: Record<SessionId, SessionStage> = {};
     if (needsStage) {
@@ -197,6 +216,7 @@ export const useSortedGroupedSessions = (
     sessionPhaseRuns,
     selectedAgentId,
     currentSessionId,
+    githubStatus,
   ]);
 };
 
@@ -239,6 +259,7 @@ export const useStageGroupedSessions = (
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
+  const githubStatus = useAppStore((s) => s.githubStatus);
   const workspaces = useAppStore((s) => s.workspaces);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const previousRef = useRef<ReadonlyArray<GroupedSessions> | null>(null);
@@ -252,6 +273,7 @@ export const useStageGroupedSessions = (
       sessionPhaseRuns,
       selectedAgentId,
       currentSessionId,
+      githubStatus,
     };
     const stages: Record<SessionId, SessionStage> = {};
     for (const session of sessions) {
@@ -274,6 +296,7 @@ export const useStageGroupedSessions = (
     sessionPhaseRuns,
     selectedAgentId,
     currentSessionId,
+    githubStatus,
   ]);
   if (previousRef.current !== null && groupedSessionsEqual(grouped, previousRef.current)) {
     return previousRef.current;

@@ -1,4 +1,9 @@
-import type { PullRequestState, Session, SessionStageInfo } from '@goodboy/types';
+import type {
+  PullRequestState,
+  Session,
+  SessionPrFetchState,
+  SessionStageInfo,
+} from '@goodboy/types';
 
 type Params = {
   session: Session;
@@ -9,6 +14,7 @@ type Params = {
   isPrReview?: boolean;
   isBranchless?: boolean;
   requestLabel?: string;
+  prFetchState?: SessionPrFetchState;
 };
 
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
@@ -26,6 +32,7 @@ export const deriveSessionStage = ({
   isPrReview = false,
   isBranchless = false,
   requestLabel,
+  prFetchState = 'known',
 }: Params): SessionStageInfo => {
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
   if (isBranchless) {
@@ -91,6 +98,12 @@ export const deriveSessionStage = ({
   }
   if (isPrReview && pr === null) {
     return { stage: 'review', reason: 'reviewing an external PR' };
+  }
+  if (pr === null && prFetchState === 'unknown') {
+    return { stage: 'building', reason: 'checking GitHub' };
+  }
+  if (pr === null && prFetchState === 'unreachable') {
+    return { stage: 'building', reason: 'GitHub unreachable' };
   }
   if (pr === null) {
     return { stage: 'building', reason: 'no PR yet' };

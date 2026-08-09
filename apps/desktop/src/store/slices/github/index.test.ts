@@ -627,6 +627,7 @@ describe('store contract', () => {
             pr: selectedPr,
             linkedIssues: [],
             fetchedAt: null,
+            failedAt: null,
             loading: false,
             error: null,
             detail: null,
@@ -669,6 +670,44 @@ describe('store contract', () => {
 
       expect(store.getState().sessionGithubPrs[SESSION_ID]).toEqual([previousPr]);
       expect(store.getState().sessionSelectedPrNumber[SESSION_ID]).toBe(previousPr.number);
+    });
+
+    it('records the failed attempt so a never-tried session stays distinguishable', async () => {
+      const store = await getStore();
+      detectRepoSlugSpy.mockRejectedValueOnce(new Error('gh timed out'));
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
+      });
+
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true, silent: true });
+
+      const github = store.getState().sessionGithub[SESSION_ID];
+      expect(github?.fetchedAt).toBeNull();
+      expect(github?.failedAt).not.toBeNull();
+      expect(github?.loading).toBe(false);
+    });
+
+    it('clears the failed attempt once a later fetch lands', async () => {
+      const store = await getStore();
+      detectRepoSlugSpy.mockRejectedValueOnce(new Error('gh timed out'));
+      store.setState({
+        workspaces: [buildWorkspace()],
+        sessions: [buildSession()],
+        sessionBranches: { [SESSION_ID]: 'goodboy/topic' },
+        sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.wt/topic'] },
+      });
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true, silent: true });
+      expect(store.getState().sessionGithub[SESSION_ID]?.failedAt).not.toBeNull();
+
+      detectRepoSlugSpy.mockResolvedValueOnce('acme/goodboy');
+      listPrsForBranchSpy.mockResolvedValueOnce([]);
+      await store.getState().refreshSessionPr(SESSION_ID, { force: true, silent: true });
+
+      expect(store.getState().sessionGithub[SESSION_ID]?.failedAt).toBeNull();
+      expect(store.getState().sessionGithub[SESSION_ID]?.fetchedAt).not.toBeNull();
     });
 
     it('sweepGithub is a no-op when github is unavailable', async () => {
@@ -754,6 +793,7 @@ describe('store contract', () => {
             pr: openPr,
             linkedIssues: [],
             fetchedAt: null,
+            failedAt: null,
             loading: false,
             error: null,
             detail: null,
@@ -804,6 +844,7 @@ describe('store contract', () => {
             pr: openPr,
             linkedIssues: [],
             fetchedAt: null,
+            failedAt: null,
             loading: false,
             error: null,
             detail: null,
@@ -847,6 +888,7 @@ describe('store contract', () => {
             pr: openPr,
             linkedIssues: [],
             fetchedAt: null,
+            failedAt: null,
             loading: false,
             error: null,
             detail: null,
@@ -901,6 +943,7 @@ describe('store contract', () => {
             pr: openPr,
             linkedIssues: [],
             fetchedAt: null,
+            failedAt: null,
             loading: false,
             error: null,
             detail: null,
@@ -1357,6 +1400,7 @@ describe('store contract', () => {
             pr: null,
             linkedIssues: [],
             fetchedAt: null,
+            failedAt: null,
             loading: false,
             error: null,
             detail: {
@@ -2073,6 +2117,7 @@ describe('store contract', () => {
             pr: openPr,
             linkedIssues: [],
             fetchedAt: null,
+            failedAt: null,
             loading: false,
             error: null,
             detail: null,

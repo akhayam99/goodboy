@@ -27,6 +27,7 @@ vi.mock('./store', () => ({
 import {
   sumSessionCost,
   useLiveTerminalCount,
+  useSessionStageInfo,
   useSessionUnreadLens,
   useSortedGroupedSessions,
   useStageGroupedSessions,
@@ -104,7 +105,59 @@ beforeEach(() => {
     getSessionViewPrefs: vi.fn(),
     workspaces: [],
     sessionBranches: {},
+    githubStatus: null,
   };
+});
+
+describe('useSessionStageInfo pull request freshness', () => {
+  const repoSession = () => {
+    store.state.workspaces = [createWorkspace('repo')];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    return createSession(SESSION_ID);
+  };
+
+  it('does not claim a session has no PR before the first fetch lands', () => {
+    const session = repoSession();
+    store.state.githubStatus = { available: true };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.stage).toBe('building');
+    expect(result.current.reason).toBe('checking GitHub');
+  });
+
+  it('claims no PR once that session fetch has landed with none', () => {
+    const session = repoSession();
+    store.state.githubStatus = { available: true };
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no PR yet');
+  });
+
+  it('claims no PR right away when gh is absent, leaving nothing to wait for', () => {
+    const session = repoSession();
+    store.state.githubStatus = { available: false };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('no PR yet');
+  });
+
+  it('says GitHub is unreachable when every attempt for that session failed', () => {
+    const session = repoSession();
+    store.state.githubStatus = { available: true };
+    store.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
+    };
+
+    const { result } = renderHook(() => useSessionStageInfo(session));
+
+    expect(result.current.reason).toBe('GitHub unreachable');
+  });
 });
 
 describe('useLiveTerminalCount', () => {

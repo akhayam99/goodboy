@@ -1,4 +1,6 @@
-use std::process::Stdio;
+use std::io::Read;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use thiserror::Error;
@@ -19,6 +21,11 @@ const CERTIFICATE_MESSAGE: &str = "Goodboy cannot verify the certificate github.
 const RATE_LIMIT_MESSAGE: &str =
     "GitHub is rate limiting this token. Wait a few minutes, then try again.";
 const UNVERIFIED_MESSAGE: &str = "Goodboy could not verify this token.";
+const TIMEOUT_MESSAGE: &str =
+    "The gh CLI stopped responding, so Goodboy gave up waiting. Check your connection, then try again.";
+
+const GH_TIMEOUT: Duration = Duration::from_secs(60);
+const GH_POLL_INTERVAL: Duration = Duration::from_millis(25);
 
 const CERTIFICATE_MARKERS: &[&str] = &["x509", "certificate", "unknown authority"];
 
@@ -129,6 +136,8 @@ pub enum GithubError {
     Validation(String),
     #[error("{0}")]
     TokenRejected(String),
+    #[error("{}", TIMEOUT_MESSAGE)]
+    Timeout,
 }
 
 impl Serialize for GithubError {
@@ -187,12 +196,43 @@ fn run_gh(
             cmd.env("GITHUB_TOKEN", t);
         }
     }
-    let output = cmd.output()?;
-    Ok(GhRunResult {
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-        stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-        exit_code: output.status.code().unwrap_or(-1),
+    run_with_timeout(cmd, GH_TIMEOUT)
+}
+
+fn drain<R: Read + Send + 'static>(stream: Option<R>) -> std::thread::JoinHandle<Vec<u8>> {
+    std::thread::spawn(move || {
+        let mut buffer = Vec::new();
+        if let Some(mut stream) = stream {
+            let _ = stream.read_to_end(&mut buffer);
+        }
+        buffer
     })
+}
+
+fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<GhRunResult, GithubError> {
+    let mut child = cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
+    let stdout = drain(child.stdout.take());
+    let stderr = drain(child.stderr.take());
+    let deadline = Instant::now() + timeout;
+    loop {
+        if let Some(status) = child.try_wait()? {
+            let out = stdout.join().unwrap_or_default();
+            let err = stderr.join().unwrap_or_default();
+            return Ok(GhRunResult {
+                stdout: String::from_utf8_lossy(&out).to_string(),
+                stderr: String::from_utf8_lossy(&err).to_string(),
+                exit_code: status.code().unwrap_or(-1),
+            });
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = stdout.join();
+            let _ = stderr.join();
+            return Err(GithubError::Timeout);
+        }
+        std::thread::sleep(GH_POLL_INTERVAL);
+    }
 }
 
 fn run_git_push(args: &[&str], cwd: &str, token: Option<&str>) -> Result<GhRunResult, GithubError> {
@@ -435,11 +475,49 @@ pub async fn gh_pr_diff(
 #[cfg(test)]
 mod tests {
     use super::{
-        read_token_from, token_failure_message, token_key, validate_token_with, GhRunResult,
-        GithubError, BAD_CREDENTIALS_MESSAGE, CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE,
-        EXPIRED_MESSAGE, MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, TOKEN_KEY,
-        UNVERIFIED_MESSAGE,
+        read_token_from, run_with_timeout, token_failure_message, token_key, validate_token_with,
+        GhRunResult, GithubError, BAD_CREDENTIALS_MESSAGE, CERTIFICATE_MESSAGE,
+        EMPTY_TOKEN_MESSAGE, EXPIRED_MESSAGE, GH_TIMEOUT, MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE,
+        RATE_LIMIT_MESSAGE, TOKEN_KEY, UNVERIFIED_MESSAGE,
     };
+    use std::process::Command;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn a_hanging_gh_call_is_killed_once_the_timeout_passes() {
+        let mut cmd = Command::new("sleep");
+        cmd.arg("30");
+        let started = Instant::now();
+        let result = run_with_timeout(cmd, Duration::from_millis(150));
+        assert!(matches!(result, Err(GithubError::Timeout)));
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn a_timed_out_call_reports_it_rather_than_pretending_the_command_ran() {
+        let mut cmd = Command::new("sleep");
+        cmd.arg("30");
+        let message = run_with_timeout(cmd, Duration::from_millis(150))
+            .err()
+            .map(|err| err.to_string())
+            .unwrap_or_default();
+        assert!(message.contains("stopped responding"));
+    }
+
+    #[test]
+    fn a_command_that_finishes_keeps_its_output_and_exit_code() {
+        let mut cmd = Command::new("sh");
+        cmd.args(["-c", "printf out; printf err >&2; exit 3"]);
+        let result = run_with_timeout(cmd, GH_TIMEOUT).expect("command should run");
+        assert_eq!(result.stdout, "out");
+        assert_eq!(result.stderr, "err");
+        assert_eq!(result.exit_code, 3);
+    }
+
+    #[test]
+    fn the_gh_timeout_is_bounded_so_a_stuck_call_cannot_wedge_a_card() {
+        assert!(GH_TIMEOUT <= Duration::from_secs(120));
+    }
 
     fn gh_failure(stderr: &str) -> GhRunResult {
         GhRunResult {

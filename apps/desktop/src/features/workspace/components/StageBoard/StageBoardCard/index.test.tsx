@@ -7,6 +7,7 @@ import type {
   Session,
   SessionExternalTask,
   SessionId,
+  SessionPrFetchState,
   SessionStage,
 } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../../integrations/gitlab/client';
@@ -35,6 +36,7 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     reason: 'no PR yet',
     agents: [] as ReadonlyArray<unknown>,
     cost: 0,
+    prFetchState: 'known' as SessionPrFetchState,
   },
   useDynamicActionsMock: vi.fn((): ReadonlyArray<MockDynamicAction> => []),
 }));
@@ -44,6 +46,7 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
   useNonResolverStandaloneAgents: () => hooks.agents,
   useSessionCost: () => hooks.cost,
+  useSessionPrFetchState: () => hooks.prFetchState,
   useSessionStageInfo: () => ({ stage: hooks.stage, reason: hooks.reason }),
 }));
 
@@ -125,6 +128,7 @@ beforeEach(() => {
   hooks.reason = 'no PR yet';
   hooks.agents = [];
   hooks.cost = 0;
+  hooks.prFetchState = 'known';
 });
 
 afterEach(cleanup);
@@ -216,6 +220,26 @@ describe('StageBoardCard linked request', () => {
     fireEvent.click(btn);
     expect(dispatched).toHaveLength(1);
     window.removeEventListener('goodboy:open-gitlab-studio', (e) => dispatched.push(e));
+  });
+
+  it('marks the pull request slot as still being checked before GitHub answers', () => {
+    hooks.prFetchState = 'unknown';
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByLabelText('Checking GitHub for a pull request')).toBeTruthy();
+    expect(screen.queryByLabelText(/open in GitHub/)).toBeNull();
+  });
+
+  it('marks the pull request slot offline when GitHub could not be reached', () => {
+    hooks.prFetchState = 'unreachable';
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByLabelText('Could not reach GitHub, will retry')).toBeTruthy();
+    expect(screen.queryByLabelText('Checking GitHub for a pull request')).toBeNull();
+  });
+
+  it('leaves the pull request slot empty once a fetch confirms there is none', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByLabelText('Checking GitHub for a pull request')).toBeNull();
+    expect(screen.queryByLabelText('Could not reach GitHub, will retry')).toBeNull();
   });
 
   it('does not render a clickable button when state is none', () => {
