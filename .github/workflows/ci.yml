@@ -58,7 +58,7 @@ jobs:
         run: pnpm knip --include files,duplicates,unlisted
 
       - name: test
-        run: pnpm turbo run test --affected
+        run: pnpm turbo run test --affected --continue
 
       - name: build
         run: pnpm turbo run build --affected

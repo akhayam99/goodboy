@@ -68,8 +68,8 @@ export const Integrations = () => (
           The cards write themselves
         </h2>
         <p className="sub rv" style={delay(80)}>
-          The task usually starts somewhere else, in an issue or a crash report. <b>One click</b>{' '}
-          makes it a card with the goal written for you, done when the PR merges.
+          The task usually starts somewhere else, in an issue, a pull request, or a crash report.{' '}
+          <b>One click</b> makes it a card with the goal written for you, done when the PR merges.
         </p>
       </div>
       <div className="igrid">

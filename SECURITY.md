@@ -2,11 +2,16 @@
 
 ## Reporting a vulnerability
 
-Use [GitHub private vulnerability reporting](https://github.com/akhayam99/goodboy/security/advisories/new)
-so the report stays private until a fix ships. Include steps to reproduce and
-the version (`Goodboy > About`, or the name of the dmg or Linux package you
-installed). You will get a reply in the
-next release cycle at the latest; issues are triaged every cycle.
+GitHub private vulnerability reporting is not enabled on this repository yet.
+Until it is, reach the maintainer through the contact info on the
+[GitHub profile](https://github.com/akhayam99). Include steps to reproduce
+and the version (`Goodboy > About`, or the name of the dmg or Linux package
+you installed). You will get a reply in the next release cycle at the
+latest; issues are triaged every cycle.
+
+Private advisory reporting is being enabled for this repository. Once
+[GitHub private vulnerability reporting](https://github.com/akhayam99/goodboy/security/advisories/new)
+is live, prefer it: the report stays private until a fix ships.
 
 ## What Goodboy does with your data
 
