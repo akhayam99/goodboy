@@ -222,6 +222,19 @@ const persistOrchestrationFailure = async ({
     stop: { kind: 'failure', message },
   });
 
+type OperatorStopParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+};
+
+const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams): boolean => {
+  const current = get()
+    .sessions.find((candidate) => candidate.id === sessionId)
+    ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+  return current?.orchestrationStop?.kind === 'operator';
+};
+
 const failureLabel = (error: unknown): string => {
   if (error instanceof OrchestratorProviderError) {
     return `provider refused the request: ${error.detail}`;
@@ -470,6 +483,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           stepBudget: ORCHESTRATOR_STEP_BUDGET,
         });
       } catch (error) {
+        if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+          return;
+        }
         const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
         await persistOrchestrationFailure({ set, sessionId, workflowRunId, message });
         emitDecision({
@@ -487,6 +503,18 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       const decision = result.decision;
       if (decision == null) {
+        if (hasOperatorStop({ get, sessionId, workflowRunId })) {
+          await recordOrchestratorUsage({
+            set,
+            get,
+            sessionId,
+            agentId: null,
+            provider: routing.providerId,
+            model: result.model,
+            usage: result.usage,
+          });
+          return;
+        }
         await persistOrchestrationFailure({
           set,
           sessionId,
@@ -519,10 +547,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         );
         return;
       }
-      const afterDecide = get()
-        .sessions.find((candidate) => candidate.id === sessionId)
-        ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
-      if (afterDecide?.orchestrationStop?.kind === 'operator') {
+      if (hasOperatorStop({ get, sessionId, workflowRunId })) {
         await recordOrchestratorUsage({
           set,
           get,
