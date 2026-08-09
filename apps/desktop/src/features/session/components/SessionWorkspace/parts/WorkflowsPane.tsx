@@ -33,6 +33,7 @@ export const WorkflowsPane = ({ session }: Props) => {
   const focusedWorkflowRunId = useAppStore(
     (state) => state.focusedWorkflowRunId[sessionId] ?? null,
   );
+  const orchestratingWorkflowRuns = useAppStore((state) => state.orchestratingWorkflowRuns);
   const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);
   const restoreWorkflow = useAppStore((state) => state.restoreWorkflow);
   const [showFiled, setShowFiled] = useState(false);
@@ -67,6 +68,7 @@ export const WorkflowsPane = ({ session }: Props) => {
           agents={agents}
           costUsd={costUsd}
           predecessorName={predecessorName}
+          isOrchestrating={orchestratingWorkflowRuns?.[run.id] ?? false}
           onSelect={() => setFocusedWorkflowRun(sessionId, run.id)}
           onRestore={() => void restoreWorkflow(sessionId, run.id)}
         />
