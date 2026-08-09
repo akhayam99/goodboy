@@ -22,6 +22,7 @@ mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
 mod releases;
+mod remote_image;
 mod repo;
 mod scripts;
 mod secrets;
@@ -131,6 +132,7 @@ pub fn run() {
             editor::open_in_editor,
             editor::open_file_in_workspace,
             editor::open_url,
+            remote_image::fetch_remote_image,
             releases::releases_list,
             explore::explore_list,
             explore::explore_read,

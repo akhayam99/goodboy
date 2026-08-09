@@ -1,6 +1,7 @@
 import { Fragment, memo, useMemo, type ReactNode } from 'react';
 import { Activity, CheckCheck, FileEdit, HelpCircle, Target, type LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
+import { RemoteImage } from '../RemoteImage';
 import { parseMarkdown, type Block, type CellAlign } from './parseMarkdown';
 
 type CtxTagStyle = {
@@ -104,6 +105,33 @@ const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
   document:
     'rounded-md bg-muted/50 px-1 py-0 font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
   preview: 'font-mono text-[0.875em] text-foreground/90 wrap-anywhere',
+};
+
+type ImageParams = {
+  readonly alt: string;
+  readonly url: string;
+  readonly key: string;
+  readonly variant: MarkdownVariant;
+};
+
+const renderImage = ({ alt, url, key, variant }: ImageParams): ReactNode => {
+  if (/^data:image\//i.test(url)) {
+    return (
+      <img
+        key={key}
+        src={url}
+        alt={alt}
+        className="my-1.5 max-h-96 max-w-full rounded-md border border-border-soft object-contain"
+      />
+    );
+  }
+  if (!/^https?:/i.test(url)) {
+    return alt;
+  }
+  if (variant === 'preview') {
+    return alt;
+  }
+  return <RemoteImage key={key} url={url} alt={alt} />;
 };
 
 function renderInline(input: string, keyPrefix: string, variant: MarkdownVariant): ReactNode {
@@ -228,21 +256,8 @@ function renderInline(input: string, keyPrefix: string, variant: MarkdownVariant
         if (closeParen > closeBracket) {
           const alt = input.slice(i + 2, closeBracket);
           const url = input.slice(closeBracket + 2, closeParen).trim();
-          const safe = /^https?:/i.test(url);
           flush();
-          out.push(
-            safe ? (
-              <img
-                key={nextKey()}
-                src={url}
-                alt={alt}
-                loading="lazy"
-                className="my-1.5 max-h-96 max-w-full rounded-md border border-border-soft object-contain"
-              />
-            ) : (
-              alt
-            ),
-          );
+          out.push(renderImage({ alt, url, key: nextKey(), variant }));
           i = closeParen + 1;
           continue;
         }
