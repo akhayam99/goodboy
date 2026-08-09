@@ -56,8 +56,16 @@ GOODBOY_QA_DECIDING_RUNS=<run-id>[,<run-id>] \
 ```
 
 Boot marks those runs as deciding in memory only. Seed the operator stop
-itself as a normal row (`workflow_runs.orchestration_stop`) and the run
-reports **Stopping** on the rail card, the collapsed sidebar row and the
-orchestrator strip. Nothing is written back, so a relaunch without the
-variable reports **Stopped** again. Never persist the in-flight flag: a
-stored "deciding right now" is false the moment the app restarts.
+itself as an ordinary row in `session_workflows`, keyed by
+`workflow_run_id`: a non-empty `orchestration_error` carries the message
+(an empty value means no stop exists at all, see `toStop` in
+`packages/db/src/queries/session-workflow.ts`) and `orchestration_stop_kind`
+must be `'operator'`. With that row and the run named in
+`GOODBOY_QA_DECIDING_RUNS`, the plain **Stopping** pill shows on the rail
+card and on the collapsed sidebar row. To see it on the richer orchestrator
+strip instead, the row also needs `execution_mode = 'dynamic'` and the
+sidebar row expanded: the strip only renders in that combination, and the
+plain pill hides itself in favor of it. Nothing is written back, so a
+relaunch without the variable reports **Stopped** again. Never persist the
+in-flight flag: a stored "deciding right now" is false the moment the app
+restarts.

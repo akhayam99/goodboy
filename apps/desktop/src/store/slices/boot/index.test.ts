@@ -33,8 +33,12 @@ import type {
   WorkspaceScriptId,
 } from '@goodboy/types';
 
+const { invokeSpy } = vi.hoisted(() => ({
+  invokeSpy: vi.fn(async (_command?: unknown) => null as unknown),
+}));
+
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async () => null),
+  invoke: invokeSpy,
 }));
 
 vi.mock('@tauri-apps/api/event', () => ({
@@ -439,6 +443,7 @@ let resetState: Record<string, unknown> | null = null;
 describe('store contract', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    invokeSpy.mockImplementation(async () => null);
     invokeBudgetRuleListSpy.mockResolvedValue([]);
     invokeBudgetAlertsListSpy.mockResolvedValue([]);
     invokeSessionBudgetGetSpy.mockResolvedValue(null);
@@ -571,6 +576,21 @@ describe('store contract', () => {
 
       expect(bootPhaseAtCall).not.toBeNull();
       expect(bootPhaseAtCall).not.toBe('ready');
+    });
+
+    it('applies the qa deciding preview named by the environment at boot', async () => {
+      const store = await getStore();
+      store.setState({ orchestratingWorkflowRuns: {} } as never);
+      invokeSpy.mockImplementation(async (command: unknown) => {
+        if (command === 'qa_deciding_workflow_runs') {
+          return ['run-qa-preview'];
+        }
+        return null;
+      });
+
+      await store.getState().hydrate();
+
+      expect(store.getState().orchestratingWorkflowRuns).toEqual({ 'run-qa-preview': true });
     });
 
     it('offers to clean the session folders left behind on disk', async () => {

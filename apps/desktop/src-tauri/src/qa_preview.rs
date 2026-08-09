@@ -17,7 +17,7 @@ pub fn qa_deciding_workflow_runs() -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_run_ids;
+    use super::{parse_run_ids, qa_deciding_workflow_runs, DECIDING_RUNS_ENV};
 
     #[test]
     fn reads_nothing_from_an_empty_value() {
@@ -35,5 +35,16 @@ mod tests {
                 "run-3".to_string()
             ]
         );
+    }
+
+    #[test]
+    fn command_reads_the_process_environment_at_call_time() {
+        std::env::remove_var(DECIDING_RUNS_ENV);
+        assert!(qa_deciding_workflow_runs().is_empty());
+
+        std::env::set_var(DECIDING_RUNS_ENV, "run-9,run-10");
+        let result = qa_deciding_workflow_runs();
+        std::env::remove_var(DECIDING_RUNS_ENV);
+        assert_eq!(result, vec!["run-9".to_string(), "run-10".to_string()]);
     }
 }
