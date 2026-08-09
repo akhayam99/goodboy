@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
+import { ScrollFade } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { ConfirmPill } from '../../../../../shared/components/ConfirmPill';
 import { useAppStore } from '../../../../../store';
@@ -76,12 +77,17 @@ export const LensColumnFooter = ({ session }: Props) => {
   };
 
   return (
-    <div className="flex shrink-0 items-center gap-2 px-2 py-2">
+    <ScrollFade
+      orientation="horizontal"
+      className="shrink-0"
+      viewportClassName="flex items-center gap-2 px-2 py-2"
+      fadeSize={16}
+    >
       <ProjectSwitcher sessionId={sessionId} density={density} />
       <EditorMenu sessionId={sessionId} density={density} />
       <SessionGitActions session={session} density={density} />
       <span className="flex-1" />
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         {archived ? (
           <button
             type="button"
@@ -132,6 +138,6 @@ export const LensColumnFooter = ({ session }: Props) => {
           </button>
         )}
       </div>
-    </div>
+    </ScrollFade>
   );
 };
