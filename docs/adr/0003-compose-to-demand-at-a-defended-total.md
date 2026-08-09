@@ -5,9 +5,18 @@ date: 2026-08-09
 owner: the repo owner, whose direction this records; drafted for him by the
 org architect under the head of engineering's structural-decision clause
 reviewed-by: the challenger, on the PR that lands this record, verdict on
-the PR thread; plus the product owner as the bound role, owed by the first
-release composed under this model, in the dated-obligation shape ADR 0001's
-amendment established
+the PR thread; plus the product owner as the bound role, delivered by
+v0.1.77, the first release composed under this model. Verdict: **sound**.
+It is honest where honesty was expensive: it names its own graduation gate
+as unmet, prices the owner's override as an override, and gives the
+ratchet-back an actor and a moment rather than leaving it as a wish. The
+reviewer recorded the hazard against itself: `sound` is the verdict its
+incentives prefer, and its one independent check (that the batch it
+composed could not have fitted the retired twelve-slot shape) is a single
+data point of its own making. The release that followed bears the model
+out in one respect worth recording: the batch was composed at 20 items and
+finished at 19, because scouting proved one item already shipped, which is
+the demand procedure and the filler bar working rather than failing.
 
 ## Context
 

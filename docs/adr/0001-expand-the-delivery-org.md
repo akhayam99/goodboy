@@ -97,6 +97,18 @@ budget and merge-unit numbers;
 [docs/autonomy/release-loop.md](../autonomy/release-loop.md) owns the
 waves.
 
+**The bound-role review, delivered.** v0.1.77's Phase 2 challenger took it,
+per the obligation below, and returned **sound**: the diagnosis carries
+counted evidence, and every failure of the record's own machinery earned a
+dated amendment instead of a silent edit (a review hand-wave replaced by a
+dated obligation, the cost ceiling recounted, the graduation gate named as
+unmet, a valve named for having no actor). The weakness it named, and it is
+not fatal: three amendments in two days confirm the original arithmetic was
+ambition written as fact, and what survives is the subset with evidence
+behind it. The slot arithmetic itself is superseded by
+[ADR 0003](./0003-compose-to-demand-at-a-defended-total.md); this verdict
+judges the record, not the numbers it no longer owns.
+
 **The review.** The original reviewed-by line was a retroactive hand-wave:
 nobody had reviewed this record, and running under a rule is not reviewing
 it. It is replaced by a dated obligation with a named channel and writer:

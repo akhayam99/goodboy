@@ -7,6 +7,84 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.77
+
+Controls you can reach, and a board that does not claim what it has not checked.
+
+### [#1358] Reach every sidebar control with more than one project mounted
+
+With two or more project mounts, the sidebar's Open, Branch, Archive and Delete
+controls were pushed past the sidebar's edge and could not be clicked at all.
+The switcher grew a tab per mount inside a row that neither wrapped nor
+scrolled, so the controls went off-surface at any sidebar width.
+
+That row now scrolls horizontally, with a fade at each edge when there is more
+to reach. With a single mount it looks exactly as it did.
+
+### [#1363] An unfetched pull request reads as checking, not missing
+
+At launch the board placed every session it had not yet asked GitHub about as
+though the answer were already in, then moved cards between columns one at a
+time as the real answers arrived. Nothing was missing from that first board;
+what was on it was labelled wrong.
+
+A session whose pull request state has not arrived now says so, in place, with
+the chip slot showing it is still checking. A session GitHub could not be
+reached for shows a quiet offline marker and is retried. A session that has
+been checked and genuinely has no pull request reads exactly as before, and a
+running agent, an error or an open question still outrank all of it.
+
+A `gh` call that never returns no longer freezes a card for the rest of the
+session: those calls now give up after a minute and the card retries instead
+of waiting forever.
+
+### [#1365] A stop mid-decision reads as stopping until it lands
+
+Stopping a run while the orchestrator was choosing its next step showed
+Stopped on the rail card and the collapsed row for as long as the decision ran,
+which is the surface the stop button sits on. Those surfaces now say stopping
+until the decision ends.
+
+A stop is also no longer overwritten when the decision in flight fails or comes
+back unreadable: the run stays stopped by you rather than reporting a failure
+you did not cause.
+
+### [#1366] Images in a pull request body load when you ask
+
+An image in a pull request or merge request body showed as broken. It now
+renders as a placeholder naming the host it would come from, and loads only
+when you click it, one image at a time. Nothing is fetched before that click,
+because loading a remote image tells whoever hosts it that you opened the page.
+
+This covers every body the app renders that way, including GitLab merge
+requests, Bitbucket pull requests and Slack threads.
+
+### [#1362] Autorun reads as autorun everywhere
+
+Three surfaces called it "auto" and coloured it as an error: the session
+overview lane, the board card and the activity bar. All three now say Autorun
+in the same tone as the toggle, and the in-app guide's colour legend matches.
+
+Delete on a session card now sits behind a divider instead of directly beside
+Archive.
+
+### [#1364] "Nothing needs you" no longer appears while resolvers are running
+
+The session overview could show "Nothing needs you right now" above a rail
+counting live resolve work, because the two counted different things. A
+resolver started without a source comment now counts on both.
+
+### [#1361] Two removals on the security perimeter
+
+Two Tauri commands that could read any credential out of the keychain and
+return it to the interface had no callers and are gone. The webview's standing
+permission to reach Linear's API has been removed too: those calls are all made
+outside the interface.
+
+Follow-up: every fix above is pinned by its own test and a re-read of the diff, not by
+a run through the built app; nobody has clicked these controls yet. If one behaves
+differently than described, the fix's own test names the exact ground it stands on.
+
 ## Goodboy v0.1.76
 
 v0.1.75 gave a hands-free run a stop. This one puts it in the pane you are already watching, not only in the sidebar.
