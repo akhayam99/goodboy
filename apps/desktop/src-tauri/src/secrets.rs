@@ -62,12 +62,50 @@ pub fn secret_delete(key: String) -> Result<(), SecretError> {
     clear(&key)
 }
 
-#[tauri::command]
-pub fn secret_has(key: String) -> Result<bool, SecretError> {
-    Ok(read(&key)?.is_some())
-}
+#[cfg(test)]
+mod tests {
+    const LIB_SRC: &str = include_str!("lib.rs");
+    const TAURI_CONF: &str = include_str!("../tauri.conf.json");
 
-#[tauri::command]
-pub fn secret_get(key: String) -> Result<Option<String>, SecretError> {
-    read(&key)
+    fn csp() -> String {
+        let conf: serde_json::Value = serde_json::from_str(TAURI_CONF).expect("tauri.conf.json");
+        conf["app"]["security"]["csp"]
+            .as_str()
+            .expect("app.security.csp")
+            .to_string()
+    }
+
+    fn directive(name: &str) -> String {
+        csp()
+            .split(';')
+            .map(str::trim)
+            .find(|part| part.starts_with(name))
+            .unwrap_or_else(|| panic!("{name} directive missing"))
+            .to_string()
+    }
+
+    #[test]
+    fn keychain_read_commands_are_not_exposed_to_the_webview() {
+        assert!(!LIB_SRC.contains("secret_get"));
+        assert!(!LIB_SRC.contains("secret_has"));
+    }
+
+    #[test]
+    fn keychain_write_commands_stay_exposed_to_the_webview() {
+        assert!(LIB_SRC.contains("secrets::secret_set"));
+        assert!(LIB_SRC.contains("secrets::secret_delete"));
+    }
+
+    #[test]
+    fn connect_src_grants_no_remote_origin() {
+        assert_eq!(
+            directive("connect-src"),
+            "connect-src 'self' ipc: http://ipc.localhost"
+        );
+    }
+
+    #[test]
+    fn img_src_stays_local_only() {
+        assert_eq!(directive("img-src"), "img-src 'self' data:");
+    }
 }
