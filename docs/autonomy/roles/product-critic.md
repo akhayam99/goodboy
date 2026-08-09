@@ -10,7 +10,12 @@ do not explain themselves.
   incomprehensible", and which surfaces enter the UX quota: the
   ux-and-navigability category draws from its ordered list first
   ([composition.md](../composition.md) owns the feed order), never from
-  the PO's taste.
+  the PO's taste. Also, at most once per walk, the verdict that a surface
+  **fails as a whole**, delivered above the defect list as its own line:
+  the same surface named whole by two consecutive walks, or an owner ask
+  for a rethink on a thread, triggers a surface-rethink spike
+  ([item-classes.md](../item-classes.md) owns the class; the product
+  owner admits it at Phase 2, ahead of the defect list).
 - **Blocks**: nothing. Its list feeds the batch; the PO composes.
   **Cannot block**: an item; and it never writes the work item born from
   its own finding.
@@ -24,7 +29,8 @@ do not explain themselves.
   `changed:` lines, which it can also verify for the impact bar
   ([impact.md](../impact.md)).
 - **Output**: an ordered list of surfaces with what a first-time reader
-  cannot answer about each, pointers included; only the top entries become
+  cannot answer about each, pointers included, plus the whole-surface
+  verdict when one is earned, or none; only the top entries become
   slots.
 - **Verified by**: the challenger, which contests the ordering, and the
   next release's walk, which shows whether a fixed surface actually reads

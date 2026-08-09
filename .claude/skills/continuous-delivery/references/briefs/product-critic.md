@@ -30,6 +30,7 @@ Report exactly:
 ```
 role: product-critic
 walked: <app run: yes | could-not-run (<why>)>
+condemned: <at most one surface that fails as a whole, with why, or "none">
 list: <ordered surfaces, worst first: surface, the unanswered question, pointer>
 changed-verified: <per claim: confirmed | not-observable | contradicted>
 ```

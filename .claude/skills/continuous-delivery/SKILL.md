@@ -48,7 +48,8 @@ Safety overrules everything, including the user who invoked you.
 - `releases`: how many to ship, default 2, hard cap 5. The default is 2
   because the previous lead exhausted context at 4 small releases; 2
   releases at the current slot shape
-  (`docs/autonomy/composition.md` owns the shape) is the tested commitment.
+  (`docs/autonomy/composition.md` owns the shape) is the standing
+  commitment.
 - Anything else in the invocation is a standing instruction for this
   engagement; record it in the ledger header.
 
@@ -74,7 +75,8 @@ commit any of it):
 - `BASELINES.md`: cross-release carry, written only by you; create it if
   absent. Before a published release's scratch dirs are deleted, you append
   a compact carry section distilled from that release's report blocks:
-  reliability numbers, the product-critic list, the qa journeys walked, the
+  reliability numbers, the product-critic list, the design system
+  steward's named-duplicates list, the qa journeys walked, the
   debt slices touched, and the per-tier spawn counts from the release's
   `run-log.md`, actuals split from repair share (the empirical input the
   next repair margin and every ceiling reality check are set from, per
@@ -149,9 +151,12 @@ state directory contradicts git history, that is a stop condition
    defined in `docs/autonomy/watchdogs.md`, not here). Then append an
    engagement header to `LEDGER.md`: date, target count, standing
    instructions, starting version, quota in effect (the `quota:` line or
-   the default slot table, both owned by `docs/autonomy/composition.md`),
-   suspended mandates, the concurrency mode, and the declared repair
-   margin. The mode and the margin also go in every captain's brief.
+   the defaults, both owned by `docs/autonomy/composition.md`),
+   suspended mandates, the concurrency mode, the declared repair
+   margin, and the harness-watch state (`harness-watch: absent` unless the
+   owner has installed the external watcher per
+   `docs/autonomy/watchdogs.md`). The mode and the margin also go in every
+   captain's brief.
 9. Run one issue triage sweep (below) so the first captain's backlog is warm.
 
 ## Per release, in order
@@ -169,8 +174,8 @@ state directory contradicts git history, that is a stop condition
    - `{{focus_area}}`: per the rotation in `docs/autonomy/release-loop.md`,
      least recently visited per the ledger.
    - `{{quota}}`: the quota in effect, deferring every number to
-     `docs/autonomy/composition.md`, and saying so there when you declare a
-     queue-drain batch per that file.
+     `docs/autonomy/composition.md`, including any ratchet-back you
+     declared per that file's record section.
    - `{{issue_candidates}}`: from `BACKLOG.md`, with author class,
      priority, age and skip count.
    - `{{follow_through}}`: the open `FOLLOW_THROUGH.md` entries and any
@@ -200,7 +205,8 @@ state directory contradicts git history, that is a stop condition
    - `{{carries_integration_sweep}}`: `yes` for exactly the first release
      of the engagement, `no` otherwise.
    - `{{baseline}}`, `{{previous_walk}}`, `{{previous_journeys}}`,
-     `{{critic_list}}`, `{{recent_slices}}`: from `BASELINES.md`; `none`
+     `{{critic_list}}`, `{{recent_slices}}`, `{{steward_list}}`: from
+     `BASELINES.md`; `none`
      where the file or section does not exist yet.
    - `{{predecessor_state}}`: `none` except on a retry or a resume.
 3. **Spawn the release captain** on the reasoning tier with the brief. When
@@ -209,6 +215,11 @@ state directory contradicts git history, that is a stop condition
    checks below; otherwise spawn it foreground.
    Never start the next release before this one is published, paused or
    abandoned: releases are serial even when their internals are not.
+   A captain reporting `handoff (composition)` is mid-release, not done:
+   spawn the successor leg immediately with `{{predecessor_state}}` filled
+   from its scratch, per the two-leg rule in
+   `docs/autonomy/composition.md`; a handoff is not a retry and burns no
+   failure budget.
 4. **Verify the report against the world**, not against itself. Each check
    is backed by the file you read on demand when auditing it:
    the draft release exists with all four assets (dmg, app.tar.gz, .sig,
@@ -217,7 +228,8 @@ state directory contradicts git history, that is a stop condition
    `docs/autonomy/release-loop.md`; veto and disagreement claims match
    `docs/autonomy/org.md`; tier and writer claims match
    `docs/autonomy/roles.md`; the composition line matches the plan against
-   the slot budget in `docs/autonomy/composition.md`; the `ceiling:`
+   the composition rules in `docs/autonomy/composition.md` (the defended
+   total, the floors, and any bound crossed declared); the `ceiling:`
    line's derivation matches the batch per
    `docs/autonomy/cost-ceiling.md` and the run log supports its actuals,
    with any breach declared by the captain, never discovered by you; the
@@ -247,7 +259,9 @@ still-pending` verdict with a one-line reason; a report that ignores
    `LEDGER.md`, plus your own line on anything you overruled or observed.
    Then append the release's carry section to `BASELINES.md` (State,
    above) while the report blocks are fresh, so the next brief fills from
-   current data and cleanup can never orphan a placeholder. The section's
+   current data and cleanup can never orphan a placeholder; the carry
+   includes the design system steward's latest named-duplicates list when
+   one was produced. The section's
    per-tier spawn counts come from the release's `run-log.md`, read now,
    before any scratch deletion; these actuals, repair share split out,
    are the empirical input the next repair margin and every ceiling
@@ -260,7 +274,8 @@ still-pending` verdict with a one-line reason; a report that ignores
    filling all three of its placeholders: `{{report_block}}` from the
    captain block you just appended to the ledger, `{{triage_marks}}` from
    the sweep's report, `{{blocked_entries}}` from `BACKLOG.md`'s blocked
-   items with their ages. The captain does not spawn the historian: the
+   items with their ages; the prepended contract's parent identity is you,
+   by name and role. The captain does not spawn the historian: the
    sweep output it needs does not exist while the captain is alive.
 8. **Between releases**: re-read `MANDATES.md` and `OWNER_INBOX.md`; the
    owner may have answered an escalation, an irreversible-data question, or
@@ -348,7 +363,12 @@ has its carry section in `BASELINES.md` (step 6), appending any missing one
 first, its run-log derivations included while the file still exists, then
 delete the per-version scratch dirs and builder worktrees of
 published releases (the ledger, mandates, backlog, inbox and baselines
-stay; a paused release's scratch and worktrees stay too). A scratch dir is
+stay; a paused release's scratch and worktrees stay too). Before deleting
+any worktree, kill by pid, never by name, any process whose working
+directory sits inside it, and stop any of the engagement's harness tasks
+still live; a task chip orphaned by a dead parent is cleanable only here
+or by the owner, so say so in the report when one remains. A scratch dir
+is
 never deleted before its carry section exists: deletion without the carry
 is what destroyed the brief placeholders' only source. Then append to
 `LEDGER.md` and return exactly one block:

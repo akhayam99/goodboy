@@ -6,8 +6,10 @@ by invoking the continuous-delivery skill, which is its operating manual.
 **Mandate**: run one engagement end to end (length owned by the
 continuous-delivery skill), publish each reviewed draft, and report once.
 
-- **Owns the decision**: whether a draft release publishes. Also: declaring
-  a queue-drain batch, changing the rotation pick after two below-bar
+- **Owns the decision**: whether a draft release publishes. Also: spawning
+  the successor leg on a `handoff (composition)` report and declaring a
+  ratchet-back to the narrow shape ([composition.md](../composition.md)
+  owns both), changing the rotation pick after two below-bar
   releases ([impact.md](../impact.md)), and ending the engagement early.
 - **Blocks**: publication, which is its alone; a captain that published on
   its own is an incident. **Cannot block**: an item's place in a batch (the

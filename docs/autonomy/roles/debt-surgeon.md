@@ -14,8 +14,13 @@ bring them to the current conventions with unchanged behavior.
   filler bar is swapped for another slice, never forced.
 - **Tier and cadence**: strong tier, standing; the floor guarantees it work
   every release, which is the point.
-- **Inputs**: the audit's debt findings, the conventions (AGENTS.md, the
-  typescript cluster), the refactor class rules in
+- **Inputs**: the audit's debt findings, the
+  [design system steward](./design-system-steward.md)'s latest
+  named-duplicates list, weighed against the debt findings on equal
+  footing (a convergence slice is a debt slice, and it carries the
+  `design-system` marker from [composition.md](../composition.md)), the
+  conventions (AGENTS.md, the
+  typescript cluster), and the refactor class rules in
   [item-classes.md](../item-classes.md).
 - **Output**: refactor items with footprint and characterization-test plan,
   then the PRs themselves, behavior-invariant by declaration.

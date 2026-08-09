@@ -107,3 +107,23 @@ spawn one trivial background child and see whether its completion
 notification arrives. The verdict goes in the ledger header and in every
 captain's brief, and each parent writes it into its scratch state so its
 watchdogs and any successor know which rules apply.
+
+## Outside the process
+
+Every check in this file is performed by an agent inside one host process,
+the delivery lead included, and nobody watches the lead. Host death removes
+watcher and watched atomically, and a role spawned by the thing whose death
+is the event cannot report the event. That is a limit, stated as fact: no
+rule above can cover it
+([infrastructure.md](./infrastructure.md) owns what a harness death costs).
+
+The cover is an **external watcher**: a launchd or cron job outside every
+agent process, on a roughly 15 minute cadence, that reads only the state
+directory and git, never spawns agents, never edits state. Its one
+question: is there a fresh `ENGAGEMENT.lock` with no live process behind
+it, or a newest per-release `run-log.md` past the lead's 2 hour cadence
+with no mtime change and no new commits on any `ak/*` branch? On yes, it
+notifies the owner, and may invoke the resume path. **Installing it is the
+owner's action**, never an agent's. Until it exists, the delivery lead
+writes `harness-watch: absent` in the ledger header at preflight, so every
+unattended run carries the named risk on the record.

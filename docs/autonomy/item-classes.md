@@ -55,6 +55,20 @@ Class-specific notes, each carrying its reason:
 - **Spike.** The challenger attacks the conclusion because a spike's failure
   mode is a confident answer resting on research that never tested the
   alternative, and re-doing the research would just be a second spike.
+- **Surface rethink, a spike variant.** The one sanctioned way to say "this
+  surface is wrong whole and should be rebuilt", which no per-defect list
+  can say. Admission bar mirrors the org-item citation bar: an owner ask
+  for a rethink on the record, or the same surface named whole by two
+  consecutive product-critic walks ([roles/product-critic.md](./roles/product-critic.md)
+  owns the naming); no citation, the challenger rejects it, because the
+  filler bar exists precisely to refuse redesigns on taste. Deliverable: a
+  written redesign of the surface (entry point, states, verbs, the three
+  questions answered at surface level, and what it deletes), contested by
+  the challenger like any spike; the conclusion goes to the owner inbox as
+  a direction question before any implementation is planned. A triggered
+  rethink is admitted ahead of ux defect items
+  ([composition.md](./composition.md) states the same rule from the
+  composing side).
 - **Experiment.** The criterion is written before the build because a
   criterion written at judgment time always passes. A criterion nobody can
   read in its window is a failed experiment and reverts by default; the
@@ -79,6 +93,9 @@ covering pending org items and experiment criteria alike, and the delivery
 lead rejects a report that leaves an inherited item unjudged. Verdicts are
 `kept | reverted | still-pending`, each with one line of reason on the
 report's `self:` line; `still-pending` without a reason is a rejection too.
+A record review (an ADR or a spike conclusion judged after the fact) uses
+`sound | unsound` instead: a record is not kept or reverted, it is judged,
+and forcing it into the other pair is how a review verdict goes unwritten.
 The channel is written down because a deferred verdict with no delivery
 mechanism is the same silent death this file diagnoses: release N ships the
 item, release N+1 never receives it in its brief, and

@@ -32,5 +32,7 @@ filled by the delivery lead.
 A captain's turn ends only at its report block, never with children still
 live; the roster incident behind that rule is narrated in
 [watchdogs.md](../watchdogs.md). Children report to the captain by its
-name; two verifiers once could not resolve their parent and a sleeping
+name, which the captain writes into every spawn's contract (the parent
+identity in the skill's `_contract.md`, with disk as the only fallback):
+two verifiers once could not resolve their parent, and a sleeping
 lead would have stalled the release.

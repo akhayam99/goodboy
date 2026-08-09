@@ -19,7 +19,7 @@ owned by [cost-ceiling.md](./cost-ceiling.md).
 
 ```
 delivery lead (one per engagement; length owned by the continuous-delivery skill)
-├── release captain (one per release)
+├── release captain (one per release, or two sequential legs per composition.md)
 │   ├── archaeologists (3-5, cheap, read-only)
 │   ├── product owner (decides the release)
 │   ├── head of engineering (feasibility and sequencing)
