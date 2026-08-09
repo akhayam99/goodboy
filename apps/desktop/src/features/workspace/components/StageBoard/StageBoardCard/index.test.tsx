@@ -300,6 +300,16 @@ describe('StageBoardCard actions visibility', () => {
     expect(nonAttention.className).not.toContain('bg-warning/5');
     expect(nonAttention.className.includes(' bg-primary/5')).toBe(false);
   });
+
+  it('separates delete from archive with a divider in the lifecycle group', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    const group = screen.getByRole('group', { name: 'Session lifecycle actions' });
+    const archive = screen.getByLabelText('Archive').closest('[data-tooltip]');
+    const del = screen.getByLabelText('Delete').closest('[data-tooltip]');
+    const divider = group.querySelector('[role="separator"]');
+    expect(divider).not.toBeNull();
+    expect(Array.from(group.children)).toEqual([archive, divider, del]);
+  });
 });
 
 describe('StageBoardCard review drafts', () => {
@@ -351,12 +361,14 @@ describe('StageBoardCard footer', () => {
     const agents = screen.getByLabelText('2 agents');
     const task = screen.getByLabelText('GB-123 from Linear');
     const cost = document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]');
-    const auto = screen.getByText('Auto');
+    const auto = screen.getByText('Autorun');
     const footer = agents.closest('[data-tooltip]')?.parentElement;
     expect(agents.querySelector('.lucide-bot')).not.toBeNull();
     expect(screen.queryByText('GB-123')).toBeNull();
     expect(cost).not.toBeNull();
     expect(auto).toBeDefined();
+    expect(auto.className).toContain('text-primary');
+    expect(auto.className).not.toContain('text-danger');
     expect(Array.from(footer?.children ?? [])).toEqual([
       agents.closest('[data-tooltip]'),
       task,

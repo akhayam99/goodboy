@@ -35,7 +35,7 @@ export const PipelineLane = ({ lane, onOpen, advance }: Props) => {
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
           {lane.workflowName}
         </span>
-        {lane.autoRun ? <Chip tone="danger" size="sm" label="auto" /> : null}
+        {lane.autoRun ? <Chip tone="primary" size="sm" label="Autorun" /> : null}
         <span className="shrink-0 tabular-nums text-2xs text-muted-foreground/60">
           {done}/{lane.steps.length}
         </span>

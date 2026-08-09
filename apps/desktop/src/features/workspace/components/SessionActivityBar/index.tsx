@@ -339,7 +339,7 @@ const SessionActivityItem = memo(function SessionActivityItem({
       <span className="flex w-full items-start gap-2">
         <span className="inline-flex h-5 shrink-0 items-center">
           <StatusDot
-            tone={isAutoMode ? 'danger' : STAGE_TONE[stage]}
+            tone={isAutoMode ? 'primary' : STAGE_TONE[stage]}
             size="sm"
             pulsing={stage === 'running'}
           />
