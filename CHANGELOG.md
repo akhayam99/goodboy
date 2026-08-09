@@ -21,7 +21,7 @@ scrolled, so the controls went off-surface at any sidebar width.
 That row now scrolls horizontally, with a fade at each edge when there is more
 to reach. With a single mount it looks exactly as it did.
 
-### [#1363] The board says it is checking GitHub instead of saying there is no pull request
+### [#1363] An unfetched pull request reads as checking, not missing
 
 At launch the board placed every session it had not yet asked GitHub about as
 though the answer were already in, then moved cards between columns one at a
@@ -38,7 +38,7 @@ A `gh` call that never returns no longer freezes a card for the rest of the
 session: those calls now give up after a minute and the card retries instead
 of waiting forever.
 
-### [#1365] A run that is still deciding says stopping rather than stopped
+### [#1365] A stop mid-decision reads as stopping until it lands
 
 Stopping a run while the orchestrator was choosing its next step showed
 Stopped on the rail card and the collapsed row for as long as the decision ran,
@@ -80,6 +80,10 @@ Two Tauri commands that could read any credential out of the keychain and
 return it to the interface had no callers and are gone. The webview's standing
 permission to reach Linear's API has been removed too: those calls are all made
 outside the interface.
+
+Follow-up: every fix above is pinned by its own test and a re-read of the diff, not by
+a run through the built app; nobody has clicked these controls yet. If one behaves
+differently than described, the fix's own test names the exact ground it stands on.
 
 ## Goodboy v0.1.76
 
