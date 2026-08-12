@@ -109,7 +109,6 @@ export const SessionGitActions = ({ session, density = 'full' }: Props) => {
       items={items}
       label="Branch actions"
       align="left"
-      side="top"
       triggerClassName={triggerClassName}
       trigger={
         <>

@@ -73,16 +73,14 @@ export const EditorMenu = ({ sessionId, density = 'full' }: Props) => {
           ]
         : [
             { kind: 'header', key: 'editor-header', label: 'Open in editor' },
-            ...refEditors.map(
-              (ed): OverflowMenuItem => ({
-                kind: 'item',
-                key: `editor-${ed.binary}`,
-                label: ed.label,
-                icon: FolderOpen,
-                onClick: () => void launchEditor(ed.binary),
-                disabled: worktreePath == null,
-              }),
-            ),
+            ...refEditors.map((ed): OverflowMenuItem => ({
+              kind: 'item',
+              key: `editor-${ed.binary}`,
+              label: ed.label,
+              icon: FolderOpen,
+              onClick: () => void launchEditor(ed.binary),
+              disabled: worktreePath == null,
+            })),
           ];
     return [
       ...editorItems,
@@ -105,7 +103,6 @@ export const EditorMenu = ({ sessionId, density = 'full' }: Props) => {
       items={items}
       label="Open worktree"
       align="left"
-      side="top"
       triggerClassName={triggerClassName}
       trigger={
         <>

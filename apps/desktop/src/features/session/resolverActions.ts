@@ -70,6 +70,32 @@ type Block = {
 export const resolverActionOpensPanel = ({ action }: { action: ResolverAction }): boolean =>
   action.opensInspector;
 
+const GITHUB_ONLY_KINDS: ReadonlySet<ResolverActionKind> = new Set([
+  'push',
+  'queue',
+  'dequeue',
+  'explain',
+  'forceResolve',
+]);
+
+const isLocalDiffOrigin = ({ agent }: Pick<Params, 'agent'>): boolean => {
+  if (agent.sourceKind !== undefined) {
+    return agent.sourceKind === 'diff_comment';
+  }
+  return agentThreadIds(agent).length === 0 && agent.sourceCommentUrl == null;
+};
+
+const withoutGithubActions = (plan: ResolverActionPlan): ResolverActionPlan => {
+  const keep = (action: ResolverAction | null): ResolverAction | null =>
+    action !== null && GITHUB_ONLY_KINDS.has(action.kind) ? null : action;
+  return {
+    primary: keep(plan.primary),
+    secondary: keep(plan.secondary),
+    overflow: plan.overflow.filter((action) => !GITHUB_ONLY_KINDS.has(action.kind)),
+    note: null,
+  };
+};
+
 const IDLE: Block = { primary: null, secondary: null, note: null };
 
 const RUN_NOW: ResolverAction = {
@@ -387,5 +413,6 @@ export const resolverActionPlan = (params: Params): ResolverActionPlan => {
   if (manual !== null && block.secondary?.kind !== 'forceResolve') {
     overflow.push(manual);
   }
-  return { ...block, overflow };
+  const plan = { ...block, overflow };
+  return isLocalDiffOrigin(params) ? withoutGithubActions(plan) : plan;
 };

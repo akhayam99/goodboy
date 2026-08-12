@@ -79,6 +79,14 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
         : {}),
     }));
 
+    if (focus === 'announce') {
+      window.dispatchEvent(
+        new CustomEvent('goodboy:workflow-step-started', {
+          detail: { sessionId, agentId, stepName: step?.name ?? agent.name },
+        }),
+      );
+    }
+
     const effectiveKind: AgentKind =
       (agent.kind as AgentKind | undefined) ?? inferAgentKindFromName(agent.name);
     const consumesPlan = kindConsumesPlan(effectiveKind);

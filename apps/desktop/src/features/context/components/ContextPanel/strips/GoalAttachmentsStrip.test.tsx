@@ -40,10 +40,6 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (s: MockState) => T) => selector(state),
 }));
 
-vi.mock('../../../../chat/attachment-kinds', () => ({
-  fileIconFor: () => () => null,
-}));
-
 vi.mock('../../../../chat/turn', () => ({
   readAttachment: vi.fn(async () => ''),
 }));

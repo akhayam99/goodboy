@@ -1,1 +1,1 @@
-export type SpawnFocus = 'agent' | 'none';
+export type SpawnFocus = 'agent' | 'announce' | 'none';

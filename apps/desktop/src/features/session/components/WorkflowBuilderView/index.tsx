@@ -3,21 +3,20 @@ import { invoke } from '@tauri-apps/api/core';
 import {
   AlertTriangle,
   Check,
-  ChevronLeft,
-  ChevronRight,
   Hand,
   Link2,
   ListChecks,
   Paperclip,
   Pencil,
+  PenLine,
   Play,
   Plus,
   Rocket,
   RotateCcw,
-  Sparkles,
   Target,
+  Trash2,
   Undo2,
-  Wand2,
+  X,
 } from 'lucide-react';
 import {
   Button,
@@ -30,6 +29,7 @@ import {
   Textarea,
   cn,
 } from '@goodboy/ui';
+import { OverflowMenu } from '../../../../shared/components/OverflowMenu';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import {
@@ -75,14 +75,15 @@ import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhos
 import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
+import {
+  AttachmentChip,
+  pendingAttachmentProps,
+} from '../../../attachments/components/AttachmentChip';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import { ChainAfterSelect } from './parts/ChainAfterSelect';
 import { LaunchToggleRow } from './parts/LaunchToggleRow';
-import { StageHeading } from './parts/StageHeading';
-import { StepperRail } from './parts/StepperRail';
 import { TriggerButton } from './parts/TriggerButton';
 
 type Props = {
@@ -178,23 +179,12 @@ export const uniqueWorkflowName = (
   return `${requested} ${suffix}`;
 };
 
-type Stage = 0 | 1 | 2;
-
 const SECTION_LABEL_CLS =
   'inline-flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground/70';
 
-const initialStage = (d: WorkflowBuilderDraft | undefined): Stage => {
-  if (!d) {
-    return 0;
-  }
-  if (d.steps.length > 0 || d.plan !== null || d.selectedPresetId !== null) {
-    return 2;
-  }
-  return d.goalText.trim().length > 0 ? 1 : 0;
-};
-
 export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
+  const deleteWorkflow = useAppStore((s) => s.deleteWorkflow);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const generateWorkflowTitle = useAppStore((s) => s.generateWorkflowTitle);
   const phaseTemplates = useAppStore(
@@ -257,7 +247,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [chainAfterId, setChainAfterId] = useState<WorkflowRunId | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stage, setStage] = useState<Stage>(() => initialStage(initialDraft));
+  const [confirmDeleteId, setConfirmDeleteId] = useState<WorkflowId | null>(null);
   const [plannerProviderOverride, setPlannerProviderOverride] = useState<ProviderId | ''>('');
   const [plannerModelOverride, setPlannerModelOverride] = useState('');
   const [plannerEffortOverride, setPlannerEffortOverride] = useState<EffortLevel>(PLANNER_EFFORT);
@@ -385,7 +375,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSaveAsPreset(false);
     setAutoRun(false);
     setError(null);
-    setStage(0);
     setExpandedKey(null);
     clearWorkflowDraft(session.id);
   };
@@ -555,7 +544,23 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSelectedPresetId(t.id);
     setBasePresetId(t.id);
     setSteps(stepsFromTemplate(t));
-    setStage(2);
+  };
+
+  const onDeletePreset = async (t: Workflow) => {
+    setConfirmDeleteId(null);
+    setError(null);
+    try {
+      await deleteWorkflow(t.id, session.workspaceId);
+      if (selectedPresetId === t.id) {
+        setSelectedPresetId(null);
+        setBasePresetId(null);
+        setSteps([]);
+        setExpandedKey(null);
+      }
+      showToast('success', `preset deleted: ${t.name}`);
+    } catch (err) {
+      setError(formatError(err));
+    }
   };
 
   const attachOptions = () => {
@@ -598,7 +603,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       const result = await client.plan({ process });
       setPlan(result.output);
       setSteps(stepsFromPlan({ plan: result.output, roleModels }));
-      setStage(2);
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -610,7 +614,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setPlan(null);
     setSteps([]);
     setError(null);
-    setStage(1);
   };
 
   const buildSteps = (workflowId: WorkflowId): ReadonlyArray<Step> =>
@@ -716,54 +719,33 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     }
   };
 
-  const startDisabled =
-    blocked ||
-    (mode === 'preset'
+  const goalMissing = goalText.trim().length === 0;
+  const approachMissing =
+    mode === 'preset'
       ? selectedPreset === null
       : mode === 'dynamic'
         ? processText.trim().length === 0
-        : steps.length === 0);
-  const canAdvanceFromApproach =
-    mode === 'preset'
-      ? selectedPreset !== null
-      : mode === 'dynamic'
-        ? processText.trim().length > 0
-        : plan !== null;
-  const canContinue =
-    (stage === 0 && goalText.trim().length > 0) || (stage === 1 && canAdvanceFromApproach);
-  const continueHint =
-    stage === 1 && !canAdvanceFromApproach
+        : steps.length === 0;
+  const startDisabled = blocked || goalMissing || approachMissing;
+  const startHint = goalMissing
+    ? 'Set a goal to start'
+    : approachMissing
       ? mode === 'preset'
-        ? 'Select a preset to continue'
+        ? 'Select a preset to start'
         : mode === 'dynamic'
-          ? 'Describe the intent and constraints to continue'
-          : 'Generate a plan to continue'
+          ? 'Describe the intent and constraints to start'
+          : 'Generate a plan to start'
       : null;
-  const stageReachable = (i: Stage): boolean => {
-    if (i <= stage) return true;
-    if (goalText.trim().length === 0) return false;
-    return i < 2 || canAdvanceFromApproach;
-  };
   const onModeChange = (next: Mode) => {
     setMode(next);
     if (next === 'dynamic') {
       setAutoRun(true);
     }
   };
-  const goNext = () => {
-    if (canContinue) {
-      setStage((s) => Math.min(s + 1, 2) as Stage);
-    }
-  };
-  const goBack = () => setStage((s) => Math.max(s - 1, 0) as Stage);
-  const jumpStage = (i: Stage) => {
-    if (stageReachable(i)) {
-      setStage(i);
-    }
-  };
 
   const stepCount = steps.length;
   const showSteps = steps.length > 0;
+  const showLaunch = showSteps || mode === 'dynamic';
   const customReady = mode === 'custom' && plan !== null;
   const workflowName =
     mode === 'custom'
@@ -783,398 +765,393 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     >
       {() => (
         <div className="flex min-h-0 w-full flex-1 flex-col">
-          <StepperRail
-            current={stage}
-            canReach={stageReachable}
-            disabled={blocked}
-            onJump={jumpStage}
-          />
-          <Divider />
           <ScrollFade className="min-h-0 flex-1">
             <div
-              key={stage}
               className={cn(
-                'flex max-w-2xl flex-col motion-safe:animate-fade-in',
+                'flex max-w-2xl flex-col',
                 PANE_RHYTHM.column,
                 PANE_RHYTHM.stack,
                 PANE_RHYTHM.body,
               )}
             >
-              {stage === 0 ? (
-                <>
-                  <StageHeading
-                    title="What's the goal?"
-                    subtitle="Set the objective and attach any files. Every step in the workflow works toward this."
-                  />
-                  <section className="flex flex-col gap-2">
-                    <SectionHeader
-                      icon={<Target size={11} aria-hidden />}
-                      label="Goal"
-                      htmlFor="workflow-goal"
-                      action={
-                        <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
-                          {sessionGoal.length > 0 ? (
-                            <button
-                              type="button"
-                              onClick={onUseSessionGoal}
-                              disabled={blocked || polishing || goalText === sessionGoal}
-                              className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <Target size={10} aria-hidden /> Use session goal
-                            </button>
-                          ) : null}
-                          {goalHistory.length > 0 ? (
-                            <button
-                              type="button"
-                              onClick={onUndoGoal}
-                              disabled={blocked || polishing}
-                              aria-label="Undo goal change"
-                              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <Undo2 size={10} aria-hidden /> Undo
-                            </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            onClick={() => void onPolishGoal()}
-                            disabled={blocked || polishing || goalText.trim().length === 0}
-                            aria-label="Polish goal"
-                            className={cn(
-                              'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
-                              polishing && 'animate-border-pulse',
-                            )}
-                          >
-                            <Wand2 size={10} aria-hidden />
-                            Polish
-                          </button>
-                        </div>
-                      }
-                    />
-                    <Textarea
-                      id="workflow-goal"
-                      value={goalText}
-                      onChange={(e) => setGoalText(e.target.value)}
-                      placeholder="what should this workflow accomplish? same as the session, or a specific sub-objective (e.g. just the auth module)…"
-                      autoGrow
-                      minRows={3}
-                      maxRows={4}
-                      disabled={busy || polishing}
-                      className="resize-none rounded-lg bg-subtle/80 px-4 py-3 text-sm ring-1 ring-border-soft focus-visible:ring-foreground/15"
-                    />
-                    <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
-                      Every step works toward this goal.
-                    </p>
-                  </section>
-
-                  <Divider />
-
-                  <section className="flex flex-col gap-2">
-                    <SectionHeader icon={<Paperclip size={11} aria-hidden />} label="Attachments" />
-                    <div
-                      ref={composerRef}
-                      data-drop-composer
-                      className={cn(
-                        'flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
-                        isDragging
-                          ? 'border-dashed border-primary bg-primary/5'
-                          : 'border-border-soft',
-                      )}
-                    >
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept={ATTACHMENT_ACCEPT}
-                        multiple
-                        hidden
-                        onChange={onFileInputChange}
-                      />
+              <section className="flex flex-col gap-2">
+                <SectionHeader
+                  icon={<Target size={11} aria-hidden />}
+                  label="Goal"
+                  htmlFor="workflow-goal"
+                  action={
+                    <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
+                      {sessionGoal.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={onUseSessionGoal}
+                          disabled={blocked || polishing || goalText === sessionGoal}
+                          className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-2xs text-primary transition-colors hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Target size={10} aria-hidden /> Use session goal
+                        </button>
+                      ) : null}
+                      {goalHistory.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={onUndoGoal}
+                          disabled={blocked || polishing}
+                          aria-label="Undo goal change"
+                          className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Undo2 size={10} aria-hidden /> Undo
+                        </button>
+                      ) : null}
                       <button
                         type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={blocked}
+                        onClick={() => void onPolishGoal()}
+                        disabled={blocked || polishing || goalText.trim().length === 0}
+                        aria-label="Polish goal"
                         className={cn(
-                          'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs transition-colors',
-                          blocked
-                            ? 'cursor-not-allowed text-muted-foreground'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                          'inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                          polishing && 'animate-border-pulse',
                         )}
                       >
-                        <Paperclip size={13} aria-hidden /> Add files
+                        <CONCEPT_ICONS.enhance size={10} aria-hidden />
+                        Polish
                       </button>
-                      {attachments.length > 0 ? (
-                        <>
-                          {attachments.map((a) => (
-                            <AttachmentChip
-                              key={a.id}
-                              attachment={a}
-                              onRemove={() => removeAttachment(a.id)}
-                            />
-                          ))}
-                        </>
-                      ) : (
-                        <span className="text-2xs text-muted-foreground/60">
-                          Drop or add files. Routed to the agents that need them.
-                        </span>
-                      )}
                     </div>
-                  </section>
-                </>
-              ) : null}
-
-              {stage === 1 ? (
-                <>
-                  <StageHeading
-                    title="How do you want to build it?"
-                    subtitle="Start from a preset, draft a custom plan, or let the orchestrator decide each step at runtime."
+                  }
+                />
+                <Textarea
+                  id="workflow-goal"
+                  value={goalText}
+                  onChange={(e) => setGoalText(e.target.value)}
+                  placeholder="what should this workflow accomplish? same as the session, or a specific sub-objective (e.g. just the auth module)…"
+                  autoGrow
+                  minRows={2}
+                  maxRows={4}
+                  disabled={busy || polishing}
+                  className="resize-none rounded-lg bg-subtle/80 px-4 py-3 text-sm ring-1 ring-border-soft focus-visible:ring-foreground/15"
+                />
+                <div
+                  ref={composerRef}
+                  data-drop-composer
+                  className={cn(
+                    'flex flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
+                    isDragging ? 'border-dashed border-primary bg-primary/5' : 'border-border-soft',
+                  )}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ATTACHMENT_ACCEPT}
+                    multiple
+                    hidden
+                    onChange={onFileInputChange}
                   />
-                  <section className="flex flex-col gap-3">
-                    <SectionHeader
-                      icon={<CONCEPT_ICONS.workflows size={11} aria-hidden />}
-                      label="Approach"
-                      action={
-                        <SegmentedTabs
-                          ariaLabel="Workflow approach"
-                          options={[
-                            {
-                              value: 'preset',
-                              label: 'Preset',
-                              icon: ListChecks,
-                              disabled: blocked,
-                            },
-                            {
-                              value: 'custom',
-                              label: 'Custom',
-                              icon: Sparkles,
-                              disabled: blocked,
-                            },
-                            {
-                              value: 'dynamic',
-                              label: 'Orchestrated',
-                              icon: Wand2,
-                              disabled: blocked,
-                            },
-                          ]}
-                          value={mode}
-                          onChange={onModeChange}
-                          size="sm"
-                        />
-                      }
-                    />
-
-                    {mode === 'preset' ? (
-                      <div className="flex flex-col gap-2">
-                        {presets.length === 0 ? (
-                          <EmptyState
-                            bordered
-                            tone={CONCEPT_TONE.workflows}
-                            icon={CONCEPT_ICONS.workflows}
-                            title="No presets in this workspace yet"
-                            size="inline"
-                            className="items-start px-4 py-5 text-left"
-                            action={
-                              <button
-                                type="button"
-                                onClick={() => setMode('custom')}
-                                className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/10"
-                              >
-                                <Sparkles size={12} aria-hidden /> Describe your own
-                              </button>
-                            }
-                          />
-                        ) : (
-                          <>
-                            <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
-                              Pick a preset. Tune its steps on the next screen before starting.
-                            </p>
-                            <div
-                              className="flex flex-col gap-1.5"
-                              role="radiogroup"
-                              aria-label="Presets"
-                            >
-                              {presets.map((t) => {
-                                const tSteps = sortedSteps(t);
-                                const kinds = tSteps.map((s) =>
-                                  s.role ? ROLE_TO_KIND[s.role] : inferAgentKindFromName(s.name),
-                                );
-                                const shown = kinds.slice(0, 5);
-                                const selected = t.id === selectedPresetId;
-                                const desc = t.description || t.goal;
-                                return (
-                                  <button
-                                    key={t.id}
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={selected}
-                                    onClick={() => onSelectPreset(t)}
-                                    disabled={busy}
-                                    className={cn(
-                                      'flex items-center gap-2.5 rounded-lg border border-l-2 px-3 py-2 text-left transition-colors',
-                                      selected
-                                        ? 'border-l-primary border-border-soft bg-subtle'
-                                        : 'border-l-transparent border-border-soft hover:border-border hover:bg-muted/40',
-                                      busy && 'cursor-not-allowed opacity-60',
-                                    )}
-                                  >
-                                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                      <span className="flex items-center gap-1.5">
-                                        <span className="min-w-0 truncate text-xs font-medium text-foreground">
-                                          {t.name}
-                                        </span>
-                                        <span className="shrink-0 rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground">
-                                          {tSteps.length}
-                                        </span>
-                                      </span>
-                                      {desc ? (
-                                        <span className="truncate text-3xs leading-snug text-muted-foreground/70">
-                                          {desc}
-                                        </span>
-                                      ) : null}
-                                    </span>
-                                    <span className="flex shrink-0 items-center gap-1">
-                                      {shown.map((k, i) => (
-                                        <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
-                                      ))}
-                                      {kinds.length > shown.length ? (
-                                        <span className="text-3xs text-muted-foreground">
-                                          +{kinds.length - shown.length}
-                                        </span>
-                                      ) : null}
-                                    </span>
-                                    {selected ? (
-                                      <Check
-                                        size={13}
-                                        className="shrink-0 text-primary"
-                                        aria-hidden
-                                      />
-                                    ) : null}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
-                          {mode === 'dynamic'
-                            ? 'Describe the intent and constraints. The orchestrator decides each step from the latest results.'
-                            : 'Describe the flow. The planner drafts ordered steps you tune before starting.'}
-                        </p>
-                        <div className="rounded-lg bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
-                          <div className="relative">
-                            <Textarea
-                              value={processText}
-                              onChange={(e) => setProcessText(e.target.value)}
-                              placeholder={
-                                mode === 'dynamic'
-                                  ? 'describe the intent, constraints, and stopping conditions…'
-                                  : 'describe the process you expect (e.g. read the existing github integration, study how it works, then plan the gitlab equivalent, then implement)…'
-                              }
-                              autoGrow
-                              minRows={4}
-                              maxRows={9}
-                              className={cn(
-                                'min-h-20 resize-none border-0 bg-transparent px-4 pt-3 text-sm shadow-none focus-visible:ring-0',
-                                mode === 'custom' ? 'pb-12' : 'pb-3',
-                              )}
-                            />
-                            {mode === 'custom' ? (
-                              <div className="absolute bottom-2.5 right-2.5">
-                                <Button
-                                  size="sm"
-                                  onClick={() => void onPlan()}
-                                  disabled={blocked || processText.trim().length === 0}
-                                  className={cn(
-                                    'min-w-[6.5rem]',
-                                    planning && 'animate-border-pulse',
-                                  )}
-                                >
-                                  {planning ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
-                                </Button>
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-                        {mode === 'custom' ? (
-                          <div className="flex justify-end px-1">
-                            <div className="w-64">
-                              <RoutingPicker
-                                ariaLabel="Planner routing"
-                                connectedProviders={connectedProviders}
-                                provider={plannerProviderOverride}
-                                model={plannerModelOverride}
-                                effort={{
-                                  editable: true,
-                                  value: plannerEffortOverride,
-                                  onChange: setPlannerEffortOverride,
-                                }}
-                                recommendation={{
-                                  provider: resolvedPlanTaskModel.providerId,
-                                  model: plannerRecommendedModel,
-                                }}
-                                disabled={blocked}
-                                onProvider={(next) => {
-                                  setPlannerProviderOverride(next);
-                                  setPlannerModelOverride('');
-                                }}
-                                onModel={setPlannerModelOverride}
-                              />
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={blocked}
+                    className={cn(
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-2xs transition-colors',
+                      blocked
+                        ? 'cursor-not-allowed text-muted-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                     )}
-                  </section>
-                </>
-              ) : null}
+                  >
+                    <Paperclip size={11} aria-hidden /> Add files
+                  </button>
+                  {attachments.length > 0 ? (
+                    attachments.map((a) => (
+                      <AttachmentChip
+                        key={a.id}
+                        {...pendingAttachmentProps(a)}
+                        onRemove={() => removeAttachment(a.id)}
+                      />
+                    ))
+                  ) : (
+                    <span className="text-2xs text-muted-foreground/60">
+                      Drop or add files. Routed to the agents that need them.
+                    </span>
+                  )}
+                </div>
+              </section>
 
-              {stage === 2 ? (
-                <>
-                  <StageHeading
-                    title={mode === 'dynamic' ? 'Review orchestration' : 'Tune your steps'}
-                    subtitle={
-                      mode === 'dynamic'
-                        ? 'The orchestrator creates one focused step at a time from the latest results.'
-                        : 'Reorder, edit instructions, and pick a model and provider for each agent.'
-                    }
-                  />
-                  <section className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-xs font-semibold text-foreground">
-                        {workflowName}
-                      </span>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {customReady ? (
+              <Divider />
+
+              <section className="flex flex-col gap-3">
+                <SectionHeader
+                  icon={<CONCEPT_ICONS.workflows size={11} aria-hidden />}
+                  label="Approach"
+                  action={
+                    <SegmentedTabs
+                      ariaLabel="Workflow approach"
+                      options={[
+                        { value: 'preset', label: 'Preset', icon: ListChecks, disabled: blocked },
+                        { value: 'custom', label: 'Custom', icon: PenLine, disabled: blocked },
+                        {
+                          value: 'dynamic',
+                          label: 'Orchestrated',
+                          icon: CONCEPT_ICONS.orchestrator,
+                          disabled: blocked,
+                        },
+                      ]}
+                      value={mode}
+                      onChange={onModeChange}
+                      size="sm"
+                    />
+                  }
+                />
+
+                {mode === 'preset' ? (
+                  <div className="flex flex-col gap-2">
+                    {presets.length === 0 ? (
+                      <EmptyState
+                        bordered
+                        tone={CONCEPT_TONE.workflows}
+                        icon={CONCEPT_ICONS.workflows}
+                        title="No presets in this workspace yet"
+                        size="inline"
+                        className="items-start px-4 py-5 text-left"
+                        action={
                           <button
                             type="button"
-                            onClick={onRedesign}
-                            disabled={blocked}
-                            className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={() => setMode('custom')}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:border-primary hover:bg-primary/10"
                           >
-                            <Sparkles size={10} aria-hidden /> Re-design
+                            <PenLine size={12} aria-hidden /> Describe your own
                           </button>
+                        }
+                      />
+                    ) : (
+                      <>
+                        <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
+                          Pick a preset. Tune its steps below before starting.
+                        </p>
+                        <div
+                          className="flex flex-col gap-1.5"
+                          role="radiogroup"
+                          aria-label="Presets"
+                        >
+                          {presets.map((t) => {
+                            const tSteps = sortedSteps(t);
+                            const kinds = tSteps.map((s) =>
+                              s.role ? ROLE_TO_KIND[s.role] : inferAgentKindFromName(s.name),
+                            );
+                            const shown = kinds.slice(0, 5);
+                            const selected = t.id === selectedPresetId;
+                            const desc = t.description || t.goal;
+                            return (
+                              <div
+                                key={t.id}
+                                className={cn(
+                                  'flex items-center gap-1 rounded-lg border border-l-2 pr-1.5 transition-colors',
+                                  selected
+                                    ? 'border-l-primary border-border-soft bg-subtle'
+                                    : 'border-l-transparent border-border-soft hover:border-border hover:bg-muted/40',
+                                )}
+                              >
+                                <button
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={selected}
+                                  onClick={() => onSelectPreset(t)}
+                                  disabled={busy}
+                                  className={cn(
+                                    'flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left',
+                                    busy && 'cursor-not-allowed opacity-60',
+                                  )}
+                                >
+                                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                                        {t.name}
+                                      </span>
+                                      <span className="shrink-0 rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground">
+                                        {tSteps.length}
+                                      </span>
+                                    </span>
+                                    {desc ? (
+                                      <span className="truncate text-3xs leading-snug text-muted-foreground/70">
+                                        {desc}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                  <span className="flex shrink-0 items-center gap-1">
+                                    {shown.map((k, i) => (
+                                      <AgentAvatar key={`${k}-${i}`} kind={k} size="xs" />
+                                    ))}
+                                    {kinds.length > shown.length ? (
+                                      <span className="text-3xs text-muted-foreground">
+                                        +{kinds.length - shown.length}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                  {selected ? (
+                                    <Check
+                                      size={13}
+                                      className="shrink-0 text-primary"
+                                      aria-hidden
+                                    />
+                                  ) : null}
+                                </button>
+                                {confirmDeleteId === t.id ? (
+                                  <span className="flex shrink-0 items-center gap-0.5">
+                                    <span className="px-1 text-2xs text-muted-foreground">
+                                      Delete?
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => void onDeletePreset(t)}
+                                      aria-label={`Confirm delete ${t.name}`}
+                                      className="rounded-md p-1 text-danger transition-colors hover:bg-danger/10"
+                                    >
+                                      <Check size={12} aria-hidden />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setConfirmDeleteId(null)}
+                                      aria-label="Cancel delete"
+                                      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                                    >
+                                      <X size={12} aria-hidden />
+                                    </button>
+                                  </span>
+                                ) : (
+                                  <OverflowMenu
+                                    label={`Preset actions: ${t.name}`}
+                                    disabled={busy}
+                                    items={[
+                                      {
+                                        kind: 'item',
+                                        key: 'delete',
+                                        label: 'Delete preset',
+                                        icon: Trash2,
+                                        destructive: true,
+                                        onClick: () => setConfirmDeleteId(t.id),
+                                      },
+                                    ]}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="px-1 text-2xs leading-relaxed text-muted-foreground/60">
+                      {mode === 'dynamic'
+                        ? 'Describe the intent and constraints. The orchestrator decides each step from the latest results.'
+                        : 'Describe the flow. The planner drafts ordered steps you tune below.'}
+                    </p>
+                    <div className="rounded-lg bg-subtle/80 ring-1 ring-border-soft transition-shadow focus-within:ring-foreground/15">
+                      <div className="relative">
+                        <Textarea
+                          value={processText}
+                          onChange={(e) => setProcessText(e.target.value)}
+                          placeholder={
+                            mode === 'dynamic'
+                              ? 'describe the intent, constraints, and stopping conditions…'
+                              : 'describe the process you expect (e.g. read the existing github integration, study how it works, then plan the gitlab equivalent, then implement)…'
+                          }
+                          autoGrow
+                          minRows={3}
+                          maxRows={7}
+                          className={cn(
+                            'min-h-16 resize-none border-0 bg-transparent px-4 pt-3 text-sm shadow-none focus-visible:ring-0',
+                            mode === 'custom' ? 'pb-12' : 'pb-3',
+                          )}
+                        />
+                        {mode === 'custom' ? (
+                          <div className="absolute bottom-2.5 right-2.5">
+                            <Button
+                              size="sm"
+                              onClick={() => void onPlan()}
+                              disabled={blocked || processText.trim().length === 0}
+                              className={cn('min-w-[6.5rem]', planning && 'animate-border-pulse')}
+                            >
+                              {planning ? 'Planning…' : plan ? 'Re-plan' : 'Generate plan'}
+                            </Button>
+                          </div>
                         ) : null}
-                        {mode === 'custom' || mode === 'dynamic' ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
-                            <Check size={10} aria-hidden /> Ready
-                          </span>
-                        ) : presetDirty ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-1.5 py-0.5 text-2xs font-medium text-warning">
-                            <Pencil size={9} aria-hidden /> Customized
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
-                            <Check size={10} aria-hidden /> Selected
-                          </span>
-                        )}
                       </div>
                     </div>
+                    {mode === 'custom' ? (
+                      <div className="flex justify-end px-1">
+                        <div className="w-64">
+                          <RoutingPicker
+                            ariaLabel="Planner routing"
+                            connectedProviders={connectedProviders}
+                            provider={plannerProviderOverride}
+                            model={plannerModelOverride}
+                            effort={{
+                              editable: true,
+                              value: plannerEffortOverride,
+                              onChange: setPlannerEffortOverride,
+                            }}
+                            recommendation={{
+                              provider: resolvedPlanTaskModel.providerId,
+                              model: plannerRecommendedModel,
+                            }}
+                            disabled={blocked}
+                            onProvider={(next) => {
+                              setPlannerProviderOverride(next);
+                              setPlannerModelOverride('');
+                            }}
+                            onModel={setPlannerModelOverride}
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </section>
+
+              {showSteps || mode === 'dynamic' || planning ? (
+                <>
+                  <Divider />
+                  <section className="flex flex-col gap-3">
+                    {showSteps || mode === 'dynamic' ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-xs font-semibold text-foreground">
+                          {workflowName}
+                        </span>
+                        <div className="flex shrink-0 items-center gap-2">
+                          {customReady ? (
+                            <button
+                              type="button"
+                              onClick={onRedesign}
+                              disabled={blocked}
+                              className="inline-flex items-center gap-1 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <CONCEPT_ICONS.enhance size={10} aria-hidden /> Re-design
+                            </button>
+                          ) : null}
+                          {mode === 'custom' || mode === 'dynamic' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
+                              <Check size={10} aria-hidden /> Ready
+                            </span>
+                          ) : presetDirty ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-1.5 py-0.5 text-2xs font-medium text-warning">
+                              <Pencil size={9} aria-hidden /> Customized
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-2xs font-medium text-success">
+                              <Check size={10} aria-hidden /> Selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
 
                     {mode === 'dynamic' ? (
                       <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/40 p-4">
                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
-                          <Wand2 size={13} className="text-primary" aria-hidden />
+                          <CONCEPT_ICONS.orchestrator
+                            size={13}
+                            className="text-accent"
+                            aria-hidden
+                          />
                           Steps are decided at runtime
                         </span>
                         <p className="text-2xs leading-relaxed text-muted-foreground">
@@ -1271,7 +1248,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                         </p>
                         <DragGhost ghost={ghost} />
                       </div>
-                    ) : planning ? (
+                    ) : (
                       <div
                         role="status"
                         aria-label="Drafting plan"
@@ -1296,24 +1273,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           ))}
                         </ol>
                       </div>
-                    ) : (
-                      <EmptyState
-                        bordered
-                        tone={CONCEPT_TONE.workflows}
-                        icon={CONCEPT_ICONS.workflows}
-                        title={mode === 'preset' ? 'No preset selected' : 'No plan yet'}
-                        description={
-                          mode === 'preset'
-                            ? 'Go back and pick a preset to load its steps here.'
-                            : 'Go back and generate a plan to draft steps here.'
-                        }
-                        className="px-4 py-8"
-                      />
                     )}
                   </section>
+                </>
+              ) : null}
 
+              {showLaunch ? (
+                <>
                   <Divider />
-
                   <section className="flex flex-col gap-3">
                     <SectionHeader icon={<Rocket size={11} aria-hidden />} label="Launch options" />
                     <div className="flex flex-col divide-y divide-border-soft/70 overflow-hidden rounded-lg border border-border-soft bg-subtle/40">
@@ -1414,11 +1381,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     size="md"
                     onClick={resetDraft}
                     disabled={busy}
-                    aria-label="Reset workflow draft"
+                    aria-label="Discard workflow draft"
                     className="gap-1.5 text-muted-foreground"
                   >
                     <RotateCcw size={14} aria-hidden />
-                    Reset
+                    Discard changes
                   </Button>
                 ) : null}
                 {error ? (
@@ -1429,44 +1396,18 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     <AlertTriangle size={12} className="shrink-0" aria-hidden />
                     {error}
                   </span>
-                ) : continueHint ? (
-                  <span className="truncate text-2xs text-muted-foreground/60">{continueHint}</span>
+                ) : startHint ? (
+                  <span className="truncate text-2xs text-muted-foreground/60">{startHint}</span>
                 ) : null}
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {stage > 0 ? (
-                  <Button
-                    variant="ghost"
-                    size="md"
-                    onClick={goBack}
-                    disabled={blocked}
-                    className="gap-1"
-                  >
-                    <ChevronLeft size={14} aria-hidden />
-                    Back
-                  </Button>
-                ) : null}
-                {stage < 2 ? (
-                  <Button
-                    size="md"
-                    onClick={goNext}
-                    disabled={blocked || !canContinue}
-                    className="gap-1"
-                  >
-                    Continue
-                    <ChevronRight size={14} aria-hidden />
-                  </Button>
-                ) : (
-                  <Button
-                    size="md"
-                    onClick={() => void onStart()}
-                    disabled={startDisabled}
-                    className={cn(busy && 'animate-border-pulse')}
-                  >
-                    {busy ? 'Starting…' : 'Start workflow'}
-                  </Button>
-                )}
-              </div>
+              <Button
+                size="md"
+                onClick={() => void onStart()}
+                disabled={startDisabled}
+                className={cn('shrink-0', busy && 'animate-border-pulse')}
+              >
+                {busy ? 'Starting…' : 'Start workflow'}
+              </Button>
             </div>
           </footer>
         </div>

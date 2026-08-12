@@ -1,6 +1,7 @@
 import type {
   IsoDateTime,
   Message,
+  OpenQuestion,
   PlanWithCount,
   ProviderRunId,
   SessionId,
@@ -134,12 +135,12 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
     void get().loadGoalAttachments({ type: 'session', id });
 
     void listOpenQuestionsForSession(tauriDatabase, id, 'open')
+      .catch(() => [] as ReadonlyArray<OpenQuestion>)
       .then((qs) => {
         set((state) => ({
           sessionOpenQuestions: { ...state.sessionOpenQuestions, [id]: qs },
         }));
-      })
-      .catch(() => {});
+      });
 
     if (!cached?.plans) {
       const endPlans = perf('plans');

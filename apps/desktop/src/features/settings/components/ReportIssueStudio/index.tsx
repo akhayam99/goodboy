@@ -21,6 +21,8 @@ import { useAppStore } from '../../../../store';
 import { tauriGhRunner } from '../../../github/github';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { ISSUE_TYPE_OPTIONS, issueTypeLabel, type IssueTypeValue } from '../../reportIssueTypes';
+import { useBugReportImages } from '../../hooks/useBugReportImages';
+import { BugReportImages } from '../BugReportImages';
 import { AREA_OPTIONS, type AreaValue } from './areas';
 import {
   buildFallbackIssue,
@@ -30,7 +32,9 @@ import {
 } from './issuePayload';
 import { parseIssueCreateResult } from './parseIssueCreateResult';
 import { previewHint } from './previewHint';
+import { stageBugReportImages } from './stageImages';
 import { truncationNotice } from './truncationNotice';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 
 type Props = {
   readonly onClose: () => void;
@@ -49,6 +53,8 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
   const draft = useAppStore((s) => s.bugReportDraft);
   const setBugReportDraft = useAppStore((s) => s.setBugReportDraft);
   const clearBugReportDraft = useAppStore((s) => s.clearBugReportDraft);
+
+  const imageControl = useBugReportImages();
 
   const [area, setArea] = useState<AreaValue | ''>('');
   const [title, setTitle] = useState('');
@@ -72,9 +78,21 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
   );
   const typeLabel = issueTypeLabel({ issueType: draft.issueType });
 
+  const imageNames = useMemo(
+    () => imageControl.images.map((image) => image.fileName),
+    [imageControl.images],
+  );
+
   const directBody = useMemo(
-    () => buildIssueBody({ typeLabel, version: version ?? '', areaLabel, notes: trimmedNotes }),
-    [typeLabel, version, areaLabel, trimmedNotes],
+    () =>
+      buildIssueBody({
+        typeLabel,
+        version: version ?? '',
+        areaLabel,
+        notes: trimmedNotes,
+        imageNames,
+      }),
+    [typeLabel, version, areaLabel, trimmedNotes, imageNames],
   );
   const fallback = useMemo(
     () =>
@@ -84,8 +102,9 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
         version: version ?? '',
         areaLabel,
         notes: trimmedNotes,
+        imageNames,
       }),
-    [trimmedTitle, typeLabel, version, areaLabel, trimmedNotes],
+    [trimmedTitle, typeLabel, version, areaLabel, trimmedNotes, imageNames],
   );
 
   const previewBody = sendsDirectly ? directBody : fallback.body;
@@ -110,6 +129,14 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     }
     setSendState('sending');
     setErrorMessage(null);
+
+    try {
+      await stageBugReportImages({ images: imageControl.images });
+    } catch (err) {
+      setSendState('error');
+      setErrorMessage(`Could not prepare the images to attach. ${formatError(err)}`);
+      return;
+    }
 
     if (sendsDirectly) {
       try {
@@ -172,7 +199,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
     >
       {(requestClose) => (
         <div className="flex min-h-0 flex-1 flex-col">
-          <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+          <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
             <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
               <section className="flex flex-col">
                 <SectionHeader
@@ -232,12 +259,17 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                     maxRows={12}
                     value={draft.description}
                     onChange={(e) => setBugReportDraft({ description: e.target.value })}
+                    onPaste={imageControl.onPaste}
                     placeholder="Steps to reproduce, what you expected, what happened instead"
                   />
                 </FieldRow>
-                <p className="text-2xs leading-relaxed text-muted-foreground">
-                  Screenshots aren&apos;t supported yet. Drag one onto the issue once it opens.
-                </p>
+                <FieldRow
+                  label="Images"
+                  help="Screenshots that show the problem. Their folder opens on send, so you can drag them into the issue."
+                  layout="stacked"
+                >
+                  <BugReportImages control={imageControl} />
+                </FieldRow>
               </section>
 
               <Divider />

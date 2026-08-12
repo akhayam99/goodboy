@@ -1,5 +1,5 @@
-import { Fragment, memo, useEffect, useMemo, useState } from 'react';
-import { Archive, Check, ChevronRight, Plus } from 'lucide-react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Archive, ChevronRight, Plus } from 'lucide-react';
 import {
   Button,
   EmptyState,
@@ -33,7 +33,11 @@ import {
 } from '../../../../features/github/components/PullRequestChip';
 import { ExternalTaskChip } from '../../../../features/integrations/components/ExternalTaskChip';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
+import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { sessionCardShell } from '../../../session/components/sessionCardShell';
+import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { BulkActionBar } from '../BulkActionBar';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionViewMenu } from './SessionViewMenu';
@@ -109,13 +113,17 @@ export const SessionActivityBar = ({
     [visibleSessions, isSelected],
   );
 
-  const onToggleSelect = (id: SessionId, event: SelectionClickEvent) => {
-    if (event.shiftKey) {
-      selection.selectRange(id);
-      return;
-    }
-    selection.toggle(id);
-  };
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const { selectIds } = selection;
+  const onLassoSelect = useCallback(
+    (ids: ReadonlyArray<SessionId>, mode: 'replace' | 'add') => selectIds(ids, mode),
+    [selectIds],
+  );
+  const lasso = useDragLasso<SessionId>({
+    containerRef: listRef,
+    onSelect: onLassoSelect,
+    requireAlt: true,
+  });
 
   useEffect(() => {
     clearSelection();
@@ -145,8 +153,16 @@ export const SessionActivityBar = ({
   return (
     <div className="flex h-full w-full shrink-0 flex-col">
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-1.5 px-2.5 py-2.5">
-          <div className="mb-1.5 mt-0.5 flex items-center justify-between gap-1 pl-1 pr-0.5">
+        <div
+          ref={listRef}
+          onPointerDown={lasso.onPointerDown}
+          className={cn(
+            'relative flex flex-col',
+            PANE_RHYTHM.sessionList.cardGap,
+            PANE_RHYTHM.sessionList.pad,
+          )}
+        >
+          <div className="mb-1 flex items-center justify-between gap-1 px-0.5">
             <Eyebrow label="Sessions" />
             <div className="flex items-center gap-0.5">
               <button
@@ -238,7 +254,6 @@ export const SessionActivityBar = ({
                       isActive={session.id === currentSessionId}
                       dimmed={isArchivedView}
                       selected={isSelected(session.id as SessionId)}
-                      onToggleSelect={onToggleSelect}
                       onModifierClick={selection.handleItemClick}
                       onClick={() => onSelectSession(session.id as SessionId)}
                     />
@@ -246,6 +261,19 @@ export const SessionActivityBar = ({
               </Fragment>
             );
           })}
+
+          {lasso.rect && (
+            <div
+              aria-hidden
+              style={{
+                left: lasso.rect.left,
+                top: lasso.rect.top,
+                width: lasso.rect.width,
+                height: lasso.rect.height,
+              }}
+              className="pointer-events-none absolute z-10 rounded-sm border border-primary/60 bg-primary/10"
+            />
+          )}
 
           {totalVisible === 0 ? (
             <EmptyState
@@ -285,7 +313,6 @@ type SessionActivityItemProps = {
   isActive: boolean;
   dimmed?: boolean;
   selected?: boolean;
-  onToggleSelect: (id: SessionId, event: SelectionClickEvent) => void;
   onModifierClick: (id: SessionId, event: SelectionClickEvent) => void;
   onClick: () => void;
 };
@@ -295,7 +322,6 @@ const SessionActivityItem = memo(function SessionActivityItem({
   isActive,
   dimmed,
   selected,
-  onToggleSelect,
   onModifierClick,
   onClick,
 }: SessionActivityItemProps) {
@@ -309,87 +335,72 @@ const SessionActivityItem = memo(function SessionActivityItem({
   );
 
   const sessionCost = useSessionCost(session.id as SessionId);
+  const age = formatRelativeAge({ fromIso: session.updatedAt });
 
-  const body = (
+  return (
     <button
       type="button"
+      data-select-id={session.id}
+      aria-pressed={selected === true}
+      aria-keyshortcuts="Alt+Enter"
       onClick={(event) => {
-        if (event.shiftKey || event.metaKey || event.ctrlKey) {
+        if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) {
           onModifierClick(session.id as SessionId, event);
           return;
         }
         onClick();
       }}
+      onKeyDown={(event) => {
+        if (!event.altKey || (event.key !== 'Enter' && event.key !== ' ')) {
+          return;
+        }
+        event.preventDefault();
+        onModifierClick(session.id as SessionId, event);
+      }}
       title={`${session.goal} · ${reason}${prMeta ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
       className={cn(
-        'flex w-full flex-col items-start gap-1.5 rounded-lg border px-2.5 py-2.5 text-left transition-colors',
-        isActive
-          ? 'bg-elevated text-foreground shadow-sm'
-          : 'bg-muted/40 text-foreground/70 hover:bg-muted/60 hover:text-foreground',
-        isActive
-          ? 'border-border'
-          : stage === 'attention'
-            ? 'border-warning/50'
-            : stage === 'running'
-              ? 'border-info/60'
-              : 'border-transparent',
-        dimmed && 'opacity-50',
+        'flex w-full cursor-pointer items-center gap-2 px-2.5 py-2.5 text-left',
+        sessionCardShell({ stage, selected, active: isActive, dimmed }),
       )}
     >
-      <span className="flex w-full items-start gap-2">
-        <span className="inline-flex h-5 shrink-0 items-center">
-          <StatusDot
-            tone={isAutoMode ? 'primary' : STAGE_TONE[stage]}
-            size="sm"
-            pulsing={stage === 'running'}
-          />
+      <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="flex w-full items-start gap-2">
+          <span className="inline-flex h-5 shrink-0 items-center">
+            <StatusDot
+              tone={isAutoMode ? 'primary' : STAGE_TONE[stage]}
+              size="sm"
+              pulsing={stage === 'running'}
+            />
+          </span>
+          <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
+            {session.goal}
+          </span>
+          {externalTasks.map((task) => (
+            <ExternalTaskChip
+              key={`${task.provider}:${task.externalId}`}
+              task={task}
+              variant="icon"
+            />
+          ))}
+          {prState && <PullRequestChip state={prState} variant="icon" iconSize={11} />}
         </span>
-        <span className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug">
-          {session.goal}
+        <span className="flex w-full items-center gap-1.5 pl-[14px]">
+          <span className="min-w-0 flex-1 truncate text-2xs leading-tight text-muted-foreground/60">
+            {reason}
+          </span>
+          {age && (
+            <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">{age}</span>
+          )}
+          {sessionCost > 0 && (
+            <CostBadge
+              value={sessionCost}
+              title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
+              className="shrink-0 text-2xs font-medium text-muted-foreground/55"
+            />
+          )}
         </span>
-        {externalTasks.map((task) => (
-          <ExternalTaskChip
-            key={`${task.provider}:${task.externalId}`}
-            task={task}
-            variant="icon"
-          />
-        ))}
-        {prState && <PullRequestChip state={prState} variant="icon" iconSize={11} />}
       </span>
-      <span className="flex w-full items-center gap-1.5 pl-[14px]">
-        <span className="min-w-0 flex-1 truncate text-2xs leading-tight text-muted-foreground/60">
-          {reason}
-        </span>
-        {sessionCost > 0 && (
-          <CostBadge
-            value={sessionCost}
-            title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-            className="shrink-0 text-2xs font-medium text-muted-foreground/55"
-          />
-        )}
-      </span>
+      <ChevronRight size={14} aria-hidden className="shrink-0 text-muted-foreground/50" />
     </button>
-  );
-
-  return (
-    <div className="group/select flex w-full items-center gap-1.5">
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={selected === true}
-        aria-label={`Select ${session.goal}`}
-        onClick={(event) => onToggleSelect(session.id as SessionId, event)}
-        title={selected ? 'Deselect session' : 'Select session · shift-click to extend'}
-        className={cn(
-          'flex size-4 shrink-0 items-center justify-center rounded border motion-safe:transition-colors',
-          selected
-            ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-border-soft opacity-0 hover:border-primary/50 focus-visible:opacity-100 group-hover/select:opacity-100',
-        )}
-      >
-        {selected === true && <Check size={11} aria-hidden />}
-      </button>
-      <span className="min-w-0 flex-1">{body}</span>
-    </div>
   );
 });

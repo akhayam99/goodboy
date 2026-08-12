@@ -26,6 +26,16 @@ const describeIssue = (description: string) => {
   fireEvent.change(screen.getByLabelText('Description'), { target: { value: description } });
 };
 
+const screenshot = (name: string, sizeBytes = 1024): File => {
+  const file = new File(['shot'], name, { type: 'image/png' });
+  Object.defineProperty(file, 'size', { value: sizeBytes });
+  return file;
+};
+
+const pasteFiles = (files: ReadonlyArray<File>) => {
+  fireEvent.paste(screen.getByLabelText('Description'), { clipboardData: { files } });
+};
+
 beforeEach(() => {
   useAppStore.setState(initialBugReportDraftState);
 });
@@ -91,6 +101,51 @@ describe('ReportIssuePopover', () => {
     expect(onOpenStudio).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Report an issue' })).toBeNull();
     expect(useAppStore.getState().bugReportDraft.description).toBe('Session cost is stale');
+  });
+
+  it('attaches a pasted screenshot and shows it as a thumbnail', async () => {
+    render(<ReportIssuePopover />);
+
+    openPopover();
+    pasteFiles([screenshot('board.png')]);
+
+    const thumbnail = (await screen.findByAltText('board.png')) as HTMLImageElement;
+    expect(thumbnail.src.startsWith('data:image/png')).toBe(true);
+    expect(useAppStore.getState().bugReportDraft.images).toHaveLength(1);
+  });
+
+  it('drops a pasted screenshot again from its remove button', async () => {
+    render(<ReportIssuePopover />);
+
+    openPopover();
+    pasteFiles([screenshot('board.png')]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove board.png' }));
+
+    expect(screen.queryByAltText('board.png')).toBeNull();
+    expect(useAppStore.getState().bugReportDraft.images).toHaveLength(0);
+  });
+
+  it('refuses a screenshot over the size cap and says why', async () => {
+    render(<ReportIssuePopover />);
+
+    openPopover();
+    pasteFiles([screenshot('huge.png', 6 * 1024 * 1024)]);
+
+    expect(await screen.findByText('huge.png is over 5MB.')).toBeDefined();
+    expect(useAppStore.getState().bugReportDraft.images).toHaveLength(0);
+  });
+
+  it('keeps the attached screenshots across a fresh mount', async () => {
+    const first = render(<ReportIssuePopover />);
+    openPopover();
+    pasteFiles([screenshot('board.png')]);
+    await screen.findByAltText('board.png');
+    first.unmount();
+
+    render(<ReportIssuePopover />);
+    openPopover();
+
+    expect(screen.getByAltText('board.png')).toBeDefined();
   });
 
   it('shows a dot on the trigger while a draft is waiting, and hides it once reset', () => {

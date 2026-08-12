@@ -55,6 +55,7 @@ export type WorkspaceRuns = {
   readonly freeAgents: SpawnNode[];
   readonly resolveQueue: SpawnNode[];
   readonly aggregate: RunsAggregate;
+  readonly blockedLanes?: RunLaneModel[];
   readonly completedLanes?: RunLaneModel[];
   readonly completedFreeAgents?: SpawnNode[];
   readonly completedResolveQueue?: SpawnNode[];
@@ -151,8 +152,24 @@ const agentToNode = (
   };
 };
 
-const stepStatus = (root: Agent | null): SpawnNodeStatus =>
-  root ? statusToNodeStatus(root.status) : 'planned';
+const subtreeStatuses = (node: SpawnNode): ReadonlyArray<SpawnNodeStatus> => [
+  node.status,
+  ...node.children.flatMap(subtreeStatuses),
+];
+
+const stepStatus = (root: SpawnNode | null): SpawnNodeStatus => {
+  if (root === null) {
+    return 'planned';
+  }
+  const statuses = subtreeStatuses(root);
+  if (statuses.includes('running')) {
+    return 'running';
+  }
+  if (statuses.includes('queued')) {
+    return 'queued';
+  }
+  return root.status;
+};
 
 export const useWorkspaceRuns = (
   workspaceId: WorkspaceId,
@@ -251,6 +268,7 @@ export const useWorkspaceRuns = (
     }
 
     const activeLanes: RunLaneModel[] = [];
+    const blockedLanes: RunLaneModel[] = [];
     const completedLanes: RunLaneModel[] = [];
     const activeFreeAgents: SpawnNode[] = [];
     const completedFreeAgents: SpawnNode[] = [];
@@ -331,14 +349,15 @@ export const useWorkspaceRuns = (
           .sort((a, b) => a.ordinal - b.ordinal)
           .map((step) => {
             const root = rootByRunStep.get(`${run.id}::${step.id}`) ?? null;
-            const children = root
-              ? [agentToNode(root, childrenByParentId, costByAgentId, selectedAgentId, 0)]
-              : (EMPTY_ARRAY as ReadonlyArray<SpawnNode>);
+            const rootNode = root
+              ? agentToNode(root, childrenByParentId, costByAgentId, selectedAgentId, 0)
+              : null;
+            const children = rootNode ? [rootNode] : (EMPTY_ARRAY as ReadonlyArray<SpawnNode>);
             return {
               stepId: step.id,
               name: step.name,
               kind: root ? kindOf(root) : stepKind(workflow, step.id),
-              status: stepStatus(root),
+              status: stepStatus(rootNode),
               rootAgentId: root ? root.id : null,
               children,
             };
@@ -360,9 +379,10 @@ export const useWorkspaceRuns = (
           steps,
           costUsd: runCost,
         };
-        const laneIsActive = steps.some((step) => isRunningOrPending(step.status));
-        if (laneIsActive) {
+        if (steps.some((step) => isRunningOrPending(step.status))) {
           activeLanes.push(laneModel);
+        } else if (steps.some((step) => step.status === 'stalled')) {
+          blockedLanes.push(laneModel);
         } else {
           completedLanes.push(laneModel);
         }
@@ -391,7 +411,7 @@ export const useWorkspaceRuns = (
     }
 
     const aggregate: RunsAggregate = {
-      runCount: activeLanes.length + completedLanes.length,
+      runCount: activeLanes.length + blockedLanes.length + completedLanes.length,
       agentCount,
       runningCount,
       stalledCount,
@@ -403,6 +423,7 @@ export const useWorkspaceRuns = (
       freeAgents: activeFreeAgents,
       resolveQueue: activeResolveQueue,
       aggregate,
+      blockedLanes,
       completedLanes,
       completedFreeAgents,
       completedResolveQueue,

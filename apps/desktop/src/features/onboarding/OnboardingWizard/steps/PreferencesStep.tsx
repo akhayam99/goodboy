@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { OverrideSettings, VerbosityLevel, WorkspaceId, WorkspaceKind } from '@goodboy/types';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { Button, EmptyState, FieldRow, Switch, cn } from '@goodboy/ui';
-import { FolderGit2, GitBranch, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { FolderGit2, GitBranch, SlidersHorizontal } from 'lucide-react';
 import { VerbositySelect } from '../../../session/components/VerbositySelect';
 import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../settings/settings';
@@ -193,7 +193,11 @@ const PreferencesForm = ({ workspaceId, isSimple }: FormProps) => {
               ariaLabel="Default provider"
             />
             <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-muted-foreground">
-              <Sparkles size={12} aria-hidden className="mt-0.5 shrink-0 text-primary" />
+              <CONCEPT_ICONS.providers
+                size={12}
+                aria-hidden
+                className="mt-0.5 shrink-0 text-info"
+              />
               Goodboy routes work across the providers you connect, by priority and budget.
             </p>
           </div>

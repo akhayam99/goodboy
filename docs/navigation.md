@@ -5,6 +5,14 @@ taxonomy. For the file locations of every component named here see
 [file-system.md](file-system.md). For visual layout rules see
 [styling.md](styling.md).
 
+## One layout
+
+`AppShell` from `@goodboy/ui` is the single app layout. It is mounted once, in
+`apps/desktop/src/App.tsx`, and owns the top bar, left column, content column
+and footer slots for every surface: board, session, and studios. Surfaces fill
+the slots, they do not define their own shell. A new surface that needs a
+different frame changes `AppShell` or its props, never forks a second layout.
+
 ## Breadcrumb derivation
 
 `buildBreadcrumb(input)` is a pure function in
@@ -18,18 +26,25 @@ from the existing store (`currentWorkspaceId`, `currentSessionId`,
 `AppBreadcrumb` is NOT rendered in `AppTopBar`. Navigation context is surfaced
 differently depending on where the user is:
 
-- Inside a session: `WorkspacesSidebar` shows a "Back to board" action above
-  the sessions list, bound to ⌘⇧H and showing that glyph on hover.
+- Inside a session: `SessionNavSidebar` carries "Board" at the top in both
+  modes, bound to ⌘⇧H and showing that glyph on hover. In lens mode a second
+  row below it holds the session title and steps back to the sessions list;
+  sessions mode has no second row, and the workspace name is never repeated
+  there because it already lives in the top bar.
 - Inside a session lens: `buildSessionBreadcrumb`
   (`features/session/components/SessionWorkspace/sessionBreadcrumb.ts`) is read
-  by `useSessionCrumbs` and rendered by `SessionStripCrumbs` in the top bar,
-  rooted at the session goal rather than at a separate `Overview` crumb. The
-  trail below is what `buildSessionBreadcrumb` returns; the strip drops its
-  first crumb and uses the session title in its place. At most three crumbs
+  by `useSessionCrumbs` and rendered by `SessionCrumbBar`, a bar in the page
+  above the lens rather than a region of the top bar. The bar renders the trail
+  exactly as returned and starts at `Overview`: the session name is not repeated
+  as a crumb because the sidebar already carries it. At most three crumbs
   deep. Shapes: `Overview > {LensName}`,
   `Overview > Workflows > {WorkflowName}`, `Overview > Plans > {PlanTitle}`,
   and for the session studios `Overview > Workflows > Create`,
-  `Overview > Pull request > PR #{n}`, `Overview > Pull request > Merge request`.
+  `Overview > GitHub > PR #{n}`, `Overview > GitLab > Merge request`.
+  Every integration lens uses the tool name that its sidebar row uses (GitHub,
+  GitLab, Jira, Linear, Sentry, Slack) and sits at the same depth, so a studio
+  hangs off its own tool rather than off another tool's lens. A list view never
+  pre-populates a crumb for an item the user has not opened yet.
   The last crumb is the current location and is never clickable. With an agent
   open this trail is replaced entirely by the agent-overlay breadcrumb (see
   below), never nested inside it.
@@ -111,9 +126,9 @@ crumbs navigate via `toOverview` / `toWorkspaceLauncher` / `toWorkspaceBoard`.
 ## App-chrome header
 
 `AppTopBar` is the single app-chrome row, 36px tall. Left to right: the mascot,
-the sessions-column toggle (only inside a session), the workspace identity and
-its switcher popover, then the session breadcrumb, which does render here and is
-rooted at the session title.
+the sessions-column toggle (only inside a session), then the workspace identity
+and its switcher popover. The remaining left-side space is a neutral spacer;
+no breadcrumb is rendered in `AppTopBar` (see line 18).
 
 Right side: workspace rollup (attention count and today's spend), a divider,
 then running scripts, the report control, notifications, the theme toggle and
@@ -129,8 +144,8 @@ downwards: both open a destination, and destinations belong to the footer.
 
 Controls dispatch the same `goodboy:*` events and callbacks as before.
 
-`WorkspacesSidebar` contains only the sessions/agents content. No global
-controls live in the sidebar.
+`SessionNavSidebar` contains only session navigation: the lens rail or the
+sessions/agents list. No global controls live in the sidebar.
 
 ## App footer
 
@@ -194,7 +209,7 @@ on the active row. Opening any studio closes the others (`closeAllStudios` in
 
 Every lens row is bound on the ⌘⌥ plane and reveals its glyph on hover, in
 place of the row badge, so the rail teaches the binding without widening.
-`LENS_SHORTCUTS` in `LensColumn/groups.ts` maps each `LensKind` to a registry
+`LENS_SHORTCUTS` in `LensNav/groups.ts` maps each `LensKind` to a registry
 id and never to a literal combo.
 
 ## Board-only Overview and animated sidebar
@@ -207,9 +222,9 @@ hidden.
 `App.tsx` keeps Overview board-only and applies the user preference in session:
 
 - Overview (no session active): board-only, sidebar hidden.
-- Session entered: sidebar follows the persisted sessions-column preference.
+- Session entered: `SessionNavSidebar` follows the persisted column preference.
 
-The sidebar has no collapse rail. In a session, users hide or show the sessions
+The sidebar has no collapse rail. In a session, users hide or show the nav
 column from the single control in the top bar or with ⌘B, whose glyph the
 control itself spells out in its tooltip and label. The toggle writes
 a persisted preference, while Overview still forces `leftHidden`. Collapsed, the
@@ -317,9 +332,10 @@ when the toggle is on. A plan with no active siblings still shows the
 "Nothing active" empty state, with the toggle as its own row underneath it,
 never inside the empty state's action slot: the toggle is a lens-wide control,
 not an action scoped to that one empty state. Selecting a card writes
-`focusedPlanId` and swaps the list for the plan body in a `FocusedPane`, with
-`WorkSurfaceBackButton` as its only header action. There is no sibling
-"other plans" panel: the list is the only way back.
+`focusedPlanId` and swaps the list for the plan body in a `FocusedPane`, which
+takes no back action of its own there. The focused plan is exited via the
+`Overview > Plans > {PlanTitle}` crumb (`toPlansList` in `useSessionCrumbs`).
+There is no sibling "other plans" panel: the crumb is the only way back.
 
 ### Sibling panels inside a lens
 
@@ -509,7 +525,7 @@ chosen in the form; the workflow is built after creation.
 
 ## Session activity bar
 
-The session activity bar (sessions list in `WorkspacesSidebar`) shows ALL
+The session activity bar (sessions list in `SessionNavSidebar`) shows ALL
 sessions grouped by stage: building, running, needs-you/attention, in-review,
 done. It is not filtered to running sessions only. The board also surfaces
 every stage.

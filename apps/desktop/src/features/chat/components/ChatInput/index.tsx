@@ -26,7 +26,10 @@ import { useRightSizeNudge } from './hooks/useRightSizeNudge';
 import { useAgentSwitchSync } from './hooks/useAgentSwitchSync';
 import { useSuggestionCards } from './hooks/useSuggestionCards';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
-import { AttachmentChip } from './parts/AttachmentChip';
+import {
+  AttachmentChip,
+  pendingAttachmentProps,
+} from '../../../attachments/components/AttachmentChip';
 import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
 import { TurnErrorCallout } from '../TurnErrorCallout';
@@ -447,7 +450,11 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
               {attachments.map((a) => (
-                <AttachmentChip key={a.id} attachment={a} onRemove={() => removeAttachment(a.id)} />
+                <AttachmentChip
+                  key={a.id}
+                  {...pendingAttachmentProps(a)}
+                  onRemove={() => removeAttachment(a.id)}
+                />
               ))}
             </div>
           )}

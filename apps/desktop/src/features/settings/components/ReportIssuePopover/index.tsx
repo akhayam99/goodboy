@@ -6,6 +6,8 @@ import { useAppStore } from '../../../../store';
 import { emptyBugReportDraft } from '../../../../store/slices/bugReportDraft/state';
 import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../../reportIssueTypes';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
+import { useBugReportImages } from '../../hooks/useBugReportImages';
+import { BugReportImages } from '../BugReportImages';
 
 const TRIGGER_LABEL = 'Report an issue';
 const DRAFT_TRIGGER_LABEL = 'Report an issue, draft saved';
@@ -31,8 +33,12 @@ export const ReportIssuePopover = () => {
   const draft = useAppStore((s) => s.bugReportDraft);
   const setBugReportDraft = useAppStore((s) => s.setBugReportDraft);
   const clearBugReportDraft = useAppStore((s) => s.clearBugReportDraft);
+  const imageControl = useBugReportImages();
 
-  const hasDraft = draft.description !== '' || draft.issueType !== emptyBugReportDraft.issueType;
+  const hasDraft =
+    draft.description !== '' ||
+    draft.issueType !== emptyBugReportDraft.issueType ||
+    draft.images.length > 0;
   const triggerLabel = hasDraft ? DRAFT_TRIGGER_LABEL : TRIGGER_LABEL;
   const ReportIssueIcon = CONCEPT_ICONS.reportIssue;
 
@@ -95,8 +101,10 @@ export const ReportIssuePopover = () => {
                 aria-label="Description"
                 value={draft.description}
                 onChange={(e) => setBugReportDraft({ description: e.target.value })}
+                onPaste={imageControl.onPaste}
                 placeholder="What happened, and what you expected instead"
               />
+              <BugReportImages control={imageControl} />
               <p className="text-2xs leading-relaxed text-muted-foreground">
                 Kept as a draft until you send it from the report form.
               </p>

@@ -154,4 +154,30 @@ describe('parseOrchestratorDecision', () => {
       },
     });
   });
+  it('carries the run recap that travels alongside the decision', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>>\n<<run-summary>>\n**Done**\n- shipped the gate\n\n**Left**\n- nothing\n<</run-summary>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'done',
+      reason: 'Goal satisfied.',
+      runSummary: '**Done**\n- shipped the gate\n\n**Left**\n- nothing',
+    });
+  });
+
+  it('leaves the recap out when the block is missing or empty', () => {
+    const missing = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>>',
+    });
+    const empty = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>><<run-summary>>   <</run-summary>>',
+    });
+
+    expect(missing).not.toHaveProperty('runSummary');
+    expect(empty).not.toHaveProperty('runSummary');
+  });
 });

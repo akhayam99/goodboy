@@ -64,10 +64,6 @@ vi.mock('../../../shared/components/DogMascot', () => ({
   DogMascot: () => null,
 }));
 
-vi.mock('../../../features/session/components/SessionStripCrumbs', () => ({
-  SessionStripCrumbs: () => <span>session crumbs</span>,
-}));
-
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
@@ -82,7 +78,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 import { AppTopBar } from './index';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { useThemeStore } from '../../../shared/lib/theme';
 
 const ATTENTION_SESSION_ID = 'session-1' as SessionId;
@@ -93,28 +88,10 @@ const ATTENTION_SESSION = {
 
 type BarOverrides = {
   readonly onOpenBudget?: () => void;
-  readonly hasWorkspace?: boolean;
-  readonly hasActiveSession?: boolean;
-  readonly isSessionSidebarCollapsed?: boolean;
-  readonly isSessionSidebarPeeking?: boolean;
-  readonly onToggleSessionSidebar?: () => void;
-  readonly onSessionSidebarAnchorEnter?: () => void;
-  readonly onSessionSidebarAnchorLeave?: () => void;
 };
 
 const renderBar = (overrides: BarOverrides = {}) =>
-  render(
-    <AppTopBar
-      onOpenBudget={overrides.onOpenBudget ?? vi.fn()}
-      hasWorkspace={overrides.hasWorkspace ?? true}
-      hasActiveSession={overrides.hasActiveSession ?? false}
-      isSessionSidebarCollapsed={overrides.isSessionSidebarCollapsed ?? false}
-      isSessionSidebarPeeking={overrides.isSessionSidebarPeeking ?? false}
-      onToggleSessionSidebar={overrides.onToggleSessionSidebar ?? vi.fn()}
-      onSessionSidebarAnchorEnter={overrides.onSessionSidebarAnchorEnter ?? vi.fn()}
-      onSessionSidebarAnchorLeave={overrides.onSessionSidebarAnchorLeave ?? vi.fn()}
-    />,
-  );
+  render(<AppTopBar onOpenBudget={overrides.onOpenBudget ?? vi.fn()} />);
 
 describe('AppTopBar', () => {
   it('mounts the onboarding reopen chip, which the card tooltip points at', () => {
@@ -149,7 +126,7 @@ describe('AppTopBar', () => {
 
     expect(screen.queryByRole('button', { name: /^open settings/i })).toBeNull();
     expect(screen.queryByTestId('update-indicator')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Workspace settings' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Preferences' })).toBeNull();
   });
 
   it('flips the real theme state from the top bar', () => {
@@ -163,95 +140,31 @@ describe('AppTopBar', () => {
     expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeDefined();
   });
 
-  it('carries workspace identity whatever the column is doing', () => {
-    const { rerender } = renderBar({ hasActiveSession: false });
-    expect(screen.getByLabelText('Switch or open a workspace')).toBeDefined();
-
-    rerender(
-      <AppTopBar
-        onOpenBudget={vi.fn()}
-        hasWorkspace
-        hasActiveSession
-        isSessionSidebarCollapsed={false}
-        isSessionSidebarPeeking={false}
-        onToggleSessionSidebar={vi.fn()}
-        onSessionSidebarAnchorEnter={vi.fn()}
-        onSessionSidebarAnchorLeave={vi.fn()}
-      />,
-    );
-    expect(screen.getByLabelText('Switch or open a workspace')).toBeDefined();
-  });
-
-  it('falls back to the wordmark before any workspace exists', () => {
-    renderBar({ hasWorkspace: false });
+  it('carries the brand badge and leaves workspace identity to the sidebar', () => {
+    renderBar();
 
     expect(screen.getByText('Goodboy')).toBeDefined();
     expect(screen.queryByLabelText('Switch or open a workspace')).toBeNull();
   });
 
-  it('holds the column control pressed while the peek is open', () => {
-    const { rerender } = renderBar({ hasActiveSession: true, isSessionSidebarCollapsed: true });
-    expect(
-      screen.getByRole('button', { name: /show sessions column/i }).getAttribute('aria-pressed'),
-    ).toBe('false');
+  it('leaves the column control to the sidebar', () => {
+    renderBar();
 
-    rerender(
-      <AppTopBar
-        onOpenBudget={vi.fn()}
-        hasWorkspace
-        hasActiveSession
-        isSessionSidebarCollapsed
-        isSessionSidebarPeeking
-        onToggleSessionSidebar={vi.fn()}
-        onSessionSidebarAnchorEnter={vi.fn()}
-        onSessionSidebarAnchorLeave={vi.fn()}
-      />,
-    );
-    const toggle = screen.getByRole('button', { name: /show sessions column/i });
-    expect(toggle.className).toContain('bg-muted text-foreground');
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByRole('button', { name: /session sidebar/i })).toBeNull();
   });
 
-  it('shows the column control only inside a session', () => {
-    const onToggleSessionSidebar = vi.fn();
-    const { rerender } = renderBar({ hasActiveSession: false });
-    expect(screen.queryByRole('button', { name: /sessions column/i })).toBeNull();
-
-    rerender(
-      <AppTopBar
-        onOpenBudget={vi.fn()}
-        hasWorkspace
-        hasActiveSession
-        isSessionSidebarCollapsed
-        isSessionSidebarPeeking={false}
-        onToggleSessionSidebar={onToggleSessionSidebar}
-        onSessionSidebarAnchorEnter={vi.fn()}
-        onSessionSidebarAnchorLeave={vi.fn()}
-      />,
-    );
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: `Show sessions column (${shortcutGlyphs('column.toggle')})`,
-      }),
-    );
-    expect(onToggleSessionSidebar).toHaveBeenCalledOnce();
-  });
-
-  it('gives the middle to the session and truncates nothing else', () => {
-    const { container } = renderBar({ hasActiveSession: true });
-    const crumbs = screen.getByText('session crumbs');
+  it('keeps a single spacer holding the rollup strip to the right', () => {
+    const { container } = renderBar();
     const bar = container.querySelector('[data-tauri-drag-region]');
     const children = Array.from(bar?.children ?? []);
-    const crumbIndex = children.findIndex((child) => child.contains(crumbs));
 
-    expect(children[crumbIndex]?.className).toContain('flex-1');
     expect(children.filter((child) => child.className.includes('flex-1')).length).toBe(1);
     expect(children.some((child) => child.className.includes('absolute'))).toBe(false);
   });
 
-  it('leaves the middle empty on the board', () => {
-    renderBar({ hasActiveSession: false });
-    expect(screen.queryByText('session crumbs')).toBeNull();
+  it('leaves session breadcrumbs to the page, not the drag strip', () => {
+    renderBar();
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
   });
 
   it('opens budget only from the spend target and omits the beta chip', () => {

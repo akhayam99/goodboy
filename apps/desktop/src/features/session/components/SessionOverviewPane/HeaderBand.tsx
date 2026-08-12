@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CheckCheck, Pencil } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, cn, Input, StatusDot, Tooltip } from '@goodboy/ui';
@@ -19,8 +20,11 @@ type Props = {
   readonly stage: SessionStageInfo;
 };
 
+const GOAL_CLAMP_CHARS = 160;
+
 export const HeaderBand = ({ session, stage }: Props) => {
   const sessionId = session.id as SessionId;
+  const [goalExpanded, setGoalExpanded] = useState(false);
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const workspace = useCurrentWorkspace();
   const repo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
@@ -33,6 +37,8 @@ export const HeaderBand = ({ session, stage }: Props) => {
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const pullRequest = github?.pr ?? null;
   const hasUnreadAgents = sessionAgents.some((agent) => agentHasUnread(agent, false));
+  const goalText = session.goal || 'Untitled session';
+  const canExpandGoal = goalText.length > GOAL_CLAMP_CHARS;
   const done = definitionOfDone({
     pr: pullRequest,
     mergeRequest,
@@ -90,9 +96,26 @@ export const HeaderBand = ({ session, stage }: Props) => {
         </div>
       ) : (
         <div className="group/goal flex items-start gap-2">
-          <h1 className="text-balance text-xl font-semibold leading-snug text-foreground">
-            {session.goal || 'Untitled session'}
-          </h1>
+          <div className="flex min-w-0 flex-col items-start gap-1">
+            <h1
+              className={cn(
+                'text-balance text-xl font-semibold leading-snug text-foreground',
+                canExpandGoal && !goalExpanded && 'line-clamp-3',
+              )}
+            >
+              {goalText}
+            </h1>
+            {canExpandGoal ? (
+              <button
+                type="button"
+                aria-expanded={goalExpanded}
+                onClick={() => setGoalExpanded((current) => !current)}
+                className="rounded text-2xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+              >
+                {goalExpanded ? 'Show less' : 'Show more'}
+              </button>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={rename.start}

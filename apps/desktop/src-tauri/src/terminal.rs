@@ -41,6 +41,27 @@ impl TerminalRegistry {
     }
 }
 
+/// Drains every live terminal, killing the whole pty session behind each
+/// leader. Killing the leader alone leaves grandchildren holding ports.
+pub fn shutdown(registry: &TerminalRegistry) {
+    let slots: Vec<SessionSlot> = match registry.0.lock() {
+        Ok(mut map) => map.drain().map(|(_, slot)| slot).collect(),
+        Err(_) => return,
+    };
+    for slot in slots {
+        let Ok(mut guard) = slot.lock() else {
+            continue;
+        };
+        let Some(mut session) = guard.take() else {
+            continue;
+        };
+        if let Some(leader_pid) = session.child.process_id() {
+            terminate_pty_session(leader_pid);
+        }
+        let _ = session.child.kill();
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum TerminalError {
     #[error("registry mutex poisoned")]
@@ -395,6 +416,53 @@ mod tests {
         assert!(
             !still_alive,
             "backgrounded descendant {background_pid} survived the terminal close"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn shutdown_drains_the_registry_and_kills_descendants() {
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .unwrap();
+        let mut cmd = CommandBuilder::new("/bin/sh");
+        cmd.arg("-c");
+        cmd.arg("trap '' HUP; sleep 120 & echo BACKGROUND:$! ; sleep 120");
+        let child = pair.slave.spawn_command(cmd).unwrap();
+        drop(pair.slave);
+        let mut reader = pair.master.try_clone_reader().unwrap();
+        let background_pid = read_announced_pid(&mut reader);
+        let writer = pair.master.take_writer().unwrap();
+
+        let registry = TerminalRegistry::new();
+        registry.0.lock().unwrap().insert(
+            "session-1".to_string(),
+            Arc::new(Mutex::new(Some(TerminalSession {
+                writer,
+                master: pair.master,
+                child,
+            }))),
+        );
+
+        shutdown(&registry);
+
+        assert!(registry.0.lock().unwrap().is_empty());
+        let mut still_alive = true;
+        for _ in 0..60 {
+            if !is_alive(background_pid) {
+                still_alive = false;
+                break;
+            }
+            thread::sleep(std::time::Duration::from_millis(50));
+        }
+        assert!(
+            !still_alive,
+            "backgrounded descendant {background_pid} survived the app shutdown"
         );
     }
 

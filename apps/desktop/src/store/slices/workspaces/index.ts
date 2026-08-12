@@ -4,6 +4,7 @@ import { addSimpleWorkspace } from './addSimpleWorkspace';
 import { convertWorkspaceToRepo } from './convertWorkspaceToRepo';
 import { deleteWorkspace } from './deleteWorkspace';
 import { loadWorkspaceGitStatus } from './loadWorkspaceGitStatus';
+import { renameWorkspace } from './renameWorkspace';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 import { wipeLocalDatabase } from './wipeLocalDatabase';
 import type { GetFn, SetFn } from './types';
@@ -16,6 +17,7 @@ export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
     convertWorkspaceToRepo: convertWorkspaceToRepo(set, get),
     deleteWorkspace: deleteWorkspace(set, get),
     loadWorkspaceGitStatus: loadWorkspaceGitStatus(set, get),
+    renameWorkspace: renameWorkspace(set, get),
     setCurrentWorkspace: setCurrentWorkspace(set, get),
     wipeLocalDatabase: wipeLocalDatabase(set, get),
   };

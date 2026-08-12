@@ -75,18 +75,21 @@ function toggleArchivedTab() {
   fireEvent.click(screen.getByRole('button', { name: 'Archived' }));
 }
 
-function checkboxAt(index: number): HTMLElement {
-  const box = screen.getAllByRole('checkbox')[index];
-  if (!box) {
-    throw new Error(`no checkbox at index ${index}`);
+function rowAt(index: number): HTMLElement {
+  const row = document.querySelectorAll<HTMLElement>('[data-select-id]')[index];
+  if (!row) {
+    throw new Error(`no session row at index ${index}`);
   }
-  return box;
+  return row;
 }
 
-function clickCheckbox(index: number): HTMLElement {
-  const box = checkboxAt(index);
-  fireEvent.click(box);
-  return box;
+function selectRow(
+  index: number,
+  over: { readonly shiftKey?: boolean; readonly altKey?: boolean } = {},
+): HTMLElement {
+  const row = rowAt(index);
+  fireEvent.click(row, { altKey: true, ...over });
+  return row;
 }
 
 beforeEach(() => {
@@ -117,23 +120,33 @@ describe('SessionActivityBar, baseline', () => {
 });
 
 describe('SessionActivityBar, bulk selection', () => {
-  it('exposes selection checkboxes in both tabs', () => {
+  it('carries selection on the row itself, with no checkbox in either tab', () => {
     renderBar([makeSession('s-1', 'archived one')], [makeSession('a-1', 'active one')]);
-    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(rowAt(0).getAttribute('aria-keyshortcuts')).toBe('Alt+Enter');
     toggleArchivedTab();
-    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(rowAt(0).getAttribute('data-select-id')).toBe('s-1');
+  });
+
+  it('selects from the keyboard with alt and Enter', () => {
+    const onSelect = vi.fn();
+    renderBar([], [makeSession('a-1', 'keyboard me')], onSelect);
+    fireEvent.keyDown(rowAt(0), { key: 'Enter', altKey: true });
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.getByText(/1 selected/)).toBeDefined();
   });
 
   it('offers Archive instead of Restore for active sessions', () => {
     renderBar([], [makeSession('a-1', 'active one')]);
-    clickCheckbox(0);
+    selectRow(0);
     expect(screen.getByRole('button', { name: /^Archive \(1\)$/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Restore/ })).toBeNull();
   });
 
   it('arms an inline confirmation on Archive and calls bulkArchiveTask once confirmed', async () => {
     renderBar([], [makeSession('a-1', 'active one')]);
-    clickCheckbox(0);
+    selectRow(0);
     fireEvent.click(screen.getByRole('button', { name: /^Archive \(1\)$/ }));
     const panel = screen.getByRole('group', { name: 'Archive 1 sessions?' });
     expect(state.bulkArchiveTask).not.toHaveBeenCalled();
@@ -151,15 +164,15 @@ describe('SessionActivityBar, bulk selection', () => {
 
   it('extends the selection to a range on shift-click', () => {
     renderBar([], [makeSession('a-1', 'one'), makeSession('a-2', 'two'), makeSession('a-3', 'x')]);
-    clickCheckbox(0);
-    fireEvent.click(checkboxAt(2), { shiftKey: true });
+    selectRow(0);
+    selectRow(2, { shiftKey: true, altKey: false });
     expect(screen.getByText(/3 selected/)).toBeDefined();
   });
 
-  it('builds a selection from checkbox clicks and surfaces the bulk action bar with a count', () => {
+  it('builds a selection from alt clicks and surfaces the bulk action bar with a count', () => {
     renderBar([makeSession('s-1', 'one'), makeSession('s-2', 'two')]);
     toggleArchivedTab();
-    clickCheckbox(0);
+    selectRow(0);
     expect(screen.getByText(/1 selected/)).toBeDefined();
     expect(screen.getByRole('button', { name: /^Restore \(1\)$/ })).toBeDefined();
   });
@@ -167,8 +180,8 @@ describe('SessionActivityBar, bulk selection', () => {
   it('calls bulkUnarchiveTask with the selected ids and clears the selection on Restore', async () => {
     renderBar([makeSession('s-1', 'one'), makeSession('s-2', 'two')]);
     toggleArchivedTab();
-    clickCheckbox(0);
-    clickCheckbox(1);
+    selectRow(0);
+    selectRow(1);
     fireEvent.click(screen.getByRole('button', { name: /^Restore \(2\)$/ }));
     expect(state.bulkUnarchiveTask).toHaveBeenCalledWith(['s-1', 's-2']);
     await waitFor(() => expect(screen.queryByText(/selected/)).toBeNull());
@@ -177,7 +190,7 @@ describe('SessionActivityBar, bulk selection', () => {
   it('arms an inline confirmation on Delete and calls bulkDeleteTask once confirmed', async () => {
     renderBar([makeSession('s-1', 'one')]);
     toggleArchivedTab();
-    clickCheckbox(0);
+    selectRow(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
     const panel = screen.getByRole('group', { name: 'Delete 1 session?' });
     expect(state.bulkDeleteTask).not.toHaveBeenCalled();
@@ -188,7 +201,7 @@ describe('SessionActivityBar, bulk selection', () => {
   it('clears the selection when switching tabs', () => {
     renderBar([makeSession('s-1', 'one')]);
     toggleArchivedTab();
-    clickCheckbox(0);
+    selectRow(0);
     expect(screen.getByText(/1 selected/)).toBeDefined();
     toggleArchivedTab();
     toggleArchivedTab();
@@ -206,20 +219,20 @@ describe('SessionActivityBar, bulk selection', () => {
   it('toggles aria-checked and hides the bulk bar when the last selection is removed', () => {
     renderBar([makeSession('s-1', 'one')]);
     toggleArchivedTab();
-    expect(checkboxAt(0).getAttribute('aria-checked')).toBe('false');
-    clickCheckbox(0);
-    expect(checkboxAt(0).getAttribute('aria-checked')).toBe('true');
+    expect(rowAt(0).getAttribute('aria-pressed')).toBe('false');
+    selectRow(0);
+    expect(rowAt(0).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByText(/1 selected/)).toBeDefined();
-    clickCheckbox(0);
-    expect(checkboxAt(0).getAttribute('aria-checked')).toBe('false');
+    selectRow(0);
+    expect(rowAt(0).getAttribute('aria-pressed')).toBe('false');
     expect(screen.queryByText(/selected/)).toBeNull();
   });
 
   it('reflects the selected count across both bulk actions when several are picked', () => {
     renderBar([makeSession('s-1', 'one'), makeSession('s-2', 'two'), makeSession('s-3', 'three')]);
     toggleArchivedTab();
-    clickCheckbox(0);
-    clickCheckbox(2);
+    selectRow(0);
+    selectRow(2);
     expect(screen.getByText(/2 selected/)).toBeDefined();
     expect(screen.getByRole('button', { name: /^Restore \(2\)$/ })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Delete \(2\)$/ })).toBeDefined();
@@ -228,7 +241,7 @@ describe('SessionActivityBar, bulk selection', () => {
   it('clears the selection via the Clear button', () => {
     renderBar([makeSession('s-1', 'one'), makeSession('s-2', 'two')]);
     toggleArchivedTab();
-    clickCheckbox(0);
+    selectRow(0);
     expect(screen.getByText(/1 selected/)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /^Clear$/ }));
     expect(screen.queryByText(/selected/)).toBeNull();
@@ -239,8 +252,8 @@ describe('SessionActivityBar, bulk selection', () => {
   it('lists the selected session goals in the confirmation', () => {
     renderBar([makeSession('s-1', 'alpha goal'), makeSession('s-2', 'beta goal')]);
     toggleArchivedTab();
-    clickCheckbox(0);
-    clickCheckbox(1);
+    selectRow(0);
+    selectRow(1);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(2\)$/ }));
     const panel = screen.getByRole('group', { name: 'Delete 2 sessions?' });
     expect(within(panel).getByText('alpha goal')).toBeDefined();
@@ -250,7 +263,7 @@ describe('SessionActivityBar, bulk selection', () => {
   it('does not call bulkDeleteTask when the confirmation is cancelled', () => {
     renderBar([makeSession('s-1', 'one')]);
     toggleArchivedTab();
-    clickCheckbox(0);
+    selectRow(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
     const panel = screen.getByRole('group', { name: 'Delete 1 session?' });
     fireEvent.click(within(panel).getByRole('button', { name: /^Cancel$/ }));
@@ -265,14 +278,14 @@ describe('SessionActivityBar, bulk selection', () => {
     toggleArchivedTab();
     fireEvent.click(screen.getByRole('button', { name: /open me/ }));
     expect(onSelect).toHaveBeenCalledWith('s-1');
-    expect(checkboxAt(0).getAttribute('aria-checked')).toBe('false');
+    expect(rowAt(0).getAttribute('aria-pressed')).toBe('false');
     expect(screen.queryByText(/selected/)).toBeNull();
   });
 
   it('clears the selection after a confirmed bulk delete', async () => {
     renderBar([makeSession('s-1', 'one')]);
     toggleArchivedTab();
-    clickCheckbox(0);
+    selectRow(0);
     fireEvent.click(screen.getByRole('button', { name: /^Delete \(1\)$/ }));
     const panel = screen.getByRole('group', { name: 'Delete 1 session?' });
     fireEvent.click(within(panel).getByRole('button', { name: /^Delete \(1\)$/ }));

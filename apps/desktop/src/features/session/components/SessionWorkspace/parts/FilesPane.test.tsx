@@ -1,10 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import {
-  lensGo,
   openDiffLens,
   setActiveLens,
   setDiffFocus,
@@ -29,23 +28,14 @@ vi.mock('../../../../../store', () => ({
 }));
 
 vi.mock('../../../../permissions/components/DiffViewerDialog', () => ({
-  DiffViewerPane: ({
-    diffFocus,
-    paneActions,
-  }: {
-    diffFocus: { readonly kind: string } | null;
-    paneActions: React.ReactNode;
-  }) => (
-    <div data-testid="diff-viewer" data-focus-kind={diffFocus?.kind ?? 'none'}>
-      {paneActions}
-    </div>
+  DiffViewerPane: ({ diffFocus }: { diffFocus: { readonly kind: string } | null }) => (
+    <div data-testid="diff-viewer" data-focus-kind={diffFocus?.kind ?? 'none'} />
   ),
 }));
 
 vi.mock('./FileVersionsPane', () => ({
-  FileVersionsPane: ({ actions, onClose }: { actions?: React.ReactNode; onClose: () => void }) => (
+  FileVersionsPane: ({ onClose }: { onClose: () => void }) => (
     <div data-testid="file-versions">
-      {actions}
       <button type="button" onClick={onClose}>
         Close
       </button>
@@ -69,7 +59,6 @@ const reset = () => {
     sessionPhaseRuns: { [SESSION_ID]: [] },
     setDiffFocus: setDiffFocus(set),
     setActiveLens: setActiveLens(set),
-    lensGo: lensGo(set, get),
   });
 };
 
@@ -98,7 +87,7 @@ const renderBranchlessPane = () =>
 afterEach(cleanup);
 
 describe('FilesPane', () => {
-  it('carries the working tree focus into the diff and offers the way back', () => {
+  it('carries the working tree focus into the diff', () => {
     reset();
     setActiveLens(set)(SESSION_ID, 'resolve');
     openDiffLens(get)(SESSION_ID, { kind: 'working', path: null });
@@ -106,52 +95,24 @@ describe('FilesPane', () => {
     renderPane({ worktreePath: '/tmp/wt' });
 
     expect(screen.getByTestId('diff-viewer').getAttribute('data-focus-kind')).toBe('working');
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-
-    expect((state['activeLens'] as Record<string, string>)[SESSION_ID]).toBe('resolve');
   });
 
-  it('offers no way back when the diff is where the session started', () => {
+  it('explains itself when there is no worktree to diff', () => {
     reset();
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    renderPane({ worktreePath: '/tmp/wt' });
-
-    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-  });
-
-  it('keeps the way back when there is no worktree to diff', () => {
-    reset();
-    setActiveLens(set)(SESSION_ID, 'resolve');
     setActiveLens(set)(SESSION_ID, 'files');
 
     renderPane({ worktreePath: null });
 
     expect(screen.getByText('No worktree for this session')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
   });
 
-  it('carries the way back into the branchless file versions pane too', () => {
+  it('shows the file versions pane with its own close control when branchless', () => {
     reset();
-    setActiveLens(set)(SESSION_ID, 'resolve');
     setActiveLens(set)(SESSION_ID, 'files');
 
     renderBranchlessPane();
 
     expect(screen.getByTestId('file-versions')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-
-    expect((state['activeLens'] as Record<string, string>)[SESSION_ID]).toBe('resolve');
-  });
-
-  it('keeps back and close as two distinct controls on the branchless file versions pane', () => {
-    reset();
-    setActiveLens(set)(SESSION_ID, 'resolve');
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    renderBranchlessPane();
-
-    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
   });
 });

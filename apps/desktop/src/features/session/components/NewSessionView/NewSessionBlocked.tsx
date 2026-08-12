@@ -3,6 +3,7 @@ import { Button, Divider, ScrollFade } from '@goodboy/ui';
 import type { WorkspaceGitStatus } from '@goodboy/types';
 import { OverlayHeader } from '../../../../shared/components/OverlayHeader';
 import { WorkspaceGitPanel } from '../../../workspace/components/WorkspaceGitPanel';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 
 type Props = {
   readonly rootPath: string;
@@ -22,7 +23,7 @@ export const NewSessionBlocked = ({ rootPath, status, onClose }: Props) => {
           closeLabel="close new session"
         />
         <Divider />
-        <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+        <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
           <div className="flex flex-col gap-4">
             <p className="text-xs leading-relaxed text-muted-foreground">
               Goodboy gives every session its own git worktree and branch, so this project cannot

@@ -1,23 +1,25 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
 
-const { state, gitStatus } = vi.hoisted(() => ({
+const { state, gitStatus, groups } = vi.hoisted(() => ({
   state: {
     boardReady: true,
     archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
     loadArchivedSessions: vi.fn(),
     workspaces: [] as ReadonlyArray<Workspace>,
+    bulkUnarchiveTask: vi.fn(async () => undefined),
   },
   gitStatus: { current: null as WorkspaceGitStatus | null },
+  groups: { current: [] as ReadonlyArray<{ key: string; sessions: ReadonlyArray<Session> }> },
 }));
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: (selector: (s: typeof state) => unknown) => selector(state),
-  useStageGroupedSessions: () => [],
+  useStageGroupedSessions: () => groups.current,
 }));
 
 vi.mock('../../hooks/useWorkspaceGitStatus', () => ({
@@ -35,8 +37,29 @@ vi.mock('./useBoardNavigation', () => ({
 }));
 
 vi.mock('./StageColumn', () => ({
-  StageColumn: ({ spec }: { spec: { kind: string; stage?: string } }) => (
-    <div data-testid="stage-column">{spec.kind === 'stage' ? spec.stage : 'archived'}</div>
+  StageColumn: ({
+    spec,
+    sessions,
+    selection,
+  }: {
+    spec: { kind: string; stage?: string };
+    sessions: ReadonlyArray<Session>;
+    selection: {
+      handleItemClick: (id: string, event: { altKey: boolean }) => void;
+    };
+  }) => (
+    <div data-testid="stage-column">
+      {spec.kind === 'stage' ? spec.stage : 'archived'}
+      {sessions.map((entry) => (
+        <button
+          key={entry.id}
+          type="button"
+          data-select-id={entry.id}
+          aria-label={`card ${entry.id}`}
+          onClick={(event) => selection.handleItemClick(entry.id, event)}
+        />
+      ))}
+    </div>
   ),
 }));
 
@@ -55,6 +78,18 @@ const wsId = 'ws-a' as WorkspaceId;
 const onCreate = vi.fn();
 
 const workspace = { id: wsId, kind: 'repo', rootPath: '/tmp/fresh-idea' } as Workspace;
+
+const boxOf = (left: number, top: number, width: number, height: number) =>
+  ({
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    x: left,
+    y: top,
+  }) as DOMRect;
 
 const statusOf = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
   state,
@@ -75,6 +110,7 @@ beforeEach(() => {
   state.loadArchivedSessions = vi.fn();
   state.workspaces = [workspace];
   gitStatus.current = null;
+  groups.current = [];
 });
 afterEach(cleanup);
 
@@ -140,5 +176,152 @@ describe('StageBoard git gate', () => {
     expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
       false,
     );
+  });
+});
+
+describe('StageBoard selection', () => {
+  const other = { id: 's-2' } as Session;
+  const shelved = { id: 's-9' } as Session;
+
+  it('offers the alt-click hint only once the board holds more than one session', () => {
+    render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
+    expect(screen.queryByText(/lasso/)).toBeNull();
+
+    cleanup();
+    render(
+      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
+    );
+    expect(screen.getByText('⌥click to select · drag to lasso')).toBeDefined();
+  });
+
+  it('raises a single bulk bar for the whole board, not one per column', () => {
+    groups.current = [{ key: 'building', sessions: [session, other] }];
+    render(
+      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
+    );
+    expect(screen.queryByText(/selected/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'card s-1' }), { altKey: true });
+    fireEvent.click(screen.getByRole('button', { name: 'card s-2' }), { altKey: true });
+
+    expect(screen.getAllByText('2 selected')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /^Archive \(2\)$/ })).toBeDefined();
+  });
+
+  it('selects every card a lasso drag crosses, across columns', () => {
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
+      return 1;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+    groups.current = [
+      { key: 'building', sessions: [session] },
+      { key: 'review', sessions: [other] },
+    ];
+    render(
+      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
+    );
+
+    const cardA = screen.getByRole('button', { name: 'card s-1' });
+    const cardB = screen.getByRole('button', { name: 'card s-2' });
+    const columns = cardA.closest('[data-testid="stage-column"]')?.parentElement as HTMLElement;
+    columns.getBoundingClientRect = () => boxOf(0, 0, 500, 500);
+    cardA.getBoundingClientRect = () => boxOf(10, 10, 100, 40);
+    cardB.getBoundingClientRect = () => boxOf(200, 10, 100, 40);
+
+    fireEvent.pointerDown(columns, { button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+    fireEvent(
+      window,
+      new PointerEvent('pointermove', {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 100,
+        bubbles: true,
+      }),
+    );
+
+    expect(screen.getByText('2 selected')).toBeDefined();
+
+    fireEvent(window, new PointerEvent('pointerup', { pointerId: 1, bubbles: true }));
+    expect(screen.getByText('2 selected')).toBeDefined();
+  });
+
+  it('leaves the cards a lasso drag misses untouched', () => {
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
+      return 1;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+    groups.current = [{ key: 'building', sessions: [session, other] }];
+    render(
+      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
+    );
+
+    const cardA = screen.getByRole('button', { name: 'card s-1' });
+    const columns = cardA.closest('[data-testid="stage-column"]')?.parentElement as HTMLElement;
+    columns.getBoundingClientRect = () => boxOf(0, 0, 500, 500);
+    cardA.getBoundingClientRect = () => boxOf(10, 300, 100, 40);
+    screen.getByRole('button', { name: 'card s-2' }).getBoundingClientRect = () =>
+      boxOf(10, 400, 100, 40);
+
+    fireEvent.pointerDown(columns, { button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+    fireEvent(
+      window,
+      new PointerEvent('pointermove', { pointerId: 1, clientX: 400, clientY: 100, bubbles: true }),
+    );
+
+    expect(screen.queryByText(/selected/)).toBeNull();
+  });
+
+  it('never mixes the archived scope with the active one', () => {
+    groups.current = [{ key: 'building', sessions: [session] }];
+    state.archivedSessions = { [wsId]: [shelved] };
+    render(<StageBoard workspaceId={wsId} sessions={[session]} onCreateSession={onCreate} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'card s-1' }), { altKey: true });
+    fireEvent.click(screen.getByRole('button', { name: 'card s-9' }), { altKey: true });
+
+    expect(screen.getByText('1 selected')).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Restore \(1\)$/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Archive/ })).toBeNull();
+  });
+
+  it('keeps the active-lane hits when a lasso spans into the archived column', () => {
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
+      return 1;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+    groups.current = [
+      { key: 'building', sessions: [session] },
+      { key: 'review', sessions: [other] },
+    ];
+    state.archivedSessions = { [wsId]: [shelved] };
+    render(
+      <StageBoard workspaceId={wsId} sessions={[session, other]} onCreateSession={onCreate} />,
+    );
+
+    const cardA = screen.getByRole('button', { name: 'card s-1' });
+    const cardB = screen.getByRole('button', { name: 'card s-2' });
+    const cardShelved = screen.getByRole('button', { name: 'card s-9' });
+    const columns = cardA.closest('[data-testid="stage-column"]')?.parentElement as HTMLElement;
+    columns.getBoundingClientRect = () => boxOf(0, 0, 500, 500);
+    cardA.getBoundingClientRect = () => boxOf(10, 10, 100, 40);
+    cardB.getBoundingClientRect = () => boxOf(200, 10, 100, 40);
+    cardShelved.getBoundingClientRect = () => boxOf(390, 10, 20, 40);
+
+    fireEvent.pointerDown(columns, { button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+    fireEvent(
+      window,
+      new PointerEvent('pointermove', {
+        pointerId: 1,
+        clientX: 400,
+        clientY: 100,
+        bubbles: true,
+      }),
+    );
+
+    expect(screen.getByText('2 selected')).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Archive \(2\)$/ })).toBeDefined();
   });
 });

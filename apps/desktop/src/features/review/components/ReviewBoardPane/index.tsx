@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ResizeHandle, ScrollFade, Skeleton } from '@goodboy/ui';
+import { cn, ResizeHandle, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
@@ -19,6 +19,7 @@ import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import { DiffLayoutToggle } from '../../../../shared/components/DiffLayoutToggle';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 
 type Props = {
   readonly session: Session;
@@ -161,7 +162,7 @@ export const ReviewBoardPane = ({ session }: Props) => {
         <div className="flex min-w-0 flex-1 flex-col">
           {loading ? (
             <div
-              className="flex min-h-0 flex-1 flex-col gap-4 px-6 py-5"
+              className={cn('flex min-h-0 flex-1 flex-col gap-4', PANE_RHYTHM.body)}
               role="status"
               aria-label="Loading diff"
             >
@@ -177,11 +178,11 @@ export const ReviewBoardPane = ({ session }: Props) => {
               ))}
             </div>
           ) : error != null ? (
-            <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
+            <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
               <ErrorStrip label="the diff" error={new Error(error)} onRetry={refresh} />
             </div>
           ) : files.length === 0 ? (
-            <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
+            <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
               <LensEmptyState
                 tone={CONCEPT_TONE.diff}
                 icon={CONCEPT_ICONS.diff}

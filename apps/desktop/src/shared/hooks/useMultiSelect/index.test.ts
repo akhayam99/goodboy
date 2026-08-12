@@ -78,6 +78,39 @@ describe('useMultiSelect', () => {
     expect(result.current.selected).toEqual(['d', 'c', 'b']);
   });
 
+  it('adds and removes with the alt key', () => {
+    const { result } = renderHook(() => useMultiSelect<(typeof IDS)[number]>([...IDS]));
+
+    act(() => result.current.handleItemClick('a', click({})));
+    act(() => result.current.handleItemClick('c', click({ altKey: true })));
+    expect(result.current.selected).toEqual(['a', 'c']);
+
+    act(() => result.current.handleItemClick('c', click({ altKey: true })));
+    expect(result.current.selected).toEqual(['a']);
+  });
+
+  it('replaces or extends the selection from a lasso, without duplicates', () => {
+    const { result } = renderHook(() => useMultiSelect<(typeof IDS)[number]>([...IDS]));
+
+    act(() => result.current.selectIds(['a', 'b'], 'replace'));
+    expect(result.current.selected).toEqual(['a', 'b']);
+
+    act(() => result.current.selectIds(['b', 'c'], 'add'));
+    expect(result.current.selected).toEqual(['a', 'b', 'c']);
+
+    act(() => result.current.selectIds(['d'], 'replace'));
+    expect(result.current.selected).toEqual(['d']);
+  });
+
+  it('anchors a shift range on the last id the lasso touched', () => {
+    const { result } = renderHook(() => useMultiSelect<(typeof IDS)[number]>([...IDS]));
+
+    act(() => result.current.selectIds(['a', 'b'], 'replace'));
+    act(() => result.current.handleItemClick('d', click({ shiftKey: true })));
+
+    expect(result.current.selected).toEqual(['a', 'b', 'c', 'd']);
+  });
+
   it('starts a fresh selection when a range has no anchor', () => {
     const { result } = renderHook(() => useMultiSelect<(typeof IDS)[number]>([...IDS]));
 

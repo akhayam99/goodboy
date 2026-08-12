@@ -1,10 +1,11 @@
 import { useRef } from 'react';
-import { CheckCircle2, Sparkles } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { Divider, MetaRow, Popover, ScrollFade, cn } from '@goodboy/ui';
 import type { Agent, AgentId, PlanConsumption } from '@goodboy/types';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 import { fmtTimestamp } from './fmtTimestamp';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly creatorName: string;
@@ -44,7 +45,7 @@ export const PlanProvenance = ({
       <MetaRow
         items={[
           <span key="creator" className="inline-flex min-w-0 items-center gap-1.5">
-            <Sparkles size={11} aria-hidden className="shrink-0 text-warning" />
+            <CONCEPT_ICONS.agents size={11} aria-hidden className="shrink-0 text-primary" />
             <span>Created by</span>
             <button
               type="button"

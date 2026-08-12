@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionPlans, type LensKind } from '../../../../store';
 import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
-import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
+import { useIsBranchlessSession } from '../useIsBranchlessSession';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { buildSessionBreadcrumb } from '../../components/SessionWorkspace/sessionBreadcrumb';
@@ -14,11 +14,7 @@ type Params = {
 
 export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbCrumb> => {
   const sessionId = session.id as SessionId;
-  const workspaceKind = useAppStore(
-    (s) => s.workspaces?.find((workspace) => workspace.id === session.workspaceId)?.kind ?? 'repo',
-  );
-  const sessionBranch = useAppStore((s) => s.sessionBranches[sessionId]);
-  const isBranchless = isBranchlessSession({ workspaceKind, branch: sessionBranch });
+  const isBranchless = useIsBranchlessSession({ session });
   const storedActiveLens = useAppStore((s) => s.activeLens[sessionId] ?? null);
   const lens =
     isBranchless && storedActiveLens != null && !SIMPLE_LENSES.has(storedActiveLens)
@@ -35,9 +31,8 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
 
   const focusedWorkflowName = useMemo(() => {
     const focusedRun = attachedWorkflowRuns.find(({ run }) => run.id === focusedWorkflowRunId);
-    const visibleRun = focusedRun ?? (lens === 'workflows' ? attachedWorkflowRuns[0] : null);
-    return visibleRun == null ? null : workflowKindName(visibleRun.workflow);
-  }, [focusedWorkflowRunId, attachedWorkflowRuns, lens]);
+    return focusedRun == null ? null : workflowKindName(focusedRun.workflow);
+  }, [focusedWorkflowRunId, attachedWorkflowRuns]);
 
   const focusedPlanTitle = useMemo(
     () => plans.find((p) => p.id === focusedPlanId)?.title ?? null,

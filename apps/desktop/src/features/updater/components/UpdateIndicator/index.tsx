@@ -33,7 +33,8 @@ export const UpdateIndicator = ({ variant }: Props) => {
   const trigger = (
     <Chip
       as="button"
-      tone="primary"
+      tone="accent"
+      emphasis="strong"
       shape={variant === 'pip' ? 'pill' : 'badge'}
       icon={<ArrowUpCircle size={11} aria-hidden />}
       label={downloading ? `Updating to ${targetVersion}…` : `Update to ${targetVersion}`}

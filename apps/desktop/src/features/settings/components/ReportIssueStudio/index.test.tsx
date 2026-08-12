@@ -11,6 +11,13 @@ const mocks = vi.hoisted(() => ({
     (args: ReadonlyArray<string>, opts: Readonly<Record<string, unknown>>) => Promise<GhRunResult>
   >(async () => ({ stdout: '', stderr: '', exitCode: 0 })),
   openUrl: vi.fn<(url: string) => Promise<void>>(async () => undefined),
+  invoke: vi.fn<(cmd: string, args: Record<string, unknown>) => Promise<unknown>>(
+    async () => '/tmp/goodboy-report-1',
+  ),
+}));
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: mocks.invoke,
 }));
 
 vi.mock('../../../../store', async () => {
@@ -70,6 +77,8 @@ beforeEach(() => {
   mocks.run.mockImplementation(async () => ({ stdout: '', stderr: '', exitCode: 0 }));
   mocks.openUrl.mockReset();
   mocks.openUrl.mockImplementation(async () => undefined);
+  mocks.invoke.mockReset();
+  mocks.invoke.mockImplementation(async () => '/tmp/goodboy-report-1');
 });
 afterEach(cleanup);
 
@@ -105,6 +114,113 @@ describe('ReportIssueStudio', () => {
         { normalizer: (text) => text },
       ),
     ).toBeDefined();
+  });
+
+  const attachOneImage = () => {
+    useAppStore.getState().addBugReportImages({
+      images: [
+        {
+          id: 'shot-1',
+          fileName: 'board.png',
+          mimeType: 'image/png',
+          sizeBytes: 2048,
+          dataUrl: 'data:image/png;base64,AAAA',
+        },
+      ],
+    });
+  };
+
+  it('shows the images attached in the popover and names them in the issue body', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    attachOneImage();
+    mocks.run.mockImplementation(async () => ({
+      stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
+      stderr: '',
+      exitCode: 0,
+    }));
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    expect(screen.getByAltText('board.png')).toBeDefined();
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+
+    expect(mocks.run.mock.calls[0]?.[0]).toContain(
+      'Type: Bug\nArea: Board and sessions\nVersion: 0.1.69\n\nFreezes on archive.\n\nScreenshots to drag into this issue: board.png',
+    );
+  });
+
+  it('writes the attached image bytes out to a folder before the issue is filed', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    attachOneImage();
+    mocks.run.mockImplementation(async () => ({
+      stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
+      stderr: '',
+      exitCode: 0,
+    }));
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+
+    expect(mocks.invoke).toHaveBeenCalledWith('bug_report_stage_images', {
+      images: [{ fileName: 'board.png', dataBase64: 'AAAA' }],
+    });
+  });
+
+  it('stages the images on the fallback path too, where the link cannot carry them', async () => {
+    setGithubStatus({ available: false, mode: 'absent' });
+    attachOneImage();
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open on GitHub' }));
+    });
+
+    expect(mocks.invoke).toHaveBeenCalledWith('bug_report_stage_images', {
+      images: [{ fileName: 'board.png', dataBase64: 'AAAA' }],
+    });
+    expect(mocks.openUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('files nothing and keeps the draft when the images cannot be written out', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    attachOneImage();
+    mocks.invoke.mockImplementation(async () => {
+      throw new Error('disk is full');
+    });
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+
+    expect(mocks.run).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toContain('disk is full');
+    expect(useAppStore.getState().bugReportDraft.images).toHaveLength(1);
+  });
+
+  it('never reaches for the file system when no image is attached', async () => {
+    setGithubStatus({ available: true, mode: 'gh-cli' });
+    mocks.run.mockImplementation(async () => ({
+      stdout: 'https://github.com/akhayam99/goodboy/issues/99\n',
+      stderr: '',
+      exitCode: 0,
+    }));
+    render(<ReportIssueStudio onClose={vi.fn()} />);
+
+    fillReport({ area: 'board-sessions', title: 'Board freeze', notes: 'Freezes on archive.' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    });
+
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
   it('sends directly through gh when connected, and opens the created issue', async () => {

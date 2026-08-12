@@ -55,6 +55,7 @@ type Runs = {
   lanes: ReadonlyArray<unknown>;
   freeAgents: ReadonlyArray<unknown>;
   resolveQueue: ReadonlyArray<unknown>;
+  blockedLanes?: ReadonlyArray<unknown>;
   completedLanes?: ReadonlyArray<unknown>;
   completedFreeAgents?: ReadonlyArray<unknown>;
   completedResolveQueue?: ReadonlyArray<unknown>;
@@ -105,6 +106,7 @@ const { store, hooks, runs } = vi.hoisted(() => ({
     lanes: [],
     freeAgents: [],
     resolveQueue: [],
+    blockedLanes: [],
     completedLanes: [],
     completedFreeAgents: [],
     completedResolveQueue: [],
@@ -282,6 +284,7 @@ beforeEach(() => {
   runs.lanes = [];
   runs.freeAgents = [];
   runs.resolveQueue = [];
+  runs.blockedLanes = [];
   runs.completedLanes = [];
   runs.completedFreeAgents = [];
   runs.completedResolveQueue = [];
@@ -409,6 +412,22 @@ describe('SessionOverviewPane next up', () => {
     const { onSelectLens } = renderPane();
     fireEvent.click(screen.getByRole('button', { name: 'Restart the step' }));
     expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', 'run-7');
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+  });
+
+  it('scans the blocked lanes so a workflow stuck on a failed step still surfaces', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('failed')] };
+    runs.blockedLanes = [
+      completedLane({
+        runId: 'run-8',
+        steps: [
+          { stepId: 's1', name: 'Review', kind: 'reviewer', status: 'stalled', children: [] },
+        ],
+      }),
+    ];
+    const { onSelectLens } = renderPane();
+    fireEvent.click(screen.getByRole('button', { name: 'Restart the step' }));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', 'run-8');
     expect(onSelectLens).toHaveBeenCalledWith('workflows');
   });
 
@@ -589,6 +608,13 @@ describe('SessionOverviewPane activity', () => {
     expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
 
+  it('counts nothing to resolve once every resolver has finished', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
+    runs.completedResolveQueue = [spawnNode({ id: 'resolver-done', status: 'done' })];
+    renderPane();
+    expect(screen.queryByText(/to resolve/)).toBeNull();
+  });
+
   it('opens a completed workflow in one click, focusing the run first', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
     runs.completedLanes = [completedLane()];
@@ -597,6 +623,25 @@ describe('SessionOverviewPane activity', () => {
     expect(screen.queryByText('Completed workflow')).toBeNull();
     fireEvent.click(screen.getByText('1 completed workflow'));
     expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', 'completed-run');
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+  });
+
+  it('counts a blocked workflow apart from the completed ones', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
+    runs.blockedLanes = [
+      completedLane({
+        runId: 'blocked-run',
+        workflowName: 'Blocked workflow',
+        steps: [
+          { stepId: 's1', name: 'Review', kind: 'reviewer', status: 'stalled', children: [] },
+        ],
+      }),
+    ];
+    runs.completedLanes = [completedLane()];
+    const { onSelectLens } = renderPane();
+    expect(screen.getByText('1 completed workflow')).toBeDefined();
+    fireEvent.click(screen.getByText('1 blocked workflow'));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', 'blocked-run');
     expect(onSelectLens).toHaveBeenCalledWith('workflows');
   });
 
@@ -721,6 +766,20 @@ describe('SessionOverviewPane pipeline lane next-step badge', () => {
     });
     expect(store.setFocusedWorkflowRun).not.toHaveBeenCalled();
     expect(onSelectLens).not.toHaveBeenCalledWith('workflows');
+  });
+
+  it('names the step the workflow is waiting on as what comes next', () => {
+    const { onSelectLens } = renderPane(sessionWithRun());
+    expect(screen.getByText('Execute is next')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'View workflow' }));
+    expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith('sess-1', RUN_ID);
+    expect(onSelectLens).toHaveBeenCalledWith('workflows');
+  });
+
+  it('stays quiet about the next step while its agent is running', () => {
+    store.sessionPhaseRuns = { 'sess-1': [pendingAgent('running')] };
+    renderPane(sessionWithRun());
+    expect(screen.queryByText('Execute is next')).toBeNull();
   });
 
   it('clicking the card body navigates to the workflow without starting the step', () => {

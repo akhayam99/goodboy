@@ -1,12 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-  useRef,
-  useLayoutEffect,
-  type ReactNode,
-} from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, GitBranch, RefreshCw, X } from 'lucide-react';
 import { Divider, ScrollFade, Skeleton, cn } from '@goodboy/ui';
@@ -76,7 +68,6 @@ type Props = {
   diffFocus?: DiffFocus | null;
   showToolbarClose?: boolean;
   presentation?: 'dialog' | 'pane';
-  paneActions?: ReactNode;
 };
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
@@ -283,7 +274,6 @@ export const DiffViewerContent = ({
   diffFocus = null,
   showToolbarClose = true,
   presentation = 'dialog',
-  paneActions = null,
 }: Props) => {
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [focusPath, setFocusPath] = useState<string | null>(null);
@@ -837,7 +827,6 @@ export const DiffViewerContent = ({
           </div>
           {!isEmpty ? (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
-              {paneActions}
               <DiffToolbar
                 title={title}
                 prNumber={prNumber}
@@ -867,7 +856,6 @@ export const DiffViewerContent = ({
             </div>
           ) : (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
-              {paneActions}
               {isGitAware &&
                 (isDefaultView ? (
                   <button

@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, Divider, EmptyState, Eyebrow, Skeleton } from '@goodboy/ui';
-import type { Session, SessionStage, WorkspaceId } from '@goodboy/types';
+import { Button, cn, Divider, EmptyState, Eyebrow, Skeleton } from '@goodboy/ui';
+import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useStageGroupedSessions } from '../../../../store';
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import { ArchiveSessionConfirm } from '../../../session/components/ArchiveSessionConfirm';
 import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionConfirm';
 import { WorkspaceGitPanel } from '../WorkspaceGitPanel';
+import { BulkActionBar } from '../BulkActionBar';
 import { useWorkspaceGitStatus } from '../../hooks/useWorkspaceGitStatus';
+import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { StageColumn } from './StageColumn';
 import { useBoardNavigation } from './useBoardNavigation';
+import { useBoardSelection } from './useBoardSelection';
 
 type Confirm = { readonly kind: 'archive' | 'delete'; readonly session: Session };
 
@@ -24,16 +28,26 @@ const SKELETON_COLUMNS = [3, 2, 2, 1, 2];
 
 const BoardSkeleton = () => (
   <div
-    className="mx-auto flex min-h-0 w-fit max-w-full flex-1 gap-4 overflow-x-hidden"
+    className={cn(
+      'mx-auto flex min-h-0 w-fit max-w-full flex-1 overflow-x-hidden',
+      PANE_RHYTHM.board.colGap,
+    )}
     role="status"
     aria-label="Loading board"
   >
     {SKELETON_COLUMNS.map((cards, col) => (
-      <div key={col} className="flex min-h-0 w-[17rem] min-w-[13.5rem] flex-col gap-3">
+      <div
+        key={col}
+        className={cn(
+          'flex min-h-0 flex-col',
+          PANE_RHYTHM.board.colWidth,
+          PANE_RHYTHM.board.colStack,
+        )}
+      >
         <Skeleton className="h-4 w-24 rounded-full" />
-        <div className="flex flex-col gap-2">
+        <div className={cn('flex flex-col', PANE_RHYTHM.board.cardGap)}>
           {Array.from({ length: cards }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+            <Skeleton key={i} className="h-[8.25rem] w-full rounded-lg" />
           ))}
         </div>
       </div>
@@ -74,6 +88,27 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
     return map;
   }, [groups]);
 
+  const activeSessions = useMemo(
+    () => STAGES.flatMap((stage) => [...(byStage.get(stage) ?? EMPTY_ARRAY)]),
+    [byStage],
+  );
+  const selection = useBoardSelection({ activeSessions, archivedSessions: archived });
+  const columnsRef = useRef<HTMLDivElement | null>(null);
+  const onLassoSelect = useCallback(
+    (ids: ReadonlyArray<SessionId>, mode: 'replace' | 'add') => {
+      const archivedIds = new Set(archived.map((session) => session.id as SessionId));
+      const inArchived = ids.filter((id) => archivedIds.has(id));
+      const inActive = ids.filter((id) => !archivedIds.has(id));
+      if (inArchived.length > inActive.length) {
+        selection.archived.selectIds(inArchived, mode);
+        return;
+      }
+      selection.active.selectIds(inActive, mode);
+    },
+    [archived, selection],
+  );
+  const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
+
   const empty = sessions.length === 0;
   const gitReady = gitStatus === null || gitStatus.state === 'ready';
   const blockedReason =
@@ -82,7 +117,7 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
       : 'This project needs a git repository with one commit first';
 
   return (
-    <div className="flex h-full w-full flex-col gap-4 p-6">
+    <div className={cn('flex h-full w-full flex-col gap-4', PANE_RHYTHM.board.pad)}>
       {rootPath != null && gitStatus !== null && (
         <>
           <div className="shrink-0">
@@ -100,6 +135,11 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
               <span className="text-2xs tabular-nums text-muted-foreground/60">
                 {sessions.length}
               </span>
+              {sessions.length > 1 && (
+                <span className="hidden text-3xs text-muted-foreground/50 sm:inline">
+                  ⌥click to select · drag to lasso
+                </span>
+              )}
             </span>
             <Button
               size="sm"
@@ -138,13 +178,21 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
 
       {boardReady && !empty && (
         <div className="flex min-h-0 flex-1 overflow-x-auto">
-          <div className="mx-auto flex min-h-0 w-fit max-w-full gap-4">
+          <div
+            ref={columnsRef}
+            onPointerDown={lasso.onPointerDown}
+            className={cn(
+              'relative mx-auto flex min-h-0 w-fit max-w-full',
+              PANE_RHYTHM.board.colGap,
+            )}
+          >
             {STAGES.map((stage) => (
               <StageColumn
                 key={stage}
                 spec={{ kind: 'stage', stage }}
                 sessions={byStage.get(stage) ?? EMPTY_ARRAY}
                 nav={nav}
+                selection={selection.active}
                 onArchive={onArchive}
                 onDelete={onDelete}
                 onRestore={nav.restore}
@@ -155,12 +203,39 @@ export const StageBoard = ({ workspaceId, sessions, onCreateSession }: Props) =>
               spec={{ kind: 'archived' }}
               sessions={archived}
               nav={nav}
+              selection={selection.archived}
               onArchive={onArchive}
               onDelete={onDelete}
               onRestore={nav.restore}
             />
+            {lasso.rect && (
+              <div
+                aria-hidden
+                style={{
+                  left: lasso.rect.left,
+                  top: lasso.rect.top,
+                  width: lasso.rect.width,
+                  height: lasso.rect.height,
+                }}
+                className="pointer-events-none absolute z-10 rounded-sm border border-primary/60 bg-primary/10"
+              />
+            )}
           </div>
         </div>
+      )}
+
+      {selection.selectedSessions.length > 0 && (
+        <BulkActionBar
+          scope={selection.scope}
+          sessions={selection.selectedSessions}
+          onSelectAll={
+            selection.scope === 'archived'
+              ? selection.archived.selectAll
+              : selection.active.selectAll
+          }
+          onClear={selection.clearAll}
+          className="shrink-0"
+        />
       )}
 
       {confirm?.kind === 'archive' && (

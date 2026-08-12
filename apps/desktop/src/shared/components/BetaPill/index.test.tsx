@@ -16,11 +16,15 @@ afterEach(() => {
   openUrlMock.mockClear();
 });
 
+const TRIGGER_LABEL = 'Beta build, open the sponsor panel';
+
 describe('BetaPill', () => {
-  it('still reads Beta on the trigger', () => {
+  it('reads as a two-part Beta and Sponsor trigger', () => {
     render(<BetaPill />);
 
-    expect(screen.getByRole('button', { name: 'Beta' })).toBeTruthy();
+    const trigger = screen.getByRole('button', { name: TRIGGER_LABEL });
+
+    expect(trigger.textContent).toBe('BetaSponsor');
   });
 
   it('opens the support popover on click', () => {
@@ -28,7 +32,7 @@ describe('BetaPill', () => {
 
     expect(screen.queryByRole('dialog', { name: 'Support Goodboy' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Beta' }));
+    fireEvent.click(screen.getByRole('button', { name: TRIGGER_LABEL }));
 
     expect(screen.getByRole('dialog', { name: 'Support Goodboy' })).toBeTruthy();
   });
@@ -36,7 +40,7 @@ describe('BetaPill', () => {
   it('opens the exact sponsor URL and nothing else when the action is clicked', () => {
     render(<BetaPill />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Beta' }));
+    fireEvent.click(screen.getByRole('button', { name: TRIGGER_LABEL }));
     fireEvent.click(screen.getByRole('button', { name: 'Sponsor on GitHub' }));
 
     expect(openUrlMock).toHaveBeenCalledTimes(1);
@@ -46,7 +50,7 @@ describe('BetaPill', () => {
   it('closes on escape', () => {
     render(<BetaPill />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Beta' }));
+    fireEvent.click(screen.getByRole('button', { name: TRIGGER_LABEL }));
     expect(screen.getByRole('dialog', { name: 'Support Goodboy' })).toBeTruthy();
 
     fireEvent.keyDown(window, { key: 'Escape' });

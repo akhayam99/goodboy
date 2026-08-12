@@ -375,6 +375,22 @@ describe('WorkflowRow detail dashboard', () => {
     expect(onPickAgent).toHaveBeenCalledWith(agents[0]!.id);
   });
 
+  it('closes the dashboard with the recap the orchestrator kept', () => {
+    renderDetail({ runOverride: { ...run, orchestratorSummary: '- shipped the gate' } });
+
+    const steps = screen.getByTestId('workflow-step-graph');
+    const recap = screen.getByTestId('workflow-run-summary');
+
+    expect(recap.textContent).toContain('shipped the gate');
+    expect(steps.compareDocumentPosition(recap)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('takes no room on a run the orchestrator never recapped', () => {
+    renderDetail();
+
+    expect(screen.queryByTestId('workflow-run-summary')).toBeNull();
+  });
+
   it('deletes the workflow run after confirmation', () => {
     const onDeleteWorkflow = vi.fn(async () => undefined);
     renderDetail({ onDeleteWorkflow });
@@ -384,6 +400,38 @@ describe('WorkflowRow detail dashboard', () => {
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
     expect(onDeleteWorkflow).toHaveBeenCalledWith(RUN_ID);
+  });
+});
+
+describe('WorkflowRow substep disclosure', () => {
+  const child: Agent = {
+    id: 'agent-3' as AgentId,
+    sessionId: SESSION_ID,
+    stepId: 'step-2' as StepId,
+    workflowRunId: RUN_ID,
+    ordinal: 2,
+    name: 'Sub one',
+    status: 'pending',
+  };
+
+  it('folds the subagents away behind their count', () => {
+    renderDetail({
+      variant: 'sidebar',
+      childrenByParentId: new Map([['agent-2', [child]]]),
+    });
+
+    const trigger = screen.getByRole('button', { name: /1 subagent/i });
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('unfolds the subagents on its own while one of them is running', () => {
+    renderDetail({
+      variant: 'sidebar',
+      childrenByParentId: new Map([['agent-2', [{ ...child, status: 'running' as const }]]]),
+    });
+
+    const trigger = screen.getByRole('button', { name: /1 subagent/i });
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
   });
 });
 

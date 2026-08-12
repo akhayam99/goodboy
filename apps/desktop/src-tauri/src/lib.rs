@@ -58,6 +58,15 @@ fn suppress_webkit_media_remote() {
     }
 }
 
+/// Kills every child process the app still owns. Idempotent: each registry is
+/// drained, so a second call after the window teardown finds nothing left.
+fn drain_child_processes(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
+    terminal::shutdown(&app.state::<terminal::TerminalRegistry>());
+    provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(target_os = "macos")]
@@ -91,6 +100,21 @@ pub fn run() {
     let slack_token_cache = slack::SlackTokenCache::new();
 
     tauri::Builder::default()
+        .on_window_event(|window, event| {
+            use tauri::Manager;
+            if !matches!(event, tauri::WindowEvent::Destroyed) {
+                return;
+            }
+            let app = window.app_handle();
+            let survivors = app
+                .webview_windows()
+                .keys()
+                .filter(|label| label.as_str() != window.label())
+                .count();
+            if survivors == 0 {
+                drain_child_processes(app);
+            }
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .manage(database)
@@ -200,6 +224,7 @@ pub fn run() {
             attachment::attachment_read,
             attachment::attachment_delete,
             attachment::attachment_read_dropped,
+            attachment::bug_report_stage_images,
             file_versions::file_versions_begin_snapshot,
             file_versions::file_versions_finalize_snapshot,
             file_versions::file_versions_list_staged_snapshots,
@@ -359,6 +384,14 @@ pub fn run() {
             slack::slack_add_reaction,
             qa_preview::qa_deciding_workflow_runs,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if matches!(
+                event,
+                tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
+            ) {
+                drain_child_processes(app);
+            }
+        });
 }

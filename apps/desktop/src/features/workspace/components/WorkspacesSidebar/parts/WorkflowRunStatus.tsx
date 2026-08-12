@@ -1,6 +1,7 @@
-import { AlertTriangle, Ban, Check, CircleStop, Link2, Pause, Wand2 } from 'lucide-react';
+import { AlertTriangle, Ban, Check, CircleStop, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { StatusDot, cn } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -120,7 +121,7 @@ export const WorkflowRunStatus = ({
   if (isDeciding && !hasOrchestratorStrip) {
     return (
       <span className={cn(baseClass, 'bg-accent/10 text-accent')}>
-        <Wand2 size={10} aria-hidden />
+        <CONCEPT_ICONS.orchestrator size={10} aria-hidden />
         Next step due
       </span>
     );

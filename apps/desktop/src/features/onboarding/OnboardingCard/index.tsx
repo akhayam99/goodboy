@@ -1,4 +1,4 @@
-import { Check, Sparkles, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import {
   visibleOnboardingSteps,
@@ -9,6 +9,7 @@ import {
   type OnboardingStepId,
 } from '../onboarding-store';
 import { useOnboardingProgress, type OnboardingProgress } from '../hooks/useOnboardingProgress';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 
 const GROUP_LABEL: Record<OnboardingGroup, string> = {
   setup: 'Setup',
@@ -90,7 +91,7 @@ function CompletedBody() {
     <>
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-[0.08em] text-success">
-          <Sparkles size={11} aria-hidden />
+          <CONCEPT_ICONS.decisions size={11} aria-hidden />
           Setup complete
         </span>
         <button

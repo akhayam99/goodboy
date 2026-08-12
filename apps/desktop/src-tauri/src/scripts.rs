@@ -51,6 +51,27 @@ impl ScriptRegistry {
     }
 }
 
+/// Drains every live script run, killing the whole pty session behind each
+/// leader. Killing the leader alone leaves grandchildren holding ports.
+pub fn shutdown(registry: &ScriptRegistry) {
+    let slots: Vec<PtySlot> = match registry.0.lock() {
+        Ok(mut map) => map.drain().map(|(_, slot)| slot).collect(),
+        Err(_) => return,
+    };
+    for slot in slots {
+        let Ok(mut guard) = slot.lock() else {
+            continue;
+        };
+        let Some(mut run) = guard.take() else {
+            continue;
+        };
+        if let Some(leader_pid) = run.child.process_id() {
+            crate::terminal::terminate_pty_session(leader_pid);
+        }
+        let _ = run.child.kill();
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Error type
 // ---------------------------------------------------------------------------

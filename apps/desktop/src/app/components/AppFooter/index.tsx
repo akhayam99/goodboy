@@ -2,7 +2,6 @@ import { Fragment } from 'react';
 import { Divider } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { useAppStore } from '../../../store';
-import { useUnseenRelease } from '../../../features/changelog/hooks/useUnseenRelease';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
 import { BetaPill } from '../../../shared/components/BetaPill';
@@ -69,8 +68,6 @@ export const AppFooter = ({
   const noProviderConnected = useAppStore(
     (s) => !s.providers.some((p) => p.connection === 'connected'),
   );
-  const hasUnseenRelease = useUnseenRelease();
-
   const enabled = {
     github: githubEnabled,
     gitlab: gitlabEnabled,
@@ -121,7 +118,10 @@ export const AppFooter = ({
           ))}
         </div>
 
-        <BetaPill />
+        <div className="flex items-center gap-2">
+          <BetaPill />
+          <UpdateIndicator variant="pip" />
+        </div>
 
         <div className="flex items-center gap-0.5">
           <FooterButton
@@ -149,10 +149,8 @@ export const AppFooter = ({
             onClick={onOpenSettings}
             active={activeStudio === 'settings'}
           />
-          <UpdateIndicator variant="pip" />
           <MoreStudiosPopover
             activeStudio={activeStudio}
-            hasUnseenRelease={hasUnseenRelease}
             openers={{
               budget: onOpenBudget,
               impact: onOpenImpact,

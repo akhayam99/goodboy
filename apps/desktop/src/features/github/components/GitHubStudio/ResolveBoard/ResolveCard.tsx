@@ -1,6 +1,6 @@
 import type { AgentId, ProviderId } from '@goodboy/types';
 import { Checkbox, Chip, cn } from '@goodboy/ui';
-import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw, Sparkles } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw } from 'lucide-react';
 import { modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import type { CommentThread } from '../../../comment-threads';
@@ -12,6 +12,7 @@ import type { ResolverLink } from '../../../../session/resolver-linkage';
 import { ResolveConfigPopover } from './ResolveConfigPopover';
 import { isClaimedLink } from './isClaimedLink';
 import type { CardConfig } from './config';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly thread: CommentThread;
@@ -157,7 +158,7 @@ export const ResolveCard = ({
                   {failed ? (
                     <RotateCcw size={11} aria-hidden />
                   ) : (
-                    <Sparkles size={11} aria-hidden />
+                    <CONCEPT_ICONS.resolve size={11} aria-hidden />
                   )}
                   {failed ? 'Retry' : 'Resolve'}
                 </button>

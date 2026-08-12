@@ -53,7 +53,7 @@ type PathProbe =
   | { readonly kind: 'invalid'; readonly message: string };
 
 const DEFAULT_SIMPLE_NAME = 'My workspace';
-const WORKSPACE_LINK_DRAFT_VERSION = 1;
+const WORKSPACE_LINK_DRAFT_VERSION = 2;
 
 const MODE_OPTIONS = [
   { value: 'single', label: 'Single project', icon: FolderGit2 },
@@ -65,6 +65,7 @@ type WorkspaceLinkDraft = {
   readonly v: number;
   readonly mode: WorkspaceLinkMode;
   readonly path: string;
+  readonly singleName: string;
   readonly selected: ReadonlyArray<string>;
   readonly mountNames: Record<string, string>;
   readonly containerPath: string;
@@ -128,6 +129,10 @@ const readDraft = ({ storageKey }: { readonly storageKey: string }): WorkspaceLi
     if (path === null) {
       return null;
     }
+    const singleName = typeof record['singleName'] === 'string' ? record['singleName'] : null;
+    if (singleName === null) {
+      return null;
+    }
     const selected = readStringArray({ value: record['selected'] });
     if (selected === null) {
       return null;
@@ -168,6 +173,7 @@ const readDraft = ({ storageKey }: { readonly storageKey: string }): WorkspaceLi
       v: WORKSPACE_LINK_DRAFT_VERSION,
       mode,
       path,
+      singleName,
       selected,
       mountNames,
       containerPath,
@@ -225,6 +231,7 @@ export const WorkspaceLinkForm = ({
 
   const [mode, setMode] = useState<Mode>(modes[0] ?? 'single');
   const [path, setPath] = useState('');
+  const [singleName, setSingleName] = useState('');
   const [validating, setValidating] = useState(false);
   const [probe, setProbe] = useState<PathProbe | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -262,6 +269,7 @@ export const WorkspaceLinkForm = ({
     }
     setMode(modes.includes(draft.mode) ? draft.mode : (modes[0] ?? 'single'));
     setPath(draft.path);
+    setSingleName(draft.singleName);
     setSelected(draft.selected);
     setMountNames(draft.mountNames);
     setContainerPath(draft.containerPath);
@@ -281,6 +289,7 @@ export const WorkspaceLinkForm = ({
       v: WORKSPACE_LINK_DRAFT_VERSION,
       mode,
       path,
+      singleName,
       selected,
       mountNames,
       containerPath,
@@ -300,6 +309,7 @@ export const WorkspaceLinkForm = ({
     draftStorageKey,
     mode,
     path,
+    singleName,
     selected,
     mountNames,
     containerPath,
@@ -481,10 +491,15 @@ export const WorkspaceLinkForm = ({
     setBusy(true);
     setSubmitError(null);
     try {
-      const workspace = await addWorkspace({ rootPath: path });
+      const trimmedName = singleName.trim();
+      const workspace = await addWorkspace({
+        rootPath: path,
+        ...(trimmedName === '' ? {} : { name: trimmedName }),
+      });
       await setCurrentWorkspace(workspace.id);
       clearPersistedDraft();
       setPath('');
+      setSingleName('');
       setProbe(null);
       onComplete({ mode: 'single' });
     } catch (error) {
@@ -492,7 +507,7 @@ export const WorkspaceLinkForm = ({
     } finally {
       setBusy(false);
     }
-  }, [path, addWorkspace, setCurrentWorkspace, clearPersistedDraft, onComplete]);
+  }, [path, singleName, addWorkspace, setCurrentWorkspace, clearPersistedDraft, onComplete]);
 
   const onSubmitMulti = useCallback(async () => {
     setBusy(true);
@@ -711,7 +726,28 @@ export const WorkspaceLinkForm = ({
               </Button>
             </div>
           </FieldRow>
-        ) : mode === 'multi' ? (
+        ) : null}
+
+        {mode === 'single' ? (
+          <>
+            <Divider />
+            <FieldRow
+              label="Display name"
+              help="Optional. Presentation only, the folder on disk keeps its own name."
+              layout="stacked"
+            >
+              <Input
+                value={singleName}
+                placeholder={path === '' ? 'Folder name' : lastPathSegment({ path })}
+                onChange={(event) => setSingleName(event.target.value)}
+                disabled={busy}
+                aria-label="Display name"
+              />
+            </FieldRow>
+          </>
+        ) : null}
+
+        {mode === 'multi' ? (
           <>
             <FieldRow
               label="Projects"
@@ -861,7 +897,7 @@ export const WorkspaceLinkForm = ({
               />
             </FieldRow>
           </>
-        ) : (
+        ) : mode === 'simple' ? (
           <>
             <FieldRow label="Name" help="Name the standalone workspace." layout="stacked">
               <Input
@@ -897,7 +933,7 @@ export const WorkspaceLinkForm = ({
               </div>
             </FieldRow>
           </>
-        )}
+        ) : null}
       </section>
 
       {footerContainer == null ? (

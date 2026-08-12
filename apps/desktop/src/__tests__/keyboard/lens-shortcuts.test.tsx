@@ -74,8 +74,8 @@ vi.mock('../../app/components/Toast', () => ({ ToastProvider: () => null }));
 vi.mock('../../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
 }));
-vi.mock('../../features/workspace/components/WorkspacesSidebar', () => ({
-  WorkspacesSidebar: () => null,
+vi.mock('../../features/session/components/SessionNavSidebar', () => ({
+  SessionNavSidebar: () => null,
 }));
 vi.mock('../../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
 vi.mock('../../features/workspace/components/WorkspaceLinkDialog', () => ({
@@ -237,7 +237,7 @@ describe('App lens shortcuts on darwin', () => {
     expect(setActiveLens).toHaveBeenCalledWith('session-1', 'agents');
   });
 
-  it('leaves the lens alone when the sessions column toggles', () => {
+  it('leaves the lens alone when the session sidebar toggles', () => {
     render(<App />);
 
     press({ code: 'KeyB', key: 'b', metaKey: true });

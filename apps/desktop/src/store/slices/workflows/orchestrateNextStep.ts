@@ -35,6 +35,7 @@ import {
   listOpenQuestionsForSession,
   updateWorkflowRunOrchestrationOutcome,
   updateWorkflowRunOrchestrationStop,
+  updateWorkflowRunOrchestratorSummary,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -199,6 +200,32 @@ export const persistOrchestrationStop = async ({
     workflowRunId,
     patch: (run) =>
       stop == null ? withoutKeys(run, ['orchestrationStop']) : { ...run, orchestrationStop: stop },
+  });
+};
+
+type PersistSummaryParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly summary: string | undefined;
+};
+
+const persistRunSummary = async ({
+  set,
+  sessionId,
+  workflowRunId,
+  summary,
+}: PersistSummaryParams): Promise<void> => {
+  const trimmed = summary?.trim() ?? '';
+  if (trimmed === '') {
+    return;
+  }
+  await updateWorkflowRunOrchestratorSummary(tauriDatabase, workflowRunId, trimmed);
+  patchWorkflowRun({
+    set,
+    sessionId,
+    workflowRunId,
+    patch: (run) => ({ ...run, orchestratorSummary: trimmed }),
   });
 };
 
@@ -560,6 +587,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
+      await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
       if (decision.action === 'next') {
         const enforced = enforceOrchestratorModelPool({
           step: decision.step,
@@ -619,7 +647,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         await get().activateWorkflowAgent({
           sessionId,
           agentId: agent.id,
-          focus: 'agent',
+          focus: 'announce',
           bypassGate: true,
         });
         return;

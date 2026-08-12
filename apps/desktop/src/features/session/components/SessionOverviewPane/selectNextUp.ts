@@ -12,16 +12,11 @@ type NextUpId =
   | 'errored'
   | 'close-out'
   | 'start'
+  | 'next-step'
   | 'follow';
 
 export type NextUpSignal =
-  | 'question'
-  | 'review'
-  | 'checks'
-  | 'resume'
-  | 'stalled'
-  | 'errored'
-  | 'resolve';
+  'question' | 'review' | 'checks' | 'resume' | 'stalled' | 'errored' | 'resolve';
 
 export type NextUpItem = {
   readonly id: NextUpId;
@@ -50,6 +45,13 @@ export type StalledStep = {
   readonly name: string;
 };
 
+export type UpcomingStep = {
+  readonly runId: string;
+  readonly name: string;
+  readonly workflowName: string;
+  readonly remaining: number;
+};
+
 type Params = {
   readonly openQuestions: ReadonlyArray<OpenQuestion>;
   readonly questionBlocksRun: boolean;
@@ -60,6 +62,7 @@ type Params = {
   readonly isFresh: boolean;
   readonly runningAgent: RunningAgent | null;
   readonly resolveCount: number;
+  readonly upcomingStep: UpcomingStep | null;
 };
 
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
@@ -125,6 +128,7 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
     isFresh,
     runningAgent,
     resolveCount,
+    upcomingStep,
   } = params;
   const signals = liveSignals(params);
   const tail = ({ chosen }: { readonly chosen: NextUpSignal }): ReadonlyArray<NextUpSignal> =>
@@ -262,6 +266,24 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
       tone: 'info',
       lens: runningAgent?.lens ?? 'agents',
       itemId: runningAgent?.itemId ?? null,
+      signals,
+    };
+  }
+
+  if (upcomingStep !== null) {
+    return {
+      id: 'next-step',
+      title: `${upcomingStep.name} is next`,
+      detail:
+        upcomingStep.remaining === 0
+          ? `It closes out ${upcomingStep.workflowName}.`
+          : upcomingStep.remaining === 1
+            ? `1 more step follows it in ${upcomingStep.workflowName}.`
+            : `${upcomingStep.remaining} more steps follow it in ${upcomingStep.workflowName}.`,
+      action: 'View workflow',
+      tone: 'info',
+      lens: 'workflows',
+      itemId: upcomingStep.runId,
       signals,
     };
   }

@@ -28,6 +28,7 @@ export type SessionWorkflowRow = {
   orchestration_error: string | null;
   orchestration_stop_kind: string;
   orchestrator_hints: string | null;
+  orchestrator_summary: string | null;
   orchestrator_provider: string | null;
   orchestrator_model: string | null;
   orchestrator_effort: string | null;
@@ -38,7 +39,7 @@ export type SessionWorkflowRow = {
 };
 
 export const SESSION_WORKFLOW_COLS =
-  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, chain_after_run_id, goal, discarded_at, created_at';
+  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, chain_after_run_id, goal, discarded_at, created_at';
 
 type RoutingColumns = {
   readonly provider: string | null;
@@ -113,6 +114,8 @@ export function toWorkflowRun(row: SessionWorkflowRow): WorkflowRun {
     ...(orchestrationStop != null && { orchestrationStop }),
     ...(row.orchestrator_hints != null &&
       row.orchestrator_hints !== '' && { orchestratorHints: row.orchestrator_hints }),
+    ...(row.orchestrator_summary != null &&
+      row.orchestrator_summary !== '' && { orchestratorSummary: row.orchestrator_summary }),
     ...(orchestratorRouting != null && { orchestratorRouting }),
     ...(row.chain_after_run_id != null && {
       chainAfterId: row.chain_after_run_id as WorkflowRunId,
@@ -212,7 +215,7 @@ export const updateWorkflowOrder = async (
         continue;
       }
       await db.execute(
-        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_provider, orchestrator_model, orchestrator_effort, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, trigger_mode, chain_after_run_id, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hints, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           runId,
           sessionId,
@@ -230,6 +233,7 @@ export const updateWorkflowOrder = async (
           prev.orchestration_error,
           prev.orchestration_stop_kind,
           prev.orchestrator_hints,
+          prev.orchestrator_summary,
           prev.orchestrator_provider,
           prev.orchestrator_model,
           prev.orchestrator_effort,
@@ -343,6 +347,17 @@ export const updateWorkflowRunOrchestratorHints = async (
   await db.execute(
     'UPDATE session_workflows SET orchestrator_hints = ? WHERE workflow_run_id = ?',
     [hints, workflowRunId],
+  );
+};
+
+export const updateWorkflowRunOrchestratorSummary = async (
+  db: Database,
+  workflowRunId: WorkflowRunId,
+  summary: string | null,
+): Promise<void> => {
+  await db.execute(
+    'UPDATE session_workflows SET orchestrator_summary = ? WHERE workflow_run_id = ?',
+    [summary, workflowRunId],
   );
 };
 

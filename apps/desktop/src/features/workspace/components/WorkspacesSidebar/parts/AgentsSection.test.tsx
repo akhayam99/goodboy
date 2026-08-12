@@ -50,6 +50,24 @@ vi.mock('@goodboy/ui', () => ({
     </div>
   ),
   cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
+  Collapsible: ({
+    open,
+    onOpenChange,
+    trigger,
+    children,
+  }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    trigger: ReactNode;
+    children: ReactNode;
+  }) => (
+    <div>
+      <button type="button" aria-expanded={open} onClick={() => onOpenChange(!open)}>
+        {trigger}
+      </button>
+      {open ? children : null}
+    </div>
+  ),
   Divider: () => <hr role="separator" />,
   StatusDot: ({ tone }: { tone: string }) => <span data-testid={`status-dot-${tone}`} />,
   formatUsd: (usd: number) => `$${usd}`,

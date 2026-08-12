@@ -8,17 +8,15 @@ import { MORE_STUDIOS, type MoreStudioId } from './moreStudios';
 
 type Props = {
   readonly activeStudio: string | null;
-  readonly hasUnseenRelease: boolean;
   readonly openers: Record<MoreStudioId, () => void>;
 };
 
 const PANEL_WIDTH = 208;
 const PANEL_MAX_HEIGHT = 200;
 const PANEL_LABEL = 'More studios';
-const REST_LABEL = 'More studios: budget, impact and changelog';
-const UNSEEN_LABEL = 'More studios: budget, impact and changelog, new release notes to read';
+const TRIGGER_LABEL = 'More studios: budget, impact and changelog';
 
-export const MoreStudiosPopover = ({ activeStudio, hasUnseenRelease, openers }: Props) => {
+export const MoreStudiosPopover = ({ activeStudio, openers }: Props) => {
   const {
     open: isOpen,
     close,
@@ -44,18 +42,17 @@ export const MoreStudiosPopover = ({ activeStudio, hasUnseenRelease, openers }: 
   };
 
   const holdsActiveStudio = MORE_STUDIOS.some((entry) => entry.id === activeStudio);
-  const label = hasUnseenRelease ? UNSEEN_LABEL : REST_LABEL;
 
   return (
     <div ref={containerRef} className="relative">
-      <Tooltip content={label}>
+      <Tooltip content={TRIGGER_LABEL}>
         <button
           type="button"
           onClick={toggle}
-          aria-label={label}
+          aria-label={TRIGGER_LABEL}
           aria-expanded={isOpen}
           className={cn(
-            'relative flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-medium transition-colors',
+            'flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-medium transition-colors',
             holdsActiveStudio || isOpen
               ? 'bg-muted text-foreground'
               : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
@@ -63,13 +60,6 @@ export const MoreStudiosPopover = ({ activeStudio, hasUnseenRelease, openers }: 
         >
           <MoreHorizontal size={12} aria-hidden />
           <span>More</span>
-          {hasUnseenRelease ? (
-            <span
-              data-testid="more-studios-dot"
-              aria-hidden
-              className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-info"
-            />
-          ) : null}
         </button>
       </Tooltip>
 

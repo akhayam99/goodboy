@@ -1,5 +1,5 @@
 import { type ReactNode, useRef } from 'react';
-import { GripVertical, Trash2, Wand2 } from 'lucide-react';
+import { GripVertical, Trash2 } from 'lucide-react';
 import { Input, Textarea, cn } from '@goodboy/ui';
 import type { AgentRole, ProviderId } from '@goodboy/types';
 import { AGENT_KIND_PALETTE, ROLE_LABEL, ROLE_TO_KIND, type AgentKind } from '../../agent-kind';
@@ -10,6 +10,7 @@ import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { RoleSelect } from '../RoleSelect';
 import { useClickOutside } from '../../../../shared/hooks/useClickOutside';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly ordinal: number;
@@ -251,7 +252,7 @@ export const WorkflowStepCard = ({
                     polishing && 'animate-border-pulse',
                   )}
                 >
-                  <Wand2 size={12} aria-hidden />
+                  <CONCEPT_ICONS.enhance size={12} aria-hidden />
                 </button>
               ) : null}
             </div>

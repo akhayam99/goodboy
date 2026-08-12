@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 
 type Params = {
@@ -51,11 +51,6 @@ export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
   const closeTimer = useRef<number | null>(null);
   const holdCount = useRef(0);
   const wantsClose = useRef(false);
-
-  const leftHidden = useMemo(
-    () => !hasActiveSession || isCollapsed,
-    [hasActiveSession, isCollapsed],
-  );
 
   const clearOpenTimer = useCallback(() => {
     if (openTimer.current === null) {
@@ -189,7 +184,6 @@ export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
   return {
     isCollapsed,
     isPeeking,
-    leftHidden,
     toggle,
     pin,
     requestPeek,

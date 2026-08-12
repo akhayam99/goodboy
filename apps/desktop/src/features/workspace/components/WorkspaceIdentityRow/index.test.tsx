@@ -66,12 +66,12 @@ describe('WorkspaceIdentityRow', () => {
     expect(screen.getByText('New workspace')).toBeDefined();
   });
 
-  it('opens workspace settings from a control on the row, not from the switcher popover', () => {
+  it('opens preferences from a control on the row, not from the switcher popover', () => {
     render(<WorkspaceIdentityRow />);
     const spy = vi.fn();
     window.addEventListener('goodboy:open-workspace-settings', spy);
 
-    fireEvent.click(screen.getByLabelText('Workspace settings'));
+    fireEvent.click(screen.getByLabelText('Preferences'));
 
     expect(spy).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-workspace-settings', spy);

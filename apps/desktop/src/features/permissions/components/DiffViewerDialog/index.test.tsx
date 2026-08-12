@@ -369,20 +369,6 @@ describe('DiffViewerPane', () => {
 
     await waitFor(() => expect(worktreeDiffWorking).toHaveBeenCalledWith('/tmp/worktree', 'all'));
   });
-
-  it('keeps a pane action next to the diff toolbar', async () => {
-    fixtures.files = fileFixture();
-    render(
-      <DiffViewerPane
-        sessionId={SID}
-        worktreePath="/tmp/worktree"
-        paneActions={<button type="button">Back</button>}
-        onClose={vi.fn()}
-      />,
-    );
-
-    expect(await screen.findByRole('button', { name: 'Back' })).toBeDefined();
-  });
 });
 
 describe('line comment add (single + multi-line drag)', () => {

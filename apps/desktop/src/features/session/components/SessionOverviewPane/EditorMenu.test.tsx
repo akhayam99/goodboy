@@ -27,14 +27,12 @@ vi.mock('../../../../shared/components/OverflowMenu', () => ({
     label,
     triggerClassName,
     trigger,
-    side,
   }: {
     label: string;
     triggerClassName: string;
     trigger: ReactNode;
-    side?: string;
   }) => (
-    <button type="button" aria-label={label} className={triggerClassName} data-side={side}>
+    <button type="button" aria-label={label} className={triggerClassName}>
       {trigger}
     </button>
   ),
@@ -55,11 +53,10 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('EditorMenu', () => {
-  it('renders the open-worktree trigger with a visible Open label opening upward', () => {
+  it('renders the open-worktree trigger with a visible Open label', () => {
     render(<EditorMenu sessionId={'sess-1' as SessionId} />);
     const trigger = screen.getByRole('button', { name: /open worktree/i });
     expect(trigger.textContent).toContain('Open');
-    expect(trigger.getAttribute('data-side')).toBe('top');
   });
 
   it('keeps the open-worktree accessible name in compact density', () => {

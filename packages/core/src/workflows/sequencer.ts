@@ -60,6 +60,28 @@ export const currentStep = (template: Workflow, runs: ReadonlyArray<Agent>): Ste
   return sorted[0] ?? null;
 };
 
+export const upcomingSteps = (
+  template: Workflow,
+  runs: ReadonlyArray<Agent>,
+): ReadonlyArray<Step> => {
+  const current = currentStep(template, runs);
+  if (current === null) {
+    return [];
+  }
+  const doneIds = new Set(
+    runs
+      .filter((r) => r.status === 'completed' || r.status === 'skipped')
+      .map((r) => r.stepId)
+      .filter((id): id is Step['id'] => id !== undefined),
+  );
+  const sorted = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
+  const index = sorted.findIndex((s) => s.id === current.id);
+  if (index < 0) {
+    return [];
+  }
+  return sorted.slice(index + 1).filter((s) => !doneIds.has(s.id));
+};
+
 export const findReusableAgent = (runs: ReadonlyArray<Agent>, stepId: Step['id']): Agent | null => {
   const matches = runs.filter((r) => r.stepId === stepId);
   if (matches.length === 0) {

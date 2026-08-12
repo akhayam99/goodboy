@@ -33,20 +33,19 @@ is where a destination belongs.
 The strip is context, never content. Everything in it is a chip, an indicator,
 a crumb, or a trigger that opens something elsewhere. No editor, no form, no
 list is rendered inline in the strip. `WorkspaceRollupStrip` opens the budget
-studio, `WorkspaceIdentityRow` opens a popover, `SessionStripCrumbs` changes
-the active lens. None of them mutates a record in place.
+studio, `WorkspaceIdentityRow` opens a popover. None of them mutates a record
+in place. Session breadcrumbs are not in the strip at all: they belong to the
+page, in `SessionCrumbBar`.
 
 `ReportIssuePopover` is the one control that takes typing, and the carve-out is
 argued in [DESIGN.md](../DESIGN.md): a bug report is not a record until it is
 filed, its two fields live in the `bugReportDraft` slice, and the popover's
 primary action opens the full form rather than sending anything itself.
 
-Exactly one child carries `flex-1`, the crumb region:
+Exactly one child carries `flex-1`, an empty spacer:
 
 ```tsx
-<div className="flex min-w-0 flex-1 items-center overflow-hidden pl-1">
-  {hasActiveSession ? <SessionStripCrumbs /> : null}
-</div>
+<div className="min-w-0 flex-1" />
 ```
 
 Every other child is `shrink-0`. That single decision fixes the truncation
@@ -74,21 +73,22 @@ Two overlay slots sit inside the grid rather than above it. `leftOverlay`
 spans `1 / -1` at `z-20` and is `pointer-events-none` at the root (its children
 opt back in), which is what lets the sidebar peek float over main without
 taking layout. `overlay` spans `main-start / right-end` at `z-30`, so a
-full-surface editor covers main and right but never the sessions column.
+full-surface editor covers main and right but never the session sidebar.
 
-Inside `main`, a session draws its own two columns
-(`features/session/components/SessionWorkspace/index.tsx`): the lens rail at a
-persisted `lensColumnWidth` (default 240, min 200, max 400), a `ResizeHandle`,
-then the pane.
+Inside `main`, a session draws one full-width column
+(`features/session/components/SessionWorkspace/index.tsx`): the pane, nothing
+beside it. Navigation lives in the left sidebar, which `AppShell` already
+persists under `leftSidebarWidth` (min 260, max 640), so there is no second
+width to store.
 
-The lens rail is navigation. `LensColumn`
-(`SessionWorkspace/parts/LensColumn/index.tsx`) renders a `nav` whose rows only
-call `onSelect` or `onSelectOverview`. Row content is data, not decisions:
-`buildLensGroups` (`LensColumn/groups.ts`) returns the four groups (Context,
-Work, Infra, Integrations) with label, icon, tone, count, dot, and the rail just
-paints them. Counts and status dots are read-only signals attached to a
-destination. Session lifecycle is not in the rail: it sits below a `<Divider>`
-in `LensColumnFooter` (see drift 4).
+The lens rail is navigation. `LensNav`
+(`SessionNavSidebar/parts/LensNav/index.tsx`) renders a `nav` whose rows write
+`setActiveLens(session.id, lens)` straight to the store. Row content is data,
+not decisions: `buildLensGroups` (`LensNav/groups.ts`) returns the four groups
+(Context, Work, Infra, Integrations) with label, icon, tone, count, dot, and the
+rail just paints them. Counts and status dots are read-only signals attached to
+a destination. Session lifecycle is not in the rail: it sits below a
+`<Divider>` in `SessionNavFooter` (see drift 4).
 
 ### The pane
 
@@ -103,20 +103,20 @@ lives where it must, and B does not get a second copy.
 **The worked example: `leftHidden`.** `useSessionSidebarVisibility`
 (`features/workspace/hooks/useSessionSidebarVisibility/index.ts`) derives it as
 `!hasActiveSession || isCollapsed`. The first term is not a preference: on the
-board there is no session, so there is no sessions column at all, ever.
+board there is no session, so there is no session sidebar at all, ever.
 Therefore anything that must be reachable from the board cannot live in the
 sidebar. Workspace identity must be reachable from the board, so it lives in
-the strip, and `WorkspacesSidebar` renders no workspace name at all, only the
-Board button and `SessionActivityBar`.
+the strip, and `SessionNavSidebar` never names it: a second, unclickable copy of
+the workspace name under the Board button read like a switcher and was not one.
 
 Current mounts, one each:
 
 | Thing                           | Sole mount                                                                                            |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Workspace identity and switcher | `features/workspace/components/WorkspaceIdentityRow/index.tsx`                                        |
-| Session title (read)            | `features/session/components/SessionStripCrumbs/index.tsx`                                            |
+| Session title (read)            | `features/session/components/SessionCrumbBar/index.tsx`                                               |
 | Session title (rename)          | `SessionOverviewPane/HeaderBand.tsx`                                                                  |
-| Collapse the sessions column    | the toggle in `AppTopBar/index.tsx`, plus ⌘B                                                          |
+| Collapse the session sidebar    | the toggle in `AppTopBar/index.tsx`, plus ⌘B                                                          |
 | Open app settings               | the launcher in `AppFooter/index.tsx`, plus ⌘, and the palette                                        |
 | Report an issue                 | the report control in `AppTopBar/index.tsx`, the button in Settings' App scope panel, and the palette |
 
@@ -125,7 +125,7 @@ Current mounts, one each:
 palette does not build a second one, it dispatches
 `goodboy:open-workspace-switcher` and this row listens.
 
-The title split is the rule applied twice. `SessionStripCrumbs` shows
+The title split is the rule applied twice. `SessionCrumbBar` shows
 `session.goal` as the breadcrumb root and it is read-only there: the click
 target resets the lens to overview (`setActiveLens(session.id, null)`), it does
 not edit. Rename lives in the overview's `HeaderBand`, and
@@ -153,10 +153,11 @@ A hint that would truncate the label beside it moves to the tooltip instead.
 
 When the column is collapsed, `SidebarPeekOverlay`
 (`features/workspace/components/SidebarPeekOverlay/index.tsx`) renders the same
-`<WorkspacesSidebar>` in the `leftOverlay` slot with `onNavigate={closePeek}`.
-There is one sessions list in the codebase.
+`<SessionNavSidebar>` in the `leftOverlay` slot with `onNavigate={closePeek}`,
+in the same mode the pinned column is showing. There is one sessions list in the
+codebase.
 
-Width is the pinned column's persisted width times `PEEK_WIDTH_FACTOR` (1.5),
+Width is the pinned column's persisted width times `PEEK_WIDTH_FACTOR` (1.2),
 clamped to `LEFT_SIDEBAR_MAX`. A panel that is only on screen while the pointer
 rests on it has to be read in one glance, so it is given more room than the
 column the user chose to live with. The factor is applied at read time in the
@@ -313,7 +314,7 @@ Rules:
   that already has an entry. Add the concept to the map instead.
 - One tone per concept, and pass it alongside the icon. Call sites read
   `icon={CONCEPT_ICONS.questions} tone={CONCEPT_TONE.questions}` as a pair;
-  `LensColumn/groups.ts` does this for every rail row.
+  `LensNav/groups.ts` does this for every rail row.
 - Tone is meaning, not decoration. `questions` is `warning` because a question
   blocks someone, `decisions` and `plans` are `success` because they are
   settled, `sentry` is `danger` because it is errors, `terminal` and `settings`
@@ -409,8 +410,8 @@ title's baseline, where 11px would look broken.
 **Why the pane caps at `max-w-5xl`.** That is 64rem, 1024px, which is also the
 window's minimum width (`minWidth: 1024` in `apps/desktop/src-tauri/tauri.conf.json`
 and in `features/workspace/window.ts` for spawned windows). So the cap is never
-the binding constraint at minimum size: the sessions column, the lens rail and
-the pane insets are. The cap exists for wide monitors, where an uncapped
+the binding constraint at minimum size: the session sidebar and the pane insets
+are. The cap exists for wide monitors, where an uncapped
 `text-sm` paragraph would run past a comfortable measure. Content that is not
 prose opts out with `wide` (section 3).
 
@@ -521,10 +522,10 @@ Verified against the code, not speculation.
 4. **Two confirm primitives, and the rail footer is not purely navigation.**
    `InlineConfirm` is the documented one, but icon-dense rows use
    `shared/components/ConfirmPill` instead (label plus check plus cross, no
-   description). `LensColumnFooter.tsx` uses it for archive and delete, which
-   also means the lens column hosts session lifecycle actions, editor launch,
-   git actions and the project switcher below its `<Divider>`. The `nav` above
-   the divider is navigation only; the column as a whole is not.
+   description). `SessionNavFooter.tsx` uses it for archive and delete, which
+   also means the session sidebar hosts session lifecycle actions, editor
+   launch, git actions and the project switcher below its `<Divider>`. The `nav`
+   above the divider is navigation only; the sidebar as a whole is not.
 
 5. **One stale claim in `docs/navigation.md`.** It says the Scripts lens runs at
    `width="5xl"`; `PaneShell` has no `width` prop (only `wide`), and the Scripts

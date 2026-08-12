@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
-import { ImageOff } from 'lucide-react';
-import { Markdown, MetaRow, Skeleton } from '@goodboy/ui';
+import { Markdown, MetaRow } from '@goodboy/ui';
 import type { MessageAttachment, ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
 import { readAttachment } from '../../turn';
-import { fileIconFor } from '../../attachment-kinds';
-import { ImageLightbox } from '../ImageLightbox';
+import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
+import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachmentThumbnail';
 import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '../../../../shared/components/CopyButton';
 
@@ -20,143 +18,32 @@ const formatHHMM = (iso: string): string => {
   return `${hh}:${mm}`;
 };
 
-type AttachmentThumbProps = {
-  attachment: MessageAttachment;
-  workingDir: string | null;
+type MessageAttachmentChipProps = {
+  readonly attachment: MessageAttachment;
+  readonly workingDir: string | null;
 };
 
-const AttachmentThumb = ({ attachment, workingDir }: AttachmentThumbProps) => {
-  if (attachment.kind === 'file') {
-    return <AttachmentFileCard attachment={attachment} workingDir={workingDir} />;
-  }
-  return <AttachmentImage attachment={attachment} workingDir={workingDir} />;
-};
-
-type AttachmentImageProps = {
-  attachment: MessageAttachment;
-  workingDir: string | null;
-};
-
-const AttachmentImage = ({ attachment, workingDir }: AttachmentImageProps) => {
-  const [src, setSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-  useEffect(() => {
-    if (!workingDir) {
-      setFailed(true);
-      return;
-    }
-    let alive = true;
-    setFailed(false);
-    setSrc(null);
-    readAttachment(workingDir, attachment.relPath)
-      .then((dataUrl) => {
-        if (alive) {
-          setSrc(dataUrl);
-        }
-      })
-      .catch(() => {
-        if (alive) {
-          setFailed(true);
-        }
-      });
-    return () => {
-      alive = false;
-    };
-  }, [workingDir, attachment.relPath]);
-
-  if (failed) {
-    return (
-      <div
-        className="flex h-28 w-28 flex-col items-center justify-center gap-1 rounded-lg bg-foreground/5 text-muted-foreground"
-        title={attachment.fileName}
-      >
-        <ImageOff size={16} aria-hidden />
-        <span className="max-w-[6.5rem] truncate px-1 text-2xs">{attachment.fileName}</span>
-      </div>
-    );
-  }
-
-  if (src === null) {
-    return <Skeleton className="h-28 w-28 rounded-lg" />;
-  }
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setPreviewOpen(true)}
-        title={`Preview ${attachment.fileName}`}
-        aria-label={`Preview ${attachment.fileName}`}
-        className="cursor-zoom-in"
-      >
-        <img
-          src={src}
-          alt={attachment.fileName}
-          className="max-h-60 max-w-full rounded-lg object-contain ring-1 ring-primary/20"
-        />
-      </button>
-      {previewOpen ? (
-        <ImageLightbox src={src} alt={attachment.fileName} onClose={() => setPreviewOpen(false)} />
-      ) : null}
-    </>
-  );
-};
-
-type AttachmentFileCardProps = {
-  attachment: MessageAttachment;
-  workingDir: string | null;
-};
-
-const AttachmentFileCard = ({ attachment, workingDir }: AttachmentFileCardProps) => {
-  const [src, setSrc] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const Icon = fileIconFor(attachment.mimeType);
+const MessageAttachmentChip = ({ attachment, workingDir }: MessageAttachmentChipProps) => {
+  const thumbnail = useAttachmentThumbnail({
+    kind: attachment.kind,
+    relPath: attachment.relPath,
+    workingDir,
+  });
   const isPdf = attachment.mimeType === 'application/pdf';
 
-  const openPreview = () => {
-    if (!isPdf || !workingDir) {
-      return;
-    }
-    if (src !== null) {
-      setPreviewOpen(true);
-      return;
-    }
-    setLoading(true);
-    readAttachment(workingDir, attachment.relPath)
-      .then((dataUrl) => {
-        setSrc(dataUrl);
-        setPreviewOpen(true);
-      })
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  };
-
   return (
-    <>
-      <button
-        type="button"
-        disabled={!isPdf}
-        onClick={openPreview}
-        title={isPdf ? `preview ${attachment.fileName}` : attachment.fileName}
-        aria-label={isPdf ? `preview ${attachment.fileName}` : attachment.fileName}
-        className="flex max-w-[16rem] items-center gap-2 rounded-lg bg-foreground/5 px-3 py-2 ring-1 ring-border-soft transition-colors enabled:cursor-zoom-in enabled:hover:bg-foreground/10"
-      >
-        <Icon size={16} aria-hidden className="shrink-0 text-muted-foreground" />
-        <span className="truncate text-xs text-foreground/80">{attachment.fileName}</span>
-        {loading ? <Skeleton className="h-3 w-10 shrink-0 rounded" /> : null}
-      </button>
-      {previewOpen && src !== null ? (
-        <ImageLightbox
-          media="pdf"
-          src={src}
-          alt={attachment.fileName}
-          onClose={() => setPreviewOpen(false)}
-        />
-      ) : null}
-    </>
+    <AttachmentChip
+      fileName={attachment.fileName}
+      mimeType={attachment.mimeType}
+      thumbnail={attachment.kind === 'image' ? thumbnail : undefined}
+      preview={thumbnail.status === 'ready' ? { src: thumbnail.src } : undefined}
+      lazyPreview={
+        isPdf && workingDir
+          ? { load: () => readAttachment(workingDir, attachment.relPath), media: 'pdf' }
+          : undefined
+      }
+      title={attachment.fileName}
+    />
   );
 };
 
@@ -180,7 +67,7 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
       {atts.length > 0 && (
         <div className="flex flex-wrap justify-end gap-1.5">
           {atts.map((a) => (
-            <AttachmentThumb key={a.id} attachment={a} workingDir={workingDir} />
+            <MessageAttachmentChip key={a.id} attachment={a} workingDir={workingDir} />
           ))}
         </div>
       )}

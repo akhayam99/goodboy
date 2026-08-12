@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react';
-import { Play } from 'lucide-react';
+import { useMemo } from 'react';
 import type { Agent, SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../../store';
@@ -8,9 +7,6 @@ import { workflowRunHasOpenQuestions } from '../../../../context/openQuestionsGa
 import { agentRoutingOverrides } from '../../../../workflows/agentRoutingOverrides';
 import { resolveWorkflowAdvance } from '../../../../workflows/advanceGate';
 import { WorkflowNextStepCta } from '../../../../workflows/components/WorkflowNextStepCta';
-import { WorkflowAutorunToggle } from '../../../../workflows/components/WorkflowAutorunToggle';
-import { OrchestratorAction } from '../../../../workflows/components/OrchestratorPanel/OrchestratorAction';
-import { resolveOrchestratorState } from '../../../../workflows/components/OrchestratorPanel/orchestratorState';
 import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRoleModels';
 
 type Props = {
@@ -35,17 +31,10 @@ export const ChatWorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
   const openQuestions = useSessionOpenQuestions(sessionId);
   const hasOpenQuestions = workflowRunHasOpenQuestions(openQuestions, workflowRunId);
   const isAutoRun = run.autoRun === true;
-  const isOrchestrating = useAppStore(
-    (state) => state.orchestratingWorkflowRuns?.[workflowRunId] ?? false,
-  );
   const roleModels = useSessionRoleModels({ sessionId });
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
-  const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
-  const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
-  const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const emitNotification = useAppStore((state) => state.emitNotification);
-  const [isResuming, setIsResuming] = useState(false);
 
   const stepAgents = useMemo(
     () =>
@@ -89,60 +78,8 @@ export const ChatWorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
     effortOverride,
   });
 
-  const isOperatorStopped = isAutoRun === false && run.orchestrationStop?.kind === 'operator';
-  const showAutorunToggle = state.kind === 'automatic' || isOperatorStopped;
-  const orchestratorPhase =
-    run.executionMode === 'dynamic'
-      ? resolveOrchestratorState({
-          run,
-          agents: stepAgents,
-          isOrchestrating,
-          hasOpenQuestions,
-          costUsd: 0,
-        }).phase
-      : null;
-  const showResume = showAutorunToggle && orchestratorPhase === 'stopped';
-
-  if (state.kind === 'complete') {
+  if (state.kind === 'complete' || state.kind === 'automatic') {
     return null;
-  }
-
-  const onResume = async () => {
-    if (isResuming) {
-      return;
-    }
-    setIsResuming(true);
-    try {
-      await retryWorkflowOrchestration(sessionId, workflowRunId);
-    } finally {
-      setIsResuming(false);
-    }
-  };
-
-  if (showAutorunToggle) {
-    return (
-      <div className="ml-auto flex shrink-0 items-center gap-2">
-        {showResume ? (
-          <OrchestratorAction
-            icon={Play}
-            label="Resume the run"
-            variant="primary"
-            tone="warning"
-            testId="chat-workflow-orchestrator-resume"
-            title="Clear the stop, put autorun back on, and ask for the next step"
-            disabled={isResuming}
-            onClick={() => void onResume()}
-          />
-        ) : null}
-        <WorkflowAutorunToggle
-          variant="detail"
-          isOn={isAutoRun}
-          isStepInFlight={isOrchestrating || stepAgents.some((agent) => agent.status === 'running')}
-          onToggle={() => void setWorkflowRunAutoRun(sessionId, workflowRunId, !isAutoRun)}
-          onStopNow={() => void stopWorkflowRunNow(sessionId, workflowRunId)}
-        />
-      </div>
-    );
   }
 
   const onAdvance = async ({ step, isConfirmed }: AdvanceParams) => {

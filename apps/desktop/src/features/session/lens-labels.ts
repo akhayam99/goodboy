@@ -12,15 +12,15 @@ export const LENS_LABEL: Record<LensKind, string> = {
   goal: 'Goal',
   decisions: 'Decisions',
   last_output_summary: 'Session summary',
-  pr: 'Pull request',
+  pr: 'GitHub',
   files: 'Diff',
   explore: 'Explore',
   linear: 'Linear',
   sentry: 'Sentry',
-  gitlab_issues: 'GitLab issues',
-  jira_issues: 'Jira issues',
+  gitlab_issues: 'GitLab',
+  jira_issues: 'Jira',
   github_issue: 'GitHub issue',
-  slack_threads: 'Slack threads',
+  slack_threads: 'Slack',
 };
 
 export const SIMPLE_LENSES = new Set<LensKind>([

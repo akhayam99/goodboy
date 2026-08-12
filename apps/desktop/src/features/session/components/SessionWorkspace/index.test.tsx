@@ -157,23 +157,14 @@ vi.mock('../CreateAgentPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../../../../app/components/AppBreadcrumb', () => ({
-  AppBreadcrumb: ({ crumbs }: { crumbs: ReadonlyArray<{ label: string }> }) => (
-    <div data-testid="breadcrumb">{crumbs.map((crumb) => crumb.label).join(' / ')}</div>
-  ),
-}));
 vi.mock('../SessionOverviewPane', () => ({
   SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
 }));
+vi.mock('../SessionCrumbBar', () => ({
+  SessionCrumbBar: () => <div data-testid="session-crumb-bar" />,
+}));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
 vi.mock('./parts/SessionTopBar', () => ({ SessionTopBar: () => null }));
-vi.mock('./parts/LensColumn', () => ({
-  LensColumn: ({ onSelectOverview }: { onSelectOverview: () => void }) => (
-    <button type="button" onClick={onSelectOverview}>
-      Overview
-    </button>
-  ),
-}));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
 vi.mock('./parts/SlotPane', () => ({ SlotPane: () => null }));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => null }));
@@ -317,7 +308,6 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
-    expect(screen.queryByTestId('breadcrumb')).toBeNull();
     expect(
       screen.getByTestId('chat-view').contains(screen.getByRole('button', { name: 'Resolve' })),
     ).toBe(true);
@@ -358,7 +348,6 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={workflowSession} isActive />);
 
     expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
-    expect(screen.queryByTestId('breadcrumb')).toBeNull();
     expect(screen.queryByText('Part of')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Release flow' })).toBeNull();
   });
@@ -669,6 +658,25 @@ describe('SessionWorkspace pane metadata', () => {
 });
 
 describe('SessionWorkspace breadcrumb visibility', () => {
+  it('seats the crumb bar in the page above the lens', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
+  });
+
+  it('drops the crumb bar once an agent overlay owns the surface', () => {
+    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
+    store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(screen.queryByTestId('session-crumb-bar')).toBeNull();
+  });
+
   it('moves the workflow run name into the chat header while an agent is open', () => {
     const workflowAgent = {
       ...selectedAgent,
@@ -703,7 +711,6 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     render(<SessionWorkspace session={workflowSession} isActive />);
 
-    expect(screen.queryByTestId('breadcrumb')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Release flow' }));
     expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
     expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'workflows');
@@ -737,13 +744,12 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     render(<SessionWorkspace session={workflowSession} isActive />);
 
-    expect(screen.queryByTestId('breadcrumb')).toBeNull();
     expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Resolve' })).toHaveLength(1);
     expect(screen.queryByText('Part of')).toBeNull();
   });
 
-  it('uses the visible workflow name when the only run is not explicitly focused', () => {
+  it('leaves the trail on the list when no run is explicitly focused', () => {
     store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = {};
     store.phaseTemplates = {
@@ -771,11 +777,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
 
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Overview',
-      'Workflows',
-      'refactor',
-    ]);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Workflows']);
   });
 });
 
@@ -811,16 +813,6 @@ describe('SessionWorkspace overview', () => {
 
     expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
-  });
-
-  it('keeps the lens column visible and selects Overview', () => {
-    store.activeLens = { [SESSION_ID]: null };
-    store.selectedAgentId = {};
-
-    render(<SessionWorkspace session={session} isActive />);
-    fireEvent.click(screen.getByRole('button', { name: 'Overview' }));
-
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, null);
   });
 });
 

@@ -15,7 +15,6 @@ import { WorkflowRunDetail } from './WorkflowRunDetail';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../../shared/components/PaneShell/FocusedPane';
-import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
 import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
 
 type Props = {
@@ -83,7 +82,6 @@ export const WorkflowsPane = ({ session }: Props) => {
         count={attachedRuns.length}
         actions={
           <>
-            <WorkSurfaceBackButton sessionId={sessionId} />
             {focusedRun.workflow != null && focusedRun.workflow.isPreset === false ? (
               <GhostActionButton
                 icon={BookmarkPlus}

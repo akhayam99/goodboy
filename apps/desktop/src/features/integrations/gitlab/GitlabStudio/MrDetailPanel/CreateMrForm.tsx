@@ -10,7 +10,7 @@ import {
   SegmentedTabs,
   Textarea,
 } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, PenLine, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowRight, PenLine } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { appendOperatorNotes } from '../../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig';
@@ -19,6 +19,8 @@ import { taskModelAgentSpawnConfig } from '../../../../session/components/AgentS
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
 import { formatError } from '../../../../../shared/lib/errors';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -139,7 +141,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
         <section className="mx-auto flex w-full max-w-2xl flex-col gap-6">
           <section className="flex flex-col">
             <SectionHeader
@@ -151,7 +153,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                   size="sm"
                   options={[
                     { value: 'manual', label: 'Manual', icon: PenLine },
-                    { value: 'agent', label: 'With an agent', icon: Sparkles },
+                    { value: 'agent', label: 'With an agent', icon: CONCEPT_ICONS.agents },
                   ]}
                   value={mode}
                   onChange={setMode}
@@ -264,7 +266,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
               'Drafting…'
             ) : (
               <>
-                <Sparkles size={13} aria-hidden />
+                <CONCEPT_ICONS.agents size={13} aria-hidden />
                 Draft with agent
               </>
             )}

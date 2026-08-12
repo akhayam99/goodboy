@@ -1,8 +1,9 @@
-import { ArrowRight, FolderGit2, LayoutDashboard, Lightbulb, Sparkles, Wrench } from 'lucide-react';
+import { ArrowRight, FolderGit2, LayoutDashboard, Lightbulb, Wrench } from 'lucide-react';
 import { SectionHeader } from '@goodboy/ui';
 import { Block } from './Block';
 import { Callout } from './Callout';
 import { DefinitionList } from './DefinitionList';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = Record<never, never>;
 
@@ -21,7 +22,7 @@ export const StageBoardSection = ({}: Props) => (
           {
             term: 'attention',
             desc: 'An agent replied or hit a question and is waiting on you. Clear these first.',
-            icon: <Sparkles size={11} aria-hidden />,
+            icon: <CONCEPT_ICONS.questions size={11} aria-hidden />,
             tone: 'warning',
           },
           {

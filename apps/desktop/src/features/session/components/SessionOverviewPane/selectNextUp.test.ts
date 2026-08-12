@@ -26,6 +26,7 @@ const everySignal = {
   isFresh: false,
   runningAgent: { lens: 'agents', itemId: 'agent-9' },
   resolveCount: 2,
+  upcomingStep: null,
 } as const;
 
 describe('selectNextUp precedence', () => {

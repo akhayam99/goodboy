@@ -106,6 +106,7 @@ import { m105IntegrationJiraProvider } from './m105-integration-jira-provider';
 import { m106MoonshotProviderRuns } from './m106-moonshot-provider-runs';
 import { m107IntegrationBitbucketProvider } from './m107-integration-bitbucket-provider';
 import { m108IntegrationSlackProvider } from './m108-integration-slack-provider';
+import { m109WorkflowRunSummary } from './m109-workflow-run-summary';
 
 export type Migration = {
   readonly version: number;
@@ -221,4 +222,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 106, sql: m106MoonshotProviderRuns },
   { version: 107, sql: m107IntegrationBitbucketProvider },
   { version: 108, sql: m108IntegrationSlackProvider },
+  { version: 109, sql: m109WorkflowRunSummary },
 ];

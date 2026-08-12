@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import { Button, Divider, ScrollFade, Skeleton, Textarea } from '@goodboy/ui';
-import { Sparkles } from 'lucide-react';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 
 type Props = {
   readonly draft: string;
@@ -59,7 +60,7 @@ export const GoalEditor = ({
             onClick={onPolish}
             disabled={draft.trim().length === 0 || polishing}
           >
-            <Sparkles size={13} aria-hidden />
+            <CONCEPT_ICONS.enhance size={13} aria-hidden />
             Polish
           </Button>
           <Button size="sm" onClick={onSave} disabled={polishing}>
@@ -68,7 +69,7 @@ export const GoalEditor = ({
         </div>
       </div>
       <Divider />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
         {polishing ? (
           <Skeleton className="h-80 w-full rounded-lg" />
         ) : (

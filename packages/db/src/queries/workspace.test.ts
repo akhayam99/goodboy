@@ -10,6 +10,7 @@ import {
   insertWorkspace,
   listWorkspaces,
   reconnectWorkspace,
+  renameWorkspace,
   touchWorkspaceLastAccessed,
   updateWorkspaceKind,
 } from './workspace';
@@ -237,6 +238,20 @@ describe('updateWorkspaceKind', () => {
 
     const after = await getWorkspaceById(db, ws.id);
     expect(Date.parse(after!.updatedAt)).toBeGreaterThanOrEqual(Date.parse(before!.updatedAt));
+  });
+});
+
+describe('renameWorkspace', () => {
+  it('renames only the display name, never the path', async () => {
+    const db = await makeDb();
+    const ws = makeWorkspace({ id: 'named', name: 'billing-api', rootPath: '/tmp/billing-api' });
+    await insertWorkspace(db, ws);
+
+    await renameWorkspace(db, ws.id, 'Billing platform');
+
+    const after = await getWorkspaceById(db, ws.id);
+    expect(after?.name).toBe('Billing platform');
+    expect(after?.rootPath).toBe('/tmp/billing-api');
   });
 });
 

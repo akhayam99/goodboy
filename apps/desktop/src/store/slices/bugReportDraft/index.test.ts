@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createBugReportDraftSlice } from './index';
-import { initialBugReportDraftState, type BugReportDraftState } from './state';
+import { initialBugReportDraftState, type BugReportDraftState, type BugReportImage } from './state';
+
+const image = (id: string): BugReportImage => ({
+  id,
+  fileName: `${id}.png`,
+  mimeType: 'image/png',
+  sizeBytes: 1024,
+  dataUrl: `data:image/png;base64,${id}`,
+});
 
 const harness = () => {
   let state: BugReportDraftState = { ...initialBugReportDraftState };
@@ -22,7 +30,11 @@ describe('bug report draft slice', () => {
   });
 
   it('starts on the bug type with nothing written', () => {
-    expect(harnessed.getState().bugReportDraft).toEqual({ issueType: 'bug', description: '' });
+    expect(harnessed.getState().bugReportDraft).toEqual({
+      issueType: 'bug',
+      description: '',
+      images: [],
+    });
   });
 
   it('keeps the type when only the description is written', () => {
@@ -32,6 +44,7 @@ describe('bug report draft slice', () => {
     expect(harnessed.getState().bugReportDraft).toEqual({
       issueType: 'idea',
       description: 'The board keeps the old goal',
+      images: [],
     });
   });
 
@@ -40,6 +53,33 @@ describe('bug report draft slice', () => {
     harnessed.slice.setBugReportDraft({ description: '' });
 
     expect(harnessed.getState().bugReportDraft.description).toBe('');
+  });
+
+  it('keeps the images while the description is rewritten', () => {
+    harnessed.slice.addBugReportImages({ images: [image('shot-1')] });
+    harnessed.slice.setBugReportDraft({ description: 'see the screenshot' });
+
+    expect(harnessed.getState().bugReportDraft.images.map((i) => i.id)).toEqual(['shot-1']);
+  });
+
+  it('stops adding images once the cap is reached', () => {
+    harnessed.slice.addBugReportImages({
+      images: [image('a'), image('b'), image('c'), image('d'), image('e')],
+    });
+
+    expect(harnessed.getState().bugReportDraft.images.map((i) => i.id)).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ]);
+  });
+
+  it('removes one image and leaves the rest alone', () => {
+    harnessed.slice.addBugReportImages({ images: [image('a'), image('b')] });
+    harnessed.slice.removeBugReportImage({ imageId: 'a' });
+
+    expect(harnessed.getState().bugReportDraft.images.map((i) => i.id)).toEqual(['b']);
   });
 
   it('drops both fields back to the start on a reset', () => {

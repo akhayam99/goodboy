@@ -111,6 +111,7 @@ export type WorkflowRun = Readonly<{
   orchestrationReason?: string;
   orchestrationStop?: WorkflowOrchestrationStop;
   orchestratorHints?: string;
+  orchestratorSummary?: string;
   orchestratorRouting?: OrchestratorRouting;
   chainAfterId?: WorkflowRunId;
   goal?: string;

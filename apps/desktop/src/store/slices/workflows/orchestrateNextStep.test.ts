@@ -26,6 +26,7 @@ const {
   listOpenQuestionsSpy,
   updateOutcomeSpy,
   updateStopSpy,
+  updateSummarySpy,
   insertProviderRunSpy,
   updateProviderRunStatusSpy,
   insertTelemetrySpy,
@@ -38,6 +39,7 @@ const {
   listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
   updateOutcomeSpy: vi.fn(async () => undefined),
   updateStopSpy: vi.fn(async () => undefined),
+  updateSummarySpy: vi.fn(async () => undefined),
   insertProviderRunSpy: vi.fn(async () => undefined),
   updateProviderRunStatusSpy: vi.fn(async () => undefined),
   insertTelemetrySpy: vi.fn(async () => undefined),
@@ -59,6 +61,7 @@ vi.mock('@goodboy/db', () => ({
   listOpenQuestionsForSession: listOpenQuestionsSpy,
   updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
   updateWorkflowRunOrchestrationStop: updateStopSpy,
+  updateWorkflowRunOrchestratorSummary: updateSummarySpy,
   insertProviderRun: insertProviderRunSpy,
   updateProviderRunStatus: updateProviderRunStatusSpy,
   insertTelemetry: insertTelemetrySpy,
@@ -277,7 +280,7 @@ describe('orchestrateNextStep', () => {
     expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       agentId: 'agent-2',
-      focus: 'agent',
+      focus: 'announce',
       bypassGate: true,
     });
     expect(state['appendTurnEvent']).toHaveBeenCalledWith(
@@ -607,6 +610,54 @@ describe('orchestrateNextStep', () => {
     expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done', expect.any(String));
     const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(updated.orchestrationOutcome).toBe('done');
+  });
+
+  it('keeps the run recap the decision came with', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'done',
+        reason: 'All required tests pass.',
+        runSummary: '**Done**\n- shipped the gate',
+      },
+    });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateSummarySpy).toHaveBeenCalledWith(
+      {},
+      WORKFLOW_RUN_ID,
+      '**Done**\n- shipped the gate',
+    );
+    const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(updated.orchestratorSummary).toBe('**Done**\n- shipped the gate');
+  });
+
+  it('leaves the previous recap alone when a decision carries none', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'done', reason: 'All required tests pass.' },
+    });
+    const state = baseState();
+    const current = (state['sessions'] as ReadonlyArray<Session>)[0]!;
+    state['sessions'] = [
+      {
+        ...current,
+        workflowRuns: current.workflowRuns.map((run) => ({
+          ...run,
+          orchestratorSummary: 'the earlier recap',
+        })),
+      },
+    ];
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateSummarySpy).not.toHaveBeenCalled();
+    const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(updated.orchestratorSummary).toBe('the earlier recap');
   });
 
   it('skips a run whose persisted outcome is already terminal', async () => {
@@ -1237,7 +1288,7 @@ describe('orchestrateNextStep', () => {
     expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       agentId: 'agent-2',
-      focus: 'agent',
+      focus: 'announce',
       bypassGate: true,
     });
   });

@@ -11,6 +11,7 @@ export const setBugReportDraft = (set: SetFn, get: GetFn) => {
     const current = get().bugReportDraft;
     set({
       bugReportDraft: {
+        ...current,
         issueType: issueType ?? current.issueType,
         description: description ?? current.description,
       },
