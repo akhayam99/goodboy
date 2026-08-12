@@ -137,6 +137,19 @@ describe('parseOrchestratorDecision', () => {
     expect(parsed).toEqual({ action: 'done', reason: 'Goal satisfied.' });
   });
 
+  it('stops the missing-end-marker fallback before a recap that carries a brace', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}\n<<run-summary>>\n**Done**\n- closed the `}` case\n<</run-summary>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'done',
+      reason: 'Goal satisfied.',
+      runSummary: '**Done**\n- closed the `}` case',
+    });
+  });
+
   it('repairs literal newlines inside JSON strings', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',

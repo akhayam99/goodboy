@@ -769,7 +769,7 @@ export const App = () => {
       <WorkflowFollowToastBridge />
       <ReleaseToast onOpenChangelog={openChangelog} />
       <AppShell
-        topBar={<AppTopBar onOpenBudget={openBudget} />}
+        topBar={<AppTopBar onOpenBudget={openBudget} showWorkspaceIdentity={!hasActiveSession} />}
         footer={
           currentWorkspace ? (
             <AppFooter
@@ -869,6 +869,8 @@ export const App = () => {
                 session={currentSession}
                 mode={sessionNav.mode}
                 onModeChange={sessionNav.setMode}
+                onCollapse={sessionSidebar.pin}
+                collapseAction="pin"
                 onNavigate={sessionSidebar.closePeek}
               />
             </SidebarPeekOverlay>

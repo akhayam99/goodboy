@@ -587,7 +587,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         return;
       }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
-      await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
+      try {
+        await persistRunSummary({ set, sessionId, workflowRunId, summary: decision.runSummary });
+      } catch {}
       if (decision.action === 'next') {
         const enforced = enforceOrchestratorModelPool({
           step: decision.step,

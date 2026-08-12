@@ -88,10 +88,16 @@ const ATTENTION_SESSION = {
 
 type BarOverrides = {
   readonly onOpenBudget?: () => void;
+  readonly showWorkspaceIdentity?: boolean;
 };
 
 const renderBar = (overrides: BarOverrides = {}) =>
-  render(<AppTopBar onOpenBudget={overrides.onOpenBudget ?? vi.fn()} />);
+  render(
+    <AppTopBar
+      onOpenBudget={overrides.onOpenBudget ?? vi.fn()}
+      showWorkspaceIdentity={overrides.showWorkspaceIdentity ?? false}
+    />,
+  );
 
 describe('AppTopBar', () => {
   it('mounts the onboarding reopen chip, which the card tooltip points at', () => {
@@ -145,6 +151,12 @@ describe('AppTopBar', () => {
 
     expect(screen.getByText('Goodboy')).toBeDefined();
     expect(screen.queryByLabelText('Switch or open a workspace')).toBeNull();
+  });
+
+  it('mounts the workspace switcher on the board, where no sidebar carries it', () => {
+    renderBar({ showWorkspaceIdentity: true });
+
+    expect(screen.getByLabelText('Switch or open a workspace')).toBeDefined();
   });
 
   it('leaves the column control to the sidebar', () => {

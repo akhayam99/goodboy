@@ -4,15 +4,17 @@ import { NotificationCenter } from '../../../features/notifications/components/N
 import { ReportIssuePopover } from '../../../features/settings/components/ReportIssuePopover';
 import { RunningScriptsIndicator } from '../../../features/scripts/components/RunningScriptsIndicator';
 import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
+import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import { BrandBadge } from './BrandBadge';
 import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
 import { useThemeStore } from '../../../shared/lib/theme';
 
 type Props = {
   onOpenBudget: () => void;
+  showWorkspaceIdentity?: boolean;
 };
 
-export const AppTopBar = ({ onOpenBudget }: Props) => {
+export const AppTopBar = ({ onOpenBudget, showWorkspaceIdentity = false }: Props) => {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const themeActionLabel = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
@@ -24,6 +26,15 @@ export const AppTopBar = ({ onOpenBudget }: Props) => {
         className="relative flex h-9 shrink-0 items-center gap-2 bg-background px-3"
       >
         <BrandBadge />
+
+        {showWorkspaceIdentity ? (
+          <>
+            <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
+            <div className="min-w-0 max-w-56 shrink">
+              <WorkspaceIdentityRow />
+            </div>
+          </>
+        ) : null}
 
         <div className="min-w-0 flex-1" />
 

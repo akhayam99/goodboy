@@ -26,11 +26,11 @@ from the existing store (`currentWorkspaceId`, `currentSessionId`,
 `AppBreadcrumb` is NOT rendered in `AppTopBar`. Navigation context is surfaced
 differently depending on where the user is:
 
-- Inside a session: `SessionNavSidebar` carries "Board" at the top in both
-  modes, bound to ⌘⇧H and showing that glyph on hover. In lens mode a second
-  row below it holds the session title and steps back to the sessions list;
-  sessions mode has no second row, and the workspace name is never repeated
-  there because it already lives in the top bar.
+- Inside a session: `SessionNavSidebar` opens with `SidebarHeader`, which carries
+  the workspace identity and the hide control, then "Board" in both modes, bound
+  to ⌘⇧H and showing that glyph on hover. In lens mode a second row below it
+  holds the session title and steps back to the sessions list; sessions mode has
+  no second row.
 - Inside a session lens: `buildSessionBreadcrumb`
   (`features/session/components/SessionWorkspace/sessionBreadcrumb.ts`) is read
   by `useSessionCrumbs` and rendered by `SessionCrumbBar`, a bar in the page
@@ -126,9 +126,11 @@ crumbs navigate via `toOverview` / `toWorkspaceLauncher` / `toWorkspaceBoard`.
 ## App-chrome header
 
 `AppTopBar` is the single app-chrome row, 36px tall. Left to right: the mascot,
-the sessions-column toggle (only inside a session), then the workspace identity
-and its switcher popover. The remaining left-side space is a neutral spacer;
-no breadcrumb is rendered in `AppTopBar` (see line 18).
+then the workspace identity and its switcher popover on the board only
+(`showWorkspaceIdentity`). Inside a session the identity moves into the sidebar,
+so exactly one mount of `WorkspaceIdentityRow` is live at a time and the ⌘
+switcher shortcut resolves to a single popover. The remaining left-side space is
+a neutral spacer; no breadcrumb is rendered in `AppTopBar` (see line 18).
 
 Right side: workspace rollup (attention count and today's spend), a divider,
 then running scripts, the report control, notifications, the theme toggle and
@@ -144,8 +146,10 @@ downwards: both open a destination, and destinations belong to the footer.
 
 Controls dispatch the same `goodboy:*` events and callbacks as before.
 
-`SessionNavSidebar` contains only session navigation: the lens rail or the
-sessions/agents list. No global controls live in the sidebar.
+`SessionNavSidebar` carries session navigation, the lens rail or the
+sessions/agents list, plus the two workspace-scoped controls in `SidebarHeader`:
+the workspace switcher and Preferences. Every other global control lives in the
+top bar or the footer.
 
 ## App footer
 
@@ -224,13 +228,17 @@ hidden.
 - Overview (no session active): board-only, sidebar hidden.
 - Session entered: `SessionNavSidebar` follows the persisted column preference.
 
-The sidebar has no collapse rail. In a session, users hide or show the nav
-column from the single control in the top bar or with ⌘B, whose glyph the
-control itself spells out in its tooltip and label. The toggle writes
-a persisted preference, while Overview still forces `leftHidden`. Collapsed, the
-column still comes back on hover as a temporary overlay
-(`features/workspace/components/SidebarPeekOverlay`); the peek never touches the
-persisted preference.
+In a session, users hide or show the nav column from `SidebarHeader`'s control or
+with ⌘B, whose glyph the control itself spells out in its tooltip and label. The
+toggle writes a persisted preference, while Overview still forces `leftHidden`.
+Collapsed, the column becomes `CollapsedRail`, a 44px rail holding the expand
+control, `WorkspaceRailBadge` (the switcher in collapsed form), board, new
+session, and the lens glyphs. The column also comes back on hover as a temporary
+overlay (`features/workspace/components/SidebarPeekOverlay`); the peek never
+touches the persisted preference, and its header control pins the column
+(`collapseAction="pin"`) rather than hiding it, so a peek is escapable without
+the keyboard. The peek header omits the workspace identity, since the rail
+underneath already owns the switcher while collapsed.
 
 ## Studios
 

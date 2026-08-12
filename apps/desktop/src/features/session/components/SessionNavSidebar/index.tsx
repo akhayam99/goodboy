@@ -16,6 +16,7 @@ type Props = {
   readonly onModeChange: (mode: SessionNavMode) => void;
   readonly onNavigate?: () => void;
   readonly onCollapse?: () => void;
+  readonly collapseAction?: 'collapse' | 'pin';
 };
 
 export const SessionNavSidebar = ({
@@ -24,6 +25,7 @@ export const SessionNavSidebar = ({
   onModeChange,
   onNavigate,
   onCollapse,
+  collapseAction = 'collapse',
 }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
@@ -58,7 +60,7 @@ export const SessionNavSidebar = ({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 flex-col gap-2 px-2 pb-1.5 pt-2">
-        {onCollapse ? <SidebarHeader onCollapse={onCollapse} /> : null}
+        {onCollapse ? <SidebarHeader onCollapse={onCollapse} action={collapseAction} /> : null}
         <BoardCta onNavigate={onBoard} />
         {mode === 'lenses' ? (
           <>
