@@ -6,7 +6,6 @@ import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDia
 import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
 import { FileVersionsPane } from './FileVersionsPane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { WorkSurfaceBackButton } from '../../../../../shared/components/WorkSurfaceBackButton';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -24,7 +23,6 @@ export const FilesPane = ({
   onClose,
 }: Props) => {
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
-  const backButton = <WorkSurfaceBackButton sessionId={sessionId} />;
 
   if (isBranchless) {
     if (sessionDir == null) {
@@ -32,7 +30,6 @@ export const FilesPane = ({
         <PaneShell
           title="File versions"
           description="View and restore saved file copies for this session."
-          actions={backButton}
         >
           <LensEmptyState
             tone={CONCEPT_TONE.diff}
@@ -43,21 +40,13 @@ export const FilesPane = ({
         </PaneShell>
       );
     }
-    return (
-      <FileVersionsPane
-        sessionId={sessionId}
-        sessionDir={sessionDir}
-        onClose={onClose}
-        actions={backButton}
-      />
-    );
+    return <FileVersionsPane sessionId={sessionId} sessionDir={sessionDir} onClose={onClose} />;
   }
   if (worktreePath == null) {
     return (
       <PaneShell
         title={DIFF_VIEWER_PANE_COPY.title}
         description={DIFF_VIEWER_PANE_COPY.description}
-        actions={backButton}
       >
         <LensEmptyState
           tone={CONCEPT_TONE.diff}
@@ -75,7 +64,6 @@ export const FilesPane = ({
       workingDir={sessionDir ?? undefined}
       worktreePath={worktreePath}
       diffFocus={diffFocus}
-      paneActions={backButton}
       onClose={onClose}
     />
   );

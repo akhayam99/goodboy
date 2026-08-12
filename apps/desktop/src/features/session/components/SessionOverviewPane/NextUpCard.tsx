@@ -47,6 +47,7 @@ const ITEM_ICON: Record<NextUpItem['id'], LucideIcon> = {
   errored: AlertCircle,
   'close-out': GitPullRequest,
   start: CONCEPT_ICONS.workflows,
+  'next-step': CONCEPT_ICONS.workflows,
   follow: Bot,
 };
 
@@ -57,7 +58,7 @@ export const NextUpCard = ({ item, onAct }: Props) => {
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-3 rounded-lg border bg-elevated px-4 py-3.5 shadow-sm',
+        'flex flex-wrap items-center gap-3 rounded-lg border bg-elevated px-4 py-3.5',
         tint.borderSoft,
         tint.bgSoft,
       )}

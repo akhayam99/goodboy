@@ -114,6 +114,21 @@ describe('pane rhythm', () => {
     expect(detail.header.measure).toBe(PANE_RHYTHM.measure.reading);
   });
 
+  it('fills its parent so the studio column centers instead of hugging the left edge', () => {
+    const { container } = render(
+      <StudioPanel title="Panel">
+        <p>Panel body</p>
+      </StudioPanel>,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+
+    expect(root.className).toContain('w-full');
+    expect(nearestClasses({ node: screen.getByText('Panel body'), pattern: /^mx-auto$/ })).toBe(
+      'mx-auto',
+    );
+  });
+
   it('holds one reading measure across the pane shell and the detail shell', () => {
     const detail = studioDetail();
 

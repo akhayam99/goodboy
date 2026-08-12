@@ -21,15 +21,11 @@ type Store = {
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   agentTurnState: Record<string, { kind: string }>;
   summarizerStatus: Record<string, { status: string }>;
-  orchestratingWorkflowRuns: Record<string, boolean>;
   agentModelOverride: Record<string, string>;
   agentProviderOverride: Record<string, ProviderId>;
   agentEffortOverride: Record<string, string>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
-  setWorkflowRunAutoRun: ReturnType<typeof vi.fn>;
-  stopWorkflowRunNow: ReturnType<typeof vi.fn>;
-  retryWorkflowOrchestration: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
 };
 
@@ -38,15 +34,11 @@ const { store, gate } = vi.hoisted(() => ({
     sessionPhaseRuns: {},
     agentTurnState: {},
     summarizerStatus: {},
-    orchestratingWorkflowRuns: {},
     agentModelOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},
     activateWorkflowAgent: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
-    setWorkflowRunAutoRun: vi.fn(async () => undefined),
-    stopWorkflowRunNow: vi.fn(async () => undefined),
-    retryWorkflowOrchestration: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
   } as Store,
   gate: { hasOpenQuestions: false },
@@ -118,19 +110,12 @@ beforeEach(() => {
   store.sessionPhaseRuns = {};
   store.agentTurnState = {};
   store.summarizerStatus = {};
-  store.orchestratingWorkflowRuns = {};
   store.agentModelOverride = {};
   store.agentProviderOverride = {};
   store.agentEffortOverride = {};
   store.activateWorkflowAgent.mockReset();
   store.activateWorkflowAgent.mockResolvedValue(undefined);
   store.skipStuckStepAndAdvance.mockReset();
-  store.setWorkflowRunAutoRun.mockReset();
-  store.setWorkflowRunAutoRun.mockResolvedValue(undefined);
-  store.stopWorkflowRunNow.mockReset();
-  store.stopWorkflowRunNow.mockResolvedValue(undefined);
-  store.retryWorkflowOrchestration.mockReset();
-  store.retryWorkflowOrchestration.mockResolvedValue(undefined);
   store.emitNotification.mockReset();
   store.emitNotification.mockResolvedValue(undefined);
   gate.hasOpenQuestions = false;
@@ -195,43 +180,28 @@ describe('ChatWorkflowAdvance', () => {
     });
   });
 
-  it('offers a stop instead of manual advance while autorun drives the run', () => {
+  it('renders nothing at all while autorun drives the run, controls live on the run card', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    renderStrip(buildRun({ autoRun: true }));
+    const { container } = renderStrip(buildRun({ autoRun: true }));
 
-    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
-    const toggle = screen.getByTestId('workflow-autorun-toggle');
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
-    expect(toggle.textContent).toMatch(/autorun/i);
-  });
-
-  it('renders no advance control of any kind while autorun drives the run', () => {
-    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    renderStrip(buildRun({ autoRun: true }));
-
+    expect(container.innerHTML).toBe('');
+    expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
     expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
     expect(screen.queryByTestId('workflow-force-next-step-cta')).toBeNull();
     expect(screen.queryByTestId('workflow-next-step-blocked')).toBeNull();
-    expect(screen.getByTestId('workflow-autorun-toggle')).toBeDefined();
   });
 
-  it('lets autorun resume a stopped static run from the same toggle', () => {
+  it('offers the manual advance on a stopped run instead of an autorun switch', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
     renderStrip(
       buildRun({ autoRun: false, orchestrationStop: { kind: 'operator', message: 'stopped' } }),
     );
 
-    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
-    expect(screen.queryByTestId('chat-workflow-orchestrator-resume')).toBeNull();
-    const toggle = screen.getByTestId('workflow-autorun-toggle');
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
-
-    fireEvent.click(toggle);
-
-    expect(store.setWorkflowRunAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, true);
+    expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
+    expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
   });
 
-  it('offers a dedicated resume next to the toggle for a stopped dynamic run', () => {
+  it('offers no resume of its own on a stopped dynamic run, the orchestrator card owns it', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
     renderStrip(
       buildRun({
@@ -241,11 +211,8 @@ describe('ChatWorkflowAdvance', () => {
       }),
     );
 
-    const resume = screen.getByTestId('chat-workflow-orchestrator-resume');
-    fireEvent.click(resume);
-
-    expect(store.retryWorkflowOrchestration).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
-    expect(store.setWorkflowRunAutoRun).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('chat-workflow-orchestrator-resume')).toBeNull();
+    expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
   });
 
   it('falls through to the manual advance CTA on a provider-failure stop, same as before this PR', () => {

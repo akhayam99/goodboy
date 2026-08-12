@@ -27,7 +27,18 @@ Respond immediately with exactly one marked JSON object on a single line, using 
 
 The other valid forms are:
 <<orchestrator>>{"action":"done","reason":"..."}<</orchestrator>>
-<<orchestrator>>{"action":"blocked","reason":"..."}<</orchestrator>>`;
+<<orchestrator>>{"action":"blocked","reason":"..."}<</orchestrator>>
+
+After the decision, on its own line, emit the running recap of the whole run:
+<<run-summary>>
+**Done**
+- one bullet per thing the run has actually landed
+
+**Left**
+- one bullet per thing still open, or "nothing" when the run is complete
+<</run-summary>>
+
+The recap is short markdown for the operator, it replaces the previous one every time, and it covers the run so far rather than only the step you just decided. Emit it with every decision, including done and blocked.`;
 
 export const buildOrchestratorUserPrompt = ({
   goal,

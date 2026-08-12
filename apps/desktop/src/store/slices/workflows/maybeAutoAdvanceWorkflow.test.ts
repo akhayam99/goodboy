@@ -137,7 +137,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       agentId: `${RUN_ID}-s1`,
-      focus: 'agent',
+      focus: 'announce',
     });
   });
 
@@ -171,7 +171,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       agentId: `${RUN_ID}-s0`,
-      focus: 'agent',
+      focus: 'announce',
     });
   });
 
@@ -317,7 +317,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       agentId: `${CHAINED_ID}-s0`,
-      focus: 'agent',
+      focus: 'announce',
     });
   });
 
@@ -335,7 +335,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       agentId: `${RUN_ID}-s0`,
-      focus: 'agent',
+      focus: 'announce',
     });
   });
 

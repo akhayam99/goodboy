@@ -439,6 +439,32 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     expect(sendTurn).toHaveBeenCalledTimes(1);
   });
 
+  it("focus 'announce' fires the follow event and never touches the selection", async () => {
+    const { set, state, sendTurn, activate } = buildHarness({
+      agent: makeAgent('generic', 'Execute commits'),
+      workflow: makeWorkflow('Execute commits'),
+      plans: [makePlan()],
+    });
+    const seen: Array<Record<string, unknown>> = [];
+    const listener = (event: Event) => {
+      seen.push((event as CustomEvent).detail as Record<string, unknown>);
+    };
+    window.addEventListener('goodboy:workflow-step-started', listener);
+
+    await activate({ sessionId: SESSION_ID, agentId: AGENT_ID, focus: 'announce' });
+    window.removeEventListener('goodboy:workflow-step-started', listener);
+
+    const merged = mergedSetPartials(set, state);
+    expect(merged.selectedAgentId).toBeUndefined();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toMatchObject({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      stepName: 'Execute commits',
+    });
+  });
+
   it('replays an explicit plan even when it is already consumed', async () => {
     const { activate } = buildHarness({
       agent: makeAgent('generic', 'Execute commits'),

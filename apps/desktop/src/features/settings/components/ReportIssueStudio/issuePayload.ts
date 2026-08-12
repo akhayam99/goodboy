@@ -20,6 +20,7 @@ type BuildIssueBodyParams = {
   readonly version: string;
   readonly areaLabel: string;
   readonly notes: string;
+  readonly imageNames?: ReadonlyArray<string>;
 };
 
 export const buildIssueBody = ({
@@ -27,8 +28,14 @@ export const buildIssueBody = ({
   version,
   areaLabel,
   notes,
-}: BuildIssueBodyParams): string =>
-  `Type: ${typeLabel}\nArea: ${areaLabel}\nVersion: ${version}\n\n${notes}`;
+  imageNames = [],
+}: BuildIssueBodyParams): string => {
+  const head = `Type: ${typeLabel}\nArea: ${areaLabel}\nVersion: ${version}\n\n${notes}`;
+  if (imageNames.length === 0) {
+    return head;
+  }
+  return `${head}\n\nScreenshots to drag into this issue: ${imageNames.join(', ')}`;
+};
 
 type SanitizeParams = {
   readonly text: string;
@@ -96,6 +103,7 @@ type BuildFallbackIssueParams = {
   readonly version: string;
   readonly areaLabel: string;
   readonly notes: string;
+  readonly imageNames?: ReadonlyArray<string>;
 };
 
 type FallbackIssue = {
@@ -112,13 +120,14 @@ export const buildFallbackIssue = ({
   version,
   areaLabel,
   notes,
+  imageNames = [],
 }: BuildFallbackIssueParams): FallbackIssue => {
   const safeTitle = withoutLoneSurrogates({ text: title });
   const safeNotes = withoutLoneSurrogates({ text: notes });
   const fallbackTitle = capFallbackTitle({ title: safeTitle });
   const titleTruncated = fallbackTitle !== safeTitle;
 
-  const fullBody = buildIssueBody({ typeLabel, version, areaLabel, notes: safeNotes });
+  const fullBody = buildIssueBody({ typeLabel, version, areaLabel, notes: safeNotes, imageNames });
   if (fitsFallbackUrl({ title: fallbackTitle, body: fullBody })) {
     return {
       url: buildFallbackIssueUrl({ title: fallbackTitle, body: fullBody }),
@@ -135,10 +144,16 @@ export const buildFallbackIssue = ({
     fits: ({ candidate }) =>
       fitsFallbackUrl({
         title: fallbackTitle,
-        body: buildIssueBody({ typeLabel, version, areaLabel, notes: candidate }),
+        body: buildIssueBody({ typeLabel, version, areaLabel, notes: candidate, imageNames }),
       }),
   });
-  const truncatedBody = buildIssueBody({ typeLabel, version, areaLabel, notes: truncatedNotes });
+  const truncatedBody = buildIssueBody({
+    typeLabel,
+    version,
+    areaLabel,
+    notes: truncatedNotes,
+    imageNames,
+  });
   return {
     url: buildFallbackIssueUrl({ title: fallbackTitle, body: truncatedBody }),
     title: fallbackTitle,

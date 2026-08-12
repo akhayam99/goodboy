@@ -13,7 +13,7 @@ import {
   Skeleton,
   Textarea,
 } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, GitBranch, PenLine, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowRight, GitBranch, PenLine } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
 import { closingIssueReferences } from '../../closingIssueReferences';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
@@ -26,6 +26,8 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { openUrl } from '../../../../shared/lib/editor';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -202,7 +204,7 @@ export const CreatePrPanel = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
         <section className="mx-auto flex w-full max-w-2xl flex-col gap-6">
           <SectionHeader
             label="Open a pull request"
@@ -223,7 +225,7 @@ export const CreatePrPanel = ({
                   size="sm"
                   options={[
                     { value: 'manual', label: 'Manual', icon: PenLine },
-                    { value: 'agent', label: 'With an agent', icon: Sparkles },
+                    { value: 'agent', label: 'With an agent', icon: CONCEPT_ICONS.agents },
                   ]}
                   value={mode}
                   onChange={setMode}
@@ -375,7 +377,7 @@ export const CreatePrPanel = ({
               'Drafting…'
             ) : (
               <>
-                <Sparkles size={13} aria-hidden />
+                <CONCEPT_ICONS.agents size={13} aria-hidden />
                 Draft with agent
               </>
             )}

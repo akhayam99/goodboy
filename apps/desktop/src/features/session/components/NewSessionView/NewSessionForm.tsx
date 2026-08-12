@@ -1,9 +1,12 @@
 import type { ChangeEventHandler, RefObject } from 'react';
 import { Divider, FieldRow, Input, SectionHeader, Skeleton, Textarea, cn } from '@goodboy/ui';
-import { AlertTriangle, Expand, Folder, GitBranch, Paperclip, Target, Wand2 } from 'lucide-react';
+import { AlertTriangle, Expand, Folder, GitBranch, Paperclip, Target } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
-import { AttachmentChip } from '../../../chat/components/ChatInput/parts/AttachmentChip';
+import {
+  AttachmentChip,
+  pendingAttachmentProps,
+} from '../../../attachments/components/AttachmentChip';
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import type { PendingAttachment } from '../../../chat/components/ChatInput/lib';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
@@ -14,6 +17,7 @@ import { DEFAULT_BRANCH_PREFIX } from '../../../settings/settings';
 import { PROVIDER_ORDER } from '../../../providers/components/ProviderStudio/providerOrder';
 import { BranchModeToggle } from './BranchModeToggle';
 import { IssueSourceField } from './IssueSourceField';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type BranchMode = 'new' | 'existing';
 
@@ -220,7 +224,7 @@ export const NewSessionForm = ({
                 {attachments.map((attachment) => (
                   <AttachmentChip
                     key={attachment.id}
-                    attachment={attachment}
+                    {...pendingAttachmentProps(attachment)}
                     onRemove={() => onRemoveAttachment(attachment.id)}
                   />
                 ))}
@@ -351,7 +355,7 @@ export const NewSessionForm = ({
                         : 'cursor-not-allowed text-muted-foreground/30',
                     )}
                   >
-                    <Wand2 size={13} aria-hidden />
+                    <CONCEPT_ICONS.enhance size={13} aria-hidden />
                   </button>
                 </div>
               ) : (

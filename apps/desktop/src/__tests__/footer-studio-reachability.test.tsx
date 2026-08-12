@@ -172,8 +172,11 @@ vi.mock('../app/components/Toast', () => ({
 vi.mock('../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
 }));
-vi.mock('../features/workspace/components/WorkspacesSidebar', () => ({
-  WorkspacesSidebar: () => null,
+vi.mock('../features/workflows/components/WorkflowFollowToastBridge', () => ({
+  WorkflowFollowToastBridge: () => null,
+}));
+vi.mock('../features/session/components/SessionNavSidebar', () => ({
+  SessionNavSidebar: () => null,
 }));
 vi.mock('../features/workspace/hooks/useWindowPresence', () => ({ useWindowPresence: vi.fn() }));
 vi.mock('../features/workspace/components/WorkspaceLinkDialog', () => ({

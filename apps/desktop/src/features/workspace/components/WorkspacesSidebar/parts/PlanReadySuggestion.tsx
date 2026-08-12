@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { Agent, Session, StepId, Workflow } from '@goodboy/types';
 import {
@@ -15,6 +15,7 @@ import {
   kindConsumesPlan,
 } from '../../../../session/agent-kind';
 import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   task: Session;
@@ -105,7 +106,7 @@ export const PlanReadySuggestion = ({ task }: Props) => {
         className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary"
         aria-hidden
       >
-        <Sparkles size={11} />
+        <CONCEPT_ICONS.suggestion size={11} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center gap-1.5 text-3xs font-semibold uppercase tracking-wide text-primary">

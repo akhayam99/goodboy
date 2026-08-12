@@ -138,42 +138,70 @@ describe('StageBoardCard layout', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = screen.getAllByRole('button')[0];
     const title = screen.getByText(session.goal);
-    const footer = title.closest('[data-tooltip]')?.parentElement?.nextElementSibling;
-    expect(card?.className).toContain('h-[7.25rem]');
+    const footer =
+      title.closest('[data-tooltip]')?.parentElement?.nextElementSibling?.nextElementSibling;
+    expect(card?.className).toContain('h-[8.25rem]');
     expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('min-h-10');
     expect(footer?.className).toContain('flex-nowrap');
     expect(footer?.className).toContain('min-h-5');
   });
 
-  it('keeps the reason in the title tooltip without rendering a status dot or reason line', () => {
+  it('shows the reason under the goal and in the title tooltip without a status dot', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const tooltip = screen.getByText(session.goal).closest('[data-tooltip]');
     expect(tooltip?.getAttribute('data-tooltip')).toBe(`${session.goal} · no PR yet`);
     expect(screen.queryByTestId('status-dot')).toBeNull();
-    expect(screen.queryByText('no PR yet')).toBeNull();
+    expect(screen.getByText('no PR yet').className).toContain('truncate');
+  });
+
+  it('points at the session with a trailing chevron', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(document.querySelector('.lucide-chevron-right')).not.toBeNull();
+  });
+
+  it('renders the last update age when the session carries a timestamp', () => {
+    const updated = { ...session, updatedAt: new Date(Date.now() - 7_200_000).toISOString() };
+    render(<StageBoardCard session={updated as unknown as Session} nav={nav} />);
+    expect(screen.getByText('2h ago')).toBeDefined();
   });
 });
 
 describe('StageBoardCard selection', () => {
-  it('renders no selection checkbox when the column does not offer selection', () => {
-    render(<StageBoardCard session={session} nav={nav} />);
+  it('offers no selection checkbox at all', () => {
+    render(<StageBoardCard session={session} nav={nav} onModifierClick={vi.fn()} />);
     expect(screen.queryByRole('checkbox')).toBeNull();
   });
 
-  it('toggles selection from the checkbox without opening the session', () => {
-    const onToggleSelect = vi.fn();
-    render(
-      <StageBoardCard
-        session={session}
-        nav={nav}
-        onToggleSelect={onToggleSelect}
-        selected={false}
-      />,
-    );
-    fireEvent.click(screen.getByRole('checkbox'));
-    expect(onToggleSelect).toHaveBeenCalledWith(SESSION_ID, expect.anything());
+  it('selects on an alt click instead of opening the session', () => {
+    const onModifierClick = vi.fn();
+    render(<StageBoardCard session={session} nav={nav} onModifierClick={onModifierClick} />);
+    fireEvent.click(screen.getAllByRole('button')[0] as HTMLElement, { altKey: true });
+    expect(onModifierClick).toHaveBeenCalledWith(SESSION_ID, expect.anything());
     expect(nav.selectCard).not.toHaveBeenCalled();
+  });
+
+  it('selects from the keyboard with alt and Enter', () => {
+    const onModifierClick = vi.fn();
+    render(<StageBoardCard session={session} nav={nav} onModifierClick={onModifierClick} />);
+    const card = screen.getAllByRole('button')[0] as HTMLElement;
+    expect(card.getAttribute('aria-keyshortcuts')).toBe('Alt+Enter');
+    fireEvent.keyDown(card, { key: 'Enter', altKey: true });
+    expect(onModifierClick).toHaveBeenCalledWith(SESSION_ID, expect.anything());
+    expect(nav.selectCard).not.toHaveBeenCalled();
+  });
+
+  it('opens the session on a plain Enter', () => {
+    render(<StageBoardCard session={session} nav={nav} onModifierClick={vi.fn()} />);
+    fireEvent.keyDown(screen.getAllByRole('button')[0] as HTMLElement, { key: 'Enter' });
+    expect(nav.selectCard).toHaveBeenCalledWith(session);
+  });
+
+  it('exposes the id the lasso hit-tests against', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect((screen.getAllByRole('button')[0] as HTMLElement).getAttribute('data-select-id')).toBe(
+      SESSION_ID,
+    );
   });
 
   it('routes a modifier click on the card to selection instead of navigation', () => {
@@ -369,12 +397,13 @@ describe('StageBoardCard footer', () => {
     expect(auto).toBeDefined();
     expect(auto.className).toContain('text-primary');
     expect(auto.className).not.toContain('text-danger');
-    expect(Array.from(footer?.children ?? [])).toEqual([
+    expect(Array.from(footer?.children ?? []).slice(0, 4)).toEqual([
       agents.closest('[data-tooltip]'),
       task,
       cost,
       auto,
     ]);
+    expect(footer?.lastElementChild?.classList.contains('lucide-chevron-right')).toBe(true);
   });
 
   it('singularizes the agent count label at one agent', () => {

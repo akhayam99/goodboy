@@ -1,20 +1,13 @@
-import { BookOpen, GitBranch, LayoutDashboard, MessageSquare, Sparkles } from 'lucide-react';
+import { BookOpen, GitBranch, LayoutDashboard, MessageSquare } from 'lucide-react';
 import { Eyebrow, SectionHeader } from '@goodboy/ui';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
 import { Callout } from './Callout';
 import { ConceptCard } from './ConceptCard';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Section =
-  | 'overview'
-  | 'board'
-  | 'session'
-  | 'turn'
-  | 'tools'
-  | 'tokens'
-  | 'agents'
-  | 'tips'
-  | 'legenda';
+  'overview' | 'board' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
 
 type Props = {
   readonly onJump: (s: Section) => void;
@@ -33,7 +26,7 @@ export const OverviewSection = ({ onJump }: Props) => (
       }
     />
 
-    <Callout tone="info" icon={<Sparkles size={13} />}>
+    <Callout tone="info" icon={<CONCEPT_ICONS.providers size={13} />}>
       Goodboy does <strong className="text-foreground">not</strong> talk to providers directly. It
       spawns each provider's own CLI as a subprocess and streams its events. Your login, usage, and
       quotas stay inside that CLI. Goodboy adds the workspace, board, and orchestration layer on

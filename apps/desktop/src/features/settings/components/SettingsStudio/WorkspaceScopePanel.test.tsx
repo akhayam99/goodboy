@@ -8,6 +8,8 @@ const { state, toastMock } = vi.hoisted(() => ({
     loadSetting: vi.fn(async () => null),
     saveSetting: vi.fn(async () => undefined),
     deleteWorkspace: vi.fn(async () => undefined),
+    workspaces: [] as ReadonlyArray<{ id: string; name: string; rootPath: string }>,
+    renameWorkspace: vi.fn(async () => undefined),
     workspaceOverrides: {} as Record<string, unknown>,
     setWorkspaceOverrides: vi.fn(async () => undefined),
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
@@ -55,6 +57,8 @@ beforeEach(() => {
   state.loadSetting = vi.fn(async () => null);
   state.saveSetting = vi.fn(async () => undefined);
   state.deleteWorkspace = vi.fn(async () => undefined);
+  state.workspaces = [{ id: 'ws-1', name: 'billing', rootPath: '/repos/billing-api' }];
+  state.renameWorkspace = vi.fn(async () => undefined);
   state.workspaceOverrides = {};
   state.setWorkspaceOverrides = vi.fn(async () => undefined);
   state.workspaceIntegrations = {};
@@ -76,6 +80,33 @@ describe('WorkspaceScopePanel', () => {
     expect(screen.queryByText('Linear')).toBeNull();
     expect(screen.queryByText('GitHub')).toBeNull();
     expect(screen.queryByRole('button', { name: /^general$/i })).toBeNull();
+  });
+
+  it('renames the workspace on blur while keeping the folder name as the hint', () => {
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+
+    const input = screen.getByLabelText(/display name/i);
+    expect((input as HTMLInputElement).value).toBe('billing');
+    expect(screen.getByText(/the folder on disk stays billing-api/i)).toBeDefined();
+
+    fireEvent.change(input, { target: { value: 'Billing platform' } });
+    fireEvent.blur(input);
+
+    expect(state.renameWorkspace).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      name: 'Billing platform',
+    });
+  });
+
+  it('spends no write on a name that did not change', () => {
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+
+    const input = screen.getByLabelText(/display name/i);
+    fireEvent.change(input, { target: { value: '  billing  ' } });
+    fireEvent.blur(input);
+
+    expect(state.renameWorkspace).not.toHaveBeenCalled();
+    expect((input as HTMLInputElement).value).toBe('billing');
   });
 
   it('shows the disconnect action with inline confirm', () => {

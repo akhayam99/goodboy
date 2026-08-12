@@ -77,6 +77,7 @@ vi.mock('@goodboy/db', () => ({
   reconnectWorkspace: vi.fn(async () => undefined),
   touchWorkspaceLastAccessed: vi.fn(async () => undefined),
   updateWorkspaceKind: vi.fn(async () => undefined),
+  renameWorkspace: vi.fn(async () => undefined),
   findWorkspaceByRootPath: vi.fn(async () => null),
   upsertSessionExternalTask: vi.fn(async () => undefined),
   deleteSessionExternalTask: vi.fn(async () => undefined),
@@ -811,6 +812,35 @@ describe('store contract', () => {
         workspaceId: WS_ID,
       });
       expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual(tasks);
+    });
+
+    it('renames a workspace without touching its path on disk', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      store.setState({ workspaces: [buildWorkspace({ name: 'ws', rootPath: '/tmp/repo' })] });
+
+      const renamed = await store.getState().renameWorkspace({
+        workspaceId: WS_ID,
+        name: '  Billing platform  ',
+      });
+
+      expect(db.renameWorkspace).toHaveBeenCalledWith(expect.anything(), WS_ID, 'Billing platform');
+      expect(renamed.name).toBe('Billing platform');
+      expect(renamed.rootPath).toBe('/tmp/repo');
+      expect(store.getState().workspaces[0]?.name).toBe('Billing platform');
+    });
+
+    it('refuses an empty display name', async () => {
+      const store = await getStore();
+      const db = await import('@goodboy/db');
+      store.setState({ workspaces: [buildWorkspace({ name: 'ws' })] });
+
+      await expect(
+        store.getState().renameWorkspace({ workspaceId: WS_ID, name: '   ' }),
+      ).rejects.toThrow('give the workspace a name');
+
+      expect(db.renameWorkspace).not.toHaveBeenCalled();
+      expect(store.getState().workspaces[0]?.name).toBe('ws');
     });
 
     it('converts a simple workspace into a repo, writing the kind last', async () => {

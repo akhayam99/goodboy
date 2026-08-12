@@ -169,7 +169,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     get,
     sessionId,
     agentId: nextPendingAgent.id,
-    focus: 'agent',
+    focus: 'announce',
   });
   if (activated) {
     void get().emitNotification(

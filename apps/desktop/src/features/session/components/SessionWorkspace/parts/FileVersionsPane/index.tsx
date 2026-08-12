@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Divider } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
@@ -17,12 +16,11 @@ type Props = {
   sessionId: SessionId;
   sessionDir: string;
   onClose: () => void;
-  actions?: ReactNode;
 };
 
 const EMPTY_VERSIONS: ReadonlyArray<FileVersion> = [];
 
-export const FileVersionsPane = ({ sessionId, sessionDir, onClose, actions = null }: Props) => {
+export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
   const versions = useAppStore(
     useShallow((state) => state.sessionFileVersions[sessionId] ?? EMPTY_VERSIONS),
   );
@@ -95,7 +93,6 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, actions = nul
       measure={loading || groups.length > 0 ? 'full' : 'pane'}
       actions={
         <>
-          {actions}
           {deleteAllArmed ? (
             <>
               <button

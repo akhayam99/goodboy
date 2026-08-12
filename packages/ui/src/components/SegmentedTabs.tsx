@@ -84,7 +84,7 @@ export const SegmentedTabs = <T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        'gap-1 rounded-lg border border-border-soft/60 bg-subtle/30 p-1',
+        'gap-1 rounded-lg border border-border-soft bg-subtle p-1',
         fill ? 'grid w-full' : 'inline-flex items-center',
         className,
       )}
@@ -113,7 +113,7 @@ export const SegmentedTabs = <T extends string>({
               'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
               isMedium ? 'px-3 py-2 text-sm font-semibold' : 'px-2.5 py-1 text-xs',
               isActive
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-elevated font-semibold text-foreground ring-1 ring-inset ring-border'
                 : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
               option.disabled === true &&
                 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',

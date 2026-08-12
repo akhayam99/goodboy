@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Button, Dialog, Textarea, cn } from '@goodboy/ui';
 import type { FormattedWorkflow } from '@goodboy/core';
 import type { AgentRole } from '@goodboy/types';
-import { Lightbulb, Sparkles } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 import { AGENT_KIND_PALETTE, ROLE_TO_KIND } from '../../../../session/agent-kind';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly open: boolean;
@@ -54,7 +55,7 @@ export const WorkflowFormatPreview = ({
             </Button>
           ) : (
             <Button size="sm" onClick={() => onFormat(text)} disabled={!canFormat}>
-              <Sparkles size={13} aria-hidden />
+              <CONCEPT_ICONS.enhance size={13} aria-hidden />
               {formatting ? 'Formatting…' : 'Format'}
             </Button>
           )}

@@ -280,4 +280,57 @@ describe('resolverActionPlan', () => {
     expect(plan.secondary).toBeNull();
     expect(plan.overflow).toEqual([]);
   });
+
+  it('withholds the GitHub cluster from a resolver born of a local diff note', () => {
+    const localAgent = agentWith({ sourceThreadId: undefined, sourceKind: 'diff_comment' });
+    const committed = resolverActionPlan({
+      ...base,
+      agent: localAgent,
+      status: 'committed',
+      tally: tallyOf(),
+    });
+    const wontfix = resolverActionPlan({
+      ...base,
+      agent: localAgent,
+      status: 'wontfix',
+      tally: tallyOf(),
+    });
+
+    expect(committed.primary).toBeNull();
+    expect(committed.secondary).toBeNull();
+    expect(committed.note).toBeNull();
+    expect(wontfix.primary).toBeNull();
+    expect(wontfix.overflow).toEqual([]);
+  });
+
+  it('keeps local affordances that never touch GitHub', () => {
+    const localAgent = agentWith({ sourceThreadId: undefined, sourceKind: 'diff_comment' });
+    const analyzed = resolverActionPlan({
+      ...base,
+      agent: localAgent,
+      status: 'analyzed',
+      tally: tallyOf(),
+    });
+    const failed = resolverActionPlan({
+      ...base,
+      agent: localAgent,
+      status: 'failed',
+      tally: tallyOf(),
+    });
+
+    expect(analyzed.primary?.label).toBe('Proceed with fix');
+    expect(analyzed.secondary).toBeNull();
+    expect(failed.primary?.label).toBe('Run again');
+  });
+
+  it('still offers the GitHub cluster to a review-born resolver', () => {
+    const plan = resolverActionPlan({
+      ...base,
+      agent: agentWith({ sourceKind: 'review_comment' }),
+      status: 'committed',
+    });
+
+    expect(plan.primary?.label).toBe('Push & resolve');
+    expect(plan.secondary?.label).toBe('Add to push batch');
+  });
 });

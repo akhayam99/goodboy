@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo } from 'react';
 import {
   Archive,
   Bot,
-  Check,
+  ChevronRight,
   Code,
   MessageSquareDiff,
   RotateCcw,
@@ -23,8 +23,11 @@ import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
 import { CardAction } from '../../../../../shared/components/CardAction';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { STAGE_TONE } from '../../../../session/session-stage';
 import { CardActionSlot } from '../../../../../shared/components/CardActionSlot';
+import { sessionCardShell } from '../../../../session/components/sessionCardShell';
+import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { PrRequestSlot } from './PrRequestSlot';
@@ -32,7 +35,7 @@ import { useDynamicActions } from './useDynamicActions';
 
 const draftTint = tintClasses('draft');
 
-export type CardSelectionEvent = {
+type CardSelectionEvent = {
   readonly shiftKey: boolean;
   readonly metaKey: boolean;
   readonly ctrlKey: boolean;
@@ -44,7 +47,6 @@ type StageBoardCardProps = {
   readonly nav: BoardNavigation;
   readonly archived?: boolean;
   readonly selected?: boolean;
-  readonly onToggleSelect?: (id: SessionId, event: CardSelectionEvent) => void;
   readonly onModifierClick?: (id: SessionId, event: CardSelectionEvent) => void;
   readonly onArchive?: (session: Session) => void;
   readonly onDelete?: (session: Session) => void;
@@ -56,7 +58,6 @@ export const StageBoardCard = memo(function StageBoardCard({
   nav,
   archived,
   selected,
-  onToggleSelect,
   onModifierClick,
   onArchive,
   onDelete,
@@ -92,6 +93,7 @@ export const StageBoardCard = memo(function StageBoardCard({
     ? (reviewDrafts ?? []).filter((draft) => draft.status === 'draft').length
     : 0;
 
+  const age = formatRelativeAge({ fromIso: session.updatedAt });
   const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
   const isGitlab = mergeRequest != null && pullRequest == null;
 
@@ -109,9 +111,11 @@ export const StageBoardCard = memo(function StageBoardCard({
       role="button"
       tabIndex={0}
       data-archived={archived || undefined}
+      data-select-id={id}
       aria-pressed={selected === true}
+      aria-keyshortcuts="Alt+Enter"
       onClick={(event) => {
-        if (onModifierClick && (event.shiftKey || event.metaKey || event.ctrlKey)) {
+        if (onModifierClick && (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey)) {
           onModifierClick(id, event);
           return;
         }
@@ -125,16 +129,15 @@ export const StageBoardCard = memo(function StageBoardCard({
           return;
         }
         event.preventDefault();
+        if (onModifierClick && event.altKey) {
+          onModifierClick(id, event);
+          return;
+        }
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid h-[7.25rem] min-h-[7.25rem] shrink-0 grid-cols-[minmax(0,1fr)_auto] grid-rows-[1fr_auto] gap-2 rounded-lg border bg-muted/40 p-3 text-left text-foreground/70 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-        stage === 'running'
-          ? 'border-info/50'
-          : stage === 'attention'
-            ? 'border-warning/50'
-            : 'border-transparent',
-        selected === true && 'border-primary bg-primary/5 text-foreground',
+        'group/session-card grid h-[8.25rem] min-h-[8.25rem] shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[1fr_auto] gap-2 p-3 text-left shadow-sm',
+        sessionCardShell({ stage, selected }),
       )}
     >
       <span className="row-span-2 flex min-w-0 flex-col justify-between gap-2">
@@ -151,6 +154,10 @@ export const StageBoardCard = memo(function StageBoardCard({
             </span>
           </Tooltip>
         </span>
+
+        {reason && (
+          <span className="truncate text-2xs leading-tight text-muted-foreground/60">{reason}</span>
+        )}
 
         <span className="flex min-h-5 flex-nowrap items-center gap-1.5 overflow-hidden">
           {agentCount > 0 && (
@@ -191,7 +198,23 @@ export const StageBoardCard = memo(function StageBoardCard({
               className="shrink-0 text-2xs font-medium tabular-nums text-muted-foreground"
             />
           )}
-          {isAutoMode && <Chip tone="primary" size="sm" label="Autorun" className="shrink-0" />}
+          {isAutoMode && (
+            <Chip
+              tone={CONCEPT_TONE.autorun}
+              size="sm"
+              icon={<CONCEPT_ICONS.autorun size={10} aria-hidden />}
+              label="Autorun"
+              className="shrink-0"
+            />
+          )}
+          {age && (
+            <span className="shrink-0 text-2xs tabular-nums text-muted-foreground/50">{age}</span>
+          )}
+          <ChevronRight
+            size={13}
+            aria-hidden
+            className="ml-auto shrink-0 text-muted-foreground/40 group-hover/session-card:text-muted-foreground/70"
+          />
         </span>
       </span>
 
@@ -199,43 +222,6 @@ export const StageBoardCard = memo(function StageBoardCard({
         label="Session quick actions"
         className="col-start-2 row-start-1 flex-col items-end self-start"
       >
-        <span className="flex items-center justify-end gap-1">
-          {onToggleSelect != null && (
-            <Tooltip
-              content={
-                selected === true ? 'Deselect session' : 'Select session, shift-click to extend'
-              }
-              side="top"
-            >
-              <span
-                role="checkbox"
-                tabIndex={0}
-                aria-checked={selected === true}
-                aria-label={`Select ${session.goal}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onToggleSelect(id, event);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onToggleSelect(id, event);
-                }}
-                className={cn(
-                  'flex size-4 shrink-0 items-center justify-center rounded border motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
-                  selected === true
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border-soft opacity-0 hover:border-primary/50 group-hover/session-card:opacity-100 group-focus-within/session-card:opacity-100',
-                )}
-              >
-                {selected === true && <Check size={11} aria-hidden />}
-              </span>
-            </Tooltip>
-          )}
-        </span>
         {!archived && (
           <span className="flex flex-nowrap justify-end gap-1">
             {dynamicActions.map((action) => (

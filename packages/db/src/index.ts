@@ -13,6 +13,7 @@ export {
   findWorkspaceByRootPath,
   disconnectWorkspace,
   reconnectWorkspace,
+  renameWorkspace,
   touchWorkspaceLastAccessed,
   updateWorkspaceKind,
   deleteWorkspace,
@@ -65,6 +66,7 @@ export {
   updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorHints,
   updateWorkflowRunOrchestratorRouting,
+  updateWorkflowRunOrchestratorSummary,
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {

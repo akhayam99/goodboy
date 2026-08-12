@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
-import { Check, Code2, FolderGit2, RefreshCw, Sparkles } from 'lucide-react';
+import { Check, Code2, FolderGit2, RefreshCw } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { Workspace, WorkspaceKind } from '@goodboy/types';
 import type { WorkspaceLinkMode } from '../../../workspace/components/WorkspaceLinkForm';
 import { WorkspaceLinkForm } from '../../../workspace/components/WorkspaceLinkForm';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type WorkspaceAudience = 'developer' | 'everyone-else';
 
@@ -36,7 +37,7 @@ const AUDIENCE_OPTIONS = [
   },
   {
     value: 'everyone-else',
-    icon: Sparkles,
+    icon: CONCEPT_ICONS.agents,
     label: 'I do not write code',
     hint: 'Start a workspace for agents, workflows, and shared context. No repository needed.',
   },

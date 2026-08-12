@@ -1,5 +1,5 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
-import { cn, Divider, formatUsdPrecise, Input, MetaRow, StatusDot } from '@goodboy/ui';
+import { cn, Collapsible, Divider, formatUsdPrecise, Input, MetaRow, StatusDot } from '@goodboy/ui';
 import { ChevronDown, ChevronRight, ChevronUp, Pencil, Undo2 } from 'lucide-react';
 import type {
   Agent,
@@ -20,6 +20,7 @@ import { useSessionRoleModels } from '../../../../../shared/hooks/useSessionRole
 import type { AgentAggregate } from '../../../../../features/session/components/AgentMetrics';
 import { WorkflowNextStepCta } from '../../../../../features/workflows/components/WorkflowNextStepCta';
 import { OrchestratorPanel } from '../../../../../features/workflows/components/OrchestratorPanel';
+import { WorkflowRunSummary } from '../../../../../features/workflows/components/WorkflowRunSummary';
 import { WorkflowAutorunToggle } from '../../../../../features/workflows/components/WorkflowAutorunToggle';
 import { useWorkflowTitleRename } from '../../../../../features/workflows/hooks/useWorkflowTitleRename';
 import { WorkflowStepGraph } from '../../../../../features/workflows/components/WorkflowStepGraph';
@@ -84,6 +85,8 @@ type Props = {
   readonly toggleClusterExpand: (id: string) => void;
   readonly skipStuckStepAndAdvance: AppStore['skipStuckStepAndAdvance'];
 };
+
+const isRunning = (agent: Agent): boolean => agent.status === 'running';
 
 export const WorkflowRow = ({
   run,
@@ -195,7 +198,7 @@ export const WorkflowRow = ({
         {isDetail ? (
           <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-              <CONCEPT_ICONS.workflows size={17} aria-hidden className="text-accent" />
+              <CONCEPT_ICONS.workflows size={16} aria-hidden className="text-accent" />
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -312,7 +315,7 @@ export const WorkflowRow = ({
                   onStart={() => startWorkflowRun(task.id, run.id)}
                 />
               ) : null}
-              {!isDiscarded && !isCompleted ? (
+              {!isDiscarded && !isCompleted && !hasOrchestratorStrip ? (
                 <WorkflowAutorunToggle
                   variant="detail"
                   isOn={run.autoRun}
@@ -345,7 +348,7 @@ export const WorkflowRow = ({
                     onStart={() => startWorkflowRun(task.id, run.id)}
                   />
                 ) : null}
-                {!isCompleted ? (
+                {!isCompleted && !hasOrchestratorStrip ? (
                   <WorkflowAutorunToggle
                     variant="sidebar"
                     isOn={run.autoRun}
@@ -393,6 +396,34 @@ export const WorkflowRow = ({
                 processText={(workflow.processText ?? '').trim()}
               />
               <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+            </div>
+          ) : null}
+          {expanded &&
+          !isDiscarded &&
+          !isDynamic &&
+          (isDetail || wfBlockReason === 'failed-step') ? (
+            <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
+              <WorkflowNextStepCta
+                workflow={workflow}
+                runs={wfAgents}
+                roleModels={roleModels}
+                agentModel={ctaRouting.agentModel}
+                agentProvider={ctaRouting.agentProvider}
+                agentEffort={ctaRouting.agentEffort}
+                blockReason={wfBlockReason}
+                onAdvance={({ step, isConfirmed }) => {
+                  const pending = wfAgents.find(
+                    (agent) => agent.stepId === step.id && agent.status === 'pending',
+                  );
+                  if (pending == null) {
+                    return;
+                  }
+                  void onStartStepAgent({ agent: pending, isConfirmed });
+                }}
+                onForceAdvance={() =>
+                  void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })
+                }
+              />
             </div>
           ) : null}
           {expanded && !isDiscarded ? (
@@ -486,36 +517,33 @@ export const WorkflowRow = ({
                             onSelect={onPickAgent}
                           />
                         ) : (
-                          <div className="ml-3 flex flex-col gap-0.5 border-l border-border-soft/60 pl-2">
-                            <button
-                              type="button"
-                              onClick={() => toggleClusterExpand(run.id)}
-                              aria-expanded={clustersExpanded}
-                              aria-label={`${clustersExpanded ? 'Collapse' : 'Expand'} clusters for ${run.name}`}
-                              className="flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-wide text-muted-foreground/50 transition-colors hover:text-muted-foreground"
-                            >
-                              {clustersExpanded ? (
-                                <ChevronDown size={10} aria-hidden className="shrink-0" />
-                              ) : (
-                                <ChevronRight size={10} aria-hidden className="shrink-0" />
-                              )}
-                              <span className="min-w-0 truncate">
-                                clusters{' '}
-                                {clusterChildren.filter((c) => c.status === 'completed').length}/
-                                {clusterChildren.length}
-                              </span>
-                              {!clustersExpanded && clusterUnread > 0 ? (
-                                <span
-                                  className="inline-flex shrink-0 items-center gap-1 rounded-md bg-warning/15 px-1 py-0.5 text-2xs font-medium text-warning"
-                                  title={`${clusterUnread} cluster ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
-                                >
-                                  <span aria-hidden className="size-1 rounded-full bg-warning" />
-                                  {clusterUnread}
+                          <div className="ml-3 border-l border-border-soft/60 pl-2">
+                            <Collapsible
+                              open={clustersExpanded || clusterChildren.some(isRunning)}
+                              onOpenChange={() => toggleClusterExpand(run.id)}
+                              trigger={
+                                <span className="flex min-w-0 items-center gap-1.5 text-2xs text-muted-foreground">
+                                  <span className="min-w-0 truncate">
+                                    {clusterChildren.length}{' '}
+                                    {clusterChildren.length === 1 ? 'subagent' : 'subagents'}
+                                  </span>
+                                  {clusterUnread > 0 ? (
+                                    <span
+                                      className="inline-flex shrink-0 items-center gap-1 rounded-md bg-warning/15 px-1 py-0.5 text-2xs font-medium text-warning"
+                                      title={`${clusterUnread} subagent ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
+                                    >
+                                      <span
+                                        aria-hidden
+                                        className="size-1 rounded-full bg-warning"
+                                      />
+                                      {clusterUnread}
+                                    </span>
+                                  ) : null}
                                 </span>
-                              ) : null}
-                            </button>
-                            {clustersExpanded
-                              ? clusterChildren.map((child, ci) => (
+                              }
+                            >
+                              <div className="flex flex-col gap-0.5">
+                                {clusterChildren.map((child, ci) => (
                                   <ClusterChildRow
                                     key={child.id}
                                     child={child}
@@ -528,8 +556,9 @@ export const WorkflowRow = ({
                                     isTaskActive={isTaskActive}
                                     onSelect={() => onPickAgent(child.id)}
                                   />
-                                ))
-                              : null}
+                                ))}
+                              </div>
+                            </Collapsible>
                           </div>
                         )}
                       </Fragment>
@@ -543,39 +572,7 @@ export const WorkflowRow = ({
               </p>
             )
           ) : null}
-          {expanded &&
-          !isDiscarded &&
-          !isDynamic &&
-          (isDetail || wfBlockReason === 'failed-step') ? (
-            <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
-              <WorkflowNextStepCta
-                workflow={workflow}
-                runs={wfAgents}
-                roleModels={roleModels}
-                agentModel={ctaRouting.agentModel}
-                agentProvider={ctaRouting.agentProvider}
-                agentEffort={ctaRouting.agentEffort}
-                blockReason={wfBlockReason}
-                onAdvance={({ step, isConfirmed }) => {
-                  const pending = wfAgents.find(
-                    (agent) => agent.stepId === step.id && agent.status === 'pending',
-                  );
-                  if (pending == null) {
-                    return;
-                  }
-                  void onStartStepAgent({ agent: pending, isConfirmed });
-                }}
-                onForceAdvance={() =>
-                  void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })
-                }
-              />
-            </div>
-          ) : null}
-          {expanded && !isDetail ? (
-            <div className={cn('pb-1', !isDetail && 'pl-3')}>
-              <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
-            </div>
-          ) : null}
+          {isDetail ? <WorkflowRunSummary summary={run.orchestratorSummary} /> : null}
         </div>
       ) : null}
     </div>

@@ -87,7 +87,6 @@ import { runA11yCheck } from './utils';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
 import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel';
-import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { ToastProvider } from '../../app/components/Toast';
@@ -125,14 +124,6 @@ describe('a11y smoke, BootSplash', () => {
 
   it('no violations (boot error)', async () => {
     const { container } = render(<BootSplash phase="error" error="failed to connect" />);
-    const { violations } = await runA11yCheck(container);
-    expect(violations).toHaveLength(0);
-  });
-});
-
-describe('a11y smoke, WorkspacesSidebar', () => {
-  it('no violations (no workspace selected)', async () => {
-    const { container } = render(<WorkspacesSidebar />);
     const { violations } = await runA11yCheck(container);
     expect(violations).toHaveLength(0);
   });

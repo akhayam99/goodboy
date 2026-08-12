@@ -1,5 +1,6 @@
-import { Check, Sparkles } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   label: string;
@@ -38,7 +39,7 @@ export const SuggestionChip = ({ label, selected, recommended = false, onToggle 
         <Check size={11} strokeWidth={3} />
       </span>
       {recommended && !selected && (
-        <Sparkles size={11} aria-hidden className="shrink-0 text-warning" />
+        <CONCEPT_ICONS.suggestion size={11} aria-hidden className="shrink-0 text-info" />
       )}
       <span className="min-w-0 break-words text-left">{label}</span>
     </button>

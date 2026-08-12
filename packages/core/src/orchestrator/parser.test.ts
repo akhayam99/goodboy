@@ -137,6 +137,19 @@ describe('parseOrchestratorDecision', () => {
     expect(parsed).toEqual({ action: 'done', reason: 'Goal satisfied.' });
   });
 
+  it('stops the missing-end-marker fallback before a recap that carries a brace', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}\n<<run-summary>>\n**Done**\n- closed the `}` case\n<</run-summary>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'done',
+      reason: 'Goal satisfied.',
+      runSummary: '**Done**\n- closed the `}` case',
+    });
+  });
+
   it('repairs literal newlines inside JSON strings', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
@@ -153,5 +166,31 @@ describe('parseOrchestratorDecision', () => {
         expectedOutput: 'a plan',
       },
     });
+  });
+  it('carries the run recap that travels alongside the decision', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>>\n<<run-summary>>\n**Done**\n- shipped the gate\n\n**Left**\n- nothing\n<</run-summary>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'done',
+      reason: 'Goal satisfied.',
+      runSummary: '**Done**\n- shipped the gate\n\n**Left**\n- nothing',
+    });
+  });
+
+  it('leaves the recap out when the block is missing or empty', () => {
+    const missing = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>>',
+    });
+    const empty = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>><<run-summary>>   <</run-summary>>',
+    });
+
+    expect(missing).not.toHaveProperty('runSummary');
+    expect(empty).not.toHaveProperty('runSummary');
   });
 });

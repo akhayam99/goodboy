@@ -66,7 +66,11 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     }
     return sealLast([
       overview,
-      { id: 'pr', label: lensLabel('pr'), onClick: () => handlers.toLens('pr') },
+      {
+        id: 'gitlab_issues',
+        label: lensLabel('gitlab_issues'),
+        onClick: () => handlers.toLens('gitlab_issues'),
+      },
       { id: 'mr', label: 'Merge request' },
     ]);
   }

@@ -8,6 +8,7 @@ import {
   isWorkflowComplete,
   nextStep,
   runsForWorkflowRun,
+  upcomingSteps,
 } from './sequencer';
 
 const D1: Step = {
@@ -233,6 +234,30 @@ describe('currentStep', () => {
 
   it('falls back to first step when template empty', () => {
     expect(currentStep({ ...TEMPLATE, steps: [] }, [])).toBeNull();
+  });
+});
+
+describe('upcomingSteps', () => {
+  it('lists every step after the first one when nothing has run', () => {
+    expect(upcomingSteps(TEMPLATE, [])).toEqual([D2, D3]);
+  });
+
+  it('drops the steps that already finished', () => {
+    const runs = [makeRun('d1', 'completed', 1), makeRun('d2', 'running', 2, '2024-01-01')];
+    expect(upcomingSteps(TEMPLATE, runs)).toEqual([D3]);
+  });
+
+  it('returns nothing once the last step is current', () => {
+    const runs = [
+      makeRun('d1', 'completed', 1),
+      makeRun('d2', 'completed', 2),
+      makeRun('d3', 'running', 3, '2024-01-01'),
+    ];
+    expect(upcomingSteps(TEMPLATE, runs)).toEqual([]);
+  });
+
+  it('returns nothing for a template without steps', () => {
+    expect(upcomingSteps({ ...TEMPLATE, steps: [] }, [])).toEqual([]);
   });
 });
 

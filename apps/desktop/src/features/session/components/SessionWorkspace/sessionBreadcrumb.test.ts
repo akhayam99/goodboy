@@ -91,12 +91,36 @@ describe('buildSessionBreadcrumb', () => {
     expect(labels(crumbs)).toEqual(['Overview', 'pr', 'GitHub']);
   });
 
-  it('renders Merge request for an mr studio', () => {
+  it('roots the merge request studio in the GitLab lens, not the GitHub one', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ studio: { kind: 'mr' } }, h));
-    expect(labels(crumbs)).toEqual(['Overview', 'pr', 'Merge request']);
+    expect(labels(crumbs)).toEqual(['Overview', 'gitlab_issues', 'Merge request']);
     crumbs[1]!.onClick!();
-    expect(h.toLens).toHaveBeenCalledWith('pr');
+    expect(h.toLens).toHaveBeenCalledWith('gitlab_issues');
+  });
+
+  it('gives every integration lens the same two-crumb depth', () => {
+    const h = makeHandlers();
+    const lenses: ReadonlyArray<LensKind> = [
+      'pr',
+      'gitlab_issues',
+      'jira_issues',
+      'linear',
+      'sentry',
+      'slack_threads',
+    ];
+
+    for (const lens of lenses) {
+      const crumbs = buildSessionBreadcrumb(base({ lens }, h));
+      expect(labels(crumbs)).toEqual(['Overview', lens]);
+      expect(last(crumbs)?.onClick).toBeUndefined();
+    }
+  });
+
+  it('opens on Overview so the session name never repeats the sidebar', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(base({ lens: 'agents' }, h));
+    expect(crumbs[0]?.label).toBe('Overview');
   });
 
   it('renders Overview > Plans > {title} for a focused plan', () => {

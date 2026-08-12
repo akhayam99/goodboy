@@ -178,7 +178,6 @@ import { NewSessionView } from '../../features/session/components/NewSessionView
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
-import { WorkspacesSidebar } from '../../features/workspace/components/WorkspacesSidebar';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { ToastProvider } from '../../app/components/Toast';
 
@@ -218,11 +217,6 @@ describe('snapshot, empty states', () => {
         onDismiss={vi.fn()}
       />,
     );
-    expect(container.firstChild).toMatchSnapshot();
-  });
-
-  it('WorkspacesSidebar: no workspace selected', () => {
-    const { container } = render(<WorkspacesSidebar />);
     expect(container.firstChild).toMatchSnapshot();
   });
 

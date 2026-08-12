@@ -23,7 +23,7 @@ export const SHORTCUTS = {
   'workspace.7': { combo: 'cmd+Digit7', label: 'Workspace 7', plane: 'app' },
   'workspace.8': { combo: 'cmd+Digit8', label: 'Workspace 8', plane: 'app' },
   'workspace.9': { combo: 'cmd+Digit9', label: 'Workspace 9', plane: 'app' },
-  'column.toggle': { combo: 'cmd+KeyB', label: 'Show or hide the sessions column', plane: 'app' },
+  'column.toggle': { combo: 'cmd+KeyB', label: 'Show or hide the session sidebar', plane: 'app' },
   'lens.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app' },
   'lens.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app' },
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app' },

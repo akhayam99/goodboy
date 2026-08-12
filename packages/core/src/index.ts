@@ -229,6 +229,7 @@ export {
   isWorkflowComplete,
   nextStep,
   runsForWorkflowRun,
+  upcomingSteps,
   type ChainCarryForwardStep,
   type ParallelCarryForwardBranch,
   type WorkflowChainState,

@@ -220,6 +220,50 @@ pub fn attachment_delete(worktree_dir: String, rel_path: String) -> Result<(), A
     }
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BugReportImageInput {
+    file_name: String,
+    data_base64: String,
+}
+
+fn bug_report_dir_name() -> String {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    format!("goodboy-report-{}-{}", std::process::id(), stamp)
+}
+
+/// GitHub has no public endpoint for issue-body image uploads, so the images
+/// are written to a throwaway folder and the file manager is opened on it: the
+/// reporter drags them straight into the issue the app just opened.
+fn write_bug_report_images(
+    dir: &Path,
+    images: &[BugReportImageInput],
+) -> Result<(), AttachmentError> {
+    fs::create_dir_all(dir)?;
+    for (index, image) in images.iter().enumerate() {
+        let bytes = STANDARD.decode(image.data_base64.as_bytes())?;
+        if bytes.len() > MAX_BYTES {
+            return Err(AttachmentError::TooLarge(MAX_BYTES));
+        }
+        let stored = format!("{:02}-{}", index + 1, sanitize_segment(&image.file_name));
+        fs::write(dir.join(stored), &bytes)?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn bug_report_stage_images(
+    images: Vec<BugReportImageInput>,
+) -> Result<String, AttachmentError> {
+    let dir = std::env::temp_dir().join(bug_report_dir_name());
+    write_bug_report_images(&dir, &images)?;
+    crate::explore::spawn_open(&dir, false)?;
+    Ok(dir.to_string_lossy().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -321,6 +365,54 @@ mod tests {
         fs::write(&pdf, b"%PDF-1.4\n").unwrap();
         let out = attachment_read_dropped(pdf.to_string_lossy().to_string()).unwrap();
         assert_eq!(out.mime_type, "application/pdf");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bug_report_images_land_on_disk_numbered_and_sanitized() {
+        let dir = std::env::temp_dir().join(format!("goodboy-report-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+
+        let png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        write_bug_report_images(
+            &dir,
+            &[
+                BugReportImageInput {
+                    file_name: "../../board freeze.png".to_string(),
+                    data_base64: png_b64.to_string(),
+                },
+                BugReportImageInput {
+                    file_name: "second.png".to_string(),
+                    data_base64: png_b64.to_string(),
+                },
+            ],
+        )
+        .unwrap();
+
+        assert!(dir.join("01-board_freeze.png").is_file());
+        assert!(dir.join("02-second.png").is_file());
+        assert_eq!(
+            fs::read(dir.join("02-second.png")).unwrap(),
+            STANDARD.decode(png_b64).unwrap()
+        );
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bug_report_images_reject_a_bad_payload() {
+        let dir = std::env::temp_dir().join(format!("goodboy-report-bad-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+
+        let err = write_bug_report_images(
+            &dir,
+            &[BugReportImageInput {
+                file_name: "shot.png".to_string(),
+                data_base64: "not base64!!".to_string(),
+            }],
+        );
+        assert!(matches!(err, Err(AttachmentError::Decode(_))));
+
         let _ = fs::remove_dir_all(&dir);
     }
 

@@ -174,6 +174,18 @@ export const updateWorkspaceKind = async ({
   ]);
 };
 
+export const renameWorkspace = async (
+  db: Database,
+  id: WorkspaceId,
+  name: string,
+): Promise<void> => {
+  await db.execute('UPDATE workspaces SET name = ?, updated_at = ? WHERE id = ?', [
+    name,
+    Date.now(),
+    id,
+  ]);
+};
+
 export const touchWorkspaceLastAccessed = async (db: Database, id: WorkspaceId): Promise<void> => {
   await db.execute('UPDATE workspaces SET last_accessed_at = ? WHERE id = ?', [Date.now(), id]);
 };

@@ -393,12 +393,12 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
               >
                 <div
                   aria-label="Branch source"
-                  class="gap-1 rounded-lg border border-border-soft/60 bg-subtle/30 p-1 inline-flex items-center"
+                  class="gap-1 rounded-lg border border-border-soft bg-subtle p-1 inline-flex items-center"
                   role="tablist"
                 >
                   <button
                     aria-selected="true"
-                    class="relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] px-2.5 py-1 text-xs bg-background text-foreground shadow-sm"
+                    class="relative flex items-center justify-center gap-1.5 rounded-md border border-transparent motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] px-2.5 py-1 text-xs bg-elevated font-semibold text-foreground ring-1 ring-inset ring-border"
                     role="tab"
                     tabindex="0"
                     type="button"
@@ -486,7 +486,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                   >
                     <svg
                       aria-hidden="true"
-                      class="lucide lucide-wand-sparkles"
+                      class="lucide lucide-highlighter"
                       fill="none"
                       height="13"
                       stroke="currentColor"
@@ -498,28 +498,10 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
+                        d="m9 11-6 6v3h9l3-3"
                       />
                       <path
-                        d="m14 7 3 3"
-                      />
-                      <path
-                        d="M5 6v4"
-                      />
-                      <path
-                        d="M19 14v4"
-                      />
-                      <path
-                        d="M10 2v2"
-                      />
-                      <path
-                        d="M7 8H3"
-                      />
-                      <path
-                        d="M21 16h-4"
-                      />
-                      <path
-                        d="M11 3H9"
+                        d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"
                       />
                     </svg>
                   </button>
@@ -793,94 +775,6 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
       >
         New skill
       </button>
-    </div>
-  </div>
-</div>
-`;
-
-exports[`snapshot, empty states > WorkspacesSidebar: no workspace selected 1`] = `
-<div
-  class="flex h-full min-h-0 flex-col"
->
-  <div
-    class="flex min-h-0 flex-1"
-  >
-    <div
-      class="flex flex-col items-center gap-3 text-center h-full justify-center px-6 py-10"
-    >
-      <span
-        class="flex size-12 items-center justify-center rounded-full bg-info/10 text-info"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-folder-plus"
-          fill="none"
-          height="24"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M12 10v6"
-          />
-          <path
-            d="M9 13h6"
-          />
-          <path
-            d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-          />
-        </svg>
-      </span>
-      <div
-        class="flex flex-col gap-1"
-      >
-        <span
-          class="text-sm font-medium text-foreground"
-        >
-          No workspace yet
-        </span>
-        <span
-          class="max-w-xs text-xs leading-relaxed text-muted-foreground"
-        >
-          Point at a local project folder. Once git is set up, each session opens its own worktree off it.
-        </span>
-      </div>
-      <div
-        class=""
-      >
-        <button
-          class="inline-flex items-center gap-1.5 rounded-md bg-info/15 px-3 py-1.5 text-xs font-medium text-info transition-colors hover:bg-info/25"
-          type="button"
-        >
-          <svg
-            aria-hidden="true"
-            class="lucide lucide-plus"
-            fill="none"
-            height="12"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="12"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M5 12h14"
-            />
-            <path
-              d="M12 5v14"
-            />
-          </svg>
-          <span>
-            Add workspace
-          </span>
-        </button>
-      </div>
     </div>
   </div>
 </div>
@@ -1428,12 +1322,12 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
               >
                 <div
                   aria-label="Branch source"
-                  class="gap-1 rounded-lg border border-border-soft/60 bg-subtle/30 p-1 inline-flex items-center"
+                  class="gap-1 rounded-lg border border-border-soft bg-subtle p-1 inline-flex items-center"
                   role="tablist"
                 >
                   <button
                     aria-selected="true"
-                    class="relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] px-2.5 py-1 text-xs bg-background text-foreground shadow-sm"
+                    class="relative flex items-center justify-center gap-1.5 rounded-md border border-transparent motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] px-2.5 py-1 text-xs bg-elevated font-semibold text-foreground ring-1 ring-inset ring-border"
                     role="tab"
                     tabindex="0"
                     type="button"
@@ -1521,7 +1415,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                   >
                     <svg
                       aria-hidden="true"
-                      class="lucide lucide-wand-sparkles"
+                      class="lucide lucide-highlighter"
                       fill="none"
                       height="13"
                       stroke="currentColor"
@@ -1533,28 +1427,10 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
+                        d="m9 11-6 6v3h9l3-3"
                       />
                       <path
-                        d="m14 7 3 3"
-                      />
-                      <path
-                        d="M5 6v4"
-                      />
-                      <path
-                        d="M19 14v4"
-                      />
-                      <path
-                        d="M10 2v2"
-                      />
-                      <path
-                        d="M7 8H3"
-                      />
-                      <path
-                        d="M21 16h-4"
-                      />
-                      <path
-                        d="M11 3H9"
+                        d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"
                       />
                     </svg>
                   </button>

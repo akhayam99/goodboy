@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Divider, Eyebrow, ScrollFade, cn } from '@goodboy/ui';
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import { classifyWorkflowChain, runsForWorkflowRun, upcomingSteps } from '@goodboy/core';
+import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
 import {
   agentHasUnread,
   EMPTY_ARRAY,
@@ -29,6 +30,7 @@ import {
   type NextUpItem,
   type RunningAgent,
   type StalledStep,
+  type UpcomingStep,
   type WaitingAgent,
 } from './selectNextUp';
 import { ActivitySection } from './ActivitySection';
@@ -65,6 +67,22 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       ).length,
     [resolverIndex.links],
   );
+  const phaseTemplates = useAppStore(
+    (s) => s.phaseTemplates?.[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+  );
+  const sessionWorkflows = useAppStore(
+    (s) => s.sessionWorkflows?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+  );
+  const workflowById = useMemo(() => {
+    const map = new Map<string, Workflow>();
+    for (const workflow of phaseTemplates) {
+      map.set(workflow.id, workflow);
+    }
+    for (const workflow of sessionWorkflows) {
+      map.set(workflow.id, workflow);
+    }
+    return map;
+  }, [phaseTemplates, sessionWorkflows]);
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const loadPendingResolutions = useAppStore((s) => s.loadPendingResolutions);
@@ -73,14 +91,16 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     void loadPendingResolutions(sessionId);
   }, [sessionId, loadPendingResolutions]);
 
-  const activeRuns = session.workflowRuns.filter((run) => run.discardedAt == null);
+  const activeRuns = useMemo(
+    () => session.workflowRuns.filter((run) => run.discardedAt == null),
+    [session.workflowRuns],
+  );
   const isFresh = activeRuns.length === 0 && rawStandalone.length === 0;
   const resolveCount =
     resolvable.prComments +
     resolvable.diffComments +
     resolvable.pending +
     runs.resolveQueue.length +
-    (runs.completedResolveQueue?.length ?? 0) +
     threadlessActiveResolverCount;
   const questionBlocksRun = openQuestions.some(
     (question) =>
@@ -151,7 +171,11 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         };
 
   const stalledStep = useMemo((): StalledStep | null => {
-    for (const lane of [...runs.lanes, ...(runs.completedLanes ?? [])]) {
+    for (const lane of [
+      ...runs.lanes,
+      ...(runs.blockedLanes ?? []),
+      ...(runs.completedLanes ?? []),
+    ]) {
       const step = lane.steps.find((candidate) => candidate.status === 'stalled');
       if (step == null) {
         continue;
@@ -159,7 +183,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       return { runId: lane.runId, name: step.name };
     }
     return null;
-  }, [runs.lanes, runs.completedLanes]);
+  }, [runs.lanes, runs.blockedLanes, runs.completedLanes]);
 
   const runningAgent = useMemo((): RunningAgent | null => {
     const running = sessionAgents.filter((agent) => agent.status === 'running');
@@ -176,6 +200,33 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     return { lens, itemId: root.id };
   }, [sessionAgents, agentKindOverride]);
 
+  const upcomingStep = useMemo((): UpcomingStep | null => {
+    for (const run of activeRuns) {
+      const workflow = workflowById.get(run.workflowId);
+      if (workflow === undefined) {
+        continue;
+      }
+      const runAgents = runsForWorkflowRun(sessionAgents, run.id);
+      const chain = classifyWorkflowChain(workflow, runAgents);
+      if (chain.kind !== 'step') {
+        continue;
+      }
+      const stepIsRunning = runAgents.some(
+        (agent) => agent.stepId === chain.step.id && agent.status === 'running',
+      );
+      if (stepIsRunning) {
+        continue;
+      }
+      return {
+        runId: run.id,
+        name: chain.step.name,
+        workflowName: workflow.name,
+        remaining: upcomingSteps(workflow, runAgents).length,
+      };
+    }
+    return null;
+  }, [activeRuns, workflowById, sessionAgents]);
+
   const nextUp = selectNextUp({
     openQuestions,
     questionBlocksRun,
@@ -186,6 +237,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     isFresh,
     runningAgent,
     resolveCount,
+    upcomingStep,
   });
 
   const openWorkflowBuilder = () => {

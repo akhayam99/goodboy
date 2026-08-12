@@ -13,15 +13,18 @@ export type OrchestratorDecision =
   | {
       readonly action: 'next';
       readonly reason: string;
+      readonly runSummary?: string;
       readonly step: OrchestratorStep;
     }
   | {
       readonly action: 'done';
       readonly reason: string;
+      readonly runSummary?: string;
     }
   | {
       readonly action: 'blocked';
       readonly reason: string;
+      readonly runSummary?: string;
     };
 
 export type OrchestratorCompletedStep = {

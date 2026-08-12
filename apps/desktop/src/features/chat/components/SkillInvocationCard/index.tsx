@@ -1,7 +1,7 @@
-import { Sparkles } from 'lucide-react';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'skill_invocation' }>;
@@ -16,7 +16,7 @@ export const SkillInvocationCard = ({ item }: Props) => {
         <TranscriptRowHeader
           grouped
           tone="operations"
-          icon={<Sparkles size={12} aria-hidden />}
+          icon={<CONCEPT_ICONS.skills size={12} aria-hidden />}
           eyebrow="skill"
           preview={
             <span className="flex min-w-0 flex-wrap items-center gap-2">

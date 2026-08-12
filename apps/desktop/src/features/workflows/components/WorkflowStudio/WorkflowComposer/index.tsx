@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { Button, Divider, FieldRow, Input, SectionHeader, ScrollFade, cn } from '@goodboy/ui';
-import { Check, Plus, Sparkles, X } from 'lucide-react';
+import { Check, Plus, X } from 'lucide-react';
 import { recommendedModelForRole } from '@goodboy/core';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../../workflows';
@@ -12,6 +12,7 @@ import { StepFlowConnector } from '../StepFlowConnector';
 import { StepLibraryPalette } from '../StepLibraryPalette';
 import { EmptyGuide } from '../EmptyGuide';
 import { useAppStore } from '../../../../../store';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly open: boolean;
@@ -149,7 +150,7 @@ export const WorkflowComposer = ({
                 onClick={onOpenFormat}
                 disabled={saving || formatting}
               >
-                <Sparkles size={13} aria-hidden />
+                <CONCEPT_ICONS.enhance size={13} aria-hidden />
                 {formatting ? 'Formatting…' : 'Format'}
               </Button>
             ) : null}

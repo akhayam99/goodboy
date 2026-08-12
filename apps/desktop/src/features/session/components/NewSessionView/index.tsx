@@ -37,6 +37,7 @@ import { NewSessionBlocked } from './NewSessionBlocked';
 import { NewSessionFooter } from './NewSessionFooter';
 import { NewSessionForm } from './NewSessionForm';
 import { polishGoal } from './polishGoal';
+import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 
 type Props = {
   onClose: () => void;
@@ -422,7 +423,11 @@ export const NewSessionView = ({ onClose, workspaceId, onOpenSettings }: Props) 
           />
         ) : (
           <>
-            <ScrollFade className="min-h-0 flex-1" viewportClassName="px-6 py-5" fadeSize={24}>
+            <ScrollFade
+              className="min-h-0 flex-1"
+              viewportClassName={PANE_RHYTHM.body}
+              fadeSize={24}
+            >
               <NewSessionForm
                 workspaceId={workspaceId}
                 isSimple={isSimple}

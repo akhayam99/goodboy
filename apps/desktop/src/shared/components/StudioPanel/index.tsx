@@ -20,7 +20,7 @@ export const StudioPanel = ({
   children,
 }: Props) => {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full w-full min-w-0 flex-col">
       <div className={cn('flex flex-col', PANE_RHYTHM.header)}>
         <div className={cn('flex items-center gap-3', PANE_RHYTHM.column, maxWidthClass)}>
           {icon ?? null}

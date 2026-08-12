@@ -164,6 +164,8 @@ import type { Params as MarkChangelogSeenParams } from './slices/changelog/markC
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
+import type { Params as AddBugReportImagesParams } from './slices/bugReportDraft/addBugReportImages';
+import type { Params as RemoveBugReportImageParams } from './slices/bugReportDraft/removeBugReportImage';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
@@ -194,6 +196,8 @@ export type AppActions = {
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
   setBugReportDraft(params: SetBugReportDraftParams): void;
+  addBugReportImages(params: AddBugReportImagesParams): void;
+  removeBugReportImage(params: RemoveBugReportImageParams): void;
   clearBugReportDraft(): void;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
@@ -224,6 +228,7 @@ export type AppActions = {
     workspaceId: WorkspaceId;
     remoteUrl: string;
   }): Promise<Workspace>;
+  renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
   deleteWorkspace(id: WorkspaceId): Promise<void>;
   loadWorkspaceGitStatus(input: { workspaceId: WorkspaceId }): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;

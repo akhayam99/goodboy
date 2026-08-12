@@ -1,7 +1,7 @@
-import { Sparkles } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { modelLabel, modelTier, TIER_TEXT } from '../../utils/chat-constants';
 import { NudgeCard } from '../NudgeCard';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type Props = {
   readonly direction: 'lighter' | 'heavier';
@@ -49,7 +49,7 @@ export const RightSizeCard = ({
   return (
     <NudgeCard
       severity="info"
-      icon={<Sparkles size={12} aria-hidden />}
+      icon={<CONCEPT_ICONS.suggestion size={12} aria-hidden />}
       ariaLabel="Model right-sizing suggestion"
       testId="right-size-card"
       autoFocusPrimary

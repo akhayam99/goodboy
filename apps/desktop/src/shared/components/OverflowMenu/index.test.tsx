@@ -35,13 +35,18 @@ describe('OverflowMenu', () => {
     expect(onSelect).toHaveBeenCalledOnce();
   });
 
-  it('anchors the menu above the trigger when side is top', () => {
+  it('escapes clipping ancestors by rendering the menu in a fixed portal', () => {
     const items: OverflowMenuItem[] = [{ kind: 'item', key: 'x', label: 'X', onClick: vi.fn() }];
-    render(<OverflowMenu items={items} side="top" />);
+    render(
+      <div className="overflow-x-auto">
+        <OverflowMenu items={items} />
+      </div>,
+    );
     fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
     const menu = screen.getByRole('menu');
-    expect(menu.className).toContain('bottom-full');
-    expect(menu.className).not.toContain('top-full');
+    expect(menu.className).toContain('fixed');
+    expect(menu.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'X' })).toBeDefined();
   });
 
   it('does not open when disabled', () => {

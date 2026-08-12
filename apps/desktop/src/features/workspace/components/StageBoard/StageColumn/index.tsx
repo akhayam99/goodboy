@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn, Eyebrow, ScrollFade, type Tone } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
-import { useMultiSelect } from '../../../../../shared/hooks/useMultiSelect';
-import { BulkActionBar } from '../../BulkActionBar';
-import { StageBoardCard, type CardSelectionEvent } from '../StageBoardCard';
+import type { MultiSelect } from '../../../../../shared/hooks/useMultiSelect';
+import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
 
 const ZERO_STATE: Record<SessionStage | 'archived', string> = {
   attention: 'nothing needs you',
@@ -19,8 +19,7 @@ const ZERO_STATE: Record<SessionStage | 'archived', string> = {
 };
 
 export type ColumnSpec =
-  | { readonly kind: 'stage'; readonly stage: SessionStage }
-  | { readonly kind: 'archived' };
+  { readonly kind: 'stage'; readonly stage: SessionStage } | { readonly kind: 'archived' };
 
 type ColumnView = {
   readonly key: SessionStage | 'archived';
@@ -53,6 +52,7 @@ type StageColumnProps = {
   readonly spec: ColumnSpec;
   readonly sessions: ReadonlyArray<Session>;
   readonly nav: BoardNavigation;
+  readonly selection: MultiSelect<SessionId>;
   readonly onArchive: (session: Session) => void;
   readonly onDelete: (session: Session) => void;
   readonly onRestore: (session: Session) => void;
@@ -62,6 +62,7 @@ export const StageColumn = ({
   spec,
   sessions,
   nav,
+  selection,
   onArchive,
   onDelete,
   onRestore,
@@ -70,24 +71,14 @@ export const StageColumn = ({
   const [collapsed, setCollapsed] = useState(false);
   const empty = sessions.length === 0;
 
-  const order = useMemo(() => sessions.map((s) => s.id as SessionId), [sessions]);
-  const selection = useMultiSelect(order);
   const { clear: clearSelection, isSelected } = selection;
-  const selectedSessions = sessions.filter((s) => isSelected(s.id as SessionId));
-
-  const onToggleSelect = (id: SessionId, event: CardSelectionEvent) => {
-    if (event.shiftKey) {
-      selection.selectRange(id);
-      return;
-    }
-    selection.toggle(id);
-  };
+  const archivedColumn = view.archived;
 
   useEffect(() => {
-    if (collapsed) {
+    if (collapsed && archivedColumn) {
       clearSelection();
     }
-  }, [collapsed, clearSelection]);
+  }, [collapsed, archivedColumn, clearSelection]);
 
   const header = (
     <span className="flex items-center gap-1.5">
@@ -97,7 +88,13 @@ export const StageColumn = ({
   );
 
   return (
-    <div className={cn('flex min-h-0 w-[17rem] min-w-[13.5rem] flex-col gap-3')}>
+    <div
+      className={cn(
+        'flex min-h-0 flex-col',
+        PANE_RHYTHM.board.colWidth,
+        PANE_RHYTHM.board.colStack,
+      )}
+    >
       {view.collapsible ? (
         <button
           type="button"
@@ -122,7 +119,7 @@ export const StageColumn = ({
 
       {!collapsed && (
         <ScrollFade orientation="vertical" className="flex-1">
-          <div className="flex flex-col gap-2">
+          <div className={cn('flex flex-col', PANE_RHYTHM.board.cardGap)}>
             {empty ? (
               <p className="flex items-center gap-2 px-1 py-2 text-xs text-muted-foreground/70">
                 <CONCEPT_ICONS.sessions
@@ -140,7 +137,6 @@ export const StageColumn = ({
                   nav={nav}
                   archived={view.archived}
                   selected={isSelected(session.id as SessionId)}
-                  onToggleSelect={onToggleSelect}
                   onModifierClick={selection.handleItemClick}
                   onArchive={onArchive}
                   onDelete={onDelete}
@@ -150,16 +146,6 @@ export const StageColumn = ({
             )}
           </div>
         </ScrollFade>
-      )}
-
-      {!collapsed && selectedSessions.length > 0 && (
-        <BulkActionBar
-          scope={view.archived ? 'archived' : 'active'}
-          sessions={selectedSessions}
-          onSelectAll={selection.selectAll}
-          onClear={clearSelection}
-          className="shrink-0"
-        />
       )}
     </div>
   );

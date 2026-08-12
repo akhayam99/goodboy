@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, RoleModelPreferences } from '@goodboy/types';
 import { Checkbox, EmptyState } from '@goodboy/ui';
-import { ChevronDown, Sliders, Sparkles } from 'lucide-react';
+import { ChevronDown, Sliders } from 'lucide-react';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
 import type { CommentThread } from '../../../comment-threads';
@@ -145,7 +145,7 @@ export const ResolveBoard = ({
             title={selected.length > 8 ? 'Too many threads for one resolver (max 8)' : undefined}
             className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 px-2.5 py-1 text-xs font-semibold text-accent transition-opacity hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Sparkles size={12} aria-hidden />
+            <CONCEPT_ICONS.resolve size={12} aria-hidden />
             Spawn 1 combined resolver
           </button>
         ) : null}
@@ -155,7 +155,7 @@ export const ResolveBoard = ({
           disabled={selected.length === 0}
           className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Sparkles size={12} aria-hidden />
+          <CONCEPT_ICONS.resolve size={12} aria-hidden />
           {selected.length >= 2
             ? `Spawn ${selected.length} resolvers`
             : `Spawn resolver for ${selected.length} comment`}

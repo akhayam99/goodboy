@@ -77,4 +77,10 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
   it('gives reason an operator facing contract', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('reason is written for the operator');
   });
+  it('asks for a running recap alongside every decision', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('<<run-summary>>');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('<</run-summary>>');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('it replaces the previous one every time');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('including done and blocked');
+  });
 });

@@ -21,10 +21,14 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnect = useAppStore((s) => s.deleteWorkspace);
+  const workspace = useAppStore((s) => s.workspaces.find((w) => w.id === workspaceId) ?? null);
+  const renameWorkspace = useAppStore((s) => s.renameWorkspace);
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const storeSetWorkspaceOverrides = useAppStore((s) => s.setWorkspaceOverrides);
   const { showToast } = useToast();
 
+  const [displayName, setDisplayName] = useState(workspace?.name ?? '');
+  const [renaming, setRenaming] = useState(false);
   const [branchPrefix, setBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [savedBranchPrefix, setSavedBranchPrefix] = useState(DEFAULT_BRANCH_PREFIX);
   const [busy, setBusy] = useState(false);
@@ -43,6 +47,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       setSavedBranchPrefix(value);
     });
   }, [workspaceId, loadSetting]);
+
+  useEffect(() => {
+    setDisplayName(workspace?.name ?? '');
+  }, [workspace?.name]);
 
   useEffect(() => {
     if (!initialSection) {
@@ -78,6 +86,24 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       showToast('error', formatError(err));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const commitDisplayName = async () => {
+    const next = displayName.trim();
+    if (workspace == null || next === '' || next === workspace.name) {
+      setDisplayName(workspace?.name ?? '');
+      return;
+    }
+    setRenaming(true);
+    try {
+      await renameWorkspace({ workspaceId, name: next });
+      showToast('success', 'workspace renamed');
+    } catch (err) {
+      showToast('error', formatError(err));
+      setDisplayName(workspace.name);
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -118,6 +144,9 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .replace(/^-+/, '')
       .slice(0, 16);
 
+  const folderName =
+    workspace?.rootPath.split('/').filter(Boolean).at(-1) ?? 'the workspace folder';
+
   const anchor = (id: string) => (el: HTMLElement | null) => {
     anchorsRef.current[id] = el;
   };
@@ -126,6 +155,48 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     <ScrollFade className="h-full w-full" viewportClassName="px-5 py-5">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-col gap-6">
+          {workspace == null ? null : (
+            <>
+              <section id="identity" ref={anchor('identity')} className="flex flex-col gap-4">
+                <SectionHeader
+                  label="Workspace"
+                  hint="How this workspace is labelled across the app."
+                />
+                <FieldRow
+                  label="Display name"
+                  help={`Presentation only. The folder on disk stays ${folderName}.`}
+                >
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    onBlur={() => void commitDisplayName()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        void commitDisplayName();
+                      }
+                      if (e.key === 'Escape') {
+                        setDisplayName(workspace.name);
+                      }
+                    }}
+                    placeholder={folderName}
+                    disabled={renaming}
+                    maxLength={60}
+                    aria-label="Display name"
+                    className={cn(
+                      'h-8 w-56 rounded-md border border-border bg-background px-2 text-sm text-foreground motion-safe:transition-colors',
+                      'placeholder:text-muted-foreground/40',
+                      'hover:border-border-strong focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
+                      renaming && 'cursor-not-allowed opacity-50',
+                    )}
+                  />
+                </FieldRow>
+              </section>
+
+              <Divider />
+            </>
+          )}
+
           <section id="general" ref={anchor('general')} className="flex flex-col gap-4">
             <SectionHeader
               label="Session defaults"

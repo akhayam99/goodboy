@@ -32,13 +32,22 @@ export const ActivitySection = ({
   onSelectLens,
 }: Props) => {
   const sessionId = session.id as SessionId;
+  const blockedLanes = runs.blockedLanes ?? [];
   const completedLanes = runs.completedLanes ?? [];
   const completedAgents = runs.completedFreeAgents ?? [];
   const lastCompletedLane = completedLanes[completedLanes.length - 1] ?? null;
+  const firstBlockedLane = blockedLanes[0] ?? null;
 
   const openCompletedWorkflows = () => {
     if (lastCompletedLane !== null) {
       onFocusCompletedRun(lastCompletedLane.runId);
+    }
+    onSelectLens('workflows');
+  };
+
+  const openBlockedWorkflows = () => {
+    if (firstBlockedLane !== null) {
+      onFocusCompletedRun(firstBlockedLane.runId);
     }
     onSelectLens('workflows');
   };
@@ -72,6 +81,18 @@ export const ActivitySection = ({
             />
           ) : null}
           <PendingResolutionsStrip sessionId={sessionId} />
+          {blockedLanes.length > 0 ? (
+            <SummaryRow
+              icon={CONCEPT_ICONS.workflows}
+              tone="danger"
+              label={
+                blockedLanes.length === 1
+                  ? '1 blocked workflow'
+                  : `${blockedLanes.length} blocked workflows`
+              }
+              onClick={openBlockedWorkflows}
+            />
+          ) : null}
           {resolveCount > 0 ? (
             <SummaryRow
               icon={CONCEPT_ICONS.resolve}

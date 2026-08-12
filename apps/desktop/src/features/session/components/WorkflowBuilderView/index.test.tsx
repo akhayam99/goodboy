@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ModelEffort, Session, Workflow } from '@goodboy/types';
 import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 
@@ -13,6 +13,7 @@ const {
   mockPolish,
   mockPolishStep,
   mockGenerateWorkflowTitle,
+  mockDeleteWorkflow,
   toastMock,
   storeState,
 } = vi.hoisted(() => ({
@@ -23,6 +24,7 @@ const {
   mockPolish: vi.fn(),
   mockPolishStep: vi.fn(),
   mockGenerateWorkflowTitle: vi.fn(async () => undefined),
+  mockDeleteWorkflow: vi.fn(async () => undefined),
   toastMock: vi.fn(),
   storeState: {
     phaseTemplates: {} as Record<string, ReadonlyArray<Workflow>>,
@@ -53,6 +55,7 @@ vi.mock('../../../../store', () => {
     savePhaseTemplate: mockSavePhaseTemplate,
     attachWorkflowToSession: mockAttach,
     generateWorkflowTitle: mockGenerateWorkflowTitle,
+    deleteWorkflow: mockDeleteWorkflow,
     setActiveLens: mockSetActiveLens,
     phaseTemplates: storeState.phaseTemplates,
     sessionPhaseRuns: storeState.sessionPhaseRuns,
@@ -209,22 +212,19 @@ afterEach(() => {
 const goalField = () =>
   screen.getByPlaceholderText(/what should this workflow accomplish/i) as HTMLTextAreaElement;
 
-const continueBtn = () => screen.getByRole('button', { name: /^continue$/i }) as HTMLButtonElement;
-
 const startBtn = () => screen.getByRole('button', { name: /start workflow/i }) as HTMLButtonElement;
 
-const goToApproach = () => {
+const setGoal = () => {
   const field = screen.getByPlaceholderText(
     /what should this workflow accomplish/i,
   ) as HTMLTextAreaElement;
   if (field.value.trim().length === 0) {
     fireEvent.change(field, { target: { value: 'test goal' } });
   }
-  fireEvent.click(continueBtn());
 };
 
 async function draftPlan() {
-  goToApproach();
+  setGoal();
   mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
   fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
     target: { value: 'do something' },
@@ -232,6 +232,8 @@ async function draftPlan() {
   fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
   await waitFor(() => screen.getByText('Ready'));
 }
+
+const withinSteps = () => within(screen.getByRole('list', { name: 'Workflow steps' }));
 
 const stepToggles = () => screen.getAllByRole('button', { name: /^step \d+:/i });
 
@@ -270,7 +272,7 @@ describe('WorkflowBuilderView (studio chrome)', () => {
 describe('WorkflowBuilderView (custom mode, no presets)', () => {
   it('enables start only after a plan is drafted', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    expect(screen.queryByRole('button', { name: /start workflow/i })).toBeNull();
+    expect(startBtn().disabled).toBe(true);
     await draftPlan();
     expect(startBtn().disabled).toBe(false);
   });
@@ -345,7 +347,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     await draftPlan();
     expandStep(0);
-    fireEvent.click(screen.getAllByRole('button', { name: /^model:auto$/i })[0]!);
+    fireEvent.click(withinSteps().getAllByRole('button', { name: /^model:auto$/i })[0]!);
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     const saved = mockSavePhaseTemplate.mock.calls[0]![0];
@@ -369,7 +371,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     };
     storeState.phaseTemplates = { 'ws-1': [workflow] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
     expandStep(0);
     fireEvent.click(screen.getAllByRole('button', { name: 'model:sonnet' })[0]!);
@@ -403,13 +405,13 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     fireEvent.click(screen.getByRole('button', { name: /re-design/i }));
     expect(screen.queryByText('Ready')).toBeNull();
     expect(screen.getByPlaceholderText(/describe the process/i)).toBeDefined();
-    expect(continueBtn().disabled).toBe(true);
+    expect(startBtn().disabled).toBe(true);
   });
 
   it('shows a plan error and keeps start disabled when planning fails', async () => {
     mockPlan.mockRejectedValue(new Error('model unavailable'));
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
       target: { value: 'fail case' },
     });
@@ -417,7 +419,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     await waitFor(() => screen.getByRole('alert'));
     expect(screen.getByRole('alert').textContent).toMatch(/model unavailable/i);
     expect(mockSavePhaseTemplate).not.toHaveBeenCalled();
-    expect(continueBtn().disabled).toBe(true);
+    expect(startBtn().disabled).toBe(true);
   });
 
   it('leaves the landing to attachWorkflowToSession after starting a custom workflow', async () => {
@@ -441,16 +443,15 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
 describe('WorkflowBuilderView (orchestrated mode)', () => {
   it('gates on process text and starts a zero-step dynamic workflow', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
 
     expect(screen.queryByRole('button', { name: /generate plan/i })).toBeNull();
-    expect(continueBtn().disabled).toBe(true);
+    expect(startBtn().disabled).toBe(true);
     fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
-    expect(continueBtn().disabled).toBe(false);
-    fireEvent.click(continueBtn());
+    expect(startBtn().disabled).toBe(false);
 
     expect(screen.getByText(/steps are decided at runtime/i)).toBeDefined();
     fireEvent.click(startBtn());
@@ -481,12 +482,11 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     mockGenerateWorkflowTitle.mockImplementationOnce(() => new Promise(() => {}));
     const onClose = vi.fn();
     render(<WorkflowBuilderView session={session} onClose={onClose} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
     fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
-    fireEvent.click(continueBtn());
     fireEvent.click(startBtn());
 
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
@@ -496,7 +496,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
   it('does not generate a title for preset or custom workflows', async () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
@@ -505,12 +505,11 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
 
   it('defaults auto-run to on for dynamic runs while letting the user disable it', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
     fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
-    fireEvent.click(continueBtn());
 
     const autoRunSwitch = screen.getByRole('switch', { name: /autorun/i });
     expect(autoRunSwitch.getAttribute('aria-checked')).toBe('true');
@@ -527,12 +526,11 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
 
   it('offers no run-wide model for the runtime-decided steps', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
     fireEvent.change(screen.getByPlaceholderText(/describe the intent/i), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
-    fireEvent.click(continueBtn());
 
     expect(screen.queryByRole('button', { name: /step agent routing/i })).toBeNull();
     expect(screen.getByText(/model configured for its role/i)).toBeDefined();
@@ -559,9 +557,9 @@ describe('WorkflowBuilderView (preset mode)', () => {
     const onClose = vi.fn();
     render(<WorkflowBuilderView session={session} onClose={onClose} />);
     fireEvent.change(goalField(), { target: { value: 'review only the db layer' } });
-    goToApproach();
+    setGoal();
     expect(screen.getByText(/pick a preset/i)).toBeDefined();
-    expect(screen.queryByRole('button', { name: /start workflow/i })).toBeNull();
+    expect(startBtn().disabled).toBe(true);
 
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
     expect(startBtn().disabled).toBe(false);
@@ -583,7 +581,7 @@ describe('WorkflowBuilderView (preset mode)', () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     const onClose = vi.fn();
     render(<WorkflowBuilderView session={session} onClose={onClose} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
@@ -591,10 +589,34 @@ describe('WorkflowBuilderView (preset mode)', () => {
     expect(mockSetActiveLens).not.toHaveBeenCalled();
   });
 
+  it('deletes a preset from its own overflow menu, only after confirming', async () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('button', { name: /preset actions: ship it/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /delete preset/i }));
+    expect(mockDeleteWorkflow).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /confirm delete ship it/i }));
+    await waitFor(() => expect(mockDeleteWorkflow).toHaveBeenCalledWith('wf-preset-1', 'ws-1'));
+  });
+
+  it('discarding the draft never deletes the selected preset', () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
+    fireEvent.click(screen.getByRole('button', { name: /discard workflow draft/i }));
+    expect(mockDeleteWorkflow).not.toHaveBeenCalled();
+    expect(screen.getByRole('radio', { name: /ship it/i }).getAttribute('aria-checked')).toBe(
+      'false',
+    );
+  });
+
   it('switches to custom mode via the segment', () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /custom/i }));
     expect(screen.getByPlaceholderText(/describe the process/i)).toBeDefined();
   });
@@ -640,7 +662,7 @@ describe('WorkflowBuilderView (trigger modes)', () => {
       ],
     } as unknown as Session;
     render(<WorkflowBuilderView session={chainedSession} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
     fireEvent.click(screen.getByRole('button', { name: /run after/i }));
     fireEvent.click(startBtn());
@@ -723,7 +745,6 @@ describe('WorkflowBuilderView (draft persistence)', () => {
     expect(storeState.workflowDrafts['sess-1']?.goalText).toBe('persist me');
     unmount();
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /^goal$/i }));
     expect(goalField().value).toBe('persist me');
   });
 
@@ -737,20 +758,20 @@ describe('WorkflowBuilderView (draft persistence)', () => {
     expect(storeState.workflowDrafts['sess-2']).toBeUndefined();
   });
 
-  it('reset draft wipes local state and the stored draft', () => {
+  it('discard changes wipes local state and the stored draft', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     fireEvent.change(goalField(), { target: { value: 'throwaway' } });
     expect(storeState.workflowDrafts['sess-1']).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /reset workflow draft/i }));
+    fireEvent.click(screen.getByRole('button', { name: /discard workflow draft/i }));
     expect(goalField().value).toBe('');
     expect(storeState.workflowDrafts['sess-1']).toBeUndefined();
   });
 
-  it('hides the reset button while the draft is empty', () => {
+  it('hides the discard action while the draft is empty', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    expect(screen.queryByRole('button', { name: /reset workflow draft/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /discard workflow draft/i })).toBeNull();
     fireEvent.change(goalField(), { target: { value: 'now dirty' } });
-    expect(screen.getByRole('button', { name: /reset workflow draft/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /discard workflow draft/i })).toBeDefined();
   });
 
   it('clears the draft after attaching a workflow', async () => {
@@ -776,7 +797,7 @@ describe('WorkflowBuilderView (preset mode - dirty flows)', () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     const onClose = vi.fn();
     render(<WorkflowBuilderView session={session} onClose={onClose} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
     expandStep(0);
 
@@ -798,7 +819,7 @@ describe('WorkflowBuilderView (preset mode - dirty flows)', () => {
   it('dirty preset: adding a step triggers savePhaseTemplate with the extra step', async () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /add step/i }));
@@ -812,7 +833,7 @@ describe('WorkflowBuilderView (preset mode - dirty flows)', () => {
   it('dirty preset: removing a step triggers savePhaseTemplate with fewer steps', async () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
 
     const removeButtons = screen.getAllByRole('button', { name: /remove step/i });
@@ -827,7 +848,7 @@ describe('WorkflowBuilderView (preset mode - dirty flows)', () => {
   it('save-as-preset toggle is hidden for a clean preset, visible after editing a step', async () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('radio', { name: /ship it/i }));
 
     expect(screen.queryByRole('switch', { name: /save as preset/i })).toBeNull();
@@ -887,9 +908,9 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
     await draftPlan();
     expandStep(0);
 
-    fireEvent.click(screen.getAllByRole('button', { name: /^provider:default$/i })[0]!);
+    fireEvent.click(withinSteps().getAllByRole('button', { name: /^provider:default$/i })[0]!);
 
-    const model = screen.getAllByRole('button', { name: /^model:auto$/i })[0]!;
+    const model = withinSteps().getAllByRole('button', { name: /^model:auto$/i })[0]!;
     expect(model.dataset['provider']).toBe('cursor');
     expect(model.dataset['recommendedModel']).toBe('auto');
 
@@ -946,14 +967,14 @@ describe('WorkflowBuilderView (per-step polish)', () => {
 describe('WorkflowBuilderView (no-presets empty state)', () => {
   it('shows the empty state message when preset mode is selected but no presets exist', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /^preset$/i }));
     expect(screen.getByText(/no presets in this workspace yet/i)).toBeDefined();
   });
 
   it('clicking "Describe your own" from the empty state switches to custom mode', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /^preset$/i }));
     fireEvent.click(screen.getByRole('button', { name: /describe your own/i }));
     expect(screen.getByPlaceholderText(/describe the process/i)).toBeDefined();
@@ -963,7 +984,7 @@ describe('WorkflowBuilderView (no-presets empty state)', () => {
 describe('WorkflowBuilderView (planner model picker)', () => {
   it('default shows the resolved model name as recommended (not cheap-tier string)', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     const modelBtn = screen.getByRole('button', { name: /^model:auto$/i });
     expect(modelBtn.dataset['recommendedModel']).toBe('haiku-4.5');
     expect(screen.queryByText(/cheap-tier/i)).toBeNull();
@@ -972,7 +993,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
   it('PlannerClient receives resolved model when Auto is selected', async () => {
     mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
       target: { value: 'do something' },
     });
@@ -987,7 +1008,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
   it('picking a concrete provider+model makes PlannerClient receive it', async () => {
     mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
 
     const plannerProviderBtn = screen.getByRole('button', { name: /^provider:default$/i });
     fireEvent.click(plannerProviderBtn);
@@ -1009,7 +1030,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
   it('picking planner effort makes PlannerClient receive it', async () => {
     mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
     fireEvent.click(screen.getByRole('button', { name: /^effort:high$/i }));
 
     fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
@@ -1026,7 +1047,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
   it('planner model picker does not write workspace overrides', async () => {
     mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    goToApproach();
+    setGoal();
 
     const plannerProviderBtn = screen.getByRole('button', { name: /^provider:default$/i });
     fireEvent.click(plannerProviderBtn);

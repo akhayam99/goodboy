@@ -16,7 +16,6 @@ import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
-import { WorkSurfaceBackButton } from '../../../../shared/components/WorkSurfaceBackButton';
 import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
 import { planStatusBadge } from './planStatusBadge';
 import { PlanProvenance } from './PlanProvenance';
@@ -129,11 +128,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
 
   if (selected != null) {
     return (
-      <FocusedPane
-        lens="Plans"
-        count={plans.length}
-        actions={<WorkSurfaceBackButton sessionId={sessionId} />}
-      >
+      <FocusedPane lens="Plans" count={plans.length}>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.header)}>
             <div className="flex shrink-0 items-start gap-3">

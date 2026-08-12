@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, EmptyState, SectionHeader, StatusDot } from '@goodboy/ui';
-import { RotateCw, Sparkles, type LucideIcon } from 'lucide-react';
+import { RotateCw, type LucideIcon } from 'lucide-react';
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider, type ProviderId } from '@goodboy/types';
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
@@ -47,7 +47,7 @@ function Detail({
   readonly autoConnect: boolean;
 }) {
   const id = info.id as ProviderId;
-  const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? Sparkles;
+  const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? CONCEPT_ICONS.providers;
   const connectPhase = useAppStore((s) => s.providerConnect[id].phase);
   const connectProvider = useAppStore((s) => s.connectProvider);
   const logoutProvider = useAppStore((s) => s.logoutProvider);

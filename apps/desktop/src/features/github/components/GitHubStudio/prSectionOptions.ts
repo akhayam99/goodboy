@@ -1,8 +1,9 @@
 import type { PrDetail, PullRequestState } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
-import { FileText, ListChecks, MessageSquare, Sparkles } from 'lucide-react';
+import { FileText, ListChecks, MessageSquare } from 'lucide-react';
 import { computeTabStatus } from '../../utils/compute-tab-status';
 import type { PrSection } from './prSection';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Params = {
   readonly pr: PullRequestState;
@@ -36,7 +37,7 @@ export const prSectionOptions = ({
     {
       value: 'resolve',
       label: 'Resolve',
-      icon: Sparkles,
+      icon: CONCEPT_ICONS.resolve,
       badge: countBadge({ count: openResolveCount }),
     },
     {

@@ -109,6 +109,10 @@ const renderPanel = ({
 
 const sentence = () => screen.getByTestId('orchestrator-state').textContent ?? '';
 
+const openHints = () => {
+  fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+};
+
 beforeEach(() => {
   Object.assign(storeState, {
     orchestrateNextStep: vi.fn(async () => undefined),
@@ -117,6 +121,8 @@ beforeEach(() => {
     setWorkflowOrchestratorHints: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
+    setWorkflowRunAutoRun: vi.fn(async () => undefined),
+    stopWorkflowRunNow: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     sessionOpenQuestions: {},
     sessions: [],
@@ -191,7 +197,7 @@ describe('OrchestratorPanel state ladder', () => {
     expect(sentence()).toContain('Choosing the next step');
     expect(screen.getByTestId('orchestrator-panel').className).toContain('spin-border');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
-    expect(screen.getByTestId('orchestrator-hints-toggle')).toBeDefined();
+    expect(screen.getByRole('button', { name: /hints/i })).toBeDefined();
   });
 
   it('names the step it waits on and how long it has been running', () => {
@@ -427,7 +433,7 @@ describe('OrchestratorPanel state ladder', () => {
     });
 
     fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
-    fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+    openHints();
 
     expect(screen.getByTestId('orchestrator-hints-input')).toBeDefined();
     expect(screen.queryByTestId('orchestrator-continue-note')).toBeNull();
@@ -445,7 +451,7 @@ describe('OrchestratorPanel strip', () => {
   it('saves runtime hints from the disclosure', () => {
     renderPanel();
 
-    fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+    openHints();
     fireEvent.change(screen.getByTestId('orchestrator-hints-input'), {
       target: { value: 'ignore the website' },
     });
@@ -460,15 +466,70 @@ describe('OrchestratorPanel strip', () => {
 
   it('offers to clear standing hints only once there are some', () => {
     renderPanel();
-    fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+    openHints();
     expect(screen.queryByTestId('orchestrator-hints-clear')).toBeNull();
 
     cleanup();
     renderPanel({ runOverride: run({ orchestratorHints: 'ignore the website' }) });
-    fireEvent.click(screen.getByTestId('orchestrator-hints-toggle'));
+    openHints();
     fireEvent.click(screen.getByTestId('orchestrator-hints-clear'));
 
     expect(storeState['setWorkflowOrchestratorHints']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, '');
+  });
+
+  it('carries autorun in its own header, so the chat header does not need one', () => {
+    renderPanel({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
+
+    const toggle = screen.getByTestId('workflow-autorun-toggle');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(toggle);
+    expect(storeState['setWorkflowRunAutoRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
+  });
+
+  it('drops the autorun switch once the run is over', () => {
+    renderPanel({
+      runOverride: run({ orchestrationOutcome: 'done' }),
+      agents: [agent(0, 'completed')],
+    });
+
+    expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
+  });
+
+  it('says standing hints are on without spending a button on it', () => {
+    renderPanel({ runOverride: run({ orchestratorHints: 'ignore the website' }) });
+
+    expect(screen.getByTestId('orchestrator-panel').textContent).toContain('Standing hints on');
+  });
+
+  it('puts every control in the open, with no overflow menu left to hunt through', () => {
+    renderPanel({ agents: [agent(0, 'completed')] });
+
+    expect(screen.queryByRole('button', { name: /orchestrator options/i })).toBeNull();
+    expect(screen.queryByRole('menuitem')).toBeNull();
+    expect(screen.getByRole('button', { name: /decide next step/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^hints$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^budget$/i })).toBeDefined();
+    expect(screen.getByTestId('workflow-autorun-toggle')).toBeDefined();
+  });
+
+  it('opens the budget from the row instead of a second review button', () => {
+    renderPanel();
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-budget-studio', opened);
+    fireEvent.click(screen.getByTestId('orchestrator-budget'));
+    window.removeEventListener('goodboy:open-budget-studio', opened);
+
+    expect(opened).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the budget shortcut while a budget pause already owns the primary action', () => {
+    renderPanel({
+      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
+    });
+
+    expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
+    expect(screen.getByTestId('orchestrator-review-budget')).toBeDefined();
   });
 
   it('folds the decisions into the strip behind a count', () => {

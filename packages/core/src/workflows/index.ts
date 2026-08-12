@@ -6,6 +6,7 @@ export {
   isWorkflowComplete,
   nextStep,
   runsForWorkflowRun,
+  upcomingSteps,
   type WorkflowChainState,
 } from './sequencer';
 export {

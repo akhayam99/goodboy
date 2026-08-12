@@ -7,6 +7,7 @@ export type AppShellProps = {
   footer?: ReactNode;
   leftSidebar?: ReactNode;
   leftHidden?: boolean;
+  leftSidebarCollapsed?: boolean;
   leftOverlay?: ReactNode;
   main: ReactNode;
   rightSidebar: ReactNode;
@@ -25,6 +26,7 @@ const RIGHT_SIDEBAR_MAX = 560;
 const RIGHT_SIDEBAR_DEFAULT = 340;
 export const RIGHT_SIDEBAR_STORAGE_KEY = 'goodboy:right-sidebar-width';
 const RIGHT_RAIL_WIDTH = 44;
+const LEFT_RAIL_WIDTH = 44;
 
 function readPersistedWidth(key: string, def: number, min: number, max: number): number {
   if (typeof localStorage === 'undefined') {
@@ -43,6 +45,7 @@ function readPersistedWidth(key: string, def: number, min: number, max: number):
 
 function buildLayout(opts: {
   collapsed: boolean;
+  leftCollapsed: boolean;
   leftHidden: boolean;
   hasLeftSidebar: boolean;
   hasRightSidebar: boolean;
@@ -56,6 +59,7 @@ function buildLayout(opts: {
 } {
   const {
     collapsed,
+    leftCollapsed,
     leftHidden,
     hasLeftSidebar,
     hasRightSidebar,
@@ -85,8 +89,8 @@ function buildLayout(opts: {
     };
   }
 
-  const leftCol = leftHidden ? '0px' : `${leftWidthPx}px`;
-  const handleCol = leftHidden ? '0px' : '6px';
+  const leftCol = leftHidden ? '0px' : leftCollapsed ? `${LEFT_RAIL_WIDTH}px` : `${leftWidthPx}px`;
+  const handleCol = leftHidden || leftCollapsed ? '0px' : '6px';
   if (!hasRightSidebar) {
     return {
       templateAreas: hasFooter
@@ -112,6 +116,7 @@ export const AppShell = ({
   footer,
   leftSidebar,
   leftHidden = false,
+  leftSidebarCollapsed = false,
   leftOverlay,
   main,
   rightSidebar,
@@ -122,7 +127,7 @@ export const AppShell = ({
   const hasFooter = footer != null;
   const hasLeftSidebar = leftSidebar != null;
   const hasRightSidebar = rightSidebar !== null && rightSidebar !== undefined;
-  const isLeftResizeDisabled = leftHidden;
+  const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed;
   const [leftWidth, setLeftWidth] = useState<number>(() =>
     readPersistedWidth(
       LEFT_SIDEBAR_STORAGE_KEY,
@@ -155,6 +160,7 @@ export const AppShell = ({
 
   const layout = buildLayout({
     collapsed: rightSidebarCollapsed,
+    leftCollapsed: leftSidebarCollapsed,
     leftHidden,
     hasLeftSidebar,
     hasRightSidebar,

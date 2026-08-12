@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Sparkles } from 'lucide-react';
 import { cn, Divider } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   openCount: number;
@@ -29,7 +29,7 @@ export const NotesFooter = ({ openCount, spawning, routing, onPropose }: Props) 
             )}
             title="Spawn a reviewer agent that proposes fixes without touching code"
           >
-            <Sparkles size={11} aria-hidden />
+            <CONCEPT_ICONS.agents size={11} aria-hidden />
             Propose fixes
           </button>
         </div>

@@ -110,7 +110,7 @@ export const useDropdown = ({
     portalTarget,
     popupClassName: cn(
       strategy === 'fixed' ? 'fixed' : 'absolute',
-      hasBackdrop ? 'z-popover' : 'z-50',
+      strategy === 'fixed' || hasBackdrop ? 'z-popover' : 'z-50',
       width,
       strategy === 'absolute' && ALIGN_CLASS[align],
       strategy === 'absolute' &&

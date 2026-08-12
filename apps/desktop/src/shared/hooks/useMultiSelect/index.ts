@@ -9,6 +9,7 @@ export type MultiSelect<T extends string> = {
   readonly selectRange: (id: T) => void;
   readonly selectAll: () => void;
   readonly clear: () => void;
+  readonly selectIds: (ids: ReadonlyArray<T>, mode: 'replace' | 'add') => void;
   readonly handleItemClick: (id: T, event: MultiSelectClickEvent) => void;
 };
 
@@ -57,7 +58,17 @@ export const useMultiSelect = <T extends string>(orderedIds: ReadonlyArray<T>): 
   const clear = useCallback(() => {
     anchorRef.current = null;
     baseRef.current = [];
-    setSelected([]);
+    setSelected((current) => (current.length === 0 ? current : []));
+  }, []);
+
+  const selectIds = useCallback((ids: ReadonlyArray<T>, mode: 'replace' | 'add') => {
+    setSelected((current) => {
+      const next =
+        mode === 'replace' ? [...ids] : [...current, ...ids.filter((id) => !current.includes(id))];
+      anchorRef.current = next[next.length - 1] ?? null;
+      baseRef.current = next;
+      return next;
+    });
   }, []);
 
   const handleItemClick = useCallback(
@@ -66,7 +77,7 @@ export const useMultiSelect = <T extends string>(orderedIds: ReadonlyArray<T>): 
         selectRange(id);
         return;
       }
-      if (event.metaKey || event.ctrlKey) {
+      if (event.metaKey || event.ctrlKey || event.altKey) {
         toggle(id);
         return;
       }
@@ -77,5 +88,14 @@ export const useMultiSelect = <T extends string>(orderedIds: ReadonlyArray<T>): 
     [selectRange, toggle],
   );
 
-  return { selected, isSelected, toggle, selectRange, selectAll, clear, handleItemClick };
+  return {
+    selected,
+    isSelected,
+    toggle,
+    selectRange,
+    selectAll,
+    clear,
+    selectIds,
+    handleItemClick,
+  };
 };

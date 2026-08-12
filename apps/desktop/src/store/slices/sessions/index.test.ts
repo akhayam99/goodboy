@@ -1169,6 +1169,27 @@ describe('store contract', () => {
       expect(store.getState().sessionStudio[session.id]).toBeNull();
       expect(store.getState().activeLens[session.id]).toBeNull();
     });
+
+    it('seeds an empty question list so the badge never waits on a load nobody asked for', async () => {
+      const store = await getStore();
+      store.setState({ currentWorkspaceId: WS_ID });
+      const { listWorkspaces } = await import('@goodboy/db');
+      (listWorkspaces as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        buildWorkspace(),
+      ]);
+      createWorktreeSpy.mockResolvedValueOnce({
+        worktreePath: '/tmp/repo/wt',
+        branchName: 'kay/setup-workflow',
+        slug: 'setup-workflow',
+        reused: false,
+      });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'ship it' });
+
+      expect(store.getState().sessionOpenQuestions[session.id]).toEqual([]);
+    });
   });
 
   describe('session external task links', () => {

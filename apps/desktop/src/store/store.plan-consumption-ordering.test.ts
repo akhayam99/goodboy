@@ -535,7 +535,7 @@ describe('autorun plan consumption ordering', () => {
     expect(planBacking.plans).toHaveLength(0);
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
     await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2));
-    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(IMPL_ID);
+    expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBe(PLANNER_ID);
   });
 
   it('captures the plan but records no consumption outside a workflow', async () => {

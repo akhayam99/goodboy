@@ -209,7 +209,7 @@ fn read_binary(path: &Path, metadata: &Metadata) -> Result<ExploreContent, Explo
     })
 }
 
-fn spawn_open(path: &Path, reveal: bool) -> Result<(), ExploreError> {
+pub(crate) fn spawn_open(path: &Path, reveal: bool) -> std::io::Result<()> {
     #[cfg(target_os = "macos")]
     let mut command = Command::new("open");
     #[cfg(target_os = "macos")]
@@ -302,7 +302,8 @@ pub fn explore_open(
     if !path.is_file() {
         return Err(ExploreError::NotFile);
     }
-    spawn_open(&path, reveal)
+    spawn_open(&path, reveal)?;
+    Ok(())
 }
 
 #[cfg(test)]

@@ -6,6 +6,8 @@ import type { OrchestratorDecision, OrchestratorStep } from './types';
 
 const START_MARKER = '<<orchestrator>>';
 const END_MARKER = '<</orchestrator>>';
+const SUMMARY_START_MARKER = '<<run-summary>>';
+const SUMMARY_END_MARKER = '<</run-summary>>';
 
 const asRecord = (value: unknown): Record<string, unknown> | null => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -71,11 +73,26 @@ const decisionSlice = (raw: string): string | null => {
   if (end >= 0) {
     return raw.slice(contentStart, end).trim();
   }
-  const lastBrace = raw.lastIndexOf('}');
+  const summaryStart = raw.indexOf(SUMMARY_START_MARKER, contentStart);
+  const searchEnd = summaryStart >= 0 ? summaryStart : raw.length;
+  const lastBrace = raw.lastIndexOf('}', searchEnd - 1);
   if (lastBrace <= contentStart) {
     return null;
   }
   return raw.slice(contentStart, lastBrace + 1).trim();
+};
+
+const runSummarySlice = (raw: string): string | null => {
+  const start = raw.indexOf(SUMMARY_START_MARKER);
+  if (start < 0) {
+    return null;
+  }
+  const contentStart = start + SUMMARY_START_MARKER.length;
+  const end = raw.indexOf(SUMMARY_END_MARKER, contentStart);
+  if (end < 0) {
+    return null;
+  }
+  return nonEmptyString(raw.slice(contentStart, end));
 };
 
 type ModelParams = {
@@ -156,8 +173,10 @@ export const parseOrchestratorDecision = ({
   }
   const action = decision['action'];
   const reason = nonEmptyString(decision['reason']) ?? '';
+  const summary = runSummarySlice(raw);
+  const runSummary = summary === null ? {} : { runSummary: summary };
   if (action === 'done' || action === 'blocked') {
-    return { action, reason };
+    return { action, reason, ...runSummary };
   }
   if (action !== 'next') {
     return null;
@@ -166,5 +185,5 @@ export const parseOrchestratorDecision = ({
   if (step === null) {
     return null;
   }
-  return { action, reason, step };
+  return { action, reason, ...runSummary, step };
 };

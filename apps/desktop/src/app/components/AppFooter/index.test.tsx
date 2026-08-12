@@ -38,7 +38,8 @@ import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
 const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
 const REST_MORE_LABEL = 'More studios: budget, impact and changelog';
-const UNSEEN_MORE_LABEL = 'More studios: budget, impact and changelog, new release notes to read';
+
+const footerRow = () => screen.getByTestId('beta-badge-trigger').closest('.grid');
 
 const openMore = () => {
   fireEvent.click(screen.getByRole('button', { name: /^More studios/ }));
@@ -201,17 +202,16 @@ describe('AppFooter', () => {
     expect(screen.queryByRole('dialog', { name: 'More studios' })).toBeNull();
   });
 
-  it('dots the more control for release notes the running version has not shown', () => {
+  it('never dots the more control, release notes announce themselves elsewhere', () => {
     const { rerender } = render(<AppFooter {...footerProps()} />);
 
     expect(screen.queryByTestId('more-studios-dot')).toBeNull();
-    expect(screen.getByRole('button', { name: REST_MORE_LABEL })).toBeDefined();
 
     flags.unseenRelease = true;
     rerender(<AppFooter {...footerProps()} />);
 
-    expect(screen.getByTestId('more-studios-dot')).toBeDefined();
-    expect(screen.getByRole('button', { name: UNSEEN_MORE_LABEL })).toBeDefined();
+    expect(screen.queryByTestId('more-studios-dot')).toBeNull();
+    expect(screen.getByRole('button', { name: REST_MORE_LABEL })).toBeDefined();
   });
 
   it('shows the update control only while an update is pending', () => {
@@ -225,12 +225,11 @@ describe('AppFooter', () => {
     expect(screen.getByTestId('update-indicator').textContent).toContain('Update to 0.2.0');
   });
 
-  it('orders the right cluster as workflows, providers, settings, update, more', () => {
+  it('orders the right cluster as workflows, providers, settings, more', () => {
     storeState.updaterStatus = 'available';
     render(<AppFooter {...footerProps()} />);
 
-    const beta = screen.getByRole('button', { name: 'Beta' });
-    const row = beta.parentElement?.parentElement;
+    const row = footerRow();
     const cluster = row?.children[2];
     const buttons = Array.from(cluster?.querySelectorAll('button') ?? []).filter(
       (button) => button.closest('dialog') == null,
@@ -241,9 +240,18 @@ describe('AppFooter', () => {
       'Open the workflow library for this workspace',
       'Connect and manage your provider accounts',
       SETTINGS_LABEL,
-      'Update to 0.2.0',
       REST_MORE_LABEL,
     ]);
+  });
+
+  it('parks the update call to action next to the beta pill', () => {
+    storeState.updaterStatus = 'available';
+    render(<AppFooter {...footerProps()} />);
+
+    const center = footerRow()?.children[1];
+
+    expect(center?.contains(screen.getByTestId('beta-badge-trigger'))).toBe(true);
+    expect(center?.contains(screen.getByTestId('update-indicator'))).toBe(true);
   });
 
   it('pulses the providers launcher until a provider connects, and never while its studio is open', () => {
@@ -264,8 +272,8 @@ describe('AppFooter', () => {
   it('lays the row out as three grid regions so the beta badge cannot overlap a cluster', () => {
     render(<AppFooter {...footerProps()} />);
 
-    const beta = screen.getByRole('button', { name: 'Beta' });
-    const row = beta.parentElement?.parentElement;
+    const beta = screen.getByTestId('beta-badge-trigger');
+    const row = footerRow();
 
     expect(row?.className).toContain('grid');
     expect(row?.className).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]');
