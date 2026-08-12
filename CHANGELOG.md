@@ -7,6 +7,48 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.1.78
+
+One sidebar for every surface, and chrome that stays where you left it.
+
+### [#1379] One sidebar carries navigation on the board and inside a session
+
+The left rail and the session sidebar were two columns, each with its own
+header, its own controls and its own idea of where you were. Moving between the
+board and a session swapped one for the other, so the workspace name, the
+switcher and the hide control changed place under the cursor.
+
+There is now a single sidebar across the board, a session, the collapsed rail
+and the peek that opens when you hover that rail. It opens with the workspace
+identity, the switcher and Preferences, then Board, then the session title when
+a lens is open. The breadcrumb sits in the page above the lens instead of in the
+top bar, and the top bar keeps the workspace identity on the board only, so the
+switcher shortcut always resolves to one popover.
+
+Integration lenses read with the tool name their sidebar row uses,
+`Overview > GitHub > PR #12` rather than a generic pull request crumb, with
+GitLab, Jira, Linear, Sentry and Slack at the same depth. A list view no longer
+shows a crumb for an item you have not opened.
+
+### [#1379] A workflow run carries a recap of what it has landed
+
+Reading what a run had done meant opening its steps one by one. The
+orchestrator now writes a short recap with every decision, what the run has
+landed and what is still open, and the run detail shows it under the steps. It
+belongs to the run you are looking at, not to the workflow, and it is rewritten
+on each decision through to done or blocked.
+
+### Fixes
+
+- The workspace switcher opened two popovers at once when the sidebar was
+  collapsed or peeking, because each state mounted its own listener [#1379]
+- An orchestrator decision that never closed its marker swallowed the recap
+  that followed it; the search for the decision's end now stops at the recap
+  [#1379]
+- Autorun, stop and retry appeared twice on an orchestrated run, once in the
+  chat and once in the orchestrator panel that owns them; the chat now shows
+  the next step only [#1379]
+
 ## Goodboy v0.1.77
 
 Controls you can reach, and a board that does not claim what it has not checked.
