@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ImageOff, X } from 'lucide-react';
-import { Skeleton } from '@goodboy/ui';
+import { IconButton, Skeleton } from '@goodboy/ui';
 import { attachmentKindFor, fileIconFor } from '../../../chat/attachment-kinds';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { dataUrlToBase64, type PendingAttachment } from '../../../chat/components/ChatInput/lib';
@@ -82,15 +82,13 @@ export const AttachmentChip = ({
 
   const removeButton =
     onRemove == null ? null : (
-      <button
-        type="button"
+      <IconButton
+        icon={X}
+        label={`Remove ${fileName}`}
+        iconSize={10}
         onClick={onRemove}
-        title={`Remove ${fileName}`}
-        aria-label={`Remove ${fileName}`}
-        className="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity hover:bg-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] group-hover:opacity-100"
-      >
-        <X size={10} aria-hidden />
-      </button>
+        className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full border-0 bg-foreground/70 p-0 text-background opacity-0 transition-opacity hover:bg-foreground hover:text-background focus-visible:opacity-100 group-hover:opacity-100"
+      />
     );
 
   const lightbox =

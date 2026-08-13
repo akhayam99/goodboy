@@ -18,6 +18,8 @@ export type ChipProps = {
   readonly testId?: string;
   readonly onClick?: () => void;
   readonly disabled?: boolean;
+  readonly expanded?: boolean;
+  readonly hasPopup?: 'dialog' | 'menu' | 'listbox' | 'true';
   readonly className?: string;
 };
 
@@ -62,6 +64,8 @@ export const Chip = ({
   testId,
   onClick,
   disabled = false,
+  expanded,
+  hasPopup,
   className,
 }: ChipProps) => {
   const tint = tintClasses(tone);
@@ -92,6 +96,8 @@ export const Chip = ({
         title={title}
         aria-label={ariaLabel}
         data-testid={testId}
+        aria-expanded={expanded}
+        aria-haspopup={hasPopup}
         onClick={onClick}
         disabled={disabled}
         className={cn(

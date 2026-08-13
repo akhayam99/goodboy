@@ -93,7 +93,7 @@ export const AgentCard = ({
         onOpen();
       }}
       className={cn(
-        'group/agent-card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        'group/card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
         DENSITY_PADDING[density],
         isInert ? '' : 'cursor-pointer',
         isMuted && 'opacity-60',

@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { cn, StatusDot, type Tone } from '@goodboy/ui';
+import { Chip, cn, StatusDot, type Tone } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
@@ -71,18 +71,20 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
 
   return (
     <div className="relative" ref={containerRef}>
-      <button
-        type="button"
+      <Chip
+        tone="neutral"
+        bordered={false}
+        size="md"
+        as="button"
         onClick={toggle}
         title={unenforced ? 'Not enforced for cursor and gemini' : current.description}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-full bg-subtle px-2.5 py-0.5 text-xs transition-colors hover:bg-muted"
-      >
-        <StatusDot tone={current.tone} size="sm" />
-        <span className={cn('font-medium', current.text)}>{current.label}</span>
-        <ChevronDown size={11} aria-hidden className="text-muted-foreground/70" />
-      </button>
+        hasPopup="dialog"
+        expanded={open}
+        className="gap-1.5 bg-subtle px-2.5 py-0.5 hover:bg-muted hover:opacity-100"
+        icon={<StatusDot tone={current.tone} size="sm" />}
+        label={<span className={cn(current.text)}>{current.label}</span>}
+        trailing={<ChevronDown size={11} aria-hidden className="text-muted-foreground/70" />}
+      />
       {open ? (
         <div
           role="dialog"

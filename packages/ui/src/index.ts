@@ -55,6 +55,8 @@ export {
   SlackIcon,
 } from './components/brandIcons';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
+export { CardAction } from './components/CardAction';
+export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
 export type { CheckboxProps } from './components/Checkbox';
 export { Chip } from './components/Chip';
@@ -77,6 +79,8 @@ export { Eyebrow } from './components/Eyebrow';
 export type { EyebrowProps } from './components/Eyebrow';
 export { FieldRow } from './components/FieldRow';
 export type { FieldRowProps } from './components/FieldRow';
+export { GhostActionButton } from './components/GhostActionButton';
+export type { GhostActionButtonProps } from './components/GhostActionButton';
 export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
 export { ConfirmPill } from './components/ConfirmPill';

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { IconButton } from '@goodboy/ui';
 
 type Props = {
   readonly src: string;
@@ -67,17 +68,16 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
         visible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      <button
-        type="button"
-        onClick={requestClose}
+      <IconButton
+        icon={X}
+        label="Close image preview"
         title="Close image preview (esc)"
-        aria-label="Close image preview"
-        className={`absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/95 text-foreground shadow-lg ring-1 ring-border-soft transition-all duration-[180ms] ease-out hover:bg-background ${
+        iconSize={18}
+        onClick={requestClose}
+        className={`absolute right-4 top-4 h-9 w-9 rounded-full border-0 bg-background/95 p-0 text-foreground shadow-lg ring-1 ring-border-soft transition-all duration-[180ms] ease-out hover:bg-background hover:text-foreground ${
           visible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
         }`}
-      >
-        <X size={18} aria-hidden />
-      </button>
+      />
       {media === 'pdf' ? (
         <iframe
           src={src}
