@@ -98,6 +98,7 @@ import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRoutingNoticeMessage';
+import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -908,6 +909,20 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         get().appendTurnEvent(activeAgentId, sessionId, event);
         if (event.kind === 'error') {
           receivedProviderError = true;
+        }
+        if (event.kind === 'tool_call_end' && event.isError === true) {
+          const toolCallFailure = classifyToolCallFailure({ output: event.output });
+          const toolCallFailureText = toolCallFailureMessage(toolCallFailure);
+          if (toolCallFailureText !== null) {
+            get().appendTurnEvent(activeAgentId, sessionId, {
+              kind: 'error',
+              runId,
+              message: toolCallFailureText,
+              retryable: true,
+              at: now(),
+            });
+            receivedProviderError = true;
+          }
         }
         if (event.kind === 'assistant_text') {
           assistantText += event.delta;
