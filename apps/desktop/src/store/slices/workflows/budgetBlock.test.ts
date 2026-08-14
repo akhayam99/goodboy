@@ -10,7 +10,7 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { resolveSpendLimitStop } from './budgetBlock';
+import { loadSpendLimitTelemetry, resolveSpendLimitStop } from './budgetBlock';
 
 const SESSION_ID = 'ses-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -55,35 +55,54 @@ const stateWith = (spentUsd: number) => {
 };
 
 describe('resolveSpendLimitStop', () => {
-  it('pauses a run that spent past its limit', async () => {
-    const { state, get } = stateWith(7);
-
-    const stop = await resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'pause') });
-
-    expect(stop).toEqual({ kind: 'pause', limitUsd: 5, message: expect.any(String) });
-    expect(state['loadSessionTelemetry']).toHaveBeenCalledWith(SESSION_ID);
-  });
-
-  it('reports a notify stop instead of swallowing it', async () => {
+  it('pauses a run that spent past its limit', () => {
     const { get } = stateWith(7);
 
-    const stop = await resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'notify') });
+    const stop = resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'pause') });
+
+    expect(stop).toEqual({ kind: 'pause', limitUsd: 5, message: expect.any(String) });
+  });
+
+  it('reports a notify stop instead of swallowing it', () => {
+    const { get } = stateWith(7);
+
+    const stop = resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'notify') });
 
     expect(stop?.kind).toBe('notify');
   });
 
-  it('stays silent while the run is under its limit', async () => {
+  it('stays silent while the run is under its limit', () => {
     const { get } = stateWith(2);
 
-    expect(await resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'pause') })).toBe(
-      null,
-    );
+    expect(resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run(5, 'pause') })).toBe(null);
   });
 
-  it('never loads telemetry for a run without a limit', async () => {
+  it('stays silent for a run without a limit', () => {
+    const { get } = stateWith(99);
+
+    expect(resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run() })).toBe(null);
+  });
+});
+
+describe('loadSpendLimitTelemetry', () => {
+  it('reads telemetry once for a batch instead of once per run', async () => {
+    const { state, get } = stateWith(7);
+
+    await loadSpendLimitTelemetry({
+      get,
+      sessionId: SESSION_ID,
+      runs: [run(5, 'pause'), run(9, 'notify'), run()],
+    });
+
+    expect(state['loadSessionTelemetry']).toHaveBeenCalledTimes(1);
+    expect(state['loadSessionTelemetry']).toHaveBeenCalledWith(SESSION_ID);
+  });
+
+  it('never reads telemetry when no run in the batch has a limit', async () => {
     const { state, get } = stateWith(99);
 
-    expect(await resolveSpendLimitStop({ get, sessionId: SESSION_ID, run: run() })).toBe(null);
+    await loadSpendLimitTelemetry({ get, sessionId: SESSION_ID, runs: [run(), run()] });
+
     expect(state['loadSessionTelemetry']).not.toHaveBeenCalled();
   });
 });

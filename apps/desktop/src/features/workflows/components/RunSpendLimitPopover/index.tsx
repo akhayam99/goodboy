@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wallet } from 'lucide-react';
+import { CircleDollarSign } from 'lucide-react';
 import { Button, Divider, Popover, cn, formatUsd } from '@goodboy/ui';
 import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
@@ -53,6 +53,8 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
   };
 
   const metaLabel = limitUsd == null ? 'Set a spend limit' : `Spend limit ${formatUsd(limitUsd)}`;
+  const isBlank = amount.trim() === '';
+  const isInvalid = !isBlank && parseSpendLimit(amount) == null;
 
   return (
     <div ref={containerRef} className="relative inline-flex">
@@ -69,12 +71,12 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
               : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
           )}
         >
-          <Wallet size={11} aria-hidden className="shrink-0" />
+          <CircleDollarSign size={11} aria-hidden className="shrink-0" />
           {metaLabel}
         </button>
       ) : (
         <OrchestratorAction
-          icon={Wallet}
+          icon={CircleDollarSign}
           label={TRIGGER_LABEL[variant]}
           variant={variant}
           tone="warning"
@@ -102,11 +104,14 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
               amount={amount}
               mode={mode}
               inputId="run-spend-limit-amount"
+              invalid={isInvalid}
               onAmount={setAmount}
               onMode={setMode}
             />
             <p className="text-2xs leading-relaxed text-muted-foreground">
-              {formatUsd(spentUsd)} spent so far. Leave it empty for no limit.
+              {isInvalid
+                ? 'Enter an amount above zero, or clear the field for no limit.'
+                : `${formatUsd(spentUsd)} spent so far. Leave it empty for no limit.`}
             </p>
           </div>
           <Divider />
@@ -124,7 +129,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
             )}
             <Button
               size="sm"
-              disabled={busy}
+              disabled={busy || isInvalid}
               data-testid="run-spend-limit-save"
               onClick={() => void commit(parseSpendLimit(amount))}
             >

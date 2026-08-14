@@ -8,7 +8,12 @@ import {
 } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
-import { BUDGET_BLOCK_MESSAGE, isBudgetBlocked, resolveSpendLimitStop } from './budgetBlock';
+import {
+  BUDGET_BLOCK_MESSAGE,
+  isBudgetBlocked,
+  loadSpendLimitTelemetry,
+  resolveSpendLimitStop,
+} from './budgetBlock';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import type { GetFn, SetFn } from './types';
@@ -73,9 +78,12 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     return;
   }
   const sessionBlocked = isBudgetBlocked({ alerts: state.budgetAlerts, sessionId });
+  if (!sessionBlocked) {
+    await loadSpendLimitTelemetry({ get, sessionId, runs: activeRuns });
+  }
   const runnableRuns: typeof activeRuns = [];
   for (const run of activeRuns) {
-    const spendStop = sessionBlocked ? null : await resolveSpendLimitStop({ get, sessionId, run });
+    const spendStop = sessionBlocked ? null : resolveSpendLimitStop({ get, sessionId, run });
     const blockMessage = sessionBlocked
       ? BUDGET_BLOCK_MESSAGE
       : spendStop?.kind === 'pause'

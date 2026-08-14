@@ -735,7 +735,9 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       : mode === 'dynamic'
         ? processText.trim().length === 0
         : steps.length === 0;
-  const startDisabled = blocked || goalMissing || approachMissing;
+  const spendLimitInvalid =
+    mode === 'dynamic' && spendLimitDraft.trim() !== '' && parseSpendLimit(spendLimitDraft) == null;
+  const startDisabled = blocked || goalMissing || approachMissing || spendLimitInvalid;
   const startHint = goalMissing
     ? 'Set a goal to start'
     : approachMissing
@@ -1182,11 +1184,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                             amount={spendLimitDraft}
                             mode={spendLimitMode}
                             inputId="builder-spend-limit-amount"
+                            invalid={spendLimitInvalid}
                             onAmount={setSpendLimitDraft}
                             onMode={setSpendLimitMode}
                           />
                           <p className="text-2xs leading-relaxed text-muted-foreground">
-                            Leave it empty and the run spends whatever it needs.
+                            {spendLimitInvalid
+                              ? 'Enter an amount above zero, or clear the field for no limit.'
+                              : 'Leave it empty and the run spends whatever it needs.'}
                           </p>
                         </div>
                       </div>

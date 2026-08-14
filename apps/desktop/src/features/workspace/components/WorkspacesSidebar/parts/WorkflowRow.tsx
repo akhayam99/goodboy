@@ -297,7 +297,7 @@ export const WorkflowRow = ({
             />
             {total > 0 ? (
               <span className="shrink-0 font-mono text-2xs text-muted-foreground/50">
-                {isDynamic ? total : `${done}/${total}`}
+                {isDynamic ? `${total} ${total === 1 ? 'step' : 'steps'}` : `${done}/${total}`}
               </span>
             ) : null}
           </button>

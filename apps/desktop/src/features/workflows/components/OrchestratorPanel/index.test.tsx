@@ -126,6 +126,7 @@ beforeEach(() => {
     setWorkflowRunSpendLimit: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
     sessionOpenQuestions: {},
+    budgetAlerts: [],
     sessionTelemetry: {},
     sessionPhaseRuns: {},
     agentRunHistory: {},
@@ -539,8 +540,22 @@ describe('OrchestratorPanel strip', () => {
     renderPanel({ runOverride: run({ spendLimitUsd: 12, spendLimitMode: 'notify' }) });
 
     expect(screen.getByTestId('orchestrator-spend-limit').textContent).toContain(
-      'Spend limit $12.00 · notify',
+      'Spend limit $12.00 · notifies at the limit',
     );
+  });
+
+  it('sends a session budget pause to the session budget, not to the run limit', () => {
+    storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
+    renderPanel({
+      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
+    });
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-budget-studio', opened);
+    fireEvent.click(screen.getByTestId('orchestrator-review-budget'));
+    window.removeEventListener('goodboy:open-budget-studio', opened);
+
+    expect(opened).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
   });
 
   it('saves a spend limit for the run from the strip', () => {

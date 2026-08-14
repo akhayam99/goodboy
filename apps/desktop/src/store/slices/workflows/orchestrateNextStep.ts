@@ -40,10 +40,11 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import {
   BUDGET_BLOCK_MESSAGE,
   isBudgetBlocked,
+  loadSpendLimitTelemetry,
   resolveSpendLimitStop,
+  spentUsdForRun,
   type SpendLimitStop,
 } from './budgetBlock';
-import { runSpendUsd } from './runSpendUsd';
 import { roleModelsForSession } from '../overrides/roleModelsForSession';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
@@ -456,7 +457,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         });
         return;
       }
-      const spendStop = await resolveSpendLimitStop({ get, sessionId, run });
+      await loadSpendLimitTelemetry({ get, sessionId, runs: [run] });
+      const spendStop = resolveSpendLimitStop({ get, sessionId, run });
       if (spendStop?.kind === 'pause') {
         await persistOrchestrationStop({
           set,
@@ -540,12 +542,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           stepsUsed: workflow.steps.length,
           ...(run.spendLimitUsd != null && {
             spendLimitUsd: run.spendLimitUsd,
-            spentUsd: runSpendUsd({
-              records: get().sessionTelemetry[sessionId] ?? [],
-              agents: get().sessionPhaseRuns[sessionId] ?? [],
-              agentRunHistory: get().agentRunHistory,
-              workflowRunId,
-            }),
+            spentUsd: spentUsdForRun({ get, sessionId, run }),
           }),
         });
       } catch (error) {
@@ -575,6 +572,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             get,
             sessionId,
             agentId: null,
+            workflowRunId,
             provider: routing.providerId,
             model: result.model,
             usage: result.usage,
@@ -600,6 +598,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           get,
           sessionId,
           agentId: unparseableAgentId,
+          workflowRunId,
           provider: routing.providerId,
           model: result.model,
           usage: result.usage,
@@ -619,6 +618,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           get,
           sessionId,
           agentId: null,
+          workflowRunId,
           provider: routing.providerId,
           model: result.model,
           usage: result.usage,
@@ -681,6 +681,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           get,
           sessionId,
           agentId: agent.id,
+          workflowRunId,
           provider: routing.providerId,
           model: result.model,
           usage: result.usage,
@@ -713,6 +714,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         get,
         sessionId,
         agentId: terminalAgentId,
+        workflowRunId,
         provider: routing.providerId,
         model: result.model,
         usage: result.usage,

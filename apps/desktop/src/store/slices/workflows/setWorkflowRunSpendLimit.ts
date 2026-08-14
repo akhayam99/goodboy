@@ -27,5 +27,9 @@ export const setWorkflowRunSpendLimit = (set: SetFn, get: GetFn) => {
           ? { ...withoutKeys(current, ['spendLimitUsd']), spendLimitMode: mode }
           : { ...current, spendLimitUsd: nextLimit, spendLimitMode: mode },
     });
+    set((state) => {
+      const { [workflowRunId]: _cleared, ...announcedRunBudget } = state.announcedRunBudget ?? {};
+      return { announcedRunBudget };
+    });
   };
 };

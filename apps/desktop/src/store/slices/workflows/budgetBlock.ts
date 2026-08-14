@@ -37,24 +37,43 @@ type SpendLimitParams = {
   readonly run: WorkflowRun;
 };
 
-export const resolveSpendLimitStop = async ({
+type TelemetryParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly runs: ReadonlyArray<WorkflowRun>;
+};
+
+export const loadSpendLimitTelemetry = async ({
   get,
   sessionId,
-  run,
-}: SpendLimitParams): Promise<SpendLimitStop | null> => {
-  const limitUsd = run.spendLimitUsd;
-  if (limitUsd == null) {
-    return null;
+  runs,
+}: TelemetryParams): Promise<void> => {
+  if (runs.every((run) => run.spendLimitUsd == null)) {
+    return;
   }
   await get().loadSessionTelemetry(sessionId);
+};
+
+export const spentUsdForRun = ({ get, sessionId, run }: SpendLimitParams): number => {
   const state = get();
-  const spentUsd = runSpendUsd({
+  return runSpendUsd({
     records: state.sessionTelemetry[sessionId] ?? [],
     agents: state.sessionPhaseRuns[sessionId] ?? [],
     agentRunHistory: state.agentRunHistory,
     workflowRunId: run.id,
   });
-  if (spentUsd < limitUsd) {
+};
+
+export const resolveSpendLimitStop = ({
+  get,
+  sessionId,
+  run,
+}: SpendLimitParams): SpendLimitStop | null => {
+  const limitUsd = run.spendLimitUsd;
+  if (limitUsd == null) {
+    return null;
+  }
+  if (spentUsdForRun({ get, sessionId, run }) < limitUsd) {
     return null;
   }
   const kind = run.spendLimitMode ?? 'pause';
