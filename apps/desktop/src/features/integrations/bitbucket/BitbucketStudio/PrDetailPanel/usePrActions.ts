@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
-import { formatError } from '../../../../../shared/lib/errors';
 import { useAppStore } from '../../../../../store';
 import type { BitbucketPrWriteParams } from '../../../../../store/slices/bitbucket-pr';
 import type { BitbucketRepo } from '../../client';

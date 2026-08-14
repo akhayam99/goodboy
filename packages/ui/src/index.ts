@@ -2,7 +2,11 @@ export { cn } from './cn';
 export { escapeLayerCount, registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
 export { useCopyLink } from './useCopyLink';
+export { useDropdown } from './useDropdown';
+export { DropdownBackdrop } from './useDropdown/DropdownBackdrop';
+export { DropdownPortal } from './useDropdown/DropdownPortal';
 export { PANE_RHYTHM } from './paneRhythm';
+export { formatError } from './formatError';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export {
   AppShell,
@@ -20,14 +24,20 @@ export { BrandGlyph } from './components/BrandGlyph';
 export { CardAction } from './components/CardAction';
 export { CardActionSlot } from './components/CardActionSlot';
 export { CommandPreview } from './components/CommandPreview';
+export { DiffLayoutToggle } from './components/DiffLayoutToggle';
+export type { DiffLayoutMode } from './components/DiffLayoutToggle';
+export { ErrorBoundary } from './components/ErrorBoundary';
 export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
 export { HeaderBand } from './components/HeaderBand';
 export { MetaItem } from './components/MetaItem';
 export { NoteCard } from './components/NoteCard';
+export { NoteComposer } from './components/NoteComposer';
 export { NoteHeader } from './components/NoteHeader';
 export { NoteListSkeleton } from './components/NoteListSkeleton';
 export { OverlayHeader } from './components/OverlayHeader';
+export { OverflowMenu } from './components/OverflowMenu';
+export type { OverflowMenuItem } from './components/OverflowMenu';
 export { PanelLoading } from './components/PanelLoading';
 export { RailBlock } from './components/RailBlock';
 export { RailCard } from './components/RailCard';
@@ -54,12 +64,12 @@ export {
   SentryIcon,
   SlackIcon,
 } from './components/brandIcons';
-export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
+export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
 export type { CheckboxProps } from './components/Checkbox';
 export { Chip } from './components/Chip';
-export type { ChipProps } from './components/Chip';
+export type { ChipEmphasis, ChipProps, ChipSize } from './components/Chip';
 export { ClampedProse } from './components/ClampedProse';
 export type { ClampLines, ClampedProseProps } from './components/ClampedProse';
 export { Collapsible } from './components/Collapsible';
@@ -83,7 +93,7 @@ export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
 export { ConfirmPill } from './components/ConfirmPill';
 export { InlineConfirm } from './components/InlineConfirm';
-export type { ConfirmRole } from './components/InlineConfirm';
+export type { ConfirmAltAction, ConfirmRole } from './components/InlineConfirm';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';

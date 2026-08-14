@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { formatError } from '../../../shared/lib/errors';
 import type { WorkflowBlockReason } from '../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../blockCopy';
 

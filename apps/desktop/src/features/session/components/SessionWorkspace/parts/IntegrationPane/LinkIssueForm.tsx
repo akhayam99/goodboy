@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Divider } from '@goodboy/ui';
+import { Divider, formatError } from '@goodboy/ui';
 import type {
   IsoDateTime,
   SessionExternalTaskProvider,
@@ -8,7 +8,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
-import { formatError } from '../../../../../../shared/lib/errors';
 import { IssuePicker } from '../../../../../integrations/components/IssuePicker';
 import { useIssueCandidates } from '../../../../../integrations/hooks/useIssueCandidates';
 import type { IssueCandidate } from '../../../../../integrations/fetchIssueCandidates';

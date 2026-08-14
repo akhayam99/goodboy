@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { formatError } from '../../../../shared/lib/errors';
 import { jiraCreateComment, jiraListComments, type JiraComment, type JiraIssue } from '../client';
 import { useJiraConfig } from '../useJiraConfig';
 

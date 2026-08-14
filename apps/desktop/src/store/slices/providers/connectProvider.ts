@@ -4,6 +4,7 @@ import {
   type ProviderId,
   type ProviderLifecycleAction,
 } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { PROVIDER_LABEL_LOWER, checkProviderAuth } from '../../../features/providers/providers';
 import {
   invokeProviderLifecycleCancel,
@@ -14,7 +15,6 @@ import {
   type LifecycleExitPayload,
 } from '../../../features/providers/provider-lifecycle';
 import { openUrl } from '../../../shared/lib/editor';
-import { formatError } from '../../../shared/lib/errors';
 import { clearStallTimer, disposeConnectRun, getConnectRun, openConnectRun } from './connectRuns';
 import type { ConnectRun } from './connectRuns';
 import { detectAuthUrl } from './detectAuthUrl';

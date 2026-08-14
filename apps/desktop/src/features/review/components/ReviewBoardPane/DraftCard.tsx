@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Textarea, cn, tintClasses } from '@goodboy/ui';
+import { Chip, Textarea, cn } from '@goodboy/ui';
 import type { PrReviewDraft } from '@goodboy/types';
 import { ComposerActionRow } from './ComposerActionRow';
-
-const draftTint = tintClasses('draft');
 
 type Props = {
   readonly draft: PrReviewDraft;
@@ -41,23 +39,22 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
         <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">
           {draft.path}:{draft.line}
         </span>
-        <span
-          className={cn(
-            'shrink-0 rounded-full px-1.5 py-0.5 text-3xs font-medium',
-            draft.origin === 'agent'
-              ? cn(draftTint.bg, draftTint.text)
-              : 'bg-muted text-muted-foreground',
-          )}
-        >
-          {draft.origin === 'agent' ? 'Agent' : 'You'}
-        </span>
+        <Chip
+          tone={draft.origin === 'agent' ? 'draft' : 'neutral'}
+          size="3xs"
+          bordered={false}
+          label={draft.origin === 'agent' ? 'Agent' : 'You'}
+          className="shrink-0"
+        />
         {draft.stale ? (
-          <span
+          <Chip
+            tone="warning"
+            size="3xs"
+            bordered={false}
+            label="Stale"
             title="The diff changed under this comment; it will be skipped on publish"
-            className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning"
-          >
-            Stale
-          </span>
+            className="shrink-0"
+          />
         ) : null}
         <span className="flex-1" />
         <button

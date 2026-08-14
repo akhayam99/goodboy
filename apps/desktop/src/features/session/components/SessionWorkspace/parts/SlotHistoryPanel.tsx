@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { EmptyState, Markdown, ScrollFade, cn } from '@goodboy/ui';
+import { EmptyState, Markdown, ScrollFade } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { InspectorHeader } from './InspectorSplit/InspectorHeader';
+import { AuthorshipChip } from './AuthorshipChip';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
@@ -26,14 +27,7 @@ const HistoryEntry = ({
   return (
     <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle p-3">
       <div className="flex items-center gap-2">
-        <span
-          className={cn(
-            'rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide',
-            entry.author === 'user' ? 'bg-accent/10 text-accent' : 'bg-info/10 text-info',
-          )}
-        >
-          {entry.author === 'user' ? 'you' : 'agent'}
-        </span>
+        <AuthorshipChip byUser={entry.author === 'user'} />
         <span className="text-2xs text-muted-foreground">
           {formatRelativeAge({ fromIso: entry.createdAt })}
         </span>

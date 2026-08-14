@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { type DiffLayoutMode } from '@goodboy/ui';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { DiffComment, DiffHunkLine, FileDiff, IsoDateTime, SessionId } from '@goodboy/types';
-import type { DiffLayoutMode } from '../../../../shared/utils/diffLayoutMode';
 import { FileDiffCard } from './FileDiffCard';
 
 const SID = 's1' as SessionId;

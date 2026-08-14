@@ -1,11 +1,10 @@
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useEffect, useState } from 'react';
-import { Button, Chip, EmptyState, cn, tintClasses } from '@goodboy/ui';
+import { Button, Chip, cn, EmptyState, formatError, tintClasses } from '@goodboy/ui';
 import { ArrowRight, MessagesSquare } from 'lucide-react';
 import type { ReviewablePr, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
-import { formatError } from '../../../../shared/lib/errors';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';

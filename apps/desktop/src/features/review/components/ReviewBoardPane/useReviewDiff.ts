@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { FileDiff, GitlabWorkspaceIntegration, Session, SessionId } from '@goodboy/types';
@@ -9,7 +10,6 @@ import {
 } from '../../../../store/slices/review-drafts/resolveReviewTarget';
 import { ghPrDiff } from '../../../github/github';
 import { gitlabMrDiff } from '../../../integrations/gitlab/client';
-import { formatError } from '../../../../shared/lib/errors';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Params = {

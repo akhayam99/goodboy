@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import type { PullRequestState } from '@goodboy/types';
-import { cn, ScrollFade } from '@goodboy/ui';
+import { cn, DropdownBackdrop, Popover, ScrollFade, useDropdown } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
 import { PullRequestChip } from '../PullRequestChip';
 
@@ -11,17 +10,21 @@ type Props = {
 };
 
 export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
-  const [open, setOpen] = useState(false);
+  const { open, close, toggle, containerRef, popupRef, popupClassName } = useDropdown({
+    width: 'w-96',
+    expectedHeight: 288,
+    hasBackdrop: true,
+  });
   const current = prs.find((p) => p.number === selected) ?? prs[0];
   if (!current) {
     return null;
   }
 
   return (
-    <div className="relative shrink-0">
+    <div ref={containerRef} className="relative shrink-0">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2 py-1 text-xs font-medium text-foreground transition-colors hover:border-border hover:bg-muted/50"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -34,38 +37,39 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
       </button>
       {open ? (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          <ScrollFade
-            className="absolute left-0 z-50 mt-1 max-h-72 w-96 rounded-md border border-border-soft bg-background shadow-lg"
-            viewportClassName="py-1"
-          >
-            <ul role="listbox">
-              {prs.map((p) => (
-                <li key={p.number}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={p.number === selected}
-                    onClick={() => {
-                      onSelect(p.number);
-                      setOpen(false);
-                    }}
-                    className={cn(
-                      'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/50',
-                      p.number === selected && 'bg-primary/5',
-                    )}
-                  >
-                    <PullRequestChip state={p.state} variant="icon" iconSize={12} />
-                    <span className="shrink-0 tabular-nums text-muted-foreground">#{p.number}</span>
-                    <span className="min-w-0 flex-1 truncate text-foreground">{p.title}</span>
-                    {p.number === selected && (
-                      <Check size={12} aria-hidden className="shrink-0 text-primary" />
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </ScrollFade>
+          <DropdownBackdrop onClose={close} />
+          <Popover innerRef={popupRef} className={popupClassName}>
+            <ScrollFade className="max-h-72" viewportClassName="py-1">
+              <ul role="listbox">
+                {prs.map((p) => (
+                  <li key={p.number}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={p.number === selected}
+                      onClick={() => {
+                        onSelect(p.number);
+                        close();
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted/50',
+                        p.number === selected && 'bg-primary/5',
+                      )}
+                    >
+                      <PullRequestChip state={p.state} variant="icon" iconSize={12} />
+                      <span className="shrink-0 tabular-nums text-muted-foreground">
+                        #{p.number}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-foreground">{p.title}</span>
+                      {p.number === selected && (
+                        <Check size={12} aria-hidden className="shrink-0 text-primary" />
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </ScrollFade>
+          </Popover>
         </>
       ) : null}
     </div>

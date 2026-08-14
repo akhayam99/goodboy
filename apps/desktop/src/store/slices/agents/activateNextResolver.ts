@@ -1,6 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { classifyAgent } from '../../../features/session/agent-kind';
-import { formatError } from '../../../shared/lib/errors';
 import type { GetFn, SetFn } from './types';
 
 const resolverStartsPending = new Map<SessionId, AgentId>();

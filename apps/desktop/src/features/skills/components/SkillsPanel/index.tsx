@@ -6,6 +6,7 @@ import {
   Divider,
   EmptyState,
   FieldRow,
+  formatError,
   InlineConfirm,
   Input,
   SectionHeader,
@@ -15,7 +16,6 @@ import type { Skill, SkillFrontmatter, WorkspaceId } from '@goodboy/types';
 import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { formatError } from '../../../../shared/lib/errors';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 
@@ -250,7 +250,7 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
 
   return (
     <li className="flex flex-col gap-1">
-      <div className="group/skill-card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] gap-x-2 rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] gap-x-2 rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground">
         <button
           type="button"
           onClick={onEdit}

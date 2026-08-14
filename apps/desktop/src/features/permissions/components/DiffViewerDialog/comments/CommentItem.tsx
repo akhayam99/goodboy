@@ -1,5 +1,5 @@
 import { ArrowUpRight, Check, RotateCcw, Trash2 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Chip, cn, type Tone } from '@goodboy/ui';
 import type { AgentId, DiffComment } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 
@@ -27,11 +27,11 @@ export const CommentItem = ({
       : comment.status === 'consumed'
         ? 'border-info/40 bg-info/5'
         : 'border-warning bg-warning/5';
-  const statusPill =
+  const statusPill: { label: string; tone: Tone } | null =
     comment.status === 'resolved'
-      ? { label: 'resolved', cls: 'bg-success/15 text-success' }
+      ? { label: 'resolved', tone: 'success' }
       : comment.status === 'consumed'
-        ? { label: 'in progress', cls: 'bg-info/15 text-info' }
+        ? { label: 'in progress', tone: 'info' }
         : null;
   return (
     <div
@@ -49,9 +49,7 @@ export const CommentItem = ({
           {formatRelativeAge({ fromIso: comment.createdAt })}
         </span>
         {statusPill ? (
-          <span className={cn('rounded-full px-1.5 py-0.5 text-3xs font-medium', statusPill.cls)}>
-            {statusPill.label}
-          </span>
+          <Chip tone={statusPill.tone} size="3xs" bordered={false} label={statusPill.label} />
         ) : null}
         <div className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {comment.status === 'open' && (

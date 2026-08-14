@@ -1,4 +1,4 @@
-import { Popover, cn } from '@goodboy/ui';
+import { cn, Popover, useDropdown } from '@goodboy/ui';
 import { Check, ChevronDown } from 'lucide-react';
 import {
   VERBOSITY_LABEL,
@@ -6,7 +6,6 @@ import {
   VERBOSITY_DOT,
   type VerbosityLevel,
 } from '../../../settings/verbosity';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 
 type Props = {
   value: VerbosityLevel;

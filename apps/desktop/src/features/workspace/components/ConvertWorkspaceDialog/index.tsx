@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Dialog, Input, SegmentedTabs, Select, StatusDot } from '@goodboy/ui';
+import { Button, Dialog, formatError, Input, SegmentedTabs, Select, StatusDot } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { listOwnedRepos, type GithubRepoRef, type OwnedReposResult } from '@goodboy/core';
 import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 import { tauriGhRunner } from '../../../github/github';
 
 type Props = {

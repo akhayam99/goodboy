@@ -1,9 +1,8 @@
 import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react';
 import type { PullRequestState, SessionId } from '@goodboy/types';
-import { Markdown, SectionHeader, Textarea } from '@goodboy/ui';
+import { formatError, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { ImagePlus, Pencil } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 import { SaveCancel } from './SaveCancel';
 
 type Props = {

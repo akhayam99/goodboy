@@ -1,6 +1,6 @@
 import { polishWorkflowGoal } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type { ModelEffort, ProviderId } from '@goodboy/types';
-import { formatError } from '../../../../shared/lib/errors';
 
 export const GOAL_POLISH_TIMEOUT_MS = 15_000;
 

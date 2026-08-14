@@ -1,6 +1,6 @@
 import { turnReducer, type ClaudeFlagSet } from '@goodboy/core';
 import { insertMessage, updateSessionState } from '@goodboy/db';
-import { formatUsd } from '@goodboy/ui';
+import { formatError, formatUsd } from '@goodboy/ui';
 import type {
   AgentId,
   IsoDateTime,
@@ -16,7 +16,6 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { formatError } from '../../../shared/lib/errors';
 import { AGENT_FEATURES } from '../../../shared/lib/features';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { degradedNotifiedAgents } from '../../../shared/utils/degradedNotifiedAgents';

@@ -4,6 +4,7 @@ import {
   parseUnifiedDiff,
   type ReviewEvent,
 } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import { markPrReviewDraftsPublished } from '@goodboy/db';
 import type {
   GitlabWorkspaceIntegration,
@@ -19,7 +20,6 @@ import {
   gitlabMrDiffRefs,
 } from '../../../features/integrations/gitlab/client';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { formatError } from '../../../shared/lib/errors';
 import { computeStaleDrafts } from './computeStaleDrafts';
 import { resolveReviewTarget, type ReviewTarget } from './resolveReviewTarget';
 import { getSessionRepo } from '../worktrees/getSessionRepo';

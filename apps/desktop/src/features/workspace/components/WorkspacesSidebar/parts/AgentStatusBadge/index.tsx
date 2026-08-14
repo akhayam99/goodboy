@@ -1,11 +1,12 @@
 import type { AgentStatus } from '@goodboy/types';
+import { Chip, type Tone } from '@goodboy/ui';
 
-const CLASS_NAME: Record<AgentStatus, string> = {
-  pending: 'bg-muted text-muted-foreground',
-  running: 'bg-info/10 text-info',
-  completed: 'bg-success/10 text-success',
-  failed: 'bg-danger/10 text-danger',
-  skipped: 'bg-muted text-muted-foreground/70',
+const TONE: Record<AgentStatus, Tone> = {
+  pending: 'neutral',
+  running: 'info',
+  completed: 'success',
+  failed: 'danger',
+  skipped: 'neutral',
 };
 
 type Props = {
@@ -13,9 +14,12 @@ type Props = {
 };
 
 export const AgentStatusBadge = ({ status }: Props) => (
-  <span
-    className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-3xs font-medium uppercase tracking-wide ${CLASS_NAME[status]}`}
-  >
-    {status}
-  </span>
+  <Chip
+    tone={TONE[status]}
+    size="3xs"
+    uppercase
+    bordered={false}
+    label={status}
+    className={status === 'skipped' ? 'shrink-0 opacity-70' : 'shrink-0'}
+  />
 );

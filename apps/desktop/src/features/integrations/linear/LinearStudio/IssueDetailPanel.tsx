@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, formatError } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 import { sanitizeBranchSlug } from '../../../../shared/utils/sanitizeBranchSlug';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { ghPrHeadBranch } from '../../../github/github';

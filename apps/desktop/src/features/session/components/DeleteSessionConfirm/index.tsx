@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Archive, Trash2 } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
+import { formatError, InlineConfirm } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 
 type Props = {
@@ -66,19 +65,13 @@ export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => 
       onCancel={onClose}
       isBusy={busy}
       className={className}
-      note={
-        session.archivedAt == null && (
-          <button
-            type="button"
-            onClick={() => void onArchiveInstead()}
-            disabled={busy}
-            className="inline-flex w-fit items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Archive size={11} aria-hidden />
-            Archive instead
-          </button>
-        )
-      }
+      {...(session.archivedAt == null && {
+        altAction: {
+          label: 'Archive instead',
+          icon: <Archive size={11} aria-hidden />,
+          onClick: () => void onArchiveInstead(),
+        },
+      })}
     >
       <p className="truncate rounded-md border border-border-soft bg-subtle px-2 py-1 font-mono text-foreground">
         {session.goal}

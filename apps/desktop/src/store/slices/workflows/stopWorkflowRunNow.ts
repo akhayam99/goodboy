@@ -1,7 +1,7 @@
 import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { formatError } from '../../../shared/lib/errors';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
 

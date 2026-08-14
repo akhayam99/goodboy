@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { CircleDollarSign } from 'lucide-react';
-import { Button, Divider, Popover, cn, formatUsd } from '@goodboy/ui';
+import { Button, cn, Divider, formatUsd, Popover, useDropdown } from '@goodboy/ui';
 import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { useAppStore } from '../../../../store/store';
 import { useRunSpendUsd } from '../../../../store/selectors';
 import { OrchestratorAction } from '../OrchestratorPanel/OrchestratorAction';

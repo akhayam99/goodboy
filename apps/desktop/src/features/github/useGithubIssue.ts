@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { GithubIssue, WorkspaceId } from '@goodboy/types';
-import { formatError } from '../../shared/lib/errors';
 import { ghIssueByNumber } from './github';
 
 type Params = {

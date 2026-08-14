@@ -1,5 +1,5 @@
 import { slackListChannels } from '../../../features/integrations/slack/client';
-import { formatError } from '../../../shared/lib/errors';
+import { formatError } from '@goodboy/ui';
 import type { GetFn, SetFn, SlackWorkspaceParams } from './types';
 
 export const refreshSlackChannels = (set: SetFn, get: GetFn) => {

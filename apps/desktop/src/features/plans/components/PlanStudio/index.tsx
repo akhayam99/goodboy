@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ArchiveRestore, CircleCheck, Eye, Pencil, Play, RotateCw, Trash2 } from 'lucide-react';
 import {
+  Button,
   CountToggle,
   Divider,
   InlineConfirm,
@@ -17,7 +18,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { planStatusBadge } from './planStatusBadge';
+import { PlanStatusChip } from './PlanStatusChip';
 import { PlanProvenance } from './PlanProvenance';
 import { PlanRailCard } from './PlanRailCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -137,14 +138,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
                   <h2 className="min-w-0 truncate text-sm font-medium text-foreground">
                     {selected.title}
                   </h2>
-                  <span
-                    className={cn(
-                      'inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-2xs lowercase tracking-wide',
-                      planStatusBadge({ status: selected.status }).className,
-                    )}
-                  >
-                    {planStatusBadge({ status: selected.status }).label}
-                  </span>
+                  <PlanStatusChip status={selected.status} />
                 </div>
                 <PlanProvenance
                   creatorName={selectedAgentName}
@@ -160,28 +154,25 @@ export const PlanStudio = ({ sessionId }: Props) => {
                 <div className="flex items-center gap-1.5">
                   {selected.status !== 'discarded' ? (
                     selected.status === 'consumed' ? (
-                      <button
-                        type="button"
+                      <Button
+                        variant="warning"
+                        emphasis="outline"
+                        size="sm"
                         onClick={() => setReplayArmed(true)}
                         disabled={spawning}
                         title="Plan already ran, click to replay and confirm"
-                        className={cn(
-                          'inline-flex items-center justify-center gap-1.5 rounded-md border border-warning/40 px-2.5 py-1 text-xs font-medium text-warning transition-colors hover:bg-warning/10',
-                          spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
-                        )}
+                        className={cn(spawning && 'cursor-not-allowed animate-border-pulse')}
                       >
                         <RotateCw size={12} aria-hidden />
                         Replay
-                      </button>
+                      </Button>
                     ) : (
-                      <button
-                        type="button"
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={() => void handleTrigger()}
                         disabled={spawning}
-                        className={cn(
-                          'inline-flex items-center justify-center gap-1.5 rounded-md border border-transparent bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90',
-                          spawning && 'cursor-not-allowed opacity-60 animate-border-pulse',
-                        )}
+                        className={cn(spawning && 'cursor-not-allowed animate-border-pulse')}
                         title={
                           selected.status === 'active'
                             ? 'Spawn new agent to execute this plan'
@@ -194,7 +185,7 @@ export const PlanStudio = ({ sessionId }: Props) => {
                           <RotateCw size={12} aria-hidden />
                         )}
                         {selected.status === 'active' ? 'Start' : 'Replay'}
-                      </button>
+                      </Button>
                     )
                   ) : null}
                   {selected.status === 'consumed' ? (

@@ -6,7 +6,7 @@ import {
   type AuditRetryEntry,
   type PermissionAuditInsertPayload,
 } from '../../../features/permissions/permissions';
-import { formatError } from '../../../shared/lib/errors';
+import { formatError } from '@goodboy/ui';
 import type { SetFn } from './types';
 
 const AUDIT_RETRY_MAX_ATTEMPTS = 5;

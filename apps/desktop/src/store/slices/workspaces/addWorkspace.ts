@@ -1,4 +1,5 @@
 import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { seedWorkflowLibrary } from '@goodboy/core';
 import {
   findWorkspaceByRootPath,
@@ -7,7 +8,6 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { validateGitRepo } from '../../../shared/lib/repo';
-import { formatError } from '../../../shared/lib/errors';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import { invokeSkillRescan } from '../../../features/skills/skills';
 import type { GetFn, SetFn } from './types';

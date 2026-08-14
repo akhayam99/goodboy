@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { IconButton, InlineConfirm } from '@goodboy/ui';
+import { formatError, IconButton, InlineConfirm } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { useToast } from '../../../../app/components/Toast';
-import { formatError } from '../../../../shared/lib/errors';
 
 type Props = {
   readonly label: string;
@@ -38,7 +37,7 @@ export const IntegrationDisconnect = ({ label, description, onDisconnect }: Prop
           autoDisarmMs={4000}
           onConfirm={confirm}
           onCancel={() => setIsArmed(false)}
-          className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
+          className="absolute right-0 top-full z-popover mt-1 w-72 bg-background shadow-lg"
         />
       ) : null}
     </div>

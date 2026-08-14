@@ -1,10 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { Check, SlidersHorizontal } from 'lucide-react';
-import { Divider, Eyebrow, Popover, Tooltip, cn } from '@goodboy/ui';
+import {
+  cn,
+  Divider,
+  DropdownBackdrop,
+  DropdownPortal,
+  Eyebrow,
+  Popover,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
-import { DropdownBackdrop } from '../../../../../shared/hooks/useDropdown/DropdownBackdrop';
-import { DropdownPortal } from '../../../../../shared/hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../../../../shared/hooks/useDropdown';
 import { useAppStore, useSessionViewPrefs } from '../../../../../store';
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
 

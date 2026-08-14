@@ -19,15 +19,7 @@ export const DiscardDraftConfirm = ({ onSave, onDiscard, onCancel }: Props) => {
       onConfirm={onDiscard}
       onCancel={onCancel}
       className="shrink-0"
-      note={
-        <button
-          type="button"
-          onClick={onSave}
-          className="inline-flex w-fit items-center rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted"
-        >
-          Save
-        </button>
-      }
+      altAction={{ label: 'Save', onClick: onSave }}
     />
   );
 };

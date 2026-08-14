@@ -1,7 +1,7 @@
 import type { AgentId, IsoDateTime, ProviderRunId, Session, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { parseSlashCommand } from '@goodboy/core';
 import { resolveSkillInvocation } from '../../../features/skills/skills';
-import { formatError } from '../../../shared/lib/errors';
 import type { AppStore } from '../../store';
 import type { GetFn } from './types';
 import { resolveSessionRepo } from '../worktrees/resolveSessionRepo';

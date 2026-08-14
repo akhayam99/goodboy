@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, RoleModelPreferences } from '@goodboy/types';
-import { Checkbox, EmptyState } from '@goodboy/ui';
+import { Button, Checkbox, EmptyState } from '@goodboy/ui';
 import { ChevronDown, Sliders } from 'lucide-react';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import type { ResolveModelChoice } from '../../../../chat/spawn-from-comment';
@@ -117,12 +117,14 @@ export const ResolveBoard = ({
             onChange={setDefaultsOverride}
             onPrimary={applyToAll}
             renderTrigger={(open, popoverToggle) => (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                emphasis="outline"
+                size="sm"
                 onClick={popoverToggle}
                 aria-expanded={open}
                 title="Apply one resolver configuration to every comment"
-                className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1 text-xs transition-colors hover:bg-muted/50"
+                className="bg-subtle px-2"
               >
                 <Sliders size={12} aria-hidden className="text-muted-foreground" />
                 <span className="text-muted-foreground">Resolve all with</span>
@@ -132,22 +134,24 @@ export const ResolveBoard = ({
                   <RoutingBadge provider={aggregate.provider} model={aggregate.model} />
                 )}
                 <ChevronDown size={11} aria-hidden className="text-muted-foreground" />
-              </button>
+              </Button>
             )}
           />
         </div>
 
         {selected.length >= 2 ? (
-          <button
-            type="button"
+          <Button
+            variant="accent"
+            emphasis="outline"
+            size="sm"
             onClick={() => onSpawnCombined(selected, { ...defaults })}
             disabled={selected.length > 8}
             title={selected.length > 8 ? 'Too many threads for one resolver (max 8)' : undefined}
-            className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 px-2.5 py-1 text-xs font-semibold text-accent transition-opacity hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className="font-semibold"
           >
             <CONCEPT_ICONS.resolve size={12} aria-hidden />
             Spawn 1 combined resolver
-          </button>
+          </Button>
         ) : null}
         <button
           type="button"

@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { BitbucketWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
-import { Button, InlineConfirm, Input } from '@goodboy/ui';
+import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../store';
-import { formatError } from '../../../shared/lib/errors';
 import { normalizeWorkspaceSlug } from './normalizeWorkspaceSlug';
 
 type Props = {

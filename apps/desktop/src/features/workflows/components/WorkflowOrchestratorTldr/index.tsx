@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { cn, Divider, Markdown } from '@goodboy/ui';
+import { Chip, Divider, Markdown, type Tone } from '@goodboy/ui';
 import type { Step, WorkflowRun } from '@goodboy/types';
 
 const COLLAPSED_COUNT = 3;
@@ -11,9 +11,9 @@ const OUTCOME_LABEL = {
 } as const;
 
 const OUTCOME_TONE = {
-  done: 'bg-success/10 text-success',
-  blocked: 'bg-warning/10 text-warning',
-} as const;
+  done: 'success',
+  blocked: 'warning',
+} as const satisfies Record<'done' | 'blocked', Tone>;
 
 const ROW_BUTTON =
   'flex min-w-0 items-baseline gap-2 rounded-md text-left text-2xs transition-colors hover:bg-muted/40';
@@ -130,14 +130,13 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
                   onClick={() => setClosingOpen((open) => !open)}
                   className={ROW_BUTTON}
                 >
-                  <span
-                    className={cn(
-                      'shrink-0 rounded-full px-1.5 py-0.5 text-2xs font-semibold',
-                      OUTCOME_TONE[outcome],
-                    )}
-                  >
-                    {OUTCOME_LABEL[outcome]}
-                  </span>
+                  <Chip
+                    tone={OUTCOME_TONE[outcome]}
+                    size="xs"
+                    bordered={false}
+                    label={OUTCOME_LABEL[outcome]}
+                    className="shrink-0 font-semibold"
+                  />
                   {!closingOpen && (
                     <span className="min-w-0 flex-1 truncate text-muted-foreground">
                       {closingReason}

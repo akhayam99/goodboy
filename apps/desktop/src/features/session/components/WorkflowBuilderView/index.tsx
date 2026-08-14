@@ -20,16 +20,17 @@ import {
 } from 'lucide-react';
 import {
   Button,
+  cn,
   Divider,
   EmptyState,
+  formatError,
+  OverflowMenu,
   ScrollFade,
   SectionHeader,
   SegmentedTabs,
   Skeleton,
   Textarea,
-  cn,
 } from '@goodboy/ui';
-import { OverflowMenu } from '../../../../shared/components/OverflowMenu';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
@@ -77,7 +78,6 @@ import {
   parseSpendLimit,
 } from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
 import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
-import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { formatError } from '../../../shared/lib/errors';
 import { gitlabFetchIssue, type GitlabIssue } from './client';
 
 type Params = {

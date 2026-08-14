@@ -10,7 +10,7 @@ import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '@goodboy/ui';
-import { EmptyState, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { EmptyState, StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -158,14 +158,8 @@ export const ShippedPanel = ({
         </StudioWidget>
         <StudioWidget label="linked issues" hint="linked after launch vs launched from an issue">
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-md bg-muted p-3">
-              <span className="block text-2xs text-muted-foreground">linked</span>
-              <span className="font-mono text-lg tabular-nums">{tasks?.linked ?? 0}</span>
-            </div>
-            <div className="rounded-md bg-muted p-3">
-              <span className="block text-2xs text-muted-foreground">launched</span>
-              <span className="font-mono text-lg tabular-nums">{tasks?.launched ?? 0}</span>
-            </div>
+            <StatCard label="linked" value={String(tasks?.linked ?? 0)} valueSize="lg" />
+            <StatCard label="launched" value={String(tasks?.launched ?? 0)} valueSize="lg" />
           </div>
           <SessionRows
             sessions={tasks?.sessions ?? []}

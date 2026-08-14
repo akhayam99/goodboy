@@ -1,6 +1,6 @@
 import type { IsoDateTime } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { slackGetThread } from '../../../features/integrations/slack/client';
-import { formatError } from '../../../shared/lib/errors';
 import { slackThreadKey } from './state';
 import type { GetFn, SetFn, SlackThreadParams } from './types';
 

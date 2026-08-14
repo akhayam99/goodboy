@@ -1,8 +1,7 @@
 import { ChevronDown } from 'lucide-react';
-import { Chip, cn, StatusDot, type Tone } from '@goodboy/ui';
+import { Chip, cn, StatusDot, type Tone, useDropdown } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 
 const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini'];
 

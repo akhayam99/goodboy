@@ -6,10 +6,9 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { CountToggle, InlineConfirm, cn } from '@goodboy/ui';
+import { cn, CountToggle, formatError, InlineConfirm } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
-import { formatError } from '../../../../../../shared/lib/errors';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';

@@ -1,4 +1,4 @@
-import { MetaRow, cn, formatUsdPrecise } from '@goodboy/ui';
+import { MetaRow, Skeleton, cn, formatUsdPrecise } from '@goodboy/ui';
 import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
@@ -96,11 +96,9 @@ export const AgentMetrics = ({
               </span>
             ) : null,
             turnsLoading ? (
-              <span
-                key="turns"
-                aria-label="Loading turn count"
-                className="inline-block h-2.5 w-4 motion-safe:animate-pulse rounded bg-muted"
-              />
+              <span key="turns" role="status" aria-label="Loading turn count">
+                <Skeleton className="inline-block h-2.5 w-4" />
+              </span>
             ) : (
               <span
                 key="turns"

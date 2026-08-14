@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { ScrollFade } from '@goodboy/ui';
+import { ScrollFade } from './ScrollFade';
 
 type ErrorBoundaryProps = {
   readonly children: ReactNode;

@@ -1,5 +1,14 @@
 import type { ChangeEventHandler, RefObject } from 'react';
-import { Divider, FieldRow, Input, SectionHeader, Skeleton, Textarea, cn } from '@goodboy/ui';
+import {
+  Divider,
+  FieldRow,
+  IconButton,
+  Input,
+  SectionHeader,
+  Skeleton,
+  Textarea,
+  cn,
+} from '@goodboy/ui';
 import { AlertTriangle, Expand, Folder, GitBranch, Paperclip, Target } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
@@ -179,19 +188,13 @@ export const NewSessionForm = ({
               className="min-w-0 flex-1"
             />
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <button
-                type="button"
+              <IconButton
+                icon={Expand}
+                label="Open goal editor"
                 onClick={onOpenGoalEditor}
                 disabled={busy}
-                title="Open goal editor"
-                aria-label="Open goal editor"
-                className={cn(
-                  'rounded-md border border-border p-2 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground',
-                  busy && 'cursor-not-allowed text-muted-foreground/30',
-                )}
-              >
-                <Expand size={13} aria-hidden />
-              </button>
+                className={cn(busy && 'cursor-not-allowed text-muted-foreground/30')}
+              />
               {goalEditorDirty ? (
                 <span className="text-2xs text-warning">Unsaved edits</span>
               ) : null}

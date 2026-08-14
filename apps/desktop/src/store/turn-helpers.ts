@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { formatError } from '@goodboy/ui';
 import {
   assessPlanReadiness,
   extractClustersFromMarker,
@@ -52,7 +53,6 @@ import {
   listPlansForSession as invokeListPlansForSession,
   upsertPlan as invokeUpsertPlan,
 } from '../features/plans/plans';
-import { formatError } from '../shared/lib/errors';
 import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';

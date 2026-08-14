@@ -8,7 +8,7 @@ import {
   bitbucketPullRequestFields,
   resolveDetailFields,
 } from '../../../../../shared/detail-fields';
-import { StateBadge, type StateTone } from '@goodboy/ui';
+import { StateBadge } from '@goodboy/ui';
 import { BranchPair } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '@goodboy/ui';
@@ -20,7 +20,8 @@ import { LaunchSessionPanel } from '../../../components/LaunchSessionPanel';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
 import { bitbucketPrUrl } from '../../bitbucketPrUrl';
 import { goalFromPullRequest } from '../../goal-from-pull-request';
-import type { BitbucketPullRequest, BitbucketPullRequestState, BitbucketRepo } from '../../client';
+import { pullRequestStateTone } from '../../stateTone';
+import type { BitbucketPullRequest, BitbucketRepo } from '../../client';
 import { useAppStore } from '../../../../../store';
 import { PrActionBar } from '../PrActionBar';
 import { PrChanges } from './PrChanges';
@@ -40,13 +41,6 @@ type Props = {
   readonly error: string | null;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
-};
-
-const STATE_TONE: Record<BitbucketPullRequestState, StateTone> = {
-  OPEN: 'success',
-  MERGED: 'info',
-  DECLINED: 'danger',
-  SUPERSEDED: 'neutral',
 };
 
 const SECTION_OPTIONS = [
@@ -119,7 +113,7 @@ export const PrDetailPanel = ({
         <>
           <HeaderBand
             meta={
-              <StateBadge tone={STATE_TONE[pullRequest.state]}>
+              <StateBadge tone={pullRequestStateTone({ state: pullRequest.state })}>
                 #{pullRequest.id} · {pullRequest.state.toLowerCase()}
               </StateBadge>
             }

@@ -1,7 +1,7 @@
 import { updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { formatError } from '../../../shared/lib/errors';
 
 export const recordOutcome = async (id: string, outcome: NudgeOutcome): Promise<void> => {
   try {

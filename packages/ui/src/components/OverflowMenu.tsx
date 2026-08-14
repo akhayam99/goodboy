@@ -1,8 +1,9 @@
 import type { ComponentType, ReactNode } from 'react';
 import { MoreVertical } from 'lucide-react';
-import { Popover, cn } from '@goodboy/ui';
-import { useDropdown } from '../../hooks/useDropdown';
-import { DropdownPortal } from '../../hooks/useDropdown/DropdownPortal';
+import { cn } from '../cn';
+import { Popover } from './Popover';
+import { useDropdown } from '../useDropdown';
+import { DropdownPortal } from '../useDropdown/DropdownPortal';
 
 type IconProps = {
   readonly size?: number;

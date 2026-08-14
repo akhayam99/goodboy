@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { cn, EmptyState, Popover, ScrollFade, Skeleton, useDropdown } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../store';
 import type { WorkspaceId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
 import { Avatar } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 
 type Props = {
   readonly workspaceRoot: string | null;
@@ -25,6 +24,7 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
     close,
     toggle,
     containerRef,
+    popupRef,
     popupClassName,
   } = useDropdown({ width: 'w-52', expectedHeight: 220 });
 
@@ -58,12 +58,7 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
         Add
       </button>
       {isOpen ? (
-        <div
-          className={cn(
-            popupClassName,
-            'flex flex-col gap-1 rounded-md border border-border-soft bg-background p-1.5 shadow-lg',
-          )}
-        >
+        <Popover innerRef={popupRef} className={cn(popupClassName, 'flex flex-col gap-1 p-1.5')}>
           <div className="flex items-center gap-1.5 px-1.5 py-1">
             <Search size={12} aria-hidden className="shrink-0 text-muted-foreground" />
             <input
@@ -113,7 +108,7 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
               </ul>
             </ScrollFade>
           )}
-        </div>
+        </Popover>
       ) : null}
     </div>
   );

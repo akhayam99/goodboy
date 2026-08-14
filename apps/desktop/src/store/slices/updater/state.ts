@@ -1,10 +1,5 @@
 export type UpdaterStatus =
-  | 'idle'
-  | 'checking'
-  | 'available'
-  | 'downloading'
-  | 'uptodate'
-  | 'error';
+  'idle' | 'checking' | 'available' | 'downloading' | 'uptodate' | 'error';
 
 export type UpdaterState = {
   readonly updaterStatus: UpdaterStatus;

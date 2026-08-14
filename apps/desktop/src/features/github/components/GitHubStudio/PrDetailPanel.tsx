@@ -1,7 +1,7 @@
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, formatError } from '@goodboy/ui';
 import {
   buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
@@ -39,7 +39,6 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { githubReviewTarget } from '../../../../store/slices/review-drafts/githubReviewTarget';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
 import { useToast } from '../../../../app/components/Toast';
-import { formatError } from '../../../../shared/lib/errors';
 
 const VERDICT_TOAST = {
   comment: 'Comment posted on the pull request',

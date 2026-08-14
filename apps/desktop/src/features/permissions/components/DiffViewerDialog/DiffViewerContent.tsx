@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, GitBranch, RefreshCw, X } from 'lucide-react';
-import { Divider, ScrollFade, Skeleton, cn } from '@goodboy/ui';
+import { cn, DiffLayoutToggle, Divider, formatError, ScrollFade, Skeleton } from '@goodboy/ui';
 import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
 import type {
   BranchCommit,
@@ -15,7 +15,6 @@ import type {
 } from '@goodboy/types';
 import { ghPrDiff } from '../../../../features/github/github';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
-import { formatError } from '../../../../shared/lib/errors';
 import { ErrorStrip } from '@goodboy/ui';
 import {
   DEFAULT_EDITOR_BINARY,
@@ -36,7 +35,6 @@ import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
-import { DiffLayoutToggle } from '../../../../shared/components/DiffLayoutToggle';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import {
   listBranchCommits,

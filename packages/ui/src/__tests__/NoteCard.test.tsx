@@ -1,6 +1,7 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { NoteCard } from '@goodboy/ui';
+import { NoteCard } from '../components/NoteCard';
 
 afterEach(cleanup);
 

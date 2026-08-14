@@ -297,7 +297,7 @@ function LogFlyout({ script, result, anchor: initialAnchor, onClose }: LogFlyout
         width: pos.width,
         height: pos.height,
       }}
-      className="z-50 flex flex-col"
+      className="z-popover flex flex-col"
     >
       <div className="flex items-center gap-2 px-3 py-2">
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">

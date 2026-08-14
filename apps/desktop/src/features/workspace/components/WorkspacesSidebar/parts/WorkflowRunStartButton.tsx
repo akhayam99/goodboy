@@ -50,7 +50,7 @@ export const WorkflowRunStartButton = ({ variant, blockReason, onStart }: Props)
           isBusy={start.isBusy}
           onConfirm={start.onConfirm}
           onCancel={start.onCancel}
-          className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
+          className="absolute right-0 top-full z-popover mt-1 w-72 bg-background shadow-lg"
         />
       ) : null}
     </div>

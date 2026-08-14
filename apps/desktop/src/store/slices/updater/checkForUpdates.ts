@@ -1,5 +1,5 @@
 import { check } from '@tauri-apps/plugin-updater';
-import { formatError } from '../../../shared/lib/errors';
+import { formatError } from '@goodboy/ui';
 import { setPendingUpdate } from './pendingUpdate';
 import type { GetFn, SetFn } from './types';
 

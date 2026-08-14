@@ -1,18 +1,17 @@
 import { StudioDetailLayout } from '../../../../../shared/components/StudioDetail';
 import { useEffect, useState } from 'react';
-import { Button, EmptyState, Markdown } from '@goodboy/ui';
+import { Button, EmptyState, formatError, Markdown } from '@goodboy/ui';
 import { AlertTriangle, FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
 import type { GitlabWorkspaceIntegration, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
-import { StateBadge, type StateTone } from '@goodboy/ui';
+import { StateBadge } from '@goodboy/ui';
 import { BranchPair } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
 import { RefreshIconButton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
-import { formatError } from '../../../../../shared/lib/errors';
 import {
   gitlabMergeMr,
   gitlabUpdateMrState,
@@ -27,6 +26,7 @@ import { MrActionBar, type MrActionBusy } from './MrActionBar';
 import { MrApprovalRail } from './MrApprovalRail';
 import { MrConversation } from './MrConversation';
 import { mrDraftTitle } from './mrDraftTitle';
+import { mergeRequestStateTone } from '../../stateTone';
 
 type MrSection = 'overview' | 'conversation';
 
@@ -46,13 +46,6 @@ type Props = {
   readonly host?: string | null;
   readonly onRefresh?: () => void;
   readonly onClose: () => void;
-};
-
-const STATE_TONE: Record<string, StateTone> = {
-  opened: 'success',
-  merged: 'info',
-  closed: 'danger',
-  locked: 'neutral',
 };
 
 const SECTION_OPTIONS = [
@@ -241,7 +234,7 @@ export const MrDetailPanel = ({
             <HeaderBand
               meta={
                 <>
-                  <StateBadge tone={STATE_TONE[mr.state] ?? 'neutral'}>
+                  <StateBadge tone={mergeRequestStateTone({ state: mr.state })}>
                     !{mr.iid} · {mr.state}
                   </StateBadge>
                   {mr.draft ? <StateBadge tone="warning">draft</StateBadge> : null}

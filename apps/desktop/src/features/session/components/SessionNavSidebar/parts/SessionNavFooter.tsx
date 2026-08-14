@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
-import { ConfirmPill } from '@goodboy/ui';
+import { ConfirmPill, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
-import { formatError } from '../../../../../shared/lib/errors';
 import { useToast } from '../../../../../app/components/Toast';
 import { EditorMenu } from '../../SessionOverviewPane/EditorMenu';
 import { SessionGitActions } from '../../SessionWorkspace/parts/SessionGitActions';

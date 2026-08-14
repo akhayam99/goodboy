@@ -1,7 +1,7 @@
 import { detectRepoSlug, fetchPrDetail } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
-import { formatError } from '../../../shared/lib/errors';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 

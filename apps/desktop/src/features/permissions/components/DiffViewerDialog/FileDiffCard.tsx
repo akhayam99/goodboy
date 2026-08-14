@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, ExternalLink, MessageSquarePlus } from 'lucide-react';
-import { Divider, EmptyState, Tooltip, cn } from '@goodboy/ui';
+import { Chip, cn, type DiffLayoutMode, Divider, EmptyState, Tooltip } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
 import type {
@@ -11,7 +11,6 @@ import type {
   DiffHunkLine,
   FileDiff,
 } from '@goodboy/types';
-import type { DiffLayoutMode } from '../../../../shared/utils/diffLayoutMode';
 import { buildDiffPairRows, type DiffPairRow } from '../../../../shared/utils/diffPairRows';
 import { buildDiffRows, type DiffRow } from '../../../../shared/utils/diffRows';
 import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
@@ -295,17 +294,23 @@ export const FileDiffCard = ({
             {file.path}
           </button>
           {reviewState === 'stale' ? (
-            <span
-              className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground"
+            <Chip
+              tone="neutral"
+              size="3xs"
+              bordered={false}
+              label="previously reviewed"
               title="This file changed since you last reviewed it"
-            >
-              previously reviewed
-            </span>
+              className="shrink-0"
+            />
           ) : null}
           {noteCount > 0 ? (
-            <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning">
-              {noteCount} {noteCount === 1 ? 'note' : 'notes'}
-            </span>
+            <Chip
+              tone="warning"
+              size="3xs"
+              bordered={false}
+              label={`${noteCount} ${noteCount === 1 ? 'note' : 'notes'}`}
+              className="shrink-0"
+            />
           ) : null}
           <span className="shrink-0 text-3xs tabular-nums">
             {file.additions > 0 && <span className="text-success">+{file.additions}</span>}

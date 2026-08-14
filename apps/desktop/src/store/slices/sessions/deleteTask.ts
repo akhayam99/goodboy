@@ -1,9 +1,9 @@
 import type { ProviderRunId, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { deleteSession as deleteSessionFromDb, listWorktreesForSession } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { removeSessionDirectory, removeWorktree } from '../../../features/worktree/worktree';
-import { formatError } from '../../../shared/lib/errors';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildSessionMounts } from '../worktrees/buildSessionMounts';
 import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';

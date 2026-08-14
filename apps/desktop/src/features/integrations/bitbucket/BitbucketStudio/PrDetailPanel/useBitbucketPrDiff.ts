@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { FileDiff } from '@goodboy/types';
-import { formatError } from '../../../../../shared/lib/errors';
 import { bitbucketPullRequestDiff, type BitbucketPullRequestTarget } from '../../client';
 
 type Params = {

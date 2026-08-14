@@ -19,15 +19,7 @@ type Props = {
 };
 
 type Section =
-  | 'overview'
-  | 'board'
-  | 'session'
-  | 'turn'
-  | 'tools'
-  | 'tokens'
-  | 'agents'
-  | 'tips'
-  | 'legenda';
+  'overview' | 'board' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
 
 type NavItem = {
   readonly id: Section;

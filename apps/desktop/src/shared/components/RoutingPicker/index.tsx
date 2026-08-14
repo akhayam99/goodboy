@@ -8,7 +8,7 @@ import {
   resolveModelArgs,
   resolveStoredModelSelection,
 } from '@goodboy/core';
-import { Button, Divider, Popover, ScrollFade, cn } from '@goodboy/ui';
+import { Button, cn, Divider, DropdownPortal, Popover, ScrollFade, useDropdown } from '@goodboy/ui';
 import type { CatalogModel, ModelSelection, ProviderId } from '@goodboy/types';
 import {
   EFFORT_LABEL,
@@ -21,8 +21,6 @@ import {
   VERBOSITY_LEVELS,
   type VerbosityLevel,
 } from '../../../features/settings/verbosity';
-import { DropdownPortal } from '../../hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../hooks/useDropdown';
 import { AxesSection } from './AxesSection';
 import { verbosityTone } from './chipTone';
 import { CatalogGrid } from './CatalogGrid';

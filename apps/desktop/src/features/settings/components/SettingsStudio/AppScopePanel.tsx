@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { RotateCcw, Smartphone } from 'lucide-react';
-import { Button, cn, Divider, FieldRow, ScrollFade, SectionHeader, Select } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Divider,
+  FieldRow,
+  formatError,
+  ScrollFade,
+  SectionHeader,
+  Select,
+} from '@goodboy/ui';
 import { GithubPanel } from '../../../../features/github/components/Panel';
 import { ImportConfigDialog } from '../ImportConfigDialog';
 import type { ConfigBundleImportResult } from '@goodboy/types';
@@ -9,7 +18,6 @@ import {
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
 import { reopenWizard } from '../../../onboarding/onboarding-store';
-import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
 import { useThemeStore } from '../../../../shared/lib/theme';

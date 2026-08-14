@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ScrollFade } from '@goodboy/ui';
+import { formatError, ScrollFade } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceIntegration } from '@goodboy/types';
 import { resolveTaskModel } from '@goodboy/core';
 import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
@@ -20,7 +20,6 @@ import { useWorkspaceGitStatus } from '../../../workspace/hooks/useWorkspaceGitS
 import type { IssueCandidate } from '../../../../features/integrations/fetchIssueCandidates';
 import { resolveIssueSources } from '../../../../features/integrations/issueSources';
 import { useGithubConnection } from '../../../../features/integrations/github/useGithubConnection';
-import { formatError } from '../../../../shared/lib/errors';
 import { isValidBranchSlug as validateBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
 import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
 import { sanitizeBranchSlug as sanitizeBranchSlugValue } from '../../../../shared/utils/sanitizeBranchSlug';

@@ -1,9 +1,7 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Check, GitBranch, Pencil } from 'lucide-react';
-import { cn, Popover, Tooltip } from '@goodboy/ui';
+import { cn, Popover, Tooltip, useCopyLink, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { formatError } from '../../../../shared/lib/errors';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { useToast } from '../../../../app/components/Toast';
 import { BranchSwitchPanel } from '../../../worktree/BranchSwitchPanel';
 
@@ -16,23 +14,24 @@ type Props = {
 
 export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Props) => {
   const { showToast } = useToast();
-  const [copied, setCopied] = useState(false);
+  const { copied, failed, copy } = useCopyLink();
   const { open, close, toggle, containerRef, popupClassName } = useDropdown({
     disabled: !canEdit,
     width: 'w-96',
     expectedHeight: 360,
   });
 
-  const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(branch);
-      setCopied(true);
+  useEffect(() => {
+    if (copied) {
       showToast('success', 'branch copied');
-      setTimeout(() => setCopied(false), 1200);
-    } catch (err) {
-      showToast('error', `copy failed: ${formatError(err)}`);
     }
-  };
+  }, [copied, showToast]);
+
+  useEffect(() => {
+    if (failed) {
+      showToast('error', 'copy failed');
+    }
+  }, [failed, showToast]);
 
   return (
     <div
@@ -46,7 +45,7 @@ export const BranchChip = ({ branch, mountName = null, sessionId, canEdit }: Pro
     >
       <button
         type="button"
-        onClick={() => void onCopy()}
+        onClick={() => void copy(branch)}
         title="Click to copy branch name"
         aria-label={`Copy branch ${branch}`}
         className="inline-flex min-w-0 items-center gap-1.5 px-2 py-1"

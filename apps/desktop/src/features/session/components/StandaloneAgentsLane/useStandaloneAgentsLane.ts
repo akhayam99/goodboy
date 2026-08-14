@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 import { classifyAgent, isStandaloneAgent, type AgentKind } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';

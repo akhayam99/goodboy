@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, EmptyState, InlineConfirm, Input, SectionHeader } from '@goodboy/ui';
+import { Button, EmptyState, formatError, InlineConfirm, Input, SectionHeader } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { PROVIDER_API_KEY_ENV, type CredentialId, type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 

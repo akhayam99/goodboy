@@ -1,10 +1,9 @@
 import { useEffect, useMemo } from 'react';
+import { formatError, OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
 import { Copy, FolderOpen } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
-import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
-import { formatError } from '../../../../shared/lib/errors';
 import { useToast } from '../../../../app/components/Toast';
 import type { Density } from '../../density';
 

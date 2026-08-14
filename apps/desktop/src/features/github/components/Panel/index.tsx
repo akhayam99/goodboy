@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, AlertCircle, RefreshCw } from 'lucide-react';
-import { Button, Input, cn } from '@goodboy/ui';
+import { Button, cn, formatError, Input } from '@goodboy/ui';
 import { GithubIcon } from '@goodboy/ui';
-import { formatError } from '../../../../shared/lib/errors';
 import type { SaveState } from '../../../../shared/types/saveState';
 import { useAppStore } from '../../../../store';
 import { CreateTokenLink } from '../../../integrations/github/CreateTokenLink';

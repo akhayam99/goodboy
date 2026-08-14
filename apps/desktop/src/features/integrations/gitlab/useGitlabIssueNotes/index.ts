@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { GitlabWorkspaceIntegration, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 import {
   gitlabCreateIssueNote,
   gitlabListIssueNotes,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { formatError } from '../../../shared/lib/errors';
 import { linearCreateComment, linearFetchIssueComments, type LinearIssueComment } from './client';
 
 type Params = {

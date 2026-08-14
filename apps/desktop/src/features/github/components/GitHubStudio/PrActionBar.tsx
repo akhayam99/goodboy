@@ -1,26 +1,10 @@
 import { useState } from 'react';
 import type { PullRequestState } from '@goodboy/types';
-import { cn, Divider, InlineConfirm, tintClasses, type Tone } from '@goodboy/ui';
+import { Button, cn, Divider, InlineConfirm } from '@goodboy/ui';
 import { GitMerge, GitPullRequestDraft, Plus, RotateCcw, Send, XCircle } from 'lucide-react';
 import { PrVerdictAction, type PrVerdictSubmission } from './PrVerdictAction';
-import { HOST_ACTION_BUTTON } from '../../../../shared/utils/hostActionButton';
 
 export type ActionBusy = 'ready' | 'undraft' | 'merge' | 'close' | 'reopen' | 'review' | null;
-
-const actionTone = (
-  tone: Extract<Tone, 'neutral' | 'success' | 'danger' | 'primary' | 'warning'>,
-): string => {
-  const t = tintClasses(tone);
-  return cn(t.border, t.text, t.hoverBgSoft, t.hoverText);
-};
-
-const TONE = {
-  neutral: actionTone('neutral'),
-  success: actionTone('success'),
-  danger: actionTone('danger'),
-  primary: actionTone('primary'),
-  warning: actionTone('warning'),
-} as const;
 
 type Props = {
   readonly pr: PullRequestState;
@@ -116,66 +100,62 @@ export const PrActionBar = ({
       {!isTerminal && <Divider orientation="vertical" className="mx-0.5 h-5" />}
 
       {!isTerminal && isDraft ? (
-        <button
-          type="button"
+        <Button
+          variant="success"
+          emphasis="outline"
+          size="sm"
           onClick={onMarkReady}
           disabled={busy !== null}
-          className={cn(HOST_ACTION_BUTTON, TONE.success, spin('ready') && 'animate-border-pulse')}
+          isBusy={spin('ready')}
         >
           <Send size={13} aria-hidden />
           Mark ready
-        </button>
+        </Button>
       ) : !isTerminal ? (
-        <button
-          type="button"
+        <Button
+          variant="warning"
+          emphasis="outline"
+          size="sm"
           onClick={onConvertDraft}
           disabled={busy !== null}
-          className={cn(
-            HOST_ACTION_BUTTON,
-            TONE.warning,
-            spin('undraft') && 'animate-border-pulse',
-          )}
+          isBusy={spin('undraft')}
         >
           <GitPullRequestDraft size={13} aria-hidden />
           Convert to draft
-        </button>
+        </Button>
       ) : null}
 
       {!isTerminal && (
-        <button
-          type="button"
+        <Button
+          variant="danger"
+          emphasis="outline"
+          size="sm"
           onClick={onClose}
           disabled={busy !== null}
-          className={cn(HOST_ACTION_BUTTON, TONE.danger, spin('close') && 'animate-border-pulse')}
+          isBusy={spin('close')}
         >
           <XCircle size={13} aria-hidden />
           Close
-        </button>
+        </Button>
       )}
 
       {isClosed ? (
         <>
-          <button
-            type="button"
+          <Button
+            variant="success"
+            emphasis="outline"
+            size="sm"
             onClick={onReopen}
             disabled={busy !== null}
-            className={cn(
-              HOST_ACTION_BUTTON,
-              TONE.success,
-              spin('reopen') && 'animate-border-pulse',
-            )}
+            isBusy={spin('reopen')}
           >
             <RotateCcw size={13} aria-hidden />
             Reopen
-          </button>
-          <button
-            type="button"
-            onClick={onCreateNew}
-            className={cn(HOST_ACTION_BUTTON, TONE.primary)}
-          >
+          </Button>
+          <Button variant="primary" emphasis="outline" size="sm" onClick={onCreateNew}>
             <Plus size={13} aria-hidden />
             Create new PR
-          </button>
+          </Button>
         </>
       ) : null}
     </div>

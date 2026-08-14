@@ -1,8 +1,6 @@
 import { Plus } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
-import { Button, Popover, cn } from '@goodboy/ui';
-import { useDropdown } from '../../../../../../shared/hooks/useDropdown';
-import { DropdownPortal } from '../../../../../../shared/hooks/useDropdown/DropdownPortal';
+import { Button, cn, DropdownPortal, Popover, useDropdown } from '@goodboy/ui';
 import { LinkIssueForm } from './LinkIssueForm';
 
 type Props = {

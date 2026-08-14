@@ -42,7 +42,7 @@ describe('BranchChip', () => {
     render(<BranchChip branch="ak/feat-thing" sessionId={'sess-1' as never} canEdit />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy branch ak/feat-thing' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('ak/feat-thing'));
-    expect(toastMock).toHaveBeenCalledWith('success', 'branch copied');
+    await waitFor(() => expect(toastMock).toHaveBeenCalledWith('success', 'branch copied'));
   });
 
   it('toasts an error when the clipboard write fails', async () => {

@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState, type RefObject } from 'react';
+import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Skill, Workflow, WorkspaceScript } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
-import { formatError } from '../../../../../../shared/lib/errors';
 import { WORKSPACE_FEATURES } from '../../../../../../shared/lib/features';
 import type { ToastKind } from '../../../../../../app/components/Toast';
 import {

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Button, Input, SegmentedTabs } from '@goodboy/ui';
+import { Button, formatError, Input, SegmentedTabs } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useToast } from '../../../app/components/Toast';
-import { formatError } from '../../../shared/lib/errors';
 import { useAppStore, useSessionById } from '../../../store';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { BranchCombobox } from '../BranchCombobox';

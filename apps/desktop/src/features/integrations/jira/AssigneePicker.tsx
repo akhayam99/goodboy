@@ -1,8 +1,18 @@
 import { useMemo, useState } from 'react';
-import { Check, Loader2, UserRound } from 'lucide-react';
-import { Button, Divider, Input, Popover, ScrollFade } from '@goodboy/ui';
+import { Check, UserRound } from 'lucide-react';
+import {
+  Button,
+  cn,
+  Divider,
+  DropdownBackdrop,
+  formatError,
+  Input,
+  Popover,
+  ScrollFade,
+  StatusDot,
+  useDropdown,
+} from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { formatError } from '../../../shared/lib/errors';
 import type { JiraUser } from './client';
 import { useJiraAssignableUsers } from './useJiraAssignableUsers';
 
@@ -32,10 +42,17 @@ const filterAssignees = ({ users, query }: FilterParams): ReadonlyArray<JiraUser
 };
 
 export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
+  const {
+    open: isOpen,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupClassName,
+  } = useDropdown({ align: 'end', width: 'w-64', expectedHeight: 300, hasBackdrop: true });
   const { users, isLoading, error, reload } = useJiraAssignableUsers({
     issueKey,
     workspaceId,
@@ -48,7 +65,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
     setAssignError(null);
     try {
       await onAssign(accountId);
-      setIsOpen(false);
+      close();
       setQuery('');
     } catch (assignFailure: unknown) {
       setAssignError(formatError(assignFailure));
@@ -58,7 +75,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
   };
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <Button
         size="sm"
         variant="secondary"
@@ -67,18 +84,19 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
         title="Change who owns this issue in Jira"
         isBusy={busyId != null}
         busyLabel="Assigning"
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={toggle}
       >
         <UserRound size={12} aria-hidden />
         {assignee?.displayName ?? 'Unassigned'}
       </Button>
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} aria-hidden />
+          <DropdownBackdrop onClose={close} />
           <Popover
+            innerRef={popupRef}
             role="menu"
             ariaLabel="Assign this issue"
-            className="absolute right-0 z-50 mt-1 flex w-64 flex-col"
+            className={cn(popupClassName, 'flex flex-col')}
           >
             <div className="p-1">
               <Input
@@ -101,9 +119,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
                   className={MENU_ROW}
                 >
                   <span className="min-w-0 truncate text-muted-foreground">Unassign</span>
-                  {busyId === UNASSIGN_ROW_ID && (
-                    <Loader2 size={12} aria-hidden className="motion-safe:animate-spin" />
-                  )}
+                  {busyId === UNASSIGN_ROW_ID && <StatusDot tone="neutral" pulsing />}
                 </button>
               )}
               {filtered.map((user) => (
@@ -116,9 +132,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
                   className={MENU_ROW}
                 >
                   <span className="min-w-0 truncate">{user.displayName}</span>
-                  {busyId === user.accountId && (
-                    <Loader2 size={12} aria-hidden className="motion-safe:animate-spin" />
-                  )}
+                  {busyId === user.accountId && <StatusDot tone="neutral" pulsing />}
                   {busyId !== user.accountId && user.accountId === assignee?.accountId && (
                     <Check size={12} aria-hidden />
                   )}

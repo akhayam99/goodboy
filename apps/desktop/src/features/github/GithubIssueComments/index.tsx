@@ -1,10 +1,9 @@
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, NoteComposer } from '@goodboy/ui';
 import type { GithubIssueComment } from '@goodboy/types';
 import { formatRelativeDuration } from '../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { Avatar } from '@goodboy/ui';
 import { NoteCard } from '@goodboy/ui';
-import { NoteComposer } from '../../../shared/components/NoteComposer';
 import { NoteHeader } from '@goodboy/ui';
 import { NoteListSkeleton } from '@goodboy/ui';
 

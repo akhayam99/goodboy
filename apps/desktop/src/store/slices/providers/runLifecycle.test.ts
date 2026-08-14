@@ -49,8 +49,7 @@ describe('runLifecycle', () => {
     const set = vi.fn(
       (
         update:
-          | Record<string, unknown>
-          | ((current: Record<string, unknown>) => Record<string, unknown>),
+          Record<string, unknown> | ((current: Record<string, unknown>) => Record<string, unknown>),
       ) => {
         const patch = typeof update === 'function' ? update(state) : update;
         state = { ...state, ...patch };
@@ -121,8 +120,7 @@ describe('runLifecycle', () => {
     const set = vi.fn(
       (
         update:
-          | Record<string, unknown>
-          | ((current: Record<string, unknown>) => Record<string, unknown>),
+          Record<string, unknown> | ((current: Record<string, unknown>) => Record<string, unknown>),
       ) => {
         const patch = typeof update === 'function' ? update(state) : update;
         state = { ...state, ...patch };
@@ -187,8 +185,7 @@ describe('runLifecycle', () => {
     const set = vi.fn(
       (
         update:
-          | Record<string, unknown>
-          | ((current: Record<string, unknown>) => Record<string, unknown>),
+          Record<string, unknown> | ((current: Record<string, unknown>) => Record<string, unknown>),
       ) => {
         const patch = typeof update === 'function' ? update(state) : update;
         state = { ...state, ...patch };

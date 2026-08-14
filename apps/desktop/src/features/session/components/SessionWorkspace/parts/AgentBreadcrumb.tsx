@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Popover, ScrollFade, cn } from '@goodboy/ui';
+import { cn, Popover, ScrollFade, useDropdown } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { AgentAvatar } from '../../../../../shared/components/AgentAvatar';
-import { useDropdown } from '../../../../../shared/hooks/useDropdown';
 import { agentHomeLens, classifyAgent, type AgentHomeLens } from '../../../agent-kind';
 import { isAgentFinished } from '../../../agent-lifecycle';
 import { useResolverIndex } from '../../../hooks/useResolverIndex';

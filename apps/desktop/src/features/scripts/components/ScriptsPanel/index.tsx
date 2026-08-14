@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, SectionHeader } from '@goodboy/ui';
+import { Button, formatError, SectionHeader } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorkspaceScript, WorkspaceScriptId } from '@goodboy/types';
 import { Plus } from 'lucide-react';
-import { formatError } from '../../../../shared/lib/errors';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';

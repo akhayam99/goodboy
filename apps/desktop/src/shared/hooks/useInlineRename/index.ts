@@ -1,5 +1,5 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
-import { formatError } from '../../lib/errors';
+import { formatError } from '@goodboy/ui';
 
 type Params = {
   readonly value: string;

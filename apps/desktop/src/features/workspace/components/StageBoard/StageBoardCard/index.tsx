@@ -9,7 +9,7 @@ import {
   SquareTerminal,
   Trash2,
 } from 'lucide-react';
-import { Chip, cn, Divider, formatUsd, tintClasses, Tooltip } from '@goodboy/ui';
+import { Chip, cn, Divider, formatUsd, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -31,8 +31,6 @@ import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { PrRequestSlot } from './PrRequestSlot';
 import { useDynamicActions } from './useDynamicActions';
-
-const draftTint = tintClasses('draft');
 
 type CardSelectionEvent = {
   readonly shiftKey: boolean;
@@ -171,17 +169,15 @@ export const StageBoardCard = memo(function StageBoardCard({
             </Tooltip>
           )}
           {reviewDraftCount > 0 && (
-            <span
-              className={cn(
-                'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium',
-                draftTint.bg,
-                draftTint.text,
-              )}
-            >
-              <MessageSquareDiff size={10} aria-hidden />
-              <span className="tabular-nums">{reviewDraftCount}</span>
-              <span>draft {reviewDraftCount === 1 ? 'comment' : 'comments'}</span>
-            </span>
+            <Chip
+              tone="draft"
+              size="3xs"
+              bordered={false}
+              icon={<MessageSquareDiff size={10} aria-hidden />}
+              label={<span className="tabular-nums">{reviewDraftCount}</span>}
+              trailing={<span>draft {reviewDraftCount === 1 ? 'comment' : 'comments'}</span>}
+              className="shrink-0"
+            />
           )}
           {externalTasks.map((task) => (
             <ExternalTaskChip

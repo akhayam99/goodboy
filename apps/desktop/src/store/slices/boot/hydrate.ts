@@ -1,4 +1,5 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { getSetting, listWorkspaces } from '@goodboy/db';
 import { runDbMigrations, tauriDatabase } from '../../../shared/lib/db';
 import { migrateLsToDb } from '../../../shared/lib/ls-to-db-migration';
@@ -24,7 +25,6 @@ import {
   SETTING_LAST_WORKSPACE_ID,
   SETTING_REOPEN_LAST,
 } from '../../../features/settings/settings';
-import { formatError } from '../../../shared/lib/errors';
 import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVersions';
 import { applyQaDecidingPreview } from '../workflows/applyQaDecidingPreview';
 import { drainAuditRetryQueue } from './auditRetryQueue';

@@ -3,9 +3,9 @@ import {
   listPendingResolutionsForSession,
   queuePendingResolution,
 } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import type { PendingResolutionOutcome, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { formatError } from '../../../shared/lib/errors';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
 import { withResolutionLock } from './withResolutionLock';

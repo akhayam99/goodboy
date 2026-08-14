@@ -1,9 +1,14 @@
-import { cn, Popover, ScrollFade, Tooltip } from '@goodboy/ui';
+import {
+  cn,
+  DropdownBackdrop,
+  DropdownPortal,
+  Popover,
+  ScrollFade,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
-import { DropdownBackdrop } from '../../../shared/hooks/useDropdown/DropdownBackdrop';
-import { DropdownPortal } from '../../../shared/hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../../shared/hooks/useDropdown';
 import type { FooterIntegrationEntry } from './categories';
 import { IntegrationAddRow } from './IntegrationAddRow';
 

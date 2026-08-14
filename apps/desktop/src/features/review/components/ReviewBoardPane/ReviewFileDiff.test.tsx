@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { type DiffLayoutMode } from '@goodboy/ui';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { DiffHunkLine, FileDiff } from '@goodboy/types';
-import type { DiffLayoutMode } from '../../../../shared/utils/diffLayoutMode';
 import { ReviewFileDiff } from './ReviewFileDiff';
 
 const fileOf = (lines: ReadonlyArray<DiffHunkLine>): FileDiff => ({

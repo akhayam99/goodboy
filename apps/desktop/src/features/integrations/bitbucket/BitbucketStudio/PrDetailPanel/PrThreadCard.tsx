@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Divider, Markdown } from '@goodboy/ui';
+import { Divider, Markdown, NoteComposer } from '@goodboy/ui';
 import { MessageSquareReply } from 'lucide-react';
-import { NoteComposer } from '../../../../../shared/components/NoteComposer';
 import type { BitbucketPrThread } from './bitbucketPrThreads';
 import { PrNoteHeader } from './PrNoteHeader';
 

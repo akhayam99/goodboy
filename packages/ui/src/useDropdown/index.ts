@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn } from '../cn';
 import { useDropdownDirection } from '../useDropdownDirection';
 
 type Align = 'start' | 'end' | 'center';

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Terminal } from 'lucide-react';
-import { Tooltip } from '@goodboy/ui';
+import { Button, formatError, Tooltip } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { openCommandInExternalTerminal } from '../../external-terminal';
-import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
 import { CopyButton } from '@goodboy/ui';
 
@@ -86,21 +85,21 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
             presentation="icon"
             value={command}
             label="copy command"
-            className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2.5 py-1 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="h-7 gap-1.5 border border-border bg-muted px-2.5 text-xs font-medium text-foreground hover:bg-muted/70 hover:text-foreground"
           >
             <span>Copy command</span>
           </CopyButton>
         </Tooltip>
         <Tooltip content="Open in your system terminal" side="top">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             disabled={launching}
             onClick={() => void onLaunch()}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2.5 py-1 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
           >
             <Terminal size={11} aria-hidden />
             <span>Run in my terminal</span>
-          </button>
+          </Button>
         </Tooltip>
       </div>
       {launchError ? (

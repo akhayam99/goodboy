@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Button, Textarea } from '@goodboy/ui';
-import { formatError } from '../../lib/errors';
+import { formatError } from '../formatError';
+import { Button } from './Button';
+import { Textarea } from './Textarea';
 
 type Props = {
   readonly placeholder: string;

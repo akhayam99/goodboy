@@ -1,6 +1,6 @@
 import { extractAuxOutput, getDefaultBinary, runAuxOneShot } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type { ModelEffort, ProviderId } from '@goodboy/types';
-import { formatError } from '../../../../shared/lib/errors';
 import { parseBranchSlugAnswer } from './parseBranchSlugAnswer';
 
 export const SLUG_TIMEOUT_MS = 15_000;

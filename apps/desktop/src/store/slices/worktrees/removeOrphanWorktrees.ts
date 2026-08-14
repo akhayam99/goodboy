@@ -1,6 +1,6 @@
 import type { WorkspaceId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { removeOrphanWorktree } from '../../../features/worktree/worktree';
-import { formatError } from '../../../shared/lib/errors';
 import type { GetFn, SetFn } from './types';
 
 type Params = {

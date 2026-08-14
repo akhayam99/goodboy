@@ -13,15 +13,15 @@ describe('CardAction', () => {
         icon={Star}
         label="Pin"
         reveal
-        revealGroup="group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+        revealGroup="group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100"
         onClick={vi.fn()}
       />,
     );
     const button = screen.getByRole('button', { name: 'Pin' });
 
     expect(button.className).toContain('opacity-0');
-    expect(button.className).toContain('group-hover/card:opacity-100');
-    expect(button.className).toContain('group-focus-within/card:opacity-100');
+    expect(button.className).toContain('group-hover/agent-card:opacity-100');
+    expect(button.className).toContain('group-focus-within/agent-card:opacity-100');
   });
 
   it('stays opaque when reveal is not set', () => {

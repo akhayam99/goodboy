@@ -4,6 +4,7 @@ import {
   Checkbox,
   Divider,
   FieldRow,
+  formatError,
   Input,
   ScrollFade,
   SectionHeader,
@@ -18,7 +19,6 @@ import type { AgentSpawnConfigValue } from '../../../../session/components/Agent
 import { taskModelAgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
-import { formatError } from '../../../../../shared/lib/errors';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
