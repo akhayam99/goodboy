@@ -104,7 +104,7 @@ export const Context = () => {
             </div>
           </div>
         </div>
-        <a className="more rv" style={delay(220)} href={SITE.repo}>
+        <a className="more rv" style={delay(220)} href={`${SITE.concepts}#the-object-model`}>
           Why the task comes first <span className="arr">→</span>
         </a>
       </div>

@@ -9,49 +9,75 @@ Comments are forbidden repo-wide, so a deliberate dead end cannot explain
 itself where it sits. This file is where those explanations live. Everything
 below has been "fixed" at least once and had to be put back.
 
-## Deliberate dead ends in the code
+## Deliberate dead ends
 
-- `fetchIssueCandidates` has a dead `case 'bitbucket': return []` arm, and
-  `issueSources.ts` deliberately has no bitbucket entry. Bitbucket has no
-  issue tracking by design, so wiring either one ships a picker that lists
-  nothing forever.
-- `RemoteHostKind` deliberately has no `'bitbucket'`. Adding it breaks the
-  `never` check in `resolveSessionStudioOpenEvent` and `remoteHost.test.ts`.
-- The mobile companion's `fetchIssuesFor` and `resolveIssueForSession` are
-  exhaustive switches over `WorkspaceIntegrationProvider` with a `never`
-  checked default, and neither falls through to another provider:
-  `fetchIssuesFor` returns `[]` where there is no mobile fetch, and
-  `resolveIssueForSession` throws a named refusal. The gating lists
-  (`ALL_ISSUE_PROVIDERS`, `CREATE_SESSION_PROVIDERS`) are hand-enumerated
-  separately from those switches, so the compiler forces a switch arm for a
-  new provider while nothing forces a gating-list entry. A provider can
-  compile clean and stay silently absent from mobile issue queries and
-  session creation. Add it to both.
-- `pending_resolutions` is a transient push queue, not a durable verdict log.
-  Making it durable was investigated and rejected; the durable source is
-  message replay through `hydrateResolverOutcomes`.
-- `LENS_KINDS` is a hand-maintained set whose only consumer is
-  `readPersistedLens`. A missing entry breaks lens restore silently, with no
-  compile error.
+- `fetchIssueCandidates` returns `[]` for Bitbucket, and `issueSources.ts`
+  has no Bitbucket entry. Goodboy deliberately does not expose Bitbucket
+  issues, because Atlassian points issues at Jira. Adding the source entry
+  alone ships a picker that lists nothing forever; the mobile companion
+  refuses the same provider explicitly, in `commandExecutor.ts`.
+- `RemoteHostKind` deliberately has no `'bitbucket'`: a Bitbucket remote
+  classifies as `'other'`, and `remoteHost.test.ts` asserts exactly that.
+  Adding the member changes that classification and fails the test. It is
+  also not the union the pull-request surfaces switch on. That one is
+  `PullRequestProvider`, which already carries `'bitbucket'`, so Bitbucket
+  pull requests do not need a `RemoteHostKind` member to work.
+- `pending_resolutions` is a durable SQLite queue (migration `m052`), not the
+  canonical verdict history. Rows survive a restart and are deleted once
+  consumed, so do not read a row's absence as a verdict. The canonical source
+  is message replay through `hydrateResolverOutcomes`.
 - `LinkedPrChip` and `NewSessionView` read `[data-studio-overlay]` out of the
-  DOM. Do not tidy this without first centralizing fullscreen-studio state:
-  `sessionStudio` tracks three kinds and `StudioShell` backs seventeen
-  studios, and the sniff is what bridges them.
+  DOM to tell whether a fullscreen studio is open, which decides in-session
+  navigation in one and Escape handling in the other. The sniff exists
+  because that state is split between the `sessionStudio` union in the store
+  and the shell that renders every studio. Do not tidy it without
+  centralizing fullscreen-studio state first.
+
+## Hand-maintained lists the compiler does not check
+
+Each of these is a set or array enumerated by hand alongside an exhaustive
+type. Adding a member to the type forces the switch arms to be updated; it
+never forces the list. Omission compiles clean and fails silently at runtime.
+
+- `LENS_KINDS`, consumed in production only by `readPersistedLens`: a missing
+  entry breaks lens restore with no error. A test asserts the set matches
+  `LENS_LABEL`, so an omission is caught only once the label entry exists.
+- `ALL_ISSUE_PROVIDERS` and `CREATE_SESSION_PROVIDERS` gate the mobile
+  companion. Their `WorkspaceIntegrationProvider` switches (`fetchIssuesFor`,
+  `resolveIssueForSession`) are `never`-checked and will demand an arm for a
+  new provider, while the gating lists will not, leaving the provider absent
+  from mobile issue queries and session creation.
+- `PROVIDER_PRIORITY` ranks pull-request providers and also drives review
+  target resolution. A provider missing from it still compiles, then vanishes
+  from availability counts and fallback selection.
+- `VALID_SORTS` and `VALID_GROUPS` validate persisted session-list
+  preferences. A new sort or group key not listed here is read back as
+  invalid, silently replaced by the default and written over.
+- `SIMPLE_LENSES` marks the lenses that survive without a branch. A lens
+  omitted from it is hidden or cleared for branchless sessions.
+- `GITHUB_ONLY_KINDS` strips GitHub-only resolver actions from other hosts. A
+  new GitHub-only action kind left out of it is offered where it cannot work.
+- `MARKDOWN_SLOTS` decides which context slots render as markdown. A new
+  prose slot left out renders through the plain path.
 
 ## Traps in the toolchain
 
-- A new worktree needs `pnpm install`, and that install exits 1 at the
-  `prepare` step: lefthook refuses when `core.hooksPath` points at the shared
-  `.git/hooks`. It is harmless. Dependencies and native bindings install
-  before `prepare`, so check that `node_modules` and `better_sqlite3.node`
-  exist and carry on. Do not repoint `core.hooksPath`.
+- A new worktree needs `pnpm install`, and in this checkout that install
+  exits 1 at the `prepare` step: `prepare` runs `lefthook install`, which
+  refuses while `core.hooksPath` points at the shared `.git/hooks`. It is
+  harmless. Dependencies and native bindings install before `prepare`, so
+  check that `node_modules` and `better_sqlite3.node` exist and carry on. Do
+  not repoint `core.hooksPath`: the hooks resolve their tools through the
+  common git directory on purpose.
 - A worktree installed with `--ignore-scripts` has no `better-sqlite3`
-  bindings, so `@goodboy/db` tests error out and a green run covers only the
-  desktop package.
-- Turbo caches are shared across worktrees, so a `FULL TURBO` green can be a
-  sibling's replayed log rather than a run. When the green has to mean
-  something, `pnpm exec turbo run test --force` and a log line reading
-  `0 cached`.
-- Neither `ci.yml` nor `rust.yml` has a `workflow_dispatch` trigger. When a
-  run was never dispatched, closing and reopening the PR is the only way to
-  summon one.
+  binding, which `@goodboy/db` and `@goodboy/core` both need. The root test
+  script runs `turbo run test --continue`, so every other package still runs
+  and the tail of the output can look healthy while both of those suites
+  errored out. Read the summary, not the last lines.
+- Turbo replays cached task results, so a `FULL TURBO` green can be a replay
+  rather than a run. When the green has to mean something,
+  `pnpm exec turbo run test --force` and a log line reading `0 cached`.
+- Neither `ci.yml` nor `rust.yml` has a `workflow_dispatch` trigger, so there
+  is no "run workflow" button. Pushing another commit to the PR re-triggers
+  them, and a finished run can be re-run from the Actions UI; closing and
+  reopening the PR is the last resort, not the only route.
