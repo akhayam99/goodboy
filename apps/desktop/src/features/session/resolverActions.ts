@@ -1,5 +1,6 @@
 import type { Agent, TurnState } from '@goodboy/types';
 import type { ResolverStatus } from './resolver-linkage';
+import { resolverActGate } from './resolverActGate';
 import { agentThreadIds } from './agentThreadIds';
 import type { ResolverThreadTally } from './resolverThreadTally';
 
@@ -358,7 +359,6 @@ const statusBlock = (params: Params): Block => {
   const threadCount = agentThreadIds(params.agent).length;
   switch (params.status) {
     case 'pending':
-      return params.isQueueStalled ? { primary: RUN_NOW, secondary: null, note: null } : IDLE;
     case 'running':
     case 'resolved':
       return IDLE;
@@ -393,11 +393,16 @@ const statusBlock = (params: Params): Block => {
   }
 };
 
-const isSettledStatus = ({ status }: Pick<Params, 'status'>): boolean =>
-  status !== 'pending' && status !== 'running' && status !== 'resolved';
-
 const blockFor = (params: Params): Block => {
-  if (params.tally.isMixed && isSettledStatus(params)) {
+  const gate = resolverActGate({ status: params.status });
+  if (!gate.canAct) {
+    return {
+      primary: params.status === 'pending' && params.isQueueStalled ? RUN_NOW : null,
+      secondary: null,
+      note: gate.reason,
+    };
+  }
+  if (params.tally.isMixed) {
     return mixedBlock(params);
   }
   return statusBlock(params);

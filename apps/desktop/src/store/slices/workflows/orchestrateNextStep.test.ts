@@ -642,7 +642,7 @@ describe('orchestrateNextStep', () => {
       decision: {
         action: 'done',
         reason: 'All required tests pass.',
-        runSummary: '**Done**\n- shipped the gate',
+        runSummary: { kind: 'structured', done: ['shipped the gate'], left: [] },
       },
     });
     const state = baseState();
@@ -650,13 +650,10 @@ describe('orchestrateNextStep', () => {
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(updateSummarySpy).toHaveBeenCalledWith(
-      {},
-      WORKFLOW_RUN_ID,
-      '**Done**\n- shipped the gate',
-    );
+    const serialized = JSON.stringify({ done: ['shipped the gate'], left: [] });
+    expect(updateSummarySpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, serialized);
     const updated = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
-    expect(updated.orchestratorSummary).toBe('**Done**\n- shipped the gate');
+    expect(updated.orchestratorSummary).toBe(serialized);
   });
 
   it('leaves the previous recap alone when a decision carries none', async () => {

@@ -1,14 +1,18 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { PrComment } from '@goodboy/types';
+import { GhostActionButton } from '@goodboy/ui';
 import type { ResolverActionKind } from '../../resolverActions';
 import type { ResolverRunningThreadAction } from '../../hooks/useResolverActions';
 import type { ResolverThreadSettlement } from '../../resolverThreadSettlements';
+import { resolverThreadBrief } from '../../resolverThreadBrief';
 import { resolverThreadDecisions } from '../../resolverThreadDecisions';
 import { resolverReplySummary } from '../../resolverReplySummary';
 import { prCommentLocation } from '../../pr-comment-location';
 import { ResolverThreadCardHeader } from './ResolverThreadCardHeader';
 import { ResolverThreadComment } from './ResolverThreadComment';
 import { ResolverThreadDecisions } from './ResolverThreadDecisions';
+import { ResolverThreadLead } from './ResolverThreadLead';
 import { ResolverThreadReply } from './ResolverThreadReply';
 
 type Props = {
@@ -18,6 +22,7 @@ type Props = {
   readonly prNumber: number | null;
   readonly isBusy: boolean;
   readonly canAct: boolean;
+  readonly actLockReason: string | null;
   readonly runningThreadAction: ResolverRunningThreadAction | null;
   readonly onRun: (params: {
     readonly threadId: string;
@@ -43,6 +48,7 @@ export const ResolverThreadCard = ({
   prNumber,
   isBusy,
   canAct,
+  actLockReason,
   runningThreadAction,
   onRun,
   onReplyChange,
@@ -51,20 +57,27 @@ export const ResolverThreadCard = ({
   const initial = settlement.reason ?? settlement.reply ?? '';
   const [edited, setEdited] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isCommentShown, setIsCommentShown] = useState(false);
   const text = edited ?? initial;
   const runningKind =
     runningThreadAction?.threadId === settlement.threadId ? runningThreadAction.kind : null;
   const isEditable = canAct && !settlement.isClosed;
   const isCollapsible = settlement.isClosed;
   const isOpen = !isCollapsible || isExpanded;
-  const plan = resolverThreadDecisions({ settlement, prNumber, isBusy });
+  const plan = resolverThreadDecisions({ settlement, prNumber, isBusy, actLockReason });
+  const brief = resolverThreadBrief({
+    settlement,
+    commentBody: comment?.body ?? null,
+    prNumber,
+    isBusy,
+  });
   const draftedReply =
     settlement.reply !== null && settlement.reply !== initial ? settlement.reply : null;
   const summary = resolverReplySummary({ text: initial !== '' ? initial : (comment?.body ?? '') });
 
   return (
     <li
-      className="flex min-w-0 flex-col gap-2 rounded-md bg-muted/20 p-3"
+      className="flex min-w-0 flex-col gap-3 rounded-lg bg-muted/20 p-4"
       data-testid="resolver-thread-card"
     >
       <ResolverThreadCardHeader
@@ -76,12 +89,24 @@ export const ResolverThreadCard = ({
         onToggle={() => setIsExpanded((current) => !current)}
         onOpenThread={onOpenThread === null ? null : () => onOpenThread(settlement.threadId)}
       />
+      {isOpen && <ResolverThreadLead brief={brief} />}
       {isOpen && comment !== null && (
-        <ResolverThreadComment
-          author={comment.author}
-          location={prCommentLocation({ comment })}
-          body={comment.body}
-        />
+        <div className="flex flex-col gap-2">
+          <div className="flex">
+            <GhostActionButton
+              icon={isCommentShown ? ChevronDown : ChevronRight}
+              label={isCommentShown ? 'Hide the comment' : 'Read the comment'}
+              onClick={() => setIsCommentShown((current) => !current)}
+            />
+          </div>
+          {isCommentShown && (
+            <ResolverThreadComment
+              author={comment.author}
+              location={prCommentLocation({ comment })}
+              body={comment.body}
+            />
+          )}
+        </div>
       )}
       {isOpen && draftedReply !== null && (
         <ResolverThreadReply
@@ -105,7 +130,7 @@ export const ResolverThreadCard = ({
           onCommit={() => onReplyChange({ threadId: settlement.threadId, reply: text })}
         />
       )}
-      {isOpen && isEditable && (
+      {isOpen && !settlement.isClosed && (
         <ResolverThreadDecisions
           plan={plan}
           ariaScope={`thread ${position}`}

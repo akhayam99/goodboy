@@ -28,6 +28,7 @@ import {
   resolveTaskModel,
   runsForWorkflowRun,
   type OrchestratorRoleDefault,
+  type RunSummary,
 } from '@goodboy/core';
 import {
   listOpenQuestionsForSession,
@@ -245,7 +246,17 @@ type PersistSummaryParams = {
   readonly set: SetFn;
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
-  readonly summary: string | undefined;
+  readonly summary: RunSummary | undefined;
+};
+
+const serializeRunSummary = (summary: RunSummary): string => {
+  if (summary.kind === 'text') {
+    return summary.text.trim();
+  }
+  if (summary.done.length === 0 && summary.left.length === 0) {
+    return '';
+  }
+  return JSON.stringify({ done: summary.done, left: summary.left });
 };
 
 const persistRunSummary = async ({
@@ -254,7 +265,7 @@ const persistRunSummary = async ({
   workflowRunId,
   summary,
 }: PersistSummaryParams): Promise<void> => {
-  const trimmed = summary?.trim() ?? '';
+  const trimmed = summary === undefined ? '' : serializeRunSummary(summary);
   if (trimmed === '') {
     return;
   }

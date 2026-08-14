@@ -9,22 +9,33 @@ export type OrchestratorStep = {
   readonly effort?: ModelEffort;
 };
 
+export type RunSummary =
+  | {
+      readonly kind: 'structured';
+      readonly done: ReadonlyArray<string>;
+      readonly left: ReadonlyArray<string>;
+    }
+  | {
+      readonly kind: 'text';
+      readonly text: string;
+    };
+
 export type OrchestratorDecision =
   | {
       readonly action: 'next';
       readonly reason: string;
-      readonly runSummary?: string;
+      readonly runSummary?: RunSummary;
       readonly step: OrchestratorStep;
     }
   | {
       readonly action: 'done';
       readonly reason: string;
-      readonly runSummary?: string;
+      readonly runSummary?: RunSummary;
     }
   | {
       readonly action: 'blocked';
       readonly reason: string;
-      readonly runSummary?: string;
+      readonly runSummary?: RunSummary;
     };
 
 export type OrchestratorCompletedStep = {

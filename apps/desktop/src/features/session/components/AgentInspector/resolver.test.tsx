@@ -5,7 +5,9 @@ import type {
   AgentId,
   BranchCommit,
   IsoDateTime,
+  ProviderId,
   ProviderRunId,
+  Session,
   SessionId,
   TurnEvent,
   WorkspaceId,
@@ -210,7 +212,26 @@ vi.mock('../../hooks/useAgentMetrics', () => ({
   }),
 }));
 
-import { AgentInspector } from './index';
+vi.mock('../../../chat/components/ChatView', () => ({
+  ChatView: () => <div data-testid="chat-view" />,
+}));
+
+import { ResolverDetailPane } from '../ResolverDetailPane';
+
+const SESSION: Session = {
+  id: SESSION_ID,
+  workspaceId: 'workspace-1' as WorkspaceId,
+  goal: 'ship the resolver',
+  state: { kind: 'idle', lastActivityAt: '2026-07-25T08:00:00.000Z' as IsoDateTime },
+  contextSlots: [],
+  providerPreference: { defaultProvider: 'claude' as ProviderId, allowTurnOverride: true },
+  permissionMode: 'default',
+  workflowRuns: [],
+  autoRun: false,
+  titleUserEdited: false,
+  createdAt: '2026-07-25T08:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-07-25T08:00:00.000Z' as IsoDateTime,
+};
 
 const fileEdit: TurnEvent = {
   kind: 'file_edit',
@@ -266,13 +287,26 @@ const PUSHED_COMMIT: BranchCommit = {
   pushed: true,
 };
 
-const renderInspector = (agentId: AgentId) =>
-  render(<AgentInspector sessionId={SESSION_ID} agentId={agentId} onClose={() => undefined} />);
+const renderPane = (agentId: AgentId) => {
+  const agents = h.state.sessionPhaseRuns as Record<SessionId, ReadonlyArray<Agent>>;
+  const found = agents[SESSION_ID]?.find((one) => one.id === agentId);
+  if (found === undefined) {
+    throw new Error(`agent ${agentId} is not in the session`);
+  }
+  return render(
+    <ResolverDetailPane
+      session={SESSION}
+      agent={found}
+      isChatActive={false}
+      onBack={() => undefined}
+    />,
+  );
+};
 
 const openOverflow = () =>
   fireEvent.click(screen.getByRole('button', { name: 'More resolver actions' }));
 
-describe('AgentInspector (resolver)', () => {
+describe('ResolverDetailPane (resolver)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     h.runtime.events = [];
@@ -282,18 +316,6 @@ describe('AgentInspector (resolver)', () => {
   });
 
   afterEach(cleanup);
-
-  it('leads with the state and drops the question-headed sections', () => {
-    renderInspector(RUNNING_ID);
-
-    expect(screen.getByText('working')).toBeDefined();
-    expect(screen.getByText('Comment')).toBeDefined();
-    expect(screen.queryByText('Identity')).toBeNull();
-    expect(screen.queryByText('Cost')).toBeNull();
-    expect(screen.queryByText('What state it is in')).toBeNull();
-    expect(screen.queryByText('Actions')).toBeNull();
-    expect(screen.queryByText('not blocked')).toBeNull();
-  });
 
   it.each([
     ['committed', 'fix committed, ready to push'],
@@ -305,27 +327,27 @@ describe('AgentInspector (resolver)', () => {
     'explains the %s state in one sentence',
     (state, sentence) => {
       reset({ resolverState: { [SETTLED_ID]: state } });
-      renderInspector(SETTLED_ID);
+      renderPane(SETTLED_ID);
 
       expect(screen.getByText(sentence)).toBeDefined();
     },
   );
 
   it('says a resolver finished without a verdict', () => {
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText('finished without a verdict')).toBeDefined();
   });
 
   it('places the resolver in the queue and names what blocks it', () => {
-    renderInspector(QUEUED_ID);
+    renderPane(QUEUED_ID);
 
     expect(screen.getByText('2 of 3')).toBeDefined();
     expect(screen.getByText(/resolve: reviewer on a.ts is still running/)).toBeDefined();
   });
 
   it('offers no action block while working', () => {
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     expect(screen.queryByRole('button', { name: 'Push & resolve' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Run again' })).toBeNull();
@@ -334,7 +356,7 @@ describe('AgentInspector (resolver)', () => {
 
   it('offers no action block once the thread is resolved', () => {
     reset({ resolvedThreadIds: ['PRRT_3'] });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText('resolved')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Run again' })).toBeNull();
@@ -342,19 +364,43 @@ describe('AgentInspector (resolver)', () => {
   });
 
   it('offers a rerun and a manual resolve on a resolver that never reached a verdict', () => {
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByRole('button', { name: 'Run again' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Mark resolved' })).toBeDefined();
   });
 
   it('names the recorded origin and surfaces the comment behind it', () => {
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     expect(screen.getByText('Review comment')).toBeDefined();
     expect(screen.queryByText('inferred')).toBeNull();
-    expect(screen.getByText('this needs a guard clause')).toBeDefined();
+    expect(screen.getAllByText('this needs a guard clause')).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Read the comment' }));
+
+    expect(screen.getAllByText('this needs a guard clause')).toHaveLength(2);
     expect(screen.getByRole('button', { name: /Open thread/ })).toBeDefined();
+  });
+
+  it('opens on the resolve board and keeps the transcript one tab away', () => {
+    renderPane(RUNNING_ID);
+
+    expect(screen.getByTestId('resolver-run-recap')).toBeDefined();
+    expect(screen.queryByTestId('chat-view')).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+
+    expect(screen.getByTestId('chat-view')).toBeDefined();
+    expect(screen.queryByTestId('resolver-run-recap')).toBeNull();
+  });
+
+  it('jumps to the transcript when the resolver asks for an answer', () => {
+    renderPane(RUNNING_ID);
+
+    fireEvent(window, new CustomEvent('goodboy:focus-composer'));
+
+    expect(screen.getByTestId('chat-view')).toBeDefined();
   });
 
   it('reads the verdict the agent wrote once it stops working', () => {
@@ -366,7 +412,7 @@ describe('AgentInspector (resolver)', () => {
         },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText('Thread')).toBeDefined();
     expect(screen.getByText('no change')).toBeDefined();
@@ -387,7 +433,7 @@ describe('AgentInspector (resolver)', () => {
         },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText('Threads')).toBeDefined();
     expect(screen.getByText('fixed')).toBeDefined();
@@ -409,7 +455,7 @@ describe('AgentInspector (resolver)', () => {
         },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Post & close' })[1]!);
     fireEvent.click(screen.getAllByRole('button', { name: 'Post & close' })[1]!);
@@ -425,7 +471,7 @@ describe('AgentInspector (resolver)', () => {
       resolverState: { [SETTLED_ID]: 'wontfix' },
       outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'wontfix', reason: '' } } },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     const post = screen.getByRole('button', { name: 'Post & close' }) as HTMLButtonElement;
     expect(post.disabled).toBe(true);
@@ -447,7 +493,7 @@ describe('AgentInspector (resolver)', () => {
         [SETTLED_ID]: { PRRT_3: { kind: 'analyzed', reply: 'The `guard` already covers it' } },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText('Reply')).toBeDefined();
     expect(screen.getByText('guard')).toBeDefined();
@@ -478,16 +524,17 @@ describe('AgentInspector (resolver)', () => {
         },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText('Already guarded.')).toBeDefined();
     expect(screen.queryByText('Reviewer')).toBeNull();
     expect(screen.queryByText('this one too')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Thread 1 details' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read the comment' }));
 
     expect(screen.getByText('Reviewer')).toBeDefined();
-    expect(screen.getByText('this one too')).toBeDefined();
+    expect(screen.getAllByText('this one too')).toHaveLength(2);
     expect(screen.queryByLabelText('Edit reply for thread 1')).toBeNull();
   });
 
@@ -509,7 +556,7 @@ describe('AgentInspector (resolver)', () => {
         },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Add to batch' })[0]!);
 
@@ -527,9 +574,10 @@ describe('AgentInspector (resolver)', () => {
       resolverState: { [SETTLED_ID]: 'wontfix' },
       outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'wontfix', reason: 'the branch is dead' } } },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fix it anyway' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
     expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, SETTLED_ID);
@@ -548,9 +596,10 @@ describe('AgentInspector (resolver)', () => {
       outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'wontfix', reason: 'the branch is dead' } } },
     });
     h.sendTurn.mockRejectedValueOnce(new Error('provider exited without a response'));
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fix it anyway' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await vi.waitFor(() => expect(h.emitNotification).toHaveBeenCalledTimes(1));
     expect(h.emitNotification).toHaveBeenCalledWith(
@@ -564,7 +613,7 @@ describe('AgentInspector (resolver)', () => {
 
   it('hides the changes section entirely when there is no commit', () => {
     h.runtime.events = [fileEdit];
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     expect(screen.queryByText('Changes')).toBeNull();
     expect(screen.queryByText('src/auth/guard.ts')).toBeNull();
@@ -574,7 +623,7 @@ describe('AgentInspector (resolver)', () => {
   it('lists the commit and the files it derives from it', async () => {
     h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT]);
     h.runtime.events = [fileEdit];
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     expect(await screen.findByText('Changes')).toBeDefined();
     expect(screen.getByText('fix(auth): guard the nullable session')).toBeDefined();
@@ -584,7 +633,7 @@ describe('AgentInspector (resolver)', () => {
   it('opens the diff lens on the file the resolver edited, at the commit it reported', async () => {
     h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT]);
     h.runtime.events = [fileEdit];
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     fireEvent.click(await screen.findByRole('button', { name: 'src/auth/guard.ts' }));
 
@@ -621,7 +670,7 @@ describe('AgentInspector (resolver)', () => {
         at: '2026-07-25T09:04:00.000Z' as IsoDateTime,
       },
     ];
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(await screen.findByRole('button', { name: 'src/second.ts' }));
 
@@ -652,7 +701,7 @@ describe('AgentInspector (resolver)', () => {
         },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText('closed')).toBeDefined();
     expect(screen.queryByText('fixed')).toBeNull();
@@ -663,7 +712,7 @@ describe('AgentInspector (resolver)', () => {
 
   it('opens the diff lens at a reported sha the branch does not carry', () => {
     h.runtime.events = [resolvedMarker];
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'deadbee' }));
 
@@ -675,7 +724,7 @@ describe('AgentInspector (resolver)', () => {
   });
 
   it('keeps force close behind the header overflow, off the card', () => {
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     expect(screen.queryByRole('menuitem', { name: 'Force close' })).toBeNull();
 
@@ -687,7 +736,7 @@ describe('AgentInspector (resolver)', () => {
   });
 
   it('puts mark done, reopen and delete in the footer at the bottom of the panel, not the header', () => {
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     expect(screen.getByRole('button', { name: 'Mark done' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDefined();
@@ -695,7 +744,7 @@ describe('AgentInspector (resolver)', () => {
   });
 
   it('marks a resolver done from the footer and deletes it after confirming', async () => {
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
     expect(h.setAgentDone).toHaveBeenCalledWith(SESSION_ID, RUNNING_ID);
@@ -709,7 +758,7 @@ describe('AgentInspector (resolver)', () => {
 
   it('rewords the newest local commit from the overflow', async () => {
     h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT]);
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
     openOverflow();
 
     const reword = await screen.findByRole('button', { name: 'Reword' });
@@ -727,7 +776,7 @@ describe('AgentInspector (resolver)', () => {
 
   it('blocks reword when another commit is the branch HEAD', async () => {
     h.listBranchCommits.mockResolvedValue([OTHER_AGENT_HEAD, LOCAL_COMMIT]);
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
     openOverflow();
 
     const reword = await screen.findByRole('button', { name: 'Reword' });
@@ -738,7 +787,7 @@ describe('AgentInspector (resolver)', () => {
 
   it('squashes from an older local commit and leaves a pushed one alone', async () => {
     h.listBranchCommits.mockResolvedValue([LOCAL_COMMIT, OLDER_LOCAL_COMMIT, PUSHED_COMMIT]);
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
     openOverflow();
 
     const squash = await screen.findByRole('button', { name: 'Squash through HEAD' });
@@ -754,7 +803,7 @@ describe('AgentInspector (resolver)', () => {
   });
 });
 
-describe('AgentInspector (resolver decisions)', () => {
+describe('ResolverDetailPane (resolver decisions)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     h.runtime.events = [];
@@ -780,7 +829,7 @@ describe('AgentInspector (resolver decisions)', () => {
 
   it('offers the three ways out of a no-change verdict, in plain language', () => {
     withWontfix();
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText(/judged this thread not worth a change/)).toBeDefined();
     expect(screen.queryByTestId('resolver-missing-verdicts')).toBeNull();
@@ -792,7 +841,7 @@ describe('AgentInspector (resolver decisions)', () => {
 
   it('follows the suggestion and closes the thread with the reason it wrote', async () => {
     withWontfix();
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'Post & close' }));
     fireEvent.click(screen.getByRole('button', { name: 'Post & close' }));
@@ -806,18 +855,53 @@ describe('AgentInspector (resolver decisions)', () => {
 
   it('refuses the suggestion and asks for the fix, naming the thread itself', async () => {
     withWontfix();
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fix it anyway' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
     expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, SETTLED_ID);
     expect(sentContent()).toContain('PRRT_3');
   });
 
+  it('offers hints on a refused verdict without forcing them', () => {
+    withWontfix();
+    renderPane(SETTLED_ID);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix it anyway' }));
+
+    expect(screen.getByLabelText('Optional hints for thread 1')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('keeps a running resolver choices visible but locked, with the reason on each', () => {
+    renderPane(RUNNING_ID);
+
+    const custom = screen.getByRole('button', { name: 'Write something else' });
+
+    expect(custom.hasAttribute('disabled')).toBe(true);
+    expect(custom.getAttribute('title')).toContain('working on this resolver right now');
+  });
+
+  it('keeps the hint choices visible but locked while a turn is running', () => {
+    reset({
+      resolverState: { [SETTLED_ID]: 'analyzed' },
+      outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'analyzed', reply: 'Already guarded' } } },
+    });
+    Object.assign(h.state, { agentTurnState: { [SETTLED_ID]: { kind: 'running' } } });
+    renderPane(SETTLED_ID);
+
+    const fixAnyway = screen.getByRole('button', { name: 'Fix it anyway' });
+
+    expect(fixAnyway.hasAttribute('disabled')).toBe(true);
+    expect(fixAnyway.getAttribute('title')).toContain('working on this thread');
+    expect(screen.getByRole('button', { name: 'Write something else' })).toBeDefined();
+  });
+
   it('sends something else entirely when neither way out fits', async () => {
     withWontfix();
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'Write something else' }));
     fireEvent.change(screen.getByLabelText('Instructions for thread 1'), {
@@ -836,12 +920,13 @@ describe('AgentInspector (resolver decisions)', () => {
       resolverState: { [SETTLED_ID]: 'analyzed' },
       outcomes: { [SETTLED_ID]: { PRRT_3: { kind: 'analyzed', reply: 'Already guarded' } } },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText(/drafted an answer/)).toBeDefined();
     expect(screen.getByText('Already guarded')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ask for a new reply' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
     expect(sentContent()).toContain('PRRT_3');
 
@@ -868,7 +953,7 @@ describe('AgentInspector (resolver decisions)', () => {
         },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText(/committed a fix for this thread/)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Add to batch' }));
@@ -891,7 +976,7 @@ describe('AgentInspector (resolver decisions)', () => {
         [SETTLED_ID]: { PRRT_3: { kind: 'resolved', commitSha: 'abc1234def', reply: 'done' } },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     fireEvent.click(screen.getByRole('button', { name: 'Redo with hints' }));
     fireEvent.change(screen.getByLabelText('Instructions for thread 1'), {
@@ -916,7 +1001,7 @@ describe('AgentInspector (resolver decisions)', () => {
         },
       },
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getAllByTestId('resolver-thread-card')).toHaveLength(2);
 
@@ -933,7 +1018,7 @@ describe('AgentInspector (resolver decisions)', () => {
   });
 
   it('says so when the agent reported no outcome, and offers the way out of it', async () => {
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByTestId('resolver-missing-verdicts')).toBeDefined();
     expect(screen.getByText(/stopped without saying what to do on this thread/)).toBeDefined();
@@ -951,7 +1036,7 @@ describe('AgentInspector (resolver decisions)', () => {
       resolverState: { [SETTLED_ID]: 'awaiting' },
       outcomes: {},
     });
-    renderInspector(SETTLED_ID);
+    renderPane(SETTLED_ID);
 
     expect(screen.getByText(/on any of its 2 threads/)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Ask for the 2 verdicts' }));
@@ -962,7 +1047,7 @@ describe('AgentInspector (resolver decisions)', () => {
   });
 
   it('keeps the notice away while the resolver is still working', () => {
-    renderInspector(RUNNING_ID);
+    renderPane(RUNNING_ID);
 
     expect(screen.queryByTestId('resolver-missing-verdicts')).toBeNull();
   });

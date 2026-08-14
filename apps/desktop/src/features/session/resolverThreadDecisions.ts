@@ -1,11 +1,15 @@
+import { resolverThreadActGate } from './resolverActGate';
 import type { ResolverAction } from './resolverActions';
 import type { ResolverThreadSettlement } from './resolverThreadSettlements';
+
+export type ResolverThreadNotes = 'none' | 'optional' | 'required';
 
 export type ResolverThreadDecision = {
   readonly action: ResolverAction;
   readonly hint: string;
-  readonly needsNotes: boolean;
+  readonly notes: ResolverThreadNotes;
   readonly isRecommended: boolean;
+  readonly lockReason: string | null;
 };
 
 export type ResolverThreadDecisionPlan = {
@@ -17,19 +21,42 @@ type Params = {
   readonly settlement: ResolverThreadSettlement;
   readonly prNumber: number | null;
   readonly isBusy: boolean;
+  readonly actLockReason: string | null;
 };
+
+type Locks = {
+  readonly agent: string | null;
+  readonly thread: string | null;
+};
+
+const locksOf = ({ settlement, isBusy, actLockReason }: Params): Locks => ({
+  agent: actLockReason,
+  thread: resolverThreadActGate({
+    agentReason: actLockReason,
+    isQueued: settlement.isQueued,
+    isBusy,
+  }).reason,
+});
 
 const decision = ({
   action,
   hint,
-  needsNotes = false,
+  notes = 'none',
   isRecommended = false,
+  lockReason = null,
 }: {
   readonly action: ResolverAction;
   readonly hint: string;
-  readonly needsNotes?: boolean;
+  readonly notes?: ResolverThreadNotes;
   readonly isRecommended?: boolean;
-}): ResolverThreadDecision => ({ action, hint, needsNotes, isRecommended });
+  readonly lockReason?: string | null;
+}): ResolverThreadDecision => ({
+  action: lockReason === null ? action : { ...action, isEnabled: false },
+  hint,
+  notes,
+  isRecommended: lockReason === null && isRecommended,
+  lockReason,
+});
 
 const POST_AND_CLOSE: ResolverAction = {
   kind: 'explain',
@@ -119,77 +146,96 @@ const CLOSED: ResolverThreadDecisionPlan = {
 };
 
 const askAgain = ({
-  isBusy,
+  lockReason,
 }: {
-  readonly isBusy: boolean;
-}): ReadonlyArray<ResolverThreadDecision> =>
-  isBusy
-    ? []
-    : [
-        decision({
-          action: CUSTOM,
-          hint: 'Send your own instruction for this thread',
-          needsNotes: true,
-        }),
-      ];
+  readonly lockReason: string | null;
+}): ReadonlyArray<ResolverThreadDecision> => [
+  decision({
+    action: CUSTOM,
+    hint: 'Send your own instruction for this thread',
+    notes: 'required',
+    lockReason,
+  }),
+];
 
-const committedPlan = ({ settlement, prNumber, isBusy }: Params): ResolverThreadDecisionPlan => {
-  if (settlement.isQueued) {
-    return {
-      question: 'The fix is committed and waiting in the push batch.',
-      decisions: [decision({ action: DEQUEUE, hint: 'Take it out of the batch' })],
-    };
-  }
+const committedPlan = (params: Params): ResolverThreadDecisionPlan => {
+  const { settlement, prNumber } = params;
+  const locks = locksOf(params);
   return {
-    question: 'The agent committed a fix for this thread and drafted the reply to post.',
+    question: settlement.isQueued
+      ? 'The fix is committed and waiting in the push batch.'
+      : 'The agent committed a fix for this thread and drafted the reply to post.',
     decisions: [
+      settlement.isQueued
+        ? decision({
+            action: DEQUEUE,
+            hint: 'Take it out of the batch',
+            isRecommended: true,
+            lockReason: locks.agent,
+          })
+        : decision({
+            action: queueAction({ isEnabled: prNumber !== null }),
+            hint: 'Commit joins the batch, pushed when you run it',
+            isRecommended: true,
+            lockReason: locks.agent,
+          }),
       decision({
-        action: queueAction({ isEnabled: prNumber !== null }),
-        hint: 'Commit joins the batch, pushed when you run it',
-        isRecommended: true,
+        action: REDO,
+        hint: 'Send hints and have the change redone',
+        notes: 'required',
+        lockReason: locks.thread,
       }),
-      ...(isBusy
-        ? []
-        : [
-            decision({
-              action: REDO,
-              hint: 'Send hints and have the change redone',
-              needsNotes: true,
-            }),
-          ]),
-      ...askAgain({ isBusy }),
+      ...askAgain({ lockReason: locks.thread }),
     ],
   };
 };
 
-const settledPlan = ({ settlement, isBusy }: Params): ResolverThreadDecisionPlan => ({
-  question:
-    settlement.kind === 'wontfix'
-      ? 'The agent judged this thread not worth a change, and wrote why.'
-      : 'The agent analyzed this thread without changing anything, and drafted an answer.',
-  decisions: [
-    decision({
-      action: POST_AND_CLOSE,
-      hint: 'Posts the reply above and closes the thread',
-      isRecommended: true,
-    }),
-    ...(isBusy
-      ? []
-      : [
-          decision({ action: FIX_ANYWAY, hint: 'Refuse the verdict and have the change made' }),
-          decision({ action: REWORK, hint: 'Keep the verdict, ask for a different reply' }),
-        ]),
-    ...askAgain({ isBusy }),
-  ],
-});
+const settledPlan = (params: Params): ResolverThreadDecisionPlan => {
+  const { settlement } = params;
+  const locks = locksOf(params);
+  return {
+    question:
+      settlement.kind === 'wontfix'
+        ? 'The agent judged this thread not worth a change, and wrote why.'
+        : 'The agent analyzed this thread without changing anything, and drafted an answer.',
+    decisions: [
+      decision({
+        action: POST_AND_CLOSE,
+        hint: 'Posts the reply above and closes the thread',
+        isRecommended: true,
+        lockReason: locks.agent,
+      }),
+      decision({
+        action: FIX_ANYWAY,
+        hint: 'Refuse the verdict, optionally say what to change',
+        notes: 'optional',
+        lockReason: locks.thread,
+      }),
+      decision({
+        action: REWORK,
+        hint: 'Keep the verdict, optionally steer the new reply',
+        notes: 'optional',
+        lockReason: locks.thread,
+      }),
+      ...askAgain({ lockReason: locks.thread }),
+    ],
+  };
+};
 
-const openPlan = ({ isBusy }: Params): ResolverThreadDecisionPlan => ({
-  question: 'The agent recorded no outcome for this thread.',
-  decisions: [
-    decision({ action: MARK_RESOLVED, hint: 'Close it yourself with the reply above' }),
-    ...askAgain({ isBusy }),
-  ],
-});
+const openPlan = (params: Params): ResolverThreadDecisionPlan => {
+  const locks = locksOf(params);
+  return {
+    question: 'The agent recorded no outcome for this thread.',
+    decisions: [
+      decision({
+        action: MARK_RESOLVED,
+        hint: 'Close it yourself with the reply above',
+        lockReason: locks.agent,
+      }),
+      ...askAgain({ lockReason: locks.thread }),
+    ],
+  };
+};
 
 export const resolverThreadDecisions = (params: Params): ResolverThreadDecisionPlan => {
   if (params.settlement.isClosed) {

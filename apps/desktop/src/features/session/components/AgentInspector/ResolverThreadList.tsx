@@ -13,6 +13,7 @@ type Props = {
   readonly prNumber: number | null;
   readonly isBusy: boolean;
   readonly canAct: boolean;
+  readonly actLockReason: string | null;
   readonly missingVerdicts: ResolverMissingVerdicts | null;
   readonly runningThreadAction: ResolverRunningThreadAction | null;
   readonly isAskingForVerdicts: boolean;
@@ -33,6 +34,7 @@ export const ResolverThreadList = ({
   prNumber,
   isBusy,
   canAct,
+  actLockReason,
   missingVerdicts,
   runningThreadAction,
   isAskingForVerdicts,
@@ -64,6 +66,7 @@ export const ResolverThreadList = ({
             prNumber={prNumber}
             isBusy={isBusy}
             canAct={canAct}
+            actLockReason={actLockReason}
             runningThreadAction={runningThreadAction}
             onRun={onRun}
             onReplyChange={onReplyChange}

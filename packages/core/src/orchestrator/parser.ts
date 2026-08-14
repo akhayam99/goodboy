@@ -2,7 +2,7 @@ import type { ModelEffort, ProviderId } from '@goodboy/types';
 import { providerEffortLevels } from '../providers/providerEffortLevels';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { isAgentRole } from '../roles';
-import type { OrchestratorDecision, OrchestratorStep } from './types';
+import type { OrchestratorDecision, OrchestratorStep, RunSummary } from './types';
 
 const START_MARKER = '<<orchestrator>>';
 const END_MARKER = '<</orchestrator>>';
@@ -95,6 +95,27 @@ const runSummarySlice = (raw: string): string | null => {
   return nonEmptyString(raw.slice(contentStart, end));
 };
 
+const stringList = (value: unknown): ReadonlyArray<string> =>
+  Array.isArray(value)
+    ? value.map((entry) => nonEmptyString(entry)).filter((entry): entry is string => entry !== null)
+    : [];
+
+const parseRunSummary = (raw: string): RunSummary | null => {
+  const slice = runSummarySlice(raw);
+  if (slice === null) {
+    return null;
+  }
+  const parsed = asRecord(parseJson(slice));
+  if (parsed === null || (!Array.isArray(parsed['done']) && !Array.isArray(parsed['left']))) {
+    return { kind: 'text', text: slice };
+  }
+  return {
+    kind: 'structured',
+    done: stringList(parsed['done']),
+    left: stringList(parsed['left']),
+  };
+};
+
 type ModelParams = {
   readonly provider: ProviderId;
   readonly id: string | null;
@@ -173,7 +194,7 @@ export const parseOrchestratorDecision = ({
   }
   const action = decision['action'];
   const reason = nonEmptyString(decision['reason']) ?? '';
-  const summary = runSummarySlice(raw);
+  const summary = parseRunSummary(raw);
   const runSummary = summary === null ? {} : { runSummary: summary };
   if (action === 'done' || action === 'blocked') {
     return { action, reason, ...runSummary };

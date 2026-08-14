@@ -5,7 +5,10 @@ import { RESOLVER_ACTION_BUSY_LABEL } from '../../resolverActionBusyLabel';
 import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
 import { RESOLVER_ACTION_TONE } from '../../resolverActionTone';
 import type { ResolverActionKind } from '../../resolverActions';
-import type { ResolverThreadDecisionPlan } from '../../resolverThreadDecisions';
+import type {
+  ResolverThreadDecisionPlan,
+  ResolverThreadNotes,
+} from '../../resolverThreadDecisions';
 import { ResolverConfirm } from '../ResolverConfirm';
 
 type Props = {
@@ -22,7 +25,10 @@ type Props = {
 
 const NEEDS_REPLY: ReadonlyArray<ResolverActionKind> = ['explain', 'forceResolve'];
 
-const NOTES_PLACEHOLDER = 'What should it do instead?';
+const NOTES_PLACEHOLDER: Record<Exclude<ResolverThreadNotes, 'none'>, string> = {
+  required: 'What should it do instead?',
+  optional: 'Hints, optional',
+};
 
 export const ResolverThreadDecisions = ({
   plan,
@@ -65,14 +71,19 @@ export const ResolverThreadDecisions = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-2xs leading-relaxed text-muted-foreground">{plan.question}</p>
       {writingDecision !== null && (
         <div className="flex flex-col gap-1">
           <Textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            aria-label={`Instructions for ${ariaScope}`}
-            placeholder={NOTES_PLACEHOLDER}
+            aria-label={
+              writingDecision.notes === 'required'
+                ? `Instructions for ${ariaScope}`
+                : `Optional hints for ${ariaScope}`
+            }
+            placeholder={
+              NOTES_PLACEHOLDER[writingDecision.notes === 'required' ? 'required' : 'optional']
+            }
             autoFocus
             autoGrow
             maxRows={8}
@@ -84,7 +95,8 @@ export const ResolverThreadDecisions = ({
               label="Send"
               tone="info"
               disabled={
-                notes.trim() === '' || (isFrozen && runningKind !== writingDecision.action.kind)
+                (writingDecision.notes === 'required' && notes.trim() === '') ||
+                (isFrozen && runningKind !== writingDecision.action.kind)
               }
               isBusy={runningKind === writingDecision.action.kind}
               busyLabel={RESOLVER_ACTION_BUSY_LABEL[writingDecision.action.kind]}
@@ -103,7 +115,7 @@ export const ResolverThreadDecisions = ({
       )}
       {writingDecision === null && (
         <div className="flex flex-wrap items-center justify-end gap-1">
-          {plan.decisions.map(({ action, hint, needsNotes, isRecommended }) => (
+          {plan.decisions.map(({ action, hint, notes: notesMode, isRecommended, lockReason }) => (
             <GhostActionButton
               key={action.kind}
               icon={RESOLVER_ACTION_ICON[action.kind]}
@@ -118,10 +130,14 @@ export const ResolverThreadDecisions = ({
                 (isFrozen && runningKind !== action.kind)
               }
               title={
-                isBlocked({ kind: action.kind }) ? 'Write the reply to post first' : `${hint}.`
+                lockReason !== null
+                  ? `${lockReason}.`
+                  : isBlocked({ kind: action.kind })
+                    ? 'Write the reply to post first'
+                    : `${hint}.`
               }
               onClick={() => {
-                if (needsNotes) {
+                if (notesMode !== 'none') {
                   setWriting(action.kind);
                   return;
                 }
