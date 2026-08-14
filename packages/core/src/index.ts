@@ -323,6 +323,7 @@ export {
   resolvePrForBranch,
   resolveReviewThread,
   runJson as ghRunJson,
+  toCachedPullRequest,
   updateIssueBody,
   type GetPrInput,
   type GhDetectResult,

@@ -92,10 +92,15 @@ export type PullRequestDiff = {
   files: ReadonlyArray<FileDiff>;
 };
 
+export type CachedPullRequest = Pick<
+  PullRequestState,
+  'number' | 'title' | 'url' | 'state' | 'updatedAt'
+>;
+
 export type GithubPrCacheEntry = {
   branch: string;
   repoSlug: string;
-  pr: PullRequestState | null;
+  pr: CachedPullRequest | null;
   fetchedAt: string;
 };
 

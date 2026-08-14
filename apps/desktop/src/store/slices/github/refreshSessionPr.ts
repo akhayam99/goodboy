@@ -1,7 +1,14 @@
-import { detectRepoSlug, fetchLinkedIssues, listPrsForBranch } from '@goodboy/core';
+import {
+  detectRepoSlug,
+  fetchLinkedIssues,
+  listPrsForBranch,
+  toCachedPullRequest,
+} from '@goodboy/core';
+import { updateSessionWorktreeRepoSlug, upsertGithubPrCache } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
-import type { IsoDateTime, SessionId } from '@goodboy/types';
+import type { IsoDateTime, PullRequestState, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 
@@ -9,6 +16,39 @@ type Params = {
   force?: boolean;
   silent?: boolean;
   retries?: number;
+};
+
+type PersistParams = {
+  readonly sessionId: SessionId;
+  readonly repoSlug: string;
+  readonly branch: string;
+  readonly worktreePath: string;
+  readonly pr: PullRequestState | null;
+};
+
+const persistSessionPrCache = async ({
+  sessionId,
+  repoSlug,
+  branch,
+  worktreePath,
+  pr,
+}: PersistParams): Promise<void> => {
+  try {
+    await updateSessionWorktreeRepoSlug({
+      db: tauriDatabase,
+      sessionId,
+      worktreePath,
+      repoSlug,
+    });
+    await upsertGithubPrCache(tauriDatabase, {
+      branch,
+      repoSlug,
+      pr: toCachedPullRequest({ pr }),
+      fetchedAt: new Date().toISOString(),
+    });
+  } catch {
+    return;
+  }
 };
 
 export const refreshSessionPr = (set: SetFn, get: GetFn) => {
@@ -24,6 +64,7 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
     const repo = target.repo;
     const repoRoot = repo.repoRoot;
     const repoBranch = repo.branch;
+    const repoWorktreePath = repo.worktreePath;
     const memberWorkspaceId = repo.workspaceId;
     set((state) => ({
       sessionGithub: {
@@ -134,6 +175,13 @@ export const refreshSessionPr = (set: SetFn, get: GetFn) => {
               },
             },
           };
+        });
+        await persistSessionPrCache({
+          sessionId,
+          repoSlug: slug,
+          branch: repoBranch,
+          worktreePath: repoWorktreePath,
+          pr: canonicalPr,
         });
         return;
       } catch (err) {

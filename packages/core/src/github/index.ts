@@ -52,6 +52,7 @@ export {
   DEFAULT_PR_CACHE_TTL_MS,
   getPrForBranch,
   invalidatePrCache,
+  toCachedPullRequest,
   type GetPrInput,
   type PrCacheDeps,
   type PrCacheStore,
