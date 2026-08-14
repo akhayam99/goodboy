@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Unplug } from 'lucide-react';
-import { Checkbox, EmptyState, Eyebrow, InlineConfirm, ScrollFade } from '@goodboy/ui';
+import { Button, Checkbox, EmptyState, Eyebrow, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -146,14 +146,10 @@ export const WorkspaceLauncher = () => {
           </ul>
         </div>
 
-        <button
-          type="button"
-          onClick={addWorkspace}
-          className="flex w-fit items-center gap-1.5 rounded-md border border-border-soft px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
-        >
+        <Button variant="secondary" onClick={addWorkspace} className="w-fit">
           <Plus size={14} aria-hidden />
           New workspace
-        </button>
+        </Button>
 
         <Checkbox
           label="Reopen last workspace on launch"

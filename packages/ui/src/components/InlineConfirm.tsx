@@ -4,6 +4,13 @@ import { tintClasses, type Tone } from '../tint';
 
 export type ConfirmRole = 'primary' | 'alert' | 'danger';
 
+export type ConfirmAltAction = {
+  readonly label: string;
+  readonly onClick: () => void;
+  readonly icon?: ReactNode;
+  readonly disabled?: boolean;
+};
+
 type Props = {
   readonly role: ConfirmRole;
   readonly icon: ReactNode;
@@ -11,6 +18,7 @@ type Props = {
   readonly description?: string;
   readonly confirmLabel: string;
   readonly cancelLabel?: string;
+  readonly altAction?: ConfirmAltAction;
   readonly note?: ReactNode;
   readonly children?: ReactNode;
   readonly onConfirm: () => void | Promise<void>;
@@ -27,6 +35,9 @@ const ROLE_TONE: Record<ConfirmRole, Tone> = {
   danger: 'danger',
 };
 
+const SECONDARY_BUTTON =
+  'inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60';
+
 const ROLE_CONFIRM: Record<ConfirmRole, string> = {
   primary: 'bg-primary text-primary-foreground',
   alert: 'bg-warning text-warning-foreground',
@@ -40,6 +51,7 @@ export const InlineConfirm = ({
   description,
   confirmLabel,
   cancelLabel = 'Cancel',
+  altAction,
   note,
   children,
   onConfirm,
@@ -99,12 +111,18 @@ export const InlineConfirm = ({
       {note}
 
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={busy}
-          className="rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        {altAction != null && (
+          <button
+            type="button"
+            onClick={altAction.onClick}
+            disabled={busy || altAction.disabled === true}
+            className={cn('mr-auto', SECONDARY_BUTTON)}
+          >
+            {altAction.icon}
+            {altAction.label}
+          </button>
+        )}
+        <button type="button" onClick={onCancel} disabled={busy} className={SECONDARY_BUTTON}>
           {cancelLabel}
         </button>
         <button

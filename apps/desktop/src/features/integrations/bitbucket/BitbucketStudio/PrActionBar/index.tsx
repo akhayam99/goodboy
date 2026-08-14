@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn, Divider, InlineConfirm, tintClasses, type Tone } from '@goodboy/ui';
+import { Button, Divider, InlineConfirm } from '@goodboy/ui';
 import {
   GitMerge,
   MessageSquareWarning,
@@ -8,36 +8,13 @@ import {
   ThumbsUp,
   XCircle,
 } from 'lucide-react';
-import { HOST_ACTION_BUTTON } from '../../../../../shared/utils/hostActionButton';
 import type { BitbucketPullRequest, BitbucketPullRequestState } from '../../client';
 import { bitbucketPrVote } from './bitbucketPrVote';
 import { prActionBlockReason } from './prActionBlockReason';
 import { voteSummary } from './voteSummary';
 
 export type BitbucketPrActionBusy =
-  | 'approve'
-  | 'unapprove'
-  | 'request-changes'
-  | 'withdraw-changes'
-  | 'merge'
-  | 'decline'
-  | null;
-
-type ToneParams = {
-  readonly tone: Extract<Tone, 'neutral' | 'success' | 'danger' | 'warning'>;
-};
-
-const actionTone = ({ tone }: ToneParams): string => {
-  const t = tintClasses(tone);
-  return cn(t.border, t.text, t.hoverBgSoft, t.hoverText);
-};
-
-const TONE = {
-  neutral: actionTone({ tone: 'neutral' }),
-  success: actionTone({ tone: 'success' }),
-  danger: actionTone({ tone: 'danger' }),
-  warning: actionTone({ tone: 'warning' }),
-} as const;
+  'approve' | 'unapprove' | 'request-changes' | 'withdraw-changes' | 'merge' | 'decline' | null;
 
 const TERMINAL_NOTE: Record<BitbucketPullRequestState, string> = {
   OPEN: '',
@@ -101,8 +78,10 @@ export const PrActionBar = ({
 
       {isOpen && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
+          <Button
+            variant={hasApproved ? 'secondary' : 'success'}
+            emphasis="outline"
+            size="sm"
             aria-disabled={voteReason != null}
             title={
               voteReason ??
@@ -117,12 +96,8 @@ export const PrActionBar = ({
               const act = hasApproved ? onUnapprove : onApprove;
               act();
             }}
-            className={cn(
-              HOST_ACTION_BUTTON,
-              hasApproved ? TONE.neutral : TONE.success,
-              (busy === 'approve' || busy === 'unapprove') && 'animate-border-pulse',
-              voteReason != null && 'opacity-50',
-            )}
+            isBusy={busy === 'approve' || busy === 'unapprove'}
+            className={voteReason != null ? 'opacity-50' : undefined}
           >
             {hasApproved ? (
               <>
@@ -135,10 +110,12 @@ export const PrActionBar = ({
                 Approve
               </>
             )}
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
+            variant={hasRequestedChanges ? 'secondary' : 'warning'}
+            emphasis="outline"
+            size="sm"
             aria-disabled={voteReason != null}
             title={
               voteReason ??
@@ -153,12 +130,8 @@ export const PrActionBar = ({
               const act = hasRequestedChanges ? onWithdrawChanges : onRequestChanges;
               act();
             }}
-            className={cn(
-              HOST_ACTION_BUTTON,
-              hasRequestedChanges ? TONE.neutral : TONE.warning,
-              (busy === 'request-changes' || busy === 'withdraw-changes') && 'animate-border-pulse',
-              voteReason != null && 'opacity-50',
-            )}
+            isBusy={busy === 'request-changes' || busy === 'withdraw-changes'}
+            className={voteReason != null ? 'opacity-50' : undefined}
           >
             {hasRequestedChanges ? (
               <>
@@ -171,7 +144,7 @@ export const PrActionBar = ({
                 Request changes
               </>
             )}
-          </button>
+          </Button>
 
           <Divider orientation="vertical" className="h-5" />
 
@@ -192,8 +165,10 @@ export const PrActionBar = ({
               className="w-72"
             />
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="success"
+              emphasis="outline"
+              size="sm"
               aria-disabled={writeReason != null}
               title={writeReason ?? 'Merge this pull request on Bitbucket'}
               onClick={() => {
@@ -202,11 +177,11 @@ export const PrActionBar = ({
                 }
                 setConfirming('merge');
               }}
-              className={cn(HOST_ACTION_BUTTON, TONE.success, writeReason != null && 'opacity-50')}
+              className={writeReason != null ? 'opacity-50' : undefined}
             >
               <GitMerge size={13} aria-hidden />
               Merge
-            </button>
+            </Button>
           )}
 
           {confirming === 'decline' ? (
@@ -226,8 +201,10 @@ export const PrActionBar = ({
               className="w-72"
             />
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="danger"
+              emphasis="outline"
+              size="sm"
               aria-disabled={writeReason != null}
               title={writeReason ?? 'Close this pull request without merging it'}
               onClick={() => {
@@ -236,11 +213,11 @@ export const PrActionBar = ({
                 }
                 setConfirming('decline');
               }}
-              className={cn(HOST_ACTION_BUTTON, TONE.danger, writeReason != null && 'opacity-50')}
+              className={writeReason != null ? 'opacity-50' : undefined}
             >
               <XCircle size={13} aria-hidden />
               Decline
-            </button>
+            </Button>
           )}
         </div>
       )}

@@ -2,14 +2,12 @@ import { useEffect, useMemo } from 'react';
 import {
   Button,
   Chip,
-  cn,
   Divider,
   EmptyState,
   Eyebrow,
   ScrollFade,
   SelectableRow,
   Skeleton,
-  tintClasses,
 } from '@goodboy/ui';
 import type { ReviewablePr, ReviewablePrProvider, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -20,8 +18,6 @@ import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { Avatar } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { buildReviewInboxRows, type ReviewInboxScope } from './buildReviewInboxRows';
-
-const draftTint = tintClasses('draft');
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -168,21 +164,21 @@ export const ReviewInboxList = ({ workspaceId, provider, scope, focusedPrId, onS
                       </span>
                       <span className="flex-1" />
                       {scope === 'all' && pr.mine ? (
-                        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground">
-                          Mine
-                        </span>
+                        <Chip
+                          tone="neutral"
+                          size="3xs"
+                          bordered={false}
+                          label="Mine"
+                          className="shrink-0"
+                        />
                       ) : null}
                       {pr.reviewRequested ? (
-                        <span
-                          className={cn(
-                            'shrink-0 rounded-full px-1.5 py-0.5 text-3xs font-semibold ring-1',
-                            draftTint.bg,
-                            draftTint.text,
-                            draftTint.ring,
-                          )}
-                        >
-                          Review requested
-                        </span>
+                        <Chip
+                          tone="draft"
+                          size="3xs"
+                          label="Review requested"
+                          className="shrink-0 font-semibold"
+                        />
                       ) : null}
                     </span>
                   </SelectableRow>

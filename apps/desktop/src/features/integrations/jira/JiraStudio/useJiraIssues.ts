@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { Session, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
-import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore, useSessions } from '../../../../store';
 import { jiraListIssues, type JiraIssue, type JiraStatusCategoryKey } from '../client';
 import { useJiraConfig } from '../useJiraConfig';

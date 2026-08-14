@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { Button, Popover, cn } from '@goodboy/ui';
-import { useDropdown } from '../../../../../shared/hooks/useDropdown';
-import { DropdownPortal } from '../../../../../shared/hooks/useDropdown/DropdownPortal';
-import { formatError } from '../../../../../shared/lib/errors';
+import { Button, cn, DropdownPortal, formatError, Popover, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { appendClosingReferences } from '../../../../github/appendClosingReferences';
 import type { ClosingIssueReference } from '../../../../github/closingIssueReferences';

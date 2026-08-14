@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { Agent, PendingResolution, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
-import { formatError } from '../../../../shared/lib/errors';
 import { PROCEED_RESOLVER_PROMPT } from '../../../../shared/utils/proceedResolverPrompt';
 import { RERUN_RESOLVER_PROMPT } from '../../../../shared/utils/rerunResolverPrompt';
 import { agentThreadIds } from '../../agentThreadIds';

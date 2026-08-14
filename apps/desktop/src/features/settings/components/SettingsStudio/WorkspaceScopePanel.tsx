@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import type { VerbosityLevel, WorkspaceId } from '@goodboy/types';
-import { Button, Divider, FieldRow, ScrollFade, SectionHeader, Switch, cn } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Divider,
+  FieldRow,
+  formatError,
+  ScrollFade,
+  SectionHeader,
+  Switch,
+} from '@goodboy/ui';
 import { Check, GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
-import { formatError } from '../../../../shared/lib/errors';
 import { DEFAULT_BRANCH_PREFIX, settingBranchPrefix } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';

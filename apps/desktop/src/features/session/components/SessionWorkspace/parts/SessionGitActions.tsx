@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { GitBranch, Upload } from 'lucide-react';
 import type { Session, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { OverflowMenu, type OverflowMenuItem } from '../../../../../shared/components/OverflowMenu';
 import { worktreeStatus } from '../../../../worktree/worktree';
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';

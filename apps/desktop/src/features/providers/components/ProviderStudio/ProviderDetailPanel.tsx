@@ -192,13 +192,15 @@ function ConnectedAccount({
       )}
       {confirmDisconnect ? (
         <>
-          <button
-            type="button"
+          <Button
+            variant="danger"
+            emphasis="outline"
+            size="sm"
             onClick={onConfirmDisconnect}
-            className="rounded-md border border-danger/40 bg-danger/10 px-2.5 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger/15"
+            className="bg-danger/10 font-semibold"
           >
             Confirm
-          </button>
+          </Button>
           <button
             type="button"
             onClick={onCancelDisconnect}

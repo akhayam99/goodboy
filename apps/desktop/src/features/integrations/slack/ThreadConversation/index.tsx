@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, NoteComposer } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '@goodboy/ui';
-import { NoteComposer } from '../../../../shared/components/NoteComposer';
 import { NoteListSkeleton } from '@goodboy/ui';
 import type { SlackChannel, SlackMessage, SlackUser } from '../client';
 import { slackChannelNames, slackUserNames } from '../nameMaps';

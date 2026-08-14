@@ -22,19 +22,20 @@ export const WorkflowKillButton = ({ onConfirm }: Props) => {
         Discard
       </button>
       {isArmed ? (
-        <InlineConfirm
-          role="alert"
-          icon={<Ban size={12} aria-hidden />}
-          title="Discard workflow?"
-          description="Moves the run to Discarded, where you can restore it. Agents already spawned stay in the session."
-          confirmLabel="Discard"
-          onConfirm={() => {
-            setIsArmed(false);
-            onConfirm();
-          }}
-          onCancel={() => setIsArmed(false)}
-          className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
-        />
+        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+          <InlineConfirm
+            role="alert"
+            icon={<Ban size={12} aria-hidden />}
+            title="Discard workflow?"
+            description="Moves the run to Discarded, where you can restore it. Agents already spawned stay in the session."
+            confirmLabel="Discard"
+            onConfirm={() => {
+              setIsArmed(false);
+              onConfirm();
+            }}
+            onCancel={() => setIsArmed(false)}
+          />
+        </div>
       ) : null}
     </div>
   );

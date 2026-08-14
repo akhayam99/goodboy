@@ -1,9 +1,8 @@
 import { Bug, GitBranch, GitFork, Link2, ListTodo } from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
+import { Eyebrow, OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
 import type { SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { OverflowMenu, type OverflowMenuItem } from '../../../../shared/components/OverflowMenu';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { LinkedWorkRow } from '../../../../shared/components/LinkedWorkRow';
 import { workspaceMountName } from '../../../../shared/utils/workspaceMountName';

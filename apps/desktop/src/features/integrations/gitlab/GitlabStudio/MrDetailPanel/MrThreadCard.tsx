@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Divider, Markdown } from '@goodboy/ui';
+import { Divider, Markdown, NoteComposer } from '@goodboy/ui';
 import { Check, MessageSquareReply, Undo2 } from 'lucide-react';
 import { StateBadge } from '@goodboy/ui';
-import { NoteComposer } from '../../../../../shared/components/NoteComposer';
 import { MrNoteHeader } from './MrNoteHeader';
 import { threadAnchor, type MrThread } from './mrThreads';
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Check, Code2, FolderGit2, RefreshCw } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, Chip } from '@goodboy/ui';
 import type { Workspace, WorkspaceKind } from '@goodboy/types';
 import type { WorkspaceLinkMode } from '../../../workspace/components/WorkspaceLinkForm';
 import { WorkspaceLinkForm } from '../../../workspace/components/WorkspaceLinkForm';
@@ -64,9 +64,13 @@ export const WorkspaceStep = ({
                 <span className="truncate text-sm font-medium text-foreground">
                   {workspace.name}
                 </span>
-                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground">
-                  {WORKSPACE_KIND_LABELS[workspace.kind ?? 'repo']}
-                </span>
+                <Chip
+                  tone="neutral"
+                  size="3xs"
+                  bordered={false}
+                  label={WORKSPACE_KIND_LABELS[workspace.kind ?? 'repo']}
+                  className="shrink-0"
+                />
               </span>
               <span className="block truncate font-mono text-xs text-muted-foreground/80">
                 {workspace.rootPath}

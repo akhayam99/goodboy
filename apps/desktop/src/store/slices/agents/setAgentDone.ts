@@ -1,6 +1,6 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { invokeAgentSetDone } from '../../../features/workflows/workflows';
-import { formatError } from '../../../shared/lib/errors';
 import { applyAgentDone } from './applyAgentDone';
 import type { GetFn, SetFn } from './types';
 

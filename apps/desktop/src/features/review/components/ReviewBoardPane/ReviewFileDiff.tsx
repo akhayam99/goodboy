@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Bot, ChevronRight, MessageSquarePlus } from 'lucide-react';
-import { Divider, EmptyState, cn, tintClasses } from '@goodboy/ui';
+import { Chip, cn, type DiffLayoutMode, Divider, EmptyState } from '@goodboy/ui';
 import type { DiffHunkLine, FileDiff, PrReviewDraft, ReviewDraftSide } from '@goodboy/types';
 import {
   INITIAL_VISIBLE_LINES,
@@ -19,12 +19,9 @@ import {
 import { LineComposer } from './LineComposer';
 import { ReviewPairCells } from './ReviewPairCells';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import type { DiffLayoutMode } from '../../../../shared/utils/diffLayoutMode';
 import { buildDiffPairRows, type DiffPairRow } from '../../../../shared/utils/diffPairRows';
 import { buildDiffRows, type DiffRow } from '../../../../shared/utils/diffRows';
 import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
-
-const draftTint = tintClasses('draft');
 
 export type ReviewLineTarget = {
   readonly path: string;
@@ -157,15 +154,13 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
             {file.path}
           </button>
           {drafts.length > 0 ? (
-            <span
-              className={cn(
-                'shrink-0 rounded-full px-1.5 py-0.5 text-3xs font-medium',
-                draftTint.bg,
-                draftTint.text,
-              )}
-            >
-              {drafts.length} {drafts.length === 1 ? 'draft' : 'drafts'}
-            </span>
+            <Chip
+              tone="draft"
+              size="3xs"
+              bordered={false}
+              label={`${drafts.length} ${drafts.length === 1 ? 'draft' : 'drafts'}`}
+              className="shrink-0"
+            />
           ) : null}
           <span className="shrink-0 text-3xs tabular-nums">
             {file.additions > 0 && <span className="text-success">+{file.additions}</span>}

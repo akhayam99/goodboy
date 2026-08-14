@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { EmptyState, Skeleton } from '@goodboy/ui';
+import { EmptyState, NoteComposer, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '@goodboy/ui';
-import { NoteComposer } from '../../../../../shared/components/NoteComposer';
 import type { GitlabMrDiscussion } from '../../client';
 import { MrThreadCard } from './MrThreadCard';
 import { buildMrConversation } from './mrThreads';

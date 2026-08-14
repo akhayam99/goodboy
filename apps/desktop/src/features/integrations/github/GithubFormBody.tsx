@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, InlineConfirm, Input } from '@goodboy/ui';
+import { Button, formatError, InlineConfirm, Input } from '@goodboy/ui';
 import { CheckCircle2, Unplug } from 'lucide-react';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
 import { ghClearToken, ghSetToken, ghStatus } from '../../github/github';
-import { formatError } from '../../../shared/lib/errors';
 import { CreateTokenLink } from './CreateTokenLink';
 import { notifyGithubConnectionChanged } from './useGithubConnection';
 

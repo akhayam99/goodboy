@@ -1,5 +1,5 @@
 import type { AgentId, ProviderId } from '@goodboy/types';
-import { Checkbox, Chip, cn } from '@goodboy/ui';
+import { Button, Checkbox, Chip, cn } from '@goodboy/ui';
 import { ArrowUpRight, ChevronDown, ExternalLink, RotateCcw } from 'lucide-react';
 import { modelEffortLevels } from '../../../../chat/utils/chat-constants';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
@@ -105,15 +105,17 @@ export const ResolveCard = ({
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {claimed && link ? (
-              <button
-                type="button"
+              <Button
+                variant="info"
+                emphasis="outline"
+                size="sm"
                 onClick={() => onOpenResolver?.(link.agent.id as AgentId)}
                 title="Open the resolver working on this comment"
-                className="inline-flex items-center gap-1 rounded-md border border-info/40 bg-info/10 px-2 py-1 text-2xs font-semibold text-info transition-colors hover:bg-info/20"
+                className="h-auto gap-1 bg-info/10 px-2 py-1 text-2xs font-semibold"
               >
                 Open resolver
                 <ArrowUpRight size={11} aria-hidden />
-              </button>
+              </Button>
             ) : (
               <>
                 <ResolveConfigPopover
@@ -124,11 +126,13 @@ export const ResolveCard = ({
                   onChange={onConfig}
                   onPrimary={onResolve}
                   renderTrigger={(open, toggle) => (
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      emphasis="outline"
+                      size="sm"
                       onClick={toggle}
                       aria-expanded={open}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1 text-2xs transition-colors hover:bg-muted/50"
+                      className="h-auto bg-subtle px-2 py-1 text-2xs"
                     >
                       <span className="text-muted-foreground">Resolve with</span>
                       <RoutingBadge
@@ -137,11 +141,13 @@ export const ResolveCard = ({
                         effort={modelEffortLevels(config.model) ? config.effort : null}
                       />
                       <ChevronDown size={11} aria-hidden className="text-muted-foreground" />
-                    </button>
+                    </Button>
                   )}
                 />
-                <button
-                  type="button"
+                <Button
+                  variant={failed ? 'danger' : 'accent'}
+                  emphasis="outline"
+                  size="sm"
                   onClick={onResolve}
                   title={
                     failed
@@ -149,10 +155,8 @@ export const ResolveCard = ({
                       : 'Spawn a resolver for this comment now'
                   }
                   className={cn(
-                    'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-2xs font-semibold transition-colors',
-                    failed
-                      ? 'border-danger/40 bg-danger/10 text-danger hover:bg-danger/20'
-                      : 'border-accent/40 bg-accent/10 text-accent hover:bg-accent/20',
+                    'h-auto gap-1 px-2 py-1 text-2xs font-semibold',
+                    failed ? 'bg-danger/10' : 'bg-accent/10',
                   )}
                 >
                   {failed ? (
@@ -161,7 +165,7 @@ export const ResolveCard = ({
                     <CONCEPT_ICONS.resolve size={11} aria-hidden />
                   )}
                   {failed ? 'Retry' : 'Resolve'}
-                </button>
+                </Button>
               </>
             )}
           </div>

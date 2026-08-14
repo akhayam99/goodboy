@@ -1,7 +1,8 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { GithubIcon } from '@goodboy/ui';
-import { BrandGlyph } from '@goodboy/ui';
+import { GithubIcon } from '../components/brandIcons';
+import { BrandGlyph } from '../components/BrandGlyph';
 
 afterEach(cleanup);
 

@@ -48,7 +48,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
   }, [activeIndex]);
 
   return (
-    <div className="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md">
+    <div className="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md">
       {items.length === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.search}

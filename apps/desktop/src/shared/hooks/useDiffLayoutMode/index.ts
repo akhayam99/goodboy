@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
+import { type DiffLayoutMode } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../lib/storage-keys';
-import type { DiffLayoutMode } from '../../utils/diffLayoutMode';
 
 type SetLayoutMode = (mode: DiffLayoutMode) => void;
 

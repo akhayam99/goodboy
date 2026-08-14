@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { StudioRailLayout } from '@goodboy/ui';
+import { StudioRailLayout } from '../components/StudioRailLayout';
 
 afterEach(cleanup);
 

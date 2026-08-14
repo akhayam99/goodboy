@@ -1,14 +1,18 @@
-const LEVEL_TONES: Readonly<Record<string, string>> = {
-  fatal: 'border-danger/40 bg-danger/10 text-danger',
-  error: 'border-danger/40 bg-danger/10 text-danger',
-  warning: 'border-warning/40 bg-warning/10 text-warning',
-  info: 'border-info/40 bg-info/10 text-info',
-  debug: 'border-border-soft bg-muted/40 text-muted-foreground',
+import { tintClasses, type Tone } from '@goodboy/ui';
+
+const LEVEL_TONES: Readonly<Record<string, Tone>> = {
+  fatal: 'danger',
+  error: 'danger',
+  warning: 'warning',
+  info: 'info',
+  debug: 'neutral',
 };
 
 type Params = {
   readonly level: string | null;
 };
 
-export const levelTone = ({ level }: Params): string =>
-  LEVEL_TONES[level?.toLowerCase() ?? ''] ?? 'border-border-soft bg-muted/40 text-muted-foreground';
+export const levelTone = ({ level }: Params): string => {
+  const tint = tintClasses(LEVEL_TONES[level?.toLowerCase() ?? ''] ?? 'neutral');
+  return `${tint.border} ${tint.bg} ${tint.text}`;
+};

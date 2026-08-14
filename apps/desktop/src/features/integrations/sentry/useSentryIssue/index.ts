@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { formatError } from '../../../../shared/lib/errors';
 import { sentryFetchIssue, type SentryIssue } from '../client';
 
 type Params = {

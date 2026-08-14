@@ -1,9 +1,9 @@
 import type { IsoDateTime, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import {
   bitbucketGetPullRequest,
   bitbucketPullRequestForBranch,
 } from '../../../features/integrations/bitbucket/client';
-import { formatError } from '../../../shared/lib/errors';
 import { carryForward } from './state';
 import { resolveBitbucketPrContext } from './resolveBitbucketPrContext';
 import type { GetFn, SetFn } from './types';

@@ -1,4 +1,5 @@
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import {
   buildProviderList,
   type ProviderAuthResults,
@@ -12,7 +13,6 @@ import {
   resolveLifecycleCommand,
   type LifecycleExitPayload,
 } from '../../../features/providers/provider-lifecycle';
-import { formatError } from '../../../shared/lib/errors';
 import { clearStaleConnect } from './clearStaleConnect';
 import { detectAuthUrl } from './detectAuthUrl';
 import { stripAnsi } from './stripAnsi';

@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { formatError } from '../../../../shared/lib/errors';
 
 type Params = {
   readonly sessionId: SessionId;

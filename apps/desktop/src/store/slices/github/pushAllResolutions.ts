@@ -1,7 +1,7 @@
 import { deletePendingResolution, listPendingResolutionsForSession } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import type { PendingResolution, PendingResolutionOutcome, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { formatError } from '../../../shared/lib/errors';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { postThreadReply } from './postThreadReply';
 import { pushSessionBranch } from './pushSessionBranch';

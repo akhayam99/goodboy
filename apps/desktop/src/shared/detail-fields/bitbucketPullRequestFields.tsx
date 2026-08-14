@@ -2,16 +2,10 @@ import type {
   BitbucketPullRequest,
   BitbucketPullRequestState,
 } from '../../features/integrations/bitbucket/client';
-import { StateBadge, type StateTone } from '@goodboy/ui';
+import { StateBadge } from '@goodboy/ui';
+import { pullRequestStateTone } from '../../features/integrations/bitbucket/stateTone';
 import { formatAbsoluteDateTime } from '../utils/relativeDate';
 import type { DetailFieldRegistry } from './types';
-
-const STATE_TONE: Record<BitbucketPullRequestState, StateTone> = {
-  OPEN: 'success',
-  MERGED: 'info',
-  DECLINED: 'danger',
-  SUPERSEDED: 'neutral',
-};
 
 const STATE_LABEL: Record<BitbucketPullRequestState, string> = {
   OPEN: 'open',
@@ -26,7 +20,9 @@ export const bitbucketPullRequestFields: DetailFieldRegistry<BitbucketPullReques
     key: 'state',
     label: 'State',
     render: ({ entity }) => (
-      <StateBadge tone={STATE_TONE[entity.state]}>{STATE_LABEL[entity.state]}</StateBadge>
+      <StateBadge tone={pullRequestStateTone({ state: entity.state })}>
+        {STATE_LABEL[entity.state]}
+      </StateBadge>
     ),
   },
   {

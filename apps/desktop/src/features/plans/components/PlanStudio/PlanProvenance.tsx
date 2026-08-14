@@ -1,9 +1,15 @@
 import { useRef } from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import { Divider, MetaRow, Popover, ScrollFade, cn } from '@goodboy/ui';
+import {
+  cn,
+  Divider,
+  DropdownPortal,
+  MetaRow,
+  Popover,
+  ScrollFade,
+  useDropdown,
+} from '@goodboy/ui';
 import type { Agent, AgentId, PlanConsumption } from '@goodboy/types';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
-import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 import { fmtTimestamp } from './fmtTimestamp';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 

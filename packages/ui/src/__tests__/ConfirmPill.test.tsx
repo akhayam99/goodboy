@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { ConfirmPill } from '@goodboy/ui';
+import { ConfirmPill } from '../components/ConfirmPill';
 
 afterEach(cleanup);
 

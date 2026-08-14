@@ -100,4 +100,47 @@ describe('InlineConfirm', () => {
     expect(screen.getByText('refactor auth')).toBeDefined();
     expect(screen.getByLabelText('Resolution note')).toBeDefined();
   });
+
+  it('offers a third way out without touching confirm or cancel', () => {
+    const onAlt = vi.fn();
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    render(
+      <InlineConfirm
+        role="danger"
+        icon={null}
+        title="Delete session?"
+        confirmLabel="Delete"
+        altAction={{ label: 'Archive instead', onClick: onAlt }}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archive instead' }));
+
+    expect(onAlt).toHaveBeenCalledOnce();
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it('locks the third action while the confirmation is pending', () => {
+    render(
+      <InlineConfirm
+        role="danger"
+        icon={null}
+        title="Delete session?"
+        confirmLabel="Delete"
+        isBusy
+        altAction={{ label: 'Archive instead', onClick: vi.fn() }}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Archive instead' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+  });
 });

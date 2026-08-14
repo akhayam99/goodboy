@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, GitCommit } from 'lucide-react';
-import { Divider, Popover, ScrollFade, cn } from '@goodboy/ui';
+import { Chip, cn, Divider, DropdownPortal, Popover, ScrollFade, useDropdown } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
-import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 
 type Props = {
@@ -383,9 +381,13 @@ export const DiffViewSelector = ({
                                   {row.commit.subject}
                                 </span>
                                 {row.commit.pushed && (
-                                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground">
-                                    pushed
-                                  </span>
+                                  <Chip
+                                    tone="neutral"
+                                    size="3xs"
+                                    bordered={false}
+                                    label="pushed"
+                                    className="shrink-0"
+                                  />
                                 )}
                                 <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/70">
                                   {formatAdaptiveAge({ iso: row.commit.timestamp * 1000 })}

@@ -3,13 +3,7 @@ import { tauriDatabase } from '../../shared/lib/db';
 import { shortcutGlyphs } from '../../shared/keyboard/registry';
 
 export type OnboardingStepId =
-  | 'workspace'
-  | 'codeHost'
-  | 'tools'
-  | 'session'
-  | 'agent'
-  | 'plan'
-  | 'palette';
+  'workspace' | 'codeHost' | 'tools' | 'session' | 'agent' | 'plan' | 'palette';
 
 export type OnboardingGroup = 'setup' | 'build';
 

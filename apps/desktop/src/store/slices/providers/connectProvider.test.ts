@@ -18,12 +18,10 @@ const mocks = vi.hoisted(() => ({
     return vi.fn();
   }),
   openUrl: vi.fn(async () => undefined),
-  checkProviderAuth: vi.fn(
-    async (): Promise<{ state: string; identity: string | null }> => ({
-      state: 'disconnected',
-      identity: null,
-    }),
-  ),
+  checkProviderAuth: vi.fn(async (): Promise<{ state: string; identity: string | null }> => ({
+    state: 'disconnected',
+    identity: null,
+  })),
 }));
 
 vi.mock('../../../features/providers/provider-lifecycle', async (importOriginal) => {
@@ -78,8 +76,7 @@ const harness = ({ missing }: { readonly missing?: ProviderId } = {}): Harness =
   const set = vi.fn(
     (
       update:
-        | Record<string, unknown>
-        | ((current: Record<string, unknown>) => Record<string, unknown>),
+        Record<string, unknown> | ((current: Record<string, unknown>) => Record<string, unknown>),
     ) => {
       const patch = typeof update === 'function' ? update(state) : update;
       state = { ...state, ...patch };

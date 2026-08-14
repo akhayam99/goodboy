@@ -1,5 +1,5 @@
 import { fetchReleases } from '../../../features/changelog/changelog';
-import { formatError } from '../../../shared/lib/errors';
+import { formatError } from '@goodboy/ui';
 import { writeChangelogCache } from './cache';
 import type { GetFn, SetFn } from './types';
 

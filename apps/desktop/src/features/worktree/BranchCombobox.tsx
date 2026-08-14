@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollFade, cn } from '@goodboy/ui';
+import { cn, DropdownPortal, ScrollFade, useDropdown } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
-import { useDropdown } from '../../shared/hooks/useDropdown';
-import { DropdownPortal } from '../../shared/hooks/useDropdown/DropdownPortal';
 import type { LocalBranchInfo } from './worktree';
 
 type Props = {

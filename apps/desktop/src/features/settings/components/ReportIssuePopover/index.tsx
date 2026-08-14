@@ -1,7 +1,15 @@
-import { Button, Divider, Popover, SegmentedTabs, Textarea, Tooltip, cn } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Divider,
+  DropdownPortal,
+  Popover,
+  SegmentedTabs,
+  Textarea,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { useAppStore } from '../../../../store';
 import { emptyBugReportDraft } from '../../../../store/slices/bugReportDraft/state';
 import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../../reportIssueTypes';

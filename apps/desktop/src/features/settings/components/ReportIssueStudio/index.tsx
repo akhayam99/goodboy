@@ -2,20 +2,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import {
   Button,
+  cn,
   Divider,
   FieldRow,
+  formatError,
+  Input,
   ScrollFade,
   SectionHeader,
   SegmentedTabs,
   Select,
   Skeleton,
   Textarea,
-  cn,
-  Input,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { formatError } from '../../../../shared/lib/errors';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useAppStore } from '../../../../store';
 import { tauriGhRunner } from '../../../github/github';

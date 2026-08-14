@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
-import { Divider, Popover, cn } from '@goodboy/ui';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
+import { cn, Divider, Popover, useDropdown } from '@goodboy/ui';
 import type { Agent, BranchCommit } from '@goodboy/types';
 import { RESOLVER_ACTION_ICON } from '../../resolverActionIcon';
 import type { ResolverAction, ResolverActionKind } from '../../resolverActions';

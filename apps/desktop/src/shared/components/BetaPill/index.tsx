@@ -1,7 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import { Button, Chip, Popover, cn } from '@goodboy/ui';
-import { useDropdown } from '../../hooks/useDropdown';
-import { DropdownPortal } from '../../hooks/useDropdown/DropdownPortal';
+import { Button, Chip, cn, DropdownPortal, Popover, useDropdown } from '@goodboy/ui';
 import { openUrl } from '../../lib/editor';
 
 const SPONSOR_URL = 'https://github.com/sponsors/akhayam99';

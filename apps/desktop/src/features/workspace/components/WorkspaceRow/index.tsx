@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { Chip, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useWorkspaceHasUnread } from '../../../../store';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
@@ -38,14 +38,10 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
         <span className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-foreground">{workspace.name}</span>
           {workspace.kind === 'simple' ? (
-            <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground">
-              simple
-            </span>
+            <Chip tone="neutral" size="3xs" bordered={false} label="simple" className="shrink-0" />
           ) : null}
           {hasUnread ? (
-            <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning">
-              unread
-            </span>
+            <Chip tone="warning" size="3xs" bordered={false} label="unread" className="shrink-0" />
           ) : null}
         </span>
         <span className="block truncate font-mono text-xs text-muted-foreground/80">

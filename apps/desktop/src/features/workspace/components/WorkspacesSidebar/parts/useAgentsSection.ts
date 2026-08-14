@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   Agent,
@@ -25,7 +26,6 @@ import { WORKFLOW_BLOCK_COPY } from '../../../../../features/workflows/blockCopy
 import { workflowRunHasOpenQuestions } from '../../../../../features/context/openQuestionsGate';
 import { classifyAgent, type AgentKind } from '../../../../../features/session/agent-kind';
 import { useAgentMetrics } from '../../../../../features/session/hooks/useAgentMetrics';
-import { formatError } from '../../../../../shared/lib/errors';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { useSessionAgentTree } from './useSessionAgentTree';
 import { workflowKindName } from '../lib';

@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Divider, Popover, ScrollFade, Tooltip, cn } from '@goodboy/ui';
+import {
+  cn,
+  Divider,
+  DropdownBackdrop,
+  DropdownPortal,
+  Popover,
+  ScrollFade,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import { Terminal } from 'lucide-react';
-import { DropdownBackdrop } from '../../../../shared/hooks/useDropdown/DropdownBackdrop';
-import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { useAppStore } from '../../../../store';
 import { RunningScriptRow } from './RunningScriptRow';
 import { useRunningScripts, type RunningScript } from './useRunningScripts';

@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
-  Divider,
-  Popover,
-  ScrollFade,
   cn,
+  Divider,
+  DropdownPortal,
   formatUsd,
   formatUsdPrecise,
+  Popover,
+  ScrollFade,
   tintClasses,
+  useDropdown,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { openBudgetStudio as openBudgetStudioEvent } from '../../../budget/openBudgetStudio';
 import { SessionBudgetContent } from '../../../budget/components/BudgetStudio/SessionBudgetContent';
 import type { WorkspaceTurn } from '../../../budget/components/BudgetStudio/lib';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
-import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
 

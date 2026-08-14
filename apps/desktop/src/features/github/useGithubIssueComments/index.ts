@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { GithubIssueComment, WorkspaceId } from '@goodboy/types';
-import { formatError } from '../../../shared/lib/errors';
 import { ghCreateIssueComment, ghIssueComments } from '../github';
 
 type Params = {

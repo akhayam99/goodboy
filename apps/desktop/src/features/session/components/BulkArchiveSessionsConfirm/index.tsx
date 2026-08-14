@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Archive } from 'lucide-react';
-import { InlineConfirm, ScrollFade } from '@goodboy/ui';
+import { formatError, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatError } from '../../../../shared/lib/errors';
 
 type Props = {
   readonly sessions: ReadonlyArray<Session>;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, ChevronRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Chip, cn } from '@goodboy/ui';
 import { CopyButton } from '@goodboy/ui';
 import { STATUS_COLOR, STATUS_GLYPH, type ReviewState } from '../lib';
 import type { TreeNode } from './tree';
@@ -64,17 +64,23 @@ export const TreeNodeView = ({
           )}
           <span className="min-w-0 flex-1 truncate">{node.name}</span>
           {reviewState === 'stale' ? (
-            <span
-              className="shrink-0 rounded-full bg-muted px-1 text-3xs font-medium text-muted-foreground"
+            <Chip
+              tone="neutral"
+              size="3xs"
+              bordered={false}
+              label="↻"
               title="Previously reviewed, changed since"
-            >
-              ↻
-            </span>
+              className="shrink-0 px-1 py-0"
+            />
           ) : null}
           {noteCount > 0 && (
-            <span className="shrink-0 rounded-full bg-warning/15 px-1 text-3xs font-medium text-warning">
-              {noteCount}
-            </span>
+            <Chip
+              tone="warning"
+              size="3xs"
+              bordered={false}
+              label={noteCount}
+              className="shrink-0 px-1 py-0"
+            />
           )}
           <span className="shrink-0 text-3xs tabular-nums">
             {file.additions > 0 && <span className="text-success">+{file.additions}</span>}

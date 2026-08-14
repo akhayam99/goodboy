@@ -209,7 +209,7 @@ exports[`snapshot, empty states > NewSessionView: no workflows 1`] = `
                   >
                     <button
                       aria-label="Open goal editor"
-                      class="rounded-md border border-border p-2 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                      class="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                       title="Open goal editor"
                       type="button"
                     >
@@ -633,7 +633,7 @@ exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
 
 exports[`snapshot, empty states > QuickActionsPopover: no skills / empty items 1`] = `
 <div
-  class="absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md"
+  class="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md"
 >
   <div
     class="flex items-start gap-2.5 text-left px-3 py-2"
@@ -986,44 +986,44 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
   >
     This cannot be undone. To keep the history, archive instead.
   </p>
-  <button
-    class="inline-flex w-fit items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-    type="button"
-  >
-    <svg
-      aria-hidden="true"
-      class="lucide lucide-archive"
-      fill="none"
-      height="11"
-      stroke="currentColor"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      viewBox="0 0 24 24"
-      width="11"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect
-        height="5"
-        rx="1"
-        width="20"
-        x="2"
-        y="3"
-      />
-      <path
-        d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"
-      />
-      <path
-        d="M10 12h4"
-      />
-    </svg>
-    Archive instead
-  </button>
   <div
     class="flex items-center justify-end gap-2"
   >
     <button
-      class="rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+      class="mr-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-archive"
+        fill="none"
+        height="11"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="11"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect
+          height="5"
+          rx="1"
+          width="20"
+          x="2"
+          y="3"
+        />
+        <path
+          d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"
+        />
+        <path
+          d="M10 12h4"
+        />
+      </svg>
+      Archive instead
+    </button>
+    <button
+      class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
       type="button"
     >
       Cancel
@@ -1138,7 +1138,7 @@ exports[`snapshot, error states > NewSessionView: form error 1`] = `
                   >
                     <button
                       aria-label="Open goal editor"
-                      class="rounded-md border border-border p-2 text-muted-foreground motion-safe:transition-colors hover:bg-muted hover:text-foreground"
+                      class="inline-flex items-center justify-center rounded-md border border-border-soft p-1.5 text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                       title="Open goal editor"
                       type="button"
                     >

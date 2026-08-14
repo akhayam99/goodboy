@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { FolderX, Trash2 } from 'lucide-react';
-import { Button, InlineConfirm, SectionHeader } from '@goodboy/ui';
+import { Button, formatError, InlineConfirm, SectionHeader } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
-import { formatError } from '../../../../shared/lib/errors';
 import { formatDiskSize } from '../../utils/formatDiskSize';
 
 const EMPTY: ReadonlyArray<never> = [];

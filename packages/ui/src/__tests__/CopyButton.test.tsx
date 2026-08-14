@@ -90,4 +90,36 @@ describe('CopyButton', () => {
     expect(screen.getByRole('button').textContent).toBe('copy failed');
     vi.useRealTimers();
   });
+
+  it('copies from the icon variant without changing its accessible name', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    mockClipboard(writeText);
+
+    const { container } = render(
+      <CopyButton presentation="icon" value="session summary" label="copy summary" />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'copy summary' }));
+
+    await flushMicrotasks();
+
+    expect(writeText).toHaveBeenCalledWith('session summary');
+    expect(container.querySelector('.lucide-check')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'copy summary' })).toBeDefined();
+  });
+
+  it('swaps the icon variant child label while copied', async () => {
+    mockClipboard(vi.fn().mockResolvedValue(undefined));
+
+    render(
+      <CopyButton presentation="icon" value="abc" label="copy id">
+        id
+      </CopyButton>,
+    );
+    expect(screen.getByRole('button').textContent).toBe('id');
+
+    fireEvent.click(screen.getByRole('button'));
+    await flushMicrotasks();
+
+    expect(screen.getByRole('button').textContent).toBe('Copied');
+  });
 });

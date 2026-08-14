@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlaskConical, RefreshCw, Smartphone, Unplug } from 'lucide-react';
-import { Divider, ScrollFade, Skeleton, cn } from '@goodboy/ui';
+import { Button, cn, Divider, formatError, ScrollFade, Skeleton } from '@goodboy/ui';
 import { StudioShell } from '../../shared/components/StudioShell';
-import { formatError } from '../../shared/lib/errors';
 import { bridgeRevoke, bridgeStart, bridgeStatus, type BridgeStatus, type QrInfo } from './bridge';
 import { clearMobileSharedSessions } from './mobileConfinement';
 
@@ -129,13 +128,9 @@ export const CompanionStudio = ({ onClose }: Props) => {
             ) : error ? (
               <div className="flex size-[300px] flex-col items-center justify-center gap-3">
                 <p className="text-center text-xs text-danger">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => void mint()}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/50"
-                >
+                <Button variant="secondary" size="sm" onClick={() => void mint()}>
                   <RefreshCw size={13} aria-hidden /> Retry
-                </button>
+                </Button>
               </div>
             ) : info ? (
               <>
@@ -167,13 +162,9 @@ export const CompanionStudio = ({ onClose }: Props) => {
                 </div>
 
                 <div className="flex flex-col items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => void mint()}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/50"
-                  >
+                  <Button variant="secondary" size="sm" onClick={() => void mint()}>
                     <RefreshCw size={13} aria-hidden /> New code
-                  </button>
+                  </Button>
                   <p className="max-w-[18rem] text-center text-2xs text-muted-foreground">
                     A new code is minted automatically when this one expires. Only one device can be
                     linked at a time.
@@ -188,15 +179,17 @@ export const CompanionStudio = ({ onClose }: Props) => {
                         <span aria-hidden className="size-1.5 rounded-full bg-success" />
                         {enrolled} paired {enrolled === 1 ? 'device' : 'devices'}
                       </span>
-                      <button
-                        type="button"
+                      <Button
+                        variant="danger"
+                        emphasis="outline"
+                        size="sm"
                         disabled={revoking}
                         onClick={() => void revoke()}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-danger/40 bg-danger/10 px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:border-danger/60 hover:bg-danger/15 disabled:opacity-50"
+                        className="bg-danger/10 px-3 font-semibold"
                       >
                         <Unplug size={13} aria-hidden />
                         {revoking ? 'Disconnecting…' : 'Disconnect phone'}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : null}

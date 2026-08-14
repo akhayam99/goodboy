@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { formatError } from '@goodboy/ui';
 import {
   createIssueComment,
   detectRepoSlug,
@@ -24,7 +25,6 @@ import {
   deleteGithubPrCache,
   type Database,
 } from '@goodboy/db';
-import { formatError } from '../../shared/lib/errors';
 
 type RawGhRunResult = {
   stdout: string;

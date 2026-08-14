@@ -1,6 +1,6 @@
 import { insertTurnEventsBatch, type PendingTurnEventInsert } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { formatError } from '../../../shared/lib/errors';
 
 let pendingTurnEventInserts: PendingTurnEventInsert[] = [];
 let turnEventFlushScheduled = false;

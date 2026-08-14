@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Popover, ScrollFade, cn } from '@goodboy/ui';
+import { cn, Popover, ScrollFade, useDropdown } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId, Workflow } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { useDropdown } from '../../../../../shared/hooks/useDropdown';
 import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
 import { resolveRootAgent } from '../../../agent-kind';
 import { WorkflowStepStatus } from '../../../../workflows/components/WorkflowStepStatus';

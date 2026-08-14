@@ -1,7 +1,6 @@
 import { Check, ChevronDown, Link2 } from 'lucide-react';
-import { Popover, cn } from '@goodboy/ui';
+import { cn, Popover, useDropdown } from '@goodboy/ui';
 import type { Workflow, WorkflowRunId } from '@goodboy/types';
-import { useDropdown } from '../../../../../shared/hooks/useDropdown';
 
 type ChainRun = { readonly run: { readonly id: WorkflowRunId }; readonly template: Workflow };
 

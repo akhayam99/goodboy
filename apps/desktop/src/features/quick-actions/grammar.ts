@@ -1,12 +1,5 @@
 export type QuickActionGroup =
-  | 'agent'
-  | 'session'
-  | 'workspace'
-  | 'skill'
-  | 'workflow'
-  | 'script'
-  | 'action'
-  | 'help';
+  'agent' | 'session' | 'workspace' | 'skill' | 'workflow' | 'script' | 'action' | 'help';
 
 export type PrefixMeta = {
   readonly symbol: string;

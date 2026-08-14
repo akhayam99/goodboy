@@ -1,13 +1,20 @@
 import type { ComponentProps } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+import { tintClasses, type Tone } from '../tint';
 
 export type IconButtonProps = Omit<ComponentProps<'button'>, 'type' | 'children'> & {
   icon: LucideIcon;
   label: string;
   iconSize?: number;
   busy?: boolean;
+  tone?: Tone;
   type?: 'button' | 'submit' | 'reset';
+};
+
+const toneClasses = (tone: Tone): string => {
+  const tint = tintClasses(tone);
+  return cn(tint.borderSoft, tint.text, tint.hoverBorder, tint.hoverBg);
 };
 
 export const IconButton = ({
@@ -15,6 +22,7 @@ export const IconButton = ({
   label,
   iconSize = 13,
   busy = false,
+  tone = 'neutral',
   type = 'button',
   className,
   ...rest
@@ -29,6 +37,7 @@ export const IconButton = ({
         'text-muted-foreground motion-safe:transition-colors',
         'hover:border-border hover:bg-muted/50 hover:text-foreground disabled:opacity-50',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+        tone !== 'neutral' && toneClasses(tone),
         busy && 'animate-border-pulse',
         className,
       )}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Chip, EmptyState, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { Button, Chip, EmptyState, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
@@ -141,13 +141,14 @@ export const TurnsTable = ({
             </table>
           </div>
           {remaining > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setVisible((v) => v + PAGE_SIZE)}
-              className="self-center rounded-md border border-border-soft px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              className="self-center"
             >
               Show more ({remaining})
-            </button>
+            </Button>
           )}
         </div>
       )}

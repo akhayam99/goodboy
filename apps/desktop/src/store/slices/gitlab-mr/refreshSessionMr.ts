@@ -1,6 +1,6 @@
 import type { IsoDateTime, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { gitlabMrForBranch } from '../../../features/integrations/gitlab/client';
-import { formatError } from '../../../shared/lib/errors';
 import { resolveMrContext } from './resolveMrContext';
 import type { GetFn, SetFn } from './types';
 

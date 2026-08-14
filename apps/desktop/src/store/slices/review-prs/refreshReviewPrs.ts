@@ -1,4 +1,5 @@
 import { detectRepoSlug, listOpenPrsForRepo } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type {
   GitlabWorkspaceIntegration,
   ReviewablePr,
@@ -8,7 +9,6 @@ import type {
 import { tauriGhRunner } from '../../../features/github/github';
 import { gitlabFetchProjectMrs } from '../../../features/integrations/gitlab/client';
 import { worktreeRemoteUrl } from '../../../features/worktree/worktree';
-import { formatError } from '../../../shared/lib/errors';
 import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
 import { mapGithubPr } from './mapGithubPr';
 import { mapGitlabMr } from './mapGitlabMr';

@@ -13,21 +13,21 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
   Button,
   Chip,
+  cn,
   Divider,
   FieldRow,
+  formatError,
   Input,
   ScrollFade,
   SectionHeader,
   SegmentedTabs,
   StatusDot,
-  cn,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { AlertTriangle, Boxes, Check, Folder, FolderGit2 } from 'lucide-react';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { AppBreadcrumb } from '../../../../app/components/AppBreadcrumb';
 import { buildBreadcrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
-import { formatError } from '../../../../shared/lib/errors';
 import { validateGitRepo } from '../../../../shared/lib/repo';
 import { defaultSimpleWorkspacePath } from '../../defaultSimpleWorkspacePath';
 import { commonParentDirectory } from './commonParentDirectory';

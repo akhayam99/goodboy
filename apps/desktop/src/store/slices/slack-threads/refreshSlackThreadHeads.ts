@@ -1,5 +1,5 @@
 import { slackListThreadHeads } from '../../../features/integrations/slack/client';
-import { formatError } from '../../../shared/lib/errors';
+import { formatError } from '@goodboy/ui';
 import { slackChannelKey } from './state';
 import type { GetFn, SetFn, SlackChannelParams } from './types';
 

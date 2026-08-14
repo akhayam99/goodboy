@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { Chip, cn, type Tone } from '@goodboy/ui';
 import type { ResolverStatus } from '../../resolver-linkage';
 import { ResolverStateIcon } from './ResolverStateIcon';
 
@@ -67,23 +67,21 @@ const COPY: Record<ResolverBadgeState, string> = {
   resolved: 'resolved',
 };
 
-const TINT: Record<ResolverBadgeState, string> = {
-  queued: 'bg-muted text-muted-foreground',
-  working: 'bg-info/10 text-info',
-  needsYou: 'bg-warning/10 text-warning',
-  failed: 'bg-danger/10 text-danger',
-  resolved: 'bg-success/10 text-success',
+const TONE: Record<ResolverBadgeState, Tone> = {
+  queued: 'neutral',
+  working: 'info',
+  needsYou: 'warning',
+  failed: 'danger',
+  resolved: 'success',
 };
 
 export const ResolverStateBadge = ({ state, className }: ResolverStateBadgeProps) => (
-  <span
-    className={cn(
-      'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium',
-      TINT[state],
-      className,
-    )}
-  >
-    <ResolverStateIcon state={state} />
-    {COPY[state]}
-  </span>
+  <Chip
+    tone={TONE[state]}
+    size="3xs"
+    bordered={false}
+    icon={<ResolverStateIcon state={state} />}
+    label={COPY[state]}
+    className={cn('shrink-0', className)}
+  />
 );

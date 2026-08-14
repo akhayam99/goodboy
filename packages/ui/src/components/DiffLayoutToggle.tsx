@@ -1,5 +1,6 @@
-import { SegmentedTabs } from '@goodboy/ui';
-import type { DiffLayoutMode } from '../../utils/diffLayoutMode';
+import { SegmentedTabs } from './SegmentedTabs';
+
+export type DiffLayoutMode = 'unified' | 'split';
 
 type Props = {
   readonly mode: DiffLayoutMode;

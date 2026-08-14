@@ -1,5 +1,5 @@
 import { Check, GitBranch, RefreshCw, X } from 'lucide-react';
-import { cn, Divider } from '@goodboy/ui';
+import { Chip, cn, Divider } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
 import { TOOLBAR_ICON_BTN } from './lib';
 
@@ -54,26 +54,25 @@ export const DiffToolbar = ({
               </span>
             ) : null)}
           {openCommentsCount > 0 ? (
-            <span
-              className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-3xs font-medium text-warning"
+            <Chip
+              tone="warning"
+              size="3xs"
+              bordered={false}
+              label={`${openCommentsCount} ${openCommentsCount === 1 ? 'note' : 'notes'}`}
               title={`${openCommentsCount} open ${openCommentsCount === 1 ? 'note' : 'notes'}`}
-            >
-              {openCommentsCount} {openCommentsCount === 1 ? 'note' : 'notes'}
-            </span>
+              className="shrink-0"
+            />
           ) : null}
           {reviewedCount !== null && filesCount > 0 ? (
-            <span
-              className={cn(
-                'shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium',
-                reviewedCount === filesCount
-                  ? 'bg-success/15 text-success'
-                  : 'bg-muted text-muted-foreground',
-              )}
+            <Chip
+              tone={reviewedCount === filesCount ? 'success' : 'neutral'}
+              size="3xs"
+              bordered={false}
+              icon={<Check size={9} aria-hidden />}
+              label={`${reviewedCount}/${filesCount} reviewed`}
               title={`${reviewedCount} of ${filesCount} files reviewed`}
-            >
-              <Check size={9} aria-hidden />
-              {reviewedCount}/{filesCount} reviewed
-            </span>
+              className="shrink-0"
+            />
           ) : null}
         </div>
 

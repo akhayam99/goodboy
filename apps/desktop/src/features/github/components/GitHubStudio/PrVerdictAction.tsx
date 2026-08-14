@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Button, cn, Popover, Select, Textarea } from '@goodboy/ui';
+import { Button, cn, DropdownBackdrop, Popover, Select, Textarea, useDropdown } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
 import type { PublishPrReviewVerdict } from '../../../../store/slices/review-drafts/types';
-import { HOST_ACTION_BUTTON } from '../../../../shared/utils/hostActionButton';
 
 export type PrVerdictSubmission = {
   readonly verdict: PublishPrReviewVerdict;
@@ -17,18 +16,33 @@ type Props = {
 };
 
 export const PrVerdictAction = ({ canReview, isBusy, isSubmitting, onSubmit }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [verdict, setVerdict] = useState<PublishPrReviewVerdict>('approve');
   const [body, setBody] = useState('');
   const needsSummary = verdict !== 'approve';
   const canSubmit = needsSummary === false || body.trim() !== '';
+  const {
+    open: isOpen,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupClassName,
+  } = useDropdown({
+    disabled: canReview === false || isBusy,
+    width: 'w-72',
+    expectedHeight: 260,
+    hasBackdrop: true,
+  });
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen((open) => !open)}
+    <div ref={containerRef} className="relative">
+      <Button
+        variant="secondary"
+        emphasis="outline"
+        size="sm"
+        onClick={toggle}
         disabled={canReview === false || isBusy}
+        isBusy={isSubmitting}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         title={
@@ -36,22 +50,19 @@ export const PrVerdictAction = ({ canReview, isBusy, isSubmitting, onSubmit }: P
             ? 'Approve or request changes on this pull request'
             : 'Could not read the repository from the pull request link'
         }
-        className={cn(
-          HOST_ACTION_BUTTON,
-          'border-border-soft text-foreground hover:border-border hover:bg-muted/50',
-          isSubmitting && 'animate-border-pulse',
-        )}
+        className="text-foreground"
       >
         <CheckCircle2 size={13} aria-hidden />
         Review
-      </button>
+      </Button>
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} aria-hidden />
+          <DropdownBackdrop onClose={close} />
           <Popover
+            innerRef={popupRef}
             role="dialog"
             ariaLabel="Submit a review"
-            className="absolute left-0 z-50 mt-1 flex w-72 flex-col gap-2 p-3"
+            className={cn(popupClassName, 'flex flex-col gap-2 p-3')}
           >
             <Select
               size="sm"
@@ -85,7 +96,7 @@ export const PrVerdictAction = ({ canReview, isBusy, isSubmitting, onSubmit }: P
               onClick={() => {
                 onSubmit({ verdict, body });
                 setBody('');
-                setIsOpen(false);
+                close();
               }}
             >
               Submit review

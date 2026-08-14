@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type {
   AgentRole,
   AuxTaskId,
@@ -7,7 +8,6 @@ import type {
   TaskModelPreference,
   WorkspaceId,
 } from '@goodboy/types';
-import { formatError } from '../../../../../shared/lib/errors';
 import { useAppStore } from '../../../../../store';
 
 type Params = {

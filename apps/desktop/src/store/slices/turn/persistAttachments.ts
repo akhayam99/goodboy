@@ -6,9 +6,9 @@ import type {
   ProviderRunId,
   SessionId,
 } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { writeAttachment } from '../../../features/chat/turn';
 import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
-import { formatError } from '../../../shared/lib/errors';
 import { buildAttachmentPromptBlock } from '../../turn-helpers';
 import type { GetFn } from './types';
 

@@ -1,9 +1,14 @@
-import { cn, Popover, tintClasses, Tooltip } from '@goodboy/ui';
+import {
+  cn,
+  DropdownBackdrop,
+  DropdownPortal,
+  Popover,
+  tintClasses,
+  Tooltip,
+  useDropdown,
+} from '@goodboy/ui';
 import { MoreHorizontal } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-import { DropdownBackdrop } from '../../../shared/hooks/useDropdown/DropdownBackdrop';
-import { DropdownPortal } from '../../../shared/hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../../shared/hooks/useDropdown';
 import { MORE_STUDIOS, type MoreStudioId } from './moreStudios';
 
 type Props = {

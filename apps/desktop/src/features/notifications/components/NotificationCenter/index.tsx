@@ -2,23 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Bell, Trash2 } from 'lucide-react';
 import {
   Button,
+  cn,
   Divider,
+  DropdownBackdrop,
+  DropdownPortal,
   EmptyState,
   Popover,
   ScrollFade,
   Skeleton,
-  Tooltip,
-  cn,
   tintClasses,
+  Tooltip,
+  useDropdown,
 } from '@goodboy/ui';
 import { Fragment } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
 import type { ModelEffort, ProviderId, TaskModelPreference } from '@goodboy/types';
-import { DropdownBackdrop } from '../../../../shared/hooks/useDropdown/DropdownBackdrop';
-import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';

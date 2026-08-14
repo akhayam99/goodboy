@@ -7,14 +7,14 @@ import {
   GitPullRequestDraft,
   ListChecks,
 } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Chip, cn, type Tone } from '@goodboy/ui';
 import type { PullRequestStateKind } from '@goodboy/types';
 
 type PrStateMeta = {
   readonly icon: React.ElementType;
   readonly label: string;
   readonly textClass: string;
-  readonly bgClass: string;
+  readonly tone: Tone;
 };
 
 type PullRequestChipState = PullRequestStateKind | 'none';
@@ -24,43 +24,43 @@ const PR_META: Record<PullRequestChipState, PrStateMeta> = {
     icon: CircleDashed,
     label: 'No pull request',
     textClass: 'text-muted-foreground/50',
-    bgClass: 'bg-muted/20',
+    tone: 'neutral',
   },
   draft: {
     icon: GitPullRequestDraft,
     label: 'Draft',
     textClass: 'text-muted-foreground',
-    bgClass: 'bg-muted/40',
+    tone: 'neutral',
   },
   open: {
     icon: GitPullRequest,
     label: 'In review',
     textClass: 'text-success',
-    bgClass: 'bg-success/12',
+    tone: 'success',
   },
   approved: {
     icon: Check,
     label: 'Approved',
     textClass: 'text-success',
-    bgClass: 'bg-success/18',
+    tone: 'success',
   },
   queued: {
     icon: ListChecks,
     label: 'Queued',
     textClass: 'text-primary',
-    bgClass: 'bg-primary/12',
+    tone: 'primary',
   },
   merged: {
     icon: GitMerge,
     label: 'Merged',
     textClass: 'text-merged',
-    bgClass: 'bg-merged/15',
+    tone: 'merged',
   },
   closed: {
     icon: GitPullRequestClosed,
     label: 'Closed',
     textClass: 'text-danger',
-    bgClass: 'bg-danger/10',
+    tone: 'danger',
   },
 };
 
@@ -120,24 +120,24 @@ export const PullRequestChip = ({
   }
 
   return (
-    <span
-      className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-3xs font-medium uppercase tracking-[0.06em]',
-        meta.textClass,
-        meta.bgClass,
-        className,
-      )}
-    >
-      <Icon size={iconSize ?? 10} aria-hidden />
-      <span>{meta.label}</span>
-      {number !== undefined && (
-        <>
-          <span aria-hidden className="opacity-40">
-            ·
-          </span>
-          <span className="normal-case tracking-normal">#{number}</span>
-        </>
-      )}
-    </span>
+    <Chip
+      tone={meta.tone}
+      size="3xs"
+      uppercase
+      bordered={false}
+      icon={<Icon size={iconSize ?? 10} aria-hidden />}
+      label={<span>{meta.label}</span>}
+      trailing={
+        number !== undefined ? (
+          <>
+            <span aria-hidden className="opacity-40">
+              ·
+            </span>
+            <span className="normal-case tracking-normal">#{number}</span>
+          </>
+        ) : undefined
+      }
+      className={cn('shrink-0', meta.textClass, className)}
+    />
   );
 };

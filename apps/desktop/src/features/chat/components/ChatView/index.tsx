@@ -663,9 +663,11 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
       otherAgentId != null &&
       otherAgentQuestionCount > 0 ? (
         <div className="flex shrink-0 justify-center py-2">
-          <button
-            type="button"
-            className="rounded-md border border-warning/20 bg-warning/5 px-3 py-1.5 text-xs font-medium text-warning transition-colors hover:bg-warning/10"
+          <Button
+            variant="warning"
+            emphasis="outline"
+            size="sm"
+            className="border-warning/20 bg-warning/5 px-3"
             onClick={() => {
               void selectAgent(session.id, otherAgentId);
               requestOpenQuestionScroll({
@@ -677,7 +679,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             {otherAgentQuestionCount}{' '}
             {otherAgentQuestionCount === 1 ? 'open question' : 'open questions'} from{' '}
             {otherAgentName}
-          </button>
+          </Button>
         </div>
       ) : null}
       {isEnded ? (

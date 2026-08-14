@@ -1,7 +1,8 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
-import { EmptyState, cn } from '@goodboy/ui';
+import { Button, EmptyState } from '@goodboy/ui';
 import type { FileVersion, FileVersionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
+import { AuthorshipChip } from '../AuthorshipChip';
 import {
   formatAbsoluteDateTime,
   formatRelativeAge,
@@ -43,16 +44,7 @@ export const VersionHistoryList = ({
             className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle p-3"
           >
             <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-2xs uppercase tracking-wide',
-                  version.snapshotSource === 'restore'
-                    ? 'bg-accent/10 text-accent'
-                    : 'bg-info/10 text-info',
-                )}
-              >
-                {version.snapshotSource === 'restore' ? 'you' : 'agent'}
-              </span>
+              <AuthorshipChip byUser={version.snapshotSource === 'restore'} />
               <span className="text-2xs text-muted-foreground">{version.changeKind}</span>
               <span className="text-2xs text-muted-foreground">
                 {formatRelativeAge({ fromIso: version.capturedAt })}
@@ -62,16 +54,16 @@ export const VersionHistoryList = ({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => onRestoreVersion(version.id)}
                 disabled={isRestoring || deletingVersionId != null}
                 aria-label="Restore this version"
-                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RotateCcw size={12} aria-hidden />
                 {isRestoring ? 'Restoring' : 'Restore'}
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={() => onDeleteVersion(version.id)}

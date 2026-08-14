@@ -1,8 +1,13 @@
-import { Divider, Popover, ScrollFade, StatusDot } from '@goodboy/ui';
+import {
+  Divider,
+  DropdownBackdrop,
+  DropdownPortal,
+  Popover,
+  ScrollFade,
+  StatusDot,
+  useDropdown,
+} from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { DropdownBackdrop } from '../../../shared/hooks/useDropdown/DropdownBackdrop';
-import { DropdownPortal } from '../../../shared/hooks/useDropdown/DropdownPortal';
-import { useDropdown } from '../../../shared/hooks/useDropdown';
 import { useAppStore } from '../../../store';
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 

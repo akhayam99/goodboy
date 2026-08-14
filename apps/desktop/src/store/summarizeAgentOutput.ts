@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
+import { formatError } from '@goodboy/ui';
 import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
 import type { AgentId, TaskModelPreference } from '@goodboy/types';
-import { formatError } from '../shared/lib/errors';
 
 export const SUMMARY_TIMEOUT_MS = 60_000;
 

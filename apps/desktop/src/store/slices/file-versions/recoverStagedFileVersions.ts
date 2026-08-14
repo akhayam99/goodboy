@@ -1,9 +1,9 @@
 import type { ProviderRunId, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import {
   fileVersionsFinalizeSnapshot,
   fileVersionsListStagedSnapshots,
 } from '../../../features/file-versions/fileVersions';
-import { formatError } from '../../../shared/lib/errors';
 import { persistFinalizedFileVersions } from './persistFinalizedFileVersions';
 
 type FailureInfo = Readonly<{

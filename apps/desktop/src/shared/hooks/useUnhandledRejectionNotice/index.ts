@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
+import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { formatError } from '../../lib/errors';
 
 export const useUnhandledRejectionNotice = () => {
   useEffect(() => {

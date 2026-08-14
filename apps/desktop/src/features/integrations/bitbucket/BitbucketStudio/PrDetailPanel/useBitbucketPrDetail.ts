@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import type { PrCheckRun } from '@goodboy/types';
-import { formatError } from '../../../../../shared/lib/errors';
 import { bitbucketCheckRuns } from '../../bitbucketCheckRuns';
 import {
   bitbucketListPullRequestComments,

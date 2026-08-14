@@ -1,25 +1,8 @@
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import { GitPullRequestDraft, RotateCcw, Send, ThumbsDown, ThumbsUp, XCircle } from 'lucide-react';
 import type { GitlabMergeRequest, GitlabMrApprovalState } from '../../client';
-import { HOST_ACTION_BUTTON } from '../../../../../shared/utils/hostActionButton';
 
 export type MrActionBusy = 'draft' | 'close' | 'reopen' | null;
-
-type ToneParams = {
-  readonly tone: Extract<Tone, 'neutral' | 'success' | 'danger' | 'warning'>;
-};
-
-const actionTone = ({ tone }: ToneParams): string => {
-  const t = tintClasses(tone);
-  return cn(t.border, t.text, t.hoverBgSoft, t.hoverText);
-};
-
-const TONE = {
-  neutral: actionTone({ tone: 'neutral' }),
-  success: actionTone({ tone: 'success' }),
-  danger: actionTone({ tone: 'danger' }),
-  warning: actionTone({ tone: 'warning' }),
-} as const;
 
 type ApprovalReasonParams = {
   readonly approval: GitlabMrApprovalState | null;
@@ -84,8 +67,10 @@ export const MrActionBar = ({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {isOpen && isSupported && (
-        <button
-          type="button"
+        <Button
+          variant={hasApproved ? 'secondary' : 'success'}
+          emphasis="outline"
+          size="sm"
           aria-disabled={isApproveBlocked}
           title={approvalReason ?? undefined}
           onClick={() => {
@@ -94,12 +79,8 @@ export const MrActionBar = ({
             }
             approveHandler?.();
           }}
-          className={cn(
-            HOST_ACTION_BUTTON,
-            hasApproved ? TONE.neutral : TONE.success,
-            isApprovalBusy && 'animate-border-pulse',
-            isApproveBlocked && 'opacity-50',
-          )}
+          isBusy={isApprovalBusy}
+          className={isApproveBlocked ? 'opacity-50' : undefined}
         >
           {hasApproved ? (
             <>
@@ -112,19 +93,17 @@ export const MrActionBar = ({
               Approve
             </>
           )}
-        </button>
+        </Button>
       )}
 
       {isOpen && (
-        <button
-          type="button"
+        <Button
+          variant={mr.draft ? 'success' : 'warning'}
+          emphasis="outline"
+          size="sm"
           onClick={onToggleDraft}
           disabled={isDisabled}
-          className={cn(
-            HOST_ACTION_BUTTON,
-            mr.draft ? TONE.success : TONE.warning,
-            busy === 'draft' && 'animate-border-pulse',
-          )}
+          isBusy={busy === 'draft'}
         >
           {mr.draft ? (
             <>
@@ -137,39 +116,35 @@ export const MrActionBar = ({
               Convert to draft
             </>
           )}
-        </button>
+        </Button>
       )}
 
       {isOpen && (
-        <button
-          type="button"
+        <Button
+          variant="danger"
+          emphasis="outline"
+          size="sm"
           onClick={onClose}
           disabled={isDisabled}
-          className={cn(
-            HOST_ACTION_BUTTON,
-            TONE.danger,
-            busy === 'close' && 'animate-border-pulse',
-          )}
+          isBusy={busy === 'close'}
         >
           <XCircle size={13} aria-hidden />
           Close
-        </button>
+        </Button>
       )}
 
       {isClosed && (
-        <button
-          type="button"
+        <Button
+          variant="success"
+          emphasis="outline"
+          size="sm"
           onClick={onReopen}
           disabled={isDisabled}
-          className={cn(
-            HOST_ACTION_BUTTON,
-            TONE.success,
-            busy === 'reopen' && 'animate-border-pulse',
-          )}
+          isBusy={busy === 'reopen'}
         >
           <RotateCcw size={13} aria-hidden />
           Reopen
-        </button>
+        </Button>
       )}
     </div>
   );

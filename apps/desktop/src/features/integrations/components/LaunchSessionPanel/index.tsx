@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { Button, Divider, Textarea, cn } from '@goodboy/ui';
+import { Button, cn, Divider, formatError, Textarea } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight, Folder, GitBranch } from 'lucide-react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { BaseBranchGuide } from '../../../../shared/components/BaseBranchGuide';
-import { formatError, isMissingBaseRefError } from '../../../../shared/lib/errors';
+import { isMissingBaseRefError } from '../../../../shared/lib/errors';
 import { isValidBranchSlug } from '../../../../shared/utils/isValidBranchSlug';
 import { sanitizeBranchPrefix } from '../../../../shared/utils/sanitizeBranchPrefix';
 import { validateSessionDirectoryName } from '../../../../shared/utils/validateSessionDirectoryName';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { formatError } from '../../../../../shared/lib/errors';
+import { formatError } from '@goodboy/ui';
 import {
   bitbucketListPullRequests,
   type BitbucketPullRequest,

@@ -121,7 +121,7 @@ export const ScriptRow = ({
         data-testid={`script-card-${script.id}`}
         data-status={status}
         className={cn(
-          'group/script-card grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 rounded-md border px-2.5 py-2 motion-safe:transition-colors hover:bg-muted/50',
+          'grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 rounded-md border px-2.5 py-2 motion-safe:transition-colors hover:bg-muted/50',
           expanded ? 'grid-rows-[auto_auto] gap-y-2' : 'grid-rows-[auto]',
           presentation.borderClass,
           presentation.pulseClass,

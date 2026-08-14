@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { getDefaultTurnModel } from '@goodboy/core';
-import { Button, Divider, Popover, cn } from '@goodboy/ui';
+import { Button, cn, Divider, DropdownPortal, Popover, useDropdown } from '@goodboy/ui';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore, useCurrentWorkspace } from '../../../../store';
 import { clampEffort } from '../../../chat/utils/chat-constants';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import {
   AGENT_KIND_META,
@@ -19,7 +18,6 @@ import { AgentKindGrid } from './AgentKindGrid';
 import { AgentRoutingSections } from './AgentRoutingSections';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
 import { SpawnRoutingSummary } from './SpawnRoutingSummary';
-import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
 
 type Props = {

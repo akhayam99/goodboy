@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowUp, Check, FolderOpen, GitBranch, Pencil } from 'lucide-react';
-import { Button, Chip, Eyebrow } from '@goodboy/ui';
+import { Button, Chip, Eyebrow, formatError } from '@goodboy/ui';
 import type { WorkspaceGitStatus } from '@goodboy/types';
 import { openInEditor } from '../../../../shared/lib/editor';
-import { formatError } from '../../../../shared/lib/errors';
 
 type Props = {
   readonly rootPath: string;

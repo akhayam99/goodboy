@@ -1,4 +1,5 @@
 import type { SessionId, WorkspaceScriptId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import {
   invokeScriptRun,
   listenScriptExit,
@@ -6,7 +7,6 @@ import {
   type ScriptRunRecord,
   type ScriptRunResult,
 } from '../../../features/scripts/scripts';
-import { formatError } from '../../../shared/lib/errors';
 import type { GetFn, SetFn } from './types';
 
 export const runScript = (set: SetFn, get: GetFn) => {

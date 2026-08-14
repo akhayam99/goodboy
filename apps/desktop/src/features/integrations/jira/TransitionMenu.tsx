@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
-import { Button, Divider, Popover, ScrollFade, cn } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Divider,
+  DropdownBackdrop,
+  formatError,
+  Popover,
+  ScrollFade,
+  useDropdown,
+} from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { formatError } from '../../../shared/lib/errors';
 import { useJiraTransitions } from './useJiraTransitions';
 
 type Props = {
@@ -37,18 +45,31 @@ const blockReason = ({ isLoading, error, count }: ReasonParams): string | null =
 
 export const TransitionMenu = ({ issueKey, workspaceId, onTransition }: Props) => {
   const { transitions, isLoading, error, reload } = useJiraTransitions({ issueKey, workspaceId });
-  const [isOpen, setIsOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
   const reason = blockReason({ isLoading, error, count: transitions.length });
   const isBlocked = reason != null;
+  const {
+    open: isOpen,
+    close,
+    toggle,
+    containerRef,
+    popupRef,
+    popupClassName,
+  } = useDropdown({
+    disabled: isBlocked,
+    align: 'end',
+    width: 'w-60',
+    expectedHeight: 280,
+    hasBackdrop: true,
+  });
 
   const move = async (transitionId: string) => {
     setBusyId(transitionId);
     setMoveError(null);
     try {
       await onTransition(transitionId);
-      setIsOpen(false);
+      close();
       reload();
     } catch (moveFailure: unknown) {
       setMoveError(formatError(moveFailure));
@@ -58,7 +79,7 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition }: Props) =
   };
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <Button
         size="sm"
         variant="secondary"
@@ -69,23 +90,19 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition }: Props) =
         isBusy={busyId != null}
         busyLabel="Moving"
         className={cn(isBlocked && 'opacity-50')}
-        onClick={() => {
-          if (isBlocked) {
-            return;
-          }
-          setIsOpen((open) => !open);
-        }}
+        onClick={toggle}
       >
         <ArrowRightLeft size={12} aria-hidden />
         Move
       </Button>
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} aria-hidden />
+          <DropdownBackdrop onClose={close} />
           <Popover
+            innerRef={popupRef}
             role="menu"
             ariaLabel="Move this issue"
-            className="absolute right-0 z-50 mt-1 flex w-60 flex-col"
+            className={cn(popupClassName, 'flex flex-col')}
           >
             <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">
               {transitions.map((transition) => (

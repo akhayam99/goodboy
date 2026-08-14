@@ -1,18 +1,18 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Button,
+  cn,
   Divider,
+  DropdownPortal,
   Popover,
+  type SegmentedTabOption,
   SegmentedTabs,
   Textarea,
-  cn,
-  type SegmentedTabOption,
+  useDropdown,
 } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { ResolveMode } from '../../../../../chat/spawn-from-comment';
 import { PickerSection } from '../../../../../../shared/components/RoutingPicker/PickerSection';
-import { useDropdown } from '../../../../../../shared/hooks/useDropdown';
-import { DropdownPortal } from '../../../../../../shared/hooks/useDropdown/DropdownPortal';
 import { AgentRoutingSections } from '../../../../../session/components/CreateAgentPopover/AgentRoutingSections';
 import { configFor, type CardConfig } from '../config';
 

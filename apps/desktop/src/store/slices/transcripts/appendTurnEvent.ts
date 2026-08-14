@@ -1,6 +1,6 @@
 import type { AgentId, SessionId, TurnEvent } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { invokeAgentSetProviderSessionId } from '../../../features/workflows/workflows';
-import { formatError } from '../../../shared/lib/errors';
 import { bufferTurnEvent } from './buffer';
 import { queueTurnEventInsert } from './queue';
 import type { SetFn } from './types';

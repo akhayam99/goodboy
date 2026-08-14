@@ -1086,12 +1086,12 @@ export const App = () => {
         />
       ) : null}
       {currentSession && deleteOpen ? (
-        <div className="fixed bottom-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
+        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
           <DeleteSessionConfirm session={currentSession} onClose={() => setDeleteOpen(false)} />
         </div>
       ) : null}
       {currentSession && archiveOpen ? (
-        <div className="fixed bottom-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
+        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
           <ArchiveSessionConfirm session={currentSession} onClose={() => setArchiveOpen(false)} />
         </div>
       ) : null}

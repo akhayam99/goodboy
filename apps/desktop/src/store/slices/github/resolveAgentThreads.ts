@@ -3,6 +3,7 @@ import {
   listPendingResolutionsForSession,
   queuePendingResolution,
 } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import type {
   AgentId,
   PendingResolution,
@@ -14,7 +15,6 @@ import { closedThreadIds } from '../../../features/session/closedThreadIds';
 import { resolverThreadSettlements } from '../../../features/session/resolverThreadSettlements';
 import type { ResolverThreadSettlement } from '../../../features/session/resolverThreadSettlements';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { formatError } from '../../../shared/lib/errors';
 import { markThreadResolvedNoPush } from './markThreadResolvedNoPush';
 import { pushSessionBranch } from './pushSessionBranch';
 import { withResolutionLock } from './withResolutionLock';

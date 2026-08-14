@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, FieldRow, InlineConfirm, ScrollFade, SectionHeader, Skeleton } from '@goodboy/ui';
-import { formatError } from '../../../../shared/lib/errors';
+import {
+  Button,
+  FieldRow,
+  formatError,
+  InlineConfirm,
+  ScrollFade,
+  SectionHeader,
+  Skeleton,
+} from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
 import { formatBytes } from './formatBytes';

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { cn, EmptyState, ScrollFade, Skeleton, useDropdown } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
 
 type Props = {
   readonly inputId?: string;

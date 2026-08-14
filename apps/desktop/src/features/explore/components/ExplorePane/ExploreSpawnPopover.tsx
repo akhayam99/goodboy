@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Divider, Popover, Textarea, cn } from '@goodboy/ui';
+import { Button, cn, Divider, DropdownPortal, Popover, Textarea, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useDropdown } from '../../../../shared/hooks/useDropdown';
-import { DropdownPortal } from '../../../../shared/hooks/useDropdown/DropdownPortal';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { clampEffort } from '../../../chat/utils/chat-constants';

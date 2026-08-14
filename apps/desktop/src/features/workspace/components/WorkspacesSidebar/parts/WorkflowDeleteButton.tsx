@@ -21,19 +21,20 @@ export const WorkflowDeleteButton = ({ onConfirm }: Props) => {
         Delete
       </button>
       {isArmed ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={14} aria-hidden />}
-          title="Delete workflow run?"
-          description="Permanently removes this workflow run from the session."
-          confirmLabel="Delete"
-          onConfirm={() => {
-            setIsArmed(false);
-            onConfirm();
-          }}
-          onCancel={() => setIsArmed(false)}
-          className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
-        />
+        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+          <InlineConfirm
+            role="danger"
+            icon={<Trash2 size={14} aria-hidden />}
+            title="Delete workflow run?"
+            description="Permanently removes this workflow run from the session."
+            confirmLabel="Delete"
+            onConfirm={() => {
+              setIsArmed(false);
+              onConfirm();
+            }}
+            onCancel={() => setIsArmed(false)}
+          />
+        </div>
       ) : null}
     </div>
   );

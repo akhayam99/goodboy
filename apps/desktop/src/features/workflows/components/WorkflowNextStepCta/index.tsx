@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Play } from 'lucide-react';
-import { InlineConfirm, cn } from '@goodboy/ui';
+import { Button, InlineConfirm, cn } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
 import type {
   Agent,
@@ -98,30 +98,33 @@ export const WorkflowNextStepCta = ({
   if (chain.kind === 'blocked') {
     return (
       <div className={cn('relative', className)}>
-        <button
-          type="button"
+        <Button
+          variant="warning"
+          emphasis="outline"
+          size="sm"
           onClick={() => setPendingForce(true)}
           disabled={busy}
           data-testid="workflow-force-next-step-cta"
           title={`Step blocked: ${chain.failedStep.name}`}
-          className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-safe:transition-colors hover:border-warning hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-auto border-warning/50 bg-warning/10 px-2 py-1 text-2xs font-semibold"
         >
           <AlertTriangle size={12} aria-hidden className="shrink-0" />
           Skip blocked step
-        </button>
+        </Button>
         {pendingForce ? (
-          <InlineConfirm
-            role="alert"
-            icon={<AlertTriangle size={12} />}
-            title="Skip the blocked step and start the next agent?"
-            description={`${chain.failedStep.name} did not finish. Its output will not be carried forward.`}
-            confirmLabel="Skip and continue"
-            cancelLabel="Cancel"
-            isBusy={busy}
-            onConfirm={() => void doForce()}
-            onCancel={() => setPendingForce(false)}
-            className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
-          />
+          <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+            <InlineConfirm
+              role="alert"
+              icon={<AlertTriangle size={12} />}
+              title="Skip the blocked step and start the next agent?"
+              description={`${chain.failedStep.name} did not finish. Its output will not be carried forward.`}
+              confirmLabel="Skip and continue"
+              cancelLabel="Cancel"
+              isBusy={busy}
+              onConfirm={() => void doForce()}
+              onCancel={() => setPendingForce(false)}
+            />
+          </div>
         ) : null}
       </div>
     );
@@ -177,18 +180,19 @@ export const WorkflowNextStepCta = ({
         ) : null}
       </button>
       {advance.isConfirming ? (
-        <InlineConfirm
-          role="alert"
-          icon={<AlertTriangle size={12} />}
-          title={advance.title}
-          description={advance.description}
-          confirmLabel={advance.confirmLabel}
-          cancelLabel={advance.cancelLabel}
-          isBusy={advance.isBusy}
-          onConfirm={advance.onConfirm}
-          onCancel={advance.onCancel}
-          className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
-        />
+        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+          <InlineConfirm
+            role="alert"
+            icon={<AlertTriangle size={12} />}
+            title={advance.title}
+            description={advance.description}
+            confirmLabel={advance.confirmLabel}
+            cancelLabel={advance.cancelLabel}
+            isBusy={advance.isBusy}
+            onConfirm={advance.onConfirm}
+            onCancel={advance.onCancel}
+          />
+        </div>
       ) : null}
     </div>
   );

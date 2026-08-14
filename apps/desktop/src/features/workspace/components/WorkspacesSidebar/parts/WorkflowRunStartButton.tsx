@@ -40,18 +40,19 @@ export const WorkflowRunStartButton = ({ variant, blockReason, onStart }: Props)
         />
       )}
       {start.isConfirming ? (
-        <InlineConfirm
-          role="alert"
-          icon={<AlertTriangle size={12} />}
-          title={start.title}
-          description={start.description}
-          confirmLabel={start.confirmLabel}
-          cancelLabel={start.cancelLabel}
-          isBusy={start.isBusy}
-          onConfirm={start.onConfirm}
-          onCancel={start.onCancel}
-          className="absolute right-0 top-full z-40 mt-1 w-72 bg-background shadow-lg"
-        />
+        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+          <InlineConfirm
+            role="alert"
+            icon={<AlertTriangle size={12} />}
+            title={start.title}
+            description={start.description}
+            confirmLabel={start.confirmLabel}
+            cancelLabel={start.cancelLabel}
+            isBusy={start.isBusy}
+            onConfirm={start.onConfirm}
+            onCancel={start.onCancel}
+          />
+        </div>
       ) : null}
     </div>
   );

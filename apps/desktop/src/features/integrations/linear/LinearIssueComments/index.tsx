@@ -1,9 +1,8 @@
-import { EmptyState } from '@goodboy/ui';
+import { EmptyState, NoteComposer } from '@goodboy/ui';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { NoteCard } from '@goodboy/ui';
 import { NoteHeader } from '@goodboy/ui';
-import { NoteComposer } from '../../../../shared/components/NoteComposer';
 import { NoteListSkeleton } from '@goodboy/ui';
 import type { LinearIssueComment } from '../client';
 
