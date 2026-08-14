@@ -361,6 +361,8 @@ export {
   buildOrchestratorUserPrompt,
   enforceOrchestratorModelPool,
   orchestratorModelPool,
+  parseRunSummaryText,
+  serializeRunSummary,
   ORCHESTRATOR_SYSTEM_PROMPT,
   OrchestratorClient,
   OrchestratorClientSpawnError,
@@ -376,4 +378,5 @@ export {
   type OrchestratorRoleDefault,
   type OrchestratorStep,
   type OrchestratorUsage,
+  type RunSummary,
 } from './orchestrator';

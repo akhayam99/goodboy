@@ -1,58 +1,65 @@
-import { useMemo } from 'react';
-import { Divider, ScrollFade } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
-import type { Agent, PendingResolution, PrComment, SessionId } from '@goodboy/types';
+import { useEffect, useMemo, useState } from 'react';
+import type { Agent, PendingResolution, PrComment, Session, SessionId } from '@goodboy/types';
+import { ChatView } from '../../../chat/components/ChatView';
 import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
 import type { ResolverThreadOutcome } from '../../../../store/types';
 import { openUrl } from '../../../../shared/lib/editor';
 import { displayPath } from '../../../../shared/utils/display-path';
+import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { useResolverIndex } from '../../hooks/useResolverIndex';
 import { useResolverChanges } from '../../hooks/useResolverChanges';
 import { useResolverActions } from '../../hooks/useResolverActions';
+import { resolverActGate } from '../../resolverActGate';
 import { resolverOrigin } from '../../resolver-origin';
 import { resolverCommitSha } from '../../resolverCommitSha';
 import { resolverThreadCommitShas } from '../../resolverThreadCommitShas';
+import { resolverTallySentence } from '../../resolverTallySentence';
 import { agentThreadIds } from '../../agentThreadIds';
-import type { AgentAggregate } from '../AgentMetrics';
-import type { ProviderContextUsage } from '../../../workspace/components/WorkspacesSidebar/parts/ContextWindowBar';
-import { ResolverActionBlock } from '../ResolverActionBlock';
+import { AgentActionsFooter } from '../AgentInspector/AgentActionsFooter';
+import { ChangesSection } from '../AgentInspector/ChangesSection';
+import {
+  ResolverCommentSection,
+  type ResolverCommentLink,
+} from '../AgentInspector/ResolverCommentSection';
+import { ResolverOverflowMenu } from '../AgentInspector/ResolverOverflowMenu';
+import { ResolverMetaLine } from '../AgentInspector/ResolverMetaLine';
+import { ResolverThreadList } from '../AgentInspector/ResolverThreadList';
+import {
+  ResolverStateBadge,
+  resolverBadgeState,
+  resolverStateSentence,
+} from '../ResolverStateBadge';
 import {
   activeResolverIds,
   hasOtherActiveResolver,
   isResolverQueueStalled,
 } from '../ResolverAgentsLane/resolverLaneEntries';
-import { InspectorHeader } from '../SessionWorkspace/parts/InspectorSplit/InspectorHeader';
-import { AgentActionsFooter } from './AgentActionsFooter';
-import { ChangesSection } from './ChangesSection';
-import { ResolverCommentSection, type ResolverCommentLink } from './ResolverCommentSection';
-import { ResolverMetaLine } from './ResolverMetaLine';
-import { ResolverOverflowMenu } from './ResolverOverflowMenu';
-import { ResolverStateLine } from './ResolverStateLine';
-import { ResolverThreadList } from './ResolverThreadList';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
+import { ResolverRunRecap } from './ResolverRunRecap';
 
 type Props = {
-  readonly sessionId: SessionId;
+  readonly session: Session;
   readonly agent: Agent;
-  readonly model: string | null;
-  readonly aggregate: AgentAggregate | null;
-  readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
-  readonly turns: number;
-  readonly onClose?: () => void;
+  readonly isChatActive: boolean;
+  readonly onBack: () => void;
 };
+
+type Tab = 'resolve' | 'transcript';
+
+const TABS = [
+  { value: 'resolve', label: 'Resolve' },
+  { value: 'transcript', label: 'Transcript' },
+] satisfies ReadonlyArray<{ readonly value: Tab; readonly label: string }>;
 
 const EMPTY_PENDING: ReadonlyArray<PendingResolution> = [];
 const EMPTY_OUTCOMES: Readonly<Record<string, ResolverThreadOutcome>> = {};
 
-export const ResolverInspector = ({
-  sessionId,
-  agent,
-  model,
-  aggregate,
-  contextUsage,
-  turns,
-  onClose,
-}: Props) => {
+export const ResolverDetailPane = ({ session, agent, isChatActive, onBack }: Props) => {
+  const sessionId = session.id as SessionId;
+  const agentId = agent.id;
+  const [tab, setTab] = useState<Tab>('resolve');
   const resolverIndex = useResolverIndex(sessionId);
   const diffComments = useDiffComments(sessionId);
   const prComments = useAppStore(
@@ -63,14 +70,25 @@ export const ResolverInspector = ({
   const worktreePath = useSessionRepo({ sessionId })?.worktreePath ?? null;
   const openDiffLens = useAppStore((s) => s.openDiffLens);
   const setResolverThreadReply = useAppStore((s) => s.setResolverThreadReply);
-  const hasKickoff = useAppStore((s) => s.pendingResolverKickoff[agent.id] !== undefined);
+  const hasKickoff = useAppStore((s) => s.pendingResolverKickoff[agentId] !== undefined);
   const pendingResolutions =
     useAppStore((s) => s.sessionPendingResolutions[sessionId]) ?? EMPTY_PENDING;
-  const outcomes = useAppStore((s) => s.resolverThreadOutcomes[agent.id]) ?? EMPTY_OUTCOMES;
+  const outcomes = useAppStore((s) => s.resolverThreadOutcomes[agentId]) ?? EMPTY_OUTCOMES;
+  const metrics = useAgentMetrics({ sessionId });
   const amendSessionCommit = useAppStore((s) => s.amendSessionCommit);
   const squashSessionCommits = useAppStore((s) => s.squashSessionCommits);
 
-  const position = resolverIndex.links.findIndex((link) => link.agent.id === agent.id);
+  useEffect(() => {
+    setTab('resolve');
+  }, [agentId]);
+
+  useEffect(() => {
+    const onFocusComposer = () => setTab('transcript');
+    window.addEventListener('goodboy:focus-composer', onFocusComposer);
+    return () => window.removeEventListener('goodboy:focus-composer', onFocusComposer);
+  }, []);
+
+  const position = resolverIndex.links.findIndex((link) => link.agent.id === agentId);
   const link = resolverIndex.links[position] ?? null;
   const status = link?.status ?? 'done';
   const threadIds = agentThreadIds(agent);
@@ -85,8 +103,8 @@ export const ResolverInspector = ({
   );
   const changes = useResolverChanges({ agent, worktreePath, shaByThreadId });
   const diffComment = useMemo(
-    () => diffComments.find((comment) => comment.consumedByAgentId === agent.id) ?? null,
-    [diffComments, agent.id],
+    () => diffComments.find((comment) => comment.consumedByAgentId === agentId) ?? null,
+    [diffComments, agentId],
   );
   const commentByThreadId = useMemo(() => {
     const map = new Map<string, PrComment>();
@@ -107,12 +125,6 @@ export const ResolverInspector = ({
       [...changes.reported, ...changes.withinRunWindow].sort((a, b) => b.timestamp - a.timestamp),
     [changes.reported, changes.withinRunWindow],
   );
-  const commitSha = resolverCommitSha({
-    threadIds,
-    outcomes,
-    pendingResolutions,
-    reportedSha: changes.reported[0]?.sha ?? null,
-  });
   const actions = useResolverActions({
     agent,
     sessionId,
@@ -122,7 +134,7 @@ export const ResolverInspector = ({
     isQueueStalled: isResolverQueueStalled({ links: resolverIndex.links }),
     hasOtherActiveResolvers: hasOtherActiveResolver({
       activeIds: activeResolverIds({ links: resolverIndex.links }),
-      agentId: agent.id,
+      agentId,
     }),
   });
 
@@ -130,7 +142,16 @@ export const ResolverInspector = ({
     return null;
   }
 
+  const commitSha = resolverCommitSha({
+    threadIds,
+    outcomes,
+    pendingResolutions,
+    reportedSha: changes.reported[0]?.sha ?? null,
+  });
   const origin = resolverOrigin({ agent, hasDiffComment: diffComment !== null });
+  const stateSentence = resolverStateSentence(status);
+  const gate = resolverActGate({ status });
+  const tallySentence = resolverTallySentence({ tally: actions.tally });
   const openThread = (threadId: string) => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-github-session', {
@@ -170,52 +191,97 @@ export const ResolverInspector = ({
         : null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <InspectorHeader
-        title={agent.name}
-        closeLabel="close agent inspector"
-        onClose={onClose}
-        actions={
-          <ResolverOverflowMenu
+    <StudioDetailLayout
+      fit={tab === 'transcript' ? 'bleed' : 'fill'}
+      header={
+        <HeaderBand
+          meta={
+            <>
+              <ResolverStateBadge state={resolverBadgeState(status)} />
+              {stateSentence !== null && (
+                <span className="text-2xs text-muted-foreground">{stateSentence}</span>
+              )}
+              {status === 'pending' && (
+                <span className="text-2xs tabular-nums text-muted-foreground/70">
+                  {position + 1} of {resolverIndex.links.length}
+                </span>
+              )}
+            </>
+          }
+          title={agent.name}
+          subtitle={
+            tallySentence !== null && (
+              <span className="text-2xs tabular-nums text-muted-foreground/80">
+                {tallySentence}
+              </span>
+            )
+          }
+          actions={
+            <ResolverOverflowMenu
+              agent={agent}
+              actions={actions}
+              commits={localCommits}
+              headSha={changes.headSha}
+              onAmend={async (sha, message) => {
+                await amendSessionCommit(sessionId, { sha, message });
+                changes.reload();
+              }}
+              onSquash={async (sha, message) => {
+                await squashSessionCommits(sessionId, { sha, message });
+                changes.reload();
+              }}
+            />
+          }
+        />
+      }
+      tabs={
+        <StudioDetailTabs
+          ariaLabel="Resolver sections"
+          options={TABS}
+          value={tab}
+          onChange={setTab}
+        />
+      }
+      dock={
+        <AgentActionsFooter
+          agent={agent}
+          sessionId={sessionId}
+          deleteTitle="Delete this resolver?"
+          deleteDescription="Removes the agent and its transcript from the session."
+          onDeleted={onBack}
+        />
+      }
+    >
+      {tab === 'transcript' ? (
+        <ChatView session={session} isActive={isChatActive} header={null} />
+      ) : (
+        <>
+          <ResolverRunRecap tally={actions.tally} blockedBy={blockedBy} actions={actions} />
+          <ResolverMetaLine
             agent={agent}
-            actions={actions}
-            commits={localCommits}
-            headSha={changes.headSha}
-            onAmend={async (sha, message) => {
-              await amendSessionCommit(sessionId, { sha, message });
-              changes.reload();
-            }}
-            onSquash={async (sha, message) => {
-              await squashSessionCommits(sessionId, { sha, message });
-              changes.reload();
-            }}
+            model={
+              metrics.latestTelemetryByAgentId.get(agentId)?.model ?? agent.modelOverride ?? null
+            }
+            aggregate={metrics.aggregatesByAgentId.get(agentId) ?? null}
+            contextUsage={metrics.providerUsageByAgentId.get(agentId) ?? EMPTY_ARRAY}
+            turns={metrics.turnsByAgentId.get(agentId) ?? 0}
+            isWorking={status === 'running'}
           />
-        }
-      />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
-        <div className="flex flex-col gap-4">
-          <ResolverStateLine
-            status={status}
-            tally={actions.tally}
-            queuePosition={position + 1}
-            queueTotal={resolverIndex.links.length}
-            blockedBy={blockedBy}
-          />
-          <ResolverActionBlock actions={actions} />
           <ResolverCommentSection origin={origin} diffComment={diffComment} links={commentLinks} />
           <ResolverThreadList
             settlements={actions.settlements}
             commentByThreadId={commentByThreadId}
             prNumber={prNumber}
             isBusy={actions.isBusy}
-            canAct={status !== 'pending' && status !== 'running' && status !== 'resolved'}
+            canAct={gate.canAct}
+            actLockReason={gate.reason}
             missingVerdicts={actions.missingVerdicts}
             isAskingForVerdicts={actions.runningAction === 'verdict'}
             onAskForVerdicts={() => void actions.run('verdict')}
             runningThreadAction={actions.runningThreadAction}
             onRun={actions.runThread}
             onReplyChange={({ threadId, reply }) =>
-              setResolverThreadReply({ agentId: agent.id, threadId, reply })
+              setResolverThreadReply({ agentId, threadId, reply })
             }
             onOpenThread={prNumber === null ? null : openThread}
           />
@@ -237,25 +303,8 @@ export const ResolverInspector = ({
                     })
             }
           />
-          <Divider />
-          <ResolverMetaLine
-            agent={agent}
-            model={model}
-            aggregate={aggregate}
-            contextUsage={contextUsage}
-            turns={turns}
-            isWorking={status === 'running'}
-          />
-        </div>
-      </ScrollFade>
-      <Divider />
-      <AgentActionsFooter
-        agent={agent}
-        sessionId={sessionId}
-        deleteTitle="Delete this resolver?"
-        deleteDescription="Removes the agent and its transcript from the session."
-        onDeleted={onClose}
-      />
-    </div>
+        </>
+      )}
+    </StudioDetailLayout>
   );
 };

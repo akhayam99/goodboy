@@ -105,6 +105,11 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const showStudio = studio != null;
   const showAgentOverlay = selectedAgentId != null && !showStudio;
   const showLens = selectedAgentId == null && !showStudio;
+  const resolverIndex = useResolverIndex(sessionId);
+  const resolverAgentIds = useMemo(
+    () => new Set(resolverIndex.links.map(({ agent }) => agent.id)),
+    [resolverIndex],
+  );
   const overlayHome = resolveOverlayHome({ lens, agentHome });
   const githubTask = useMemo(
     () => sessionExternalTasks.find((task) => task.provider === 'github') ?? null,
@@ -121,11 +126,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const selectedWorkflowRunId = selectedRootAgent?.workflowRunId ?? null;
   const showWorkflowStrip =
     showAgentOverlay && overlayHome === 'workflows' && selectedWorkflowRunId != null;
-  const resolverIndex = useResolverIndex(sessionId);
-  const resolverAgentIds = useMemo(
-    () => new Set(resolverIndex.links.map(({ agent }) => agent.id)),
-    [resolverIndex],
-  );
   const standaloneAgents = useMemo(
     () => phaseRuns.filter((agent) => isStandaloneAgent(agent) && !resolverAgentIds.has(agent.id)),
     [phaseRuns, resolverAgentIds],
@@ -397,7 +397,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             sessionId={sessionId}
             isChatActive={isActive && selectedAgentId != null}
             selectedAgentId={selectedAgentId}
-            inspectedResolverId={overlayHome === 'resolve' ? selectedAgentId : inspectedResolverId}
             overlayHome={overlayHome}
             overlayHomeLabel={LENS_LABEL[overlayHome]}
             showWorkflowStrip={showWorkflowStrip}

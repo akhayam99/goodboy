@@ -1,6 +1,7 @@
 export { parseOrchestratorDecision } from './parser';
 export { buildOrchestratorUserPrompt, ORCHESTRATOR_SYSTEM_PROMPT } from './prompt';
 export { orchestratorModelPool } from './orchestratorModelPool';
+export { parseRunSummaryText, serializeRunSummary } from './runSummary';
 export {
   enforceOrchestratorModelPool,
   type EnforcedOrchestratorStep,
@@ -21,4 +22,5 @@ export type {
   OrchestratorModelOption,
   OrchestratorRoleDefault,
   OrchestratorStep,
+  RunSummary,
 } from './types';

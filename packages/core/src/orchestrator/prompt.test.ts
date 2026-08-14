@@ -98,6 +98,8 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
   it('asks for a running recap alongside every decision', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('<<run-summary>>');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('<</run-summary>>');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('{"done":[');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('An empty left array means the run is complete');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('it replaces the previous one every time');
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('including done and blocked');
   });

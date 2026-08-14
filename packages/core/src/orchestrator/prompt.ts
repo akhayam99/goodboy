@@ -29,16 +29,10 @@ The other valid forms are:
 <<orchestrator>>{"action":"done","reason":"..."}<</orchestrator>>
 <<orchestrator>>{"action":"blocked","reason":"..."}<</orchestrator>>
 
-After the decision, on its own line, emit the running recap of the whole run:
-<<run-summary>>
-**Done**
-- one bullet per thing the run has actually landed
+After the decision, on its own line, emit the running recap of the whole run as one JSON object on a single line:
+<<run-summary>>{"done":["one entry per thing the run has actually landed"],"left":["one entry per thing still open"]}<</run-summary>>
 
-**Left**
-- one bullet per thing still open, or "nothing" when the run is complete
-<</run-summary>>
-
-The recap is short markdown for the operator, it replaces the previous one every time, and it covers the run so far rather than only the step you just decided. Emit it with every decision, including done and blocked.`;
+Each entry is one short sentence of plain text, no markdown and no bullet glyphs. An empty left array means the run is complete. The recap is written for the operator, it replaces the previous one every time, and it covers the run so far rather than only the step you just decided. Emit it with every decision, including done and blocked.`;
 
 export const buildOrchestratorUserPrompt = ({
   goal,

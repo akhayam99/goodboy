@@ -232,10 +232,12 @@ describe('resolverActionPlan', () => {
   });
 
   it('runs a queued resolver only once the queue is stalled', () => {
-    expect(resolverActionPlan({ ...base, status: 'pending' }).primary).toBeNull();
-    expect(
-      resolverActionPlan({ ...base, status: 'pending', isQueueStalled: true }).primary?.label,
-    ).toBe('Run now');
+    const queued = resolverActionPlan({ ...base, status: 'pending' });
+    const stalled = resolverActionPlan({ ...base, status: 'pending', isQueueStalled: true });
+    expect(queued.primary).toBeNull();
+    expect(queued.note).not.toBeNull();
+    expect(stalled.primary?.label).toBe('Run now');
+    expect(stalled.note).toBeNull();
   });
 
   it('offers a rerun on a dead end, and leaves a single thread to its own card', () => {

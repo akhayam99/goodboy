@@ -128,7 +128,14 @@ vi.mock('../../../workflows/components/WorkflowStepInspector', () => ({
   WorkflowStepInspector: () => <div data-testid="workflow-step-inspector" />,
 }));
 vi.mock('../ResolverAgentsLane', () => ({
-  ResolverAgentsLane: () => <div data-testid="resolver-lane" />,
+  ResolverAgentsLane: ({ inspectedResolverId }: { inspectedResolverId: string | null }) => (
+    <div data-testid="resolver-lane">{inspectedResolverId}</div>
+  ),
+}));
+vi.mock('../ResolverDetailPane', () => ({
+  ResolverDetailPane: ({ agent }: { agent: Agent }) => (
+    <div data-testid="resolver-detail-pane">{agent.id}</div>
+  ),
 }));
 vi.mock('../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({
@@ -308,9 +315,8 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.queryByTestId('workflow-breadcrumb')).toBeNull();
-    expect(
-      screen.getByTestId('chat-view').contains(screen.getByRole('button', { name: 'Resolve' })),
-    ).toBe(true);
+    expect(screen.getByTestId('resolver-detail-pane').textContent).toBe('resolver-1');
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
@@ -370,7 +376,8 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('agent-inspector').textContent).toBe('resolver-1');
+    expect(screen.getByTestId('resolver-detail-pane').textContent).toBe('resolver-1');
+    expect(screen.queryByTestId('agent-inspector')).toBeNull();
   });
 
   it('adds the selected agent inspector to the agents-home overlay', () => {
@@ -390,7 +397,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByRole('separator', { name: 'Resize agent inspector' })).toBeDefined();
   });
 
-  it('keeps the selected inspector open across the resolve chat overlay', () => {
+  it('opens the resolve dashboard on the selected resolver and returns to the lane', () => {
     const waiting = {
       ...selectedAgent,
       id: 'resolver-waiting',
@@ -407,15 +414,15 @@ describe('SessionWorkspace agent overlay', () => {
     hooks.agentHome = 'resolve';
     const view = render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(waiting.id);
+    expect(screen.getByTestId('resolver-lane').textContent).toBe(waiting.id);
 
     store.selectedAgentId = { [SESSION_ID]: waiting.id };
     view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(waiting.id);
+    expect(screen.getByTestId('resolver-detail-pane').textContent).toBe(waiting.id);
 
     store.selectedAgentId = {};
     view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(waiting.id);
+    expect(screen.getByTestId('resolver-lane').textContent).toBe(waiting.id);
   });
 
   it('opens the running resolver by default before an awaiting resolver', () => {
@@ -440,10 +447,10 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('agent-inspector').textContent).toBe(running.id);
+    expect(screen.getByTestId('resolver-lane').textContent).toBe(running.id);
   });
 
-  it('closes the resolver inspector after the last resolver is deleted', () => {
+  it('clears the highlighted resolver after the last resolver is deleted', () => {
     const resolver = {
       ...selectedAgent,
       id: 'resolver-last',
@@ -457,12 +464,12 @@ describe('SessionWorkspace agent overlay', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [resolver] };
     const view = render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByRole('separator', { name: 'Resize inspector panel' })).toBeDefined();
+    expect(screen.getByTestId('resolver-lane').textContent).toBe(resolver.id);
 
     store.sessionPhaseRuns = { [SESSION_ID]: [] };
     view.rerender(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
+    expect(screen.getByTestId('resolver-lane').textContent).toBe('');
   });
 });
 

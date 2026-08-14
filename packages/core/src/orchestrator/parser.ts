@@ -2,7 +2,8 @@ import type { ModelEffort, ProviderId } from '@goodboy/types';
 import { providerEffortLevels } from '../providers/providerEffortLevels';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { isAgentRole } from '../roles';
-import type { OrchestratorDecision, OrchestratorStep } from './types';
+import { structuredRunSummary } from './runSummary';
+import type { OrchestratorDecision, OrchestratorStep, RunSummary } from './types';
 
 const START_MARKER = '<<orchestrator>>';
 const END_MARKER = '<</orchestrator>>';
@@ -95,6 +96,14 @@ const runSummarySlice = (raw: string): string | null => {
   return nonEmptyString(raw.slice(contentStart, end));
 };
 
+const parseRunSummary = (raw: string): RunSummary | null => {
+  const slice = runSummarySlice(raw);
+  if (slice === null) {
+    return null;
+  }
+  return structuredRunSummary(parseJson(slice)) ?? { kind: 'text', text: slice };
+};
+
 type ModelParams = {
   readonly provider: ProviderId;
   readonly id: string | null;
@@ -173,7 +182,7 @@ export const parseOrchestratorDecision = ({
   }
   const action = decision['action'];
   const reason = nonEmptyString(decision['reason']) ?? '';
-  const summary = runSummarySlice(raw);
+  const summary = parseRunSummary(raw);
   const runSummary = summary === null ? {} : { runSummary: summary };
   if (action === 'done' || action === 'blocked') {
     return { action, reason, ...runSummary };

@@ -140,13 +140,13 @@ describe('parseOrchestratorDecision', () => {
   it('stops the missing-end-marker fallback before a recap that carries a brace', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
-      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}\n<<run-summary>>\n**Done**\n- closed the `}` case\n<</run-summary>>',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}\n<<run-summary>>{"done":["closed the brace case"],"left":[]}<</run-summary>>',
     });
 
     expect(parsed).toEqual({
       action: 'done',
       reason: 'Goal satisfied.',
-      runSummary: '**Done**\n- closed the `}` case',
+      runSummary: { kind: 'structured', done: ['closed the brace case'], left: [] },
     });
   });
 
@@ -170,13 +170,26 @@ describe('parseOrchestratorDecision', () => {
   it('carries the run recap that travels alongside the decision', () => {
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
-      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>>\n<<run-summary>>\n**Done**\n- shipped the gate\n\n**Left**\n- nothing\n<</run-summary>>',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>>\n<<run-summary>>{"done":["shipped the gate"],"left":["port the tests"]}<</run-summary>>',
     });
 
     expect(parsed).toEqual({
       action: 'done',
       reason: 'Goal satisfied.',
-      runSummary: '**Done**\n- shipped the gate\n\n**Left**\n- nothing',
+      runSummary: { kind: 'structured', done: ['shipped the gate'], left: ['port the tests'] },
+    });
+  });
+
+  it('keeps a mis-emitted recap as text instead of dropping it', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>>\n<<run-summary>>\n**Done**\n- shipped the gate\n<</run-summary>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'done',
+      reason: 'Goal satisfied.',
+      runSummary: { kind: 'text', text: '**Done**\n- shipped the gate' },
     });
   });
 
