@@ -26,6 +26,7 @@ const everySignal = {
   isFresh: false,
   runningAgent: { lens: 'agents', itemId: 'agent-9' },
   resolveCount: 2,
+  pendingResolutions: 0,
   upcomingStep: null,
 } as const;
 
@@ -56,15 +57,28 @@ describe('selectNextUp precedence', () => {
     expect(item).toMatchObject({ id: 'resume', action: 'Resume', itemId: 'agent-9' });
   });
 
-  it('3b. an unresolved comment backlog wins once nothing is waiting on a reply', () => {
+  it('3b. active resolvers win once nothing is waiting on a reply', () => {
     const item = selectNextUp({
       ...everySignal,
       openQuestions: [],
       pr: pr(),
       waiting: null,
     });
-    expect(item).toMatchObject({ id: 'resolve', action: 'Resolve', lens: 'resolve' });
-    expect(item?.title).toBe('2 comments to resolve');
+    expect(item).toMatchObject({ id: 'resolve', action: 'Open the resolvers', lens: 'resolve' });
+    expect(item?.title).toBe('2 active resolvers');
+  });
+
+  it('3c. queued-but-unpushed resolutions win once no resolver is active', () => {
+    const item = selectNextUp({
+      ...everySignal,
+      openQuestions: [],
+      pr: pr(),
+      waiting: null,
+      resolveCount: 0,
+      pendingResolutions: 3,
+    });
+    expect(item).toMatchObject({ id: 'pending-push', action: 'Resolve', lens: 'resolve' });
+    expect(item?.title).toBe('3 resolutions ready to push');
   });
 
   it('4. a stalled step wins once the resolve backlog is empty', () => {

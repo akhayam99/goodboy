@@ -25,8 +25,7 @@ import { resolveAttentionLens, selectOpenQuestions } from '../../../SessionOverv
 import { SessionNavFooter } from '../SessionNavFooter';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { splitWorkflowRuns } from '../../../../../workflows/activeWorkflowRuns';
-import { useResolverIndex } from '../../../../hooks/useResolverIndex';
-import { resolverLaneEntries } from '../../../ResolverAgentsLane/resolverLaneEntries';
+import { useActiveResolverCount } from '../../../../hooks/useActiveResolverCount';
 import { LENS_SHORTCUTS, buildLensGroups } from './groups';
 import type { LensDot, LensRow } from './groups';
 import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
@@ -142,11 +141,7 @@ export const LensNav = ({ session, filesCount, diffstat, isBranchless = false }:
   }, [isBranchless, loadSessionFileVersions, sessionId]);
   const hasGithubPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr != null);
   const hasGitlabMr = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr != null);
-  const resolverIndex = useResolverIndex(sessionId);
-  const openResolvers = useMemo(
-    () => resolverLaneEntries({ links: resolverIndex.links }).active.length,
-    [resolverIndex.links],
-  );
+  const openResolvers = useActiveResolverCount(sessionId);
   const hasPendingBatch = useAppStore(
     (s) => (s.sessionPendingResolutions[sessionId]?.length ?? 0) > 0,
   );

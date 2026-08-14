@@ -228,7 +228,11 @@ breadcrumb IA, exit on close or Esc, and only one is open at a time.
   that split; reuse it rather than growing a rail.
 - **The lens rail is navigation.** Rows only select a destination; counts and
   dots are read-only signals attached to one. Session lifecycle actions are not
-  navigation and do not belong in the rail.
+  navigation and do not belong in the rail. A count on a row is a promise
+  about that destination: it counts the items the destination lists, and
+  every surface that routes to the same destination shows the same number
+  from the same selector. A population with no home at the destination gets
+  no badge pointing there.
 - **The activity bar shows ALL sessions grouped by stage**, never filtered to
   running only.
 - **A blocked action is re-routed, never hidden.** A blocked workflow advance

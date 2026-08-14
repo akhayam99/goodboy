@@ -97,7 +97,7 @@ export const ActivitySection = ({
             <SummaryRow
               icon={CONCEPT_ICONS.resolve}
               tone="neutral"
-              label={`${resolveCount} to resolve`}
+              label={resolveCount === 1 ? '1 active resolver' : `${resolveCount} active resolvers`}
               onClick={() => onSelectLens('resolve')}
             />
           ) : null}
