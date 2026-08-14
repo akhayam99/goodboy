@@ -26,8 +26,9 @@ task. By evening you've spent more time pasting the goal back into the
 next chat than actually building.
 
 Goodboy is a desktop app that holds the goal, the plan and the context once,
-then hands them to whichever agent you want to run next. Same brief, same
-memory, different model. Conversation, plans, decisions and PR state live in
+then hands them to whichever agent you want to run next. Same brief, different
+model: each agent keeps its own transcript and inherits the shared context, so
+nothing gets pasted twice and nothing gets crossed. Conversation, plans, decisions and PR state live in
 a local SQLite on your machine, scoped to Goodboy alone: a local reset clears
 that database without touching anything outside it. Your keys, your data,
 your bandwidth.
@@ -166,16 +167,19 @@ pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
 
 Goodboy is a pure orchestration layer. We do not run servers. We do not have
 accounts. We do not store, log, or transmit your data anywhere except to the
-AI providers you choose.
+services you connected yourself.
 
 - No backend. Ever.
 - No telemetry. Not now, not later, not opt-in.
-- API keys stay on your machine, in your OS credential store.
+- API keys and tokens stay on your machine, in your OS credential store.
 - Conversations, prompts, and responses flow directly between you and the
   provider.
+- What you send to a connected integration reaches that integration: a
+  comment posted to GitHub is a comment on GitHub, and its token travels with
+  every request. Local storage does not mean nothing leaves.
 - Local persistence is SQLite (`~/.goodboy/data.db`): workspaces, sessions,
   agents, messages, context slots, plans, local usage records, skills,
-  settings. All yours, all local.
+  settings. All yours, all local, and cleared only when you ask.
 
 If Goodboy disappeared tomorrow, your data would be untouched, because it was
 never ours.

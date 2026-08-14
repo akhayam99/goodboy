@@ -27,8 +27,10 @@ Caveat: a token you paste for an integration (GitHub, GitLab, Jira,
 Bitbucket, Linear, Sentry) is stored locally but sent to that provider on
 every request. Local-only storage does not mean the token never travels.
 
-Application initialization deletes the local database contents and reruns the
-schema. It never deletes API keys from the OS credential store.
+Starting the app only runs pending migrations; it never clears anything. A
+local reset is an explicit action: it drops the database contents and replays
+the schema from scratch, and it touches nothing outside that file. It never
+deletes API keys from the OS credential store.
 
 ## Releases
 

@@ -8,6 +8,43 @@
 What the app does today, defined once. Every other document links here rather
 than restating a definition.
 
+## The object model
+
+Four nested things, and everything else hangs off them.
+
+- A **workspace** is the detail view of a project plus the integrations
+  specific to it. It aggregates every piece of work on that project, not just
+  the sessions you opened today. Workspaces have three kinds: a **repo** owns
+  one project directory and gives each session a git worktree, a **composite**
+  links repo workspaces so one session can span them, and a **simple**
+  workspace is a standalone non-developer folder whose sessions use plain
+  directories without git.
+- A **session** is a container for a goal: its own git worktree, branch,
+  budget and shared context. Its stage (attention / running / review /
+  building / done) is derived from what the session actually holds, never set
+  by hand. "Refactor authentication domain" is a session.
+- An **agent** is an independent chat thread inside a session. You spawn as
+  many as you want, switch between them by clicking, and rename them inline.
+  Each agent has its own provider, model, effort level, verbosity and kind.
+- A **task** is the thing you are actually doing, and it is what the product
+  is organized around. It has an origin (an issue, an alert, a review comment,
+  an idea), a goal, a budget, a state and a definition of done. A task is not
+  finished when the code compiles, it is finished when the issue closes, the
+  PR merges, the alert resolves.
+
+A session always has at least one agent, auto-spawned at creation. Spawning
+more needs no workflow. Attaching a workflow preset pre-spawns one agent per
+step, and those agents then live alongside any free agents you add.
+
+A repo workspace must already have usable git state before a session can
+create its worktree. **Goodboy never runs git init, never commits, never adds
+a remote on your behalf.**
+
+The order matters, and it is why the app looks the way it does: task first,
+then the integrations a task comes from and returns to, then the code as the
+artifact it produces, then chat as the last mile. Every surface follows that
+order. One that shows chat before it shows the task is built upside down.
+
 ## Integration surface
 
 The workspace is the aggregator of the project, so every integration surface
