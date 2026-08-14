@@ -13,24 +13,24 @@ const RESOLVER_LOCK_REASON = {
   batched: 'Queued in the push batch, remove it from the batch to steer it again',
 } as const;
 
-const AGENT_REASON: Partial<Record<ResolverStatus, string>> = {
+const AGENT_REASON = {
   pending: RESOLVER_LOCK_REASON.pending,
   running: RESOLVER_LOCK_REASON.running,
   resolved: RESOLVER_LOCK_REASON.resolved,
-};
+} as const satisfies Partial<Record<ResolverStatus, string>>;
 
-export type ActionableResolverStatus = Exclude<ResolverStatus, 'pending' | 'running' | 'resolved'>;
+export type ActionableResolverStatus = Exclude<ResolverStatus, keyof typeof AGENT_REASON>;
 
 export const isActionableResolverStatus = (
   status: ResolverStatus,
-): status is ActionableResolverStatus => AGENT_REASON[status] === undefined;
+): status is ActionableResolverStatus => !(status in AGENT_REASON);
 
 export const resolverActGate = ({
   status,
 }: {
   readonly status: ResolverStatus;
 }): ResolverActGate => {
-  const reason = AGENT_REASON[status] ?? null;
+  const reason = isActionableResolverStatus(status) ? null : AGENT_REASON[status];
   return { canAct: reason === null, reason };
 };
 
