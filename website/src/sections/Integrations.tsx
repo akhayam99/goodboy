@@ -91,9 +91,9 @@ export const Integrations = () => (
       <a
         className="more rv"
         style={delay(CARDS.length * 60)}
-        href={`${SITE.vision}#integration-surface`}
+        href={`${SITE.concepts}#integration-surface`}
       >
-        See the integration roadmap <span className="arr">→</span>
+        See where each integration stands <span className="arr">→</span>
       </a>
     </div>
   </section>
