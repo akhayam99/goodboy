@@ -27,6 +27,7 @@ import {
   resolveRoleRouting,
   resolveTaskModel,
   runsForWorkflowRun,
+  serializeRunSummary,
   type OrchestratorRoleDefault,
   type RunSummary,
 } from '@goodboy/core';
@@ -247,16 +248,6 @@ type PersistSummaryParams = {
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
   readonly summary: RunSummary | undefined;
-};
-
-const serializeRunSummary = (summary: RunSummary): string => {
-  if (summary.kind === 'text') {
-    return summary.text.trim();
-  }
-  if (summary.done.length === 0 && summary.left.length === 0) {
-    return '';
-  }
-  return JSON.stringify({ done: summary.done, left: summary.left });
 };
 
 const persistRunSummary = async ({

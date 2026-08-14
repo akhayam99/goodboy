@@ -1,40 +1,9 @@
 import { Check, Circle } from 'lucide-react';
 import { Markdown, SectionHeader } from '@goodboy/ui';
+import { parseRunSummaryText } from '@goodboy/core';
 
 type Props = {
   readonly summary: string | undefined;
-};
-
-type Structured = {
-  readonly done: ReadonlyArray<string>;
-  readonly left: ReadonlyArray<string>;
-};
-
-const stringList = (value: unknown): ReadonlyArray<string> =>
-  Array.isArray(value)
-    ? value
-        .filter((entry): entry is string => typeof entry === 'string')
-        .map((entry) => entry.trim())
-        .filter((entry) => entry !== '')
-    : [];
-
-const parseStructured = (text: string): Structured | null => {
-  if (!text.startsWith('{')) {
-    return null;
-  }
-  try {
-    const parsed: unknown = JSON.parse(text);
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return null;
-    }
-    const record = parsed as Record<string, unknown>;
-    if (!Array.isArray(record['done']) && !Array.isArray(record['left'])) {
-      return null;
-    }
-    return { done: stringList(record['done']), left: stringList(record['left']) };
-  } catch {
-    return null;
-  }
 };
 
 type GroupProps = {
@@ -69,7 +38,7 @@ export const WorkflowRunSummary = ({ summary }: Props) => {
   if (text === '') {
     return null;
   }
-  const structured = parseStructured(text);
+  const structured = parseRunSummaryText(text);
   if (structured !== null && structured.done.length === 0 && structured.left.length === 0) {
     return null;
   }

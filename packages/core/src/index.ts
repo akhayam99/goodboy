@@ -361,6 +361,8 @@ export {
   buildOrchestratorUserPrompt,
   enforceOrchestratorModelPool,
   orchestratorModelPool,
+  parseRunSummaryText,
+  serializeRunSummary,
   ORCHESTRATOR_SYSTEM_PROMPT,
   OrchestratorClient,
   OrchestratorClientSpawnError,
