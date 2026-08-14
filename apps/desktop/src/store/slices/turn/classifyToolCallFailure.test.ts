@@ -36,6 +36,33 @@ describe('classifyToolCallFailure', () => {
     ).toEqual({ kind: 'other' });
   });
 
+  it('reads the lock only out of aggregated_output on a codex payload', () => {
+    expect(
+      classifyToolCallFailure({
+        output: {
+          aggregated_output: 'nothing to commit, working tree clean',
+          exit_code: 1,
+          command: [
+            'bash',
+            '-lc',
+            'rm -f .git/index.lock # Another git process seems to be running',
+          ],
+        },
+      }),
+    ).toEqual({ kind: 'other' });
+  });
+
+  it('unwraps a codex lock message that wraps across lines', () => {
+    expect(
+      classifyToolCallFailure({
+        output: {
+          aggregated_output: "fatal: Unable to create '/repo/.git/index.lock':\nFile exists.",
+          exit_code: 128,
+        },
+      }),
+    ).toEqual({ kind: 'git_index_lock' });
+  });
+
   it('handles a null output without throwing', () => {
     expect(classifyToolCallFailure({ output: null })).toEqual({ kind: 'other' });
   });
