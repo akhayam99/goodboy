@@ -19,6 +19,12 @@ const AGENT_REASON: Partial<Record<ResolverStatus, string>> = {
   resolved: RESOLVER_LOCK_REASON.resolved,
 };
 
+export type ActionableResolverStatus = Exclude<ResolverStatus, 'pending' | 'running' | 'resolved'>;
+
+export const isActionableResolverStatus = (
+  status: ResolverStatus,
+): status is ActionableResolverStatus => AGENT_REASON[status] === undefined;
+
 export const resolverActGate = ({
   status,
 }: {

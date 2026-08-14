@@ -1,6 +1,10 @@
 import type { Agent, TurnState } from '@goodboy/types';
 import type { ResolverStatus } from './resolver-linkage';
-import { resolverActGate } from './resolverActGate';
+import {
+  isActionableResolverStatus,
+  resolverActGate,
+  type ActionableResolverStatus,
+} from './resolverActGate';
 import { agentThreadIds } from './agentThreadIds';
 import type { ResolverThreadTally } from './resolverThreadTally';
 
@@ -96,8 +100,6 @@ const withoutGithubActions = (plan: ResolverActionPlan): ResolverActionPlan => {
     note: null,
   };
 };
-
-const IDLE: Block = { primary: null, secondary: null, note: null };
 
 const RUN_NOW: ResolverAction = {
   kind: 'run',
@@ -355,13 +357,8 @@ const mixedBlock = (params: Params): Block => {
   };
 };
 
-const statusBlock = (params: Params): Block => {
-  const threadCount = agentThreadIds(params.agent).length;
+const statusBlock = (params: Params & { readonly status: ActionableResolverStatus }): Block => {
   switch (params.status) {
-    case 'pending':
-    case 'running':
-    case 'resolved':
-      return IDLE;
     case 'committed':
       return committedBlock(params);
     case 'analyzed':
@@ -394,18 +391,20 @@ const statusBlock = (params: Params): Block => {
 };
 
 const blockFor = (params: Params): Block => {
-  const gate = resolverActGate({ status: params.status });
-  if (!gate.canAct) {
+  if (!isActionableResolverStatus(params.status)) {
+    if (params.status === 'pending' && params.isQueueStalled) {
+      return { primary: RUN_NOW, secondary: null, note: null };
+    }
     return {
-      primary: params.status === 'pending' && params.isQueueStalled ? RUN_NOW : null,
+      primary: null,
       secondary: null,
-      note: gate.reason,
+      note: resolverActGate({ status: params.status }).reason,
     };
   }
   if (params.tally.isMixed) {
     return mixedBlock(params);
   }
-  return statusBlock(params);
+  return statusBlock({ ...params, status: params.status });
 };
 
 export const resolverActionPlan = (params: Params): ResolverActionPlan => {
