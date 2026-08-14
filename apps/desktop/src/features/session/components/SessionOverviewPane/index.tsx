@@ -20,10 +20,7 @@ import {
   selectStandaloneAgents,
   type AgentHomeLens,
 } from '../../agent-kind';
-import { agentThreadIds } from '../../agentThreadIds';
-import { useResolvableCount } from '../../hooks/useResolvableCount';
-import { useResolverIndex } from '../../hooks/useResolverIndex';
-import { resolverLaneEntries } from '../ResolverAgentsLane/resolverLaneEntries';
+import { useActiveResolverCount } from '../../hooks/useActiveResolverCount';
 import { selectOpenQuestions } from './lib';
 import {
   selectNextUp,
@@ -58,14 +55,9 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const rawStandalone = selectStandaloneAgents(sessionAgents);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const nonResolverAgents = useNonResolverStandaloneAgents(sessionId);
-  const resolvable = useResolvableCount(sessionId);
-  const resolverIndex = useResolverIndex(sessionId);
-  const threadlessActiveResolverCount = useMemo(
-    () =>
-      resolverLaneEntries({ links: resolverIndex.links }).active.filter(
-        (link) => agentThreadIds(link.agent).length === 0,
-      ).length,
-    [resolverIndex.links],
+  const activeResolverCount = useActiveResolverCount(sessionId);
+  const pendingResolutionCount = useAppStore(
+    (s) => s.sessionPendingResolutions[sessionId]?.length ?? 0,
   );
   const phaseTemplates = useAppStore(
     (s) => s.phaseTemplates?.[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
@@ -96,12 +88,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     [session.workflowRuns],
   );
   const isFresh = activeRuns.length === 0 && rawStandalone.length === 0;
-  const resolveCount =
-    resolvable.prComments +
-    resolvable.diffComments +
-    resolvable.pending +
-    runs.resolveQueue.length +
-    threadlessActiveResolverCount;
+  const resolveCount = activeResolverCount;
   const questionBlocksRun = openQuestions.some(
     (question) =>
       question.workflowRunId != null && activeRuns.some((run) => run.id === question.workflowRunId),
@@ -237,6 +224,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
     isFresh,
     runningAgent,
     resolveCount,
+    pendingResolutions: pendingResolutionCount,
     upcomingStep,
   });
 

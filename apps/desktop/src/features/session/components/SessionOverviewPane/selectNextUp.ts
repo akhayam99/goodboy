@@ -8,6 +8,7 @@ type NextUpId =
   | 'checks'
   | 'resume'
   | 'resolve'
+  | 'pending-push'
   | 'stalled'
   | 'errored'
   | 'close-out'
@@ -62,6 +63,7 @@ type Params = {
   readonly isFresh: boolean;
   readonly runningAgent: RunningAgent | null;
   readonly resolveCount: number;
+  readonly pendingResolutions: number;
   readonly upcomingStep: UpcomingStep | null;
 };
 
@@ -128,6 +130,7 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
     isFresh,
     runningAgent,
     resolveCount,
+    pendingResolutions,
     upcomingStep,
   } = params;
   const signals = liveSignals(params);
@@ -190,13 +193,29 @@ export const selectNextUp = (params: Params): NextUpItem | null => {
   if (resolveCount > 0) {
     return {
       id: 'resolve',
-      title: resolveCount === 1 ? '1 comment to resolve' : `${resolveCount} comments to resolve`,
-      detail: 'Review comments and resolvers are still open.',
-      action: 'Resolve',
+      title: resolveCount === 1 ? '1 active resolver' : `${resolveCount} active resolvers`,
+      detail: 'Resolvers spawned from review comments are still open.',
+      action: 'Open the resolvers',
       tone: 'neutral',
       lens: 'resolve',
       itemId: null,
       signals: tail({ chosen: 'resolve' }),
+    };
+  }
+
+  if (pendingResolutions > 0) {
+    return {
+      id: 'pending-push',
+      title:
+        pendingResolutions === 1
+          ? '1 resolution ready to push'
+          : `${pendingResolutions} resolutions ready to push`,
+      detail: 'Replies are written; the branch has not been pushed yet.',
+      action: 'Resolve',
+      tone: 'neutral',
+      lens: 'resolve',
+      itemId: null,
+      signals,
     };
   }
 

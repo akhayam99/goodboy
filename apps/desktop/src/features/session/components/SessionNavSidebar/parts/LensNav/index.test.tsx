@@ -548,6 +548,15 @@ describe('LensNav', () => {
     }
     expect(container.querySelectorAll('[class*="animate-pulse"]')).toHaveLength(0);
   });
+
+  it('keeps the pending-push dot on the Resolve row even with zero active resolvers', () => {
+    hooks.resolverLinks = [];
+    store.sessionPendingResolutions = { 'session-1': [{}] };
+    render(<LensNav session={SESSION} filesCount={0} />);
+
+    const resolveRow = screen.getByRole('button', { name: 'Resolve' });
+    expect(resolveRow.querySelector('[class*="bg-accent"]')).not.toBeNull();
+  });
 });
 
 describe('LensNav footer', () => {

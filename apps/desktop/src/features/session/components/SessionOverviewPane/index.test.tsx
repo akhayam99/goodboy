@@ -561,7 +561,17 @@ describe('SessionOverviewPane next up', () => {
     ];
     const { onSelectLens } = renderPane();
     expect(screen.queryByText('Nothing needs you right now')).toBeNull();
-    expect(screen.getByText('1 comment to resolve')).toBeDefined();
+    expect(screen.getByText('1 active resolver')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Open the resolvers' }));
+    expect(onSelectLens).toHaveBeenCalledWith('resolve');
+  });
+
+  it('offers to push queued resolutions instead of claiming nothing needs you', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
+    store.sessionPendingResolutions = { 'sess-1': [{}, {}] };
+    const { onSelectLens } = renderPane();
+    expect(screen.queryByText('Nothing needs you right now')).toBeNull();
+    expect(screen.getByText('2 resolutions ready to push')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
     expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
@@ -595,24 +605,51 @@ describe('SessionOverviewPane activity', () => {
     expect(onSelectLens).toHaveBeenCalledWith('agents');
   });
 
-  it('rolls every resolvable item into one row', () => {
+  it('counts only active resolvers, not PR comments, pending pushes or the resolve queue', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
     store.sessionGithub = {
       'sess-1': { detail: { comments: [{ source: 'review', resolved: false }] } },
     };
     store.sessionPendingResolutions = { 'sess-1': [{}] };
     runs.resolveQueue = [spawnNode({ id: 'resolver' })];
+    renderPane();
+    expect(screen.queryByText(/active resolver/)).toBeNull();
+  });
+
+  it('rolls active resolvers into one summary row', () => {
+    store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('running')] };
+    hooks.resolverLinks = [
+      {
+        agent: { id: 'r1', name: 'resolve it', status: 'running', doneAt: null, ordinal: 0 },
+        status: 'running',
+      },
+      {
+        agent: { id: 'r2', name: 'resolve it too', status: 'running', doneAt: null, ordinal: 1 },
+        status: 'running',
+      },
+    ];
     const { onSelectLens } = renderPane();
-    expect(screen.getByText('3 to resolve')).toBeDefined();
-    fireEvent.click(screen.getByText('3 to resolve'));
+    const summaryRow = screen.getByRole('button', { name: '2 active resolvers' });
+    fireEvent.click(summaryRow);
     expect(onSelectLens).toHaveBeenCalledWith('resolve');
   });
 
   it('counts nothing to resolve once every resolver has finished', () => {
     store.sessionPhaseRuns = { 'sess-1': [standaloneAgent('completed')] };
-    runs.completedResolveQueue = [spawnNode({ id: 'resolver-done', status: 'done' })];
+    hooks.resolverLinks = [
+      {
+        agent: {
+          id: 'resolver-done',
+          name: 'resolve it',
+          status: 'completed',
+          doneAt: '2026-06-22T10:00:00.000Z',
+          ordinal: 0,
+        },
+        status: 'resolved',
+      },
+    ];
     renderPane();
-    expect(screen.queryByText(/to resolve/)).toBeNull();
+    expect(screen.queryByText(/active resolver/)).toBeNull();
   });
 
   it('opens a completed workflow in one click, focusing the run first', () => {

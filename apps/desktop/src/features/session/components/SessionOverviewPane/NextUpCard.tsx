@@ -5,6 +5,7 @@ import {
   CircleHelp,
   GitPullRequest,
   MessageSquareReply,
+  Upload,
   XCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -43,6 +44,7 @@ const ITEM_ICON: Record<NextUpItem['id'], LucideIcon> = {
   checks: XCircle,
   resume: Bot,
   resolve: MessageSquareReply,
+  'pending-push': Upload,
   stalled: CONCEPT_ICONS.workflows,
   errored: AlertCircle,
   'close-out': GitPullRequest,
