@@ -2,7 +2,7 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 
 import { Check, ChevronRight, ExternalLink, MessageSquarePlus } from 'lucide-react';
 import { Divider, EmptyState, Tooltip, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { CopyButton } from '../../../../shared/components/CopyButton';
+import { CopyButton } from '@goodboy/ui';
 import type {
   AgentId,
   DiffComment,
@@ -315,6 +315,7 @@ export const FileDiffCard = ({
           <div className="flex shrink-0 items-center gap-1">
             <Tooltip content="copy path">
               <CopyButton
+                presentation="icon"
                 value={file.path}
                 label="copy file path"
                 size={12}

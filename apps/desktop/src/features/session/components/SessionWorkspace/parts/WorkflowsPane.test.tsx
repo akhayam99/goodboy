@@ -59,7 +59,8 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
 }));
 
-vi.mock('@goodboy/ui', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   Chip: ({ label }: { label?: React.ReactNode }) => <span>{label}</span>,
   Button: ({ children, onClick, className }: ButtonMockProps) => (
     <button type="button" onClick={onClick} className={className}>
@@ -76,6 +77,18 @@ vi.mock('@goodboy/ui', () => ({
     <div data-testid="divider" data-orientation={orientation ?? 'horizontal'} />
   ),
   EmptyState: ({
+    title,
+    action,
+  }: {
+    readonly title: string;
+    readonly action?: React.ReactNode;
+  }) => (
+    <div data-testid="workflow-empty">
+      {title}
+      {action}
+    </div>
+  ),
+  LensEmptyState: ({
     title,
     action,
   }: {

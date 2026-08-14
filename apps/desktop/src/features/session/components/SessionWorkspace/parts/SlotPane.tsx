@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { History, type LucideIcon } from 'lucide-react';
 import { Button, Markdown, Textarea, cn, type Tone } from '@goodboy/ui';
-import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -16,7 +16,7 @@ import { InspectorSplit } from './InspectorSplit';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { SlotHistoryPanel } from './SlotHistoryPanel';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
-import { CopyButton } from '../../../../../shared/components/CopyButton';
+import { CopyButton } from '@goodboy/ui';
 
 type SlotKey = 'goal' | 'decisions' | 'last_output_summary';
 
@@ -169,6 +169,7 @@ export const SlotPane = ({ session, slotKey }: Props) => {
           <>
             {hasValue ? (
               <CopyButton
+                presentation="icon"
                 value={slotKey === 'last_output_summary' ? buildShareableDocument() : value}
                 label={slotKey === 'last_output_summary' ? 'copy shareable summary' : 'copy'}
                 size={15}

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { cn } from '../cn';
+import { tintClasses, type Tone } from '../tint';
 import { X, type LucideIcon } from 'lucide-react';
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
   readonly closeLabel: string;
   readonly closeDisabled?: boolean;
   readonly variant?: 'compact' | 'fullscreen';
+  readonly heightClassName?: string;
   readonly children?: ReactNode;
 };
 
@@ -25,6 +27,7 @@ export const OverlayHeader = ({
   closeLabel,
   closeDisabled = false,
   variant = 'compact',
+  heightClassName,
   children,
 }: Props) => {
   if (variant === 'fullscreen') {
@@ -62,7 +65,7 @@ export const OverlayHeader = ({
   }
 
   return (
-    <header className="flex h-[var(--chat-header-h)] shrink-0 items-center gap-1.5 px-3">
+    <header className={cn('flex shrink-0 items-center gap-1.5 px-3', heightClassName)}>
       {glyph ??
         (Icon != null ? (
           <Icon size={12} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />

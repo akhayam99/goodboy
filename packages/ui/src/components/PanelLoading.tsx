@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonText } from '@goodboy/ui';
+import { Skeleton, SkeletonText } from './Skeleton';
 
 type Props = {
   readonly label: string;

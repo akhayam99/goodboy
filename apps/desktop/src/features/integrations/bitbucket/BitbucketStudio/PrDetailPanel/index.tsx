@@ -1,21 +1,17 @@
+import { StudioDetailLayout } from '../../../../../shared/components/StudioDetail';
 import { useMemo, useState } from 'react';
 import { EmptyState, Markdown } from '@goodboy/ui';
 import { FileDiff, FileText, ListChecks, MessageSquare } from 'lucide-react';
 import type { BitbucketWorkspaceIntegration, SessionId, WorkspaceId } from '@goodboy/types';
-import {
-  DetailSection,
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../../shared/components/StudioDetail';
+import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import {
   bitbucketPullRequestFields,
   resolveDetailFields,
 } from '../../../../../shared/detail-fields';
-import { IssueStateBadge, type StateTone } from '../../../../../shared/components/IssueStateBadge';
-import { BranchPair } from '../../../../../shared/components/BranchPair';
+import { StateBadge, type StateTone } from '@goodboy/ui';
+import { BranchPair } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
-import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
+import { RefreshIconButton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { slugifyBranch } from '../../../../../shared/utils/slugifyBranch';
 import { openUrl } from '../../../../../shared/lib/editor';
@@ -123,9 +119,9 @@ export const PrDetailPanel = ({
         <>
           <HeaderBand
             meta={
-              <IssueStateBadge tone={STATE_TONE[pullRequest.state]}>
+              <StateBadge tone={STATE_TONE[pullRequest.state]}>
                 #{pullRequest.id} · {pullRequest.state.toLowerCase()}
-              </IssueStateBadge>
+              </StateBadge>
             }
             title={pullRequest.title}
             subtitle={
@@ -181,13 +177,13 @@ export const PrDetailPanel = ({
     >
       {section === 'overview' && (
         <>
-          <DetailSection label="description" variant="frameless">
+          <StudioWidget presentation="section" label="description" variant="frameless">
             {pullRequest.description !== '' ? (
               <Markdown text={pullRequest.description} className="text-sm leading-relaxed" />
             ) : (
               <p className="text-sm italic text-muted-foreground/60">No description.</p>
             )}
-          </DetailSection>
+          </StudioWidget>
           <LaunchSessionPanel
             key={identifier}
             workspaceId={workspaceId}

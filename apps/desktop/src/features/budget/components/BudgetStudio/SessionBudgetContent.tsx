@@ -4,8 +4,8 @@ import type { SessionId } from '@goodboy/types';
 import { CapEditor } from './CapEditor';
 import { ModelTable } from './ModelTable';
 import { TurnsTable } from './TurnsTable';
-import { StudioWidget } from '../../../../shared/components/StudioWidget';
-import { Sparkline } from '../../../../shared/components/Sparkline';
+import { StudioWidget } from '@goodboy/ui';
+import { Sparkline } from '@goodboy/ui';
 import { buildModelBreakdown, chronologicalTurnCosts, type WorkspaceTurn } from './lib';
 
 type Density = 'studio' | 'glance';

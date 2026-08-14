@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FolderGit2, ListChecks } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { JiraIcon, LinearIcon } from '../../../../shared/components/brand-icons';
+import { JiraIcon, LinearIcon } from '@goodboy/ui';
 import { JiraFormBody } from '../../../integrations/jira/JiraFormBody';
 import { LinearFormBody } from '../../../integrations/linear/LinearFormBody';
 import { Segmented, type SegmentedOption } from '../Segmented';

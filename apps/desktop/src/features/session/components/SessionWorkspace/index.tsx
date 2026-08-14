@@ -42,7 +42,7 @@ import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { LENS_LABEL, SIMPLE_LENSES } from '../../lens-labels';
-import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type SessionWorkspaceProps = {

@@ -1,3 +1,4 @@
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
@@ -11,17 +12,13 @@ import { useResolverIndex } from '../../../session/hooks/useResolverIndex';
 import { resolverForComment, type ResolverLink } from '../../../session/resolver-linkage';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { openUrl } from '../../../../shared/lib/editor';
-import {
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../shared/components/StudioDetail';
+import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
-import { BranchPair } from '../../../../shared/components/BranchPair';
+import { BranchPair } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { RefreshIconButton } from '../../../../shared/components/RefreshIconButton';
+import { RefreshIconButton } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import { groupThreads, type CommentThread } from '../../comment-threads';
 import { PullRequestChip } from '../PullRequestChip';

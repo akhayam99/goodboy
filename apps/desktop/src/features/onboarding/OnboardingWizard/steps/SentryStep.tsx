@@ -1,7 +1,7 @@
 import { FolderGit2 } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { SentryIcon } from '../../../../shared/components/brand-icons';
+import { SentryIcon } from '@goodboy/ui';
 import { SentryFormBody } from '../../../integrations/sentry/SentryFormBody';
 
 type Props = {

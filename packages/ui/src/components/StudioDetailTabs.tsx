@@ -1,4 +1,4 @@
-import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { SegmentedTabs, type SegmentedTabOption } from './SegmentedTabs';
 
 type Props<T extends string> = {
   readonly options: ReadonlyArray<SegmentedTabOption<T>>;

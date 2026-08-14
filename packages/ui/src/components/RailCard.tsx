@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn } from '../cn';
 
 type Props = {
   readonly title: ReactNode;

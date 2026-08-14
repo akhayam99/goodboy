@@ -1,14 +1,11 @@
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import {
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../shared/components/StudioDetail';
+import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { linearIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
-import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
+import { StateBadge } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import type { LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
@@ -50,7 +47,7 @@ export const LinearIssueDetail = ({
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                 {issue.identifier}
               </span>
-              <IssueStateBadge>{issue.state.name}</IssueStateBadge>
+              <StateBadge>{issue.state.name}</StateBadge>
             </>
           }
           title={issue.title}

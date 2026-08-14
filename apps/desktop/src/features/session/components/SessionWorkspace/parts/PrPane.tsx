@@ -1,3 +1,4 @@
+import { StudioDetailLayout } from '../../../../../shared/components/StudioDetail';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArrowRight, GitBranch, GitFork, GitMerge, GitPullRequest, Unlink } from 'lucide-react';
 import { Button, Eyebrow, Skeleton } from '@goodboy/ui';
@@ -22,22 +23,18 @@ import { gitlabMrStateKind } from '../../../../integrations/gitlab/gitlabMrState
 import { closingIssueReferences } from '../../../../github/closingIssueReferences';
 import { closingReferenceLines } from '../../../../github/closingReferenceLines';
 import { removeClosingReference } from '../../../../github/removeClosingReference';
-import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
+import { RefreshIconButton } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../../shared/components/ExternalRefActions';
-import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
+import { GhostActionButton } from '@goodboy/ui';
 import { workspaceMountName } from '../../../../../shared/utils/workspaceMountName';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../../store';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
-import {
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../../shared/components/StudioDetail';
-import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
+import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { StateBadge } from '@goodboy/ui';
 import { resolveDetailFields, sessionPullRequestFields } from '../../../../../shared/detail-fields';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { LinkedWorkRow } from '../../../../../shared/components/LinkedWorkRow';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
 import { branchRequests } from '../../../branchRequests';
@@ -216,7 +213,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
                   <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                     #{bitbucketPr.id}
                   </span>
-                  <IssueStateBadge>{bitbucketPr.state.toLowerCase()}</IssueStateBadge>
+                  <StateBadge>{bitbucketPr.state.toLowerCase()}</StateBadge>
                   <span className="min-w-0 truncate text-sm text-muted-foreground">
                     {bitbucketPr.title}
                   </span>
@@ -246,7 +243,7 @@ export const PrPane = ({ session, onSelectLens }: Props) => {
                   <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                     !{mergeRequest.iid}
                   </span>
-                  <IssueStateBadge>{pullRequestMeta(mergeRequestState).label}</IssueStateBadge>
+                  <StateBadge>{pullRequestMeta(mergeRequestState).label}</StateBadge>
                   <span className="min-w-0 truncate text-sm text-muted-foreground">
                     {mergeRequest.title}
                   </span>
@@ -598,9 +595,7 @@ const LinkedPullRequestsSection = ({
                   : `Show pull request #${candidate.number}`
               }
               tooltip={isSelected ? 'Open this pull request' : 'Show this pull request instead'}
-              attribution={
-                <IssueStateBadge>{pullRequestMeta(candidate.state).label}</IssueStateBadge>
-              }
+              attribution={<StateBadge>{pullRequestMeta(candidate.state).label}</StateBadge>}
               onClick={() => (isSelected ? onOpenSelected() : onSelect(candidate.number))}
               actions={
                 <ExternalRefActions

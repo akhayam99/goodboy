@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { resolveDetailFields, type DetailFieldRegistry } from '../../detail-fields';
-import { DetailSection } from './DetailSection';
-import { HeaderBand } from './HeaderBand';
-import { RailBlock } from './RailBlock';
+import { StudioWidget } from '@goodboy/ui';
+import { HeaderBand } from '@goodboy/ui';
+import { RailBlock } from '@goodboy/ui';
 import { StudioDetailLayout } from './StudioDetailLayout';
-import { StudioDetailTabs } from './StudioDetailTabs';
+import { StudioDetailTabs } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../lib/storage-keys';
 
 beforeEach(() => {
@@ -278,12 +278,16 @@ describe('StudioDetailTabs', () => {
   });
 });
 
-describe('DetailSection', () => {
+describe('StudioWidget', () => {
   it('renders the section label, action, and card body', () => {
     render(
-      <DetailSection label="description" action={<button type="button">Edit</button>}>
+      <StudioWidget
+        label="description"
+        presentation="section"
+        action={<button type="button">Edit</button>}
+      >
         <p>Body copy</p>
-      </DetailSection>,
+      </StudioWidget>,
     );
 
     expect(screen.getByText('description')).toBeDefined();
@@ -293,9 +297,9 @@ describe('DetailSection', () => {
 
   it('renders a frameless body without card styling', () => {
     render(
-      <DetailSection label="description" variant="frameless">
+      <StudioWidget label="description" presentation="section" variant="frameless">
         <p>Primary body</p>
-      </DetailSection>,
+      </StudioWidget>,
     );
 
     const body = screen.getByText('Primary body').parentElement;

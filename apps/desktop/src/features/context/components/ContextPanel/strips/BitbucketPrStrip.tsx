@@ -1,7 +1,7 @@
 import { ArrowUpRight, GitPullRequest } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { RefreshIconButton } from '../../../../../shared/components/RefreshIconButton';
+import { RefreshIconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 
 type Props = {

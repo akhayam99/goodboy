@@ -27,7 +27,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { openUrl } from '../../../../shared/lib/editor';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type CreateMode = 'manual' | 'agent';
 

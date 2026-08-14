@@ -1,3 +1,4 @@
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useEffect, useState } from 'react';
 import { Button, Chip, EmptyState, cn, tintClasses } from '@goodboy/ui';
 import { ArrowRight, MessagesSquare } from 'lucide-react';
@@ -8,14 +9,10 @@ import { formatError } from '../../../../shared/lib/errors';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
-import { BranchPair } from '../../../../shared/components/BranchPair';
-import {
-  DetailSection,
-  HeaderBand,
-  StudioDetailLayout,
-} from '../../../../shared/components/StudioDetail';
+import { BranchPair } from '@goodboy/ui';
+import { StudioWidget, HeaderBand } from '@goodboy/ui';
 import { githubPullRequestFields, resolveDetailFields } from '../../../../shared/detail-fields';
-import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
+import { Avatar } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -101,7 +98,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
               <PullRequestChip state={pr.isDraft ? 'draft' : pr.state} variant="badge" />
               {pr.reviewRequested ? <Chip tone="info" label="Review requested" /> : null}
               <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
-                <NoteAvatar url={pr.authorAvatarUrl} alt="" initialsSource={pr.author} size="xs" />
+                <Avatar url={pr.authorAvatarUrl} alt="" initialsSource={pr.author} size="xs" />
                 <span className="font-medium text-foreground/80">{pr.author}</span>
               </span>
             </>
@@ -115,7 +112,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
       }
       properties={resolveDetailFields({ registry: githubPullRequestFields, entity: pr })}
     >
-      <DetailSection label="review">
+      <StudioWidget presentation="section" label="review">
         {pr.mine ? (
           <p className="text-sm text-muted-foreground">
             This is your pull request. Manage it from the Mine inbox.
@@ -160,7 +157,7 @@ export const ReviewPrDetailPanel = ({ pr, workspaceId, onClose }: Props) => {
             </div>
           </div>
         )}
-      </DetailSection>
+      </StudioWidget>
     </StudioDetailLayout>
   );
 };

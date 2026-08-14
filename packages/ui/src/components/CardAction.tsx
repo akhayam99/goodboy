@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import { cn, tintClasses, Tooltip, type Tone } from '@goodboy/ui';
+import { cn } from '../cn';
+import { tintClasses, type Tone } from '../tint';
+import { Tooltip } from './Tooltip';
 
 type Props = {
   readonly icon: LucideIcon;
@@ -7,6 +9,7 @@ type Props = {
   readonly tone?: Tone;
   readonly size?: 'compact' | 'default';
   readonly reveal?: boolean;
+  readonly revealGroup?: string;
   readonly highlighted?: boolean;
   readonly pressed?: boolean;
   readonly expanded?: boolean;
@@ -20,6 +23,7 @@ export const CardAction = ({
   tone = 'neutral',
   size = 'compact',
   reveal = false,
+  revealGroup = 'group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100',
   highlighted = false,
   pressed,
   expanded,
@@ -43,8 +47,8 @@ export const CardAction = ({
           size === 'compact' ? 'text-3xs' : 'text-xs',
           tintClasses(tone).hoverBgSoft,
           tintClasses(tone).hoverText,
-          reveal &&
-            'opacity-0 group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100',
+          reveal && 'opacity-0',
+          reveal && revealGroup,
           highlighted && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
         )}
       >

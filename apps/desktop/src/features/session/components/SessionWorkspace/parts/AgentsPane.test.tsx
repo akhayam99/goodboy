@@ -4,7 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-vi.mock('@goodboy/ui', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   ScrollFade: ({ children }: { readonly children: React.ReactNode }) => <div>{children}</div>,
   ResizeHandle: ({ ariaLabel }: { readonly ariaLabel: string }) => (
     <div role="separator" aria-label={ariaLabel} />

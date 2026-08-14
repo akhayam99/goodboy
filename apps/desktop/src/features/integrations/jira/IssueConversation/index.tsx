@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { EmptyState, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { ErrorStrip } from '@goodboy/ui';
 import { NoteComposer } from '../../../../shared/components/NoteComposer';
 import type { JiraComment } from '../client';
 import { IssueNoteCard } from './IssueNoteCard';

@@ -38,8 +38,8 @@ import { HeaderBand } from './HeaderBand';
 import { LinkedWorkSection } from './LinkedWorkSection';
 import { NextUpCard } from './NextUpCard';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { LensEmptyState } from '@goodboy/ui';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly session: Session;

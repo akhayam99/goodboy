@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Divider, ScrollFade, cn } from '@goodboy/ui';
 import type { ResolvedDetailFields } from '../../detail-fields';
-import { PANE_RHYTHM } from '../paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { DetailProperties } from './DetailProperties';
 
 type Fit = 'fill' | 'bleed' | 'flow';

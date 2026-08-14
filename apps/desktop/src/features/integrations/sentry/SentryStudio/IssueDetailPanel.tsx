@@ -1,12 +1,9 @@
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useEffect, useState } from 'react';
 import { EmptyState, StatCard, type SegmentedTabOption } from '@goodboy/ui';
 import { Footprints, LayoutList, ListTree } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import {
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../shared/components/StudioDetail';
+import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { resolveDetailFields, sentryIssueFields } from '../../../../shared/detail-fields';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';

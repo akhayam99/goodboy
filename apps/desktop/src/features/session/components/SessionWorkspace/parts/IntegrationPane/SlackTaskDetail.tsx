@@ -1,6 +1,7 @@
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { HeaderBand, StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
-import { LensEmptyState } from '../../../../../../shared/components/LensEmptyState';
+import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
+import { HeaderBand } from '@goodboy/ui';
+import { LensEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SlackThreadDetail } from '../../../../../integrations/slack/SlackThreadDetail';
 import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';

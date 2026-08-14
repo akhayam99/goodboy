@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Markdown } from '@goodboy/ui';
+import { Markdown } from './Markdown';
 
 type Props = {
   readonly header: ReactNode;

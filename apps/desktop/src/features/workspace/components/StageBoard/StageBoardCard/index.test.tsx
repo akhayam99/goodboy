@@ -332,8 +332,8 @@ describe('StageBoardCard actions visibility', () => {
   it('separates delete from archive with a divider in the lifecycle group', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const group = screen.getByRole('group', { name: 'Session lifecycle actions' });
-    const archive = screen.getByLabelText('Archive').closest('[data-tooltip]');
-    const del = screen.getByLabelText('Delete').closest('[data-tooltip]');
+    const archive = screen.getByLabelText('Archive').parentElement;
+    const del = screen.getByLabelText('Delete').parentElement;
     const divider = group.querySelector('[role="separator"]');
     expect(divider).not.toBeNull();
     expect(Array.from(group.children)).toEqual([archive, divider, del]);

@@ -1,6 +1,6 @@
 import { MessageSquare } from 'lucide-react';
 import type { PrCheckRun, PullRequestState } from '@goodboy/types';
-import { BranchPair } from '../components/BranchPair';
+import { BranchPair } from '@goodboy/ui';
 import { PrChecksChip } from '../../features/github/components/PrChecksChip';
 import { ReviewDecisionChip } from '../../features/github/components/ReviewDecisionChip';
 import type { DetailFieldRegistry } from './types';

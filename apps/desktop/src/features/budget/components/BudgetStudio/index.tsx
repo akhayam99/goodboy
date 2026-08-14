@@ -4,7 +4,7 @@ import type { BudgetRule, ProviderName, SessionId, TelemetryRecord } from '@good
 import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
+import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useBudgetData } from '../../hooks/useBudgetData';
 import { OverviewPanel } from './OverviewPanel';

@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { CopyButton } from './index';
+import { CopyButton } from '@goodboy/ui';
 
 afterEach(cleanup);
 
@@ -14,7 +14,9 @@ describe('CopyButton', () => {
       value: { writeText },
     });
 
-    const { container } = render(<CopyButton value="session summary" label="copy summary" />);
+    const { container } = render(
+      <CopyButton presentation="icon" value="session summary" label="copy summary" />,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'copy summary' }));
 
     expect(writeText).toHaveBeenCalledWith('session summary');

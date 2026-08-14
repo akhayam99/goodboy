@@ -1,6 +1,8 @@
 export { cn } from './cn';
 export { escapeLayerCount, registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
+export { useCopyLink } from './useCopyLink';
+export { PANE_RHYTHM } from './paneRhythm';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export {
   AppShell,
@@ -12,6 +14,46 @@ export {
 } from './components/AppShell';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
+export { Avatar } from './components/Avatar';
+export { BranchPair } from './components/BranchPair';
+export { BrandGlyph } from './components/BrandGlyph';
+export { CardAction } from './components/CardAction';
+export { CardActionSlot } from './components/CardActionSlot';
+export { CommandPreview } from './components/CommandPreview';
+export { ErrorStrip } from './components/ErrorStrip';
+export { GhostActionButton } from './components/GhostActionButton';
+export { HeaderBand } from './components/HeaderBand';
+export { MetaItem } from './components/MetaItem';
+export { NoteCard } from './components/NoteCard';
+export { NoteHeader } from './components/NoteHeader';
+export { NoteListSkeleton } from './components/NoteListSkeleton';
+export { OverlayHeader } from './components/OverlayHeader';
+export { PanelLoading } from './components/PanelLoading';
+export { RailBlock } from './components/RailBlock';
+export { RailCard } from './components/RailCard';
+export { RefreshIconButton } from './components/RefreshIconButton';
+export { Sparkline } from './components/Sparkline';
+export { StateBadge } from './components/StateBadge';
+export type { StateTone } from './components/StateBadge';
+export { StudioDetailTabs } from './components/StudioDetailTabs';
+export { StudioRailLayout } from './components/StudioRailLayout';
+export { StudioWidget } from './components/StudioWidget';
+export {
+  ClaudeIcon,
+  BitbucketIcon,
+  GithubIcon,
+  GitlabIcon,
+  GeminiIcon,
+  CursorIcon,
+  JiraIcon,
+  LinearIcon,
+  OpenAIIcon,
+  OpencodeIcon,
+  OpenrouterIcon,
+  MoonshotIcon,
+  SentryIcon,
+  SlackIcon,
+} from './components/brandIcons';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export { Checkbox } from './components/Checkbox';
 export type { CheckboxProps } from './components/Checkbox';
@@ -29,7 +71,7 @@ export { Dialog } from './components/Dialog';
 export type { DialogProps, DialogSize } from './components/Dialog';
 export { Divider } from './components/Divider';
 export type { DividerProps } from './components/Divider';
-export { EmptyState } from './components/EmptyState';
+export { EmptyState, LensEmptyState } from './components/EmptyState';
 export type { EmptyStateProps } from './components/EmptyState';
 export { Eyebrow } from './components/Eyebrow';
 export type { EyebrowProps } from './components/Eyebrow';
@@ -37,6 +79,7 @@ export { FieldRow } from './components/FieldRow';
 export type { FieldRowProps } from './components/FieldRow';
 export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
+export { ConfirmPill } from './components/ConfirmPill';
 export { InlineConfirm } from './components/InlineConfirm';
 export type { ConfirmRole } from './components/InlineConfirm';
 export { Input } from './components/Input';

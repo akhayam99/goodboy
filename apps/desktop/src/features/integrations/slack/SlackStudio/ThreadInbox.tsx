@@ -9,7 +9,7 @@ import {
 } from '@goodboy/ui';
 import { MessagesSquare, Search } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { ErrorStrip } from '@goodboy/ui';
 import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 import { slackThreadFirstLine } from '../threadFormulas';

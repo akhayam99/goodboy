@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Divider, IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
+import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { IntegrationDisconnect } from '../../components/IntegrationDisconnect';
 import { IntegrationGlyph } from '../../components/IntegrationGlyph';

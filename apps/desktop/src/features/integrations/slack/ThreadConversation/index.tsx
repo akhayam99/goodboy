@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { ErrorStrip } from '@goodboy/ui';
 import { NoteComposer } from '../../../../shared/components/NoteComposer';
-import { NoteListSkeleton } from '../../../../shared/components/NoteListSkeleton';
+import { NoteListSkeleton } from '@goodboy/ui';
 import type { SlackChannel, SlackMessage, SlackUser } from '../client';
 import { slackChannelNames, slackUserNames } from '../nameMaps';
 import type { SlackThreadActions } from '../useSlackThreadActions';
@@ -33,7 +33,7 @@ export const ThreadConversation = ({
   const channelNames = useMemo(() => slackChannelNames({ channels }), [channels]);
 
   if (isLoading && messages.length === 0) {
-    return <NoteListSkeleton />;
+    return <NoteListSkeleton label="Loading comments" />;
   }
 
   if (error != null) {

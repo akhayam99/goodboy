@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
-import { CardActionSlot } from '../../../../shared/components/CardActionSlot';
+import { CardActionSlot } from '@goodboy/ui';
 import type { AgentCardDensity } from './agentCardDensity';
 import type { AgentCardTone } from './agentCardTone';
 

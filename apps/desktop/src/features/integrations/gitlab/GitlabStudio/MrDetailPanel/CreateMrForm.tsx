@@ -20,7 +20,7 @@ import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
 import { formatError } from '../../../../../shared/lib/errors';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type CreateMode = 'manual' | 'agent';
 

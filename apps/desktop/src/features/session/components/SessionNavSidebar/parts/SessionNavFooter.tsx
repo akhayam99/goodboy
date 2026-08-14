@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
-import { ConfirmPill } from '../../../../../shared/components/ConfirmPill';
+import { ConfirmPill } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { formatError } from '../../../../../shared/lib/errors';
 import { useToast } from '../../../../../app/components/Toast';

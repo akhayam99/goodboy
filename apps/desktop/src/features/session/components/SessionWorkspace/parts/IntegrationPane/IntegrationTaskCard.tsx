@@ -1,6 +1,6 @@
 import type { SessionExternalTask } from '@goodboy/types';
 import { Chip, MetaRow } from '@goodboy/ui';
-import { RailCard } from '../../../../../../shared/components/RailCard';
+import { RailCard } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../../../shared/utils/relativeDate';
 
 type Props = {

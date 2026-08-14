@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn } from '../cn';
 import type { LucideIcon } from 'lucide-react';
 
 const MARK_SIZE = {

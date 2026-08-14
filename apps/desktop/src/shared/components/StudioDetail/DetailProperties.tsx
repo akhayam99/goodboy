@@ -1,5 +1,5 @@
 import type { ResolvedDetailFields } from '../../detail-fields';
-import { MetaItem } from './MetaItem';
+import { MetaItem } from '@goodboy/ui';
 
 type Props = {
   readonly entries: ResolvedDetailFields;

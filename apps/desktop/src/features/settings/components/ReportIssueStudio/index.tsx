@@ -34,7 +34,7 @@ import { parseIssueCreateResult } from './parseIssueCreateResult';
 import { previewHint } from './previewHint';
 import { stageBugReportImages } from './stageImages';
 import { truncationNotice } from './truncationNotice';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly onClose: () => void;

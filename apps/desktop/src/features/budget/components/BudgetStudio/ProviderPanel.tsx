@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
-import { PanelLoading } from '../../../../shared/components/PanelLoading';
+import { ErrorStrip } from '@goodboy/ui';
+import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { CapEditor } from './CapEditor';
@@ -12,7 +12,7 @@ import { CoverageNotice } from './CoverageNotice';
 import { ModelTable } from './ModelTable';
 import { StudioPanel } from '../../../../shared/components/StudioPanel';
 import { TurnsTable } from './TurnsTable';
-import { StudioWidget } from '../../../../shared/components/StudioWidget';
+import { StudioWidget } from '@goodboy/ui';
 import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
 
 type Props = {

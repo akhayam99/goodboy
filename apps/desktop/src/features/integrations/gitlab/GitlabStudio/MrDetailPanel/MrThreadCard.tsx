@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Divider, Markdown } from '@goodboy/ui';
 import { Check, MessageSquareReply, Undo2 } from 'lucide-react';
-import { IssueStateBadge } from '../../../../../shared/components/IssueStateBadge';
+import { StateBadge } from '@goodboy/ui';
 import { NoteComposer } from '../../../../../shared/components/NoteComposer';
 import { MrNoteHeader } from './MrNoteHeader';
 import { threadAnchor, type MrThread } from './mrThreads';
@@ -37,7 +37,7 @@ export const MrThreadCard = ({ thread, onReply, onResolve, resolveError }: Props
         {anchor != null && (
           <span className="truncate font-mono text-2xs text-muted-foreground">{anchor}</span>
         )}
-        {thread.isResolved && <IssueStateBadge tone="success">resolved</IssueStateBadge>}
+        {thread.isResolved && <StateBadge tone="success">resolved</StateBadge>}
         {onResolve != null && (
           <button
             type="button"

@@ -1,7 +1,8 @@
+import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { Skeleton } from '@goodboy/ui';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { ErrorStrip } from '../../../../../../shared/components/ErrorStrip';
-import { HeaderBand, StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
+import { ErrorStrip } from '@goodboy/ui';
+import { HeaderBand } from '@goodboy/ui';
 import { LinearIssueDetail } from '../../../../../integrations/linear/LinearIssueDetail';
 import { useLinearIssue } from '../../../../../integrations/linear/useLinearIssue';
 

@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import { Tooltip, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly title: string;

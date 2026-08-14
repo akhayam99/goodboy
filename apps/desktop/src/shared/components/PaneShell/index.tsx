@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ScrollFade, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly title: string;

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { Divider, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';

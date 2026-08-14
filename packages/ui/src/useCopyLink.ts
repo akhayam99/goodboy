@@ -8,6 +8,18 @@ type UseCopyLinkResult = {
   readonly copy: (value: string) => Promise<void>;
 };
 
+const fallbackCopy = ({ value }: { readonly value: string }) => {
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+};
+
 export const useCopyLink = (): UseCopyLinkResult => {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -15,13 +27,17 @@ export const useCopyLink = (): UseCopyLinkResult => {
 
   useEffect(
     () => () => {
-      if (timer.current) clearTimeout(timer.current);
+      if (timer.current != null) {
+        clearTimeout(timer.current);
+      }
     },
     [],
   );
 
   const schedule = useCallback(() => {
-    if (timer.current) clearTimeout(timer.current);
+    if (timer.current != null) {
+      clearTimeout(timer.current);
+    }
     timer.current = setTimeout(() => {
       setCopied(false);
       setFailed(false);
@@ -35,8 +51,14 @@ export const useCopyLink = (): UseCopyLinkResult => {
         setCopied(true);
         setFailed(false);
       } catch {
-        setCopied(false);
-        setFailed(true);
+        try {
+          fallbackCopy({ value });
+          setCopied(true);
+          setFailed(false);
+        } catch {
+          setCopied(false);
+          setFailed(true);
+        }
       }
       schedule();
     },

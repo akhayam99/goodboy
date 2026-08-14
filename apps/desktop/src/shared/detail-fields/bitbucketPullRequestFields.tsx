@@ -2,7 +2,7 @@ import type {
   BitbucketPullRequest,
   BitbucketPullRequestState,
 } from '../../features/integrations/bitbucket/client';
-import { IssueStateBadge, type StateTone } from '../components/IssueStateBadge';
+import { StateBadge, type StateTone } from '@goodboy/ui';
 import { formatAbsoluteDateTime } from '../utils/relativeDate';
 import type { DetailFieldRegistry } from './types';
 
@@ -26,7 +26,7 @@ export const bitbucketPullRequestFields: DetailFieldRegistry<BitbucketPullReques
     key: 'state',
     label: 'State',
     render: ({ entity }) => (
-      <IssueStateBadge tone={STATE_TONE[entity.state]}>{STATE_LABEL[entity.state]}</IssueStateBadge>
+      <StateBadge tone={STATE_TONE[entity.state]}>{STATE_LABEL[entity.state]}</StateBadge>
     ),
   },
   {

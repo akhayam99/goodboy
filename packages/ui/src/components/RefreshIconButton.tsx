@@ -1,4 +1,4 @@
-import { IconButton } from '@goodboy/ui';
+import { IconButton } from './IconButton';
 import { RefreshCw } from 'lucide-react';
 
 type Props = {

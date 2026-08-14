@@ -4,7 +4,7 @@ import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../store';
 import type { WorkspaceId } from '@goodboy/types';
 import { ghRepoCollaborators } from '../../github';
-import { NoteAvatar } from '../../../../shared/components/NoteAvatar';
+import { Avatar } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useDropdown } from '../../../../shared/hooks/useDropdown';
 
@@ -105,7 +105,7 @@ export const ReviewerPicker = ({ workspaceRoot, memberWorkspaceId, exclude, onAd
                       }}
                       className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-xs text-foreground hover:bg-muted/60"
                     >
-                      <NoteAvatar url={null} alt={login} size="xs" />
+                      <Avatar url={null} alt={login} size="xs" />
                       <span className="min-w-0 flex-1 truncate">{login}</span>
                     </button>
                   </li>

@@ -1,6 +1,6 @@
 import type { Session, WorkflowRunId } from '@goodboy/types';
 import { ScrollFade, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
 
 type Props = {

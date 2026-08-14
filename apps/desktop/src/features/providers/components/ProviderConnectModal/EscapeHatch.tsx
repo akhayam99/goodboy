@@ -5,7 +5,7 @@ import type { ProviderId } from '@goodboy/types';
 import { openCommandInExternalTerminal } from '../../external-terminal';
 import { formatError } from '../../../../shared/lib/errors';
 import { useAppStore } from '../../../../store';
-import { CopyButton } from '../../../../shared/components/CopyButton';
+import { CopyButton } from '@goodboy/ui';
 
 type Props = {
   readonly command: string;
@@ -83,6 +83,7 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
       <div className="flex flex-wrap items-center gap-1.5">
         <Tooltip content="Copy command" side="top">
           <CopyButton
+            presentation="icon"
             value={command}
             label="copy command"
             className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2.5 py-1 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

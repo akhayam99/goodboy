@@ -1,15 +1,12 @@
+import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
-import {
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../../shared/components/StudioDetail';
+import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { jiraIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
-import { IssueStateBadge } from '../../../../shared/components/IssueStateBadge';
+import { StateBadge } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
 import type { JiraIssue } from '../client';
 import { statusCategoryTone } from '../statusCategoryTone';
@@ -60,9 +57,9 @@ export const JiraIssueDetail = ({
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                 {live.key}
               </span>
-              <IssueStateBadge tone={statusCategoryTone({ statusCategory: live.statusCategory })}>
+              <StateBadge tone={statusCategoryTone({ statusCategory: live.statusCategory })}>
                 {live.status}
-              </IssueStateBadge>
+              </StateBadge>
             </>
           }
           title={live.summary}

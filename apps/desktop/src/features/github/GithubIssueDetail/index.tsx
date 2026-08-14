@@ -1,14 +1,11 @@
+import { StudioDetailLayout } from '../../../shared/components/StudioDetail';
 import { useMemo, useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
-import {
-  HeaderBand,
-  StudioDetailLayout,
-  StudioDetailTabs,
-} from '../../../shared/components/StudioDetail';
+import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { githubIssueFields, resolveDetailFields } from '../../../shared/detail-fields';
-import { IssueStateBadge } from '../../../shared/components/IssueStateBadge';
+import { StateBadge } from '@goodboy/ui';
 import { ExternalRefActions } from '../../../shared/components/ExternalRefActions';
 import { DescriptionSection } from '../../../shared/components/DescriptionSection';
 import { GithubIssueComments } from '../GithubIssueComments';
@@ -72,7 +69,7 @@ export const GithubIssueDetail = ({
               <span className="font-mono text-2xs tabular-nums text-muted-foreground">
                 #{issue.number}
               </span>
-              <IssueStateBadge>{issue.state.toLowerCase()}</IssueStateBadge>
+              <StateBadge>{issue.state.toLowerCase()}</StateBadge>
             </>
           }
           title={issue.title}

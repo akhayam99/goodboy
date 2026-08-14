@@ -1,6 +1,6 @@
 import { MetaRow, cn } from '@goodboy/ui';
 import type { PlanWithCount } from '@goodboy/types';
-import { RailCard } from '../../../../shared/components/RailCard';
+import { RailCard } from '@goodboy/ui';
 import { planStatusBadge } from './planStatusBadge';
 import { fmtTimestamp } from './fmtTimestamp';
 

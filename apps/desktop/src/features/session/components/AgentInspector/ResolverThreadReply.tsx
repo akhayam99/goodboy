@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pencil } from 'lucide-react';
 import { Markdown, SectionHeader, Textarea } from '@goodboy/ui';
-import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
+import { GhostActionButton } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;

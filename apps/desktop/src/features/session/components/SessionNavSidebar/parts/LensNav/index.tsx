@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { LayoutDashboard, Unplug } from 'lucide-react';
 import { Divider, KbdPill, ScrollFade, Skeleton, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
-import { PANE_RHYTHM } from '../../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { classifyAgent, isStandaloneAgent } from '../../../../agent-kind';
 import { isAgentFinished } from '../../../../agent-lifecycle';
 import { isPrReviewSession } from '../../../../../../store/slices/session-view';

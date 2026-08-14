@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Divider, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import type { AgentHomeLens } from '../../../agent-kind';
 import { AgentBreadcrumb } from './AgentBreadcrumb';

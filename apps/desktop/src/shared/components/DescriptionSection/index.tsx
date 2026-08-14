@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import { Button, Markdown, Textarea, cn } from '@goodboy/ui';
 import { useInlineProseEdit } from '../../hooks/useInlineProseEdit';
-import { DetailSection } from '../StudioDetail';
+import { StudioWidget } from '@goodboy/ui';
 
 type Props = {
   readonly text: string;
@@ -13,7 +13,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
 
   if (edit.isEditing) {
     return (
-      <DetailSection label="description" variant="frameless">
+      <StudioWidget label="description" variant="frameless">
         <div className="flex flex-col gap-3">
           <Textarea
             autoFocus
@@ -49,12 +49,13 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
             </div>
           </div>
         </div>
-      </DetailSection>
+      </StudioWidget>
     );
   }
 
   return (
-    <DetailSection
+    <StudioWidget
+      presentation="section"
       label="description"
       variant="frameless"
       action={
@@ -80,6 +81,6 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
           <p className="text-sm italic text-muted-foreground/60">No description.</p>
         )}
       </div>
-    </DetailSection>
+    </StudioWidget>
   );
 };

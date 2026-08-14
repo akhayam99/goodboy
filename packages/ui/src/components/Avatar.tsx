@@ -1,25 +1,26 @@
 import { useState } from 'react';
+import { cn } from '../cn';
 
-type NoteAvatarSize = 'xs' | 'sm';
+type AvatarSize = 'xs' | 'sm';
 
 type Props = {
   readonly url: string | null;
   readonly alt: string;
-  readonly size?: NoteAvatarSize;
+  readonly size?: AvatarSize;
   readonly initialsSource?: string;
 };
 
-const DIMENSION_CLASS: Record<NoteAvatarSize, string> = {
+const DIMENSION_CLASS: Record<AvatarSize, string> = {
   xs: 'h-4 w-4',
   sm: 'h-5 w-5',
 };
 
-const FALLBACK_TEXT_CLASS: Record<NoteAvatarSize, string> = {
+const FALLBACK_TEXT_CLASS: Record<AvatarSize, string> = {
   xs: 'text-3xs',
   sm: 'text-2xs',
 };
 
-export const NoteAvatar = ({ url, alt, size = 'sm', initialsSource = alt }: Props) => {
+export const Avatar = ({ url, alt, size = 'sm', initialsSource = alt }: Props) => {
   const [failed, setFailed] = useState(false);
   const dimension = DIMENSION_CLASS[size];
 
@@ -28,7 +29,11 @@ export const NoteAvatar = ({ url, alt, size = 'sm', initialsSource = alt }: Prop
     return (
       <span
         aria-hidden
-        className={`inline-flex ${dimension} shrink-0 items-center justify-center rounded-full bg-muted ${FALLBACK_TEXT_CLASS[size]} font-semibold text-muted-foreground`}
+        className={cn(
+          'inline-flex shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground',
+          dimension,
+          FALLBACK_TEXT_CLASS[size],
+        )}
       >
         {initial !== '' ? initial : '?'}
       </span>
@@ -42,7 +47,7 @@ export const NoteAvatar = ({ url, alt, size = 'sm', initialsSource = alt }: Prop
       aria-hidden={alt === '' ? true : undefined}
       loading="lazy"
       onError={() => setFailed(true)}
-      className={`${dimension} shrink-0 rounded-full`}
+      className={cn('shrink-0 rounded-full', dimension)}
     />
   );
 };

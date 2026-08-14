@@ -1,5 +1,5 @@
 import { Skeleton, SkeletonText, cn, tintClasses } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 const accent = tintClasses('neutral');
 

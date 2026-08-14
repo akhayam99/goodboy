@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { GithubIcon } from '../brand-icons';
-import { BrandGlyph } from './index';
+import { GithubIcon } from '@goodboy/ui';
+import { BrandGlyph } from '@goodboy/ui';
 
 afterEach(cleanup);
 

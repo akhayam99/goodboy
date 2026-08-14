@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check, ChevronRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import { CopyButton } from '../../../../../shared/components/CopyButton';
+import { CopyButton } from '@goodboy/ui';
 import { STATUS_COLOR, STATUS_GLYPH, type ReviewState } from '../lib';
 import type { TreeNode } from './tree';
 
@@ -83,6 +83,7 @@ export const TreeNodeView = ({
           </span>
         </button>
         <CopyButton
+          presentation="icon"
           value={file.path}
           label="copy file path"
           size={10}

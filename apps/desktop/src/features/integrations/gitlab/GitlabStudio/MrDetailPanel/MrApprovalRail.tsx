@@ -1,5 +1,5 @@
 import { Skeleton } from '@goodboy/ui';
-import { RailBlock } from '../../../../../shared/components/StudioDetail';
+import { RailBlock } from '@goodboy/ui';
 import type { GitlabMrApprovalState } from '../../client';
 
 type Props = {

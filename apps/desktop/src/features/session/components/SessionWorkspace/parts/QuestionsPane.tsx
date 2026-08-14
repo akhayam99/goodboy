@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Bot, Check } from 'lucide-react';
 import { CountToggle, Skeleton } from '@goodboy/ui';
-import { LensEmptyState } from '../../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,

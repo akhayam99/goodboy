@@ -9,7 +9,7 @@ import {
 } from '../../../../../shared/utils/relativeDate';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { WorkflowOriginTag } from '../../../../workflows/components/WorkflowOriginTag';
-import { RailCard } from '../../../../../shared/components/RailCard';
+import { RailCard } from '@goodboy/ui';
 
 type Props = {
   readonly run: WorkflowRun;

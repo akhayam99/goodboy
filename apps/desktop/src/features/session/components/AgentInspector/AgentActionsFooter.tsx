@@ -3,8 +3,8 @@ import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
 import { InlineConfirm, cn } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { GhostActionButton } from '@goodboy/ui';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type Props = {
   readonly agent: Agent;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Check, GitCommit, GitMerge, Pencil, X } from 'lucide-react';
 import { InlineConfirm, Input, cn } from '@goodboy/ui';
 import type { BranchCommit } from '@goodboy/types';
-import { GhostActionButton } from '../../../../shared/components/GhostActionButton';
+import { GhostActionButton } from '@goodboy/ui';
 
 type Mode = 'amend' | 'squash';
 

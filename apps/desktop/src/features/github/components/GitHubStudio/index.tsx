@@ -8,7 +8,7 @@ import { PrDetailPanel } from './PrDetailPanel';
 import { GithubIssueDetailPanel } from './GithubIssueDetailPanel';
 import { useGithubInbox } from './useGithubInbox';
 import { useGithubIssues } from './useGithubIssues';
-import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
+import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
 import { ReviewInboxList } from '../../../review/components/ReviewInboxList';

@@ -2,11 +2,11 @@ import { EmptyState } from '@goodboy/ui';
 import type { GithubIssueComment } from '@goodboy/types';
 import { formatRelativeDuration } from '../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-import { NoteAvatar } from '../../../shared/components/NoteAvatar';
-import { NoteCard } from '../../../shared/components/NoteCard';
+import { Avatar } from '@goodboy/ui';
+import { NoteCard } from '@goodboy/ui';
 import { NoteComposer } from '../../../shared/components/NoteComposer';
-import { NoteHeader } from '../../../shared/components/NoteHeader';
-import { NoteListSkeleton } from '../../../shared/components/NoteListSkeleton';
+import { NoteHeader } from '@goodboy/ui';
+import { NoteListSkeleton } from '@goodboy/ui';
 
 type Props = {
   readonly comments: ReadonlyArray<GithubIssueComment>;
@@ -17,7 +17,7 @@ type Props = {
 
 export const GithubIssueComments = ({ comments, isLoading, error, onPost }: Props) => {
   if (isLoading) {
-    return <NoteListSkeleton />;
+    return <NoteListSkeleton label="Loading comments" />;
   }
 
   return (
@@ -42,9 +42,7 @@ export const GithubIssueComments = ({ comments, isLoading, error, onPost }: Prop
                 key={comment.id}
                 header={
                   <NoteHeader
-                    avatar={
-                      <NoteAvatar url={comment.authorAvatarUrl} alt={comment.author} size="xs" />
-                    }
+                    avatar={<Avatar url={comment.authorAvatarUrl} alt={comment.author} size="xs" />}
                     author={comment.author}
                     timestamp={relativeDate !== '' ? <span>{relativeDate} ago</span> : null}
                     size="xs"

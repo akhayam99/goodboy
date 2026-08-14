@@ -2,8 +2,8 @@ import { AlertTriangle, Play } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { useStartAnywayConfirm } from '../../../../workflows/useStartAnywayConfirm';
-import { CardAction } from '../../../../../shared/components/CardAction';
-import { GhostActionButton } from '../../../../../shared/components/GhostActionButton';
+import { CardAction } from '@goodboy/ui';
+import { GhostActionButton } from '@goodboy/ui';
 
 type Props = {
   readonly variant: 'sidebar' | 'detail';

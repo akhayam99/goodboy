@@ -7,7 +7,7 @@ import type { MultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 const ZERO_STATE: Record<SessionStage | 'archived', string> = {
   attention: 'nothing needs you',

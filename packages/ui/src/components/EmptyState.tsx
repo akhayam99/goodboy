@@ -127,3 +127,12 @@ export const EmptyState = ({
     </div>
   );
 };
+
+type LensEmptyStateProps = IllustrationProps &
+  Omit<EmptyStateProps, keyof IllustrationProps | 'bordered' | 'size'> & {
+    readonly description: string;
+  };
+
+export const LensEmptyState = (props: LensEmptyStateProps) => (
+  <EmptyState {...props} bordered size="inline" />
+);

@@ -4,7 +4,7 @@ import { AdHocRow } from '../../../workspace/components/WorkspacesSidebar/parts/
 import { AgentLane } from '../AgentLane';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '../../../../shared/components/LensEmptyState';
+import { LensEmptyState } from '@goodboy/ui';
 import { AgentLaneNote } from '../AgentLane/AgentLaneNote';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { AgentListSkeleton } from './AgentListSkeleton';

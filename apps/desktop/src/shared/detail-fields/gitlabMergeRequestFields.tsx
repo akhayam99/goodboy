@@ -3,7 +3,7 @@ import {
   type GitlabMergeRequest,
   type GitlabMergeStatusTone,
 } from '../../features/integrations/gitlab/client';
-import { IssueStateBadge, type StateTone } from '../components/IssueStateBadge';
+import { StateBadge, type StateTone } from '@goodboy/ui';
 import { formatAbsoluteDateTime } from '../utils/relativeDate';
 import type { DetailFieldRegistry } from './types';
 
@@ -38,9 +38,7 @@ export const gitlabMergeRequestFields: DetailFieldRegistry<GitlabMergeRequest> =
       if (status == null) {
         return null;
       }
-      return (
-        <IssueStateBadge tone={MERGE_STATUS_TONE[status.tone]}>{status.label}</IssueStateBadge>
-      );
+      return <StateBadge tone={MERGE_STATUS_TONE[status.tone]}>{status.label}</StateBadge>;
     },
   },
   {

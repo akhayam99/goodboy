@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn } from '../cn';
 
 type Props = {
   readonly label: string;

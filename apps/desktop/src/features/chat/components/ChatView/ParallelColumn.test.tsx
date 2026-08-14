@@ -42,7 +42,8 @@ vi.mock('../OperationsCluster', () => ({
   ),
 }));
 
-vi.mock('@goodboy/ui', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   ScrollFade: ({ children }: { children: ReactNode }) => (
     <div className="overflow-y-auto">{children}</div>
   ),

@@ -4,8 +4,9 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { openUrl } from '../../../../../../shared/lib/editor';
-import { HeaderBand, StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
+import { HeaderBand } from '@goodboy/ui';
 import { ExternalTaskChip } from '../../../../../integrations/components/ExternalTaskChip';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { LinearTaskDetail } from './LinearTaskDetail';

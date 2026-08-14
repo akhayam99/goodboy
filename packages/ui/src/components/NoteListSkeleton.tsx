@@ -1,7 +1,11 @@
-import { Skeleton } from '@goodboy/ui';
+import { Skeleton } from './Skeleton';
 
-export const NoteListSkeleton = () => (
-  <div role="status" aria-label="Loading comments" className="flex flex-col gap-4">
+type Props = {
+  readonly label: string;
+};
+
+export const NoteListSkeleton = ({ label }: Props) => (
+  <div role="status" aria-label={label} className="flex flex-col gap-4">
     {[0, 1, 2].map((row) => (
       <div key={row} className="flex flex-col gap-2 rounded-lg bg-muted/20 p-3">
         <Skeleton className="h-3 w-28 rounded" />

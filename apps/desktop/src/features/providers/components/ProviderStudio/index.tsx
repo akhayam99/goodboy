@@ -4,7 +4,7 @@ import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/
 import type { ProviderInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { StudioRailLayout } from '../../../../shared/components/StudioRailLayout';
+import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
 import { ProvidersRail } from './ProvidersRail';

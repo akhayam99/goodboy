@@ -1,5 +1,5 @@
 import { PROVIDER_IDS } from '@goodboy/types';
-import { BrandGlyph } from '../../../shared/components/BrandGlyph';
+import { BrandGlyph } from '@goodboy/ui';
 import { PROVIDER_BRAND } from './provider-brand';
 
 type Props = {

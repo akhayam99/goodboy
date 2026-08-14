@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { cn, Divider } from '@goodboy/ui';
+import { cn } from '../cn';
+import { Divider } from './Divider';
 
 const RAIL_WIDTH_CLASSES = {
   narrow: 'w-64',

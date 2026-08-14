@@ -1,5 +1,5 @@
 import { Check, X } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn } from '../cn';
 
 type Props = {
   readonly label: string;
@@ -10,7 +10,14 @@ type Props = {
   readonly onCancel: () => void;
 };
 
-export const ConfirmPill = ({ label, confirmAria, danger, busy, onConfirm, onCancel }: Props) => (
+export const ConfirmPill = ({
+  label,
+  confirmAria,
+  danger = false,
+  busy = false,
+  onConfirm,
+  onCancel,
+}: Props) => (
   <span className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-background/95 px-1 py-0.5 shadow-sm">
     <span className="px-0.5 text-2xs text-muted-foreground">{label}</span>
     <button

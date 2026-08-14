@@ -10,7 +10,7 @@ import {
 import { GitMerge, Search } from 'lucide-react';
 import type { GitlabMergeRequest } from '../client';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { ErrorStrip } from '../../../../shared/components/ErrorStrip';
+import { ErrorStrip } from '@goodboy/ui';
 import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
 import type { GitlabMrGroup } from './useGitlabMrs';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';

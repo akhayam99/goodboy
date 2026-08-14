@@ -1,5 +1,6 @@
-import { Loader2, type LucideIcon } from 'lucide-react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { RefreshCw, type LucideIcon } from 'lucide-react';
+import { cn } from '../cn';
+import { tintClasses, type Tone } from '../tint';
 
 type Props = {
   readonly icon: LucideIcon;
@@ -48,7 +49,7 @@ export const GhostActionButton = ({
       )}
     >
       {isBusy ? (
-        <Loader2 size={14} aria-hidden className="motion-safe:animate-spin opacity-80" />
+        <RefreshCw size={14} aria-hidden className="motion-safe:animate-spin opacity-80" />
       ) : (
         <Icon size={14} aria-hidden />
       )}

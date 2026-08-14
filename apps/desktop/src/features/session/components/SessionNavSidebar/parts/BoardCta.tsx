@@ -1,6 +1,6 @@
 import { Kanban } from 'lucide-react';
 import { KbdPill, cn, tintClasses } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 
 type Props = {

@@ -5,8 +5,8 @@ import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { InspectorHeader } from './InspectorSplit/InspectorHeader';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { CopyButton } from '../../../../../shared/components/CopyButton';
-import { PANE_RHYTHM } from '../../../../../shared/components/paneRhythm';
+import { CopyButton } from '@goodboy/ui';
+import { PANE_RHYTHM } from '@goodboy/ui';
 
 type HistoryEntryProps = {
   readonly entry: ContextSlotHistoryEntry;
@@ -39,6 +39,7 @@ const HistoryEntry = ({
         </span>
         <div className="ml-auto flex items-center gap-1">
           <CopyButton
+            presentation="icon"
             value={entry.value}
             label="copy this version"
             className="rounded-md p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground"

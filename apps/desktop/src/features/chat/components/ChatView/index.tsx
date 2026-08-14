@@ -24,7 +24,7 @@ import type {
   TurnState,
 } from '@goodboy/types';
 import { Button, Divider, ScrollFade, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   useAppStore,

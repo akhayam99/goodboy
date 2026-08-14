@@ -1,4 +1,4 @@
-import { formatUsdPrecise } from '@goodboy/ui';
+import { formatUsdPrecise } from '../format-cost';
 
 type Props = {
   readonly values: ReadonlyArray<number>;

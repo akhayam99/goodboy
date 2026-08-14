@@ -35,7 +35,7 @@ import { ExternalTaskChip } from '../../../../features/integrations/components/E
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '../../../../shared/components/paneRhythm';
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { sessionCardShell } from '../../../session/components/sessionCardShell';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { BulkActionBar } from '../BulkActionBar';
