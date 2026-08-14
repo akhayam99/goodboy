@@ -96,7 +96,7 @@ describe('CopyButton', () => {
     mockClipboard(writeText);
 
     const { container } = render(
-      <CopyButton variant="icon" value="session summary" label="copy summary" />,
+      <CopyButton presentation="icon" value="session summary" label="copy summary" />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'copy summary' }));
 
@@ -111,7 +111,7 @@ describe('CopyButton', () => {
     mockClipboard(vi.fn().mockResolvedValue(undefined));
 
     render(
-      <CopyButton variant="icon" value="abc" label="copy id">
+      <CopyButton presentation="icon" value="abc" label="copy id">
         id
       </CopyButton>,
     );

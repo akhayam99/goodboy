@@ -8,7 +8,15 @@ afterEach(cleanup);
 
 describe('CardAction', () => {
   it('reveals on card hover and focus when reveal is set', () => {
-    render(<CardAction icon={Star} label="Pin" reveal onClick={vi.fn()} />);
+    render(
+      <CardAction
+        icon={Star}
+        label="Pin"
+        reveal
+        revealGroup="group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+        onClick={vi.fn()}
+      />,
+    );
     const button = screen.getByRole('button', { name: 'Pin' });
 
     expect(button.className).toContain('opacity-0');

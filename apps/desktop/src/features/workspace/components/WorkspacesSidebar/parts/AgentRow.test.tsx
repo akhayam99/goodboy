@@ -184,8 +184,8 @@ describe('AgentRow', () => {
     const lifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
 
     expect(remove.className).toContain('opacity-0');
-    expect(remove.className).toContain('group-hover/card:opacity-100');
-    expect(remove.className).toContain('group-focus-within/card:opacity-100');
+    expect(remove.className).toContain('group-hover/agent-card:opacity-100');
+    expect(remove.className).toContain('group-focus-within/agent-card:opacity-100');
     expect(remove.className).not.toContain('hidden');
     expect(done.className).not.toContain('hidden');
     expect(details.className).not.toContain('opacity-0');

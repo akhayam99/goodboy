@@ -1,8 +1,9 @@
-import { RefreshCw, type LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
+import { StatusDot } from './StatusDot';
 
-type Props = {
+export type GhostActionButtonProps = {
   readonly icon: LucideIcon;
   readonly label: string;
   readonly tone?: Tone;
@@ -28,7 +29,7 @@ export const GhostActionButton = ({
   title,
   ariaLabel,
   onClick,
-}: Props) => {
+}: GhostActionButtonProps) => {
   const tint = tintClasses(tone);
 
   return (
@@ -49,7 +50,7 @@ export const GhostActionButton = ({
       )}
     >
       {isBusy ? (
-        <RefreshCw size={14} aria-hidden className="motion-safe:animate-spin opacity-80" />
+        <StatusDot tone="neutral" size="sm" pulsing className="bg-current" />
       ) : (
         <Icon size={14} aria-hidden />
       )}

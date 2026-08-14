@@ -3,7 +3,7 @@ import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 import { Tooltip } from './Tooltip';
 
-type Props = {
+export type CardActionProps = {
   readonly icon: LucideIcon;
   readonly label: string;
   readonly tone?: Tone;
@@ -29,7 +29,7 @@ export const CardAction = ({
   expanded,
   disabled = false,
   onClick,
-}: Props) => (
+}: CardActionProps) => (
   <Tooltip content={label} side="top">
     <span className={cn('inline-flex shrink-0', size === 'compact' ? 'size-6' : 'size-7')}>
       <button
