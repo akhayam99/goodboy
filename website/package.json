@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 1499 --host",
     "build": "tsc -b && vite build",
+    "build:og": "node scripts/build-og.mjs",
     "preview": "vite preview --port 1499"
   },
   "dependencies": {

@@ -1,37 +1,40 @@
 # How to release Goodboy
 
+> **Read this when** an agent is executing a release and needs the step
+> order plus the gotchas that bit previous runs. **Not for** signing,
+> notarization or updater detail (`docs/release.md`).
+
 Agent playbook for cutting a release. When the user says **"release the next
 version"**, **"rilascia la prossima minor/patch"**, **"ship the next release"**,
 or similar, follow this file end to end. No further instructions needed.
 
-`docs/release.md` is the technical runbook (signing, notarization, updater,
-homebrew). This file is the step order plus the gotchas that bit previous runs.
+[release.md](release.md) is the technical runbook (signing, notarization,
+updater, homebrew). This file is the step order plus the gotchas that bit
+previous runs.
 
 ## Figure out the version yourself
 
 1. Find the current latest: `gh release list --limit 5` (the one tagged
    `Latest`) and `git tag | sort -V | tail`.
-2. Compute the next version from what the user asked:
-   - "next patch" / "next version" (default): bump the patch, `0.1.11 -> 0.1.12`.
-   - "next minor": bump the minor, reset patch, `0.1.11 -> 0.2.0`.
-   - "next major": `0.1.11 -> 1.0.0`.
-     If the request is ambiguous, default to a patch bump and say so.
-3. Confirm the computed target with the user in one line before bumping.
+2. Compute the next version from what the user asked: patch by default
+   (`0.1.11 -> 0.1.12`), "next minor" resets the patch (`0.1.11 -> 0.2.0`),
+   "next major" gives `1.0.0`. Ambiguous means patch, and say so.
+3. Confirm the computed target with the user in one line before bumping. An
+   autonomous run has no user to ask and arrives with the version already
+   decided: it skips this step rather than stalling on it.
 
 Below, `X` is the new version and `X-1` is the current latest.
 
 ## Process
 
-1. Bump `X-1` -> `X` in ALL 6 files: `package.json`,
-   `apps/desktop/package.json`, `apps/desktop/src-tauri/tauri.conf.json`,
-   `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/Cargo.lock`
-   (the `goodboy-desktop` package entry), and `website/src/site.ts`
-   (`SITE.version`, which keeps the leading `v`: `vX`). In the same commit, add the `## Goodboy
-vX` section to `CHANGELOG.md` (see "Release notes" below): the release
-   build reads its body from there and fails if the section is missing, so this
-   is not optional.
-2. Branch `ak/chore-release-vX` (NOT the worktree codename; see branch-naming
-   convention). Commit `chore(repo): bump version to X`, push, open PR.
+1. Apply the version bump across the six places listed in
+   [release.md](release.md) → The version bump.
+   In the same commit add the `## Goodboy vX` section to `CHANGELOG.md` (see
+   "Release notes" below): the build reads its body from there and fails if the
+   section is missing.
+2. Create the release branch under the branch-naming rule in
+   [CONVENTIONS.md](../CONVENTIONS.md). Commit
+   `chore(repo): bump version to X`, push, open PR.
 3. Wait for ALL CI checks green (`gh pr checks`). Then merge server-side
    (`gh pr merge --squash`). DO NOT advance/checkout/pull local `main`, it
    restarts the app. Use `git fetch origin main` to get the merge SHA, tag that
@@ -39,11 +42,19 @@ vX` section to `CHANGELOG.md` (see "Release notes" below): the release
    boundary, so poll CI and builds with a foreground until-loop, not
    `run_in_background`.
 4. rc dry-run: `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
-   Wait for `release.yml` to finish green. VERIFY notarization: download the dmg,
-   `hdiutil attach`, run `spctl -a -vvv` (expect `accepted, source=Notarized
-Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`; any
-   other team is a failure). Detach. Then delete the rc (release + remote tag +
-   local tag).
+   Wait for `release.yml` to finish green. VERIFY notarization: download the
+   dmg, `hdiutil attach`, copy `Goodboy.app` out of the mounted volume, then
+   run `spctl -a -vvv` and `codesign -dv --verbose=4` against the copy (expect
+   `accepted, source=Notarized Developer ID`; the required team and the
+   failure condition are in [release.md](release.md)). Detach. Then delete the
+   rc, all three of it:
+
+   ```bash
+   gh release delete vX-rc.1 --repo akhayam99/goodboy --yes
+   git push origin :refs/tags/vX-rc.1
+   git tag -d vX-rc.1
+   ```
+
 5. Cut real: `git tag vX <merge-sha> && git push origin vX`. Wait for the build
    to produce the draft release: macOS gives dmg + app.tar.gz + .sig +
    latest.json, Linux gives AppImage + deb + rpm (x86_64, no updater manifest
@@ -52,47 +63,32 @@ Developer ID`) and `codesign -dv --verbose=4` (expect team `M3R9H4QX65`; any
 
 ## Release notes (from source, not memory)
 
-Notes live in `CHANGELOG.md`, written BEFORE the tag exists (step 1 above), not
-edited onto the release after the build. `.github/workflows/release.yml` reads
-the `## Goodboy vX` section verbatim as both the GitHub release body and the
-in-app updater's `latest.json` notes, and fails the build if that section is
-missing.
+Notes live in `CHANGELOG.md`, written BEFORE the tag exists (step 1), never
+edited onto the release after the build.
 
 - Get the ACTUAL merged PRs since `X-1`:
   `gh pr list --state merged --base main --json number,title,mergedAt` filtered to
   `mergedAt` after the `X-1` release timestamp (`gh release view vX-1`).
-- READ EACH app-facing PR body (`gh pr view <n> --json title,body`). Write notes
-  ONLY from what the PR bodies actually say. Do NOT use git commit messages, do
-  NOT use any `memory/MEMORY.md` project notes (they describe in-flight/planned
-  work and WILL be wrong). If a PR dropped a feature, say so. Do not promise
-  follow-up work or migrations unless the PR itself commits to it.
+- READ EACH app-facing PR body (`gh pr view <n> --json title,body`) and write
+  ONLY from what those bodies say. NOT commit messages, NOT private memory
+  notes (in-flight or planned work, they WILL be wrong). If a PR dropped a
+  feature, say so. Promise follow-up work only when the PR commits to it.
 - Include only `desktop`/`ui`/`core` PRs in the app notes. Exclude
   `website`/`repo`/`docs` PRs.
-- BEFORE writing, read `docs/tone-of-voice.md` and obey it, in particular its
-  "Release notes" rules: headings name the capability and never personify it
-  ("Pull requests carry the queued check state", not "The pull request tells
-  the truth"); the headline feature gets a lead line plus at most three short
-  paragraphs, every other feature one or two, a fix one line; limits go inside
-  the sentence that promises the thing; work not yet exercised against a live
-  service is a one-line follow-up, never "not verified". Plus the standing
-  rules: no "AI", no em-dashes, no fluff/minimizers/superlatives, no "bring
-  your own X", sentence-case headings, no trailing period on headings/list
-  items.
+- BEFORE writing, read [tone-of-voice.md](tone-of-voice.md) and obey it, its
+  "Release notes" section in particular. It is the law here, not a suggestion.
 
 ### Format (match the curated changelog of v0.1.7 through v0.1.11)
 
-- Section heading: `## Goodboy vX`. NO codename (release names were dropped
-  from v0.1.8 on). Add the new section above the previous one (newest first).
-- Right under the heading, a one-line lead summary of the release.
+- Section heading `## Goodboy vX`, no codename (dropped from v0.1.8 on), added
+  above the previous one. Under it, a one-line lead summary.
 - Each feature is an `### sentence-case heading` with its PR ref(s) in square
-  brackets at the START of the heading, e.g.
-  `### [#1241, #1243] Review a Bitbucket pull request in place`. This matches
-  what `CHANGELOG.md` actually does; when the file and this doc disagree,
-  match the file and fix this doc.
-- Lead with the marquee feature, then the rest in priority order.
-- End with a `### Fixes` (or `### Smaller fixes`) section: one bullet per fix,
-  each with its PR ref at the end of the line. The same PR can repeat across
-  bullets if it covered several fixes.
+  brackets at the START, e.g.
+  `### [#1241, #1243] Review a Bitbucket pull request in place`. When
+  `CHANGELOG.md` and this doc disagree, match the file and fix this doc.
+- Marquee feature first, then the rest in priority order.
+- End with `### Fixes` (or `### Smaller fixes`): one bullet per fix, PR ref at
+  the end of the line, repeating a PR across bullets when it covered several.
 
 ## Finish
 

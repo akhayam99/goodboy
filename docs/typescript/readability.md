@@ -1,12 +1,12 @@
 # Readability: speaking names, no comments
 
-Code should read for itself. If a name is clear, no comment is needed. The
-zero-comments rule is enforced in [AGENTS.md](../../AGENTS.md) → Code rules.
+> **Read this when** naming a variable, parameter or callback, or you are
+> tempted to add a code comment. **Not for** type or parameter naming rules
+> (see `docs/typescript/components.md` and `docs/typescript/data.md`).
 
 ## Speaking names, never cryptic abbreviations
 
-Variables, parameters and callbacks name the thing they hold. No single-letter or
-truncated names.
+Variables, parameters and callbacks name the thing they hold. No single-letter or truncated names.
 
 ```ts
 // good
@@ -18,15 +18,14 @@ const s = data.sessions?.[0];
 agents.map((a) => a.id);
 ```
 
-Exceptions kept short on purpose: the conventional event handler arg `e` and the
-state selector arg in store hooks. Everything that holds domain data gets a full
-name.
+Exceptions kept short on purpose: the conventional event handler arg `e` and the state selector arg in store hooks.
 
-## Zero comments
+## Why comments are prohibited
 
-Comments are not used. Not WHAT, not WHY, not JSDoc. A comment that restates
-what the code does is noise; if code needs a comment to be understood, rename
-until it speaks for itself.
+The working prohibition and its tooling exception live in
+[AGENTS.md](../../AGENTS.md) → Forbidden patterns. The reason is that a
+comment that restates what code does becomes noise, while code that needs a
+comment to be understood needs names that speak for themselves.
 
 ```ts
 // good: the guard reads for itself
@@ -39,6 +38,3 @@ if (a !== b) {
   return; // bail if the agent changed during the fetch
 }
 ```
-
-The only thing left in code is required tooling directives (e.g. the
-`/// <reference />` in `vite-env.d.ts`), which are not comments.

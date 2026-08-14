@@ -1,124 +1,114 @@
 # Docs map
 
-The index for Goodboy's documentation. Start here to find the right file for
-what you're doing, then load only what your role needs. Every doc has one job
-and one owner. If a concept lives in two places, one of them is wrong.
+> **Read this when** you need to decide which documentation a task qualifies
+> to load before opening it. **Not for** application or delivery rules; this
+> file routes to their owners.
 
-## Role to doc matrix
+Each concept has one owner. Another document that needs it links to that
+owner rather than restating it, so there is never a second copy to drift.
 
-Which docs each role loads. Rows are roles, a check means "load this when
-working in that role". Load top to bottom: a role rarely needs every doc at
-once, so pull the deep-dive only when the task touches it.
+Two things are deliberately not here: where the product is going, and the
+autonomous delivery organization that ships it. Both live in `goodboy-atlas`,
+a private repository. If you are collaborating on direction rather than on
+code, ask the owner for access; nothing in this repository depends on it.
 
-| Doc                                                     | scout | planner | implementer | reviewer | pr-release | autonomy | onboarding |
-| ------------------------------------------------------- | :---: | :-----: | :---------: | :------: | :--------: | :------: | :--------: |
-| [README.md](../README.md)                               |       |         |             |          |            |          |     ✓      |
-| [VISION.md](../VISION.md)                               |   ✓   |    ✓    |             |          |            |    ✓     |     ✓      |
-| [DESIGN.md](../DESIGN.md)                               |       |    ✓    |      ✓      |    ✓     |            |    ✓     |     ✓      |
-| [AUTONOMY.md](../AUTONOMY.md) + [cluster](autonomy/)    |       |         |             |          |     ✓      |    ✓     |     ✓      |
-| [AGENTS.md](../AGENTS.md)                               |   ✓   |    ✓    |      ✓      |    ✓     |            |    ✓     |     ✓      |
-| [CONVENTIONS.md](../CONVENTIONS.md)                     |       |    ✓    |      ✓      |    ✓     |     ✓      |    ✓     |     ✓      |
-| [glossary.md](glossary.md)                              |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
-| [design.md](design.md)                                  |       |    ✓    |      ✓      |    ✓     |            |          |            |
-| [navigation.md](navigation.md)                          |       |    ✓    |      ✓      |    ✓     |            |          |            |
-| [typescript.md](typescript.md) + [cluster](typescript/) |       |         |      ✓      |    ✓     |            |          |            |
-| [styling.md](styling.md)                                |       |         |      ✓      |    ✓     |            |          |            |
-| [tone-of-voice.md](tone-of-voice.md)                    |       |         |      ✓      |    ✓     |     ✓      |    ✓     |            |
-| [providers.md](providers.md)                            |   ✓   |    ✓    |      ✓      |          |            |          |     ✓      |
-| [model-picker.md](model-picker.md)                      |       |    ✓    |      ✓      |    ✓     |            |          |            |
-| [release.md](release.md)                                |       |         |             |          |     ✓      |          |            |
-| [release-command.md](release-command.md)                |       |         |             |          |     ✓      |    ✓     |            |
-| [workflows.md](workflows.md)                            |       |    ✓    |      ✓      |    ✓     |            |          |            |
-| [file-system.md](file-system.md)                        |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
-| [architecture.md](architecture.md)                      |   ✓   |    ✓    |      ✓      |    ✓     |            |          |     ✓      |
-| [testing.md](testing.md)                                |       |    ✓    |      ✓      |    ✓     |            |          |            |
-| [dependencies.md](dependencies.md)                      |       |    ✓    |      ✓      |    ✓     |            |          |            |
-| per-workspace `CONVENTIONS.md` / `README.md`            |       |         |      ✓      |    ✓     |            |          |     ✓      |
+## Root hubs
 
-## Reference map
+- [README.md](../README.md): when you are new here, human or agent, and want
+  the pitch, install steps, and feature tour.
+- [VISION.md](../VISION.md): when you are the product owner shaping intent,
+  priorities, or a new area's story.
+- [DESIGN.md](../DESIGN.md): when you are judging whether a screen or flow is
+  right, against the three questions and the north star.
+- [AGENTS.md](../AGENTS.md): when you are an agent about to write code here
+  and need the working-memory floor and forbidden-patterns checklist.
+- [CONVENTIONS.md](../CONVENTIONS.md): when you need monorepo-wide process
+  rules: pnpm, git workflow, commits, or CI.
+- [SECURITY.md](../SECURITY.md): when you are reporting a vulnerability or
+  checking what Goodboy does with user data before a diff ships.
 
-The graph is hub and spoke, never a lateral web.
+## Task docs
 
-- **Two code hubs.** [AGENTS.md](../AGENTS.md) is the code hub: it holds the
-  working-memory floor every code agent keeps in mind (forbidden-patterns
-  checklist plus a hard-rules summary). [CONVENTIONS.md](../CONVENTIONS.md) is
-  the process and monorepo hub (pnpm, turbo, tsconfig, ci, git, release).
-- **Spokes are the deep dives** under `docs/`. Each spoke owns one concept in
-  full. A hub carries the summary and points up to the spoke for the rest.
-- **Summary down, deep dive up.** A hub may restate a rule in one line as a
-  floor an agent must hold. The full explanation, examples, and edge cases live
-  in the spoke. Never the reverse: a spoke does not re-summarize the hub.
-- **No lateral duplication.** Spokes do not copy from each other. When two
-  spokes need the same fact, one owns it and the other links to it. There is a
-  single source of truth per concept.
+- [file-system.md](file-system.md): when deciding where a new file or folder
+  goes inside `apps/desktop/src/`.
+- [navigation.md](navigation.md): when deciding what surface exists and where
+  it lives: lens, pane, strip, footer, or breadcrumb.
+- [tone-of-voice.md](tone-of-voice.md): when writing any user-facing string:
+  README, website, release notes, in-app copy, or error messages.
+- [providers.md](providers.md): when installing, connecting, or managing a
+  provider CLI.
+- [testing.md](testing.md): when writing or reviewing test coverage and
+  assertion style.
+- [dependencies.md](dependencies.md): when adding a new package or reviewing
+  whether one is justified.
+- [packages/ui/DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md): when you
+  need concrete tokens, scales, or primitives to implement against.
+- [apps/desktop/CONVENTIONS.md](../apps/desktop/CONVENTIONS.md) and
+  [apps/desktop/README.md](../apps/desktop/README.md): desktop boundaries and
+  app shape.
+- [packages/core/CONVENTIONS.md](../packages/core/CONVENTIONS.md) and
+  [packages/core/README.md](../packages/core/README.md): core boundaries and
+  package shape.
+- [packages/db/CONVENTIONS.md](../packages/db/CONVENTIONS.md) and
+  [packages/db/README.md](../packages/db/README.md): database boundaries and
+  package shape.
+- [packages/types/CONVENTIONS.md](../packages/types/CONVENTIONS.md) and
+  [packages/types/README.md](../packages/types/README.md): shared-type
+  boundaries and package shape.
+- [packages/ui/CONVENTIONS.md](../packages/ui/CONVENTIONS.md) and
+  [packages/ui/README.md](../packages/ui/README.md): presentational boundaries
+  and package shape.
 
-## Guidelines for future additions
+## Read on demand
 
-When you add or move documentation, follow these or the map rots.
+These references are deliberate, not abandoned. Nobody preloads them. Consult
+one only when the current task reaches its trigger.
 
-- **Single source per concept.** A fact lives in exactly one doc. Everywhere
-  else links to it. If you find yourself copying a paragraph, link instead.
-- **Naming.** Root hubs are CAPS (`AGENTS`, `CONVENTIONS`, `DESIGN`, `VISION`,
-  `README`). Topic docs are kebab-case under `docs/` (`tone-of-voice.md`,
-  `release-command.md`).
-- **Clusters.** When a topic outgrows one file, split it into `docs/<name>/`
-  with granular files plus a thin twin index `docs/<name>.md` that links them
-  (the `typescript` pattern). The twin index stays short: one line per cluster
-  file.
-- **Split threshold.** Split only when a doc passes one screen AND has at least
-  three subtopics that load independently. Do not pre-split a short doc into a
-  cluster.
-- **Register here.** Every new doc gets a row in the role matrix and an entry in
-  the registry below. An unregistered doc is an orphan.
-- **Header pointer.** Open each doc with a one-line statement of what it owns and
-  a pointer to its hub or related docs, so a reader landing cold knows the scope.
-- **Inline is floor, extract is reference.** Keep in a hub only what an agent
-  must hold in working memory (the floor). Push the reference material that is
-  loaded on demand out to a granular `docs/*` spoke.
+- [README.md](README.md): when you need to decide which documentation a task
+  qualifies to load before opening it.
+- [typescript.md](typescript.md): when writing TypeScript and you need the
+  index into the cluster-specific rule for what you are touching.
+- [architecture.md](architecture.md): when touching runtime systems around
+  the app: subprocess environment, provider routing, or DB migrations.
+- [model-picker.md](model-picker.md): when changing how a user picks a model or
+  effort.
+- [workflows.md](workflows.md): when touching workflow tables, run advance
+  logic, or the post-step summarizer.
+- [release.md](release.md): when you need the technical detail of a release:
+  signing, notarization, updater, or Homebrew.
+- [release-command.md](release-command.md): when an agent is executing a
+  release and needs the step order plus the gotchas that bit previous runs.
+- [styling.md](styling.md): when implementing spacing, radius, scroll, overlay,
+  or z-index in code.
 
-## Registry
+## Routing an ad-hoc agent
 
-Every doc, its one-line purpose, and the roles that load it.
+An agent with no delivery role reads this section and stops after its task
+shape. Whoever spawns it points here explicitly.
 
-### Hubs (root)
+- Writing a component: `AGENTS.md`, `docs/typescript/components.md`,
+  `docs/file-system.md`.
+- Changing the schema: `AGENTS.md`, `docs/architecture.md`,
+  `docs/testing.md`.
+- Touching a release: `docs/release-command.md`, `docs/release.md`.
+- Reviewing a PR: `AGENTS.md`, `CONVENTIONS.md`, `docs/testing.md`.
+- Editing docs: this router, the existing owner of the concept, and
+  `docs/tone-of-voice.md` only for user-facing copy.
 
-| Doc                                 | Purpose                                                                                                             | Roles                                                            |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| [README.md](../README.md)           | Product overview, install, run, provider table.                                                                     | onboarding                                                       |
-| [VISION.md](../VISION.md)           | The why, the mission, core concepts (workspaces, sessions, agents, workflows, shared context).                      | scout, planner, autonomy, onboarding                             |
-| [DESIGN.md](../DESIGN.md)           | Surface principles: how Goodboy looks, reads, and feels. Points to styling.md for mechanics.                        | planner, implementer, reviewer, autonomy, onboarding             |
-| [AGENTS.md](../AGENTS.md)           | Code hub. Working-memory floor: forbidden patterns checklist plus hard-rules summary. Points up to granular spokes. | all code roles, autonomy, onboarding                             |
-| [AUTONOMY.md](../AUTONOMY.md)       | Autonomy hub: how Goodboy ships itself, the delivery org model and the floor. Points to docs/autonomy/.             | autonomy, pr-release, onboarding                                 |
-| [CONVENTIONS.md](../CONVENTIONS.md) | Process and monorepo hub: pnpm, turbo, tsconfig, ci, git workflow, release.                                         | planner, implementer, reviewer, pr-release, autonomy, onboarding |
+## Writing and registering docs
 
-### Spokes (`docs/`)
-
-| Doc                                                         | Purpose                                                                                                                 | Roles                                       |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| [glossary.md](glossary.md)                                  | Canonical term definitions for code, UI, docs, and issues.                                                              | all                                         |
-| [autonomy.md](autonomy.md) + [autonomy/](autonomy/)         | Pointer to the autonomy cluster; the hub and single file enumeration is [AUTONOMY.md](../AUTONOMY.md) at the repo root. | autonomy, pr-release                        |
-| [adr/](adr/README.md)                                       | Architecture decision records: one numbered record per adopted decision, trigger rule and cap in its README.            | planner, autonomy                           |
-| [typescript.md](typescript.md) + [typescript/](typescript/) | TypeScript conventions cluster: thin twin index plus data, components, control-flow, readability.                       | implementer, reviewer                       |
-| [design.md](design.md)                                      | Screen anatomy and surface ownership, between styling.md and navigation.md.                                             | planner, implementer, reviewer              |
-| [navigation.md](navigation.md)                              | Breadcrumb model, app-chrome header, sidebar visibility, studio taxonomy.                                               | planner, implementer, reviewer              |
-| [styling.md](styling.md)                                    | Concrete Tailwind rules for spacing, radius, scroll. DESIGN.md owns the principles.                                     | implementer, reviewer                       |
-| [tone-of-voice.md](tone-of-voice.md)                        | How Goodboy talks: README, website, release notes, in-app copy, errors.                                                 | implementer, reviewer, pr-release, autonomy |
-| [providers.md](providers.md)                                | Provider integration guide: install, connect, manage each CLI.                                                          | scout, planner, implementer, onboarding     |
-| [model-picker.md](model-picker.md)                          | Model picker structure: catalog presentation data, axes, Cursor Max Mode.                                               | planner, implementer, reviewer              |
-| [release.md](release.md)                                    | Technical release runbook: signing, notarization, updater, homebrew.                                                    | pr-release                                  |
-| [release-command.md](release-command.md)                    | Agent release playbook: step order and gotchas. Points to release.md for mechanics.                                     | pr-release, autonomy                        |
-| [workflows.md](workflows.md)                                | Workflow tables, run advance gate, post-step summarizer, parallel status.                                               | planner, implementer, reviewer              |
-| [file-system.md](file-system.md)                            | File layout and where new code goes.                                                                                    | all code roles, onboarding                  |
-| [architecture.md](architecture.md)                          | Repo architecture, subprocess env, provider system, vscode integration.                                                 | all code roles, onboarding                  |
-| [testing.md](testing.md)                                    | Test rules and the golden rule.                                                                                         | planner, implementer, reviewer              |
-| [dependencies.md](dependencies.md)                          | Dependency policy, single source of truth.                                                                              | planner, implementer, reviewer              |
-
-### Per-workspace
-
-| Doc                                                         | Purpose                                                              | Roles                             |
-| ----------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------- |
-| `apps/desktop/CONVENTIONS.md`, `apps/desktop/README.md`     | Tauri 2 desktop app: stack-specific rules and dev loop.              | implementer, reviewer, onboarding |
-| `packages/ui/CONVENTIONS.md`, `packages/ui/README.md`       | `@goodboy/ui`: presentational-only React 19 component library rules. | implementer, reviewer, onboarding |
-| `packages/core/CONVENTIONS.md`, `packages/core/README.md`   | `@goodboy/core`: business logic and orchestration rules.             | implementer, reviewer, onboarding |
-| `packages/db/CONVENTIONS.md`                                | `@goodboy/db`: SQLite persistence rules.                             | implementer, reviewer, onboarding |
-| `packages/types/CONVENTIONS.md`, `packages/types/README.md` | `@goodboy/types`: shared type definitions rules.                     | implementer, reviewer, onboarding |
+- Keep concepts, invariants, authority, ceilings, and non-obvious reasons.
+  Delete structure, inventories, paths, commands, counts, and facts recoverable
+  from the repository.
+- Prefer an invariant over one implementation. A sentence that fails after a
+  plausible refactor describes a solution, not a concept.
+- Single source per concept. Another context links to the owner.
+- Root hubs use capitals; topic docs use kebab case under `docs/`.
+- A cluster directory is registered directly in this router. It needs no thin
+  twin index.
+- A doc is an orphan when this router and the root hubs both fail to reach it.
+  An orphan is either registered here or deleted; it is never left floating.
+- Generated files carry no `Read this when` header: `CHANGELOG.md` is written
+  by the release flow and read through
+  [release-command.md](release-command.md), its concept owner. That is the one
+  header exception.
