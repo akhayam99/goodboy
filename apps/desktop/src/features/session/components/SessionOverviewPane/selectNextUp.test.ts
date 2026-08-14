@@ -81,6 +81,18 @@ describe('selectNextUp precedence', () => {
     expect(item?.title).toBe('3 resolutions ready to push');
   });
 
+  it('3d. an active resolver outranks a queued resolution when both are pending', () => {
+    const item = selectNextUp({
+      ...everySignal,
+      openQuestions: [],
+      pr: pr(),
+      waiting: null,
+      resolveCount: 2,
+      pendingResolutions: 3,
+    });
+    expect(item?.id).toBe('resolve');
+  });
+
   it('4. a stalled step wins once the resolve backlog is empty', () => {
     const item = selectNextUp({
       ...everySignal,
