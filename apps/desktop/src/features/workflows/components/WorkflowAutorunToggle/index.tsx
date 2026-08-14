@@ -61,19 +61,20 @@ export const WorkflowAutorunToggle = ({
         </button>
       )}
       {isArmed ? (
-        <InlineConfirm
-          role="alert"
-          icon={<CircleStop size={12} aria-hidden />}
-          title="Stop this run?"
-          description="The run stops, the step in flight is skipped, and everything it already wrote is kept."
-          confirmLabel="Stop the run"
-          onConfirm={() => {
-            setIsArmed(false);
-            onStopNow();
-          }}
-          onCancel={() => setIsArmed(false)}
-          className="absolute right-0 top-full z-popover mt-1 w-72 bg-background shadow-lg"
-        />
+        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+          <InlineConfirm
+            role="alert"
+            icon={<CircleStop size={12} aria-hidden />}
+            title="Stop this run?"
+            description="The run stops, the step in flight is skipped, and everything it already wrote is kept."
+            confirmLabel="Stop the run"
+            onConfirm={() => {
+              setIsArmed(false);
+              onStopNow();
+            }}
+            onCancel={() => setIsArmed(false)}
+          />
+        </div>
       ) : null}
     </div>
   );

@@ -112,18 +112,19 @@ export const WorkflowNextStepCta = ({
           Skip blocked step
         </Button>
         {pendingForce ? (
-          <InlineConfirm
-            role="alert"
-            icon={<AlertTriangle size={12} />}
-            title="Skip the blocked step and start the next agent?"
-            description={`${chain.failedStep.name} did not finish. Its output will not be carried forward.`}
-            confirmLabel="Skip and continue"
-            cancelLabel="Cancel"
-            isBusy={busy}
-            onConfirm={() => void doForce()}
-            onCancel={() => setPendingForce(false)}
-            className="absolute right-0 top-full z-popover mt-1 w-72 bg-background shadow-lg"
-          />
+          <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+            <InlineConfirm
+              role="alert"
+              icon={<AlertTriangle size={12} />}
+              title="Skip the blocked step and start the next agent?"
+              description={`${chain.failedStep.name} did not finish. Its output will not be carried forward.`}
+              confirmLabel="Skip and continue"
+              cancelLabel="Cancel"
+              isBusy={busy}
+              onConfirm={() => void doForce()}
+              onCancel={() => setPendingForce(false)}
+            />
+          </div>
         ) : null}
       </div>
     );
@@ -179,18 +180,19 @@ export const WorkflowNextStepCta = ({
         ) : null}
       </button>
       {advance.isConfirming ? (
-        <InlineConfirm
-          role="alert"
-          icon={<AlertTriangle size={12} />}
-          title={advance.title}
-          description={advance.description}
-          confirmLabel={advance.confirmLabel}
-          cancelLabel={advance.cancelLabel}
-          isBusy={advance.isBusy}
-          onConfirm={advance.onConfirm}
-          onCancel={advance.onCancel}
-          className="absolute right-0 top-full z-popover mt-1 w-72 bg-background shadow-lg"
-        />
+        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+          <InlineConfirm
+            role="alert"
+            icon={<AlertTriangle size={12} />}
+            title={advance.title}
+            description={advance.description}
+            confirmLabel={advance.confirmLabel}
+            cancelLabel={advance.cancelLabel}
+            isBusy={advance.isBusy}
+            onConfirm={advance.onConfirm}
+            onCancel={advance.onCancel}
+          />
+        </div>
       ) : null}
     </div>
   );

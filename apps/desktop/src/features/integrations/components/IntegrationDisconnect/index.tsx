@@ -28,17 +28,18 @@ export const IntegrationDisconnect = ({ label, description, onDisconnect }: Prop
         <IconButton icon={Unplug} label={`Disconnect ${label}`} onClick={() => setIsArmed(true)} />
       )}
       {isArmed ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Unplug size={12} aria-hidden />}
-          title={`Disconnect ${label}?`}
-          description={description}
-          confirmLabel={`Disconnect ${label}`}
-          autoDisarmMs={4000}
-          onConfirm={confirm}
-          onCancel={() => setIsArmed(false)}
-          className="absolute right-0 top-full z-popover mt-1 w-72 bg-background shadow-lg"
-        />
+        <div className="absolute right-0 top-full z-popover mt-1 w-72 rounded-lg bg-background shadow-lg">
+          <InlineConfirm
+            role="danger"
+            icon={<Unplug size={12} aria-hidden />}
+            title={`Disconnect ${label}?`}
+            description={description}
+            confirmLabel={`Disconnect ${label}`}
+            autoDisarmMs={4000}
+            onConfirm={confirm}
+            onCancel={() => setIsArmed(false)}
+          />
+        </div>
       ) : null}
     </div>
   );
