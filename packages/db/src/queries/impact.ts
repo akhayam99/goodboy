@@ -3,6 +3,8 @@ import type { Database } from '../client';
 
 const WINDOW_MS = 30 * 86_400_000;
 
+const PR_CACHE_MAX_READ_AGE_MS = 180 * 86_400_000;
+
 export type ImpactQueryParams = {
   readonly db: Database;
   readonly workspaceId: WorkspaceId;
@@ -429,6 +431,7 @@ const selectPullRequests = async ({
 }: PullRequestRangeParams): Promise<ReadonlyArray<PullRequestRow>> => {
   const startIso = startMs === null ? null : new Date(startMs).toISOString();
   const endIso = endMs === null ? null : new Date(endMs).toISOString();
+  const oldestCacheIso = new Date(Date.now() - PR_CACHE_MAX_READ_AGE_MS).toISOString();
   return db.select<PullRequestRow>(
     `SELECT
        s.id AS session_id,
@@ -444,22 +447,24 @@ const selectPullRequests = async ({
                FROM session_worktrees sw2
                JOIN sessions s2 ON s2.id = sw2.session_id
               WHERE sw2.branch = g.branch
+                AND sw2.repo_slug = g.repo_slug
                 AND s2.workspace_id = s.workspace_id
                 AND s2.deleted_at IS NULL
            )),
          0
        ) AS spend_usd
      FROM github_pr_cache g
-     JOIN session_worktrees sw ON sw.branch = g.branch
+     JOIN session_worktrees sw ON sw.branch = g.branch AND sw.repo_slug = g.repo_slug
      JOIN sessions s ON s.id = sw.session_id
     WHERE s.workspace_id = ?
       AND s.deleted_at IS NULL
       AND g.pr_json IS NOT NULL
+      AND julianday(g.fetched_at) >= julianday(?)
       AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) >= julianday(?))
       AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) < julianday(?))
     GROUP BY g.repo_slug, g.branch
     ORDER BY julianday(json_extract(g.pr_json, '$.updatedAt')) DESC`,
-    [workspaceId, startIso, startIso, endIso, endIso],
+    [workspaceId, oldestCacheIso, startIso, startIso, endIso, endIso],
   );
 };
 

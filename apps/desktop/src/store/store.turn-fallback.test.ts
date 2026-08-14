@@ -302,4 +302,54 @@ describe('sendTurn, provider failure fallback', () => {
     expect(runTurnSpy).toHaveBeenCalledOnce();
     expect(useAppStore.getState().agentTurnState[AGENT_A]?.kind).toBe('error');
   });
+
+  const LOCK_OUTPUT =
+    "fatal: Unable to create '/tmp/wt/.git/index.lock': File exists.\n\n" +
+    'Another git process seems to be running in this repository.';
+
+  const streamToolCallEnd = ({ output }: { readonly output: unknown }) =>
+    async function* () {
+      yield {
+        kind: 'tool_call_end',
+        runId: 'run-lock-1',
+        toolUseId: 'tu-1',
+        output,
+        isError: true,
+        at: NOW,
+      };
+    };
+
+  it('surfaces a git index.lock tool failure as a retryable transcript error', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    runTurnSpy.mockImplementation(streamToolCallEnd({ output: LOCK_OUTPUT }));
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'commit it' });
+
+    const transcript = useAppStore.getState().transcripts[AGENT_A] ?? [];
+    const failure = transcript.find(
+      (event) => event.kind === 'error' && event.message.includes('.git/index.lock'),
+    );
+    expect(failure).toBeDefined();
+    expect(failure).toMatchObject({ retryable: true });
+  });
+
+  it('leaves an ordinary tool failure out of the transcript', async () => {
+    const useAppStore = await importStore();
+    setup(useAppStore);
+    runTurnSpy.mockImplementation(streamToolCallEnd({ output: 'command not found: foo' }));
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'run it' });
+
+    const transcript = useAppStore.getState().transcripts[AGENT_A] ?? [];
+    expect(
+      transcript.filter(
+        (event) => event.kind === 'error' && event.message.includes('.git/index.lock'),
+      ),
+    ).toHaveLength(0);
+  });
 });

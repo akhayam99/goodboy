@@ -21,11 +21,14 @@ import {
   insertSession,
   insertSessionWorktree,
   listWorkspaces,
+  updateSessionWorktreeRepoSlug,
   upsertSessionExternalTask,
   setSetting as dbSetSetting,
   upsertContextSlot,
 } from '@goodboy/db';
+import { detectRepoSlug } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { tauriGhRunner } from '../../../features/github/github';
 import {
   createSessionDir,
   createWorktree,
@@ -43,6 +46,46 @@ import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
 import { deriveDefaultSessionDirectoryNameFromGoal } from '../../../shared/utils/deriveDefaultSessionDirectoryNameFromGoal';
 import type { GetFn, SetFn } from './types';
+
+type RepoSlugTarget = {
+  readonly repoRoot: string;
+  readonly worktreePath: string;
+  readonly memberWorkspaceId?: WorkspaceId;
+};
+
+type PopulateRepoSlugsParams = {
+  readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
+  readonly targets: ReadonlyArray<RepoSlugTarget>;
+};
+
+const populateWorktreeRepoSlugs = async ({
+  sessionId,
+  workspaceId,
+  targets,
+}: PopulateRepoSlugsParams): Promise<void> => {
+  for (const target of targets) {
+    try {
+      const slug = await detectRepoSlug(
+        tauriGhRunner,
+        target.repoRoot,
+        workspaceId,
+        target.memberWorkspaceId,
+      );
+      if (slug == null) {
+        continue;
+      }
+      await updateSessionWorktreeRepoSlug({
+        db: tauriDatabase,
+        sessionId,
+        worktreePath: target.worktreePath,
+        repoSlug: slug,
+      });
+    } catch {
+      continue;
+    }
+  }
+};
 
 const slugifyDir = (raw: string): string =>
   raw
@@ -260,6 +303,16 @@ export const createSession = (set: SetFn, get: GetFn) => {
         createdAt: Date.now(),
       });
     }
+    const repoSlugTargets: ReadonlyArray<RepoSlugTarget> = isComposite
+      ? memberWorktrees.map(({ member, worktree: wt }) => ({
+          repoRoot: member.rootPath,
+          worktreePath: wt.worktreePath,
+          memberWorkspaceId: member.workspaceId,
+        }))
+      : isSimple
+        ? []
+        : [{ repoRoot: workspace.rootPath, worktreePath: worktree.worktreePath }];
+    void populateWorktreeRepoSlugs({ sessionId, workspaceId, targets: repoSlugTargets });
 
     const goalText = goal.trim() || worktree.slug;
     if (goalText.length > 0) {

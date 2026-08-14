@@ -1,4 +1,4 @@
-import type { GithubPrCacheEntry, PullRequestState } from '@goodboy/types';
+import type { CachedPullRequest, GithubPrCacheEntry } from '@goodboy/types';
 import type { Database } from '../client';
 
 type Row = {
@@ -12,7 +12,10 @@ function toDomain(row: Row): GithubPrCacheEntry {
   return {
     branch: row.branch,
     repoSlug: row.repo_slug,
-    pr: row.pr_json ? (JSON.parse(row.pr_json) as PullRequestState) : null,
+    pr:
+      row.pr_json != null && row.pr_json.length > 0
+        ? (JSON.parse(row.pr_json) as CachedPullRequest)
+        : null,
     fetchedAt: row.fetched_at,
   };
 }

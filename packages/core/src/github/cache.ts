@@ -1,4 +1,4 @@
-import type { GithubPrCacheEntry, PullRequestState } from '@goodboy/types';
+import type { CachedPullRequest, GithubPrCacheEntry, PullRequestState } from '@goodboy/types';
 import type { GhRunner } from './gh';
 import { resolvePrForBranch } from './resolver';
 
@@ -17,6 +17,25 @@ export type PrCacheDeps = {
 
 export const DEFAULT_PR_CACHE_TTL_MS = 60_000;
 
+type ToCachedPullRequestParams = {
+  readonly pr: PullRequestState | null;
+};
+
+export const toCachedPullRequest = ({
+  pr,
+}: ToCachedPullRequestParams): CachedPullRequest | null => {
+  if (pr === null) {
+    return null;
+  }
+  return {
+    number: pr.number,
+    title: pr.title,
+    url: pr.url,
+    state: pr.state,
+    updatedAt: pr.updatedAt,
+  };
+};
+
 export type GetPrInput = {
   repoSlug: string;
   branch: string;
@@ -29,7 +48,7 @@ export type GetPrInput = {
 export const getPrForBranch = async (
   deps: PrCacheDeps,
   input: GetPrInput,
-): Promise<PullRequestState | null> => {
+): Promise<CachedPullRequest | null> => {
   const ttl = deps.ttlMs ?? DEFAULT_PR_CACHE_TTL_MS;
   const now = deps.now ? deps.now() : new Date();
   const cached = await deps.store.get(input.repoSlug, input.branch);
@@ -44,13 +63,14 @@ export const getPrForBranch = async (
     token: input.token,
     workspaceId: input.workspaceId,
   });
+  const trimmed = toCachedPullRequest({ pr: fresh });
   await deps.store.upsert({
     repoSlug: input.repoSlug,
     branch: input.branch,
-    pr: fresh,
+    pr: trimmed,
     fetchedAt: now.toISOString(),
   });
-  return fresh;
+  return trimmed;
 };
 
 export const invalidatePrCache = async (

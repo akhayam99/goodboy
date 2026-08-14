@@ -9,6 +9,7 @@ type SessionWorktreeRow = {
   parallel_index: number;
   mount_workspace_id: string | null;
   mount_name: string | null;
+  repo_slug: string | null;
   created_at: number;
 };
 
@@ -20,6 +21,7 @@ export type SessionWorktree = {
   readonly parallelIndex: number;
   readonly mountWorkspaceId?: WorkspaceId;
   readonly mountName?: string;
+  readonly repoSlug?: string;
   readonly createdAt: number;
 };
 
@@ -34,6 +36,7 @@ function toDomain(row: SessionWorktreeRow): SessionWorktree {
       ? { mountWorkspaceId: row.mount_workspace_id as WorkspaceId }
       : {}),
     ...(row.mount_name != null ? { mountName: row.mount_name } : {}),
+    ...(row.repo_slug != null ? { repoSlug: row.repo_slug } : {}),
     createdAt: row.created_at,
   };
 }
@@ -44,8 +47,8 @@ export const insertSessionWorktree = async (
 ): Promise<void> => {
   await db.execute(
     `INSERT INTO session_worktrees
-      (id, session_id, worktree_path, branch, parallel_index, mount_workspace_id, mount_name, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, session_id, worktree_path, branch, parallel_index, mount_workspace_id, mount_name, repo_slug, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       worktree.id,
       worktree.sessionId,
@@ -54,6 +57,7 @@ export const insertSessionWorktree = async (
       worktree.parallelIndex,
       worktree.mountWorkspaceId ?? null,
       worktree.mountName ?? null,
+      worktree.repoSlug ?? null,
       worktree.createdAt,
     ],
   );
@@ -127,6 +131,25 @@ export const updateSessionWorktreePath = async ({
   await db.execute(
     'UPDATE session_worktrees SET worktree_path = ? WHERE session_id = ? AND parallel_index = ?',
     [worktreePath, sessionId, parallelIndex],
+  );
+};
+
+type UpdateSessionWorktreeRepoSlugParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly worktreePath: string;
+  readonly repoSlug: string;
+};
+
+export const updateSessionWorktreeRepoSlug = async ({
+  db,
+  sessionId,
+  worktreePath,
+  repoSlug,
+}: UpdateSessionWorktreeRepoSlugParams): Promise<void> => {
+  await db.execute(
+    'UPDATE session_worktrees SET repo_slug = ? WHERE session_id = ? AND worktree_path = ?',
+    [repoSlug, sessionId, worktreePath],
   );
 };
 
