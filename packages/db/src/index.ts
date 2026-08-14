@@ -157,6 +157,7 @@ export {
   deleteWorktreesForSession,
   updateSessionWorktreeBranch,
   updateSessionWorktreePath,
+  updateSessionWorktreeRepoSlug,
   listAllSessionWorktrees,
   type SessionWorktree,
 } from './queries/session-worktree';

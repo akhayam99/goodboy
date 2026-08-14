@@ -108,6 +108,7 @@ import { m107IntegrationBitbucketProvider } from './m107-integration-bitbucket-p
 import { m108IntegrationSlackProvider } from './m108-integration-slack-provider';
 import { m109WorkflowRunSummary } from './m109-workflow-run-summary';
 import { m110WorkflowRunSpendLimit } from './m110-workflow-run-spend-limit';
+import { m111SessionWorktreeRepoSlug } from './m111-session-worktree-repo-slug';
 
 export type Migration = {
   readonly version: number;
@@ -225,4 +226,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 108, sql: m108IntegrationSlackProvider },
   { version: 109, sql: m109WorkflowRunSummary },
   { version: 110, sql: m110WorkflowRunSpendLimit },
+  { version: 111, sql: m111SessionWorktreeRepoSlug },
 ];

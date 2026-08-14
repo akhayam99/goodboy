@@ -105,6 +105,7 @@ vi.mock('@goodboy/db', () => ({
   listAgentsForSessions: vi.fn(async () => new Map()),
   deleteWorktreesForSession: vi.fn(async () => undefined),
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
+  updateSessionWorktreeRepoSlug: vi.fn(async () => undefined),
   listAllSessionWorktrees: vi.fn(async () => []),
   renameSession: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),

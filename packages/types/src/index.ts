@@ -239,6 +239,7 @@ export type {
   SessionViewPrefs,
 } from './session-view';
 export type {
+  CachedPullRequest,
   DiffHunk,
   DiffHunkLine,
   FileDiff,

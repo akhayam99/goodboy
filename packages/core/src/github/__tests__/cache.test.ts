@@ -8,6 +8,7 @@ import {
   type PrCacheStore,
   getPrForBranch,
   invalidatePrCache,
+  toCachedPullRequest,
 } from '../cache';
 
 const SAMPLE_PR: PullRequestState = {
@@ -177,6 +178,48 @@ describe('getPrForBranch', () => {
     const result = await getPrForBranch(deps, BASE_INPUT);
     expect(result).toBeNull();
     expect(runner.run).not.toHaveBeenCalled();
+  });
+});
+
+describe('cached pull request payload', () => {
+  it('stores only the five fields the impact panel reads', async () => {
+    const store = makeStore(null);
+    const runner = makeRunner(SAMPLE_PR);
+    const deps: PrCacheDeps = { runner, store, now: () => NOW };
+
+    await getPrForBranch(deps, BASE_INPUT);
+
+    const stored = store.rows.get('org/repo/feature');
+    expect(Object.keys(stored?.pr ?? {}).sort()).toEqual([
+      'number',
+      'state',
+      'title',
+      'updatedAt',
+      'url',
+    ]);
+  });
+
+  it('never writes the token supplied to the fetch into the cached row', async () => {
+    const store = makeStore(null);
+    const runner = makeRunner(SAMPLE_PR);
+    const deps: PrCacheDeps = { runner, store, now: () => NOW };
+    const token = 'token-placeholder-for-this-test';
+
+    await getPrForBranch(deps, { ...BASE_INPUT, token });
+
+    const stored = store.rows.get('org/repo/feature');
+    expect(JSON.stringify(stored)).not.toContain(token);
+  });
+
+  it('trims a full pull request and passes a missing one through', () => {
+    expect(toCachedPullRequest({ pr: SAMPLE_PR })).toEqual({
+      number: SAMPLE_PR.number,
+      title: SAMPLE_PR.title,
+      url: SAMPLE_PR.url,
+      state: SAMPLE_PR.state,
+      updatedAt: SAMPLE_PR.updatedAt,
+    });
+    expect(toCachedPullRequest({ pr: null })).toBeNull();
   });
 });
 

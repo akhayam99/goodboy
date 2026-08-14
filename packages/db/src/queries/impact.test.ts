@@ -248,9 +248,9 @@ describe('pull request outcomes', () => {
     });
     await db.execute(
       `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, created_at)
-       VALUES ('wt1', 's1', '/tmp/a', 'feature/a', 0, ?),
-              ('wt2', 's2', '/tmp/b', 'feature/b', 0, ?)`,
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('wt1', 's1', '/tmp/a', 'feature/a', 0, 'repo', ?),
+              ('wt2', 's2', '/tmp/b', 'feature/b', 0, 'repo', ?)`,
       [RECENT, RECENT],
     );
     await db.execute(
@@ -287,9 +287,9 @@ describe('pull request outcomes', () => {
     await addSession({ db, seed: { id: 'composite', createdAt: RECENT } });
     await db.execute(
       `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, created_at)
-       VALUES ('wt-a', 'composite', '/tmp/repo-a', 'shared/branch', 0, ?),
-              ('wt-b', 'composite', '/tmp/repo-b', 'shared/branch', 1, ?)`,
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('wt-a', 'composite', '/tmp/repo-a', 'shared/branch', 0, 'repo', ?),
+              ('wt-b', 'composite', '/tmp/repo-b', 'shared/branch', 1, 'repo', ?)`,
       [RECENT, RECENT],
     );
     await db.execute(
@@ -327,8 +327,8 @@ describe('pull request outcomes', () => {
     await addSession({ db, seed: { id: 'unpriced', createdAt: RECENT } });
     await db.execute(
       `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, created_at)
-       VALUES ('wt-unpriced', 'unpriced', '/tmp/unpriced', 'feature/unpriced', 0, ?)`,
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('wt-unpriced', 'unpriced', '/tmp/unpriced', 'feature/unpriced', 0, 'repo', ?)`,
       [RECENT],
     );
     await db.execute(
@@ -360,9 +360,9 @@ describe('pull request outcomes', () => {
     });
     await db.execute(
       `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, created_at)
-       VALUES ('wt-mine', 'mine', '/tmp/mine', 'ak/shared-slug', 0, ?),
-              ('wt-theirs', 'theirs', '/tmp/theirs', 'ak/shared-slug', 0, ?)`,
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('wt-mine', 'mine', '/tmp/mine', 'ak/shared-slug', 0, 'repo', ?),
+              ('wt-theirs', 'theirs', '/tmp/theirs', 'ak/shared-slug', 0, 'repo', ?)`,
       [RECENT, RECENT],
     );
     await db.execute(
@@ -398,8 +398,8 @@ describe('pull request outcomes', () => {
     await addSession({ db, seed: { id: 'freebie', createdAt: RECENT } });
     await db.execute(
       `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, created_at)
-       VALUES ('wt-freebie', 'freebie', '/tmp/freebie', 'ak/freebie', 0, ?)`,
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('wt-freebie', 'freebie', '/tmp/freebie', 'ak/freebie', 0, 'repo', ?)`,
       [RECENT],
     );
     await db.execute(
@@ -431,6 +431,135 @@ describe('pull request outcomes', () => {
     const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
 
     expect(result.entries[0]).toMatchObject({ number: 51, spendUsd: null });
+  });
+
+  it('leaves out a worktree that has no repository slug yet', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'unslugged', createdAt: RECENT } });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, created_at)
+       VALUES ('wt-unslugged', 'unslugged', '/tmp/unslugged', 'ak/pre-upgrade', 0, ?)`,
+      [RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'org/repo', ?, ?)`,
+      [
+        'ak/pre-upgrade',
+        JSON.stringify({
+          number: 60,
+          title: 'pre-upgrade worktree',
+          state: 'open',
+          updatedAt: iso(RECENT),
+        }),
+        iso(RECENT),
+      ],
+    );
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.entries).toEqual([]);
+    expect(result).toMatchObject({ open: 0, merged: 0, closed: 0 });
+  });
+
+  it('keeps two repositories that share a branch name apart', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'api', createdAt: RECENT } });
+    await addSession({ db, seed: { id: 'web', createdAt: RECENT } });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('wt-api', 'api', '/tmp/api', 'ak/same-branch', 0, 'org/api', ?),
+              ('wt-web', 'web', '/tmp/web', 'ak/same-branch', 0, 'org/web', ?)`,
+      [RECENT, RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'org/api', ?, ?)`,
+      [
+        'ak/same-branch',
+        JSON.stringify({
+          number: 70,
+          title: 'api pull request',
+          state: 'open',
+          updatedAt: iso(RECENT),
+        }),
+        iso(RECENT),
+      ],
+    );
+    await addTelemetry({
+      db,
+      seed: { id: 't-api', runId: 'r-api', sessionId: 'api', at: RECENT, cost: 3 },
+    });
+    await addTelemetry({
+      db,
+      seed: { id: 't-web', runId: 'r-web', sessionId: 'web', at: RECENT, cost: 11 },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.entries).toHaveLength(1);
+    expect(result.entries[0]).toMatchObject({ number: 70, sessionId: 'api', spendUsd: 3 });
+  });
+
+  it('leaves out a cache row fetched longer ago than the read bound', async () => {
+    const db = await seedDb();
+    const staleFetch = Date.now() - 400 * DAY_MS;
+    await addSession({ db, seed: { id: 'stale', createdAt: RECENT } });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('wt-stale', 'stale', '/tmp/stale', 'ak/stale', 0, 'org/repo', ?)`,
+      [RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'org/repo', ?, ?)`,
+      [
+        'ak/stale',
+        JSON.stringify({
+          number: 80,
+          title: 'long forgotten',
+          state: 'open',
+          updatedAt: iso(RECENT),
+        }),
+        iso(staleFetch),
+      ],
+    );
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: null }));
+
+    expect(result.entries).toEqual([]);
+  });
+
+  it('keeps a cache row fetched inside the read bound when the window is unbounded', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'kept', createdAt: RECENT } });
+    await db.execute(
+      `INSERT INTO session_worktrees
+         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+       VALUES ('wt-kept', 'kept', '/tmp/kept', 'ak/kept', 0, 'org/repo', ?)`,
+      [RECENT],
+    );
+    await db.execute(
+      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
+       VALUES (?, 'org/repo', ?, ?)`,
+      [
+        'ak/kept',
+        JSON.stringify({
+          number: 81,
+          title: 'still readable',
+          state: 'merged',
+          updatedAt: iso(RECENT),
+        }),
+        iso(Date.now() - DAY_MS),
+      ],
+    );
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: null }));
+
+    expect(result.entries[0]).toMatchObject({ number: 81 });
   });
 });
 
