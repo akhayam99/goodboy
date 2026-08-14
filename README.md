@@ -12,7 +12,7 @@
 
 <img src=".github/readme-integrations.png" alt="Integrates with GitHub, GitLab, Linear and Sentry" width="480" />
 
-[Install](#install) · [Providers](#providers) · [Vision](./VISION.md) · [Design](./DESIGN.md) · [goodboy-ai.dev](https://goodboy-ai.dev)
+[Install](#install) · [Providers](#providers) · [Concepts](./docs/concepts.md) · [Design](./DESIGN.md) · [goodboy-ai.dev](https://goodboy-ai.dev)
 
 </div>
 
@@ -162,6 +162,24 @@ regenerate the image.
 **Tauri 2 · React 19 · TypeScript · Tailwind v4 · Zustand · SQLite**, in a
 pnpm + Turborepo monorepo: `apps/desktop` plus `packages/{ui,core,db,types}`.
 
+## Zero data ownership
+
+Goodboy is a pure orchestration layer. We do not run servers. We do not have
+accounts. We do not store, log, or transmit your data anywhere except to the
+AI providers you choose.
+
+- No backend. Ever.
+- No telemetry. Not now, not later, not opt-in.
+- API keys stay on your machine, in your OS credential store.
+- Conversations, prompts, and responses flow directly between you and the
+  provider.
+- Local persistence is SQLite (`~/.goodboy/data.db`): workspaces, sessions,
+  agents, messages, context slots, plans, local usage records, skills,
+  settings. All yours, all local.
+
+If Goodboy disappeared tomorrow, your data would be untouched, because it was
+never ours.
+
 ## How it ships
 
 Goodboy ships Goodboy. Releases are decided, built, verified and drafted by an
@@ -192,11 +210,11 @@ no rather than silence.
 ## More
 
 - [docs/tone-of-voice.md](./docs/tone-of-voice.md): how Goodboy talks
-- [VISION.md](./VISION.md): the why, at length
+- [docs/concepts.md](./docs/concepts.md): what every object in the app is
 - [DESIGN.md](./DESIGN.md): how it looks and behaves
 - [CONVENTIONS.md](./CONVENTIONS.md) · [CLAUDE.md](./CLAUDE.md): contributor rules
-- Roadmap and the delivery organization live in a private repository. The app
-  never depends on it, and contributing never requires it.
+- Roadmap and the delivery organization live in `goodboy-atlas`, a private
+  repository. The app never depends on it, and contributing never requires it.
 
 ## License
 

@@ -49,7 +49,7 @@ export const Privacy = () => (
         <span>stats stay on your computer</span>
         <span>delete the file and the data is gone</span>
       </div>
-      <a className="more rv" style={delay(260)} href={`${SITE.vision}#zero-data-ownership`}>
+      <a className="more rv" style={delay(260)} href={SITE.privacy}>
         Read the full pledge <span className="arr">→</span>
       </a>
     </div>

@@ -5,7 +5,7 @@
 > (`docs/navigation.md`).
 
 Owns the workflow tables, how a run advances, and the post-step summarizer.
-Product concepts live in [VISION.md](../VISION.md), chrome in
+Product concepts live in [concepts.md](concepts.md), chrome in
 [navigation.md](navigation.md).
 
 ## `phaseTemplate*` means workflow

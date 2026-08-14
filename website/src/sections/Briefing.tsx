@@ -108,7 +108,7 @@ export const Briefing = () => {
           A chat tool drops the thread when you switch window or model. Goodboy keeps it with the
           task, whichever agent picks it up next.
         </p>
-        <a className="more rv" style={delay(240)} href={`${SITE.vision}#shared-context`}>
+        <a className="more rv" style={delay(240)} href={`${SITE.concepts}#shared-context`}>
           How shared context works <span className="arr">→</span>
         </a>
       </div>

@@ -8,7 +8,7 @@ export const Footer = () => (
       <span style={{ fontSize: 13, color: 'var(--gray6)' }}>MIT © Amin Khayam</span>
       <span className="right">
         <a href={SITE.repo}>GitHub</a>
-        <a href={SITE.vision}>Vision</a>
+        <a href={SITE.concepts}>Concepts</a>
         <a href={SITE.releases}>Releases</a>
       </span>
     </div>

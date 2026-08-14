@@ -9,15 +9,17 @@ owner rather than restating it, so there is never a second copy to drift.
 
 Two things are deliberately not here: where the product is going, and the
 autonomous delivery organization that ships it. Both live in `goodboy-atlas`,
-a private repository. If you are collaborating on direction rather than on
-code, ask the owner for access; nothing in this repository depends on it.
+a private repository. What the app does today is here, in full. If you are
+collaborating on direction rather than on code, ask the owner for access:
+contributing here needs nothing from it, it is never reconstructed from what
+is here, and an autonomous release cycle is its one reader.
 
 ## Root hubs
 
 - [README.md](../README.md): when you are new here, human or agent, and want
   the pitch, install steps, and feature tour.
-- [VISION.md](../VISION.md): when you are the product owner shaping intent,
-  priorities, or a new area's story.
+- [concepts.md](./concepts.md): when you need what an object in the app is,
+  or how far an integration goes.
 - [DESIGN.md](../DESIGN.md): when you are judging whether a screen or flow is
   right, against the three questions and the north star.
 - [AGENTS.md](../AGENTS.md): when you are an agent about to write code here
@@ -41,6 +43,8 @@ code, ask the owner for access; nothing in this repository depends on it.
   assertion style.
 - [dependencies.md](dependencies.md): when adding a new package or reviewing
   whether one is justified.
+- [traps.md](traps.md): when something in the code or the toolchain looks like
+  a bug and you are about to fix it.
 - [packages/ui/DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md): when you
   need concrete tokens, scales, or primitives to implement against.
 - [apps/desktop/CONVENTIONS.md](../apps/desktop/CONVENTIONS.md) and

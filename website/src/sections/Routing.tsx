@@ -217,7 +217,11 @@ export const Routing = () => {
         <p className="caption rv" style={delay(220)}>
           Set a budget and Goodboy taps you on the shoulder before you cross it, not after.
         </p>
-        <a className="more rv" style={delay(260)} href={`${SITE.vision}#provider-routing--balance`}>
+        <a
+          className="more rv"
+          style={delay(260)}
+          href={`${SITE.concepts}#provider-routing--balance`}
+        >
           See how routing works <span className="arr">→</span>
         </a>
       </div>
